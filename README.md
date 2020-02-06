@@ -19,3 +19,4 @@ spec:
   output: quay.io/my/app
 ```
 
+Uses Golang 1.13 and operator-sdk 1.15.1
