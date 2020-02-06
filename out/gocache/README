@@ -1,3 +1,0 @@
-This directory holds cached build artifacts from the Go build system.
-Run "go clean -cache" if the directory is getting too large.
-See golang.org to learn more about Go.
