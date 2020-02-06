@@ -1,0 +1,7 @@
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: example-build
+spec:
+  # Add fields here
+  size: 3
