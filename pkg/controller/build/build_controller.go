@@ -3,7 +3,7 @@ package build
 import (
 	"context"
 
-	buildv1alpha1 "github.com/redhat-developer/buildv2/pkg/apis/build/v1alpha1"
+	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

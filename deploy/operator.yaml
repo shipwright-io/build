@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: buildv2-operator
+  name: build-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: buildv2-operator
+      name: build-operator
   template:
     metadata:
       labels:
-        name: buildv2-operator
+        name: build-operator
     spec:
-      serviceAccountName: buildv2-operator
+      serviceAccountName: build-operator
       containers:
-        - name: buildv2-operator
+        - name: build-operator
           # Replace this with the built image name
           image: REPLACE_IMAGE
           command:
-          - buildv2-operator
+          - build-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -30,4 +30,4 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "buildv2-operator"
+              value: "build-operator"

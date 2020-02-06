@@ -12,9 +12,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"github.com/redhat-developer/buildv2/pkg/apis"
-	"github.com/redhat-developer/buildv2/pkg/controller"
-	"github.com/redhat-developer/buildv2/version"
+	"github.com/redhat-developer/build/pkg/apis"
+	"github.com/redhat-developer/build/pkg/controller"
+	"github.com/redhat-developer/build/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -84,7 +84,7 @@ func main() {
 
 	ctx := context.TODO()
 	// Become the leader before proceeding
-	err = leader.Become(ctx, "buildv2-operator-lock")
+	err = leader.Become(ctx, "build-operator-lock")
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)

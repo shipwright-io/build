@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/redhat-developer/buildv2/pkg/controller/buildstrategy"
+	"github.com/redhat-developer/build/pkg/controller/buildstrategy"
 )
 
 func init() {

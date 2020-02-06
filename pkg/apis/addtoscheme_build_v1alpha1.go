@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/redhat-developer/buildv2/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 )
 
 func init() {

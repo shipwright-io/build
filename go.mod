@@ -1,4 +1,4 @@
-module github.com/redhat-developer/buildv2
+module github.com/redhat-developer/build
 
 go 1.13
 
