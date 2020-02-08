@@ -71,6 +71,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// TODO: Watch TaskRuns
+
 	return nil
 }
 
@@ -109,6 +111,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	/*
+
+		TODO: Read "how to build" from a BuildStrategy CR
+
 		s2ibuildStrategy := &buildv1alpha1.BuildStrategy{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "example-buildstrategy", Namespace: instance.Namespace}, s2ibuildStrategy)
 		if err != nil {
