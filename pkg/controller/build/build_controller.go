@@ -4,22 +4,31 @@ import (
 	"context"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
+	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var log = logf.Log.WithName("controller_build")
+
+const (
+	// StrategyBuildpacksv3 is a reference to the name of the strategy use  for buildpacks-v3 builds
+	StrategyBuildpacksv3 = "buildpacks-v3"
+
+	// StrategySourceToImage is a reference to the name of the strategy use  for s2i builds
+	StrategySourceToImage = "s2i"
+)
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -45,21 +54,24 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	pred := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// Ignore updates to CR status in which case metadata.Generation does not change
+			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// Evaluates to false if the object has been confirmed deleted.
+			return !e.DeleteStateUnknown
+		},
+	}
+
 	// Watch for changes to primary resource Build
-	err = c.Watch(&source.Kind{Type: &buildv1alpha1.Build{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &buildv1alpha1.Build{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner Build
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &buildv1alpha1.Build{},
-	})
-	if err != nil {
-		return err
-	}
+	// TODO: Watch TaskRuns
 
 	return nil
 }
@@ -96,58 +108,75 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	/*
 
-	// Set Build instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
+		TODO: Read "how to build" from a BuildStrategy CR
 
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		s2ibuildStrategy := &buildv1alpha1.BuildStrategy{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "example-buildstrategy", Namespace: instance.Namespace}, s2ibuildStrategy)
 		if err != nil {
-			return reconcile.Result{}, err
-		}
+			if errors.IsNotFound(err) {
+				reqLogger.Info("NOT fetched strategy", "Namespace", s2ibuildStrategy.Namespace, "Name", s2ibuildStrategy.Name)
 
-		// Pod created successfully - don't requeue
+				// Request object not found, could have been deleted after reconcile request.
+				// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+				// Return and don't requeue
+				return reconcile.Result{}, nil
+			}
+		}
+		reqLogger.Info("fetched strategy", "Namespace", s2ibuildStrategy.Namespace, "Name", s2ibuildStrategy.Name)
+	*/
+
+	var generatedTask *taskv1.Task
+	var generatedTaskRun *taskv1.TaskRun
+
+	if instance.Spec.StrategyRef == StrategySourceToImage {
+		generatedTask = gets2iTask(instance)
+		generatedTaskRun = gets2iTaskRun(instance)
+	} else if instance.Spec.StrategyRef == StrategyBuildpacksv3 {
+		generatedTask = getBuildpacksV3Task(instance)
+		generatedTaskRun = getBuildpacksV3TaskRun(instance)
+	}
+
+	if generatedTask == nil && generatedTaskRun == nil {
 		return reconcile.Result{}, nil
-	} else if err != nil {
+	}
+
+	if err := controllerutil.SetControllerReference(instance, generatedTask, r.scheme); err != nil {
+		log.Error(err, "Setting owner reference fails")
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
-}
+	err = r.client.Create(context.TODO(), generatedTask)
+	if err != nil {
+		reqLogger.Info("failed to create Task", "Namespace", generatedTask.Namespace, "Name", generatedTask.Name)
+		return reconcile.Result{}, err
+	}
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *buildv1alpha1.Build) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
+	generatedTaskRun = gets2iTaskRun(instance)
+
+	if err := controllerutil.SetControllerReference(instance, generatedTaskRun, r.scheme); err != nil {
+		log.Error(err, "Setting owner reference fails")
+		return reconcile.Result{}, err
 	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
+
+	err = r.client.Create(context.TODO(), generatedTaskRun)
+	if err != nil {
+		reqLogger.Info("failed to create TaskRun", "Namespace", generatedTaskRun.Namespace, "Name", generatedTaskRun.Name)
+
+		return reconcile.Result{}, err
 	}
+
+	instance.Status = buildv1alpha1.BuildStatus{
+		Status: "in-progress",
+	}
+
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	reqLogger.Info("updated Build", "Pod.Namespace", instance.Namespace, "Build.Name", instance.Name)
+	return reconcile.Result{}, nil
 }

@@ -1,7 +1,0 @@
-apiVersion: build.dev/v1alpha1
-kind: BuildStrategy
-metadata:
-  name: example-buildstrategy
-spec:
-  # Add fields here
-  size: 3

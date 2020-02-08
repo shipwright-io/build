@@ -31,7 +31,11 @@ spec:
         spec:
           description: BuildSpec defines the desired state of Build
           properties:
-            spec:
+            builderImage:
+              type: string
+            outputImage:
+              type: string
+            source:
               description: GitSource contains the versioned source code metadata This
                 is similar to OpenShift BuildConfig Git Source API
               properties:
@@ -76,11 +80,22 @@ spec:
             strategy:
               type: string
           required:
-          - spec
+          - builderImage
+          - outputImage
+          - source
           - strategy
           type: object
         status:
           description: BuildStatus defines the observed state of Build
+          properties:
+            status:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file Add custom validation using kubebuilder
+                tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: string
+          required:
+          - status
           type: object
       type: object
   version: v1alpha1
