@@ -13,9 +13,13 @@ type BuildSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	Source GitSource `json:"spec"`
+	Source GitSource `json:"source"`
 
 	StrategyRef string `json:"strategy"`
+
+	BuilderImage *string `json:"builderImage"`
+
+	OutputImage string `json:"outputImage"`
 }
 
 // BuildStatus defines the observed state of Build
@@ -23,6 +27,7 @@ type BuildStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	Status string `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
