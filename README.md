@@ -1,5 +1,8 @@
 ## Build v2
 
+[![Docker Repository on Quay](https://quay.io/repository/redhat-developer/buildv2/status "Docker Repository on Quay")](https://quay.io/repository/redhat-developer/buildv2)
+
+
 *Proposal / *Work-in-progress
 
 An API to build images on Kubernetes using popular strategies and tools like source-to-image, buildpack-v3, kaniko and buildah, in an extensible way.
