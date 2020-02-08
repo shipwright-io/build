@@ -6,17 +6,36 @@ An API to build images on Kubernetes using popular strategies and tools like sou
 
 ## How
 
-Define the `Build` using a strategy.
+### Buildpacks v3
 
 ```
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: my-java-app-build
+  name: example-build
 spec:
-  strategy: buildpacks-v3
-  builderImage: quay.io/java8/buildpack-builder
-  output: quay.io/my/app
+  source:
+    url: https://github.com/sclorg/nodejs-ex
+  strategy: "buildpacks-v3"
+  builderImage: "cloudfoundry/cnb:bionic"
+  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
 ```
+
+### Source-to-Image (s2i )
+
+```
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: example-build
+spec:
+  # Add fields here
+  source:
+    url: https://github.com/sclorg/nodejs-ex
+  strategy: "s2i"
+  builderImage: "docker.io/centos/nodejs-10-centos7"
+  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+```
+
 
 Uses Golang 1.13 and operator-sdk 1.15.1
