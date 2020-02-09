@@ -31,11 +31,6 @@ const (
 	StrategySourceToImage = "s2i"
 )
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -72,7 +67,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO: Watch TaskRuns
+	// Watch TaskRuns
 	err = c.Watch(&source.Kind{Type: &taskv1.TaskRun{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &buildv1alpha1.Build{},
@@ -94,11 +89,6 @@ type ReconcileBuild struct {
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Build")
@@ -115,25 +105,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 	}
 
-	// Let's see if a TaskRun already exists
-
 	/*
-
 		TODO: Read "how to build" from a BuildStrategy CR
-
-		s2ibuildStrategy := &buildv1alpha1.BuildStrategy{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "example-buildstrategy", Namespace: instance.Namespace}, s2ibuildStrategy)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				reqLogger.Info("NOT fetched strategy", "Namespace", s2ibuildStrategy.Namespace, "Name", s2ibuildStrategy.Name)
-
-				// Request object not found, could have been deleted after reconcile request.
-				// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-				// Return and don't requeue
-				return reconcile.Result{}, nil
-			}
-		}
-		reqLogger.Info("fetched strategy", "Namespace", s2ibuildStrategy.Namespace, "Name", s2ibuildStrategy.Name)
+		https://github.com/redhat-developer/build/issues/3
 	*/
 
 	var generatedTask *taskv1.Task
