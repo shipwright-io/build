@@ -11,7 +11,13 @@ import (
 
 func getBuildpacksV3TaskRun(instance *buildv1alpha1.Build) *taskv1.TaskRun {
 	expectedTaskRun := &taskv1.TaskRun{
-		ObjectMeta: metav1.ObjectMeta{Name: instance.Name, Namespace: instance.Namespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instance.Name,
+			Namespace: instance.Namespace,
+			Labels: map[string]string{
+				"build.dev/build": instance.Name,
+			},
+		},
 		Spec: taskv1.TaskRunSpec{
 			ServiceAccountName: "pipeline",
 			TaskRef: &v1alpha1.TaskRef{

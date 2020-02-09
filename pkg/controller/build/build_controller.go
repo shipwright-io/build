@@ -7,6 +7,7 @@ import (
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -29,11 +30,6 @@ const (
 	// StrategySourceToImage is a reference to the name of the strategy use  for s2i builds
 	StrategySourceToImage = "s2i"
 )
-
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -71,7 +67,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO: Watch TaskRuns
+	// Watch TaskRuns
+	err = c.Watch(&source.Kind{Type: &taskv1.TaskRun{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &buildv1alpha1.Build{},
+	})
 
 	return nil
 }
@@ -89,11 +89,6 @@ type ReconcileBuild struct {
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Build")
@@ -111,26 +106,26 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	/*
-
 		TODO: Read "how to build" from a BuildStrategy CR
-
-		s2ibuildStrategy := &buildv1alpha1.BuildStrategy{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "example-buildstrategy", Namespace: instance.Namespace}, s2ibuildStrategy)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				reqLogger.Info("NOT fetched strategy", "Namespace", s2ibuildStrategy.Namespace, "Name", s2ibuildStrategy.Name)
-
-				// Request object not found, could have been deleted after reconcile request.
-				// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-				// Return and don't requeue
-				return reconcile.Result{}, nil
-			}
-		}
-		reqLogger.Info("fetched strategy", "Namespace", s2ibuildStrategy.Namespace, "Name", s2ibuildStrategy.Name)
+		https://github.com/redhat-developer/build/issues/3
 	*/
 
 	var generatedTask *taskv1.Task
 	var generatedTaskRun *taskv1.TaskRun
+
+	generatedTaskRun = r.retrieveTaskRun(instance)
+
+	if generatedTaskRun != nil {
+
+		// TODO: Make this safer
+		if len(generatedTaskRun.Status.Conditions) > 0 {
+			jobStatus := generatedTaskRun.Status.Conditions[0].Reason
+			instance.Status.Status = jobStatus
+			err = r.client.Status().Update(context.TODO(), instance)
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
 
 	if instance.Spec.StrategyRef == StrategySourceToImage {
 		generatedTask = gets2iTask(instance)
@@ -177,6 +172,31 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	reqLogger.Info("updated Build", "Pod.Namespace", instance.Namespace, "Build.Name", instance.Name)
+	reqLogger.Info("updated Build", "Build.Namespace", instance.Namespace, "Build.Name", instance.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.TaskRun {
+
+	taskRunList := &taskv1.TaskRunList{}
+
+	lbls := map[string]string{
+		"build.dev/build": instance.Name,
+	}
+
+	opts := client.ListOptions{
+		Namespace:     instance.Namespace,
+		LabelSelector: labels.SelectorFromSet(lbls),
+	}
+	err := r.client.List(context.TODO(), taskRunList, &opts)
+
+	if err != nil {
+		log.Error(err, "failed to list existing TaskRuns")
+		return nil
+	}
+
+	for _, taskRun := range taskRunList.Items {
+		return &taskRun
+	}
+	return nil
 }
