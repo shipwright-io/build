@@ -11,6 +11,8 @@ An API to build images on Kubernetes using popular strategies and tools like sou
 
 ### Buildpacks v3
 
+Create the below CR for starting a buildpacks-v3 `Build`
+
 ```
 apiVersion: build.dev/v1alpha1
 kind: Build
@@ -26,13 +28,14 @@ spec:
 
 ### Source-to-Image (s2i )
 
+Create the below CR for starting an s2i `Build`
+
 ```
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
   name: example-build
 spec:
-  # Add fields here
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy: "s2i"
@@ -40,7 +43,7 @@ spec:
   outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
 ```
 
-On Reconcile,
+On **Reconcile**, the `Build` CR's `Status` gets updated,
 
 ```
 apiVersion: build.dev/v1alpha1
@@ -48,7 +51,6 @@ kind: Build
 metadata:
   name: example-build
 spec:
-  # Add fields here
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy: "s2i"
@@ -61,10 +63,11 @@ Status:
 
 ## Development
 
-Uses Golang 1.13 and operator-sdk 1.15.1
+This project uses Golang 1.13+ and operator-sdk 1.15.1
+
+
 
 ### Running the Operator
-
 
 Assuming you are logged in to an OpenShift/Kubernetes cluster, run
 
@@ -93,4 +96,4 @@ Or
 oc policy add-role-to-user  system:image-builder  pipeline
 ```
 
-Eventually, the above would be setup by the operator.
+In the near future, the above would be setup by the operator.
