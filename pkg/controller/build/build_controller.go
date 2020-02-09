@@ -7,6 +7,7 @@ import (
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -72,6 +73,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// TODO: Watch TaskRuns
+	err = c.Watch(&source.Kind{Type: &taskv1.TaskRun{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &buildv1alpha1.Build{},
+	})
 
 	return nil
 }
@@ -110,6 +115,8 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 	}
 
+	// Let's see if a TaskRun already exists
+
 	/*
 
 		TODO: Read "how to build" from a BuildStrategy CR
@@ -131,6 +138,20 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	var generatedTask *taskv1.Task
 	var generatedTaskRun *taskv1.TaskRun
+
+	generatedTaskRun = r.retrieveTaskRun(instance)
+
+	if generatedTaskRun != nil {
+
+		// TODO: Make this safer
+		if len(generatedTaskRun.Status.Conditions) > 0 {
+			jobStatus := generatedTaskRun.Status.Conditions[0].Reason
+			instance.Status.Status = jobStatus
+			err = r.client.Status().Update(context.TODO(), instance)
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
 
 	if instance.Spec.StrategyRef == StrategySourceToImage {
 		generatedTask = gets2iTask(instance)
@@ -177,6 +198,31 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	reqLogger.Info("updated Build", "Pod.Namespace", instance.Namespace, "Build.Name", instance.Name)
+	reqLogger.Info("updated Build", "Build.Namespace", instance.Namespace, "Build.Name", instance.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.TaskRun {
+
+	taskRunList := &taskv1.TaskRunList{}
+
+	lbls := map[string]string{
+		"build.dev/build": instance.Name,
+	}
+
+	opts := client.ListOptions{
+		Namespace:     instance.Namespace,
+		LabelSelector: labels.SelectorFromSet(lbls),
+	}
+	err := r.client.List(context.TODO(), taskRunList, &opts)
+
+	if err != nil {
+		log.Error(err, "failed to list existing TaskRuns")
+		return nil
+	}
+
+	for _, taskRun := range taskRunList.Items {
+		return &taskRun
+	}
+	return nil
 }

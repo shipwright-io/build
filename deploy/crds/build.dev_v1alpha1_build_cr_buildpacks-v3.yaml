@@ -1,7 +1,7 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build
+  name: example-build-buildpack
 spec:
   # Add fields here
   source:
