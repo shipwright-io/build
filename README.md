@@ -61,7 +61,7 @@ Status:
 
 ```
 
-The above build strategies are powered by the [source-to-image](../blob/master/deploy/crds/buildstrategy_source-to-image-cr.yaml) `BuildStrategy` CR and the [buildpacks-v3](../blob/master/deploy/crds/buildstrategy_buildpacksv3-cr.yaml) `BuildStrategy` CR, respectively.
+The above build strategies are powered by the [source-to-image](../master/deploy/crds/buildstrategy_source-to-image-cr.yaml) `BuildStrategy` CR and the [buildpacks-v3](../master/deploy/crds/buildstrategy_buildpacksv3-cr.yaml) `BuildStrategy` CR, respectively.
 
 Users have the option to define their own `BuildStrategy`s and make them available for consumption by `Build`s
 
