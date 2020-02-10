@@ -1,5 +1,7 @@
 package build
 
+// The methods here are not in use anymore.
+
 import (
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 

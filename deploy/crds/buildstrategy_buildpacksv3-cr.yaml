@@ -1,0 +1,74 @@
+apiVersion: build.dev/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: buildpacks-v3
+spec:
+  steps:
+    - name: prepare
+      image: $(build.builderImage) # strong type from Build CR
+      securityContext:
+        runAsUser: 0
+      command:
+        - /bin/sh
+      args:
+        - -c
+        - chown -R "1000:1000" "/workspace/source"
+    - name: detect
+      image: $(build.builderImage) # strong type from Build CR
+      securityContext:
+        runAsUser: 1000
+      command:
+        - /cnb/lifecycle/detector
+      args:
+        - -log-level=debug
+        - -app=/workspace/source 
+        - -group=/layers/group.toml
+        - -plan=/layers/plan.toml
+      volumeMounts:
+        - name: layers-dir
+          mountPath: /layers
+    - name: analyze
+      image: $(build.builderImage) # strong type from Build CR
+      securityContext:
+        runAsUser: 1000
+      command:
+        - /cnb/lifecycle/analyzer
+      args:
+        - -log-level=debug
+        - -layers=/layers
+        - -group=/layers/group.toml
+        - $(build.outputImage) # strong type from Build CR
+      volumeMounts:
+        - name: layers-dir
+          mountPath: /layers
+    - name: restore
+      image: $(build.outputImage) # strong type from Build CR
+      securityContext:
+        runAsUser: 1000
+      command:
+        - /cnb/lifecycle/restorer
+      args:
+        - -log-level=debug
+        - -group=/layers/group.toml
+        - -layers=/layers
+        - -path=/cache
+      volumeMounts:
+        - name: cache-dir
+          mountPath: /cache
+        - name: layers-dir
+          mountPath: /layers
+    - name: build
+      image: $(build.outputImage) # strong type from Build CR
+      securityContext:
+        runAsUser: 1000
+      command:
+        - /cnb/lifecycle/builder
+      args:
+        - -app=/workspace/source
+        - -layers=/layers
+        - -group=/layers/group.toml
+        - -plan=/layers/plan.toml
+      volumeMounts:
+        - name: layers-dir
+          mountPath: /layers
+    

@@ -4,15 +4,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-
 	Source GitSource `json:"source"`
 
 	StrategyRef string `json:"strategy"`
@@ -20,13 +13,13 @@ type BuildSpec struct {
 	BuilderImage *string `json:"builderImage"`
 
 	OutputImage string `json:"outputImage"`
+
+	// +optional
+	Parameters Parameter `json:"parameters",omitempty"`
 }
 
 // BuildStatus defines the observed state of Build
 type BuildStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	Status string `json:"status"`
 }
 

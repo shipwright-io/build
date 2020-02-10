@@ -35,6 +35,18 @@ spec:
               type: string
             outputImage:
               type: string
+            parameters:
+              description: Parameter defines the data structure that would be used
+                for expressing arbitrary key/value pairs for the execution of a build
+              properties:
+                name:
+                  type: string
+                value:
+                  type: string
+              required:
+              - name
+              - value
+              type: object
             source:
               description: GitSource contains the versioned source code metadata This
                 is similar to OpenShift BuildConfig Git Source API
@@ -89,10 +101,6 @@ spec:
           description: BuildStatus defines the observed state of Build
           properties:
             status:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "operator-sdk generate k8s" to regenerate
-                code after modifying this file Add custom validation using kubebuilder
-                tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
           required:
           - status
