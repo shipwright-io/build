@@ -3,7 +3,7 @@ kind: BuildStrategy
 metadata:
   name: source-to-image
 spec:
-  steps:
+  buildSteps:
     - name: s2i-build-as-dockerfile
       image: quay.io/openshift-pipeline/s2i:nightly
       workingDir: /workspace/source

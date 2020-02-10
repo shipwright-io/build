@@ -87,7 +87,7 @@ func getCustomTask(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStrateg
 
 	var vols []corev1.Volume
 
-	for _, containerValue := range bs.Spec.Steps {
+	for _, containerValue := range bs.Spec.BuildSteps {
 
 		taskCommand := []string{}
 		for _, buildStrategyCommandPart := range containerValue.Command {
