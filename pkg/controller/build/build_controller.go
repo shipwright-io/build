@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -98,17 +99,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
 	}
-
-	/*
-		TODO: Read "how to build" from a BuildStrategy CR
-		https://github.com/redhat-developer/build/issues/3
-	*/
 
 	var generatedTask *taskv1.Task
 	var generatedTaskRun *taskv1.TaskRun
@@ -127,12 +120,10 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, nil
 	}
 
-	if instance.Spec.StrategyRef == StrategySourceToImage {
-		generatedTask = gets2iTask(instance)
-		generatedTaskRun = gets2iTaskRun(instance)
-	} else if instance.Spec.StrategyRef == StrategyBuildpacksv3 {
-		generatedTask = getBuildpacksV3Task(instance)
-		generatedTaskRun = getBuildpacksV3TaskRun(instance)
+	buildStrategyInstance := r.retrieveCustomBuildStrategy(instance, request)
+	if buildStrategyInstance != nil {
+		generatedTask = getCustomTask(instance, buildStrategyInstance)
+		generatedTaskRun = getCustomTaskRun(instance, buildStrategyInstance)
 	}
 
 	if generatedTask == nil && generatedTaskRun == nil {
@@ -174,6 +165,16 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 	reqLogger.Info("updated Build", "Build.Namespace", instance.Namespace, "Build.Name", instance.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuild) retrieveCustomBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
+	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef, Namespace: instance.Namespace}, buildStrategyInstance)
+	if err != nil {
+		log.Error(err, "failed to get BuildStrategy")
+		return nil
+	}
+	return buildStrategyInstance
 }
 
 func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.TaskRun {
