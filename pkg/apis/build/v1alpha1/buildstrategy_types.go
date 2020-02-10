@@ -13,10 +13,12 @@ type BuildStrategySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Steps []Step `json:"steps,omitempty"`
+	BuildSteps []BuildStep `json:"buildSteps,omitempty"`
 }
 
-type Step struct {
+// BuildStep defines a partial step that needs to run in container for
+// building the image.
+type BuildStep struct {
 	corev1.Container `json:",inline"`
 }
 
