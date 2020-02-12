@@ -10,12 +10,19 @@ type BuildSpec struct {
 
 	StrategyRef string `json:"strategy"`
 
-	BuilderImage *string `json:"builderImage"`
-
-	OutputImage string `json:"outputImage"`
+	// +optional
+	BuilderImage *string `json:"builderImage,omitempty"`
 
 	// +optional
-	Parameters Parameter `json:"parameters",omitempty"`
+	Dockerfile *string `json:"dockerfile,omitempty"`
+
+	// +optional
+	PathContext *string `json:"pathContext,omniempty"`
+
+	// +optional
+	Parameters *Parameter `json:"parameters,omitempty"`
+
+	OutputImage string `json:"outputImage"`
 }
 
 // BuildStatus defines the observed state of Build

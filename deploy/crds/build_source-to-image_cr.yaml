@@ -1,7 +1,7 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: custom-s2i-strategy-example
+  name: s2i-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex

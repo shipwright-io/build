@@ -1,6 +1,7 @@
 package build
 
 import (
+	"fmt"
 	"strings"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
@@ -15,6 +16,7 @@ import (
 const (
 	pipelineServiceAccountName = "pipeline"
 	inputParamBuilderImage     = "BUILDER_IMAGE"
+	inputParamDockerfile       = "DOCKERFILE"
 	inputParamPathContext      = "PATH_CONTEXT"
 	outputImageResourceName    = "image"
 	outputImageResourceURL     = "url"
@@ -25,7 +27,9 @@ const (
 func getStringTransformations(bs *buildv1alpha1.BuildStrategy, fullText string) string {
 	stringTransformations := map[string]string{
 		"$(build.outputImage)":  "$(outputs.resources.image.url)",
-		"$(build.builderImage)": "$(inputs.params.BUILDER_IMAGE)",
+		"$(build.builderImage)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
+		"$(build.dockerfile)":   fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
+		"$(build.pathContext)":  fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 	}
 	// Run the text through all possible replacements
 	for k, v := range stringTransformations {
@@ -34,22 +38,34 @@ func getStringTransformations(bs *buildv1alpha1.BuildStrategy, fullText string) 
 	return fullText
 }
 
-func getCustomTask(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStrategy) *taskv1.Task {
+func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *buildv1alpha1.BuildStrategy) *taskv1.Task {
+
 	generatedTask := taskv1.Task{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name,
-			Namespace: instance.Namespace,
+			Name:      buildInstance.Name,
+			Namespace: buildInstance.Namespace,
 			Labels: map[string]string{
-				"build.dev/build": instance.Name,
+				"build.dev/build": buildInstance.Name,
 			},
 		},
 		Spec: taskv1.TaskSpec{
 			Inputs: &taskv1.Inputs{
-				// Every build MUST have a Builder Image and a Context.
 				Params: []taskv1.ParamSpec{
 					{
-						Description: "",
+						Description: "Builder image",
 						Name:        inputParamBuilderImage,
+						Default: &taskv1.ArrayOrString{
+							Type:      taskv1.ParamTypeString,
+							StringVal: ".",
+						},
+					},
+					{
+						Description: "Dockerfile",
+						Name:        inputParamDockerfile,
+						Default: &taskv1.ArrayOrString{
+							Type:      taskv1.ParamTypeString,
+							StringVal: "Dockerfile",
+						},
 					},
 					{
 						// PATH_CONTEXT comes from the git source specification
@@ -87,19 +103,19 @@ func getCustomTask(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStrateg
 
 	var vols []corev1.Volume
 
-	for _, containerValue := range bs.Spec.BuildSteps {
+	for _, containerValue := range buildStrategyInstance.Spec.BuildSteps {
 
 		taskCommand := []string{}
 		for _, buildStrategyCommandPart := range containerValue.Command {
-			taskCommand = append(taskCommand, getStringTransformations(bs, buildStrategyCommandPart))
+			taskCommand = append(taskCommand, getStringTransformations(buildStrategyInstance, buildStrategyCommandPart))
 		}
 
 		taskArgs := []string{}
 		for _, buildStrategyArgPart := range containerValue.Args {
-			taskArgs = append(taskCommand, getStringTransformations(bs, buildStrategyArgPart))
+			taskArgs = append(taskCommand, getStringTransformations(buildStrategyInstance, buildStrategyArgPart))
 		}
 
-		taskImage := getStringTransformations(bs, containerValue.Image)
+		taskImage := getStringTransformations(buildStrategyInstance, containerValue.Image)
 
 		step := v1alpha2.Step{
 			Container: corev1.Container{
@@ -135,30 +151,32 @@ func getCustomTask(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStrateg
 	return &generatedTask
 }
 
-func getCustomTaskRun(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStrategy) *taskv1.TaskRun {
+func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance *buildv1alpha1.BuildStrategy) *taskv1.TaskRun {
 	expectedTaskRun := &taskv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name,
-			Namespace: instance.Namespace,
+			Name:      buildInstance.Name,
+			Namespace: buildInstance.Namespace,
 			Labels: map[string]string{
-				"build.dev/build": instance.Name,
+				"build.dev/build": buildInstance.Name,
 			},
 		},
 		Spec: taskv1.TaskRunSpec{
 			ServiceAccountName: pipelineServiceAccountName,
 			TaskRef: &v1alpha1.TaskRef{
-				Name: instance.Name,
+				Name: buildInstance.Name,
 			},
 			Inputs: taskv1.TaskRunInputs{
-				Params: []taskv1.Param{
-					{
-						Name: "BUILDER_IMAGE",
-						Value: taskv1.ArrayOrString{
-							Type:      taskv1.ParamTypeString,
-							StringVal: *instance.Spec.BuilderImage,
+				/*
+					Params: []taskv1.Param{
+						{
+							Name: inputParamBuilderImage,
+							Value: taskv1.ArrayOrString{
+								Type:      taskv1.ParamTypeString,
+								StringVal: *buildInstance.Spec.BuilderImage,
+							},
 						},
 					},
-				},
+				*/
 				Resources: []taskv1.TaskResourceBinding{
 					{
 						PipelineResourceBinding: taskv1.PipelineResourceBinding{
@@ -168,7 +186,7 @@ func getCustomTaskRun(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStra
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  "url",
-										Value: instance.Spec.Source.URL,
+										Value: buildInstance.Spec.Source.URL,
 									},
 								},
 							},
@@ -186,7 +204,7 @@ func getCustomTaskRun(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStra
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  outputImageResourceURL,
-										Value: instance.Spec.OutputImage,
+										Value: buildInstance.Spec.OutputImage,
 									},
 								},
 							},
@@ -196,5 +214,27 @@ func getCustomTaskRun(instance *buildv1alpha1.Build, bs *buildv1alpha1.BuildStra
 			},
 		},
 	}
+
+	inputParams := []taskv1.Param{}
+	if buildInstance.Spec.BuilderImage != nil {
+		inputParams = append(inputParams, taskv1.Param{
+
+			Name: inputParamBuilderImage,
+			Value: taskv1.ArrayOrString{
+				Type:      taskv1.ParamTypeString,
+				StringVal: *buildInstance.Spec.BuilderImage,
+			},
+		})
+	} else if buildInstance.Spec.Dockerfile != nil {
+		inputParams = append(inputParams, taskv1.Param{
+			Name: inputParamDockerfile,
+			Value: taskv1.ArrayOrString{
+				Type:      taskv1.ParamTypeString,
+				StringVal: *buildInstance.Spec.Dockerfile,
+			},
+		})
+	}
+
+	expectedTaskRun.Spec.Inputs.Params = inputParams
 	return expectedTaskRun
 }

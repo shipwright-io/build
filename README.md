@@ -43,6 +43,24 @@ spec:
   outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
 ```
 
+### Buildah
+
+Create the below CR for starting an s2i `Build`
+
+```
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildah-golang-build
+spec:
+  source:
+    url: https://github.com/sbose78/taxi
+  strategy: "buildah"
+  dockerfile: "Dockerfile" 
+  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
+```
+
+
 On **Reconcile**, the `Build` CR's `Status` gets updated,
 
 ```
