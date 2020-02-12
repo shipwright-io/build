@@ -14,8 +14,10 @@ type BuildSpec struct {
 
 	OutputImage string `json:"outputImage"`
 
+	Dockerfile *string `json:"dockerfile"`
+
 	// +optional
-	Parameters Parameter `json:"parameters",omitempty"`
+	Parameters *Parameter `json:"parameters,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build

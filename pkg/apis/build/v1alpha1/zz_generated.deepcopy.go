@@ -78,7 +78,16 @@ func (in *BuildSpec) DeepCopyInto(out *BuildSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	out.Parameters = in.Parameters
+	if in.Dockerfile != nil {
+		in, out := &in.Dockerfile, &out.Dockerfile
+		*out = new(string)
+		**out = **in
+	}
+	if in.Parameters != nil {
+		in, out := &in.Parameters, &out.Parameters
+		*out = new(Parameter)
+		**out = **in
+	}
 	return
 }
 
