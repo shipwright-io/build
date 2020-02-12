@@ -1,0 +1,21 @@
+apiVersion: build.dev/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: kaniko
+spec:
+  buildSteps:
+  - 
+    name: build-and-push
+    workingdir: /workspace/source
+    image: gcr.io/kaniko-project/executor:v0.13.0
+    env:
+    - name: DOCKER_CONFIG
+      value: /tekton/home/.docker
+    command:
+    - /kaniko/executor
+    - --skip-tls-verify=true
+    - --dockerfile=$(build.dockerfile)
+    - --context=/workspace/source/$(build.pathContext)  # The user does not need to care the workspace and the source.
+    - --destination=$(build.outputImage)
+    securityContext:
+      runAsUser: 0

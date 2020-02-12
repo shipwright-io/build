@@ -126,6 +126,7 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 				Args:            taskArgs,
 				SecurityContext: containerValue.SecurityContext,
 				WorkingDir:      containerValue.WorkingDir,
+				Env:             containerValue.Env,
 			},
 		}
 
@@ -166,17 +167,6 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 				Name: buildInstance.Name,
 			},
 			Inputs: taskv1.TaskRunInputs{
-				/*
-					Params: []taskv1.Param{
-						{
-							Name: inputParamBuilderImage,
-							Value: taskv1.ArrayOrString{
-								Type:      taskv1.ParamTypeString,
-								StringVal: *buildInstance.Spec.BuilderImage,
-							},
-						},
-					},
-				*/
 				Resources: []taskv1.TaskResourceBinding{
 					{
 						PipelineResourceBinding: taskv1.PipelineResourceBinding{
@@ -225,12 +215,22 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 				StringVal: *buildInstance.Spec.BuilderImage,
 			},
 		})
-	} else if buildInstance.Spec.Dockerfile != nil {
+	}
+	if buildInstance.Spec.Dockerfile != nil {
 		inputParams = append(inputParams, taskv1.Param{
 			Name: inputParamDockerfile,
 			Value: taskv1.ArrayOrString{
 				Type:      taskv1.ParamTypeString,
 				StringVal: *buildInstance.Spec.Dockerfile,
+			},
+		})
+	}
+	if buildInstance.Spec.PathContext != nil {
+		inputParams = append(inputParams, taskv1.Param{
+			Name: inputParamPathContext,
+			Value: taskv1.ArrayOrString{
+				Type:      taskv1.ParamTypeString,
+				StringVal: *buildInstance.Spec.PathContext,
 			},
 		})
 	}
