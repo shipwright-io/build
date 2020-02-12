@@ -1,0 +1,28 @@
+apiVersion: build.dev/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: buildah
+spec:
+  buildSteps:
+    - name: build
+      image: quay.io/buildah/stable
+      workingDir: /workspace/source
+      command: ['buildah', 'bud', '--tls-verify=false', '--layers', '-f', '$(build.dockerfile)', '-t', '$(build.outputImage)', '$(build.pathContext)']
+      volumeMounts:
+      - name: varlibcontainers
+        mountPath: /var/lib/containers
+      securityContext:
+        privileged: true
+    - command:
+      - buildah
+      - push
+      - --tls-verify=false
+      - $(build.outputImage)
+      - docker://$(build.outputImage)    # strong type from Build CR
+      image: quay.io/buildah/stable
+      name: push
+      securityContext:
+        privileged: true
+      volumeMounts:
+      - mountPath: /var/lib/containers
+        name: varlibcontainers

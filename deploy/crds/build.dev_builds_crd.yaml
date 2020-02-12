@@ -49,6 +49,8 @@ spec:
               - name
               - value
               type: object
+            pathContext:
+              type: string
             source:
               description: GitSource contains the versioned source code metadata This
                 is similar to OpenShift BuildConfig Git Source API
@@ -94,8 +96,6 @@ spec:
             strategy:
               type: string
           required:
-          - builderImage
-          - dockerfile
           - outputImage
           - source
           - strategy
