@@ -141,8 +141,6 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
-	generatedTaskRun = gets2iTaskRun(instance)
-
 	if err := controllerutil.SetControllerReference(instance, generatedTaskRun, r.scheme); err != nil {
 		log.Error(err, "Setting owner reference fails")
 		return reconcile.Result{}, err
