@@ -9,6 +9,16 @@ An API to build images on Kubernetes using popular strategies and tools like sou
 
 ## How
 
+The `Build` examples below are powered by the following  `BuildStrategy` CRs
+
+* The [source-to-image](deploy/crds/buildstrategy_source-to-image_cr.yaml) `BuildStrategy` CR 
+* The [buildpacks-v3](deploy/crds/buildstrategy_buildpacksv3-cr.yaml)  `BuildStrategy` CR
+* The [buildah](deploy/crds/buildstrategy_buildah_cr.yaml)  `BuildStrategy` CR
+* The [Kanio](deploy/crds/buildstrategy_kaniko_cr.yaml)  `BuildStrategy` CR
+
+
+Users have the option to define their own `BuildStrategy`s and make them available for consumption by `Build`s
+
 ### Buildpacks v3
 
 Create the below CR for starting a buildpacks-v3 `Build`
@@ -45,7 +55,7 @@ spec:
 
 ### Buildah
 
-Create the below CR for starting an s2i `Build`
+Create the below CR for starting a Buildah `Build`
 
 ```
 apiVersion: build.dev/v1alpha1
@@ -59,6 +69,24 @@ spec:
   dockerfile: "Dockerfile" 
   outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
 ```
+
+### Kaniko
+
+Create the below CR for starting a Kaniko `Build`
+
+```
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildah-golang-build
+spec:
+  source:
+    url: https://github.com/sbose78/taxi
+  strategy: "kaniko"
+  dockerfile: "Dockerfile" 
+  pathContext: "./"
+  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
+  ```
 
 
 On **Reconcile**, the `Build` CR's `Status` gets updated,
@@ -79,9 +107,7 @@ Status:
 
 ```
 
-The above build strategies are powered by the [source-to-image](deploy/crds/buildstrategy_source-to-image_cr.yaml) `BuildStrategy` CR and the [buildpacks-v3](deploy/crds/buildstrategy_buildpacksv3-cr.yaml) `BuildStrategy` CR, respectively.
 
-Users have the option to define their own `BuildStrategy`s and make them available for consumption by `Build`s
 
 ## Development
 
