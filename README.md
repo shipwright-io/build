@@ -11,10 +11,10 @@ An API to build images on Kubernetes using popular strategies and tools like sou
 
 The `Build` examples below are powered by the following  `BuildStrategy` CRs
 
-* The [source-to-image](deploy/crds/buildstrategy_source-to-image_cr.yaml) `BuildStrategy` CR 
-* The [buildpacks-v3](deploy/crds/buildstrategy_buildpacksv3-cr.yaml)  `BuildStrategy` CR
-* The [buildah](deploy/crds/buildstrategy_buildah_cr.yaml)  `BuildStrategy` CR
-* The [Kanio](deploy/crds/buildstrategy_kaniko_cr.yaml)  `BuildStrategy` CR
+* The [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml) `BuildStrategy` CR 
+* The [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml)  `BuildStrategy` CR
+* The [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)  `BuildStrategy` CR
+* The [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)  `BuildStrategy` CR
 
 
 Users have the option to define their own `BuildStrategy`s and make them available for consumption by `Build`s
