@@ -1,7 +1,5 @@
 ## Build v2
 
-[![Docker Repository on Quay](https://quay.io/repository/redhat-developer/buildv2/status "Docker Repository on Quay")](https://quay.io/repository/redhat-developer/buildv2)
-
 
 *Proposal / *Work-in-progress
 
@@ -78,7 +76,7 @@ Create the below CR for starting a Kaniko `Build`
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildah-golang-build
+  name: kaniko-golang-build
 spec:
   source:
     url: https://github.com/sbose78/taxi
@@ -111,8 +109,8 @@ Status:
 
 ## Development
 
-This project uses Golang 1.13+ and operator-sdk 1.15.1
-
+* This project uses Golang 1.13+ and operator-sdk 1.15.1.
+* The controllers create/watch Tekton objects.
 
 
 ### Running the Operator
