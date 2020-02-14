@@ -6,6 +6,7 @@ import (
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -106,18 +107,19 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	var generatedTask *taskv1.Task
 	var generatedTaskRun *taskv1.TaskRun
 
-	generatedTaskRun = r.retrieveTaskRun(instance)
+	existingTaskRun := r.retrieveTaskRun(instance)
 
-	if generatedTaskRun != nil {
+	if existingTaskRun != nil {
 
 		// TODO: Make this safer
-		if len(generatedTaskRun.Status.Conditions) > 0 {
-			jobStatus := generatedTaskRun.Status.Conditions[0].Reason
+		if len(existingTaskRun.Status.Conditions) > 0 {
+			jobStatus := existingTaskRun.Status.Conditions[0].Reason
 			instance.Status.Status = jobStatus
 			err = r.client.Status().Update(context.TODO(), instance)
-			return reconcile.Result{}, err
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 		}
-		return reconcile.Result{}, nil
 	}
 
 	buildStrategyInstance := r.retrieveCustomBuildStrategy(instance, request)
@@ -130,39 +132,84 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, nil
 	}
 
+	existingTask := r.retrieveTask(instance)
+	if existingTask != nil && !compare(*existingTask, *generatedTask) {
+
+		// If the Build spec has changed, we must start afresh
+
+		err = r.client.Delete(context.TODO(), existingTask)
+		if err != nil {
+			return reconcile.Result{}, nil
+		}
+
+		err = r.client.Delete(context.TODO(), existingTaskRun)
+		if err != nil {
+			return reconcile.Result{}, nil
+		}
+
+	}
+
+	// create Task if no task for that Build exists
 	if err := controllerutil.SetControllerReference(instance, generatedTask, r.scheme); err != nil {
 		log.Error(err, "Setting owner reference fails")
 		return reconcile.Result{}, err
 	}
 
-	err = r.client.Create(context.TODO(), generatedTask)
-	if err != nil {
-		reqLogger.Info("failed to create Task", "Namespace", generatedTask.Namespace, "Name", generatedTask.Name)
-		return reconcile.Result{}, err
+	if r.retrieveTask(instance) == nil {
+		err = r.client.Create(context.TODO(), generatedTask)
+		if err != nil {
+			reqLogger.Info("failed to create Task", "Namespace", generatedTask.Namespace, "Name", generatedTask.Name)
+			return reconcile.Result{}, err
+		}
 	}
 
+	// create Task if no task for that Build exists
 	if err := controllerutil.SetControllerReference(instance, generatedTaskRun, r.scheme); err != nil {
 		log.Error(err, "Setting owner reference fails")
 		return reconcile.Result{}, err
 	}
 
-	err = r.client.Create(context.TODO(), generatedTaskRun)
-	if err != nil {
-		reqLogger.Info("failed to create TaskRun", "Namespace", generatedTaskRun.Namespace, "Name", generatedTaskRun.Name)
+	if r.retrieveTaskRun(instance) == nil {
 
-		return reconcile.Result{}, err
+		// Add creds to service account
+		buildServiceAccount, err := r.retrieveServiceAccount(instance, pipelineServiceAccountName)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		buildServiceAccount = applyCredentials(instance, buildServiceAccount)
+		err = r.client.Update(context.TODO(), buildServiceAccount)
+		if err != nil {
+			log.Error(err, "updating of service account fails")
+			return reconcile.Result{}, err
+		}
+
+		err = r.client.Create(context.TODO(), generatedTaskRun)
+		if err != nil {
+			reqLogger.Info("failed to create TaskRun", "Namespace", generatedTaskRun.Namespace, "Name", generatedTaskRun.Name)
+
+			return reconcile.Result{}, err
+		}
 	}
 
-	instance.Status = buildv1alpha1.BuildStatus{
-		Status: "in-progress",
-	}
-
-	err = r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	reqLogger.Info("updated Build", "Build.Namespace", instance.Namespace, "Build.Name", instance.Name)
+	reqLogger.Info("Reconciled Build", "Build.Namespace", instance.Namespace, "Build.Name", instance.Name)
 	return reconcile.Result{}, nil
+}
+
+func compare(a taskv1.Task, b taskv1.Task) bool {
+	if a.GetLabels()[labelBuildGeneration] == b.GetLabels()[labelBuildGeneration] {
+		return true
+	}
+	return false
+}
+
+func (r *ReconcileBuild) retrieveServiceAccount(instance *buildv1alpha1.Build, pipelineServiceAccountName string) (*corev1.ServiceAccount, error) {
+	buildServiceAccount := &corev1.ServiceAccount{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: pipelineServiceAccountName, Namespace: instance.Namespace}, buildServiceAccount)
+	if err != nil {
+		log.Error(err, "failed to get Service Account")
+		return nil, err
+	}
+	return buildServiceAccount, nil
 }
 
 func (r *ReconcileBuild) retrieveCustomBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
@@ -180,7 +227,7 @@ func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.
 	taskRunList := &taskv1.TaskRunList{}
 
 	lbls := map[string]string{
-		"build.dev/build": instance.Name,
+		labelBuild: instance.Name,
 	}
 
 	opts := client.ListOptions{
@@ -195,6 +242,31 @@ func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.
 	}
 
 	for _, taskRun := range taskRunList.Items {
+		return &taskRun
+	}
+	return nil
+}
+
+func (r *ReconcileBuild) retrieveTask(instance *buildv1alpha1.Build) *taskv1.Task {
+
+	taskList := &taskv1.TaskList{}
+
+	lbls := map[string]string{
+		labelBuild: instance.Name,
+	}
+
+	opts := client.ListOptions{
+		Namespace:     instance.Namespace,
+		LabelSelector: labels.SelectorFromSet(lbls),
+	}
+	err := r.client.List(context.TODO(), taskList, &opts)
+
+	if err != nil {
+		log.Error(err, "failed to list existing TaskRuns")
+		return nil
+	}
+
+	for _, taskRun := range taskList.Items {
 		return &taskRun
 	}
 	return nil

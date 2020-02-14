@@ -2,6 +2,7 @@ package build
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
@@ -20,6 +21,9 @@ const (
 	inputParamPathContext      = "PATH_CONTEXT"
 	outputImageResourceName    = "image"
 	outputImageResourceURL     = "url"
+
+	labelBuildGeneration = "build.dev/generation"
+	labelBuild           = "build.dev/build"
 )
 
 // getStringTransformations gets us MANDATORY replacements using
@@ -45,7 +49,8 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 			Name:      buildInstance.Name,
 			Namespace: buildInstance.Namespace,
 			Labels: map[string]string{
-				"build.dev/build": buildInstance.Name,
+				labelBuild:           buildInstance.Name,
+				labelBuildGeneration: strconv.FormatInt(buildInstance.GetGeneration(), 10),
 			},
 		},
 		Spec: taskv1.TaskSpec{
@@ -152,13 +157,36 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 	return &generatedTask
 }
 
+func applyCredentials(buildInstance *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
+	sourceSecret := buildInstance.Spec.Source.SecretRef
+	if sourceSecret == nil {
+		return serviceAccount
+	}
+
+	isSecretPresent := false
+	for _, credentialSecret := range serviceAccount.Secrets {
+		if credentialSecret.Name == sourceSecret.Name {
+			isSecretPresent = true
+			break
+		}
+	}
+
+	if !isSecretPresent {
+		serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{
+			Name: sourceSecret.Name,
+		})
+	}
+
+	return serviceAccount
+}
+
 func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance *buildv1alpha1.BuildStrategy) *taskv1.TaskRun {
 	expectedTaskRun := &taskv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      buildInstance.Name,
 			Namespace: buildInstance.Namespace,
 			Labels: map[string]string{
-				"build.dev/build": buildInstance.Name,
+				labelBuild: buildInstance.Name,
 			},
 		},
 		Spec: taskv1.TaskRunSpec{
