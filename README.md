@@ -109,7 +109,7 @@ spec:
   strategy: source-to-image
   builderImage: docker.io/centos/nodejs-10-centos7
   outputImage: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex
-Status:
+status:
   status: Running
 ```
 
