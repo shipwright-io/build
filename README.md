@@ -71,9 +71,9 @@ metadata:
 spec:
   source:
     url: https://github.com/sbose78/taxi
-  strategy: "buildah"
-  dockerfile: "Dockerfile"
-  outputImage: "image-registry.openshift-image-registry.svc:5000/example/taxi-app"
+  strategy: buildah
+  dockerfile: Dockerfile
+  outputImage: image-registry.openshift-image-registry.svc:5000/example/taxi-app
 ```
 
 ### Kaniko
@@ -106,9 +106,9 @@ metadata:
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
-  strategy: "source-to-image"
-  builderImage: "docker.io/centos/nodejs-10-centos7"
-  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+  strategy: source-to-image
+  builderImage: docker.io/centos/nodejs-10-centos7
+  outputImage: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex
 Status:
   status: Running
 ```
