@@ -24,3 +24,7 @@ local:
 
 clean:
 	rm -rfv $(OUTPUT_DIR)
+
+.PHONY: test
+test: build
+	$(Q)GOCACHE=$(GOCACHE) go test ./...
