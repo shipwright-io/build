@@ -57,15 +57,15 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 			Inputs: &taskv1.Inputs{
 				Params: []taskv1.ParamSpec{
 					{
-						Description: "Builder image",
+						Description: "Image containing the build tools/logic",
 						Name:        inputParamBuilderImage,
 						Default: &taskv1.ArrayOrString{
 							Type:      taskv1.ParamTypeString,
-							StringVal: ".",
+							StringVal: "docker.io/centos/nodejs-8-centos7", // not really needed.
 						},
 					},
 					{
-						Description: "Dockerfile",
+						Description: "Path to the Dockerfile",
 						Name:        inputParamDockerfile,
 						Default: &taskv1.ArrayOrString{
 							Type:      taskv1.ParamTypeString,
@@ -75,7 +75,7 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 					{
 						// PATH_CONTEXT comes from the git source specification
 						// in the Build object
-						Description: "",
+						Description: "The root of the code",
 						Name:        inputParamPathContext,
 						Default: &taskv1.ArrayOrString{
 							Type:      taskv1.ParamTypeString,
