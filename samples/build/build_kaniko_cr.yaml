@@ -1,7 +1,7 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildah-golang-build
+  name: kaniko-golang-build
 spec:
   source:
     url: https://github.com/sbose78/taxi
