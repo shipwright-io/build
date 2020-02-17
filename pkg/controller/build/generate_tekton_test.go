@@ -117,3 +117,99 @@ func TestGenerateTask(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyCredentials(t *testing.T) {
+
+	type args struct {
+		buildInstance  *buildv1alpha1.Build
+		serviceAccount *corev1.ServiceAccount
+	}
+	tests := []struct {
+		name string
+		args args
+		want *corev1.ServiceAccount
+	}{
+
+		{
+			"secret was not present",
+			args{
+				buildInstance: &buildv1alpha1.Build{
+					Spec: buildv1alpha1.BuildSpec{
+						Source: buildv1alpha1.GitSource{
+							URL: "a/b/c",
+							SecretRef: &buildv1alpha1.SecretRef{
+								Name: "secret_a",
+							},
+						},
+					},
+				},
+				serviceAccount: &corev1.ServiceAccount{
+					Secrets: []corev1.ObjectReference{
+						{Name: "secret_b"}, {Name: "secret_c"},
+					},
+				},
+			},
+			&corev1.ServiceAccount{
+				Secrets: []corev1.ObjectReference{
+					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"},
+				},
+			},
+		},
+		{
+			"secret was already present",
+			args{
+				buildInstance: &buildv1alpha1.Build{
+					Spec: buildv1alpha1.BuildSpec{
+						Source: buildv1alpha1.GitSource{
+							URL: "a/b/c",
+							SecretRef: &buildv1alpha1.SecretRef{
+								Name: "secret_a",
+							},
+						},
+					},
+				},
+				serviceAccount: &corev1.ServiceAccount{
+					Secrets: []corev1.ObjectReference{
+						{Name: "secret_b"}, {Name: "secret_a"},
+					},
+				},
+			},
+			&corev1.ServiceAccount{
+				Secrets: []corev1.ObjectReference{
+					{Name: "secret_b"}, {Name: "secret_a"},
+				},
+			},
+		},
+		{
+			"public repo, no source secret",
+			args{
+				buildInstance: &buildv1alpha1.Build{
+					Spec: buildv1alpha1.BuildSpec{
+						Source: buildv1alpha1.GitSource{
+							URL:       "a/b/c",
+							SecretRef: nil,
+						},
+					},
+				},
+				serviceAccount: &corev1.ServiceAccount{
+					Secrets: []corev1.ObjectReference{
+						{Name: "secret_b"}, {Name: "secret_a"},
+					},
+				},
+			},
+			&corev1.ServiceAccount{
+				Secrets: []corev1.ObjectReference{
+					{Name: "secret_b"}, {Name: "secret_a"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := applyCredentials(tt.args.buildInstance, tt.args.serviceAccount); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("applyCredentials() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+
+}

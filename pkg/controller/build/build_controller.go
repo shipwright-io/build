@@ -107,8 +107,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	var generatedTask *taskv1.Task
 	var generatedTaskRun *taskv1.TaskRun
 
+	// If the reconcile was triggered because of a change in TaskRun,
+	// read the TaskRun's status and update Build's status
 	existingTaskRun := r.retrieveTaskRun(instance)
-
 	if existingTaskRun != nil {
 
 		// TODO: Make this safer
@@ -122,6 +123,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 	}
 
+	// Everytime control enters the reconcile loop, we need to ensure
+	// everything is in its desired state.
+
 	buildStrategyInstance := r.retrieveCustomBuildStrategy(instance, request)
 	if buildStrategyInstance != nil {
 		generatedTask = getCustomTask(instance, buildStrategyInstance)
@@ -133,9 +137,14 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	existingTask := r.retrieveTask(instance)
+
 	if existingTask != nil && !compare(*existingTask, *generatedTask) {
 
 		// If the Build spec has changed, we must start afresh
+
+		// If the locally generated task's "generation" annotation
+		// is different than that of existing task's "generation" annotation,
+		// then the Build must have been modified
 
 		err = r.client.Delete(context.TODO(), existingTask)
 		if err != nil {
@@ -146,6 +155,10 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		if err != nil {
 			return reconcile.Result{}, nil
 		}
+
+		// We've deleted the existing 'jobs', that is,
+		// the Task & the TaskRun because they can be considered
+		// stale.
 
 	}
 

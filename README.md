@@ -113,11 +113,6 @@ status:
   status: Running
 ```
 
-## Development
-
-* This project uses Golang 1.13+ and operator-sdk 1.15.1.
-* The controllers create/watch Tekton objects.
-
 ### Running the Operator
 
 Assuming you are logged in to an OpenShift/Kubernetes cluster, run
@@ -148,3 +143,26 @@ oc policy add-role-to-user  system:image-builder  pipeline
 ```
 
 In the near future, the above would be setup by the operator.
+
+
+## Development
+
+```
+make clean && make build
+```
+
+
+* This project uses Golang 1.13+ and operator-sdk 1.15.1.
+* The controllers create/watch Tekton objects.
+
+### Unit tests
+
+```
+make test
+```
+
+### End-to-end tests
+
+```
+operator-sdk test local ./test/e2e --up-local --namespace sbose
+```
