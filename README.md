@@ -7,7 +7,7 @@ buildpack-v3, kaniko and buildah, in an extensible way.
 
 ## How
 
-The following CRs are examples of `BuildStrategy` supported by this operator:
+The following are the `BuildStrategy`s supported by this operator, out-of-the-box:
 
 * [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml);
 * [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml);
@@ -18,7 +18,7 @@ The following CRs are examples of `BuildStrategy` supported by this operator:
 Users have the option to define their own `BuildStrategy`s and make them available for consumption
 by `Build`s.
 
-## `BuildStrategy`
+## Strategies
 
 Create resources and configuration in order to implement the following strategies.
 
@@ -113,56 +113,50 @@ status:
   status: Running
 ```
 
-### Running the Operator
-
-Assuming you are logged in to an OpenShift/Kubernetes cluster, run
-
-```sh
-make clean && make build && make local
-```
-
-If the `pipeline` service account isn't already created, here are the steps to create the same:
-
-```sh
-oc create serviceaccount pipeline
-oc adm policy add-scc-to-user privileged -z pipeline
-oc adm policy add-role-to-user edit -z pipeline
-```
-
-If your `Build`'s `outputImage` is to be pushed to the OpenShift internal registry, ensure the
-`pipeline` service account has the required role:
-
-```sh
-oc policy add-role-to-user registry-editor pipeline
-```
-
-Or
-
-```sh
-oc policy add-role-to-user  system:image-builder  pipeline
-```
-
-In the near future, the above would be setup by the operator.
+----
 
 
-## Development
+## Running the Operator
 
-```
-make clean && make build
-```
+Build, test & run using [HACK.md](HACK.md).
+
+----
 
 
-* This project uses Golang 1.13+ and operator-sdk 1.15.1.
-* The controllers create/watch Tekton objects.
+## Roadmap
 
-### Unit tests
 
-```
-make test
-```
+### Status of support for build strategies
 
-### End-to-end tests
+| Build Strategy  | Alpha | Beta | GA Support
+| ------------- | ------------- | ------------- | ------------- |
+| [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑️ | 
+| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml)  | ⚪️ |
+| [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)  | ☑️ |
+| [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)  | ☑️  |
 
-```
-operator-sdk test local ./test/e2e --up-local --namespace sbose
-```
+
+### Status of support for generic features
+
+------
+
+| Feature  | Alpha | Beta | GA Support
+| ------------- | ------------- | ------------- | ------------- |
+| Private Git Repos  | ☑️ |  |
+| Runtime Base Image  | ⚪️ |  |
+| Binary builds  |  | |
+| Image Caching  |  |  |
+| ImageStreams support  |  | |
+| Entitlements  |  | |
+
+
+------
+
+### Key
+
+⚪️  Initial work is in progress
+
+☑️ Validated to be working
+
+✅ Can be shipped
+
