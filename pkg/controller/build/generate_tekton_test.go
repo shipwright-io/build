@@ -42,7 +42,9 @@ func TestGenerateTask(t *testing.T) {
 						Source: buildv1alpha1.GitSource{
 							URL: url,
 						},
-						StrategyRef:  buildah,
+						StrategyRef: metav1.ObjectMeta{
+							Name: buildah,
+						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
 						Output: buildv1alpha1.Output{

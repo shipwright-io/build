@@ -228,20 +228,25 @@ func (r *ReconcileBuild) retrieveServiceAccount(instance *buildv1alpha1.Build, p
 
 func (r *ReconcileBuild) retrieveCustomBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
 	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
-	buildStrategyNameSpace := instance.Namespace
+	buildStrategyNameSpace := getBuildStrategyNamespace(instance)
 
-	strategyRefNamespace := strings.TrimSpace(instance.Spec.StrategyRef.Namespace)
-
-	// if namespace is specified in the strategyRef, use it.
-	if len(strategyRefNamespace) != 0 {
-		buildStrategyNameSpace = strategyRefNamespace
-	}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: buildStrategyNameSpace}, buildStrategyInstance)
 	if err != nil {
 		log.Error(err, "failed to get BuildStrategy")
 		return nil
 	}
 	return buildStrategyInstance
+}
+
+func getBuildStrategyNamespace(instance *buildv1alpha1.Build) string {
+	buildStrategyNameSpace := instance.Namespace
+	strategyRefNamespace := strings.TrimSpace(instance.Spec.StrategyRef.Namespace)
+
+	// if namespace is specified in the strategyRef, use it.
+	if len(strategyRefNamespace) != 0 {
+		buildStrategyNameSpace = strategyRefNamespace
+	}
+	return buildStrategyNameSpace
 }
 
 func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.TaskRun {

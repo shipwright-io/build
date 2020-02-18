@@ -126,12 +126,11 @@ func BuildCluster(t *testing.T) {
 
 	// Instead of letting it go to Succeeded, let's update the spec a bit.
 	// These trigger deletion of existing Task[Run]
-	testBuild.Spec.Output = operator.Output{
-		ImageURL: fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace),
-	}
+
+	testBuild.Spec.Output.ImageURL = fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace)
 	err = f.Client.Update(goctx.TODO(), testBuild)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(err)example-build
 	}
 
 	// Ensure Build is BACK TO Pending state
@@ -194,21 +193,21 @@ func buildahBuildTestData(ns string, identifier string) (*operator.Build, *opera
 	dockerfile := "Dockerfile"
 	outputPath := "image-registry.openshift-image-registry.svc:5000/example/taxi-app"
 	pathContext := "."
-
-	namespace := ns
-
 	// create build custom resource
 	exampleBuild := &operator.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      identifier,
-			Namespace: namespace,
+			Namespace: ns,
 		},
 		Spec: operator.BuildSpec{
 			Source: operator.GitSource{
 				URL: "https://github.com/sbose78/taxi",
 			},
-			StrategyRef: "buildah",
-			Dockerfile:  &dockerfile,
+			StrategyRef: metav1.ObjectMeta{
+				Name:      "buildah",
+				Namespace: ns,
+			},
+			Dockerfile: &dockerfile,
 			Output: operator.Output{
 				ImageURL: outputPath,
 			},
