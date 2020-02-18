@@ -126,7 +126,9 @@ func BuildCluster(t *testing.T) {
 
 	// Instead of letting it go to Succeeded, let's update the spec a bit.
 	// These trigger deletion of existing Task[Run]
-	testBuild.Spec.OutputImage = fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace)
+	testBuild.Spec.Output = operator.Output{
+		ImageURL: fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace),
+	}
 	err = f.Client.Update(goctx.TODO(), testBuild)
 	if err != nil {
 		t.Fatal(err)
@@ -207,7 +209,9 @@ func buildahBuildTestData(ns string, identifier string) (*operator.Build, *opera
 			},
 			StrategyRef: "buildah",
 			Dockerfile:  &dockerfile,
-			OutputImage: outputPath,
+			Output: operator.Output{
+				ImageURL: outputPath,
+			},
 			PathContext: &pathContext,
 		},
 	}

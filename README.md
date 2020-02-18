@@ -31,13 +31,28 @@ Create the below CR for starting a buildpacks-v3 `Build`
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build
+  name: example-build-buildpack
 spec:
+  # Git Source definition
   source:
     url: https://github.com/sclorg/nodejs-ex
-  strategy: buildpacks-v3
-  builderImage: cloudfoundry/cnb:bionic
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/nodejs-ex
+    credentials:
+      name: github-auth-sbose78
+
+  # Strategy defined in the buildpacks-v3 CR 
+  # in the 'openshift' namespace.
+  strategy: 
+    name: "buildpacks-v3"
+    namespace: "openshift"
+
+  # Build to be run in this image.
+  builderImage: "cloudfoundry/cnb:bionic"
+
+  # Generated image.
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+    credentials:
+      name: github-auth-sbose78
 ```
 
 ### Source-to-Image (`s2i`)
@@ -49,13 +64,16 @@ Create the below CR for starting an s2i `Build`
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build
+  name: s2i-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
-  strategy: source-to-image
-  builderImage: registry.redhat.io/rhscl/nodejs-12-rhel7:latest
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/nodejs-ex
+  strategy:
+    name: "source-to-image"
+    namespace: "openshift"
+  builderImage: "docker.io/centos/nodejs-10-centos7"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
 ```
 
 ### Buildah
@@ -69,11 +87,14 @@ kind: Build
 metadata:
   name: buildah-golang-build
 spec:
-  source:
-    url: https://github.com/sbose78/taxi
-  strategy: buildah
   dockerfile: Dockerfile
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/taxi-app
+  strategy:
+    name: "buildah"
+    namespace: "openshift"
+  output:
+    image: 'image-registry.openshift-image-registry.svc:5000/sbose/taxi-app'
+  source:
+    url: 'https://github.com/sbose78/taxi'
 ```
 
 ### Kaniko
@@ -89,10 +110,13 @@ metadata:
 spec:
   source:
     url: https://github.com/sbose78/taxi
-  strategy: kaniko
-  dockerfile: Dockerfile
-  pathContext: .
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/taxi-app
+  strategy: 
+    name: "kaniko"
+    namespace: "openshift"
+  dockerfile: "Dockerfile" 
+  pathContext: "./"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
 ```
 
 On **Reconcile**, the `Build` CR's `Status` gets updated,
@@ -102,13 +126,17 @@ On **Reconcile**, the `Build` CR's `Status` gets updated,
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build
+  name: kaniko-golang-build
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
-  strategy: source-to-image
-  builderImage: docker.io/centos/nodejs-10-centos7
-  outputImage: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex
+    url: https://github.com/sbose78/taxi
+  strategy: 
+    name: "kaniko"
+    namespace: "openshift"
+  dockerfile: "Dockerfile" 
+  pathContext: "./"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
 status:
   status: Running
 ```
