@@ -130,7 +130,7 @@ func BuildCluster(t *testing.T) {
 	testBuild.Spec.Output.ImageURL = fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace)
 	err = f.Client.Update(goctx.TODO(), testBuild)
 	if err != nil {
-		t.Fatal(err)example-build
+		t.Fatal(err)
 	}
 
 	// Ensure Build is BACK TO Pending state
