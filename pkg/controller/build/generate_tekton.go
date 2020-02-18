@@ -222,7 +222,7 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  outputImageResourceURL,
-										Value: buildInstance.Spec.OutputImage,
+										Value: buildInstance.Spec.Output.ImageURL,
 									},
 								},
 							},

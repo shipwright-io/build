@@ -2,6 +2,7 @@ package build
 
 import (
 	"context"
+	"strings"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -227,12 +228,25 @@ func (r *ReconcileBuild) retrieveServiceAccount(instance *buildv1alpha1.Build, p
 
 func (r *ReconcileBuild) retrieveCustomBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
 	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef, Namespace: instance.Namespace}, buildStrategyInstance)
+	buildStrategyNameSpace := getBuildStrategyNamespace(instance)
+
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: buildStrategyNameSpace}, buildStrategyInstance)
 	if err != nil {
 		log.Error(err, "failed to get BuildStrategy")
 		return nil
 	}
 	return buildStrategyInstance
+}
+
+func getBuildStrategyNamespace(instance *buildv1alpha1.Build) string {
+	buildStrategyNameSpace := instance.Namespace
+	strategyRefNamespace := strings.TrimSpace(instance.Spec.StrategyRef.Namespace)
+
+	// if namespace is specified in the strategyRef, use it.
+	if len(strategyRefNamespace) != 0 {
+		buildStrategyNameSpace = strategyRefNamespace
+	}
+	return buildStrategyNameSpace
 }
 
 func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.TaskRun {

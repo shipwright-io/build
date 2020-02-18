@@ -42,10 +42,14 @@ func TestGenerateTask(t *testing.T) {
 						Source: buildv1alpha1.GitSource{
 							URL: url,
 						},
-						StrategyRef:  buildah,
+						StrategyRef: metav1.ObjectMeta{
+							Name: buildah,
+						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
-						OutputImage:  outputPath,
+						Output: buildv1alpha1.Output{
+							ImageURL: outputPath,
+						},
 					},
 				},
 
@@ -137,7 +141,7 @@ func TestApplyCredentials(t *testing.T) {
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL: "a/b/c",
-							SecretRef: &buildv1alpha1.SecretRef{
+							SecretRef: &corev1.LocalObjectReference{
 								Name: "secret_a",
 							},
 						},
@@ -162,7 +166,7 @@ func TestApplyCredentials(t *testing.T) {
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL: "a/b/c",
-							SecretRef: &buildv1alpha1.SecretRef{
+							SecretRef: &corev1.LocalObjectReference{
 								Name: "secret_a",
 							},
 						},
