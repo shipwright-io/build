@@ -63,10 +63,10 @@ func TestGenerateTask(t *testing.T) {
 									Image:      "$(build.builderImage)",
 									WorkingDir: "/workspace/source",
 									Command: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.outputImage)", "$(build.pathContext)",
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
 									},
 									Args: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.outputImage)", "$(build.pathContext)",
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
 									},
 									VolumeMounts: []corev1.VolumeMount{
 										{

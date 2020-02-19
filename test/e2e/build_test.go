@@ -173,7 +173,7 @@ func buildahBuildTestData(ns string, identifier string) (*operator.Build, *opera
 						Image:      "quay.io/buildah/stable",
 						WorkingDir: "/workspace/source",
 						Command: []string{
-							"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.outputImage)", "$(build.pathContext)",
+							"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
