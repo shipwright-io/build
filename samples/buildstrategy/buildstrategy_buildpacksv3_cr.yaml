@@ -37,12 +37,12 @@ spec:
         - -log-level=debug
         - -layers=/layers
         - -group=/layers/group.toml
-        - $(build.outputImage) # strong type from Build CR
+        - $(build.output.image) # strong type from Build CR
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
     - name: restore
-      image: $(build.outputImage) # strong type from Build CR
+      image: $(build.output.image) # strong type from Build CR
       securityContext:
         runAsUser: 1000
       command:
@@ -58,7 +58,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: build
-      image: $(build.outputImage) # strong type from Build CR
+      image: $(build.output.image) # strong type from Build CR
       securityContext:
         runAsUser: 1000
       command:

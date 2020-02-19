@@ -16,6 +16,6 @@ spec:
     - --skip-tls-verify=true
     - --dockerfile=$(build.dockerfile)
     - --context=/workspace/source/$(build.pathContext)  # The user does not need to care the workspace and the source.
-    - --destination=$(build.outputImage)
+    - --destination=$(build.output.image)
     securityContext:
       runAsUser: 0

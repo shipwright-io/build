@@ -31,7 +31,7 @@ spec:
         - -f
         - /gen-source/Dockerfile.gen
         - -t
-        - $(build.outputImage)  # strong type from Build CR
+        - $(build.output.image)  # strong type from Build CR
         - .
       volumeMounts:
       - mountPath: /var/lib/containers
@@ -43,8 +43,8 @@ spec:
       - buildah
       - push
       - --tls-verify=false
-      - $(build.outputImage)
-      - docker://$(build.outputImage)    # strong type from Build CR
+      - $(build.output.image)
+      - docker://$(build.output.image)    # strong type from Build CR
       image: quay.io/buildah/stable
       name: push
       securityContext:
