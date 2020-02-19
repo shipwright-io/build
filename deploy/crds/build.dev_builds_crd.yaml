@@ -3,6 +3,11 @@ kind: CustomResourceDefinition
 metadata:
   name: builds.build.dev
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.status
+    description: The status of this Build
+    name: Status
+    type: string
   group: build.dev
   names:
     kind: Build
