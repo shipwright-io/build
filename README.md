@@ -7,7 +7,7 @@ buildpack-v3, kaniko and buildah, in an extensible way.
 
 ## How
 
-The following are the `BuildStrategy`s supported by this operator, out-of-the-box:
+The following are the `BuildStrategies` supported by this operator, out-of-the-box:
 
 * [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml);
 * [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml);
@@ -15,7 +15,7 @@ The following are the `BuildStrategy`s supported by this operator, out-of-the-bo
 * [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml);
 
 
-Users have the option to define their own `BuildStrategy`s and make them available for consumption
+Users have the option to define their own `BuildStrategies` and make them available for consumption
 by `Build`s.
 
 ## Strategies
@@ -144,9 +144,15 @@ status:
 ----
 
 
-## Running the Operator
+## Try it!
 
-Build, test & run using [HACK.md](HACK.md).
+- Install Tekton ( You could use the OpenShift Pipelines Community Operator ).
+- Execute `./hack/crd.sh install`
+- Start a sample [Kaniko](samples/build/build_kaniko_cr.yaml) build
+
+## Development
+
+*  Build, test & run using [HACK.md](HACK.md).
 
 ----
 
