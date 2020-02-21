@@ -1,34 +1,35 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: BuildStrategy
 metadata:
   name: buildpacks-v3
 spec:
   buildSteps:
-    - name: prepare
-      image: $(build.builderImage) # strong type from Build CR
+    - name: step-prepare
+      image: $(build.builderImage)
       securityContext:
         runAsUser: 0
       command:
-        - /bin/sh
+        - /bin/bash
       args:
         - -c
         - chown -R "1000:1000" "/workspace/source"
-    - name: detect
-      image: $(build.builderImage) # strong type from Build CR
+    - name: step-detect
+      image: $(build.builderImage)
       securityContext:
         runAsUser: 1000
       command:
         - /cnb/lifecycle/detector
       args:
         - -log-level=debug
-        - -app=/workspace/source 
+        - -app=/workspace/source
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
-    - name: analyze
-      image: $(build.builderImage) # strong type from Build CR
+    - name: step-analyze
+      image: $(build.builderImage)
       securityContext:
         runAsUser: 1000
       command:
@@ -37,12 +38,12 @@ spec:
         - -log-level=debug
         - -layers=/layers
         - -group=/layers/group.toml
-        - $(build.outputImage) # strong type from Build CR
+        - $(build.outputImage)
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
-    - name: restore
-      image: $(build.outputImage) # strong type from Build CR
+    - name: step-restore
+      image: $(build.builderImage)
       securityContext:
         runAsUser: 1000
       command:
@@ -57,8 +58,8 @@ spec:
           mountPath: /cache
         - name: layers-dir
           mountPath: /layers
-    - name: build
-      image: $(build.outputImage) # strong type from Build CR
+    - name: step-build
+      image: $(build.builderImage)
       securityContext:
         runAsUser: 1000
       command:
@@ -71,4 +72,3 @@ spec:
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
-    
