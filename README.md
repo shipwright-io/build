@@ -37,7 +37,7 @@ spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
     credentials:
-      name: github-auth-sbose78
+      name: github-auth-olemefer
 
   # Strategy defined in the buildpacks-v3 CR 
   # in the 'openshift' namespace.
@@ -46,13 +46,13 @@ spec:
     namespace: "openshift"
 
   # Build to be run in this image.
-  builderImage: "cloudfoundry/cnb:bionic"
+  builderImage: "heroku/buildpacks:18"
 
   # Generated image.
   output:
-    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+    image: " quay.io/olemefer/nodejs-ex:v1"
     credentials:
-      name: github-auth-sbose78
+      name: quayio-olemefer
 ```
 
 ### Source-to-Image (`s2i`)
