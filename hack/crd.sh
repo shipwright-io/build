@@ -14,6 +14,9 @@ CRDS=(
     deploy/operator.yaml
     deploy/crds/build.dev_buildstrategies_crd.yaml
     deploy/crds/build.dev_builds_crd.yaml
+    samples/buildstrategy/buildstrategy_buildah_cr.yaml
+    samples/buildstrategy/buildstrategy_kaniko_cr.yaml
+    samples/buildstrategy/buildstrategy_source-to-image_cr.yaml
 )
 
 function die () {
