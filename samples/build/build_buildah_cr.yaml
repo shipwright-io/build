@@ -3,8 +3,11 @@ kind: Build
 metadata:
   name: buildah-golang-build
 spec:
+  dockerfile: Dockerfile
+  strategy:
+    name: "buildah"
+    namespace: "openshift"
+  output:
+    image: 'image-registry.openshift-image-registry.svc:5000/sbose/taxi-app'
   source:
-    url: https://github.com/sbose78/taxi
-  strategy: "buildah"
-  dockerfile: "Dockerfile" 
-  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
+    url: 'https://github.com/sbose78/taxi'

@@ -30,7 +30,7 @@ const (
 // a poor man's templating mechanism - TODO: Use golang templating
 func getStringTransformations(bs *buildv1alpha1.BuildStrategy, fullText string) string {
 	stringTransformations := map[string]string{
-		"$(build.outputImage)":  "$(outputs.resources.image.url)",
+		"$(build.output.image)": "$(outputs.resources.image.url)",
 		"$(build.builderImage)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
 		"$(build.dockerfile)":   fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
 		"$(build.pathContext)":  fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
@@ -158,11 +158,23 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 }
 
 func applyCredentials(buildInstance *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
+
+	// credentials of the source/git repo
 	sourceSecret := buildInstance.Spec.Source.SecretRef
-	if sourceSecret == nil {
-		return serviceAccount
+	if sourceSecret != nil {
+		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
 	}
 
+	// credentials of the 'output' image registry
+	sourceSecret = buildInstance.Spec.Output.SecretRef
+	if sourceSecret != nil {
+		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
+	}
+
+	return serviceAccount
+}
+
+func updateServiceAccountIfSecretNotLinked(sourceSecret *corev1.LocalObjectReference, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
 	isSecretPresent := false
 	for _, credentialSecret := range serviceAccount.Secrets {
 		if credentialSecret.Name == sourceSecret.Name {
@@ -222,7 +234,7 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  outputImageResourceURL,
-										Value: buildInstance.Spec.OutputImage,
+										Value: buildInstance.Spec.Output.ImageURL,
 									},
 								},
 							},

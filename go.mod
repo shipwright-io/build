@@ -3,6 +3,7 @@ module github.com/redhat-developer/build
 go 1.13
 
 require (
+	github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3 // indirect
 	github.com/operator-framework/operator-sdk v0.15.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0

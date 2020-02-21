@@ -7,7 +7,7 @@ spec:
     - name: build
       image: quay.io/buildah/stable
       workingDir: /workspace/source
-      command: ['buildah', 'bud', '--tls-verify=false', '--layers', '-f', '$(build.dockerfile)', '-t', '$(build.outputImage)', '$(build.pathContext)']
+      command: ['buildah', 'bud', '--tls-verify=false', '--layers', '-f', '$(build.dockerfile)', '-t', '$(build.output.image)', '$(build.pathContext)']
       volumeMounts:
       - name: varlibcontainers
         mountPath: /var/lib/containers
@@ -17,8 +17,8 @@ spec:
       - buildah
       - push
       - --tls-verify=false
-      - $(build.outputImage)
-      - docker://$(build.outputImage)    # strong type from Build CR
+      - $(build.output.image)
+      - docker://$(build.output.image)    # strong type from Build CR
       image: quay.io/buildah/stable
       name: push
       securityContext:

@@ -7,17 +7,17 @@ An API to build container-images on Kubernetes using popular strategies and tool
 
 ## How
 
-The following CRs are examples of `BuildStrategy` supported by this operator:
+The following are the `BuildStrategies` supported by this operator, out-of-the-box:
 
 * [Source-to-Image](samples/buildstrategy/source-to-image/README.md);
 * [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md);
 * [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml);
 * [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml);
 
-Users have the option to define their own `BuildStrategy`s and make them available for consumption
+Users have the option to define their own `BuildStrategies` and make them available for consumption
 by `Build`s.
 
-## `BuildStrategy`
+## Strategies
 
 Create resources and configuration in order to implement the following strategies.
 
@@ -30,13 +30,28 @@ Create the below CR for starting a buildpacks-v3 `Build`
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build
+  name: example-build-buildpack
 spec:
+  # Git Source definition
   source:
     url: https://github.com/sclorg/nodejs-ex
-  strategy: buildpacks-v3
-  builderImage: cloudfoundry/cnb:bionic
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/nodejs-ex
+    credentials:
+      name: github-auth-sbose78
+
+  # Strategy defined in the buildpacks-v3 CR 
+  # in the 'openshift' namespace.
+  strategy: 
+    name: "buildpacks-v3"
+    namespace: "openshift"
+
+  # Build to be run in this image.
+  builderImage: "cloudfoundry/cnb:bionic"
+
+  # Generated image.
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+    credentials:
+      name: github-auth-sbose78
 ```
 
 ### Source-to-Image (`s2i`)
@@ -48,13 +63,16 @@ Create the below CR for starting an s2i `Build`
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build
+  name: s2i-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
-  strategy: source-to-image
-  builderImage: registry.redhat.io/rhscl/nodejs-12-rhel7:latest
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/nodejs-ex
+  strategy:
+    name: "source-to-image"
+    namespace: "openshift"
+  builderImage: "docker.io/centos/nodejs-10-centos7"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
 ```
 
 ### Buildah
@@ -68,11 +86,14 @@ kind: Build
 metadata:
   name: buildah-golang-build
 spec:
-  source:
-    url: https://github.com/sbose78/taxi
-  strategy: buildah
   dockerfile: Dockerfile
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/taxi-app
+  strategy:
+    name: "buildah"
+    namespace: "openshift"
+  output:
+    image: 'image-registry.openshift-image-registry.svc:5000/sbose/taxi-app'
+  source:
+    url: 'https://github.com/sbose78/taxi'
 ```
 
 ### Kaniko
@@ -88,10 +109,13 @@ metadata:
 spec:
   source:
     url: https://github.com/sbose78/taxi
-  strategy: kaniko
-  dockerfile: Dockerfile
-  pathContext: .
-  outputImage: image-registry.openshift-image-registry.svc:5000/example/taxi-app
+  strategy: 
+    name: "kaniko"
+    namespace: "openshift"
+  dockerfile: "Dockerfile" 
+  pathContext: "./"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
 ```
 
 On **Reconcile**, the `Build` CR's `Status` gets updated,
@@ -101,66 +125,71 @@ On **Reconcile**, the `Build` CR's `Status` gets updated,
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build
+  name: kaniko-golang-build
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
-  strategy: source-to-image
-  builderImage: docker.io/centos/nodejs-10-centos7
-  outputImage: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex
+    url: https://github.com/sbose78/taxi
+  strategy: 
+    name: "kaniko"
+    namespace: "openshift"
+  dockerfile: "Dockerfile" 
+  pathContext: "./"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
 status:
   status: Running
 ```
 
-### Running the Operator
+----
 
-Assuming you are logged in to an OpenShift/Kubernetes cluster, run
 
-```sh
-make clean && make build && make local
-```
+## Try it!
 
-If the `pipeline` service account isn't already created, here are the steps to create the same:
-
-```sh
-oc create serviceaccount pipeline
-oc adm policy add-scc-to-user privileged -z pipeline
-oc adm policy add-role-to-user edit -z pipeline
-```
-
-If your `Build`'s `outputImage` is to be pushed to the OpenShift internal registry, ensure the
-`pipeline` service account has the required role:
-
-```sh
-oc policy add-role-to-user registry-editor pipeline
-```
-
-Or
-
-```sh
-oc policy add-role-to-user  system:image-builder  pipeline
-```
-
-In the near future, the above would be setup by the operator.
-
+- Install Tekton ( You could use the OpenShift Pipelines Community Operator ).
+- Execute `./hack/crd.sh install`
+- Start a sample [Kaniko](samples/build/build_kaniko_cr.yaml) build
 
 ## Development
 
-```sh
-make clean && make build
-```
+*  Build, test & run using [HACK.md](HACK.md).
 
-* This project uses Golang 1.13+ and operator-sdk 1.15.1.
-* The controllers create/watch Tekton objects.
+----
 
-### Unit tests
 
-```sh
-make test
-```
+## Roadmap
 
-### End-to-end tests
 
-```sh
-operator-sdk test local ./test/e2e --up-local --namespace sbose
-```
+### Status of support for build strategies
+
+| Build Strategy  | Alpha | Beta | GA Support
+| ------------- | ------------- | ------------- | ------------- |
+| [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑️ | 
+| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml)  | ⚪️ |
+| [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)  | ☑️ |
+| [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)  | ☑️  |
+
+
+### Status of support for generic features
+
+------
+
+| Feature  | Alpha | Beta | GA Support
+| ------------- | ------------- | ------------- | ------------- |
+| Private Git Repos  | ☑️ |  |
+| Runtime Base Image  | ⚪️ |  |
+| Binary builds  |  | |
+| Image Caching  |  |  |
+| ImageStreams support  |  | |
+| Entitlements  |  | |
+
+
+------
+
+### Key
+
+⚪️  Initial work is in progress
+
+☑️ Validated to be working
+
+✅ Can be shipped
+

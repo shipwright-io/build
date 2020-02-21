@@ -42,10 +42,14 @@ func TestGenerateTask(t *testing.T) {
 						Source: buildv1alpha1.GitSource{
 							URL: url,
 						},
-						StrategyRef:  buildah,
+						StrategyRef: metav1.ObjectMeta{
+							Name: buildah,
+						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
-						OutputImage:  outputPath,
+						Output: buildv1alpha1.Output{
+							ImageURL: outputPath,
+						},
 					},
 				},
 
@@ -59,10 +63,10 @@ func TestGenerateTask(t *testing.T) {
 									Image:      "$(build.builderImage)",
 									WorkingDir: "/workspace/source",
 									Command: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.outputImage)", "$(build.pathContext)",
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
 									},
 									Args: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.outputImage)", "$(build.pathContext)",
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
 									},
 									VolumeMounts: []corev1.VolumeMount{
 										{
@@ -131,14 +135,20 @@ func TestApplyCredentials(t *testing.T) {
 	}{
 
 		{
-			"secret was not present",
+			"secrets were not present",
 			args{
 				buildInstance: &buildv1alpha1.Build{
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL: "a/b/c",
-							SecretRef: &buildv1alpha1.SecretRef{
+							SecretRef: &corev1.LocalObjectReference{
 								Name: "secret_a",
+							},
+						},
+						Output: buildv1alpha1.Output{
+							ImageURL: "quay.io/namespace/image",
+							SecretRef: &corev1.LocalObjectReference{
+								Name: "secret_quay.io",
 							},
 						},
 					},
@@ -151,7 +161,7 @@ func TestApplyCredentials(t *testing.T) {
 			},
 			&corev1.ServiceAccount{
 				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"},
+					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"}, {Name: "secret_quay.io"},
 				},
 			},
 		},
@@ -162,7 +172,7 @@ func TestApplyCredentials(t *testing.T) {
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL: "a/b/c",
-							SecretRef: &buildv1alpha1.SecretRef{
+							SecretRef: &corev1.LocalObjectReference{
 								Name: "secret_a",
 							},
 						},

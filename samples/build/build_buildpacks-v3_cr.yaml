@@ -6,6 +6,9 @@ spec:
   # Add fields here
   source:
     url: https://github.com/sclorg/nodejs-ex
-  strategy: "buildpacks-v3"
+  strategy: 
+    name: "buildpacks-v3"
+    namespace: "openshift"
   builderImage: "cloudfoundry/cnb:bionic"
-  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"

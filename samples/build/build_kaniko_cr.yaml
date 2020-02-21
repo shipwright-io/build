@@ -1,11 +1,14 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildah-golang-build
+  name: kaniko-golang-build
 spec:
   source:
     url: https://github.com/sbose78/taxi
-  strategy: "kaniko"
+  strategy: 
+    name: "kaniko"
+    namespace: "openshift"
   dockerfile: "Dockerfile" 
   pathContext: "./"
-  outputImage: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
+  output:
+    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
