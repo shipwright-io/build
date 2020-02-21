@@ -50,7 +50,7 @@ spec:
 
   # Generated image.
   output:
-    image: " quay.io/olemefer/nodejs-ex:v1"
+    image: "quay.io/olemefer/nodejs-ex:v1"
     credentials:
       name: quayio-olemefer
 ```
