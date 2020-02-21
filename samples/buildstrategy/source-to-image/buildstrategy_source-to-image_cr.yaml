@@ -1,54 +1,65 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: BuildStrategy
 metadata:
   name: source-to-image
 spec:
   buildSteps:
-    - name: s2i-build-as-dockerfile
-      image: quay.io/openshift-pipeline/s2i:nightly
+    - name: step-s2i-generate
+      image: registry.redhat.io/ocp-tools-43-tech-preview/source-to-image-rhel8:latest
+      securityContext:
+        # TODO: do we really need root (on all steps)??
+        # runAsUser: 0
       workingDir: /workspace/source
-      command:
-        - /usr/local/bin/s2i
+      args:
         - build
         - .
-        - "$(build.builderImage)" # strong type from Build CR
-        - --as-dockerfile
-        - /gen-source/Dockerfile.gen
+        - $(build.builderImage)
+        - $(build.outputImage)
+        - --as-dockerfile=/s2i/Dockerfile
       volumeMounts:
-      - mountPath: /gen-source
-        name: gen-source
-
-    - name: buildah-bud
-      image: quay.io/buildah/stable
-      workingDir: /gen-source
+        - name: s2i
+          mountPath: /s2i
+    - name: step-buildah-bud
+      image: quay.io/buildah/stable:latest
+      workingDir: /s2i
       securityContext:
+        # runAsUser: 0
         privileged: true
+      # TODO: do we really need extra env vars?
+      env:
+        - name: ENV_BUILDAH_STARTED_IN_USERNS
+          value: ""
+        - name: BUILDAH_ISOLATION
+          value: chroot
       command:
-        - buildah
+        - /usr/bin/buildah
+      args:
         - bud
-        - --tls-verify=false
-        - --layers
-        - -f
-        - /gen-source/Dockerfile.gen
-        - -t
-        - $(build.outputImage)  # strong type from Build CR
-        - .
+        - --tag=$(build.outputImage)
       volumeMounts:
-      - mountPath: /var/lib/containers
-        name: varlibcontainers
-      - mountPath: /gen-source
-        name: gen-source
-
-    - command:
-      - buildah
-      - push
-      - --tls-verify=false
-      - $(build.outputImage)
-      - docker://$(build.outputImage)    # strong type from Build CR
-      image: quay.io/buildah/stable
-      name: push
+        - name: s2i
+          mountPath: /s2i
+        - name: buildah-images
+          mountPath: /var/lib/containers/storage
+    - name: step-buildah-push
+      image: quay.io/buildah/stable:latest
       securityContext:
+        # runAsUser: 0
         privileged: true
+      env:
+        - name: ENV_BUILDAH_STARTED_IN_USERNS
+          value: ""
+        - name: BUILDAH_ISOLATION
+          value: chroot
+      command:
+        - /usr/bin/buildah
+      # --creds="anyone:$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+      args:
+        - -c
+          buildah push \
+            --tls-verify=false \
+            docker://$(build.outputImage)
       volumeMounts:
-      - mountPath: /var/lib/containers
-        name: varlibcontainers
+        - name: buildah-images
+          mountPath: /var/lib/containers/storage
