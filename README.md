@@ -1,19 +1,18 @@
 ## Build v2
 
-*Proposal / *Work-in-progress
+*Proposal*/*Work-in-progress*
 
-An API to build images on Kubernetes using popular strategies and tools like source-to-image,
-buildpack-v3, kaniko and buildah, in an extensible way.
+An API to build container-images on Kubernetes using popular strategies and tools like
+`source-to-image`, `buildpack-v3`, `kaniko` and `buildah`, in an extensible way.
 
 ## How
 
 The following CRs are examples of `BuildStrategy` supported by this operator:
 
-* [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml);
-* [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml);
+* [Source-to-Image](samples/buildstrategy/source-to-image/README.md);
+* [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md);
 * [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml);
 * [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml);
-
 
 Users have the option to define their own `BuildStrategy`s and make them available for consumption
 by `Build`s.
@@ -147,22 +146,21 @@ In the near future, the above would be setup by the operator.
 
 ## Development
 
-```
+```sh
 make clean && make build
 ```
-
 
 * This project uses Golang 1.13+ and operator-sdk 1.15.1.
 * The controllers create/watch Tekton objects.
 
 ### Unit tests
 
-```
+```sh
 make test
 ```
 
 ### End-to-end tests
 
-```
+```sh
 operator-sdk test local ./test/e2e --up-local --namespace sbose
 ```
