@@ -7,15 +7,12 @@ spec:
   buildSteps:
     - name: step-s2i-generate
       image: registry.redhat.io/ocp-tools-43-tech-preview/source-to-image-rhel8:latest
-      securityContext:
-        # TODO: do we really need root (on all steps)??
-        # runAsUser: 0
       workingDir: /workspace/source
       args:
         - build
         - .
         - $(build.builderImage)
-        - $(build.outputImage)
+        - $(build.output.image)
         - --as-dockerfile=/s2i/Dockerfile
       volumeMounts:
         - name: s2i
@@ -24,19 +21,12 @@ spec:
       image: quay.io/buildah/stable:latest
       workingDir: /s2i
       securityContext:
-        # runAsUser: 0
         privileged: true
-      # TODO: do we really need extra env vars?
-      env:
-        - name: ENV_BUILDAH_STARTED_IN_USERNS
-          value: ""
-        - name: BUILDAH_ISOLATION
-          value: chroot
       command:
         - /usr/bin/buildah
       args:
         - bud
-        - --tag=$(build.outputImage)
+        - --tag=$(build.output.image)
       volumeMounts:
         - name: s2i
           mountPath: /s2i
@@ -45,21 +35,13 @@ spec:
     - name: step-buildah-push
       image: quay.io/buildah/stable:latest
       securityContext:
-        # runAsUser: 0
         privileged: true
-      env:
-        - name: ENV_BUILDAH_STARTED_IN_USERNS
-          value: ""
-        - name: BUILDAH_ISOLATION
-          value: chroot
       command:
         - /usr/bin/buildah
-      # --creds="anyone:$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
       args:
-        - -c
-          buildah push \
-            --tls-verify=false \
-            docker://$(build.outputImage)
+        - push
+        - --tls-verify=false
+        - docker://$(build.output.image)
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage

@@ -38,7 +38,7 @@ spec:
         - -log-level=debug
         - -layers=/layers
         - -group=/layers/group.toml
-        - $(build.outputImage)
+        - $(build.output.image)
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
@@ -69,6 +69,21 @@ spec:
         - -layers=/layers
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
+      volumeMounts:
+        - name: layers-dir
+          mountPath: /layers
+    - name: step-export
+      image: $(build.builderImage)
+      securityContext:
+        runAsUser: 0
+      command:
+        - /cnb/lifecycle/exporter
+      args:
+        - -app=/workspace/source
+        - -layers=/layers
+        - -helpers=true
+        - -group=/layers/group.toml
+        - $(build.output.image)
       volumeMounts:
         - name: layers-dir
           mountPath: /layers

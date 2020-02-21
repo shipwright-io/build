@@ -19,6 +19,8 @@ kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3
 * **analyzer**: inpect for container images and previous project build cache;
 * **restorer**: restore previous state before building;
 * **builder**: execute the actual container image build;
+* **exporter**: upload container image to registry;
+
 
 [buildpacks]: https://buildpacks.io/
 [cnb]: https://buildpacks.io/docs/concepts/components/builder/
