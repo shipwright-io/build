@@ -12,7 +12,7 @@ The following are the `BuildStrategies` supported by this operator, out-of-the-b
 * [Source-to-Image](samples/buildstrategy/source-to-image/README.md);
 * [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md);
 * [Buildah](samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml);
-* [Kaniko](samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml);
+* [Kaniko](samples/buildstrategy/kaniko/README.md);
 
 Users have the option to define their own `BuildStrategies` and make them available for consumption
 by `Build`s.
