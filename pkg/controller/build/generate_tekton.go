@@ -158,11 +158,23 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 }
 
 func applyCredentials(buildInstance *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
+
+	// credentials of the source/git repo
 	sourceSecret := buildInstance.Spec.Source.SecretRef
-	if sourceSecret == nil {
-		return serviceAccount
+	if sourceSecret != nil {
+		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
 	}
 
+	// credentials of the 'output' image registry
+	sourceSecret = buildInstance.Spec.Output.SecretRef
+	if sourceSecret != nil {
+		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
+	}
+
+	return serviceAccount
+}
+
+func updateServiceAccountIfSecretNotLinked(sourceSecret *corev1.LocalObjectReference, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
 	isSecretPresent := false
 	for _, credentialSecret := range serviceAccount.Secrets {
 		if credentialSecret.Name == sourceSecret.Name {

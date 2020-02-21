@@ -135,7 +135,7 @@ func TestApplyCredentials(t *testing.T) {
 	}{
 
 		{
-			"secret was not present",
+			"secrets were not present",
 			args{
 				buildInstance: &buildv1alpha1.Build{
 					Spec: buildv1alpha1.BuildSpec{
@@ -143,6 +143,12 @@ func TestApplyCredentials(t *testing.T) {
 							URL: "a/b/c",
 							SecretRef: &corev1.LocalObjectReference{
 								Name: "secret_a",
+							},
+						},
+						Output: buildv1alpha1.Output{
+							ImageURL: "quay.io/namespace/image",
+							SecretRef: &corev1.LocalObjectReference{
+								Name: "secret_quay.io",
 							},
 						},
 					},
@@ -155,7 +161,7 @@ func TestApplyCredentials(t *testing.T) {
 			},
 			&corev1.ServiceAccount{
 				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"},
+					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"}, {Name: "secret_quay.io"},
 				},
 			},
 		},
