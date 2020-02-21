@@ -164,7 +164,7 @@ status:
 | Build Strategy  | Alpha | Beta | GA Support
 | ------------- | ------------- | ------------- | ------------- |
 | [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑️ | 
-| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml)  | ⚪️ |
+| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3-cr.yaml)  | ⚪️ |
 | [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)  | ☑️ |
 | [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)  | ☑️  |
 
