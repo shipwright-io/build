@@ -15,7 +15,7 @@ vendor: go.mod go.sum
 build: $(OPERATOR)
 
 $(OPERATOR): vendor
-	$(Q)GOARCH=amd64 GOOS=linux go build -o $(OPERATOR) cmd/manager/main.go
+	$(Q)GOCACHE=$(GOCACHE) GOARCH=amd64 GOOS=linux go build -o $(OPERATOR) cmd/manager/main.go
 
 local:
 	- hack/crd.sh uninstall
