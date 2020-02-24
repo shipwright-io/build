@@ -1,14 +1,14 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build-buildpack
+  name: buildpack-nodejs-build
 spec:
-  # Add fields here
   source:
     url: https://github.com/sclorg/nodejs-ex
-  strategy: 
-    name: "buildpacks-v3"
-    namespace: "openshift"
-  builderImage: "cloudfoundry/cnb:bionic"
+  strategy:
+    name: buildpacks-v3
+    namespace: openshift
+  builderImage: heroku/buildpacks:18
   output:
-    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+    image: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex
