@@ -68,11 +68,12 @@ spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
-    name: "source-to-image"
-    namespace: "openshift"
-  builderImage: "docker.io/centos/nodejs-10-centos7"
+    name: source-to-image
+    namespace: openshift
+  builderImage: registry.redhat.io/rhscl/nodejs-12-rhel7:latest
   output:
-    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+    image: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex
+
 ```
 
 ### Buildah
@@ -86,14 +87,14 @@ kind: Build
 metadata:
   name: buildah-golang-build
 spec:
-  dockerfile: Dockerfile
-  strategy:
-    name: "buildah"
-    namespace: "openshift"
-  output:
-    image: 'image-registry.openshift-image-registry.svc:5000/sbose/taxi-app'
   source:
-    url: 'https://github.com/sbose78/taxi'
+    url: https://github.com/sbose78/taxi
+  strategy:
+    name: buildah
+    namespace: openshift
+  dockerfile: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/sbose/taxi-app
 ```
 
 ### Kaniko
@@ -109,13 +110,13 @@ metadata:
 spec:
   source:
     url: https://github.com/sbose78/taxi
-  strategy: 
-    name: "kaniko"
-    namespace: "openshift"
-  dockerfile: "Dockerfile" 
-  pathContext: "./"
+  strategy:
+    name: kaniko
+    namespace: openshift
+  dockerfile: Dockerfile
+  pathContext: ./
   output:
-    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
+    image: image-registry.openshift-image-registry.svc:5000/sbose/taxi-app
 ```
 
 On **Reconcile**, the `Build` CR's `Status` gets updated,
@@ -127,15 +128,7 @@ kind: Build
 metadata:
   name: kaniko-golang-build
 spec:
-  source:
-    url: https://github.com/sbose78/taxi
-  strategy: 
-    name: "kaniko"
-    namespace: "openshift"
-  dockerfile: "Dockerfile" 
-  pathContext: "./"
-  output:
-    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
+...
 status:
   status: Running
 ```
@@ -163,7 +156,7 @@ status:
 
 | Build Strategy  | Alpha | Beta | GA Support
 | ------------- | ------------- | ------------- | ------------- |
-| [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑️ | 
+| [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑️ |
 | [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3-cr.yaml)  | ⚪️ |
 | [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)  | ☑️ |
 | [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)  | ☑️  |
