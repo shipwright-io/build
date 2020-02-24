@@ -11,4 +11,6 @@ spec:
     namespace: openshift
   builderImage: heroku/buildpacks:18
   output:
-    image: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex
+    image: quay.io/example/nodejs-ex:latest
+    credentials:
+      name: quayio-registry
