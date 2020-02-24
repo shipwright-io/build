@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: $(build.builderImage)
+      image: gcr.io/kaniko-project/executor:latest
       workingdir: /workspace/source
       securityContext:
         runAsUser: 0
