@@ -21,7 +21,6 @@ spec:
       command:
         - /cnb/lifecycle/detector
       args:
-        - -log-level=debug
         - -app=/workspace/source
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
@@ -31,15 +30,17 @@ spec:
     - name: step-analyze
       image: $(build.builderImage)
       securityContext:
-        runAsUser: 1000
+        runAsUser: 0
       command:
         - /cnb/lifecycle/analyzer
       args:
-        - -log-level=debug
         - -layers=/layers
+        - -cache-dir=/cache
         - -group=/layers/group.toml
         - $(build.output.image)
       volumeMounts:
+        - name: cache-dir
+          mountPath: /cache
         - name: layers-dir
           mountPath: /layers
     - name: step-restore
@@ -49,10 +50,9 @@ spec:
       command:
         - /cnb/lifecycle/restorer
       args:
-        - -log-level=debug
-        - -group=/layers/group.toml
         - -layers=/layers
-        - -path=/cache
+        - -cache-dir=/cache
+        - -group=/layers/group.toml
       volumeMounts:
         - name: cache-dir
           mountPath: /cache
@@ -81,9 +81,12 @@ spec:
       args:
         - -app=/workspace/source
         - -layers=/layers
-        - -helpers=true
+        - -cache-dir=/cache
         - -group=/layers/group.toml
+        - -helpers=true
         - $(build.output.image)
       volumeMounts:
+        - name: cache-dir
+          mountPath: /cache
         - name: layers-dir
           mountPath: /layers
