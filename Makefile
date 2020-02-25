@@ -1,3 +1,18 @@
+# It's necessary to set this because some environments don't link sh -> bash.
+SHELL := /bin/bash
+
+#-----------------------------------------------------------------------------
+# VERBOSE target
+#-----------------------------------------------------------------------------
+
+# When you run make VERBOSE=1, executed commands will be printed
+# before executed.
+VERBOSE ?= 0
+Q = @
+ifeq ($(VERBOSE),1)
+	Q =
+endif
+
 # output directory, where all artifacts will be created and managed
 OUTPUT_DIR ?= build/_output
 # relative path to operator binary
