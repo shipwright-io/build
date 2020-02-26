@@ -27,22 +27,6 @@ spec:
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
-    - name: step-analyze
-      image: $(build.builderImage)
-      securityContext:
-        runAsUser: 0
-      command:
-        - /cnb/lifecycle/analyzer
-      args:
-        - -layers=/layers
-        - -cache-dir=/cache
-        - -group=/layers/group.toml
-        - $(build.output.image)
-      volumeMounts:
-        - name: cache-dir
-          mountPath: /cache
-        - name: layers-dir
-          mountPath: /layers
     - name: step-restore
       image: $(build.builderImage)
       securityContext:
