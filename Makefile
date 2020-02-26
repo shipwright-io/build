@@ -19,6 +19,8 @@ OUTPUT_DIR ?= build/_output
 OPERATOR = $(OUTPUT_DIR)/bin/operator
 # golang cache directory path
 GOCACHE ?= "$(shell echo ${PWD})/$(OUTPUT_DIR)/gocache"
+# configure zap based logr
+ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
 
 default: build
 
@@ -35,7 +37,7 @@ $(OPERATOR): vendor
 local:
 	- hack/crd.sh uninstall
 	@hack/crd.sh install
-	operator-sdk run --local
+	operator-sdk run --local --operator-flags="$(ZAP_ENCODER_FLAG)"
 
 clean:
 	rm -rfv $(OUTPUT_DIR)
