@@ -10,7 +10,7 @@ buildpack-v3, kaniko and buildah, in an extensible way.
 The following are the `BuildStrategies` supported by this operator, out-of-the-box:
 
 * [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml);
-* [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacksv3-cr.yaml);
+* [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3_cr.yaml);
 * [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml);
 * [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml);
 
