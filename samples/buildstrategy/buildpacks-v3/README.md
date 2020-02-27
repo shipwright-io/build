@@ -15,7 +15,7 @@ kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3
 
 ## Lifecycle Steps
 
-* **detector**: inpect for the type of project to be build;
+* **detector**: inspect for the type of project to be build;
 * **restorer**: restore previous state before building;
 * **builder**: execute the actual container image build;
 * **exporter**: upload container image to registry;
