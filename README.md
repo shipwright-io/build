@@ -9,18 +9,16 @@ buildpack-v3, kaniko and buildah, in an extensible way.
 
 The following are the `BuildStrategies` supported by this operator, out-of-the-box:
 
-* [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml);
-* [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3_cr.yaml);
-* [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml);
-* [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml);
+* [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)
+* [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3_cr.yaml)
+* [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)
+* [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)
 
 
-Users have the option to define their own `BuildStrategies` and make them available for consumption
-by `Build`s.
+Users have the option to define their own(custom) `BuildStrategies` and make them available for consumption
+by `Builds`.
 
-## Strategies
-
-Create resources and configuration in order to implement the following strategies.
+## Builds
 
 ### Buildpacks v3
 
@@ -43,17 +41,18 @@ spec:
   # in the 'openshift' namespace.
   strategy: 
     name: "buildpacks-v3"
-    namespace: "openshift"
+    namespace: <NAMESPACE>
 
   # Build to be run in this image.
   builderImage: "heroku/buildpacks:18"
 
   # Generated image.
   output:
-    image: "quay.io/olemefer/nodejs-ex:v1"
+    image: "quay.io/<USERNAME>/<REPO-NAME>"
     credentials:
-      name: quayio-olemefer
+      name: <SECRET-NAME>
 ```
+The secret can be created like `kubectl create secret generic <SECRET-NAME> --from-file=.dockerconfigjson=<PATH/TO/.docker/config.json> --type=kubernetes.io/dockerconfigjson`
 
 ### Source-to-Image (`s2i`)
 
@@ -70,7 +69,7 @@ spec:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
     name: "source-to-image"
-    namespace: "openshift"
+    namespace: <NAMESPACE>
   builderImage: "docker.io/centos/nodejs-10-centos7"
   output:
     image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
@@ -90,7 +89,7 @@ spec:
   dockerfile: Dockerfile
   strategy:
     name: "buildah"
-    namespace: "openshift"
+    namespace: <NAMESPACE>
   output:
     image: 'image-registry.openshift-image-registry.svc:5000/sbose/taxi-app'
   source:
@@ -112,7 +111,7 @@ spec:
     url: https://github.com/sbose78/taxi
   strategy: 
     name: "kaniko"
-    namespace: "openshift"
+    namespace: <NAMESPACE>
   dockerfile: "Dockerfile" 
   pathContext: "./"
   output:
@@ -132,7 +131,7 @@ spec:
     url: https://github.com/sbose78/taxi
   strategy: 
     name: "kaniko"
-    namespace: "openshift"
+    namespace: <NAMESPACE>
   dockerfile: "Dockerfile" 
   pathContext: "./"
   output:
