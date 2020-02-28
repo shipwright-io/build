@@ -16,8 +16,8 @@ ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
 default: build
 
 env:
-	export GOCACHE="$(GOCACHE)"
-	export GOARCH="amd64"
+	export GOCACHE=$(GOCACHE)
+	export GOARCH=amd64
 
 .PHONY: vendor
 vendor: env go.mod go.sum
