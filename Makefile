@@ -5,7 +5,9 @@ OUTPUT_DIR ?= build/_output
 # relative path to operator binary
 OPERATOR = $(OUTPUT_DIR)/bin/operator
 # golang cache directory path
-GOCACHE ?= "$(shell echo ${PWD})/$(OUTPUT_DIR)/gocache"
+GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
+# golang target architecture
+GOARCH ?= amd64
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor
 # golang test floags
@@ -13,24 +15,22 @@ GO_TEST_FLAGS ?= -failfast
 # configure zap based logr
 ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
 
+.EXPORT_ALL_VARIABLES:
+
 default: build
 
-env:
-	export GOCACHE=$(GOCACHE)
-	export GOARCH=amd64
-
 .PHONY: vendor
-vendor: env go.mod go.sum
+vendor: go.mod go.sum
 	go mod vendor
 
 .PHONY: build
-build: env $(OPERATOR)
+build: $(OPERATOR)
 
 $(OPERATOR): vendor
 	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
 
 .PHONY: test
-test: env
+test:
 	go test $(GO_FLAGS) $(GO_TEST_FLAGS) ./pkg/apis/... ./pkg/controller/...
 
 local:
