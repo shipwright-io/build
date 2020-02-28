@@ -1,0 +1,11 @@
+---
+language: go
+go:
+  - 1.14.x
+service:
+  - docker
+install:
+  - make travis
+script:
+  - make
+  - make test
