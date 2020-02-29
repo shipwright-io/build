@@ -5,6 +5,13 @@
 
 set -eu
 
-TEKTON_VERSION="v0.10.1"
+TEKTON_VERSION="${TEKTON_VERSION:-v0.10.1}"
 
-kubectl apply -f https://storage.googleapis.com/tekton-releases/pipeline/previous/${TEKTON_VERSION}/release.yaml
+TEKTON_HOST="storage.googleapis.com"
+TEKTON_HOST_PATH="tekton-releases/pipeline/previous"
+
+echo "# Deploying Tekton Pipelines Operator '${TEKTON_VERSION}"
+
+kubectl apply \
+    --filename="https://${TEKTON_HOST}/${TEKTON_HOST_PATH}/${TEKTON_VERSION}/release.yaml" \
+    --output="yaml"
