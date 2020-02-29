@@ -34,7 +34,6 @@ build: $(OPERATOR)
 $(OPERATOR): vendor
 	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
 
-.PHONY: test
 test:
 	go test $(GO_FLAGS) $(GO_TEST_FLAGS) ./pkg/apis/... ./pkg/controller/...
 
