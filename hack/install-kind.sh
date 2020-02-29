@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# Installs kubectl and kind in Travis-CI.
+# Installs kubectl and KinD for Travis-CI (Ubuntu). Docker is a dependency for this script, in order
+# to run KinD, and it needs to use the actual "docker" client in command-line.
 #
 
 set -eu

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Installs Operator-SDK binary at "$HOME/bin" directory, meant to work in Travis-CI Ubuntu VM.
+# Installs Operator-SDK binary at "$HOME/bin" directory, meant to work in Travis-CI (Ubuntu).
 #
 
 set -eu
