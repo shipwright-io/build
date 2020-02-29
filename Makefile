@@ -15,6 +15,11 @@ GO_TEST_FLAGS ?= -failfast
 # configure zap based logr
 ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
 
+# CI: tekton pipelines operator version
+TEKTON_VERSION ?= v0.10.1
+# CI: operator-sdk version
+SDK_VERSION ?= v0.15.2
+
 .EXPORT_ALL_VARIABLES:
 
 default: build
