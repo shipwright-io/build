@@ -120,8 +120,7 @@ and start the operator.
 
 5. Start a [Kaniko](samples/build/build_kaniko_cr.yaml) build
 
-```
----
+```yaml
 ---
 apiVersion: build.dev/v1alpha1
 kind: Build
