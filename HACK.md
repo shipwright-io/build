@@ -47,5 +47,5 @@ make test
 ### End-to-end tests
 
 ```
-operator-sdk test local ./test/e2e --up-local --namespace sbose
+operator-sdk test local ./test/e2e --up-local --namespace build-examples
 ```

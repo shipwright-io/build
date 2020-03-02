@@ -30,8 +30,8 @@ by `Build`s.
 
 ## Operator Resources
 
-This operator ships two CRDs in order to register a strategy and start the actual
-application builds using a previously registered strategy.
+This operator ships two CRDs in order to register a strategy and then start the actual
+application builds using a registered strategy.
 
 ### `BuildStrategy`
 
@@ -50,10 +50,7 @@ spec:
 ...
 ```
 
-Attributes:
-* `spec.buildSteps`: array of `containers.core/v1` resources;
-
-More example of strategies can be found on this [directory](samples/buildstrategy).
+Well-known strategies can be boostrapped from [here](samples/buildstrategy).
 
 ### `Build`
 
@@ -81,26 +78,6 @@ spec:
     credentials:
       name: quayio-olemefer
 ```
-
-Attributes:
-
-* Source
-    *  `spec.source.url`: source-code repository URL;
-    * `spec.source.credentials.name`: Kubernetes Secret name carrying source repository credentials;
-
-
-* Strategy
-    * `spec.strategy.name`: `BuildStrategy` name;
-    * `spec.strategy.namespace`: `BuildStrategy` namespace;
-
-
-* Builder Image
-    * `spec.builderImage`: container image employed during the build process;
-
-
-* Output Image
-    * `spec.output.image`: container image to be produced;
-    * `spec.output.image`: Kubernetes Secret name with container registry credentials;
 
 The resource is updated as soon as the current building status changes:
 
@@ -131,11 +108,36 @@ Examples of `Build` resource using the example strategies shipped with this oper
 
 ## Try it!
 
-- Install Tekton, where optionally you could use
-[OpenShift Pipelines Community Operator][pipelinesoperator];
-- Install [`operator-sdk`][operatorsdk];
-- Execute `make local`;
-- Start a sample [Kaniko](samples/build/build_kaniko_cr.yaml) build;
+1. Install Tekton, optionally you could use
+[OpenShift Pipelines Community Operator][pipelinesoperator]
+
+2. Install [`operator-sdk`][operatorsdk]
+
+3. Create a project or namespace called `build-examples`
+
+4. Execute `make local` to register [well-known build strategies](samples/buildstrategies) including  `Kaniko`
+and start the operator.
+
+5. Start a [Kaniko](samples/build/build_kaniko_cr.yaml) build
+
+```
+---
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-golang-build
+spec:
+  source:
+    url: https://github.com/sbose78/taxi
+  strategy:
+    name: kaniko
+    namespace: openshift
+  dockerfile: Dockerfile
+  pathContext: ./
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+```
 
 ## Development
 

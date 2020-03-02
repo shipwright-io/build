@@ -8,8 +8,8 @@ spec:
     url: https://github.com/sbose78/taxi
   strategy:
     name: kaniko
-    namespace: openshift
+    namespace: build-examples
   dockerfile: Dockerfile
   pathContext: ./
   output:
-    image: image-registry.openshift-image-registry.svc:5000/sbose/taxi-app
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
