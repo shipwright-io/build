@@ -120,18 +120,19 @@ and start the operator.
 
 5. Start a [Kaniko](samples/build/build_kaniko_cr.yaml) build
 
-```yaml
+```yml
 ---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
   name: kaniko-golang-build
+  namespace: build-examples
 spec:
   source:
     url: https://github.com/sbose78/taxi
   strategy:
     name: kaniko
-    namespace: openshift
+    namespace: build-examples
   dockerfile: Dockerfile
   pathContext: ./
   output:

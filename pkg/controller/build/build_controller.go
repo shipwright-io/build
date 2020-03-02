@@ -26,14 +26,6 @@ import (
 
 var log = logf.Log.WithName("controller_build")
 
-const (
-	// StrategyBuildpacksv3 is a reference to the name of the strategy use  for buildpacks-v3 builds
-	StrategyBuildpacksv3 = "buildpacks-v3"
-
-	// StrategySourceToImage is a reference to the name of the strategy use  for s2i builds
-	StrategySourceToImage = "s2i"
-)
-
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
