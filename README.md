@@ -162,6 +162,8 @@ spec:
 | Feature               | Alpha | Beta | GA |
 | --------------------- | ----- | ---- | -- |
 | Private Git Repos     | ☑️     |      |    |
+| Private Output Image Registry     | ☑️     |      |    |
+| Private Builder Image Registry     | ⚪️     |      |    |
 | Runtime Base Image    | ⚪️    |      |    |
 | Binary builds         |       |      |    |
 | Image Caching         |       |      |    |
@@ -170,4 +172,4 @@ spec:
 
 [corev1container]: https://github.com/kubernetes/api/blob/v0.17.3/core/v1/types.go#L2106
 [pipelinesoperator]: https://www.openshift.com/learn/topics/pipelines
-[operator-sdk]: https://github.com/operator-framework/operator-sdk
+[operatorsdk]: https://github.com/operator-framework/operator-sdk
