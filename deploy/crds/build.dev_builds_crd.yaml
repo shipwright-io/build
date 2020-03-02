@@ -36,10 +36,26 @@ spec:
         spec:
           description: BuildSpec defines the desired state of Build
           properties:
-            builderImage:
+            builder:
               description: BuilderImage refers to the image containing the build tools
                 inside which the source code would be built.
-              type: string
+              properties:
+                credentials:
+                  description: SecretRef is a reference to the Secret containing the
+                    credentials to push the image to the registry
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                image:
+                  description: ImageURL is the URL where the image will be pushed
+                    to.
+                  type: string
+              required:
+              - image
+              type: object
             dockerfile:
               description: Dockerfile is the path to the Dockerfile to be used for
                 build strategies which bank on the Dockerfile for building an image.

@@ -208,7 +208,7 @@ func buildahBuildTestData(ns string, identifier string) (*operator.Build, *opera
 				Namespace: ns,
 			},
 			Dockerfile: &dockerfile,
-			Output: operator.Output{
+			Output: operator.Image{
 				ImageURL: outputPath,
 			},
 			PathContext: &pathContext,
