@@ -163,7 +163,7 @@ spec:
 | --------------------- | ----- | ---- | -- |
 | Private Git Repos     | ☑️     |      |    |
 | Private Output Image Registry     | ☑️     |      |    |
-| Private Builder Image Registry     | ⚪️     |      |    |
+| Private Builder Image Registry     | ☑️     |      |    |
 | Runtime Base Image    | ⚪️    |      |    |
 | Binary builds         |       |      |    |
 | Image Caching         |       |      |    |
