@@ -9,7 +9,8 @@ spec:
   strategy:
     name: buildpacks-v3
     namespace: build-examples
-  builderImage: heroku/buildpacks:18
+  builder:
+    image: heroku/buildpacks:18
   output:
     image: quay.io/example/nodejs-ex:latest
     credentials:
