@@ -8,15 +8,19 @@
 
 ACTION="${1}"
 CRDS=(
+    # operator components
     deploy/role.yaml
     deploy/service_account.yaml
     deploy/role_binding.yaml
     deploy/operator.yaml
     deploy/crds/build.dev_buildstrategies_crd.yaml
     deploy/crds/build.dev_builds_crd.yaml
-    samples/buildstrategy/buildstrategy_buildah_cr.yaml
-    samples/buildstrategy/buildstrategy_kaniko_cr.yaml
-    samples/buildstrategy/buildstrategy_source-to-image_cr.yaml
+    # build strategies
+    samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
+    samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml
+    samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
+    samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml
+    samples/buildstrategy/source-to-image/buildstrategy_source-to-image-redhat_cr.yaml
 )
 
 function die () {

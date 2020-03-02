@@ -1,3 +1,4 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
@@ -6,8 +7,8 @@ spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
-    name: "source-to-image"
-    namespace: "openshift"
-  builderImage: "docker.io/centos/nodejs-10-centos7"
+    name: source-to-image
+    namespace: build-examples
+  builderImage: docker.io/centos/nodejs-10-centos7
   output:
-    image: "image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex"
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex

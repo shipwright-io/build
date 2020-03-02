@@ -1,15 +1,16 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildpacks
+  name: buildpack-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
     name: buildpacks-v3
-    namespace: otaviof
+    namespace: build-examples
   builderImage: heroku/buildpacks:18
   output:
-    image: quay.io/olemefer/nodejs-ex:v1
+    image: quay.io/example/nodejs-ex:latest
     credentials:
-      name: quayio-olemefer
+      name: quayio-registry

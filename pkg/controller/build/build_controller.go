@@ -4,9 +4,7 @@ import (
 	"context"
 	"strings"
 
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -22,17 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 )
 
 var log = logf.Log.WithName("controller_build")
-
-const (
-	// StrategyBuildpacksv3 is a reference to the name of the strategy use  for buildpacks-v3 builds
-	StrategyBuildpacksv3 = "buildpacks-v3"
-
-	// StrategySourceToImage is a reference to the name of the strategy use  for s2i builds
-	StrategySourceToImage = "s2i"
-)
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -71,12 +63,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch TaskRuns
-	err = c.Watch(&source.Kind{Type: &taskv1.TaskRun{}}, &handler.EnqueueRequestForOwner{
+	return c.Watch(&source.Kind{Type: &taskv1.TaskRun{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &buildv1alpha1.Build{},
 	})
-
-	return nil
 }
 
 // blank assignment to verify that ReconcileBuild implements reconcile.Reconciler
@@ -112,7 +102,6 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	// read the TaskRun's status and update Build's status
 	existingTaskRun := r.retrieveTaskRun(instance)
 	if existingTaskRun != nil {
-
 		// TODO: Make this safer
 		if len(existingTaskRun.Status.Conditions) > 0 {
 			jobStatus := existingTaskRun.Status.Conditions[0].Reason
@@ -126,7 +115,6 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	// Everytime control enters the reconcile loop, we need to ensure
 	// everything is in its desired state.
-
 	buildStrategyInstance := r.retrieveCustomBuildStrategy(instance, request)
 	if buildStrategyInstance != nil {
 		generatedTask = getCustomTask(instance, buildStrategyInstance)
@@ -140,9 +128,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	existingTask := r.retrieveTask(instance)
 
 	if existingTask != nil && !compare(*existingTask, *generatedTask) {
-
 		// If the Build spec has changed, we must start afresh
-
 		// If the locally generated task's "generation" annotation
 		// is different than that of existing task's "generation" annotation,
 		// then the Build must have been modified
@@ -160,7 +146,6 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		// We've deleted the existing 'jobs', that is,
 		// the Task & the TaskRun because they can be considered
 		// stale.
-
 	}
 
 	// create Task if no task for that Build exists
@@ -184,7 +169,6 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	if r.retrieveTaskRun(instance) == nil {
-
 		// Add creds to service account
 		buildServiceAccount, err := r.retrieveServiceAccount(instance, pipelineServiceAccountName)
 		if err != nil {
