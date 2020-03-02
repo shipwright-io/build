@@ -2,7 +2,7 @@
 apiVersion: build.dev/v1alpha1
 kind: BuildStrategy
 metadata:
-  name: source-to-image
+  name: source-to-image-redhat
 spec:
   buildSteps:
     - name: step-s2i-generate

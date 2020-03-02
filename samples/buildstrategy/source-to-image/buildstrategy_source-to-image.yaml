@@ -1,0 +1,54 @@
+apiVersion: build.dev/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: source-to-image
+spec:
+  buildSteps:
+    - name: s2i-build-as-dockerfile
+      image: quay.io/openshift-pipeline/s2i:nightly
+      workingDir: /workspace/source
+      command:
+        - /usr/local/bin/s2i
+        - build
+        - .
+        - "$(build.builderImage)" # strong type from Build CR
+        - --as-dockerfile
+        - /gen-source/Dockerfile.gen
+      volumeMounts:
+      - mountPath: /gen-source
+        name: gen-source
+
+    - name: buildah-bud
+      image: quay.io/buildah/stable
+      workingDir: /gen-source
+      securityContext:
+        privileged: true
+      command:
+        - buildah
+        - bud
+        - --tls-verify=false
+        - --layers
+        - -f
+        - /gen-source/Dockerfile.gen
+        - -t
+        - $(build.output.image)  # strong type from Build CR
+        - .
+      volumeMounts:
+      - mountPath: /var/lib/containers
+        name: varlibcontainers
+      - mountPath: /gen-source
+        name: gen-source
+
+    - command:
+      - buildah
+      - push
+      - --tls-verify=false
+      - $(build.output.image)
+      - docker://$(build.output.image)    # strong type from Build CR
+      image: quay.io/buildah/stable
+      name: push
+      securityContext:
+        privileged: true
+      volumeMounts:
+      - mountPath: /var/lib/containers
+        name: varlibcontainers

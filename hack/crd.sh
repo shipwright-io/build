@@ -20,6 +20,7 @@ CRDS=(
     samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml
     samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
     samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml
+    samples/buildstrategy/source-to-image/buildstrategy_source-to-image-redhat_cr.yaml
 )
 
 function die () {

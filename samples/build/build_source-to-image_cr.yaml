@@ -9,6 +9,6 @@ spec:
   strategy:
     name: source-to-image
     namespace: openshift
-  builderImage: registry.redhat.io/rhscl/nodejs-12-rhel7:latest
+  builderImage: docker.io/centos/nodejs-10-centos7
   output:
     image: image-registry.openshift-image-registry.svc:5000/sbose/nodejs-ex

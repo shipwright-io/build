@@ -8,10 +8,13 @@
     </a>
 </p>
 
-## `build-v2` Kubernetes Operator
+## The `build` Kubernetes API 
+
+Codenamed build-v2
 
 An API to build container-images on Kubernetes using popular strategies and tools like
-`source-to-image`, `buildpack-v3`, `kaniko` and `buildah`, in an extensible way.
+`source-to-image`, `buildpack-v3`, `kaniko`, `jib` and `buildah`, in an extensible way.
+
 
 ## How
 
@@ -27,12 +30,12 @@ by `Build`s.
 
 ## Operator Resources
 
-This operator ships two resources in order to define your strategy and register the actual
-application builds.
+This operator ships two CRDs in order to register a strategy and start the actual
+application builds using a previously registered strategy.
 
 ### `BuildStrategy`
 
-The resource `BuildStrategy` (`builds.build.dev/v1alpha1`) allows you to define a shared group of
+The resource `BuildStrategy` (`buildstrategies.build.dev/v1alpha1`) allows you to define a shared group of
 steps needed to fullfil the application build. Those steps are defined as
 [`containers/v1`][corev1container] entries.
 
@@ -63,7 +66,7 @@ the following example:
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build-buildpack
+  name: example-build-buildpack 
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
@@ -81,13 +84,23 @@ spec:
 
 Attributes:
 
-* `spec.source.url`: source-code repository URL;
-* `spec.source.credentials.name`: Kubernetes Secret name carrying source repository credentials;
-* `spec.strategy.name`: `BuildStrategy` name;
-* `spec.strategy.namespace`: `BuildStrategy` namespace;
-* `spec.builderImage`: container image employed during the build process;
-* `spec.output.image`: container image to be produced;
-* `spec.output.image`: Kubernetes Secret name with container registry credentials;
+* Source
+    *  `spec.source.url`: source-code repository URL;
+    * `spec.source.credentials.name`: Kubernetes Secret name carrying source repository credentials;
+
+
+* Strategy
+    * `spec.strategy.name`: `BuildStrategy` name;
+    * `spec.strategy.namespace`: `BuildStrategy` namespace;
+
+
+* Builder Image
+    * `spec.builderImage`: container image employed during the build process;
+
+
+* Output Image
+    * `spec.output.image`: container image to be produced;
+    * `spec.output.image`: Kubernetes Secret name with container registry credentials;
 
 The resource is updated as soon as the current building status changes:
 
@@ -155,4 +168,4 @@ Examples of `Build` resource using the example strategies shipped with this oper
 
 [corev1container]: https://github.com/kubernetes/api/blob/v0.17.3/core/v1/types.go#L2106
 [pipelinesoperator]: https://www.openshift.com/learn/topics/pipelines
-[operatorsdk]: https://github.com/operator-framework/operator-sdk
+[operator-sdk]: https://github.com/operator-framework/operator-sdk
