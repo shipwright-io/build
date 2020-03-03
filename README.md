@@ -166,9 +166,24 @@ spec:
 | Private Builder Image Registry     | ⚪️     |      |    |
 | Runtime Base Image    | ⚪️    |      |    |
 | Binary builds         |       |      |    |
+| Image pull policy     |       |      |    |
+| Inject source via config map         |       |      |    |
+| Inject source via secret         |       |      |    |
+| Inject source via image         |       |      |    |
+| Set image label/ens   |       |      |    |
+| Triggers (SCMs)       |       |      |    |
+| Triggers (imagestream)|       |      |    |
+| Pruning of builds     |       |      |    |
+| Cancelling of builds  |       |      |    |
+| Chaining of builds    |       |      |    |
 | Image Caching         |       |      |    |
+| Max duration / TO     |       |      |    |
+| Parallel vs. serial execution   |       |      |    |
 | ImageStreams support  |       |      |    |
 | Entitlements          |       |      |    |
+| Global Proxy support  |       |      |    |
+| Mirror support        |       |      |    |
+| new-app/build & odo ? |       |      |    |
 
 [corev1container]: https://github.com/kubernetes/api/blob/v0.17.3/core/v1/types.go#L2106
 [pipelinesoperator]: https://www.openshift.com/learn/topics/pipelines
