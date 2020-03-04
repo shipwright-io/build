@@ -11,6 +11,4 @@ spec:
     namespace: build-examples
   builderImage: heroku/buildpacks:18
   output:
-    image: quay.io/example/nodejs-ex:latest
-    credentials:
-      name: quayio-registry
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

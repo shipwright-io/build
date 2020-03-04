@@ -265,12 +265,12 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 			},
 		})
 	}
-	if buildInstance.Spec.PathContext != nil {
+	if buildInstance.Spec.Source.ContextDir != nil {
 		inputParams = append(inputParams, taskv1.Param{
 			Name: inputParamPathContext,
 			Value: taskv1.ArrayOrString{
 				Type:      taskv1.ParamTypeString,
-				StringVal: *buildInstance.Spec.PathContext,
+				StringVal: *buildInstance.Spec.Source.ContextDir,
 			},
 		})
 	}
