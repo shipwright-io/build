@@ -105,7 +105,7 @@ func BuildCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
-		testBuild.Spec.Output = operator.Output{
+		testBuild.Spec.Output = operator.Image{
 			ImageURL: os.Getenv(EnvVarImageRepo),
 			SecretRef: &v1.LocalObjectReference{
 				Name: os.Getenv(EnvVarImageRepoSecret),
