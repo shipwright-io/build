@@ -15,7 +15,8 @@ type GitSource struct {
 	Ref string `json:"ref,omitempty"`
 
 	// ContextDir is a path to subfolder in the repo. Optional.
-	ContextDir string `json:"contextDir,omitempty"`
+	// +optional
+	ContextDir *string `json:"contextDir,omitempty"`
 
 	// HTTPProxy is optional.
 	HTTPProxy string `json:"httpProxy,omitempty"`

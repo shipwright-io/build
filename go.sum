@@ -1134,6 +1134,7 @@ k8s.io/kube-proxy v0.0.0-20191016114407-2e83b6f20229/go.mod h1:2Hxci1uzXO5ipP0h9
 k8s.io/kube-scheduler v0.0.0-20191016114748-65049c67a58b/go.mod h1:BgDUHHC5Wl0xcBUQgo2XEprE5nG5i9tlRR4iNgEFbL0=
 k8s.io/kube-state-metrics v1.7.2 h1:6vdtgXrrRRMSgnyDmgua+qvgCYv954JNfxXAtDkeLVQ=
 k8s.io/kube-state-metrics v1.7.2/go.mod h1:U2Y6DRi07sS85rmVPmBFlmv+2peBcL8IWGjM+IjYA/E=
+k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51 h1:RBkTKVMF+xsNsSOVc0+HdC0B5gD1sr6s6Cu5w9qNbuQ=
 k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51/go.mod h1:gL826ZTIfD4vXTGlmzgTbliCAT9NGiqpCqK2aNYv5MQ=
 k8s.io/kubelet v0.0.0-20191016114556-7841ed97f1b2/go.mod h1:SBvrtLbuePbJygVXGGCMtWKH07+qrN2dE1iMnteSG8E=
 k8s.io/kubernetes v1.16.0/go.mod h1:nlP2zevWKRGKuaaVbKIwozU0Rjg9leVDXkL4YTtjmVs=
