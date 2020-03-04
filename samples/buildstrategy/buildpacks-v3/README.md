@@ -13,6 +13,49 @@ To install this strategy, use:
 kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
 ```
 
+
+## Try it !
+
+The buildpacks-v3 strategy needs you specify
+* A Quay.io or a DockerHub image repository where the built image would be pushed to
+* The credentials needed to push to the repository - a Docker configuration to access your image host.
+
+### Fetch Quay Docker Config
+
+Visit the settings page for your Quay.io account `"https://quay.io/user/<USERNAME>?tab=settings"`
+
+You'll be prompted to authenticate, and then you'll get a screen that allows you download credential, pick the "Docker Configuraiton" on the left hand of the screen.
+
+On this screen, there is a link below "Step 1", to download your secret "Download <USERNAME>-auth.json", download this file.
+
+
+### Create a Kubernetes Secret
+
+```
+oc create secret generic regcred --from-file=.dockerconfigjson="$HOME/Downloads/${QUAYIO_USERNAME}-auth.json" --type=kubernetes.io/dockerconfigjson
+```
+
+### Start the build
+```yml
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-nodejs-build
+spec:
+  source:
+    url: https://github.com/sclorg/nodejs-ex
+  strategy:
+    name: buildpacks-v3
+    namespace: build-examples
+  builderImage: heroku/buildpacks:18
+  output:
+    image: quay.io/yourorg/yourrepo
+    credentials: regcred
+```
+
+
+
 ## Lifecycle Steps
 
 * **detector**: inspect for the type of project to be build;
