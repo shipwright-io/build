@@ -86,20 +86,17 @@ func BuildCluster(t *testing.T) {
 	buildIdentifier = "example-build-buildpacks-v3"
 	testBuild, testBuildStrategy = buildpackBuildTestData(namespace, buildIdentifier)
 
-	if os.Getenv(EnvVarImageRepo) == "" || os.Getenv(EnvVarImageRepoSecret) == "" {
-		// our buildpack test really needs the env vars
-		return
+	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
+		// need to parameterize for test environments
+		testBuild.Spec.Output = operator.Output{
+			ImageURL: os.Getenv(EnvVarImageRepo),
+			SecretRef: &v1.LocalObjectReference{
+				Name: os.Getenv(EnvVarImageRepoSecret),
+			},
+		}
+		validateController(t, ctx, f, testBuild, testBuildStrategy)
 	}
 
-	// need to parameterize for test environments
-	testBuild.Spec.Output = operator.Output{
-		ImageURL: os.Getenv(EnvVarImageRepo),
-		SecretRef: &v1.LocalObjectReference{
-			Name: os.Getenv(EnvVarImageRepoSecret),
-		},
-	}
-
-	validateController(t, ctx, f, testBuild, testBuildStrategy)
 }
 
 func validateControllerReconcileWithModifiedSpec(t *testing.T,
