@@ -54,7 +54,7 @@ func TestBuild(t *testing.T) {
 
 	// run subtests
 	t.Run("build-group", func(t *testing.T) {
-		t.Run("Buildah test with modified Build", BuildCluster)
+		t.Run("Buildah and Buildpack", BuildCluster)
 	})
 }
 
@@ -80,7 +80,7 @@ func BuildCluster(t *testing.T) {
 	}
 
 	buildIdentifier := "example-build-buildah"
-	testBuild, testBuildStrategy := buildahBuildTestData(namespace, buildIdentifier) //buildahBuildTestData(namespace, buildIdentifier)
+	testBuild, testBuildStrategy := buildahBuildTestData(namespace, buildIdentifier)
 	validateControllerReconcileWithModifiedSpec(t, ctx, f, testBuild, testBuildStrategy)
 
 	buildIdentifier = "example-build-buildpacks-v3"
