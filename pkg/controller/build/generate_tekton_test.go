@@ -62,7 +62,7 @@ func TestGenerateTask(t *testing.T) {
 							buildv1alpha1.BuildStep{
 								Container: corev1.Container{
 									Name:       "build",
-									Image:      "$(build.builderImage)",
+									Image:      "$(build.builder.image)",
 									WorkingDir: "/workspace/source",
 									Command: []string{
 										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",

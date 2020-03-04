@@ -30,10 +30,10 @@ const (
 // a poor man's templating mechanism - TODO: Use golang templating
 func getStringTransformations(bs *buildv1alpha1.BuildStrategy, fullText string) string {
 	stringTransformations := map[string]string{
-		"$(build.output.image)": "$(outputs.resources.image.url)",
-		"$(build.builderImage)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
-		"$(build.dockerfile)":   fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
-		"$(build.pathContext)":  fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
+		"$(build.output.image)":  "$(outputs.resources.image.url)",
+		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
+		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
+		"$(build.pathContext)":   fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 	}
 	// Run the text through all possible replacements
 	for k, v := range stringTransformations {
