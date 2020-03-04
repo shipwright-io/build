@@ -97,9 +97,6 @@ spec:
                 - value
                 type: object
               type: array
-            pathContext:
-              description: PathContext is the path to the source code in the repository
-              type: string
             source:
               description: Source refers to the Git repository constaining the source
                 code to be built.

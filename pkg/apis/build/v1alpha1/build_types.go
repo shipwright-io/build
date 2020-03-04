@@ -29,10 +29,6 @@ type BuildSpec struct {
 	// +optional
 	Dockerfile *string `json:"dockerfile,omitempty"`
 
-	// PathContext is the path to the source code in the repository
-	// +optional
-	PathContext *string `json:"pathContext,omniempty"`
-
 	// Parameters contains name-value that could be used to loosely
 	// type parameters in the BuildStrategy.
 	// +optional
