@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-prepare
-      image: $(build.builderImage)
+      image: $(build.builder.image)
       securityContext:
         runAsUser: 0
       command:
@@ -15,7 +15,7 @@ spec:
         - -c
         - chown -R "1000:1000" "/workspace/source"
     - name: step-detect
-      image: $(build.builderImage)
+      image: $(build.builder.image)
       securityContext:
         runAsUser: 1000
       command:
@@ -28,7 +28,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-restore
-      image: $(build.builderImage)
+      image: $(build.builder.image)
       securityContext:
         runAsUser: 1000
       command:
@@ -43,7 +43,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-build
-      image: $(build.builderImage)
+      image: $(build.builder.image)
       securityContext:
         runAsUser: 1000
       command:
@@ -57,7 +57,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-export
-      image: $(build.builderImage)
+      image: $(build.builder.image)
       securityContext:
         runAsUser: 0
       command:

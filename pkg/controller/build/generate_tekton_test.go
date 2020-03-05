@@ -20,7 +20,9 @@ const (
 func TestGenerateTask(t *testing.T) {
 
 	dockerfile := "Dockerfile"
-	builderImage := "quay.io/builder/image"
+	builderImage := buildv1alpha1.Image{
+		ImageURL: "quay.io/builder/image",
+	}
 	outputPath := "image-registry.openshift-image-registry.svc:5000/example/taxi-app"
 	truePtr := true
 
@@ -47,7 +49,7 @@ func TestGenerateTask(t *testing.T) {
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
-						Output: buildv1alpha1.Output{
+						Output: buildv1alpha1.Image{
 							ImageURL: outputPath,
 						},
 					},
@@ -60,7 +62,7 @@ func TestGenerateTask(t *testing.T) {
 							buildv1alpha1.BuildStep{
 								Container: corev1.Container{
 									Name:       "build",
-									Image:      "$(build.builderImage)",
+									Image:      "$(build.builder.image)",
 									WorkingDir: "/workspace/source",
 									Command: []string{
 										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
@@ -120,106 +122,4 @@ func TestGenerateTask(t *testing.T) {
 			assert.Equal(t, 2, len(got.Spec.Volumes))
 		})
 	}
-}
-
-func TestApplyCredentials(t *testing.T) {
-
-	type args struct {
-		buildInstance  *buildv1alpha1.Build
-		serviceAccount *corev1.ServiceAccount
-	}
-	tests := []struct {
-		name string
-		args args
-		want *corev1.ServiceAccount
-	}{
-
-		{
-			"secrets were not present",
-			args{
-				buildInstance: &buildv1alpha1.Build{
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL: "a/b/c",
-							SecretRef: &corev1.LocalObjectReference{
-								Name: "secret_a",
-							},
-						},
-						Output: buildv1alpha1.Output{
-							ImageURL: "quay.io/namespace/image",
-							SecretRef: &corev1.LocalObjectReference{
-								Name: "secret_quay.io",
-							},
-						},
-					},
-				},
-				serviceAccount: &corev1.ServiceAccount{
-					Secrets: []corev1.ObjectReference{
-						{Name: "secret_b"}, {Name: "secret_c"},
-					},
-				},
-			},
-			&corev1.ServiceAccount{
-				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"}, {Name: "secret_quay.io"},
-				},
-			},
-		},
-		{
-			"secret was already present",
-			args{
-				buildInstance: &buildv1alpha1.Build{
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL: "a/b/c",
-							SecretRef: &corev1.LocalObjectReference{
-								Name: "secret_a",
-							},
-						},
-					},
-				},
-				serviceAccount: &corev1.ServiceAccount{
-					Secrets: []corev1.ObjectReference{
-						{Name: "secret_b"}, {Name: "secret_a"},
-					},
-				},
-			},
-			&corev1.ServiceAccount{
-				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_a"},
-				},
-			},
-		},
-		{
-			"public repo, no source secret",
-			args{
-				buildInstance: &buildv1alpha1.Build{
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL:       "a/b/c",
-							SecretRef: nil,
-						},
-					},
-				},
-				serviceAccount: &corev1.ServiceAccount{
-					Secrets: []corev1.ObjectReference{
-						{Name: "secret_b"}, {Name: "secret_a"},
-					},
-				},
-			},
-			&corev1.ServiceAccount{
-				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_a"},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := applyCredentials(tt.args.buildInstance, tt.args.serviceAccount); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("applyCredentials() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-
 }

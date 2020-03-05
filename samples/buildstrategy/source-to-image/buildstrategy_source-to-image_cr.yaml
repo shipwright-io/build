@@ -11,7 +11,7 @@ spec:
         - /usr/local/bin/s2i
         - build
         - .
-        - "$(build.builderImage)" # strong type from Build CR
+        - "$(build.builder.image)" # strong type from Build CR
         - --as-dockerfile
         - /gen-source/Dockerfile.gen
       volumeMounts:

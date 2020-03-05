@@ -72,7 +72,9 @@ spec:
   strategy:
     name: buildpacks-v3
     namespace: openshift
-  builderImage: heroku/buildpacks:18
+  builder:
+    image: heroku/buildpacks:18
+    credentials: quayio-olemefer
   output:
     image: quay.io/olemefer/nodejs-ex:v1
     credentials:
@@ -163,7 +165,7 @@ spec:
 | --------------------- | ----- | ---- | -- |
 | Private Git Repos     | ☑️     |      |    |
 | Private Output Image Registry     | ☑️     |      |    |
-| Private Builder Image Registry     | ⚪️     |      |    |
+| Private Builder Image Registry     | ☑️     |      |    |
 | Runtime Base Image    | ⚪️    |      |    |
 | Binary builds         |       |      |    |
 | Image Caching         |       |      |    |

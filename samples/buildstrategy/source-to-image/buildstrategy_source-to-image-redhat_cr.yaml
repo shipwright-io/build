@@ -11,7 +11,7 @@ spec:
       args:
         - build
         - .
-        - $(build.builderImage)
+        - $(build.builder.image)
         - $(build.output.image)
         - --as-dockerfile=/s2i/Dockerfile
       volumeMounts:

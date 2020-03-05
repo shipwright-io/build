@@ -9,6 +9,7 @@ spec:
   strategy:
     name: buildpacks-v3
     namespace: build-examples
-  builderImage: heroku/buildpacks:18
+  builder:
+    image: heroku/buildpacks:18
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

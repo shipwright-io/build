@@ -21,7 +21,7 @@ type BuildSpec struct {
 	// BuilderImage refers to the image containing the build tools
 	// inside which the source code would be built.
 	// +optional
-	BuilderImage *string `json:"builderImage,omitempty"`
+	BuilderImage *Image `json:"builder,omitempty"`
 
 	// Dockerfile is the path to the Dockerfile to be used for
 	// build strategies which bank on the Dockerfile for building
@@ -36,12 +36,11 @@ type BuildSpec struct {
 
 	// Output refers to the location where the generated
 	// image would be pushed to.
-	Output Output `json:"output"`
+	Output Image `json:"output"`
 }
 
-// Output refers to the location where the generated
-// image would be pushed to.
-type Output struct {
+// Image refers to an container image with credentials
+type Image struct {
 
 	// ImageURL is the URL where the image will be pushed to.
 	ImageURL string `json:"image"`

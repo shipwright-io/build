@@ -30,10 +30,10 @@ const (
 // a poor man's templating mechanism - TODO: Use golang templating
 func getStringTransformations(bs *buildv1alpha1.BuildStrategy, fullText string) string {
 	stringTransformations := map[string]string{
-		"$(build.output.image)": "$(outputs.resources.image.url)",
-		"$(build.builderImage)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
-		"$(build.dockerfile)":   fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
-		"$(build.pathContext)":  fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
+		"$(build.output.image)":  "$(outputs.resources.image.url)",
+		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
+		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
+		"$(build.pathContext)":   fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 	}
 	// Run the text through all possible replacements
 	for k, v := range stringTransformations {
@@ -156,42 +156,6 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 	generatedTask.Spec.Volumes = vols
 	return &generatedTask
 }
-
-func applyCredentials(buildInstance *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
-
-	// credentials of the source/git repo
-	sourceSecret := buildInstance.Spec.Source.SecretRef
-	if sourceSecret != nil {
-		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
-	}
-
-	// credentials of the 'output' image registry
-	sourceSecret = buildInstance.Spec.Output.SecretRef
-	if sourceSecret != nil {
-		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
-	}
-
-	return serviceAccount
-}
-
-func updateServiceAccountIfSecretNotLinked(sourceSecret *corev1.LocalObjectReference, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
-	isSecretPresent := false
-	for _, credentialSecret := range serviceAccount.Secrets {
-		if credentialSecret.Name == sourceSecret.Name {
-			isSecretPresent = true
-			break
-		}
-	}
-
-	if !isSecretPresent {
-		serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{
-			Name: sourceSecret.Name,
-		})
-	}
-
-	return serviceAccount
-}
-
 func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance *buildv1alpha1.BuildStrategy) *taskv1.TaskRun {
 	expectedTaskRun := &taskv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
@@ -252,7 +216,7 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 			Name: inputParamBuilderImage,
 			Value: taskv1.ArrayOrString{
 				Type:      taskv1.ParamTypeString,
-				StringVal: *buildInstance.Spec.BuilderImage,
+				StringVal: buildInstance.Spec.BuilderImage.ImageURL,
 			},
 		})
 	}
