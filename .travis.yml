@@ -2,7 +2,7 @@
 language: go
 go:
   - 1.14.x
-service:
+services:
   - docker
 install:
   - make travis
