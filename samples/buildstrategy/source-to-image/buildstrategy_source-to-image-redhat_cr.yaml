@@ -1,0 +1,47 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: source-to-image-redhat
+spec:
+  buildSteps:
+    - name: step-s2i-generate
+      image: registry.redhat.io/ocp-tools-43-tech-preview/source-to-image-rhel8:latest
+      workingDir: /workspace/source
+      args:
+        - build
+        - .
+        - $(build.builder.image)
+        - $(build.output.image)
+        - --as-dockerfile=/s2i/Dockerfile
+      volumeMounts:
+        - name: s2i
+          mountPath: /s2i
+    - name: step-buildah-bud
+      image: quay.io/buildah/stable:latest
+      workingDir: /s2i
+      securityContext:
+        privileged: true
+      command:
+        - /usr/bin/buildah
+      args:
+        - bud
+        - --tag=$(build.output.image)
+      volumeMounts:
+        - name: s2i
+          mountPath: /s2i
+        - name: buildah-images
+          mountPath: /var/lib/containers/storage
+    - name: step-buildah-push
+      image: quay.io/buildah/stable:latest
+      securityContext:
+        privileged: true
+      command:
+        - /usr/bin/buildah
+      args:
+        - push
+        - --tls-verify=false
+        - docker://$(build.output.image)
+      volumeMounts:
+        - name: buildah-images
+          mountPath: /var/lib/containers/storage

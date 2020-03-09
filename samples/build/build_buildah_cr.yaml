@@ -1,13 +1,14 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
   name: buildah-golang-build
 spec:
-  dockerfile: Dockerfile
-  strategy:
-    name: "buildah"
-    namespace: "openshift"
-  output:
-    image: 'image-registry.openshift-image-registry.svc:5000/sbose/taxi-app'
   source:
-    url: 'https://github.com/sbose78/taxi'
+    url: https://github.com/sbose78/taxi
+  strategy:
+    name: buildah
+    namespace: build-examples
+  dockerfile: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

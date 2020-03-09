@@ -46,6 +46,14 @@ make test
 
 ### End-to-end tests
 
+To run all strategies except buildpacks-v3, execute
+
 ```
-operator-sdk test local ./test/e2e --up-local --namespace sbose
+operator-sdk test local ./test/e2e --up-local --namespace build-examples
+```
+
+To run all strategies including buildpacks-v3, [setup your Quay credentials](samples/buildstrategy/buildpacks-v3#try-it-) and execute
+
+```
+TEST_IMAGE_REPO=quay.io/shbose/nodejs-ex:latest TEST_IMAGE_REPO_SECRET=regcred  operator-sdk test local ./test/e2e --up-local --namespace build-examples
 ```

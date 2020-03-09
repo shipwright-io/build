@@ -1,15 +1,15 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildpacks
+  name: buildpack-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
     name: buildpacks-v3
-    namespace: otaviof
-  builderImage: heroku/buildpacks:18
+    namespace: build-examples
+  builder:
+    image: heroku/buildpacks:18
   output:
-    image: quay.io/olemefer/nodejs-ex:v1
-    credentials:
-      name: quayio-olemefer
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

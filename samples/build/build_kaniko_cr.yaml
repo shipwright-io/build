@@ -1,3 +1,4 @@
+---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
@@ -5,10 +6,10 @@ metadata:
 spec:
   source:
     url: https://github.com/sbose78/taxi
-  strategy: 
-    name: "kaniko"
-    namespace: "openshift"
-  dockerfile: "Dockerfile" 
-  pathContext: "./"
+  strategy:
+    name: kaniko
+    namespace: build-examples
+  dockerfile: Dockerfile
+  pathContext: ./
   output:
-    image: "image-registry.openshift-image-registry.svc:5000/sbose/taxi-app"
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
