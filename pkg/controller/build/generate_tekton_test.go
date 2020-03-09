@@ -14,6 +14,7 @@ import (
 
 const (
 	buildah = "buildah"
+	buildpacks = "buildpacks-v3"
 	url     = "https://github.com/sbose78/taxi"
 )
 
@@ -120,6 +121,110 @@ func TestGenerateTask(t *testing.T) {
 
 			// Ensure top level volumes are populated.
 			assert.Equal(t, 2, len(got.Spec.Volumes))
+		})
+	}
+}
+
+func TestGenerateTaskRun(t *testing.T) {
+
+	namespace := "build-test"
+	dockerfile := "Dockerfile"
+	ContextDir := "src"
+	builderImage := buildv1alpha1.Image{
+		ImageURL: "heroku/buildpacks:18",
+	}
+	outputPath := "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
+
+	type args struct {
+		buildInstance         *buildv1alpha1.Build
+		buildStrategyInstance *buildv1alpha1.BuildStrategy
+	}
+	tests := []struct {
+		name string
+		args args
+		want *taskv1.TaskRun
+	}{
+		{
+			"taskrun generation",
+			args{
+				buildInstance: &buildv1alpha1.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: buildpacks,
+						Namespace: namespace,
+					},
+					Spec: buildv1alpha1.BuildSpec{
+						Source: buildv1alpha1.GitSource{
+							URL: url,
+							ContextDir: &ContextDir,
+						},
+						StrategyRef: metav1.ObjectMeta{
+							Name: buildpacks,
+						},
+						Dockerfile:   &dockerfile,
+						BuilderImage: &builderImage,
+						Output: buildv1alpha1.Image{
+							ImageURL: outputPath,
+						},
+					},
+				},
+
+				buildStrategyInstance: &buildv1alpha1.BuildStrategy{},
+			},
+			&taskv1.TaskRun{}, // not using it for now
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getCustomTaskRun(tt.args.buildInstance, tt.args.buildStrategyInstance)
+
+			// ensure generated TaskRun's basic information are correct
+			assert.True(t, reflect.DeepEqual(got.Name, buildpacks))
+			assert.True(t, reflect.DeepEqual(got.Namespace, namespace))
+			assert.True(t, reflect.DeepEqual(got.Spec.ServiceAccountName, pipelineServiceAccountName))
+			assert.True(t, reflect.DeepEqual(got.Spec.TaskRef.Name, tt.args.buildInstance.Name))
+			assert.True(t, reflect.DeepEqual(got.Labels[labelBuild], tt.args.buildInstance.Name))
+
+			// ensure generated TaskRun's input and output resources are correct
+			inputResources := got.Spec.Inputs.Resources
+			for _, inputResource := range inputResources {
+				if inputResource.Name == inputImageResourceName {
+					assert.True(t, reflect.DeepEqual(inputResource.ResourceSpec.Type, taskv1.PipelineResourceTypeGit))
+					params := inputResource.ResourceSpec.Params
+					for _, param := range params {
+						if param.Name == inputImageResourceURL {
+							assert.True(t, reflect.DeepEqual(param.Value, url))
+						}
+					}
+
+				}
+			}
+			outputResources := got.Spec.Outputs.Resources
+			for _, outputResource := range outputResources {
+				if outputResource.Name == outputImageResourceName {
+					assert.True(t, reflect.DeepEqual(outputResource.ResourceSpec.Type, taskv1.PipelineResourceTypeImage))
+					params := outputResource.ResourceSpec.Params
+					for _, param := range params {
+						if param.Name == outputImageResourceURL {
+							assert.True(t, reflect.DeepEqual(param.Value, outputPath))
+						}
+					}
+
+				}
+			}
+
+			// ensure generated TaskRun's spec special input params are correct
+			params := got.Spec.Inputs.Params
+			for _, param := range params {
+				if param.Name == inputParamBuilderImage {
+					assert.True(t, reflect.DeepEqual(param.Value.StringVal, builderImage.ImageURL))
+				}
+				if param.Name == inputParamDockerfile {
+					assert.True(t, reflect.DeepEqual(param.Value.StringVal, dockerfile))
+				}
+				if param.Name == inputParamPathContext {
+					assert.True(t, reflect.DeepEqual(param.Value.StringVal, ContextDir))
+				}
+			}
 		})
 	}
 }

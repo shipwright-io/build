@@ -16,6 +16,8 @@ import (
 
 const (
 	pipelineServiceAccountName = "pipeline"
+	inputImageResourceName    = "source"
+	inputImageResourceURL     = "url"
 	inputParamBuilderImage     = "BUILDER_IMAGE"
 	inputParamDockerfile       = "DOCKERFILE"
 	inputParamPathContext      = "PATH_CONTEXT"
@@ -86,7 +88,7 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 				Resources: []taskv1.TaskResource{
 					{
 						ResourceDeclaration: taskv1.ResourceDeclaration{
-							Name: "source",
+							Name: inputImageResourceName,
 							Type: taskv1.PipelineResourceTypeGit,
 						},
 					},
@@ -174,12 +176,12 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 				Resources: []taskv1.TaskResourceBinding{
 					{
 						PipelineResourceBinding: taskv1.PipelineResourceBinding{
-							Name: "source",
+							Name: inputImageResourceName,
 							ResourceSpec: &taskv1.PipelineResourceSpec{
 								Type: taskv1.PipelineResourceTypeGit,
 								Params: []taskv1.ResourceParam{
 									{
-										Name:  "url",
+										Name:  inputImageResourceURL,
 										Value: buildInstance.Spec.Source.URL,
 									},
 								},

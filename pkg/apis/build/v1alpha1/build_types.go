@@ -8,7 +8,7 @@ import (
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
 
-	// Source refers to the Git repository constaining the
+	// Source refers to the Git repository containing the
 	// source code to be built.
 	Source GitSource `json:"source"`
 
