@@ -20,7 +20,6 @@ func TestApplyCredentials(t *testing.T) {
 		args args
 		want *corev1.ServiceAccount
 	}{
-
 		{
 			"secrets were not present",
 			args{
