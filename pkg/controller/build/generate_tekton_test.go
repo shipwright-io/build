@@ -45,8 +45,9 @@ func TestGenerateTask(t *testing.T) {
 						Source: buildv1alpha1.GitSource{
 							URL: url,
 						},
-						StrategyRef: metav1.ObjectMeta{
+						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: buildah,
+							Kind: "BuildStrategy",
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
@@ -105,7 +106,7 @@ func TestGenerateTask(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCustomTask(tt.args.buildInstance, tt.args.buildStrategyInstance)
+			got := getCustomTask(tt.args.buildInstance, tt.args.buildStrategyInstance.Spec.BuildSteps)
 			expectedCommandOrArg := []string{
 				"buildah", "bud", "--tls-verify=false", "--layers", "-f", fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile), "-t", "$(outputs.resources.image.url)", fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 			}
@@ -157,8 +158,9 @@ func TestGenerateTaskRun(t *testing.T) {
 							URL: url,
 							ContextDir: &ContextDir,
 						},
-						StrategyRef: metav1.ObjectMeta{
+						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: buildpacks,
+							Kind: "ClusterBuildStrategy",
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
@@ -175,7 +177,7 @@ func TestGenerateTaskRun(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCustomTaskRun(tt.args.buildInstance, tt.args.buildStrategyInstance)
+			got := getCustomTaskRun(tt.args.buildInstance)
 
 			// ensure generated TaskRun's basic information are correct
 			assert.True(t, reflect.DeepEqual(got.Name, buildpacks))

@@ -185,6 +185,77 @@ func validateController(t *testing.T,
 	require.True(t, foundSuccessful)
 }
 
+func validateControllerForClusterBuildStrategy(t *testing.T,
+	ctx *framework.TestCtx,
+	f *framework.Framework,
+	testBuild *operator.Build,
+	testClusterBuildStrategy *operator.ClusterBuildStrategy,
+) {
+
+	buildIdentifier := testBuild.GetName()
+	namespace, _ := ctx.GetNamespace()
+
+	err := f.Client.Create(goctx.TODO(), testClusterBuildStrategy, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = f.Client.Create(goctx.TODO(), testBuild, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	//  Ensure that a Task has been created
+
+	generatedTask := &pipelinev1.Task{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, generatedTask)
+	require.NoError(t, err)
+	require.NotNil(t, generatedTask)
+
+	// Ensure that a TaskRun has been created and is in pending state
+
+	generatedTaskRun := &pipelinev1.TaskRun{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, generatedTaskRun)
+	require.NoError(t, err)
+	require.NotNil(t, generatedTaskRun)
+	//require.Equal(t, "Pending", generatedTaskRun.Status.Conditions[0].Reason)
+
+	// Ensure Build is in Pending state
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, testBuild)
+	require.NoError(t, err)
+	require.Equal(t, "Pending", testBuild.Status.Status)
+
+	// Ensure that Build moves to Running State
+	foundRunning := false
+	for i := 1; i <= 10; i++ {
+		time.Sleep(3 * time.Second)
+		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, testBuild)
+		require.NoError(t, err)
+
+		if testBuild.Status.Status == "Running" {
+			foundRunning = true
+			break
+		}
+	}
+	require.True(t, foundRunning)
+
+	// Ensure that eventually the Build moves to Succeeded.
+	foundSuccessful := false
+	for i := 1; i <= 5; i++ {
+		time.Sleep(20 * time.Second)
+		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, testBuild)
+		require.NoError(t, err)
+
+		if testBuild.Status.Status == "Succeeded" {
+			foundSuccessful = true
+			break
+		}
+	}
+	require.True(t, foundSuccessful)
+}
+
 // buildTestData gets the us the test data set up
 func buildTestData(ns string, identifier string, buildStrategyCRPath string, buildCRPath string) (*operator.Build, *operator.BuildStrategy, error) {
 
@@ -204,7 +275,6 @@ func buildTestData(ns string, identifier string, buildStrategyCRPath string, bui
 	}
 
 	buildStrategy := obj.(*operator.BuildStrategy)
-
 	buildStrategy.SetNamespace(ns)
 
 	yaml, err = ioutil.ReadFile(buildCRPath)
@@ -224,4 +294,43 @@ func buildTestData(ns string, identifier string, buildStrategyCRPath string, bui
 	build.SetName(identifier)
 
 	return build, buildStrategy, err
+}
+
+// buildTestData gets the us the test data set up
+func buildTestDataFromClusterBuildStrategy(ns string, identifier string, clusterBuildStrategyCRPath string, buildCRPath string) (*operator.Build, *operator.ClusterBuildStrategy, error) {
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	operatorapis.AddToScheme(scheme.Scheme)
+
+	yaml, err := ioutil.ReadFile(clusterBuildStrategyCRPath)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return nil, nil, err
+	}
+
+	obj, _, err := decode(yaml, nil, nil)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return nil, nil, err
+	}
+
+	clusterBuildStrategy := obj.(*operator.ClusterBuildStrategy)
+
+	yaml, err = ioutil.ReadFile(buildCRPath)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return nil, nil, err
+	}
+
+	obj, _, err = decode([]byte(yaml), nil, nil)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return nil, nil, err
+	}
+	build := obj.(*operator.Build)
+
+	build.SetNamespace(ns)
+	build.SetName(identifier)
+
+	return build, clusterBuildStrategy, err
 }

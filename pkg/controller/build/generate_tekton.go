@@ -30,7 +30,7 @@ const (
 
 // getStringTransformations gets us MANDATORY replacements using
 // a poor man's templating mechanism - TODO: Use golang templating
-func getStringTransformations(bs *buildv1alpha1.BuildStrategy, fullText string) string {
+func getStringTransformations(fullText string) string {
 	stringTransformations := map[string]string{
 		"$(build.output.image)":  "$(outputs.resources.image.url)",
 		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
@@ -44,7 +44,7 @@ func getStringTransformations(bs *buildv1alpha1.BuildStrategy, fullText string) 
 	return fullText
 }
 
-func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *buildv1alpha1.BuildStrategy) *taskv1.Task {
+func getCustomTask(buildInstance *buildv1alpha1.Build, buildSteps []buildv1alpha1.BuildStep) *taskv1.Task {
 
 	generatedTask := taskv1.Task{
 		ObjectMeta: metav1.ObjectMeta{
@@ -110,19 +110,19 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 
 	var vols []corev1.Volume
 
-	for _, containerValue := range buildStrategyInstance.Spec.BuildSteps {
+	for _, containerValue := range buildSteps {
 
-		taskCommand := []string{}
+		var taskCommand []string
 		for _, buildStrategyCommandPart := range containerValue.Command {
-			taskCommand = append(taskCommand, getStringTransformations(buildStrategyInstance, buildStrategyCommandPart))
+			taskCommand = append(taskCommand, getStringTransformations(buildStrategyCommandPart))
 		}
 
-		taskArgs := []string{}
+		var taskArgs []string
 		for _, buildStrategyArgPart := range containerValue.Args {
-			taskArgs = append(taskArgs, getStringTransformations(buildStrategyInstance, buildStrategyArgPart))
+			taskArgs = append(taskArgs, getStringTransformations(buildStrategyArgPart))
 		}
 
-		taskImage := getStringTransformations(buildStrategyInstance, containerValue.Image)
+		taskImage := getStringTransformations(containerValue.Image)
 
 		step := v1alpha2.Step{
 			Container: corev1.Container{
@@ -158,7 +158,7 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildStrategyInstance *bu
 	generatedTask.Spec.Volumes = vols
 	return &generatedTask
 }
-func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance *buildv1alpha1.BuildStrategy) *taskv1.TaskRun {
+func getCustomTaskRun(buildInstance *buildv1alpha1.Build) *taskv1.TaskRun {
 	expectedTaskRun := &taskv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      buildInstance.Name,
@@ -211,7 +211,7 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build, buildStrategyInstance 
 		},
 	}
 
-	inputParams := []taskv1.Param{}
+	var inputParams []taskv1.Param
 	if buildInstance.Spec.BuilderImage != nil {
 		inputParams = append(inputParams, taskv1.Param{
 

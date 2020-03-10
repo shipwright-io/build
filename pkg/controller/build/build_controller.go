@@ -2,8 +2,6 @@ package build
 
 import (
 	"context"
-	"strings"
-
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -115,10 +113,21 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	// Everytime control enters the reconcile loop, we need to ensure
 	// everything is in its desired state.
-	buildStrategyInstance := r.retrieveCustomBuildStrategy(instance, request)
-	if buildStrategyInstance != nil {
-		generatedTask = getCustomTask(instance, buildStrategyInstance)
-		generatedTaskRun = getCustomTaskRun(instance, buildStrategyInstance)
+	if instance.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
+		buildStrategyInstance := r.retrieveCustomBuildStrategy(instance, request)
+		if buildStrategyInstance != nil {
+			generatedTask = getCustomTask(instance, buildStrategyInstance.Spec.BuildSteps)
+			generatedTaskRun = getCustomTaskRun(instance)
+		}
+	} else if instance.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
+		clusterBuildStrategyInstance := r.retrieveCustomClusterBuildStrategy(instance, request)
+		if clusterBuildStrategyInstance != nil {
+			generatedTask = getCustomTask(instance, clusterBuildStrategyInstance.Spec.BuildSteps)
+			generatedTaskRun = getCustomTaskRun(instance)
+		}
+	} else {
+		log.Error(err, "Unsupported BuildStrategy Kind", instance.Spec.StrategyRef.Kind)
+		return reconcile.Result{}, err
 	}
 
 	if generatedTask == nil && generatedTaskRun == nil {
@@ -212,9 +221,8 @@ func (r *ReconcileBuild) retrieveServiceAccount(instance *buildv1alpha1.Build, p
 
 func (r *ReconcileBuild) retrieveCustomBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
 	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
-	buildStrategyNameSpace := getBuildStrategyNamespace(instance)
 
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: buildStrategyNameSpace}, buildStrategyInstance)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: instance.Namespace}, buildStrategyInstance)
 	if err != nil {
 		log.Error(err, "failed to get BuildStrategy")
 		return nil
@@ -222,15 +230,15 @@ func (r *ReconcileBuild) retrieveCustomBuildStrategy(instance *buildv1alpha1.Bui
 	return buildStrategyInstance
 }
 
-func getBuildStrategyNamespace(instance *buildv1alpha1.Build) string {
-	buildStrategyNameSpace := instance.Namespace
-	strategyRefNamespace := strings.TrimSpace(instance.Spec.StrategyRef.Namespace)
+func (r *ReconcileBuild) retrieveCustomClusterBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.ClusterBuildStrategy {
+	clusterBuildStrategyInstance := &buildv1alpha1.ClusterBuildStrategy{}
 
-	// if namespace is specified in the strategyRef, use it.
-	if len(strategyRefNamespace) != 0 {
-		buildStrategyNameSpace = strategyRefNamespace
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
+	if err != nil {
+		log.Error(err, "failed to get ClusterBuildStrategy")
+		return nil
 	}
-	return buildStrategyNameSpace
+	return clusterBuildStrategyInstance
 }
 
 func (r *ReconcileBuild) retrieveTaskRun(instance *buildv1alpha1.Build) *taskv1.TaskRun {

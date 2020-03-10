@@ -40,6 +40,11 @@ func TestBuild(t *testing.T) {
 		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
 	}
 
+	err = framework.AddToFrameworkScheme(apis.AddToScheme, &operator.ClusterBuildStrategyList{})
+	if err != nil {
+		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
+	}
+
 	err = framework.AddToFrameworkScheme(pipelinev1.AddToScheme, &pipelinev1.TaskList{})
 	if err != nil {
 		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
@@ -114,4 +119,17 @@ func BuildCluster(t *testing.T) {
 		validateController(t, ctx, f, testBuild, testBuildStrategy)
 	}
 
+	buildIdentifier = "example-build-buildpacks-v3-clusterbuildstrategy"
+	testBuild, testClusterBuildStrategy, err := buildpackBuildTestDataFromClusterBuildStrategy(namespace, buildIdentifier)
+	require.NoError(t, err)
+
+	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
+		testBuild.Spec.Output = operator.Image{
+			ImageURL: os.Getenv(EnvVarImageRepo),
+			SecretRef: &v1.LocalObjectReference{
+				Name: os.Getenv(EnvVarImageRepoSecret),
+			},
+		}
+		validateControllerForClusterBuildStrategy(t, ctx, f, testBuild, testClusterBuildStrategy)
+	}
 }

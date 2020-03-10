@@ -98,7 +98,7 @@ spec:
                 type: object
               type: array
             source:
-              description: Source refers to the Git repository constaining the source
+              description: Source refers to the Git repository containing the source
                 code to be built.
               properties:
                 contextDir:
@@ -138,10 +138,20 @@ spec:
               - url
               type: object
             strategy:
-              description: 'StrategyRef refers to the BuildStrategy to be used to
-                build the container image. Note: Using metav1.ObjectMeta  instead
-                of corev1.LocalObjectReference because the BuildStrategy may or may
-                not be in the same namespace.'
+              description: StrategyRef refers to the BuildStrategy to be used to build
+                the container image. There are namespaced scope and cluster scope
+                BuildStrategy
+              properties:
+                apiVersion:
+                  description: API version of the referent
+                  type: string
+                kind:
+                  description: BuildStrategyKind indicates the kind of the buildstrategy,
+                    namespaced or cluster scoped.
+                  type: string
+                name:
+                  description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                  type: string
               type: object
           required:
           - output
