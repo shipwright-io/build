@@ -79,3 +79,17 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - "tekton.dev"
+  resources:
+  - tasks
+  - taskruns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
