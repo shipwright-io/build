@@ -166,6 +166,7 @@ spec:
 | Private Git Repos     | ☑️     |      |    |
 | Private Output Image Registry     | ☑️     |      |    |
 | Private Builder Image Registry     | ☑️     |      |    |
+| Cluster scope BuildStrategy     | ☑️     |      |    |
 | Runtime Base Image    | ⚪️    |      |    |
 | Binary builds         |       |      |    |
 | Image Caching         |       |      |    |

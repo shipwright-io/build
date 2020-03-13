@@ -24,6 +24,7 @@ func TestGenerateTask(t *testing.T) {
 	builderImage := buildv1alpha1.Image{
 		ImageURL: "quay.io/builder/image",
 	}
+	buildStrategy := buildv1alpha1.ClusterBuildStrategyKind
 	outputPath := "image-registry.openshift-image-registry.svc:5000/example/taxi-app"
 	truePtr := true
 
@@ -45,8 +46,9 @@ func TestGenerateTask(t *testing.T) {
 						Source: buildv1alpha1.GitSource{
 							URL: url,
 						},
-						StrategyRef: metav1.ObjectMeta{
+						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: buildah,
+							Kind: &buildStrategy,
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
@@ -105,7 +107,7 @@ func TestGenerateTask(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCustomTask(tt.args.buildInstance, tt.args.buildStrategyInstance)
+			got := getCustomTask(tt.args.buildInstance, tt.args.buildStrategyInstance.Spec.BuildSteps)
 			expectedCommandOrArg := []string{
 				"buildah", "bud", "--tls-verify=false", "--layers", "-f", fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile), "-t", "$(outputs.resources.image.url)", fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 			}
@@ -133,6 +135,7 @@ func TestGenerateTaskRun(t *testing.T) {
 	builderImage := buildv1alpha1.Image{
 		ImageURL: "heroku/buildpacks:18",
 	}
+	clustertBuildStrategy := buildv1alpha1.ClusterBuildStrategyKind
 	outputPath := "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
 
 	type args struct {
@@ -157,8 +160,9 @@ func TestGenerateTaskRun(t *testing.T) {
 							URL: url,
 							ContextDir: &ContextDir,
 						},
-						StrategyRef: metav1.ObjectMeta{
+						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: buildpacks,
+							Kind: &clustertBuildStrategy,
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
@@ -175,7 +179,7 @@ func TestGenerateTaskRun(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCustomTaskRun(tt.args.buildInstance, tt.args.buildStrategyInstance)
+			got := getCustomTaskRun(tt.args.buildInstance)
 
 			// ensure generated TaskRun's basic information are correct
 			assert.True(t, reflect.DeepEqual(got.Name, buildpacks))

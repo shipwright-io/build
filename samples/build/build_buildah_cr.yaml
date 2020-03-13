@@ -8,7 +8,7 @@ spec:
     url: https://github.com/sbose78/taxi
   strategy:
     name: buildah
-    namespace: build-examples
+    kind: BuildStrategy
   dockerfile: Dockerfile
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

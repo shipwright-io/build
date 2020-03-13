@@ -5,9 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -54,3 +51,26 @@ type BuildStrategyList struct {
 func init() {
 	SchemeBuilder.Register(&BuildStrategy{}, &BuildStrategyList{})
 }
+
+// StrategyRef can be used to refer to a specific instance of a buildstrategy.
+// Copied from CrossVersionObjectReference: https://github.com/kubernetes/kubernetes/blob/169df7434155cbbc22f1532cba8e0a9588e29ad8/pkg/apis/autoscaling/types.go#L64
+type StrategyRef struct {
+	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	Name string `json:"name"`
+	// BuildStrategyKind indicates the kind of the buildstrategy, namespaced or cluster scoped.
+	Kind *BuildStrategyKind `json:"kind,omitempty"`
+	// API version of the referent
+	// +optional
+	APIVersion string `json:"apiVersion,omitempty"`
+}
+
+// Check that Build may be validated and defaulted.
+// BuildStrategyKind defines the type of BuildStrategy used by the build.
+type BuildStrategyKind string
+
+const (
+	// NamespacedBuildStrategyKind indicates that the buildstrategy type has a namespaced scope.
+	NamespacedBuildStrategyKind BuildStrategyKind = "BuildStrategy"
+	// ClusterBuildStrategyKind indicates that buildstrategy type has a cluster scope.
+	ClusterBuildStrategyKind BuildStrategyKind = "ClusterBuildStrategy"
+)

@@ -14,9 +14,8 @@ type BuildSpec struct {
 
 	// StrategyRef refers to the BuildStrategy to be used to
 	// build the container image.
-	// Note: Using metav1.ObjectMeta  instead of corev1.LocalObjectReference
-	// because the BuildStrategy may or may not be in the same namespace.
-	StrategyRef metav1.ObjectMeta `json:"strategy"`
+	// There are namespaced scope and cluster scope BuildStrategy
+	StrategyRef *StrategyRef `json:"strategy"`
 
 	// BuilderImage refers to the image containing the build tools
 	// inside which the source code would be built.

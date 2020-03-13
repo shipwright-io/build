@@ -71,6 +71,7 @@ rules:
   resources:
   - '*'
   - buildstrategies
+  - clusterbuildstrategies
   verbs:
   - create
   - delete
