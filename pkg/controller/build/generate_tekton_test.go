@@ -24,6 +24,7 @@ func TestGenerateTask(t *testing.T) {
 	builderImage := buildv1alpha1.Image{
 		ImageURL: "quay.io/builder/image",
 	}
+	buildStrategy := buildv1alpha1.ClusterBuildStrategyKind
 	outputPath := "image-registry.openshift-image-registry.svc:5000/example/taxi-app"
 	truePtr := true
 
@@ -47,7 +48,7 @@ func TestGenerateTask(t *testing.T) {
 						},
 						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: buildah,
-							Kind: "BuildStrategy",
+							Kind: &buildStrategy,
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
@@ -134,6 +135,7 @@ func TestGenerateTaskRun(t *testing.T) {
 	builderImage := buildv1alpha1.Image{
 		ImageURL: "heroku/buildpacks:18",
 	}
+	clustertBuildStrategy := buildv1alpha1.ClusterBuildStrategyKind
 	outputPath := "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
 
 	type args struct {
@@ -160,7 +162,7 @@ func TestGenerateTaskRun(t *testing.T) {
 						},
 						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: buildpacks,
-							Kind: "ClusterBuildStrategy",
+							Kind: &clustertBuildStrategy,
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,

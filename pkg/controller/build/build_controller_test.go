@@ -9,11 +9,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_getBuildStrategyNamespace(t *testing.T) {
+// TODO this unit test should be refined by using the operator-sdk fake client
+// After separate build definition from build run: https://github.com/redhat-developer/build/issues/65
+func Test_getBuildByDifferentBuildStrategy(t *testing.T) {
 	type args struct {
 		instance *buildv1alpha1.Build
 	}
-	tests := []struct {
+	buildStrategy := buildv1alpha1.ClusterBuildStrategyKind
+	clustertBuildStrategy := buildv1alpha1.ClusterBuildStrategyKind
+	wrongBuildStrategy := buildv1alpha1.BuildStrategyKind("WrongBuildStrategy")
+	var tests = []struct {
 		name string
 		args args
 		want buildv1alpha1.StrategyRef
@@ -29,14 +34,33 @@ func Test_getBuildStrategyNamespace(t *testing.T) {
 					Spec: buildv1alpha1.BuildSpec{
 						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: "my-strategy",
-							Kind: "BuildStrategy",
+							Kind: &buildStrategy,
 						},
 					},
 				},
 			},
 			want: buildv1alpha1.StrategyRef{
 				Name: "my-strategy",
-				Kind: "BuildStrategy",
+				Kind: &buildStrategy,
+			},
+		},
+		{
+			name: "empty buildstrategy",
+			args: args{
+				instance: &buildv1alpha1.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "build-sample",
+						Namespace: "build-ns",
+					},
+					Spec: buildv1alpha1.BuildSpec{
+						StrategyRef: &buildv1alpha1.StrategyRef{
+							Name: "my-strategy",
+						},
+					},
+				},
+			},
+			want: buildv1alpha1.StrategyRef{
+				Name: "my-strategy",
 			},
 		},
 		{
@@ -50,14 +74,35 @@ func Test_getBuildStrategyNamespace(t *testing.T) {
 					Spec: buildv1alpha1.BuildSpec{
 						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: "my-clusterstrategy",
-							Kind: "ClusterBuildStrategy",
+							Kind: &clustertBuildStrategy,
 						},
 					},
 				},
 			},
 			want: buildv1alpha1.StrategyRef{
 				Name: "my-clusterstrategy",
-				Kind: "ClusterBuildStrategy",
+				Kind: &clustertBuildStrategy,
+			},
+		},
+		{
+			name: "wrong buildstrategy",
+			args: args{
+				instance: &buildv1alpha1.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "build-sample",
+						Namespace: "build-ns",
+					},
+					Spec: buildv1alpha1.BuildSpec{
+						StrategyRef: &buildv1alpha1.StrategyRef{
+							Name: "my-strategy",
+							Kind: &wrongBuildStrategy,
+						},
+					},
+				},
+			},
+			want: buildv1alpha1.StrategyRef{
+				Name: "my-strategy",
+				Kind: &wrongBuildStrategy,
 			},
 		},
 	}

@@ -113,20 +113,20 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	// Everytime control enters the reconcile loop, we need to ensure
 	// everything is in its desired state.
-	if instance.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
+	if instance.Spec.StrategyRef.Kind == nil || *instance.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
 		buildStrategyInstance := r.retrieveCustomBuildStrategy(instance, request)
 		if buildStrategyInstance != nil {
 			generatedTask = getCustomTask(instance, buildStrategyInstance.Spec.BuildSteps)
 			generatedTaskRun = getCustomTaskRun(instance)
 		}
-	} else if instance.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
+	} else if *instance.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
 		clusterBuildStrategyInstance := r.retrieveCustomClusterBuildStrategy(instance, request)
 		if clusterBuildStrategyInstance != nil {
 			generatedTask = getCustomTask(instance, clusterBuildStrategyInstance.Spec.BuildSteps)
 			generatedTaskRun = getCustomTaskRun(instance)
 		}
 	} else {
-		log.Error(err, "Unsupported BuildStrategy Kind", instance.Spec.StrategyRef.Kind)
+		log.Error(err, "Unsupported BuildStrategy Kind", "BuildStrategyKind", instance.Spec.StrategyRef.Kind)
 		return reconcile.Result{}, err
 	}
 
