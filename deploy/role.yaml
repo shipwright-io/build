@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: build-operator
@@ -15,6 +15,7 @@ rules:
   - events
   - configmaps
   - secrets
+  - serviceaccounts
   verbs:
   - create
   - delete
@@ -92,4 +93,3 @@ rules:
   - patch
   - update
   - watch
-
