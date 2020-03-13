@@ -25,7 +25,7 @@ CRDS=(
 )
 
 function die () {
-    echo "[ERROR] ${@}" >&2
+    echo "[ERROR] ${*}" >&2
     exit 1
 }
 
@@ -45,15 +45,15 @@ function kubectl_delete() {
         echo "[WARN] Unable to delete resource '${*}'"
 }
 
-for crd in ${CRDS[@]}; do
+for crd in "${CRDS[@]}"; do
     if [[ ! -f $crd ]] ; then
         die "File not found at: '${crd}'"
     fi
 
     if [[ $ACTION == "install" ]] ; then
-        kubectl_apply $crd
+        kubectl_apply "$crd"
     fi
     if [[ $ACTION == "uninstall" ]] ; then
-        kubectl_delete $crd
+        kubectl_delete "$crd"
     fi
 done

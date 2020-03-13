@@ -45,8 +45,3 @@ local:
 
 clean:
 	rm -rf $(OUTPUT_DIR)
-
-travis:
-	./hack/install-operator-sdk.sh
-	./hack/install-kind.sh
-	./hack/install-tekton.sh
