@@ -5,8 +5,16 @@ import (
 )
 
 // kanikoBuildTestData Test data setup
-func kanikoBuildTestData(ns string, identifier string) (*operator.Build, *operator.BuildStrategy, error) {
-	return buildTestData(ns, identifier,
-		"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
-		"samples/build/build_kaniko_cr.yaml")
+func kanikoBuildTestData(ns string, identifier string) (*operator.ClusterBuildStrategy, *operator.Build, error) {
+	buildstrategy, err := clusterBuildStrategyTestData("samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	build, err := buildTestData(ns, identifier, "samples/build/build_kaniko_cr.yaml")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return buildstrategy, build, nil
 }

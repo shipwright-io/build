@@ -5,8 +5,16 @@ import (
 )
 
 // s2iBuildTestData Test data setup
-func s2iBuildTestData(ns string, identifier string) (*operator.Build, *operator.BuildStrategy, error) {
-	return buildTestData(ns, identifier,
-		"samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml",
-		"samples/build/build_source-to-image_cr.yaml")
+func s2iBuildTestData(ns string, identifier string) (*operator.ClusterBuildStrategy, *operator.Build, error) {
+	buildstrategy, err := clusterBuildStrategyTestData("samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	build, err := buildTestData(ns, identifier, "samples/build/build_source-to-image_cr.yaml")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return buildstrategy, build, nil
 }

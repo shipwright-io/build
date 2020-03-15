@@ -1,6 +1,6 @@
 ---
 apiVersion: build.dev/v1alpha1
-kind: ClusterBuildStrategy
+kind: BuildStrategy
 metadata:
   name: buildpacks-v3
 spec:

@@ -1,5 +1,5 @@
 apiVersion: build.dev/v1alpha1
-kind: BuildStrategy
+kind: ClusterBuildStrategy
 metadata:
   name: source-to-image
 spec:
