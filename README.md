@@ -25,8 +25,8 @@ The following are the `BuildStrategies` supported by this operator, out-of-the-b
 * [Buildah](samples/buildstrategy/buildah/README.md);
 * [Kaniko](samples/buildstrategy/kaniko/README.md);
 
-Users have the option to define their own `BuildStrategies` and make them available for consumption
-by `Build`s.
+Users have the option to define their own(custom) `BuildStrategies` and make them available for consumption
+by `Builds`.
 
 ## Operator Resources
 
@@ -49,6 +49,7 @@ spec:
   buildSteps:
 ...
 ```
+The secret can be created like `kubectl create secret generic <SECRET-NAME> --from-file=.dockerconfigjson=<PATH/TO/.docker/config.json> --type=kubernetes.io/dockerconfigjson`
 
 Well-known strategies can be boostrapped from [here](samples/buildstrategy).
 
