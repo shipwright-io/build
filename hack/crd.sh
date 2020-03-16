@@ -16,7 +16,7 @@ CRDS=(
     deploy/crds/build.dev_buildstrategies_crd.yaml
     deploy/crds/build.dev_builds_crd.yaml
     deploy/crds/build.dev_clusterbuildstrategies_crd.yaml
-    # build strategies
+    # cluster scope build strategies
     samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
     samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml
     samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
@@ -30,7 +30,7 @@ function die () {
 }
 
 if [[ "${ACTION}" != "install" ]] && [[ "${ACTION}" != "uninstall" ]] ; then
-    die "Invalid argument, it should be either 'install' or 'unistall'"
+    die "Invalid argument, it should be either 'install' or 'uninstall'"
 fi
 
 # apply resource file, and on error stop executing.

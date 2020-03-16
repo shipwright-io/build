@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -26,6 +25,8 @@ var (
 	cleanupTimeout        = time.Second * 5
 	EnvVarImageRepo       = "TEST_IMAGE_REPO"
 	EnvVarImageRepoSecret = "TEST_IMAGE_REPO_SECRET"
+	modifySpec            = true
+	originalSpec          = false
 )
 
 func TestBuild(t *testing.T) {
@@ -82,31 +83,40 @@ func BuildCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outputImage := fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace)
-
 	buildIdentifier := "example-build-kaniko"
-	testBuild, testBuildStrategy, err := kanikoBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, err := kanikoBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
-	testBuild.Spec.Output.ImageURL = outputImage
-
-	validateController(t, ctx, f, testBuild, testBuildStrategy)
+	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
+	validateController(t, ctx, f, testBuild, originalSpec)
 
 	buildIdentifier = "example-build-s2i"
-	testBuild, testBuildStrategy, err = s2iBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, err = s2iBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
-	testBuild.Spec.Output.ImageURL = outputImage
-
-	validateController(t, ctx, f, testBuild, testBuildStrategy)
+	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
+	validateController(t, ctx, f, testBuild, originalSpec)
 
 	buildIdentifier = "example-build-buildah"
-	testBuild, testBuildStrategy, err = buildahBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, err = buildahBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
-	testBuild.Spec.Output.ImageURL = outputImage
-
-	validateControllerReconcileWithModifiedSpec(t, ctx, f, testBuild, testBuildStrategy)
+	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
+	validateController(t, ctx, f, testBuild, modifySpec)
 
 	buildIdentifier = "example-build-buildpacks-v3"
-	testBuild, testBuildStrategy, err = buildpackBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, err = buildpackBuildTestData(namespace, buildIdentifier)
+	require.NoError(t, err)
+	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
+		testBuild.Spec.Output = operator.Image{
+			ImageURL: os.Getenv(EnvVarImageRepo),
+			SecretRef: &v1.LocalObjectReference{
+				Name: os.Getenv(EnvVarImageRepoSecret),
+			},
+		}
+	}
+	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
+	validateController(t, ctx, f, testBuild, originalSpec)
+
+	buildIdentifier = "example-build-buildpacks-v3-namespaced"
+	testbuildStrategy, testBuild, err := buildpackBuildTestDataForNamespaced(namespace, buildIdentifier)
 	require.NoError(t, err)
 
 	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
@@ -116,20 +126,7 @@ func BuildCluster(t *testing.T) {
 				Name: os.Getenv(EnvVarImageRepoSecret),
 			},
 		}
-		validateController(t, ctx, f, testBuild, testBuildStrategy)
 	}
-
-	buildIdentifier = "example-build-buildpacks-v3-clusterbuildstrategy"
-	testBuild, testClusterBuildStrategy, err := buildpackBuildTestDataFromClusterBuildStrategy(namespace, buildIdentifier)
-	require.NoError(t, err)
-
-	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
-		testBuild.Spec.Output = operator.Image{
-			ImageURL: os.Getenv(EnvVarImageRepo),
-			SecretRef: &v1.LocalObjectReference{
-				Name: os.Getenv(EnvVarImageRepoSecret),
-			},
-		}
-		validateControllerForClusterBuildStrategy(t, ctx, f, testBuild, testClusterBuildStrategy)
-	}
+	createNamespacedBuildStrategy(t, ctx, f, testbuildStrategy)
+	validateController(t, ctx, f, testBuild, originalSpec)
 }

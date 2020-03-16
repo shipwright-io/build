@@ -5,9 +5,16 @@ import (
 )
 
 // buildahBuild Test data setup
-func buildahBuildTestData(ns string, identifier string) (*operator.Build, *operator.BuildStrategy, error) {
+func buildahBuildTestData(ns string, identifier string) (*operator.ClusterBuildStrategy, *operator.Build, error) {
+	buildstrategy, err := clusterBuildStrategyTestData("samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml")
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return buildTestData(ns, identifier,
-		"samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
-		"samples/build/build_buildah_cr.yaml")
+	build, err := buildTestData(ns, identifier, "samples/build/build_buildah_cr.yaml")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return buildstrategy, build, nil
 }

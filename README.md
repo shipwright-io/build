@@ -35,12 +35,11 @@ application builds using a registered strategy.
 
 ### `BuildStrategy`
 
-The resource `BuildStrategy` (`buildstrategies.build.dev/v1alpha1`) allows you to define a shared group of
-steps needed to fullfil the application build. Those steps are defined as
+- The resource `BuildStrategy` (`buildstrategies.build.dev/v1alpha1`) allows you to define a shared group of
+steps needed to fullfil the application build in **namespaced** scope. Those steps are defined as
 [`containers/v1`][corev1container] entries.
 
-```yml
----
+```yaml
 apiVersion: build.dev/v1alpha1
 kind: BuildStrategy
 metadata:
@@ -51,6 +50,20 @@ spec:
 ```
 The secret can be created like `kubectl create secret generic <SECRET-NAME> --from-file=.dockerconfigjson=<PATH/TO/.docker/config.json> --type=kubernetes.io/dockerconfigjson`
 
+- The resource `ClusterBuildStrategy` (`clusterbuildstrategies.build.dev/v1alpha1`) allows you to define a shared group of
+steps needed to fullfil the application build in **cluster** scope. Those steps are defined as
+[`containers/v1`][corev1container] entries.
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: source-to-image
+spec:
+  buildSteps:
+...
+```
+
 Well-known strategies can be boostrapped from [here](samples/buildstrategy).
 
 ### `Build`
@@ -59,8 +72,7 @@ The resource `Build` (`builds.dev/v1alpha1`) binds together source-code and `Bui
 culminating in the actual appplication build process being executed in Kubernetes. Please consider
 the following example:
 
-```yml
----
+```yaml
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
@@ -72,7 +84,7 @@ spec:
       name: source-repository-credentials
   strategy:
     name: buildpacks-v3
-    namespace: openshift
+    kind: ClusterBuildStrategy
   builder:
     image: heroku/buildpacks:18
     credentials: quayio-olemefer
@@ -123,8 +135,7 @@ and start the operator.
 
 5. Start a [Kaniko](samples/build/build_kaniko_cr.yaml) build
 
-```yml
----
+```yaml
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
@@ -135,7 +146,7 @@ spec:
     url: https://github.com/sbose78/taxi
   strategy:
     name: kaniko
-    namespace: build-examples
+    kind: ClusterBuildStrategy
   dockerfile: Dockerfile
   pathContext: ./
   output:

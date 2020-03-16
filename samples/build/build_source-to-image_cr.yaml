@@ -8,7 +8,7 @@ spec:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
     name: source-to-image
-    kind: BuildStrategy
+    kind: ClusterBuildStrategy
   builder:
     image: docker.io/centos/nodejs-10-centos7
   output:

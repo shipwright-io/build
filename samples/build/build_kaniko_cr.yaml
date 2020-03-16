@@ -8,7 +8,7 @@ spec:
     url: https://github.com/sbose78/taxi
   strategy:
     name: kaniko
-    kind: BuildStrategy
+    kind: ClusterBuildStrategy
   dockerfile: Dockerfile
   pathContext: ./
   output:

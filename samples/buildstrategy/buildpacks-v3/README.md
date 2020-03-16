@@ -1,24 +1,24 @@
 # `buildpacks-v3` Build Strategy
 
-Supporting [buildpacks-v3][buildpacks] `BuildStrategy` or `ClusterBuildStrategy` via a Cloud Native Builder ([CNB][cnb])
+Supporting [buildpacks-v3][buildpacks] BuildStrategy via a Cloud Native Builder ([CNB][cnb])
 container image, able to implement [lifecycle commands][lifecycle]. The following CNB images are the
 most common options:
 
 * [`heroku/buildpacks:18`][hubheroku];
 * [`cloudfoundry/cnb:bionic`][hubcloudfoundry];
 
-You can install the `BuildStrategy` in your namespace or install the `ClusterBuildStrategy` at cluster scope so that it can be shared across namespaces
+You can install the `BuildStrategy` in your namespace or install the `ClusterBuildStrategy` at cluster scope so that it can be shared across namespaces.
 
-To install the namespaced scope strategy, use:
+To install the cluster scope strategy, use:
 
 ```sh
 kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
 ```
 
-To install the cluster scope strategy, use:
+To install the namespaced scope strategy, use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildpacks-v3/clusterbuildstrategy_buildpacks-v3_cr.yaml
+kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml
 ```
 
 
@@ -43,8 +43,7 @@ oc create secret generic regcred --from-file=.dockerconfigjson="$HOME/Downloads/
 ```
 
 ### Start the build
-```yml
----
+```yaml
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
@@ -54,7 +53,7 @@ spec:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
     name: buildpacks-v3
-    kind: BuildStrategy
+    kind: ClusterBuildStrategy
   builderImage: heroku/buildpacks:18
   output:
     image: quay.io/yourorg/yourrepo
@@ -62,11 +61,11 @@ spec:
 ```
 
 **NOTE:** 
-You can switch to use `ClusterBuildStrategy` by changing the kind of strategy in above yaml file:
-```yml
+You can switch to use namespaced scope `BuildStrategy` by changing the kind of strategy in above yaml file:
+```yaml
   strategy:
     name: buildpacks-v3
-    kind: ClusterBuildStrategy
+    kind: BuildStrategy
 ```
 
 
