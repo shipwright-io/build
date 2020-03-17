@@ -5,16 +5,21 @@ import (
 )
 
 // buildpacks-v3 Test data setup
-func buildpackBuildTestData(ns string, identifier string) (*operator.ClusterBuildStrategy, *operator.Build, error) {
+func buildpackBuildTestData(ns string, identifier string) (*operator.ClusterBuildStrategy, *operator.Build, *operator.BuildRun, error) {
 	buildstrategy, err := clusterBuildStrategyTestData("samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	build, err := buildTestData(ns, identifier, "samples/build/build_buildpacks-v3_cr.yaml")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return buildstrategy, build, nil
+	buildRun, err := buildRunTestData(ns, identifier, "samples/buildrun/buildrun_buildpacks-v3_cr.yaml")
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return buildstrategy, build, buildRun, nil
 }

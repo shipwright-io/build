@@ -1,42 +1,40 @@
-package build
+package buildrun
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
+	"strings"
 )
 
 const (
+	defaultServiceAccountName = "default"
 	pipelineServiceAccountName = "pipeline"
-	inputImageResourceName    = "source"
-	inputImageResourceURL     = "url"
+	inputImageResourceName     = "source"
+	inputImageResourceURL      = "url"
 	inputParamBuilderImage     = "BUILDER_IMAGE"
 	inputParamDockerfile       = "DOCKERFILE"
 	inputParamPathContext      = "PATH_CONTEXT"
 	outputImageResourceName    = "image"
 	outputImageResourceURL     = "url"
-
-	labelBuildGeneration = "build.dev/generation"
-	labelBuild           = "build.dev/build"
 )
 
 // getStringTransformations gets us MANDATORY replacements using
 // a poor man's templating mechanism - TODO: Use golang templating
-func getStringTransformations(fullText string) string {
+func getStringTransformations(build *buildv1alpha1.Build, fullText string) string {
+
 	stringTransformations := map[string]string{
 		"$(build.output.image)":  "$(outputs.resources.image.url)",
 		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
 		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
 		"$(build.pathContext)":   fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 	}
+
 	// Run the text through all possible replacements
 	for k, v := range stringTransformations {
 		fullText = strings.ReplaceAll(fullText, k, v)
@@ -44,68 +42,58 @@ func getStringTransformations(fullText string) string {
 	return fullText
 }
 
-func getCustomTask(buildInstance *buildv1alpha1.Build, buildSteps []buildv1alpha1.BuildStep) *taskv1.Task {
+func generateTaskSpec(build *buildv1alpha1.Build, buildSteps []buildv1alpha1.BuildStep) *taskv1.TaskSpec {
 
-	generatedTask := taskv1.Task{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      buildInstance.Name,
-			Namespace: buildInstance.Namespace,
-			Labels: map[string]string{
-				labelBuild:           buildInstance.Name,
-				labelBuildGeneration: strconv.FormatInt(buildInstance.GetGeneration(), 10),
+	generatedTaskSpec := taskv1.TaskSpec{
+		Inputs: &taskv1.Inputs{
+			Params: []taskv1.ParamSpec{
+				{
+					Description: "Image containing the build tools/logic",
+					Name:        inputParamBuilderImage,
+					Default: &taskv1.ArrayOrString{
+						Type:      taskv1.ParamTypeString,
+						StringVal: "docker.io/centos/nodejs-8-centos7", // not really needed.
+					},
+				},
+				{
+					Description: "Path to the Dockerfile",
+					Name:        inputParamDockerfile,
+					Default: &taskv1.ArrayOrString{
+						Type:      taskv1.ParamTypeString,
+						StringVal: "Dockerfile",
+					},
+				},
+				{
+					// PATH_CONTEXT comes from the git source specification
+					// in the Build object
+					Description: "The root of the code",
+					Name:        inputParamPathContext,
+					Default: &taskv1.ArrayOrString{
+						Type:      taskv1.ParamTypeString,
+						StringVal: ".",
+					},
+				},
+			},
+			Resources: []taskv1.TaskResource{
+				{
+					ResourceDeclaration: taskv1.ResourceDeclaration{
+						Name: inputImageResourceName,
+						Type: taskv1.PipelineResourceTypeGit,
+					},
+				},
 			},
 		},
-		Spec: taskv1.TaskSpec{
-			Inputs: &taskv1.Inputs{
-				Params: []taskv1.ParamSpec{
-					{
-						Description: "Image containing the build tools/logic",
-						Name:        inputParamBuilderImage,
-						Default: &taskv1.ArrayOrString{
-							Type:      taskv1.ParamTypeString,
-							StringVal: "docker.io/centos/nodejs-8-centos7", // not really needed.
-						},
-					},
-					{
-						Description: "Path to the Dockerfile",
-						Name:        inputParamDockerfile,
-						Default: &taskv1.ArrayOrString{
-							Type:      taskv1.ParamTypeString,
-							StringVal: "Dockerfile",
-						},
-					},
-					{
-						// PATH_CONTEXT comes from the git source specification
-						// in the Build object
-						Description: "The root of the code",
-						Name:        inputParamPathContext,
-						Default: &taskv1.ArrayOrString{
-							Type:      taskv1.ParamTypeString,
-							StringVal: ".",
-						},
-					},
-				},
-				Resources: []taskv1.TaskResource{
-					{
-						ResourceDeclaration: taskv1.ResourceDeclaration{
-							Name: inputImageResourceName,
-							Type: taskv1.PipelineResourceTypeGit,
-						},
+		Outputs: &taskv1.Outputs{
+			Resources: []taskv1.TaskResource{
+				{
+					ResourceDeclaration: taskv1.ResourceDeclaration{
+						Name: outputImageResourceName, // mapped from {{ .Build.OutputImage }}
+						Type: taskv1.PipelineResourceTypeImage,
 					},
 				},
 			},
-			Outputs: &taskv1.Outputs{
-				Resources: []taskv1.TaskResource{
-					{
-						ResourceDeclaration: taskv1.ResourceDeclaration{
-							Name: outputImageResourceName, // mapped from {{ .Build.OutputImage }}
-							Type: taskv1.PipelineResourceTypeImage,
-						},
-					},
-				},
-			},
-			Steps: []v1alpha1.Step{},
 		},
+		Steps: []v1alpha1.Step{},
 	}
 
 	var vols []corev1.Volume
@@ -114,15 +102,15 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildSteps []buildv1alpha
 
 		var taskCommand []string
 		for _, buildStrategyCommandPart := range containerValue.Command {
-			taskCommand = append(taskCommand, getStringTransformations(buildStrategyCommandPart))
+			taskCommand = append(taskCommand, getStringTransformations(build, buildStrategyCommandPart))
 		}
 
 		var taskArgs []string
 		for _, buildStrategyArgPart := range containerValue.Args {
-			taskArgs = append(taskArgs, getStringTransformations(buildStrategyArgPart))
+			taskArgs = append(taskArgs, getStringTransformations(build, buildStrategyArgPart))
 		}
 
-		taskImage := getStringTransformations(containerValue.Image)
+		taskImage := getStringTransformations(build, containerValue.Image)
 
 		step := v1alpha2.Step{
 			Container: corev1.Container{
@@ -137,7 +125,7 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildSteps []buildv1alpha
 			},
 		}
 
-		generatedTask.Spec.Steps = append(generatedTask.Spec.Steps, step)
+		generatedTaskSpec.Steps = append(generatedTaskSpec.Steps, step)
 
 		// Get volumeMounts added to Task's spec.Volumes
 		for _, volumeInBuildStrategy := range containerValue.VolumeMounts {
@@ -155,23 +143,27 @@ func getCustomTask(buildInstance *buildv1alpha1.Build, buildSteps []buildv1alpha
 
 		}
 	}
-	generatedTask.Spec.Volumes = vols
-	return &generatedTask
+
+	generatedTaskSpec.Volumes = vols
+	return &generatedTaskSpec
 }
-func getCustomTaskRun(buildInstance *buildv1alpha1.Build) *taskv1.TaskRun {
+
+func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) *taskv1.TaskRun {
+
 	expectedTaskRun := &taskv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      buildInstance.Name,
-			Namespace: buildInstance.Namespace,
+			GenerateName: buildRun.Name + "-",
+			Namespace: buildRun.Namespace,
 			Labels: map[string]string{
-				labelBuild: buildInstance.Name,
+				buildv1alpha1.LabelBuild: build.Name,
+				buildv1alpha1.LabelBuildGeneration: strconv.FormatInt(build.Generation, 10),
+				buildv1alpha1.LabelBuildRun: buildRun.Name,
+				buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
 			},
 		},
 		Spec: taskv1.TaskRunSpec{
-			ServiceAccountName: pipelineServiceAccountName,
-			TaskRef: &v1alpha1.TaskRef{
-				Name: buildInstance.Name,
-			},
+			ServiceAccountName: serviceAccountName,
+			TaskSpec: generateTaskSpec(build, buildSteps),
 			Inputs: taskv1.TaskRunInputs{
 				Resources: []taskv1.TaskResourceBinding{
 					{
@@ -182,7 +174,7 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build) *taskv1.TaskRun {
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  inputImageResourceURL,
-										Value: buildInstance.Spec.Source.URL,
+										Value: build.Spec.Source.URL,
 									},
 								},
 							},
@@ -200,7 +192,7 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build) *taskv1.TaskRun {
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  outputImageResourceURL,
-										Value: buildInstance.Spec.Output.ImageURL,
+										Value: build.Spec.Output.ImageURL,
 									},
 								},
 							},
@@ -212,31 +204,30 @@ func getCustomTaskRun(buildInstance *buildv1alpha1.Build) *taskv1.TaskRun {
 	}
 
 	var inputParams []taskv1.Param
-	if buildInstance.Spec.BuilderImage != nil {
+	if build.Spec.BuilderImage != nil {
 		inputParams = append(inputParams, taskv1.Param{
-
 			Name: inputParamBuilderImage,
 			Value: taskv1.ArrayOrString{
 				Type:      taskv1.ParamTypeString,
-				StringVal: buildInstance.Spec.BuilderImage.ImageURL,
+				StringVal: build.Spec.BuilderImage.ImageURL,
 			},
 		})
 	}
-	if buildInstance.Spec.Dockerfile != nil {
+	if build.Spec.Dockerfile != nil {
 		inputParams = append(inputParams, taskv1.Param{
 			Name: inputParamDockerfile,
 			Value: taskv1.ArrayOrString{
 				Type:      taskv1.ParamTypeString,
-				StringVal: *buildInstance.Spec.Dockerfile,
+				StringVal: *build.Spec.Dockerfile,
 			},
 		})
 	}
-	if buildInstance.Spec.Source.ContextDir != nil {
+	if build.Spec.Source.ContextDir != nil {
 		inputParams = append(inputParams, taskv1.Param{
 			Name: inputParamPathContext,
 			Value: taskv1.ArrayOrString{
 				Type:      taskv1.ParamTypeString,
-				StringVal: *buildInstance.Spec.Source.ContextDir,
+				StringVal: *build.Spec.Source.ContextDir,
 			},
 		})
 	}

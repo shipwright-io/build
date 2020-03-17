@@ -1,4 +1,4 @@
-package build
+package buildrun
 
 import (
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
@@ -6,24 +6,24 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func applyCredentials(buildInstance *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
+func applyCredentials(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
 
 	// credentials of the source/git repo
-	sourceSecret := buildInstance.Spec.Source.SecretRef
-	if sourceSecret != nil {
-		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
-	}
-
-	// credentials of the 'output' image registry
-	sourceSecret = buildInstance.Spec.Output.SecretRef
+	sourceSecret := build.Spec.Source.SecretRef
 	if sourceSecret != nil {
 		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
 	}
 
 	// credentials of the 'Builder' image registry
-	builderImage := buildInstance.Spec.BuilderImage
+	builderImage := build.Spec.BuilderImage
 	if builderImage != nil && builderImage.SecretRef != nil {
 		serviceAccount = updateServiceAccountIfSecretNotLinked(builderImage.SecretRef, serviceAccount)
+	}
+
+	// credentials of the 'output' image registry
+	sourceSecret = build.Spec.Output.SecretRef
+	if sourceSecret != nil {
+		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
 	}
 
 	return serviceAccount

@@ -10,12 +10,13 @@ ACTION="${1}"
 CRDS=(
     # operator components
     deploy/role.yaml
-    deploy/service_account.yaml
     deploy/role_binding.yaml
+    deploy/service_account.yaml
     deploy/operator.yaml
     deploy/crds/build.dev_buildstrategies_crd.yaml
-    deploy/crds/build.dev_builds_crd.yaml
     deploy/crds/build.dev_clusterbuildstrategies_crd.yaml
+    deploy/crds/build.dev_builds_crd.yaml
+    deploy/crds/build.dev_buildruns_crd.yaml
     # cluster scope build strategies
     samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
     samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml

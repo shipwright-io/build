@@ -68,9 +68,8 @@ Well-known strategies can be boostrapped from [here](samples/buildstrategy).
 
 ### `Build`
 
-The resource `Build` (`builds.dev/v1alpha1`) binds together source-code and `BuildStrategy`
-culminating in the actual appplication build process being executed in Kubernetes. Please consider
-the following example:
+The resource `Build` (`builds.dev/v1alpha1`) binds together source-code and `BuildStrategy` and related configuration as the build definition
+Please consider the following example:
 
 ```yaml
 apiVersion: build.dev/v1alpha1
@@ -92,6 +91,21 @@ spec:
     image: quay.io/olemefer/nodejs-ex:v1
     credentials:
       name: quayio-olemefer
+```
+
+### `BuildRun`
+
+The resource `BuildRun` (`buildruns.dev/v1alpha1`) is the build process of a build definition which is executed in Kubernetes. 
+Please consider the following example:
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun
+spec:
+  buildRef:
+    name: buildpack-nodejs-build
 ```
 
 The resource is updated as soon as the current building status changes:

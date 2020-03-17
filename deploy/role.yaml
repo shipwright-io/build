@@ -72,6 +72,7 @@ rules:
   - '*'
   - buildstrategies
   - clusterbuildstrategies
+  - buildruns
   verbs:
   - create
   - delete
@@ -81,7 +82,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - "tekton.dev"
+  - tekton.dev
   resources:
   - tasks
   - taskruns

@@ -8,7 +8,7 @@ import (
 
 // ClusterBuildStrategy is the Schema for the clusterbuildstrategies API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=clusterbuildstrategies,scope=Cluster
+// +kubebuilder:resource:path=clusterbuildstrategies,scope=Cluster,shortName=cbs;cbss
 type ClusterBuildStrategy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

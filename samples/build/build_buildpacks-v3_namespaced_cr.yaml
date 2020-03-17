@@ -2,7 +2,7 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildpack-nodejs-build
+  name: buildpack-nodejs-build-namespaced
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex

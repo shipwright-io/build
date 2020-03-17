@@ -7,9 +7,7 @@ import (
 
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+
 	BuildSteps []BuildStep `json:"buildSteps,omitempty"`
 }
 
@@ -21,16 +19,15 @@ type BuildStep struct {
 
 // BuildStrategyStatus defines the observed state of BuildStrategy
 type BuildStrategyStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // BuildStrategy is the Schema for the buildstrategies API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=buildstrategies,scope=Namespaced
+// +kubebuilder:resource:path=buildstrategies,scope=Namespaced,shortName=bs;bss
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.strategy.kind",description="The BuildStrategy type which is used for this Build"
 type BuildStrategy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
