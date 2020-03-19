@@ -6,17 +6,20 @@ go:
 services:
 - docker
 
+env:
+- SDK_VERSION=v0.15.2 TEKTON_VERSION=v0.10.1 KUBECTL_VERSION=v1.17.0 KIND_VERSION=v0.7.0
+
 install:
-- curl --silent --location --remote-name https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/amd64/kubectl && chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl
-- curl --silent --location --remote-name https://github.com/operator-framework/operator-sdk/releases/download/v0.15.2/operator-sdk-v0.15.2-x86_64-linux-gnu && mv ./operator-sdk-v0.15.2-x86_64-linux-gnu operator-sdk && chmod +x ./operator-sdk && sudo mv ./operator-sdk /usr/local/bin/operator-sdk
-- curl --silent --location --remote-name https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-$(uname)-amd64 && mv ./kind-$(uname)-amd64 kind && chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
+- curl --silent --location --remote-name https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl
+- curl --silent --location --remote-name https://github.com/operator-framework/operator-sdk/releases/download/${SDK_VERSION}/operator-sdk-${SDK_VERSION}-x86_64-linux-gnu && mv ./operator-sdk-${SDK_VERSION}-x86_64-linux-gnu operator-sdk && chmod +x ./operator-sdk && sudo mv ./operator-sdk /usr/local/bin/operator-sdk
+- curl --silent --location --remote-name https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-$(uname)-amd64 && mv ./kind-$(uname)-amd64 kind && chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
 
 before_script:
 - echo "# Installing Kind..." && kind --quiet create cluster
 - echo "# Creating a new Kubernetes cluster..." && kubectl config use-context "kind-kind"
 - echo "# Kind nodes:" && kubectl get nodes
-- echo "# Deploying Tekton Pipelines Operator v0.10.1"
-- kubectl apply --filename="https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.10.1/release.yaml" --output="yaml"
+- echo "# Deploying Tekton Pipelines Operator ${TEKTON_VERSION}"
+- kubectl apply --filename="https://storage.googleapis.com/tekton-releases/pipeline/previous/${TEKTON_VERSION}/release.yaml" --output="yaml"
 
 script:
 - make
