@@ -75,7 +75,7 @@ Please consider the following example:
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build-buildpack 
+  name: buildpack-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
@@ -108,20 +108,20 @@ spec:
     name: buildpack-nodejs-build
 ```
 
-The resource is updated as soon as the current building status changes:
+The BuildRun resource is updated as soon as the current building status changes:
 
 ```
-$ kubectl get builds.build.dev buildpacks
-NAME         STATUS
-buildpacks   Running
+$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
+NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
+buildpack-nodejs-buildrun     Unknown     Running     70s
 ```
 
 And finally:
 
 ```
-$ kubectl get builds.build.dev buildpacks
-NAME         STATUS
-buildpacks   Succeeded
+$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
+NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
+buildpack-nodejs-buildrun     True        Succeeded   2m10s       74s
 ```
 
 #### Examples
@@ -137,17 +137,17 @@ Examples of `Build` resource using the example strategies shipped with this oper
 
 ## Try it!
 
-1. Install Tekton, optionally you could use
+- Install Tekton, optionally you could use
 [OpenShift Pipelines Community Operator][pipelinesoperator]
 
-2. Install [`operator-sdk`][operatorsdk]
+- Install [operator-sdk][operatorsdk]
 
-3. Create a project or namespace called `build-examples`
+- Create a project or namespace called **build-examples** by using `kubectl create namespace build-examples`
 
-4. Execute `make local` to register [well-known build strategies](samples/buildstrategies) including  `Kaniko`
+- Execute `make local` to register [well-known build strategies](samples/buildstrategies) including **Kaniko**
 and start the operator.
 
-5. Start a [Kaniko](samples/build/build_kaniko_cr.yaml) build
+- Create a [Kaniko](samples/build/build_kaniko_cr.yaml) build
 
 ```yaml
 apiVersion: build.dev/v1alpha1
@@ -165,6 +165,19 @@ spec:
   pathContext: ./
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+```
+
+- Start a [Kaniko](samples/buildrun/buildrun_kaniko_cr.yaml) buildrun
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: kaniko-golang-buildrun
+  namespace: build-examples
+spec:
+  buildRef:
+    name: kaniko-golang-build
 ```
 
 ## Development

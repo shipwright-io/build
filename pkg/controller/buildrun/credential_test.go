@@ -111,7 +111,7 @@ func TestApplyCredentials(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := applyCredentials(tt.args.build, tt.args.buildRun, tt.args.serviceAccount); !reflect.DeepEqual(got, tt.want) {
+			if got := applyCredentials(tt.args.build, tt.args.serviceAccount); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("applyCredentials() = %v, want %v", got, tt.want)
 			}
 		})

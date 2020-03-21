@@ -26,7 +26,7 @@ const (
 
 // getStringTransformations gets us MANDATORY replacements using
 // a poor man's templating mechanism - TODO: Use golang templating
-func getStringTransformations(build *buildv1alpha1.Build, fullText string) string {
+func getStringTransformations(fullText string) string {
 
 	stringTransformations := map[string]string{
 		"$(build.output.image)":  "$(outputs.resources.image.url)",
@@ -102,15 +102,15 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildSteps []buildv1alpha1.Bui
 
 		var taskCommand []string
 		for _, buildStrategyCommandPart := range containerValue.Command {
-			taskCommand = append(taskCommand, getStringTransformations(build, buildStrategyCommandPart))
+			taskCommand = append(taskCommand, getStringTransformations(buildStrategyCommandPart))
 		}
 
 		var taskArgs []string
 		for _, buildStrategyArgPart := range containerValue.Args {
-			taskArgs = append(taskArgs, getStringTransformations(build, buildStrategyArgPart))
+			taskArgs = append(taskArgs, getStringTransformations(buildStrategyArgPart))
 		}
 
-		taskImage := getStringTransformations(build, containerValue.Image)
+		taskImage := getStringTransformations(containerValue.Image)
 
 		step := v1alpha2.Step{
 			Container: corev1.Container{

@@ -136,7 +136,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Error(err, "Failed to get ServiceAccount from BuildRun", "BuildRun", buildRun.Name)
 		return reconcile.Result{}, err
 	}
-	serviceAccount = applyCredentials(build, buildRun, serviceAccount)
+	serviceAccount = applyCredentials(build, serviceAccount)
 	err = r.client.Update(context.TODO(), serviceAccount)
 	if err != nil {
 		reqLogger.Error(err, "Failed to update ServiceAccount", "ServiceAccount", serviceAccount.Name)
