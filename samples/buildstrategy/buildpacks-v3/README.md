@@ -42,7 +42,9 @@ On this screen, there is a link below "Step 1", to download your secret "Downloa
 oc create secret generic regcred --from-file=.dockerconfigjson="$HOME/Downloads/${QUAYIO_USERNAME}-auth.json" --type=kubernetes.io/dockerconfigjson
 ```
 
-### Start the build
+### Create a Build
+The Build is a build definition which defines the related configuration for the build.
+Such as Github source, Output Image, BuildStrategy, etc...
 ```yaml
 apiVersion: build.dev/v1alpha1
 kind: Build
@@ -58,6 +60,18 @@ spec:
   output:
     image: quay.io/yourorg/yourrepo
     credentials: regcred
+```
+
+### Start a BuildRun
+The BuildRun is a build execution instance which runs from an existing build definition
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun
+spec:
+  buildRef:
+    name: buildpack-nodejs-build
 ```
 
 **NOTE:** 

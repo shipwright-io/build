@@ -3,11 +3,19 @@ kind: CustomResourceDefinition
 metadata:
   name: buildstrategies.build.dev
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.strategy.kind
+    description: The BuildStrategy type which is used for this Build
+    name: Version
+    type: string
   group: build.dev
   names:
     kind: BuildStrategy
     listKind: BuildStrategyList
     plural: buildstrategies
+    shortNames:
+    - bs
+    - bss
     singular: buildstrategy
   scope: Namespaced
   subresources:
@@ -32,10 +40,6 @@ spec:
           description: BuildStrategySpec defines the desired state of BuildStrategy
           properties:
             buildSteps:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file Add custom validation using kubebuilder tags:
-                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               items:
                 description: BuildStep defines a partial step that needs to run in
                   container for building the image.

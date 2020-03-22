@@ -84,25 +84,25 @@ func BuildCluster(t *testing.T) {
 	}
 
 	buildIdentifier := "example-build-kaniko"
-	testClusterBuildStrategy, testBuild, err := kanikoBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, testBuildRun, err := kanikoBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
 
 	buildIdentifier = "example-build-s2i"
-	testClusterBuildStrategy, testBuild, err = s2iBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, testBuildRun, err = s2iBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
 
 	buildIdentifier = "example-build-buildah"
-	testClusterBuildStrategy, testBuild, err = buildahBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, testBuildRun, err = buildahBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, modifySpec)
+	validateController(t, ctx, f, testBuild, testBuildRun, modifySpec)
 
 	buildIdentifier = "example-build-buildpacks-v3"
-	testClusterBuildStrategy, testBuild, err = buildpackBuildTestData(namespace, buildIdentifier)
+	testClusterBuildStrategy, testBuild, testBuildRun, err = buildpackBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
 	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
 		testBuild.Spec.Output = operator.Image{
@@ -113,10 +113,10 @@ func BuildCluster(t *testing.T) {
 		}
 	}
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
 
 	buildIdentifier = "example-build-buildpacks-v3-namespaced"
-	testbuildStrategy, testBuild, err := buildpackBuildTestDataForNamespaced(namespace, buildIdentifier)
+	testbuildStrategy, testBuild, testBuildRun, err := buildpackBuildTestDataForNamespaced(namespace, buildIdentifier)
 	require.NoError(t, err)
 
 	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
@@ -128,5 +128,5 @@ func BuildCluster(t *testing.T) {
 		}
 	}
 	createNamespacedBuildStrategy(t, ctx, f, testbuildStrategy)
-	validateController(t, ctx, f, testBuild, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
 }

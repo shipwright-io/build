@@ -1,8 +1,9 @@
-package build
+package buildrun
 
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
@@ -18,29 +19,28 @@ const (
 	url     = "https://github.com/sbose78/taxi"
 )
 
-func TestGenerateTask(t *testing.T) {
+func TestGenerateTaskSpec(t *testing.T) {
 
 	dockerfile := "Dockerfile"
 	builderImage := buildv1alpha1.Image{
 		ImageURL: "quay.io/builder/image",
 	}
 	buildStrategy := buildv1alpha1.ClusterBuildStrategyKind
-	outputPath := "image-registry.openshift-image-registry.svc:5000/example/taxi-app"
 	truePtr := true
 
 	type args struct {
-		buildInstance         *buildv1alpha1.Build
-		buildStrategyInstance *buildv1alpha1.BuildStrategy
+		build         *buildv1alpha1.Build
+		buildStrategy *buildv1alpha1.BuildStrategy
 	}
 	tests := []struct {
 		name string
 		args args
-		want *taskv1.Task
+		want *taskv1.TaskSpec
 	}{
 		{
-			"task generation",
+			"taskSpec generation",
 			args{
-				buildInstance: &buildv1alpha1.Build{
+				build: &buildv1alpha1.Build{
 					ObjectMeta: metav1.ObjectMeta{Name: buildah},
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
@@ -52,13 +52,10 @@ func TestGenerateTask(t *testing.T) {
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
-						Output: buildv1alpha1.Image{
-							ImageURL: outputPath,
-						},
 					},
 				},
 
-				buildStrategyInstance: &buildv1alpha1.BuildStrategy{
+				buildStrategy: &buildv1alpha1.BuildStrategy{
 					ObjectMeta: metav1.ObjectMeta{Name: buildah},
 					Spec: buildv1alpha1.BuildStrategySpec{
 						BuildSteps: []buildv1alpha1.BuildStep{
@@ -102,27 +99,27 @@ func TestGenerateTask(t *testing.T) {
 					},
 				},
 			},
-			&taskv1.Task{}, // not using it for now
+			&taskv1.TaskSpec{}, // not using it for now
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCustomTask(tt.args.buildInstance, tt.args.buildStrategyInstance.Spec.BuildSteps)
+			got := generateTaskSpec(tt.args.build, tt.args.buildStrategy.Spec.BuildSteps)
 			expectedCommandOrArg := []string{
 				"buildah", "bud", "--tls-verify=false", "--layers", "-f", fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile), "-t", "$(outputs.resources.image.url)", fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 			}
 
 			// ensure IMAGE is replaced by builder image when needed.
-			assert.Equal(t, fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage), got.Spec.Steps[0].Container.Image)
+			assert.Equal(t, fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage), got.Steps[0].Container.Image)
 
 			// ensure command replacements happen when needed
-			assert.True(t, reflect.DeepEqual(got.Spec.Steps[0].Container.Command, expectedCommandOrArg))
+			assert.True(t, reflect.DeepEqual(got.Steps[0].Container.Command, expectedCommandOrArg))
 
 			// ensure arg replacements happen when needed.
-			assert.True(t, reflect.DeepEqual(expectedCommandOrArg, got.Spec.Steps[0].Container.Args))
+			assert.True(t, reflect.DeepEqual(expectedCommandOrArg, got.Steps[0].Container.Args))
 
 			// Ensure top level volumes are populated.
-			assert.Equal(t, 2, len(got.Spec.Volumes))
+			assert.Equal(t, 2, len(got.Volumes))
 		})
 	}
 }
@@ -137,10 +134,11 @@ func TestGenerateTaskRun(t *testing.T) {
 	}
 	clustertBuildStrategy := buildv1alpha1.ClusterBuildStrategyKind
 	outputPath := "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
+	serviceAccountName := buildpacks + "-serviceaccount"
 
 	type args struct {
-		buildInstance         *buildv1alpha1.Build
-		buildStrategyInstance *buildv1alpha1.BuildStrategy
+		build         *buildv1alpha1.Build
+		buildRun      *buildv1alpha1.BuildRun
 	}
 	tests := []struct {
 		name string
@@ -150,7 +148,7 @@ func TestGenerateTaskRun(t *testing.T) {
 		{
 			"taskrun generation",
 			args{
-				buildInstance: &buildv1alpha1.Build{
+				build: &buildv1alpha1.Build{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: buildpacks,
 						Namespace: namespace,
@@ -171,22 +169,32 @@ func TestGenerateTaskRun(t *testing.T) {
 						},
 					},
 				},
-
-				buildStrategyInstance: &buildv1alpha1.BuildStrategy{},
+				buildRun: &buildv1alpha1.BuildRun{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: buildpacks + "-run",
+						Namespace: namespace,
+					},
+					Spec: buildv1alpha1.BuildRunSpec{
+						BuildRef: &buildv1alpha1.BuildRef{
+							Name:       buildpacks,
+						},
+						ServiceAccount: &serviceAccountName,
+					},
+				},
 			},
 			&taskv1.TaskRun{}, // not using it for now
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCustomTaskRun(tt.args.buildInstance)
+			got := generateTaskRun(tt.args.build, tt.args.buildRun, serviceAccountName, nil)
 
 			// ensure generated TaskRun's basic information are correct
-			assert.True(t, reflect.DeepEqual(got.Name, buildpacks))
+			assert.True(t, reflect.DeepEqual(true, strings.Contains(got.GenerateName, tt.args.buildRun.Name + "-")))
 			assert.True(t, reflect.DeepEqual(got.Namespace, namespace))
-			assert.True(t, reflect.DeepEqual(got.Spec.ServiceAccountName, pipelineServiceAccountName))
-			assert.True(t, reflect.DeepEqual(got.Spec.TaskRef.Name, tt.args.buildInstance.Name))
-			assert.True(t, reflect.DeepEqual(got.Labels[labelBuild], tt.args.buildInstance.Name))
+			assert.True(t, reflect.DeepEqual(got.Spec.ServiceAccountName, buildpacks + "-serviceaccount"))
+			assert.True(t, reflect.DeepEqual(got.Labels[buildv1alpha1.LabelBuild], tt.args.build.Name))
+			assert.True(t, reflect.DeepEqual(got.Labels[buildv1alpha1.LabelBuildRun], tt.args.buildRun.Name))
 
 			// ensure generated TaskRun's input and output resources are correct
 			inputResources := got.Spec.Inputs.Resources

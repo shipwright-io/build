@@ -4,6 +4,8 @@ import (
 	goctx "context"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -12,8 +14,9 @@ import (
 	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/stretchr/testify/require"
 
-	pipelinev1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-
+	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
 )
@@ -45,38 +48,47 @@ func validateController(
 	ctx *framework.TestCtx,
 	f *framework.Framework,
 	testBuild *operator.Build,
+	testBuildRun *operator.BuildRun,
 	modifySpec bool) {
-	buildIdentifier := testBuild.GetName()
 	namespace, _ := ctx.GetNamespace()
+	pendingStatus := "Pending"
+	runningStatus := "Running"
+	trueCondition := v1.ConditionTrue
 
+	// Modify the Output image URL for testing
+	if modifySpec {
+		testBuild.Spec.Output.ImageURL = fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace)
+	}
+
+	// Ensure the Build has been created
 	err := f.Client.Create(goctx.TODO(), testBuild, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	time.Sleep(5 * time.Second)
+	// Ensure the BuildRun has been created
+	err = f.Client.Create(goctx.TODO(), testBuildRun, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	//  Ensure that a Task has been created
+	time.Sleep(15 * time.Second)
 
-	generatedTask := &pipelinev1.Task{}
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, generatedTask)
-	require.NoError(t, err)
-	require.NotNil(t, generatedTask)
-
-	// Ensure that a TaskRun has been created and is in pending state
-
-	generatedTaskRun := &pipelinev1.TaskRun{}
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, generatedTaskRun)
-	require.NoError(t, err)
-	require.NotNil(t, generatedTaskRun)
-
-	// Ensure Build is in Pending state
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, testBuild)
-	require.NoError(t, err)
-
+	// Ensure that a TaskRun has been created and is in pending or running state
 	pendingOrRunning := false
+	generatedTaskRun, err := getTaskRun(testBuild, testBuildRun, f)
+	require.NoError(t, err)
+	pendingOrRunning = false
+	if generatedTaskRun.Status.Conditions[0].Reason == pendingStatus || generatedTaskRun.Status.Conditions[0].Reason == runningStatus {
+		pendingOrRunning = true
+	}
+	require.True(t, pendingOrRunning)
 
-	if testBuild.Status.Status == "Pending" || testBuild.Status.Status == "Running" {
+	// Ensure BuildRun is in pending or running state
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}, testBuildRun)
+	require.NoError(t, err)
+	pendingOrRunning = false
+	if testBuildRun.Status.Reason == pendingStatus || testBuildRun.Status.Reason == runningStatus {
 		pendingOrRunning = true
 	}
 	require.True(t, pendingOrRunning)
@@ -85,45 +97,24 @@ func validateController(
 	foundRunning := false
 	for i := 1; i <= 10; i++ {
 		time.Sleep(3 * time.Second)
-		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, testBuild)
+		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}, testBuildRun)
 		require.NoError(t, err)
 
-		if testBuild.Status.Status == "Running" {
+		if testBuildRun.Status.Reason == runningStatus {
 			foundRunning = true
 			break
 		}
 	}
 	require.True(t, foundRunning)
 
-	if modifySpec {
-		// Instead of letting it go to Succeeded, let's update the spec a bit.
-		// These trigger deletion of existing Task[Run]
-
-		testBuild.Spec.Output.ImageURL = fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace)
-		err = f.Client.Update(goctx.TODO(), testBuild)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Ensure Build is BACK TO Pending state
-
-		time.Sleep(5 * time.Second)
-		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, testBuild)
-		require.NoError(t, err)
-		if testBuild.Status.Status == "Pending" || testBuild.Status.Status == "Running" {
-			pendingOrRunning = true
-		}
-		require.True(t, pendingOrRunning)
-	}
-
 	// Ensure that eventually the Build moves to Succeeded.
 	foundSuccessful := false
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 6; i++ {
 		time.Sleep(20 * time.Second)
-		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildIdentifier, Namespace: namespace}, testBuild)
+		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}, testBuildRun)
 		require.NoError(t, err)
 
-		if testBuild.Status.Status == "Succeeded" {
+		if testBuildRun.Status.Succeeded == trueCondition {
 			foundSuccessful = true
 			break
 		}
@@ -197,4 +188,54 @@ func buildTestData(ns string, identifier string, buildCRPath string) (*operator.
 	build.SetName(identifier)
 
 	return build, err
+}
+
+// buildTestData gets the us the Build test data set up
+func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*operator.BuildRun, error) {
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	operatorapis.AddToScheme(scheme.Scheme)
+
+	yaml, err := ioutil.ReadFile(buildRunCRPath)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return nil, err
+	}
+
+	obj, _, err := decode([]byte(yaml), nil, nil)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return nil, err
+	}
+	buildRun := obj.(*operator.BuildRun)
+
+	buildRun.SetNamespace(ns)
+	buildRun.SetName(identifier)
+	buildRun.Spec.BuildRef.Name = identifier
+
+	return buildRun, err
+}
+
+func getTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, f *framework.Framework) (*taskv1.TaskRun, error) {
+
+	taskRunList := &taskv1.TaskRunList{}
+
+	lbls := map[string]string{
+		buildv1alpha1.LabelBuild: build.Name,
+		buildv1alpha1.LabelBuildRun: buildRun.Name,
+	}
+	opts := client.ListOptions{
+		Namespace:     buildRun.Namespace,
+		LabelSelector: labels.SelectorFromSet(lbls),
+	}
+	err := f.Client.List(goctx.TODO(), taskRunList, &opts)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(taskRunList.Items) > 0 {
+		return &taskRunList.Items[len(taskRunList.Items)-1], nil
+	}
+	return nil, nil
 }

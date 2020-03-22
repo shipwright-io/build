@@ -68,15 +68,14 @@ Well-known strategies can be boostrapped from [here](samples/buildstrategy).
 
 ### `Build`
 
-The resource `Build` (`builds.dev/v1alpha1`) binds together source-code and `BuildStrategy`
-culminating in the actual appplication build process being executed in Kubernetes. Please consider
-the following example:
+The resource `Build` (`builds.dev/v1alpha1`) binds together source-code and `BuildStrategy` and related configuration as the build definition
+Please consider the following example:
 
 ```yaml
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: example-build-buildpack 
+  name: buildpack-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
@@ -94,20 +93,35 @@ spec:
       name: quayio-olemefer
 ```
 
-The resource is updated as soon as the current building status changes:
+### `BuildRun`
+
+The resource `BuildRun` (`buildruns.dev/v1alpha1`) is the build process of a build definition which is executed in Kubernetes. 
+Please consider the following example:
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun
+spec:
+  buildRef:
+    name: buildpack-nodejs-build
+```
+
+The BuildRun resource is updated as soon as the current building status changes:
 
 ```
-$ kubectl get builds.build.dev buildpacks
-NAME         STATUS
-buildpacks   Running
+$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
+NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
+buildpack-nodejs-buildrun     Unknown     Running     70s
 ```
 
 And finally:
 
 ```
-$ kubectl get builds.build.dev buildpacks
-NAME         STATUS
-buildpacks   Succeeded
+$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
+NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
+buildpack-nodejs-buildrun     True        Succeeded   2m10s       74s
 ```
 
 #### Examples
@@ -123,17 +137,17 @@ Examples of `Build` resource using the example strategies shipped with this oper
 
 ## Try it!
 
-1. Install Tekton, optionally you could use
+- Install Tekton, optionally you could use
 [OpenShift Pipelines Community Operator][pipelinesoperator]
 
-2. Install [`operator-sdk`][operatorsdk]
+- Install [operator-sdk][operatorsdk]
 
-3. Create a project or namespace called `build-examples`
+- Create a project or namespace called **build-examples** by using `kubectl create namespace build-examples`
 
-4. Execute `make local` to register [well-known build strategies](samples/buildstrategies) including  `Kaniko`
+- Execute `make local` to register [well-known build strategies](samples/buildstrategies) including **Kaniko**
 and start the operator.
 
-5. Start a [Kaniko](samples/build/build_kaniko_cr.yaml) build
+- Create a [Kaniko](samples/build/build_kaniko_cr.yaml) build
 
 ```yaml
 apiVersion: build.dev/v1alpha1
@@ -151,6 +165,19 @@ spec:
   pathContext: ./
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+```
+
+- Start a [Kaniko](samples/buildrun/buildrun_kaniko_cr.yaml) buildrun
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: kaniko-golang-buildrun
+  namespace: build-examples
+spec:
+  buildRef:
+    name: kaniko-golang-build
 ```
 
 ## Development

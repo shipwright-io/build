@@ -8,6 +8,9 @@ spec:
     kind: ClusterBuildStrategy
     listKind: ClusterBuildStrategyList
     plural: clusterbuildstrategies
+    shortNames:
+    - cbs
+    - cbss
     singular: clusterbuildstrategy
   scope: Cluster
   subresources:
@@ -33,10 +36,6 @@ spec:
           description: BuildStrategySpec defines the desired state of BuildStrategy
           properties:
             buildSteps:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file Add custom validation using kubebuilder tags:
-                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               items:
                 description: BuildStep defines a partial step that needs to run in
                   container for building the image.

@@ -5,6 +5,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var (
+	LabelBuild                 = "build.build.dev/name"
+	LabelBuildGeneration       = "build.build.dev/generation"
+)
+
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
 
@@ -52,7 +57,7 @@ type Image struct {
 
 // BuildStatus defines the observed state of Build
 type BuildStatus struct {
-	Status string `json:"status"`
+
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -60,7 +65,9 @@ type BuildStatus struct {
 // Build is the Schema for the builds API
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=builds,scope=Namespaced
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="The status of this Build"
+// +kubebuilder:printcolumn:name="BuildStrategyKind",type="string",JSONPath=".spec.strategy.kind",description="The BuildStrategy type which is used for this Build"
+// +kubebuilder:printcolumn:name="BuildStrategyName",type="string",JSONPath=".spec.strategy.name",description="The BuildStrategy name which is used for this Build"
+// +kubebuilder:printcolumn:name="CreationTime",type="date",JSONPath=".metadata.creationTimestamp",description="The create time of this Build"
 type Build struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

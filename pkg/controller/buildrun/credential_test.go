@@ -1,4 +1,4 @@
-package build
+package buildrun
 
 import (
 	"reflect"
@@ -12,7 +12,8 @@ import (
 func TestApplyCredentials(t *testing.T) {
 
 	type args struct {
-		buildInstance  *buildv1alpha1.Build
+		build  *buildv1alpha1.Build
+		buildRun  *buildv1alpha1.BuildRun
 		serviceAccount *corev1.ServiceAccount
 	}
 	tests := []struct {
@@ -23,7 +24,7 @@ func TestApplyCredentials(t *testing.T) {
 		{
 			"secrets were not present",
 			args{
-				buildInstance: &buildv1alpha1.Build{
+				build: &buildv1alpha1.Build{
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL: "a/b/c",
@@ -31,16 +32,16 @@ func TestApplyCredentials(t *testing.T) {
 								Name: "secret_a",
 							},
 						},
-						Output: buildv1alpha1.Image{
-							ImageURL: "quay.io/namespace/image",
-							SecretRef: &corev1.LocalObjectReference{
-								Name: "secret_quay.io",
-							},
-						},
 						BuilderImage: &buildv1alpha1.Image{
 							ImageURL: "quay.io/namespace/image",
 							SecretRef: &corev1.LocalObjectReference{
 								Name: "secret_docker.io",
+							},
+						},
+						Output: buildv1alpha1.Image{
+							ImageURL: "quay.io/namespace/image",
+							SecretRef: &corev1.LocalObjectReference{
+								Name: "secret_quay.io",
 							},
 						},
 					},
@@ -53,14 +54,14 @@ func TestApplyCredentials(t *testing.T) {
 			},
 			&corev1.ServiceAccount{
 				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"}, {Name: "secret_quay.io"}, {Name: "secret_docker.io"},
+					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"}, {Name: "secret_docker.io"}, {Name: "secret_quay.io"},
 				},
 			},
 		},
 		{
 			"secret was already present",
 			args{
-				buildInstance: &buildv1alpha1.Build{
+				build: &buildv1alpha1.Build{
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL: "a/b/c",
@@ -70,6 +71,7 @@ func TestApplyCredentials(t *testing.T) {
 						},
 					},
 				},
+				buildRun: &buildv1alpha1.BuildRun{},
 				serviceAccount: &corev1.ServiceAccount{
 					Secrets: []corev1.ObjectReference{
 						{Name: "secret_b"}, {Name: "secret_a"},
@@ -85,7 +87,7 @@ func TestApplyCredentials(t *testing.T) {
 		{
 			"public repo, no source secret",
 			args{
-				buildInstance: &buildv1alpha1.Build{
+				build: &buildv1alpha1.Build{
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL:       "a/b/c",
@@ -93,6 +95,7 @@ func TestApplyCredentials(t *testing.T) {
 						},
 					},
 				},
+				buildRun: &buildv1alpha1.BuildRun{},
 				serviceAccount: &corev1.ServiceAccount{
 					Secrets: []corev1.ObjectReference{
 						{Name: "secret_b"}, {Name: "secret_a"},
@@ -108,7 +111,7 @@ func TestApplyCredentials(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := applyCredentials(tt.args.buildInstance, tt.args.serviceAccount); !reflect.DeepEqual(got, tt.want) {
+			if got := applyCredentials(tt.args.build, tt.args.serviceAccount); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("applyCredentials() = %v, want %v", got, tt.want)
 			}
 		})

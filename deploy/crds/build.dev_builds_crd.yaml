@@ -4,10 +4,18 @@ metadata:
   name: builds.build.dev
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.status
-    description: The status of this Build
-    name: Status
+  - JSONPath: .spec.strategy.kind
+    description: The BuildStrategy type which is used for this Build
+    name: BuildStrategyKind
     type: string
+  - JSONPath: .spec.strategy.name
+    description: The BuildStrategy name which is used for this Build
+    name: BuildStrategyName
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    description: The create time of this Build
+    name: CreationTime
+    type: date
   group: build.dev
   names:
     kind: Build
@@ -162,11 +170,6 @@ spec:
           type: object
         status:
           description: BuildStatus defines the observed state of Build
-          properties:
-            status:
-              type: string
-          required:
-          - status
           type: object
       type: object
   version: v1alpha1

@@ -1,0 +1,9 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-namespaced
+  serviceAccount: pipeline
