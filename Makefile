@@ -3,7 +3,7 @@ SHELL := /bin/bash
 # output directory, where all artifacts will be created and managed
 OUTPUT_DIR ?= build/_output
 # relative path to operator binary
-OPERATOR = $(OUTPUT_DIR)/bin/operator
+OPERATOR = $(OUTPUT_DIR)/bin/build-operator
 # golang cache directory path
 GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 # golang target architecture
