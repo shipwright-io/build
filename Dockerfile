@@ -21,7 +21,7 @@ LABEL maintainer "Devtools <devtools@redhat.com>"
 LABEL author "Shoubhik Bose <shbose@redhat.com>"
 ENV LANG=en_US.utf8
 
-COPY --from=builder /go/src/github.com/redhat-developer/build-operator/build/_output/bin/operator /usr/local/bin/build-operator
+COPY --from=builder /go/src/github.com/redhat-developer/build-operator/build/_output/bin/build-operator /usr/local/bin/build-operator
 
 USER 10001
 
