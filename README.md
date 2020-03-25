@@ -86,11 +86,12 @@ spec:
     kind: ClusterBuildStrategy
   builder:
     image: heroku/buildpacks:18
-    credentials: quayio-olemefer
+    credentials:
+      name: builder-registry-credentials
   output:
     image: quay.io/olemefer/nodejs-ex:v1
     credentials:
-      name: quayio-olemefer
+      name: output-registry-credentials
 ```
 
 ### `BuildRun`
