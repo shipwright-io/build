@@ -19,14 +19,15 @@ func TestMain(m *testing.M) {
 }
 
 var (
-	retryInterval         = time.Second * 5
-	timeout               = time.Second * 120
-	cleanupRetryInterval  = time.Second * 1
-	cleanupTimeout        = time.Second * 5
-	EnvVarImageRepo       = "TEST_IMAGE_REPO"
-	EnvVarImageRepoSecret = "TEST_IMAGE_REPO_SECRET"
-	modifySpec            = true
-	originalSpec          = false
+	retryInterval           = time.Second * 5
+	timeout                 = time.Second * 20
+	cleanupRetryInterval    = time.Second * 1
+	cleanupTimeout          = time.Second * 5
+	EnvVarImageRepo         = "TEST_IMAGE_REPO"
+	EnvVarImageRepoSecret   = "TEST_IMAGE_REPO_SECRET"
+	envVarRegistrySecret    = "REGISTRY_SECRET"
+	envVarRegistryEndpoint  = "REGISTRY_ENDPOINT"
+	envVarRegistryNamespace = "REGISTRY_NAMESPACE"
 )
 
 func TestBuild(t *testing.T) {
@@ -87,19 +88,19 @@ func BuildCluster(t *testing.T) {
 	testClusterBuildStrategy, testBuild, testBuildRun, err := kanikoBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun)
 
 	buildIdentifier = "example-build-s2i"
 	testClusterBuildStrategy, testBuild, testBuildRun, err = s2iBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun)
 
 	buildIdentifier = "example-build-buildah"
 	testClusterBuildStrategy, testBuild, testBuildRun, err = buildahBuildTestData(namespace, buildIdentifier)
 	require.NoError(t, err)
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, testBuildRun, modifySpec)
+	validateController(t, ctx, f, testBuild, testBuildRun)
 
 	buildIdentifier = "example-build-buildpacks-v3"
 	testClusterBuildStrategy, testBuild, testBuildRun, err = buildpackBuildTestData(namespace, buildIdentifier)
@@ -113,7 +114,7 @@ func BuildCluster(t *testing.T) {
 		}
 	}
 	createClusterBuildStrategy(t, ctx, f, testClusterBuildStrategy)
-	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun)
 
 	buildIdentifier = "example-build-buildpacks-v3-namespaced"
 	testbuildStrategy, testBuild, testBuildRun, err := buildpackBuildTestDataForNamespaced(namespace, buildIdentifier)
@@ -128,5 +129,5 @@ func BuildCluster(t *testing.T) {
 		}
 	}
 	createNamespacedBuildStrategy(t, ctx, f, testbuildStrategy)
-	validateController(t, ctx, f, testBuild, testBuildRun, originalSpec)
+	validateController(t, ctx, f, testBuild, testBuildRun)
 }

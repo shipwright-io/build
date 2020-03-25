@@ -4,10 +4,13 @@ import (
 	goctx "context"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"os"
+	"strings"
 	"testing"
 	"time"
+
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	operatorapis "github.com/redhat-developer/build/pkg/apis"
@@ -48,17 +51,11 @@ func validateController(
 	ctx *framework.TestCtx,
 	f *framework.Framework,
 	testBuild *operator.Build,
-	testBuildRun *operator.BuildRun,
-	modifySpec bool) {
+	testBuildRun *operator.BuildRun) {
 	namespace, _ := ctx.GetNamespace()
 	pendingStatus := "Pending"
 	runningStatus := "Running"
 	trueCondition := v1.ConditionTrue
-
-	// Modify the Output image URL for testing
-	if modifySpec {
-		testBuild.Spec.Output.ImageURL = fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/foo", namespace)
-	}
 
 	// Ensure the Build has been created
 	err := f.Client.Create(goctx.TODO(), testBuild, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
@@ -187,7 +184,53 @@ func buildTestData(ns string, identifier string, buildCRPath string) (*operator.
 	build.SetNamespace(ns)
 	build.SetName(identifier)
 
+	build = validateRegEnvVars(build)
+
 	return build, err
+}
+
+// validateRegEnvVars looks for known environment variables
+// in order to modify on the fly specific Build object specs:
+// - spec.output.imageURL
+// - spec.output.secretref
+// This is useful for users, to customize via env variables the
+// container registry to use and the secret for auth if required
+func validateRegEnvVars(o *operator.Build) *operator.Build {
+	o.Spec.Output.ImageURL = overrideImageURL(o.Spec.Output.ImageURL)
+	if s, bool := os.LookupEnv(envVarRegistrySecret); bool {
+		o.Spec.Output.SecretRef = &v1.LocalObjectReference{
+			Name: s,
+		}
+	}
+	return o
+}
+
+// overrideImageURL modifies the spec.output.image
+// of a Build instance, by constructing the URL based on:
+// - endpoint of the registry, see EnvVarRegistrySecret var
+// - namespace of the registry, see EnvVarRegistryNamespace
+// The application name will always remain the same
+func overrideImageURL(imgURL string) string {
+	var newURL []string
+	imgURLData := strings.Split(imgURL, "/")
+
+	for i, r := range imgURLData {
+		switch i {
+		case 0:
+			if val, bool := os.LookupEnv(envVarRegistryEndpoint); bool {
+				r = val
+			}
+		case 1:
+			if val, bool := os.LookupEnv(envVarRegistryNamespace); bool {
+				r = val
+			}
+		default:
+			// do nothing
+		}
+		newURL = append(newURL, r)
+	}
+
+	return strings.Join(newURL, "/")
 }
 
 // buildTestData gets the us the Build test data set up
@@ -221,7 +264,7 @@ func getTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, f 
 	taskRunList := &taskv1.TaskRunList{}
 
 	lbls := map[string]string{
-		buildv1alpha1.LabelBuild: build.Name,
+		buildv1alpha1.LabelBuild:    build.Name,
 		buildv1alpha1.LabelBuildRun: buildRun.Name,
 	}
 	opts := client.ListOptions{
