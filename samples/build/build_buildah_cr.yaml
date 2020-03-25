@@ -6,6 +6,7 @@ metadata:
 spec:
   source:
     url: https://github.com/sbose78/taxi
+    revision: master
   strategy:
     name: buildah
     kind: ClusterBuildStrategy

@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	defaultServiceAccountName = "default"
+	defaultServiceAccountName  = "default"
 	pipelineServiceAccountName = "pipeline"
-	inputImageResourceName     = "source"
-	inputImageResourceURL      = "url"
+	inputSourceResourceName    = "source"
+	inputGitSourceURL          = "url"
+	inputGitSourceRevision     = "revision"
 	inputParamBuilderImage     = "BUILDER_IMAGE"
 	inputParamDockerfile       = "DOCKERFILE"
 	inputParamPathContext      = "PATH_CONTEXT"
@@ -77,7 +78,7 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildSteps []buildv1alpha1.Bui
 			Resources: []taskv1.TaskResource{
 				{
 					ResourceDeclaration: taskv1.ResourceDeclaration{
-						Name: inputImageResourceName,
+						Name: inputSourceResourceName,
 						Type: taskv1.PipelineResourceTypeGit,
 					},
 				},
@@ -150,6 +151,11 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildSteps []buildv1alpha1.Bui
 
 func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) *taskv1.TaskRun {
 
+	revision := "master"
+	if build.Spec.Source.Revision != nil {
+		revision = *build.Spec.Source.Revision
+	}
+
 	expectedTaskRun := &taskv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: buildRun.Name + "-",
@@ -168,13 +174,17 @@ func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 				Resources: []taskv1.TaskResourceBinding{
 					{
 						PipelineResourceBinding: taskv1.PipelineResourceBinding{
-							Name: inputImageResourceName,
+							Name: inputSourceResourceName,
 							ResourceSpec: &taskv1.PipelineResourceSpec{
 								Type: taskv1.PipelineResourceTypeGit,
 								Params: []taskv1.ResourceParam{
 									{
-										Name:  inputImageResourceURL,
+										Name:  inputGitSourceURL,
 										Value: build.Spec.Source.URL,
+									},
+									{
+										Name:  inputGitSourceRevision,
+										Value: revision,
 									},
 								},
 							},
