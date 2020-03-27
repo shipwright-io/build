@@ -128,7 +128,8 @@ func TestGenerateTaskRun(t *testing.T) {
 
 	namespace := "build-test"
 	dockerfile := "Dockerfile"
-	ContextDir := "src"
+	contextDir := "src"
+	revision := "develop"
 	builderImage := buildv1alpha1.Image{
 		ImageURL: "heroku/buildpacks:18",
 	}
@@ -156,7 +157,8 @@ func TestGenerateTaskRun(t *testing.T) {
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
 							URL: url,
-							ContextDir: &ContextDir,
+							Revision: &revision,
+							ContextDir: &contextDir,
 						},
 						StrategyRef: &buildv1alpha1.StrategyRef{
 							Name: buildpacks,
@@ -199,12 +201,15 @@ func TestGenerateTaskRun(t *testing.T) {
 			// ensure generated TaskRun's input and output resources are correct
 			inputResources := got.Spec.Inputs.Resources
 			for _, inputResource := range inputResources {
-				if inputResource.Name == inputImageResourceName {
+				if inputResource.Name == inputSourceResourceName {
 					assert.True(t, reflect.DeepEqual(inputResource.ResourceSpec.Type, taskv1.PipelineResourceTypeGit))
 					params := inputResource.ResourceSpec.Params
 					for _, param := range params {
-						if param.Name == inputImageResourceURL {
+						if param.Name == inputGitSourceURL {
 							assert.True(t, reflect.DeepEqual(param.Value, url))
+						}
+						if param.Name == inputGitSourceRevision {
+							assert.True(t, reflect.DeepEqual(param.Value, revision))
 						}
 					}
 
@@ -234,7 +239,7 @@ func TestGenerateTaskRun(t *testing.T) {
 					assert.True(t, reflect.DeepEqual(param.Value.StringVal, dockerfile))
 				}
 				if param.Name == inputParamPathContext {
-					assert.True(t, reflect.DeepEqual(param.Value.StringVal, ContextDir))
+					assert.True(t, reflect.DeepEqual(param.Value.StringVal, contextDir))
 				}
 			}
 		})

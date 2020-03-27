@@ -12,7 +12,7 @@ type GitSource struct {
 	URL string `json:"url"`
 
 	// Ref is a git reference. Optional. "master" is used by default.
-	Ref string `json:"ref,omitempty"`
+	Revision *string `json:"revision,omitempty"`
 
 	// ContextDir is a path to subfolder in the repo. Optional.
 	// +optional

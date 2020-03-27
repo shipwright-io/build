@@ -135,7 +135,7 @@ spec:
                   description: NoProxy can be used to specify domains for which no
                     proxying should be performed. Optional.
                   type: string
-                ref:
+                revision:
                   description: Ref is a git reference. Optional. "master" is used
                     by default.
                   type: string
