@@ -2,10 +2,9 @@ package e2e
 
 import (
 	goctx "context"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +22,35 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
 )
+
+// OperatorEmulation is used as an struct
+// to hold required data
+type OperatorEmulation struct {
+	buildRun                *operator.BuildRun
+	clusterBuildStrategy    *operator.ClusterBuildStrategy
+	buildStrategy           *operator.BuildStrategy
+	build                   *operator.Build
+	namespace               string
+	identifier              string
+	buildStrategySamplePath string
+	buildSamplePath         string
+	buildRunSamplePath      string
+}
+
+func newOperatorEmulation(n string, id string, bSPath string, bPath string, bRPath string) *OperatorEmulation {
+	return &OperatorEmulation{
+		buildRun:                &operator.BuildRun{},
+		clusterBuildStrategy:    &operator.ClusterBuildStrategy{},
+		buildStrategy:           &operator.BuildStrategy{},
+		build:                   &operator.Build{},
+		namespace:               n,
+		identifier:              id,
+		buildStrategySamplePath: bSPath,
+		buildSamplePath:         bPath,
+		buildRunSamplePath:      bRPath,
+	}
+
+}
 
 func createNamespacedBuildStrategy(
 	t *testing.T,
@@ -119,74 +147,67 @@ func validateController(
 	require.True(t, foundSuccessful)
 }
 
-// namespacedBuildStrategyTestData gets the us the BuildStrategy test data set up
-func buildStrategyTestData(ns string, buildStrategyCRPath string) (*operator.BuildStrategy, error) {
+// BuildTestData loads all different Build objects
+// into the OperatorEmulation structure
+func BuildTestData(oE *OperatorEmulation) error {
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	operatorapis.AddToScheme(scheme.Scheme)
-
-	yaml, err := ioutil.ReadFile(buildStrategyCRPath)
-	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
+	// Load the ClusterBuildStrategy sample into the OperatorEmulation.clusterBuildS field
+	if err := oE.LoadBuildSamples(oE.buildStrategySamplePath); err != nil {
+		return err
 	}
 
-	obj, _, err := decode(yaml, nil, nil)
-	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
+	// Load the Build sample into the OperatorEmulation.build field
+	if err := oE.LoadBuildSamples(oE.buildSamplePath); err != nil {
+		return err
 	}
-	buildStrategy := obj.(*operator.BuildStrategy)
-	buildStrategy.SetNamespace(ns)
-	return buildStrategy, err
+
+	// Load the BuildRun sample into the OperatorEmulation.buildRun field
+	if err := oE.LoadBuildSamples(oE.buildRunSamplePath); err != nil {
+		return err
+	}
+	return nil
 }
 
-// clusterBuildStrategyTestData gets the us the ClusterBuildStrategy test data set up
-func clusterBuildStrategyTestData(buildStrategyCRPath string) (*operator.ClusterBuildStrategy, error) {
+// LoadBuildSamples populates Build objects depending on the
+// object type
+func (os *OperatorEmulation) LoadBuildSamples(buildStrategySample string) error {
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	operatorapis.AddToScheme(scheme.Scheme)
 
-	yaml, err := ioutil.ReadFile(buildStrategyCRPath)
+	y, err := ioutil.ReadFile(buildStrategySample)
 	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
+		return err
 	}
 
-	obj, _, err := decode(yaml, nil, nil)
+	obj, _, err := decode([]byte(y), nil, nil)
 	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
-	}
-	clusterBuildStrategy := obj.(*operator.ClusterBuildStrategy)
-	return clusterBuildStrategy, err
-}
-
-// buildTestData gets the us the Build test data set up
-func buildTestData(ns string, identifier string, buildCRPath string) (*operator.Build, error) {
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	operatorapis.AddToScheme(scheme.Scheme)
-
-	yaml, err := ioutil.ReadFile(buildCRPath)
-	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
+		return err
 	}
 
-	obj, _, err := decode([]byte(yaml), nil, nil)
-	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
+	switch object := obj.(type) {
+	case *operator.Build:
+		os.build = object
+		os.build.SetNamespace(os.namespace)
+		os.build.SetName(os.identifier)
+		// Validate if ENV variables are set
+		validateRegEnvVars(os.build)
+		return nil
+	case *operator.BuildRun:
+		os.buildRun = object
+		os.buildRun.SetNamespace(os.namespace)
+		os.buildRun.SetName(os.identifier)
+		os.buildRun.Spec.BuildRef.Name = os.identifier
+		return nil
+	case *operator.ClusterBuildStrategy:
+		os.clusterBuildStrategy = object
+		return nil
+	case *operator.BuildStrategy:
+		os.buildStrategy = object
+		return nil
+	default:
+		return errors.New("none build strategy identified")
 	}
-	build := obj.(*operator.Build)
-
-	build.SetNamespace(ns)
-	build.SetName(identifier)
-
-	build = validateRegEnvVars(build)
-
-	return build, err
 }
 
 // validateRegEnvVars looks for known environment variables
@@ -195,68 +216,17 @@ func buildTestData(ns string, identifier string, buildCRPath string) (*operator.
 // - spec.output.secretref
 // This is useful for users, to customize via env variables the
 // container registry to use and the secret for auth if required
-func validateRegEnvVars(o *operator.Build) *operator.Build {
-	o.Spec.Output.ImageURL = overrideImageURL(o.Spec.Output.ImageURL)
-	if s, bool := os.LookupEnv(envVarRegistrySecret); bool {
+func validateRegEnvVars(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarImageRepo); bool {
+		o.Spec.Output.ImageURL = val
+	}
+
+	if s, bool := os.LookupEnv(EnvVarImageRepoSecret); bool {
 		o.Spec.Output.SecretRef = &v1.LocalObjectReference{
 			Name: s,
 		}
 	}
-	return o
-}
-
-// overrideImageURL modifies the spec.output.image
-// of a Build instance, by constructing the URL based on:
-// - endpoint of the registry, see EnvVarRegistrySecret var
-// - namespace of the registry, see EnvVarRegistryNamespace
-// The application name will always remain the same
-func overrideImageURL(imgURL string) string {
-	var newURL []string
-	imgURLData := strings.Split(imgURL, "/")
-
-	for i, r := range imgURLData {
-		switch i {
-		case 0:
-			if val, bool := os.LookupEnv(envVarRegistryEndpoint); bool {
-				r = val
-			}
-		case 1:
-			if val, bool := os.LookupEnv(envVarRegistryNamespace); bool {
-				r = val
-			}
-		default:
-			// do nothing
-		}
-		newURL = append(newURL, r)
-	}
-
-	return strings.Join(newURL, "/")
-}
-
-// buildTestData gets the us the Build test data set up
-func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*operator.BuildRun, error) {
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	operatorapis.AddToScheme(scheme.Scheme)
-
-	yaml, err := ioutil.ReadFile(buildRunCRPath)
-	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
-	}
-
-	obj, _, err := decode([]byte(yaml), nil, nil)
-	if err != nil {
-		fmt.Printf("%#v", err)
-		return nil, err
-	}
-	buildRun := obj.(*operator.BuildRun)
-
-	buildRun.SetNamespace(ns)
-	buildRun.SetName(identifier)
-	buildRun.Spec.BuildRef.Name = identifier
-
-	return buildRun, err
+	// return o
 }
 
 func getTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, f *framework.Framework) (*taskv1.TaskRun, error) {
