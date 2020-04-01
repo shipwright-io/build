@@ -23,6 +23,17 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 )
 
+var (
+	EnvVarImageRepo                        = "TEST_IMAGE_REPO"
+	EnvVarImageRepoSecret                  = "TEST_IMAGE_REPO_SECRET"
+	EnvVarSourceBuildahPrivateGithubURL    = "BUILDAH_PRIV_GITHUB"
+	EnvVarSourceBuildahPrivateGitlabURL    = "BUILDAH_PRIV_GITLAB"
+	EnvVarSourceKanikoPrivateGithubURL     = "KANIKO_PRIV_GITHUB"
+	EnvVarSourceSrcToImgPrivateGithubURL   = "SRC_PRIV_GITHUB"
+	EnvVarSourceBuildpacksPrivateGithubURL = "BUILDPACKS_PRIV_GITHUB"
+	EnvVarSourURLSecret                    = "TEST_SOURCE_SECRET"
+)
+
 // OperatorEmulation is used as an struct
 // to hold required data
 type OperatorEmulation struct {
@@ -69,6 +80,26 @@ func createClusterBuildStrategy(
 	f *framework.Framework,
 	testBuildStrategy *operator.ClusterBuildStrategy) {
 	err := f.Client.Create(goctx.TODO(), testBuildStrategy, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func deleteClusterBuildStrategy(
+	t *testing.T,
+	f *framework.Framework,
+	testBuildStrategy *operator.ClusterBuildStrategy) {
+	err := f.Client.Delete(goctx.TODO(), testBuildStrategy)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func deleteBuildStrategy(
+	t *testing.T,
+	f *framework.Framework,
+	testBuildStrategy *operator.BuildStrategy) {
+	err := f.Client.Delete(goctx.TODO(), testBuildStrategy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,8 +221,6 @@ func (os *OperatorEmulation) LoadBuildSamples(buildStrategySample string) error 
 		os.build = object
 		os.build.SetNamespace(os.namespace)
 		os.build.SetName(os.identifier)
-		// Validate if ENV variables are set
-		validateRegEnvVars(os.build)
 		return nil
 	case *operator.BuildRun:
 		os.buildRun = object
@@ -210,23 +239,62 @@ func (os *OperatorEmulation) LoadBuildSamples(buildStrategySample string) error 
 	}
 }
 
-// validateRegEnvVars looks for known environment variables
+// validateOutputEnvVars looks for known environment variables
 // in order to modify on the fly specific Build object specs:
-// - spec.output.imageURL
-// - spec.output.secretref
-// This is useful for users, to customize via env variables the
-// container registry to use and the secret for auth if required
-func validateRegEnvVars(o *operator.Build) {
+// - Spec.Output.ImageURL
+// - Spec.Output.SecretRef
+func validateOutputEnvVars(o *operator.Build) {
+
+	// Get TEST_IMAGE_REPO env variable
 	if val, bool := os.LookupEnv(EnvVarImageRepo); bool {
 		o.Spec.Output.ImageURL = val
 	}
 
+	// Get TEST_IMAGE_REPO_SECRET env variable
 	if s, bool := os.LookupEnv(EnvVarImageRepoSecret); bool {
 		o.Spec.Output.SecretRef = &v1.LocalObjectReference{
 			Name: s,
 		}
 	}
-	// return o
+}
+
+func validateBuildahGithubURL(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarSourceBuildahPrivateGithubURL); bool {
+		o.Spec.Source.URL = val
+	}
+}
+
+func validateBuildahGitlabURL(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarSourceBuildahPrivateGitlabURL); bool {
+		o.Spec.Source.URL = val
+	}
+}
+
+func validateKanikoGithubURL(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarSourceKanikoPrivateGithubURL); bool {
+		o.Spec.Source.URL = val
+	}
+}
+
+func validateSrcToImgGithubURL(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarSourceSrcToImgPrivateGithubURL); bool {
+		o.Spec.Source.URL = val
+	}
+}
+
+func validateBuildpacksGithubURL(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarSourceBuildpacksPrivateGithubURL); bool {
+		o.Spec.Source.URL = val
+	}
+}
+
+func validateSourceSecretRef(o *operator.Build) {
+	// Get TEST_SOURCE_SECRET env variable
+	if s, bool := os.LookupEnv(EnvVarSourURLSecret); bool {
+		o.Spec.Source.SecretRef = &v1.LocalObjectReference{
+			Name: s,
+		}
+	}
 }
 
 func getTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, f *framework.Framework) (*taskv1.TaskRun, error) {

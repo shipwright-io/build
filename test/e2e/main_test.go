@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -17,12 +18,11 @@ func TestMain(m *testing.M) {
 }
 
 var (
-	retryInterval         = time.Second * 5
-	timeout               = time.Second * 120
-	cleanupRetryInterval  = time.Second * 1
-	cleanupTimeout        = time.Second * 5
-	EnvVarImageRepo       = "TEST_IMAGE_REPO"
-	EnvVarImageRepoSecret = "TEST_IMAGE_REPO_SECRET"
+	retryInterval            = time.Second * 5
+	timeout                  = time.Second * 60
+	cleanupRetryInterval     = time.Second * 1
+	cleanupTimeout           = time.Second * 5
+	EnvVarEnablePrivateRepos = "TEST_WITH_PRIVATE_REPO"
 )
 
 func TestBuild(t *testing.T) {
@@ -88,8 +88,11 @@ func BuildCluster(t *testing.T) {
 	)
 	err = BuildTestData(oE)
 	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
+
 	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
 	// Run e2e tests for source2image
 	oE = newOperatorEmulation(namespace,
@@ -100,8 +103,11 @@ func BuildCluster(t *testing.T) {
 	)
 	err = BuildTestData(oE)
 	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
+
 	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
 	// Run e2e tests for buildah
 	oE = newOperatorEmulation(namespace,
@@ -112,10 +118,13 @@ func BuildCluster(t *testing.T) {
 	)
 	err = BuildTestData(oE)
 	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
+
 	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
-	// Run e2e tests for buidlpacks v3
+	// Run e2e tests for buildpacks v3
 	oE = newOperatorEmulation(namespace,
 		"example-build-buildpacks-v3",
 		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
@@ -124,8 +133,11 @@ func BuildCluster(t *testing.T) {
 	)
 	err = BuildTestData(oE)
 	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
+
 	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
 	// Run e2e tests for buildpacks v3 with a namespaced scope
 	oE = newOperatorEmulation(namespace,
@@ -136,9 +148,111 @@ func BuildCluster(t *testing.T) {
 	)
 	err = BuildTestData(oE)
 	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
 
 	oE.buildStrategy.SetNamespace(namespace)
 	createNamespacedBuildStrategy(t, ctx, f, oE.buildStrategy)
 	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteBuildStrategy(t, f, oE.buildStrategy)
 
+	// Run e2e test cases for private repositories, only when
+	// env var TEST_WITH_PRIVATE_REPO is set.
+	if val, _ := os.LookupEnv(EnvVarEnablePrivateRepos); val == "true" {
+
+		// Run e2e tests for kaniko with private github repo
+		oE = newOperatorEmulation(namespace,
+			"example-build-kaniko-private-github",
+			"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
+			"test/data/build_kaniko_cr_private_github.yaml",
+			"samples/buildrun/buildrun_kaniko_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+
+		validateOutputEnvVars(oE.build)
+		// Validate env vars for private repos
+		validateSourceSecretRef(oE.build)
+		validateKanikoGithubURL(oE.build)
+
+		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
+		// Run e2e tests for buildah with a private github repo
+		oE = newOperatorEmulation(namespace,
+			"example-build-buildah-private-github",
+			"samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
+			"test/data/build_buildah_cr_private_github.yaml",
+			"samples/buildrun/buildrun_buildah_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+
+		validateOutputEnvVars(oE.build)
+		// Validate env vars for private repos
+		validateSourceSecretRef(oE.build)
+		validateBuildahGithubURL(oE.build)
+
+		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
+		// Run e2e tests for buildah with a private gitlab repo
+		oE = newOperatorEmulation(namespace,
+			"example-build-buildah-private-gitlab",
+			"samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
+			"test/data/build_buildah_cr_private_gitlab.yaml",
+			"samples/buildrun/buildrun_buildah_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+
+		validateOutputEnvVars(oE.build)
+		// Validate env vars for private repos
+		validateSourceSecretRef(oE.build)
+		validateBuildahGitlabURL(oE.build)
+
+		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
+		// Run e2e tests for buildpacks v3 with private github
+		oE = newOperatorEmulation(namespace,
+			"example-build-buildpacks-v3-private-github",
+			"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
+			"test/data/build_buildpacks-v3_cr_private_github.yaml",
+			"samples/buildrun/buildrun_buildpacks-v3_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+
+		validateOutputEnvVars(oE.build)
+		// Validate env vars for private repos
+		validateSourceSecretRef(oE.build)
+		validateBuildpacksGithubURL(oE.build)
+
+		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
+		// Run e2e tests for source2image with private github
+		oE = newOperatorEmulation(namespace,
+			"example-build-s2i-private-github",
+			"samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml",
+			"test/data/build_source-to-image_cr_private_github.yaml",
+			"samples/buildrun/buildrun_source-to-image_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+
+		validateOutputEnvVars(oE.build)
+		// Validate env vars for private repos
+		validateSourceSecretRef(oE.build)
+		validateSrcToImgGithubURL(oE.build)
+
+		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
+	}
 }
