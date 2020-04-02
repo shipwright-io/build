@@ -149,12 +149,20 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	if build.Spec.StrategyRef.Kind == nil || *build.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
 		buildStrategy := r.retrieveBuildStrategy(build, request)
 		if buildStrategy != nil {
-			generatedTaskRun = generateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
+			if err != nil {
+				reqLogger.Error(err, "Failed to generate TaskRun", "BuildRun", buildRun.Name)
+				return reconcile.Result{}, err
+			}
 		}
 	} else if *build.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
 		clusterBuildStrategy := r.retrieveClusterBuildStrategy(build, request)
 		if clusterBuildStrategy != nil {
-			generatedTaskRun = generateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
+			if err != nil {
+				reqLogger.Error(err, "Failed to generate TaskRun", "BuildRun", buildRun.Name)
+				return reconcile.Result{}, err
+			}
 		}
 	} else {
 		log.Error(err, "Unsupported BuildStrategy Kind", "BuildStrategyKind", build.Spec.StrategyRef.Kind)

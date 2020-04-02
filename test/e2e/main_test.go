@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 
 var (
 	retryInterval         = time.Second * 5
-	timeout               = time.Second * 60
+	timeout               = time.Second * 120
 	cleanupRetryInterval  = time.Second * 1
 	cleanupTimeout        = time.Second * 5
 	EnvVarImageRepo       = "TEST_IMAGE_REPO"
@@ -58,7 +58,7 @@ func TestBuild(t *testing.T) {
 
 	// run subtests
 	t.Run("build-group", func(t *testing.T) {
-		t.Run("Buildah and Buildpack", BuildCluster)
+		t.Run("Build_e2e_tests", BuildCluster)
 	})
 }
 

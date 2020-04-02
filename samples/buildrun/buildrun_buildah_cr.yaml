@@ -6,3 +6,7 @@ metadata:
 spec:
   buildRef:
     name: buildah-golang-build
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"

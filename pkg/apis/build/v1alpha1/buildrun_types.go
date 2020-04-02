@@ -16,6 +16,12 @@ type BuildRunSpec struct {
 	// BuildRef refers to the Build
 	BuildRef *BuildRef `json:"buildRef"`
 
+	// Compute Resources required by the build container
+	// which can overwrite the configuration in Build.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+	// +optional
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.
 	// Default serviceaccount will be set if it is empty

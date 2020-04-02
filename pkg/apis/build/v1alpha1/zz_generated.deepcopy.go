@@ -155,6 +155,11 @@ func (in *BuildRunSpec) DeepCopyInto(out *BuildRunSpec) {
 		*out = new(BuildRef)
 		**out = **in
 	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(v1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ServiceAccount != nil {
 		in, out := &in.ServiceAccount, &out.ServiceAccount
 		*out = new(string)
@@ -229,6 +234,11 @@ func (in *BuildSpec) DeepCopyInto(out *BuildSpec) {
 			*out = make([]Parameter, len(*in))
 			copy(*out, *in)
 		}
+	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(v1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
 	}
 	in.Output.DeepCopyInto(&out.Output)
 	return

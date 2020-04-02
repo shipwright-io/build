@@ -61,6 +61,25 @@ spec:
                   description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
                   type: string
               type: object
+            resources:
+              description: 'Compute Resources required by the build container which
+                can overwrite the configuration in Build. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+              properties:
+                limits:
+                  additionalProperties:
+                    type: string
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    type: string
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
             serviceAccount:
               description: ServiceAccount refers to the kubernetes serviceaccount
                 which is used for resource control. Default serviceaccount will be
