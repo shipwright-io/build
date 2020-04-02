@@ -1,6 +1,7 @@
 package buildrun
 
 import (
+	"encoding/json"
 	"fmt"
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -43,7 +44,7 @@ func getStringTransformations(fullText string) string {
 	return fullText
 }
 
-func generateTaskSpec(build *buildv1alpha1.Build, buildSteps []buildv1alpha1.BuildStep) *taskv1.TaskSpec {
+func generateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, buildSteps []buildv1alpha1.BuildStep) (*taskv1.TaskSpec, error) {
 
 	generatedTaskSpec := taskv1.TaskSpec{
 		Inputs: &taskv1.Inputs{
@@ -125,6 +126,21 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildSteps []buildv1alpha1.Bui
 				Env:             containerValue.Env,
 			},
 		}
+		if build.Spec.Resources != nil {
+			step.Resources = *build.Spec.Resources
+			if buildRun.Spec.Resources != nil {
+				// Merge the resources from build and buildRun
+				mergedResources, err := mergedResources(build, buildRun)
+				if err != nil {
+					return nil, err
+				}
+				step.Resources = *mergedResources
+			}
+		} else {
+			if buildRun.Spec.Resources != nil {
+				step.Resources = *buildRun.Spec.Resources
+			}
+		}
 
 		generatedTaskSpec.Steps = append(generatedTaskSpec.Steps, step)
 
@@ -146,14 +162,19 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildSteps []buildv1alpha1.Bui
 	}
 
 	generatedTaskSpec.Volumes = vols
-	return &generatedTaskSpec
+	return &generatedTaskSpec, nil
 }
 
-func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) *taskv1.TaskRun {
+func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) (*taskv1.TaskRun, error) {
 
 	revision := "master"
 	if build.Spec.Source.Revision != nil {
 		revision = *build.Spec.Source.Revision
+	}
+
+	taskSpec, err := generateTaskSpec(build, buildRun, buildSteps)
+	if err != nil {
+		return nil, err
 	}
 
 	expectedTaskRun := &taskv1.TaskRun{
@@ -169,7 +190,7 @@ func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 		},
 		Spec: taskv1.TaskRunSpec{
 			ServiceAccountName: serviceAccountName,
-			TaskSpec: generateTaskSpec(build, buildSteps),
+			TaskSpec: taskSpec,
 			Inputs: taskv1.TaskRunInputs{
 				Resources: []taskv1.TaskResourceBinding{
 					{
@@ -243,5 +264,27 @@ func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 	}
 
 	expectedTaskRun.Spec.Inputs.Params = inputParams
-	return expectedTaskRun
+	return expectedTaskRun, nil
+}
+
+// mergedResources merges the resources from build spec and buildRun spec
+func mergedResources(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ResourceRequirements, error) {
+	mergedResources := corev1.ResourceRequirements{}
+	buildResourceJson, err := json.Marshal(*build.Spec.Resources)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(buildResourceJson, &mergedResources)
+	if err != nil {
+		return nil, err
+	}
+	buildRunResourceJson, err := json.Marshal(*buildRun.Spec.Resources)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(buildRunResourceJson, &mergedResources)
+	if err != nil {
+		return nil, err
+	}
+	return &mergedResources, nil
 }

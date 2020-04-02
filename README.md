@@ -88,6 +88,10 @@ spec:
     image: heroku/buildpacks:18
     credentials:
       name: builder-registry-credentials
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
   output:
     image: quay.io/olemefer/nodejs-ex:v1
     credentials:

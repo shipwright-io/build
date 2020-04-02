@@ -109,8 +109,8 @@ func validateController(
 
 	// Ensure that eventually the Build moves to Succeeded.
 	foundSuccessful := false
-	for i := 1; i <= 6; i++ {
-		time.Sleep(20 * time.Second)
+	for i := 1; i <= 30; i++ {
+		time.Sleep(10 * time.Second)
 		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}, testBuildRun)
 		require.NoError(t, err)
 

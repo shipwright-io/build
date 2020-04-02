@@ -2,6 +2,7 @@ package buildrun
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"strings"
 	"testing"
@@ -29,8 +30,9 @@ func TestGenerateTaskSpec(t *testing.T) {
 	truePtr := true
 
 	type args struct {
-		build         *buildv1alpha1.Build
-		buildStrategy *buildv1alpha1.BuildStrategy
+		build            *buildv1alpha1.Build
+		buildRun         *buildv1alpha1.BuildRun
+		buildStrategy    *buildv1alpha1.BuildStrategy
 	}
 	tests := []struct {
 		name string
@@ -52,9 +54,28 @@ func TestGenerateTaskSpec(t *testing.T) {
 						},
 						Dockerfile:   &dockerfile,
 						BuilderImage: &builderImage,
+						Resources: &corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("1Gi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("1Gi"),
+							},
+						},
 					},
 				},
-
+				buildRun: &buildv1alpha1.BuildRun{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: buildah + "-run",
+					},
+					Spec: buildv1alpha1.BuildRunSpec{
+						BuildRef: &buildv1alpha1.BuildRef{
+							Name:       buildah,
+						},
+					},
+				},
 				buildStrategy: &buildv1alpha1.BuildStrategy{
 					ObjectMeta: metav1.ObjectMeta{Name: buildah},
 					Spec: buildv1alpha1.BuildStrategySpec{
@@ -104,16 +125,32 @@ func TestGenerateTaskSpec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generateTaskSpec(tt.args.build, tt.args.buildStrategy.Spec.BuildSteps)
+			got, err := generateTaskSpec(tt.args.build, tt.args.buildRun, tt.args.buildStrategy.Spec.BuildSteps)
 			expectedCommandOrArg := []string{
 				"buildah", "bud", "--tls-verify=false", "--layers", "-f", fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile), "-t", "$(outputs.resources.image.url)", fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 			}
+
+			expectedResourceOrArg := corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("500m"),
+					corev1.ResourceMemory: resource.MustParse("1Gi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("500m"),
+					corev1.ResourceMemory: resource.MustParse("1Gi"),
+				},
+			}
+
+			assert.True(t, reflect.DeepEqual(err, nil))
 
 			// ensure IMAGE is replaced by builder image when needed.
 			assert.Equal(t, fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage), got.Steps[0].Container.Image)
 
 			// ensure command replacements happen when needed
 			assert.True(t, reflect.DeepEqual(got.Steps[0].Container.Command, expectedCommandOrArg))
+
+			// ensure resource replacements happen when needed
+			assert.True(t, reflect.DeepEqual(got.Steps[0].Container.Resources, expectedResourceOrArg))
 
 			// ensure arg replacements happen when needed.
 			assert.True(t, reflect.DeepEqual(expectedCommandOrArg, got.Steps[0].Container.Args))
@@ -129,7 +166,7 @@ func TestGenerateTaskRun(t *testing.T) {
 	namespace := "build-test"
 	dockerfile := "Dockerfile"
 	contextDir := "src"
-	revision := "develop"
+	revision := "master"
 	builderImage := buildv1alpha1.Image{
 		ImageURL: "heroku/buildpacks:18",
 	}
@@ -138,8 +175,9 @@ func TestGenerateTaskRun(t *testing.T) {
 	serviceAccountName := buildpacks + "-serviceaccount"
 
 	type args struct {
-		build         *buildv1alpha1.Build
-		buildRun      *buildv1alpha1.BuildRun
+		build            *buildv1alpha1.Build
+		buildRun         *buildv1alpha1.BuildRun
+		buildStrategy    *buildv1alpha1.BuildStrategy
 	}
 	tests := []struct {
 		name string
@@ -147,7 +185,75 @@ func TestGenerateTaskRun(t *testing.T) {
 		want *taskv1.TaskRun
 	}{
 		{
-			"taskrun generation",
+			"taskrun generation by default",
+			args{
+				build: &buildv1alpha1.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: buildah,
+						Namespace: namespace,
+					},
+					Spec: buildv1alpha1.BuildSpec{
+						Source: buildv1alpha1.GitSource{
+							URL: url,
+						},
+						StrategyRef: &buildv1alpha1.StrategyRef{
+							Name: buildah,
+						},
+						Output: buildv1alpha1.Image{
+							ImageURL: outputPath,
+						},
+					},
+				},
+				buildRun: &buildv1alpha1.BuildRun{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: buildah + "-run",
+						Namespace: namespace,
+					},
+					Spec: buildv1alpha1.BuildRunSpec{
+						BuildRef: &buildv1alpha1.BuildRef{
+							Name:       buildah,
+						},
+						Resources: &corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+						},
+						ServiceAccount: &serviceAccountName,
+					},
+				},
+				buildStrategy: &buildv1alpha1.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{Name: buildah},
+					Spec: buildv1alpha1.BuildStrategySpec{
+						BuildSteps: []buildv1alpha1.BuildStep{
+							buildv1alpha1.BuildStep{
+								Container: corev1.Container{
+									Name:       "build",
+									Image:      "$(build.builder.image)",
+									WorkingDir: "/workspace/source",
+									Command: []string{
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "varlibcontainers",
+											MountPath: "/var/lib/containers",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			&taskv1.TaskRun{}, // not using it for now
+		},
+		{
+			"taskrun generation by special settings",
 			args{
 				build: &buildv1alpha1.Build{
 					ObjectMeta: metav1.ObjectMeta{
@@ -169,6 +275,12 @@ func TestGenerateTaskRun(t *testing.T) {
 						Output: buildv1alpha1.Image{
 							ImageURL: outputPath,
 						},
+						Resources: &corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("1Gi"),
+							},
+						},
 					},
 				},
 				buildRun: &buildv1alpha1.BuildRun{
@@ -180,7 +292,39 @@ func TestGenerateTaskRun(t *testing.T) {
 						BuildRef: &buildv1alpha1.BuildRef{
 							Name:       buildpacks,
 						},
+						Resources: &corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+						},
 						ServiceAccount: &serviceAccountName,
+					},
+				},
+				buildStrategy: &buildv1alpha1.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{Name: buildpacks},
+					Spec: buildv1alpha1.BuildStrategySpec{
+						BuildSteps: []buildv1alpha1.BuildStep{
+							buildv1alpha1.BuildStep{
+								Container: corev1.Container{
+									Name:       "build",
+									Image:      "$(build.builder.image)",
+									WorkingDir: "/workspace/source",
+									Command: []string{
+										"/cnb/lifecycle/builder", "-app", "/workspace/source", "-layers", "/layers", "-group", "/layers/group.toml", "plan", "/layers/plan.toml",
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "varlibcontainers",
+											MountPath: "/var/lib/containers",
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -189,8 +333,8 @@ func TestGenerateTaskRun(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generateTaskRun(tt.args.build, tt.args.buildRun, serviceAccountName, nil)
-
+			got, err := generateTaskRun(tt.args.build, tt.args.buildRun, serviceAccountName, tt.args.buildStrategy.Spec.BuildSteps)
+			assert.True(t, reflect.DeepEqual(err, nil))
 			// ensure generated TaskRun's basic information are correct
 			assert.True(t, reflect.DeepEqual(true, strings.Contains(got.GenerateName, tt.args.buildRun.Name + "-")))
 			assert.True(t, reflect.DeepEqual(got.Namespace, namespace))
@@ -242,6 +386,19 @@ func TestGenerateTaskRun(t *testing.T) {
 					assert.True(t, reflect.DeepEqual(param.Value.StringVal, contextDir))
 				}
 			}
+
+			expectedResourceOrArg := corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("500m"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("500m"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+			}
+			// ensure resource replacements happen when needed
+			assert.True(t, reflect.DeepEqual(got.Spec.TaskSpec.Steps[0].Resources, expectedResourceOrArg))
 		})
 	}
 }
