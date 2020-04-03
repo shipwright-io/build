@@ -62,12 +62,9 @@ the following variables for any related modification in the examples.
 
 Env var | Path | Definition
 --- | --- | --- |
-**TEST_WITH_PRIVATE_REPO** | _none_ | Enables running e2e tests for private repositories |
-**BUILDAH_PRIV_GITHUB** | **spec.source.url** | Private URL for the Buildah samples of the form *git@github.com* |
-**BUILDAH_PRIV_GITLAB** | **spec.source.url** | Private URL for the Buildah samples of the form *git@gitlab.com* |
-**KANIKO_PRIV_GITHUB** | **spec.source.url** | Private URL  for the Kaniko samples of the form *git@github.com* |
-**SRC_PRIV_GITHUB** | **spec.source.url** | Private URL for the src2img samples of the form *git@github.com* |
-**BUILDPACKS_PRIV_GITHUB** | **spec.source.url** | Private URL for the buildpacks samples of the form *git@github.com* |
+**TEST_PRIVATE_REPO** | _none_ | Enables running e2e tests for private repositories |
+**TEST_PRIVATE_GITHUB** | **spec.source.url** | Private URL for the samples of the form *git@github.com* |
+**TEST_PRIVATE_GITLAB** | **spec.source.url** | Private URL for the samples of the form *git@gitlab.com* |
 **TEST_SOURCE_SECRET** | **spec.source.credentials.name** | A secret containing the SSH private key for accessing the above private repository. See [ssh-authentication](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md#ssh-authentication-git). The secret definition must define two annotations: `tekton.dev/git-0: github.com` and `tekton.dev/git-1: gitlab.com`  |
 
 To run all strategies except buildpacks-v3 and none private git repositories tests, execute:
@@ -85,17 +82,14 @@ TEST_IMAGE_REPO=quay.io/shbose/nodejs-ex:latest TEST_IMAGE_REPO_SECRET=regcred  
 To run all strategies and also the private git repositories tests, execute:
 
 ```sh
-export TEST_WITH_PRIVATE_REPO=true
-export BUILDAH_PRIV_GITHUB=git@github.com:<youruser>/<your-repo>.git
-export BUILDAH_PRIV_GITLAB=git@gitlab.com:<youruser>/<your-repo>.git
-export KANIKO_PRIV_GITHUB=git@github.com:<youruser>/<your-repo>.git
-export SRC_PRIV_GITHUB=git@github.com:<youruser>/<your-repo>.git
-export BUILDPACKS_PRIV_GITHUB=git@github.com:<youruser>/<your-repo>.git
+export TEST_PRIVATE_REPO=true
+export TEST_PRIVATE_GITHUB=git@github.com:<youruser>/<your-repo>.git
+export TEST_PRIVATE_GITLAB=git@gitlab.com:<youruser>/<your-repo>.git
 export TEST_SOURCE_SECRET=<your-github-ssh-all>
-operator-sdk test local ./test/e2e --up-local --namespace build-examples --go-test-flags "-timeout=15m"
+operator-sdk test local ./test/e2e --up-local --namespace build-examples --go-test-flags "-timeout=20m"
 ```
 
-_Note:_ The e2e tests timeout defaults to 10min, when running with the private git repositories tests, more than 10 minutes is recommended.
+_Note:_ The e2e tests timeout defaults to 10min, when running with the private git repositories tests, more than 15 minutes is recommended.
 
 For private git repositories test a secret of the type `kubernetes.io/ssh-auth` is required, here is an example of such a secret:
 

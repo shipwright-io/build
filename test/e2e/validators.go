@@ -24,14 +24,11 @@ import (
 )
 
 var (
-	EnvVarImageRepo                        = "TEST_IMAGE_REPO"
-	EnvVarImageRepoSecret                  = "TEST_IMAGE_REPO_SECRET"
-	EnvVarSourceBuildahPrivateGithubURL    = "BUILDAH_PRIV_GITHUB"
-	EnvVarSourceBuildahPrivateGitlabURL    = "BUILDAH_PRIV_GITLAB"
-	EnvVarSourceKanikoPrivateGithubURL     = "KANIKO_PRIV_GITHUB"
-	EnvVarSourceSrcToImgPrivateGithubURL   = "SRC_PRIV_GITHUB"
-	EnvVarSourceBuildpacksPrivateGithubURL = "BUILDPACKS_PRIV_GITHUB"
-	EnvVarSourURLSecret                    = "TEST_SOURCE_SECRET"
+	EnvVarImageRepo       = "TEST_IMAGE_REPO"
+	EnvVarImageRepoSecret = "TEST_IMAGE_REPO_SECRET"
+	EnvVarSourceURLGithub = "TEST_PRIVATE_GITHUB"
+	EnvVarSourceURLGitlab = "TEST_PRIVATE_GITLAB"
+	EnvVarSourURLSecret   = "TEST_SOURCE_SECRET"
 )
 
 // OperatorEmulation is used as an struct
@@ -258,32 +255,14 @@ func validateOutputEnvVars(o *operator.Build) {
 	}
 }
 
-func validateBuildahGithubURL(o *operator.Build) {
-	if val, bool := os.LookupEnv(EnvVarSourceBuildahPrivateGithubURL); bool {
+func validateGithubURL(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarSourceURLGithub); bool {
 		o.Spec.Source.URL = val
 	}
 }
 
-func validateBuildahGitlabURL(o *operator.Build) {
-	if val, bool := os.LookupEnv(EnvVarSourceBuildahPrivateGitlabURL); bool {
-		o.Spec.Source.URL = val
-	}
-}
-
-func validateKanikoGithubURL(o *operator.Build) {
-	if val, bool := os.LookupEnv(EnvVarSourceKanikoPrivateGithubURL); bool {
-		o.Spec.Source.URL = val
-	}
-}
-
-func validateSrcToImgGithubURL(o *operator.Build) {
-	if val, bool := os.LookupEnv(EnvVarSourceSrcToImgPrivateGithubURL); bool {
-		o.Spec.Source.URL = val
-	}
-}
-
-func validateBuildpacksGithubURL(o *operator.Build) {
-	if val, bool := os.LookupEnv(EnvVarSourceBuildpacksPrivateGithubURL); bool {
+func validateGitlabURL(o *operator.Build) {
+	if val, bool := os.LookupEnv(EnvVarSourceURLGitlab); bool {
 		o.Spec.Source.URL = val
 	}
 }

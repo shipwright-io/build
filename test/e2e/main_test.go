@@ -19,10 +19,10 @@ func TestMain(m *testing.M) {
 
 var (
 	retryInterval            = time.Second * 5
-	timeout                  = time.Second * 60
+	timeout                  = time.Second * 120
 	cleanupRetryInterval     = time.Second * 1
 	cleanupTimeout           = time.Second * 5
-	EnvVarEnablePrivateRepos = "TEST_WITH_PRIVATE_REPO"
+	EnvVarEnablePrivateRepos = "TEST_PRIVATE_REPO"
 )
 
 func TestBuild(t *testing.T) {
@@ -172,7 +172,25 @@ func BuildCluster(t *testing.T) {
 		validateOutputEnvVars(oE.build)
 		// Validate env vars for private repos
 		validateSourceSecretRef(oE.build)
-		validateKanikoGithubURL(oE.build)
+		validateGithubURL(oE.build)
+
+		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
+		// Run e2e tests for kaniko with private gitlab repo
+		oE := newOperatorEmulation(namespace,
+			"example-build-kaniko-private-gitlab",
+			"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
+			"test/data/build_kaniko_cr_private_gitlab.yaml",
+			"samples/buildrun/buildrun_kaniko_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+		validateOutputEnvVars(oE.build)
+		// Validate env vars for private repos
+		validateSourceSecretRef(oE.build)
+		validateGitlabURL(oE.build)
 
 		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 		validateController(t, ctx, f, oE.build, oE.buildRun)
@@ -191,7 +209,7 @@ func BuildCluster(t *testing.T) {
 		validateOutputEnvVars(oE.build)
 		// Validate env vars for private repos
 		validateSourceSecretRef(oE.build)
-		validateBuildahGithubURL(oE.build)
+		validateGithubURL(oE.build)
 
 		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 		validateController(t, ctx, f, oE.build, oE.buildRun)
@@ -210,7 +228,7 @@ func BuildCluster(t *testing.T) {
 		validateOutputEnvVars(oE.build)
 		// Validate env vars for private repos
 		validateSourceSecretRef(oE.build)
-		validateBuildahGitlabURL(oE.build)
+		validateGitlabURL(oE.build)
 
 		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 		validateController(t, ctx, f, oE.build, oE.buildRun)
@@ -229,7 +247,7 @@ func BuildCluster(t *testing.T) {
 		validateOutputEnvVars(oE.build)
 		// Validate env vars for private repos
 		validateSourceSecretRef(oE.build)
-		validateBuildpacksGithubURL(oE.build)
+		validateGithubURL(oE.build)
 
 		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 		validateController(t, ctx, f, oE.build, oE.buildRun)
@@ -248,7 +266,7 @@ func BuildCluster(t *testing.T) {
 		validateOutputEnvVars(oE.build)
 		// Validate env vars for private repos
 		validateSourceSecretRef(oE.build)
-		validateSrcToImgGithubURL(oE.build)
+		validateGithubURL(oE.build)
 
 		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
 		validateController(t, ctx, f, oE.build, oE.buildRun)
