@@ -79,7 +79,7 @@ To run all strategies including buildpacks-v3 and none private git repositories 
 TEST_IMAGE_REPO=quay.io/shbose/nodejs-ex:latest TEST_IMAGE_REPO_SECRET=regcred  operator-sdk test local ./test/e2e --up-local --namespace build-examples
 ```
 
-To run all strategies and also the private git repositories tests, execute:
+To run all strategies and also the private git repositories tests except buildpacks-v3, execute:
 
 ```sh
 export TEST_PRIVATE_REPO=true

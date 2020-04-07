@@ -29,6 +29,7 @@ var (
 	EnvVarSourceURLGithub = "TEST_PRIVATE_GITHUB"
 	EnvVarSourceURLGitlab = "TEST_PRIVATE_GITLAB"
 	EnvVarSourURLSecret   = "TEST_SOURCE_SECRET"
+	QuayHostURL           = "quay.io"
 )
 
 // OperatorEmulation is used as an struct
@@ -253,6 +254,15 @@ func validateOutputEnvVars(o *operator.Build) {
 			Name: s,
 		}
 	}
+}
+
+// validateRegistryEnvVars check if the TEST_IMAGE_REPO
+// and TEST_IMAGE_REPO_SECRET env variables are set
+func validateRegistryEnvVars() bool {
+	if os.Getenv(EnvVarImageRepo) != "" && os.Getenv(EnvVarImageRepoSecret) != "" {
+		return true
+	}
+	return false
 }
 
 func validateGithubURL(o *operator.Build) {

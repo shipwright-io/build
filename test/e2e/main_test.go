@@ -124,36 +124,38 @@ func BuildCluster(t *testing.T) {
 	validateController(t, ctx, f, oE.build, oE.buildRun)
 	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
-	// Run e2e tests for buildpacks v3
-	oE = newOperatorEmulation(namespace,
-		"example-build-buildpacks-v3",
-		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
-		"samples/build/build_buildpacks-v3_cr.yaml",
-		"samples/buildrun/buildrun_buildpacks-v3_cr.yaml",
-	)
-	err = BuildTestData(oE)
-	require.NoError(t, err)
-	validateOutputEnvVars(oE.build)
+	if validateRegistryEnvVars() {
+		// Run e2e tests for buildpacks v3
+		oE = newOperatorEmulation(namespace,
+			"example-build-buildpacks-v3",
+			"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
+			"samples/build/build_buildpacks-v3_cr.yaml",
+			"samples/buildrun/buildrun_buildpacks-v3_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+		validateOutputEnvVars(oE.build)
 
-	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
-	validateController(t, ctx, f, oE.build, oE.buildRun)
-	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
-	// Run e2e tests for buildpacks v3 with a namespaced scope
-	oE = newOperatorEmulation(namespace,
-		"example-build-buildpacks-v3-namespaced",
-		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml",
-		"samples/build/build_buildpacks-v3_namespaced_cr.yaml",
-		"samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml",
-	)
-	err = BuildTestData(oE)
-	require.NoError(t, err)
-	validateOutputEnvVars(oE.build)
+		// Run e2e tests for buildpacks v3 with a namespaced scope
+		oE = newOperatorEmulation(namespace,
+			"example-build-buildpacks-v3-namespaced",
+			"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml",
+			"samples/build/build_buildpacks-v3_namespaced_cr.yaml",
+			"samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml",
+		)
+		err = BuildTestData(oE)
+		require.NoError(t, err)
+		validateOutputEnvVars(oE.build)
 
-	oE.buildStrategy.SetNamespace(namespace)
-	createNamespacedBuildStrategy(t, ctx, f, oE.buildStrategy)
-	validateController(t, ctx, f, oE.build, oE.buildRun)
-	deleteBuildStrategy(t, f, oE.buildStrategy)
+		oE.buildStrategy.SetNamespace(namespace)
+		createNamespacedBuildStrategy(t, ctx, f, oE.buildStrategy)
+		validateController(t, ctx, f, oE.build, oE.buildRun)
+		deleteBuildStrategy(t, f, oE.buildStrategy)
+	}
 
 	// Run e2e test cases for private repositories, only when
 	// env var TEST_WITH_PRIVATE_REPO is set.
@@ -179,7 +181,7 @@ func BuildCluster(t *testing.T) {
 		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
 		// Run e2e tests for kaniko with private gitlab repo
-		oE := newOperatorEmulation(namespace,
+		oE = newOperatorEmulation(namespace,
 			"example-build-kaniko-private-gitlab",
 			"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
 			"test/data/build_kaniko_cr_private_gitlab.yaml",
@@ -234,24 +236,26 @@ func BuildCluster(t *testing.T) {
 		validateController(t, ctx, f, oE.build, oE.buildRun)
 		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
-		// Run e2e tests for buildpacks v3 with private github
-		oE = newOperatorEmulation(namespace,
-			"example-build-buildpacks-v3-private-github",
-			"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
-			"test/data/build_buildpacks-v3_cr_private_github.yaml",
-			"samples/buildrun/buildrun_buildpacks-v3_cr.yaml",
-		)
-		err = BuildTestData(oE)
-		require.NoError(t, err)
+		if validateRegistryEnvVars() {
+			// Run e2e tests for buildpacks v3 with private github
+			oE = newOperatorEmulation(namespace,
+				"example-build-buildpacks-v3-private-github",
+				"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
+				"test/data/build_buildpacks-v3_cr_private_github.yaml",
+				"samples/buildrun/buildrun_buildpacks-v3_cr.yaml",
+			)
+			err = BuildTestData(oE)
+			require.NoError(t, err)
 
-		validateOutputEnvVars(oE.build)
-		// Validate env vars for private repos
-		validateSourceSecretRef(oE.build)
-		validateGithubURL(oE.build)
+			validateOutputEnvVars(oE.build)
+			// Validate env vars for private repos
+			validateSourceSecretRef(oE.build)
+			validateGithubURL(oE.build)
 
-		createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
-		validateController(t, ctx, f, oE.build, oE.buildRun)
-		deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+			createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+			validateController(t, ctx, f, oE.build, oE.buildRun)
+			deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+		}
 
 		// Run e2e tests for source2image with private github
 		oE = newOperatorEmulation(namespace,
