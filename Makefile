@@ -10,11 +10,8 @@ GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 GOARCH ?= amd64
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor
-# golang test floags
-GO_TEST_FLAGS ?= -failfast
 # configure zap based logr
 ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
-
 # CI: tekton pipelines operator version
 TEKTON_VERSION ?= v0.10.1
 # CI: operator-sdk version
@@ -36,7 +33,18 @@ $(OPERATOR): vendor
 
 .PHONY: test
 test:
-	go test $(GO_FLAGS) $(GO_TEST_FLAGS) ./pkg/apis/... ./pkg/controller/...
+	GO111MODULE=on ginkgo \
+	  -randomizeAllSpecs \
+	  -randomizeSuites \
+	  -failOnPending \
+	  -nodes=4 \
+	  -compilers=2 \
+	  -slowSpecThreshold=240 \
+	  -race \
+	  -cover \
+	  -trace \
+	  internal/... \
+	  pkg/...
 
 local:
 	-hack/crd.sh uninstall
@@ -45,6 +53,9 @@ local:
 
 clean:
 	rm -rf $(OUTPUT_DIR)
+
+gen-fakes:
+	./hack/generate-fakes.sh
 
 travis:
 	./hack/install-operator-sdk.sh
