@@ -9,6 +9,8 @@ spec:
       image: $(build.builder.image)
       securityContext:
         runAsUser: 0
+        capabilities:
+          add: ["CHOWN"]
       command:
         - /bin/bash
       args:

@@ -10,6 +10,8 @@ spec:
       workingdir: /workspace/source
       securityContext:
         runAsUser: 0
+        capabilities:
+          add: ["CHOWN", "DAC_OVERRIDE", "FOWNER"]
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
