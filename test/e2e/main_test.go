@@ -94,6 +94,21 @@ func BuildCluster(t *testing.T) {
 	validateController(t, ctx, f, oE.build, oE.buildRun)
 	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
+	// Run e2e tests for kaniko with custom context directory and Dockerfile name
+	oE = newOperatorEmulation(namespace,
+		"kaniko-custom-context-dockerfile",
+		"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
+		"test/data/build_kaniko_cr_custom_context+dockerfile.yaml",
+		"test/data/buildrun_kaniko_cr_custom_context+dockerfile.yaml",
+	)
+	err = BuildTestData(oE)
+	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
+
+	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
 	// Run e2e tests for source2image
 	oE = newOperatorEmulation(namespace,
 		"example-build-s2i",
@@ -115,6 +130,21 @@ func BuildCluster(t *testing.T) {
 		"samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
 		"samples/build/build_buildah_cr.yaml",
 		"samples/buildrun/buildrun_buildah_cr.yaml",
+	)
+	err = BuildTestData(oE)
+	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
+
+	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
+	// Run e2e tests for buildah with custom context directory and Dockerfile name
+	oE = newOperatorEmulation(namespace,
+		"buildah-custom-context-dockerfile",
+		"samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
+		"test/data/build_buildah_cr_custom_context+dockerfile.yaml",
+		"test/data/buildrun_buildah_cr_custom_context+dockerfile.yaml",
 	)
 	err = BuildTestData(oE)
 	require.NoError(t, err)

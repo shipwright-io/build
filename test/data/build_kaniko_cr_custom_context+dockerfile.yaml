@@ -1,0 +1,15 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-custom-context-dockerfile
+spec:
+  source:
+    url: https://github.com/SaschaSchwarze0/npm-simple
+    contextDir: renamed
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  dockerfile: RenamedDockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/renamed-dockerfile

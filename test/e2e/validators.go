@@ -116,64 +116,39 @@ func validateController(
 
 	// Ensure the Build has been created
 	err := f.Client.Create(goctx.TODO(), testBuild, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Ensure the BuildRun has been created
 	err = f.Client.Create(goctx.TODO(), testBuildRun, &framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	time.Sleep(15 * time.Second)
 
 	// Ensure that a TaskRun has been created and is in pending or running state
-	pendingOrRunning := false
 	generatedTaskRun, err := getTaskRun(testBuild, testBuildRun, f)
 	require.NoError(t, err)
-	pendingOrRunning = false
-	if generatedTaskRun.Status.Conditions[0].Reason == pendingStatus || generatedTaskRun.Status.Conditions[0].Reason == runningStatus {
-		pendingOrRunning = true
-	}
-	require.True(t, pendingOrRunning)
+	require.Contains(t, [2]string{pendingStatus, runningStatus}, generatedTaskRun.Status.Conditions[0].Reason, "TaskRun not pending or running")
 
 	// Ensure BuildRun is in pending or running state
 	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}, testBuildRun)
 	require.NoError(t, err)
-	pendingOrRunning = false
-	if testBuildRun.Status.Reason == pendingStatus || testBuildRun.Status.Reason == runningStatus {
-		pendingOrRunning = true
-	}
-	require.True(t, pendingOrRunning)
+	require.Contains(t, [2]string{pendingStatus, runningStatus}, testBuildRun.Status.Reason, "BuildRun not pending or running")
 
 	// Ensure that Build moves to Running State
-	foundRunning := false
-	for i := 1; i <= 10; i++ {
-		time.Sleep(3 * time.Second)
+	require.Eventually(t, func() bool {
 		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}, testBuildRun)
 		require.NoError(t, err)
 
-		if testBuildRun.Status.Reason == runningStatus {
-			foundRunning = true
-			break
-		}
-	}
-	require.True(t, foundRunning)
+		return testBuildRun.Status.Reason == runningStatus
+	}, 30*time.Second, 3*time.Second, "BuildRun not running")
 
 	// Ensure that eventually the Build moves to Succeeded.
-	foundSuccessful := false
-	for i := 1; i <= 30; i++ {
-		time.Sleep(10 * time.Second)
+	require.Eventually(t, func() bool {
 		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}, testBuildRun)
 		require.NoError(t, err)
 
-		if testBuildRun.Status.Succeeded == trueCondition {
-			foundSuccessful = true
-			break
-		}
-	}
-	require.True(t, foundSuccessful)
+		return testBuildRun.Status.Succeeded == trueCondition
+	}, 300*time.Second, 10*time.Second, "BuildRun not succeeded")
 }
 
 // BuildTestData loads all different Build objects
