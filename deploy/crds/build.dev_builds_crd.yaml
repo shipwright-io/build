@@ -68,6 +68,10 @@ spec:
               description: Dockerfile is the path to the Dockerfile to be used for
                 build strategies which bank on the Dockerfile for building an image.
               type: string
+            generateServiceAccount:
+              description: If automatically generate a new ServiceAccount for this
+                build
+              type: boolean
             output:
               description: Output refers to the location where the generated image
                 would be pushed to.

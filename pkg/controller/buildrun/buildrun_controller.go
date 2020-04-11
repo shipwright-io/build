@@ -6,6 +6,7 @@ import (
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -130,17 +131,39 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, nil
 	}
 
-	// Add creds to service account
-	serviceAccount, err := r.retrieveServiceAccount(buildRun)
-	if err != nil {
-		reqLogger.Error(err, "Failed to get ServiceAccount from BuildRun", "BuildRun", buildRun.Name)
-		return reconcile.Result{}, err
-	}
-	serviceAccount = applyCredentials(build, serviceAccount)
-	err = r.client.Update(context.TODO(), serviceAccount)
-	if err != nil {
-		reqLogger.Error(err, "Failed to update ServiceAccount", "ServiceAccount", serviceAccount.Name)
-		return reconcile.Result{}, err
+	// Choose a service account to use
+	serviceAccount := &corev1.ServiceAccount{}
+	if build.Spec.GenerateServiceAccount != nil &&
+		*build.Spec.GenerateServiceAccount == true &&
+		buildRun.Spec.ServiceAccount == nil {
+		serviceAccount.Name = build.Name + "-sa"
+		serviceAccount.Namespace = build.Namespace
+		serviceAccount.Labels = map[string]string{buildv1alpha1.LabelBuild: build.Name,}
+		ownerReferences := metav1.NewControllerRef(build, buildv1alpha1.SchemeGroupVersion.WithKind("Build"))
+		serviceAccount.OwnerReferences = append(serviceAccount.OwnerReferences, *ownerReferences)
+
+		// Add credentials to service account
+		serviceAccount = applyCredentials(build, serviceAccount)
+		err = r.client.Create(context.TODO(), serviceAccount)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new ServiceAccount", "ServiceAccount", serviceAccount.Name)
+			return reconcile.Result{}, err
+		}
+
+	} else {
+		serviceAccount, err = r.retrieveServiceAccount(buildRun)
+		if err != nil {
+			reqLogger.Error(err, "Failed to get the ServiceAccount from BuildRun", "BuildRun", buildRun.Name)
+			return reconcile.Result{}, err
+		}
+
+		// Add credentials to service account
+		serviceAccount = applyCredentials(build, serviceAccount)
+		err = r.client.Update(context.TODO(), serviceAccount)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update the ServiceAccount", "ServiceAccount", serviceAccount.Name)
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Everytime control enters the reconcile loop, we need to ensure

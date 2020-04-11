@@ -92,6 +92,7 @@ spec:
     limits:
       cpu: "500m"
       memory: "1Gi"
+  generateServiceAccount: false
   output:
     image: quay.io/olemefer/nodejs-ex:v1
     credentials:

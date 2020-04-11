@@ -240,6 +240,11 @@ func (in *BuildSpec) DeepCopyInto(out *BuildSpec) {
 		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.GenerateServiceAccount != nil {
+		in, out := &in.GenerateServiceAccount, &out.GenerateServiceAccount
+		*out = new(bool)
+		**out = **in
+	}
 	in.Output.DeepCopyInto(&out.Output)
 	return
 }

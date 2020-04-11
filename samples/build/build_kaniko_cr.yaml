@@ -15,5 +15,6 @@ spec:
     limits:
       cpu: "500m"
       memory: "1Gi"
+  generateServiceAccount: true
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

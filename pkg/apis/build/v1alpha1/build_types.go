@@ -43,6 +43,10 @@ type BuildSpec struct {
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// If automatically generate a new ServiceAccount for this build
+	// +optional
+	GenerateServiceAccount *bool `json:"generateServiceAccount,omitempty"`
+
 	// Output refers to the location where the generated
 	// image would be pushed to.
 	Output Image `json:"output"`
