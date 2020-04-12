@@ -86,11 +86,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	// Validate if the spec.output.secretref exist in the namespace
-	if b.Spec.Output.SecretRef != nil {
-		if b.Spec.Output.SecretRef.Name != "" {
-			if err := r.validateOutputSecret(b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
-				return reconcile.Result{}, err
-			}
+	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
+		if err := r.validateOutputSecret(b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
+			return reconcile.Result{}, err
 		}
 	}
 
