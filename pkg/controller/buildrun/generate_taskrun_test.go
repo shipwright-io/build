@@ -2,10 +2,11 @@ package buildrun
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"strings"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -15,9 +16,9 @@ import (
 )
 
 const (
-	buildah = "buildah"
+	buildah    = "buildah"
 	buildpacks = "buildpacks-v3"
-	url     = "https://github.com/sbose78/taxi"
+	url        = "https://github.com/sbose78/taxi"
 )
 
 func TestGenerateTaskSpec(t *testing.T) {
@@ -30,9 +31,9 @@ func TestGenerateTaskSpec(t *testing.T) {
 	truePtr := true
 
 	type args struct {
-		build            *buildv1alpha1.Build
-		buildRun         *buildv1alpha1.BuildRun
-		buildStrategy    *buildv1alpha1.BuildStrategy
+		build         *buildv1alpha1.Build
+		buildRun      *buildv1alpha1.BuildRun
+		buildStrategy *buildv1alpha1.BuildStrategy
 	}
 	tests := []struct {
 		name string
@@ -72,7 +73,7 @@ func TestGenerateTaskSpec(t *testing.T) {
 					},
 					Spec: buildv1alpha1.BuildRunSpec{
 						BuildRef: &buildv1alpha1.BuildRef{
-							Name:       buildah,
+							Name: buildah,
 						},
 					},
 				},
@@ -86,10 +87,10 @@ func TestGenerateTaskSpec(t *testing.T) {
 									Image:      "$(build.builder.image)",
 									WorkingDir: "/workspace/source",
 									Command: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.source.contextDir)",
 									},
 									Args: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.source.contextDir)",
 									},
 									VolumeMounts: []corev1.VolumeMount{
 										{
@@ -175,9 +176,9 @@ func TestGenerateTaskRun(t *testing.T) {
 	serviceAccountName := buildpacks + "-serviceaccount"
 
 	type args struct {
-		build            *buildv1alpha1.Build
-		buildRun         *buildv1alpha1.BuildRun
-		buildStrategy    *buildv1alpha1.BuildStrategy
+		build         *buildv1alpha1.Build
+		buildRun      *buildv1alpha1.BuildRun
+		buildStrategy *buildv1alpha1.BuildStrategy
 	}
 	tests := []struct {
 		name string
@@ -189,7 +190,7 @@ func TestGenerateTaskRun(t *testing.T) {
 			args{
 				build: &buildv1alpha1.Build{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: buildah,
+						Name:      buildah,
 						Namespace: namespace,
 					},
 					Spec: buildv1alpha1.BuildSpec{
@@ -206,12 +207,12 @@ func TestGenerateTaskRun(t *testing.T) {
 				},
 				buildRun: &buildv1alpha1.BuildRun{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: buildah + "-run",
+						Name:      buildah + "-run",
 						Namespace: namespace,
 					},
 					Spec: buildv1alpha1.BuildRunSpec{
 						BuildRef: &buildv1alpha1.BuildRef{
-							Name:       buildah,
+							Name: buildah,
 						},
 						Resources: &corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
@@ -257,13 +258,13 @@ func TestGenerateTaskRun(t *testing.T) {
 			args{
 				build: &buildv1alpha1.Build{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: buildpacks,
+						Name:      buildpacks,
 						Namespace: namespace,
 					},
 					Spec: buildv1alpha1.BuildSpec{
 						Source: buildv1alpha1.GitSource{
-							URL: url,
-							Revision: &revision,
+							URL:        url,
+							Revision:   &revision,
 							ContextDir: &contextDir,
 						},
 						StrategyRef: &buildv1alpha1.StrategyRef{
@@ -285,12 +286,12 @@ func TestGenerateTaskRun(t *testing.T) {
 				},
 				buildRun: &buildv1alpha1.BuildRun{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: buildpacks + "-run",
+						Name:      buildpacks + "-run",
 						Namespace: namespace,
 					},
 					Spec: buildv1alpha1.BuildRunSpec{
 						BuildRef: &buildv1alpha1.BuildRef{
-							Name:       buildpacks,
+							Name: buildpacks,
 						},
 						Resources: &corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
@@ -336,9 +337,9 @@ func TestGenerateTaskRun(t *testing.T) {
 			got, err := generateTaskRun(tt.args.build, tt.args.buildRun, serviceAccountName, tt.args.buildStrategy.Spec.BuildSteps)
 			assert.True(t, reflect.DeepEqual(err, nil))
 			// ensure generated TaskRun's basic information are correct
-			assert.True(t, reflect.DeepEqual(true, strings.Contains(got.GenerateName, tt.args.buildRun.Name + "-")))
+			assert.True(t, reflect.DeepEqual(true, strings.Contains(got.GenerateName, tt.args.buildRun.Name+"-")))
 			assert.True(t, reflect.DeepEqual(got.Namespace, namespace))
-			assert.True(t, reflect.DeepEqual(got.Spec.ServiceAccountName, buildpacks + "-serviceaccount"))
+			assert.True(t, reflect.DeepEqual(got.Spec.ServiceAccountName, buildpacks+"-serviceaccount"))
 			assert.True(t, reflect.DeepEqual(got.Labels[buildv1alpha1.LabelBuild], tt.args.build.Name))
 			assert.True(t, reflect.DeepEqual(got.Labels[buildv1alpha1.LabelBuildRun], tt.args.buildRun.Name))
 

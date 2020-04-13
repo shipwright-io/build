@@ -164,11 +164,11 @@ metadata:
 spec:
   source:
     url: https://github.com/sbose78/taxi
+    contextDir: .
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy
   dockerfile: Dockerfile
-  pathContext: ./
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
 ```

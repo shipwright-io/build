@@ -20,5 +20,5 @@ spec:
       args:
         - --skip-tls-verify=true
         - --dockerfile=$(build.dockerfile)
-        - --context=/workspace/source/$(build.pathContext)
+        - --context=/workspace/source/$(build.source.contextDir)
         - --destination=$(build.output.image)

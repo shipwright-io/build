@@ -3,14 +3,15 @@ package buildrun
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -31,10 +32,10 @@ const (
 func getStringTransformations(fullText string) string {
 
 	stringTransformations := map[string]string{
-		"$(build.output.image)":  "$(outputs.resources.image.url)",
-		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
-		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
-		"$(build.pathContext)":   fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
+		"$(build.output.image)":      "$(outputs.resources.image.url)",
+		"$(build.builder.image)":     fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
+		"$(build.dockerfile)":        fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
+		"$(build.source.contextDir)": fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
 	}
 
 	// Run the text through all possible replacements
@@ -180,17 +181,17 @@ func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 	expectedTaskRun := &taskv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: buildRun.Name + "-",
-			Namespace: buildRun.Namespace,
+			Namespace:    buildRun.Namespace,
 			Labels: map[string]string{
-				buildv1alpha1.LabelBuild: build.Name,
-				buildv1alpha1.LabelBuildGeneration: strconv.FormatInt(build.Generation, 10),
-				buildv1alpha1.LabelBuildRun: buildRun.Name,
+				buildv1alpha1.LabelBuild:              build.Name,
+				buildv1alpha1.LabelBuildGeneration:    strconv.FormatInt(build.Generation, 10),
+				buildv1alpha1.LabelBuildRun:           buildRun.Name,
 				buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
 			},
 		},
 		Spec: taskv1.TaskRunSpec{
 			ServiceAccountName: serviceAccountName,
-			TaskSpec: taskSpec,
+			TaskSpec:           taskSpec,
 			Inputs: taskv1.TaskRunInputs{
 				Resources: []taskv1.TaskResourceBinding{
 					{
