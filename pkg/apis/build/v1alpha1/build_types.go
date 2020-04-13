@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	LabelBuild                 = "build.build.dev/name"
-	LabelBuildGeneration       = "build.build.dev/generation"
+	LabelBuild           = "build.build.dev/name"
+	LabelBuildGeneration = "build.build.dev/generation"
 )
 
 // BuildSpec defines the desired state of Build
@@ -62,7 +62,8 @@ type Image struct {
 
 // BuildStatus defines the observed state of Build
 type BuildStatus struct {
-
+	// The Registered status of the TaskRun
+	Registered corev1.ConditionStatus `json:"registered,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

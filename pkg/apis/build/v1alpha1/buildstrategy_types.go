@@ -7,7 +7,6 @@ import (
 
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
-
 	BuildSteps []BuildStep `json:"buildSteps,omitempty"`
 }
 
@@ -19,7 +18,6 @@ type BuildStep struct {
 
 // BuildStrategyStatus defines the observed state of BuildStrategy
 type BuildStrategyStatus struct {
-
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

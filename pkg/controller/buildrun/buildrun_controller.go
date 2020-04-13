@@ -2,6 +2,7 @@ package buildrun
 
 import (
 	"context"
+
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -119,7 +120,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			buildRun.Status.Succeeded = lastTaskRun.Status.Conditions[0].Status
 			buildRun.Status.Reason = lastTaskRun.Status.Conditions[0].Reason
 		}
-		buildRun.Status.LatestTaskRunRef =&lastTaskRun.Name
+		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
 		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 		buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
 		err = r.client.Status().Update(context.TODO(), buildRun)
@@ -171,7 +172,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Set OwnerReference for Build and BuildRun
 	if err := controllerutil.SetControllerReference(build, buildRun, r.scheme); err != nil {
-		reqLogger.Error(err, "Setting owner reference fails", "Build", build.Name,"BuildRun", buildRun.Name )
+		reqLogger.Error(err, "Setting owner reference fails", "Build", build.Name, "BuildRun", buildRun.Name)
 		return reconcile.Result{}, err
 	}
 
@@ -184,7 +185,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	// create TaskRun if no TaskRun for that BuildRun exists
 	err = r.client.Create(context.TODO(), generatedTaskRun)
 	if err != nil {
-		reqLogger.Error(err,"Failed to create TaskRun", "Namespace", generatedTaskRun.Namespace, "Name", generatedTaskRun.Name)
+		reqLogger.Error(err, "Failed to create TaskRun", "Namespace", generatedTaskRun.Namespace, "Name", generatedTaskRun.Name)
 		return reconcile.Result{}, err
 	}
 
@@ -254,7 +255,7 @@ func (r *ReconcileBuildRun) retrieveTaskRun(build *buildv1alpha1.Build, buildRun
 	taskRunList := &taskv1.TaskRunList{}
 
 	lbls := map[string]string{
-		buildv1alpha1.LabelBuild: build.Name,
+		buildv1alpha1.LabelBuild:    build.Name,
 		buildv1alpha1.LabelBuildRun: buildRun.Name,
 	}
 	opts := client.ListOptions{

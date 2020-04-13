@@ -5,6 +5,8 @@ go:
 services:
   - docker
 install:
+  - go get -u github.com/onsi/ginkgo/ginkgo
+  - go get -u github.com/onsi/gomega/...
   - make travis
 script:
   - make

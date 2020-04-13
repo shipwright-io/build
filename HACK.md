@@ -43,6 +43,30 @@ make clean && make build
 
 ## Unit tests
 
+### Counterfeiter
+
+Counterfeiter is used to generate and update fake implementations of objects. Currently only used for the `manager` and `client` package interface of the `sigs.k8s.io/controller-runtime`.
+
+This allow us to use test doubles in the unit tests, from where we can instantiate the fakes and then stub return values. This is very useful, for example we can mock all **client** calls that happened during the k8s controllers reconciliation and stub the result. Same case for the **manager** when creating controllers.
+
+For installing the binary, refer to [installing counterfeiter](https://github.com/maxbrunsfeld/counterfeiter#installing-counterfeiter-to-gopathbin).
+
+### Ginkgo
+
+Ginkgo is a go testing framework that use the Go´s **testing** package. The framework have many [features](https://github.com/onsi/ginkgo#feature-list) on top of Go´s built-in testing primitives.
+
+In ginkgo, every package needs a `suite_test.go`. Each controller package under this repository will have one. You can generate a suite by running `ginkgo bootstrap` under the package directory. For testing an specific controller class, you can generate the testing class by running `ginkgo generate` under the package directory.
+
+When building unit-tests, try to follow:
+
+* Test DRY. Therefore we use the `catalog.go` helper class under the `test` directory, to avoid code repetition.
+* Use counterfeiter to generate fakes.
+* Tests happen on a separate `_test` package.
+* Assert all errors.
+* Assert that function invocations generate the expected values.
+
+### Running unit-tests
+
 ```sh
 make test
 ```
