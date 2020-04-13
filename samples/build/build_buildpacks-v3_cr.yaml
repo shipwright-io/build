@@ -11,6 +11,5 @@ spec:
     kind: ClusterBuildStrategy
   builder:
     image: heroku/buildpacks:18
-  generateServiceAccount: false
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

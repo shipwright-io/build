@@ -6,3 +6,6 @@ metadata:
 spec:
   buildRef:
     name: buildpack-nodejs-build
+  serviceAccount:
+    name: pipeline
+    generate: false

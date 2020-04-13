@@ -133,9 +133,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Choose a service account to use
 	serviceAccount := &corev1.ServiceAccount{}
-	if build.Spec.GenerateServiceAccount != nil &&
-		*build.Spec.GenerateServiceAccount == true &&
-		buildRun.Spec.ServiceAccount == nil {
+	if buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true {
 		serviceAccount.Name = build.Name + "-sa"
 		serviceAccount.Namespace = build.Namespace
 		serviceAccount.Labels = map[string]string{buildv1alpha1.LabelBuild: build.Name,}
@@ -232,7 +230,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(buildRun *buildv1alpha1.Build
 	if buildRun.Spec.ServiceAccount == nil {
 		serviceAccountName = pipelineServiceAccountName
 	} else {
-		serviceAccountName = *buildRun.Spec.ServiceAccount
+		serviceAccountName = buildRun.Spec.ServiceAccount.Name
 	}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
 	if err != nil && !errors.IsNotFound(err) {

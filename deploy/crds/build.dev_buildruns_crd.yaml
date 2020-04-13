@@ -84,7 +84,14 @@ spec:
               description: ServiceAccount refers to the kubernetes serviceaccount
                 which is used for resource control. Default serviceaccount will be
                 set if it is empty
-              type: string
+              properties:
+                generate:
+                  description: If generates a new ServiceAccount for the build
+                  type: boolean
+                name:
+                  description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                  type: string
+              type: object
           required:
           - buildRef
           type: object

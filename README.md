@@ -92,7 +92,6 @@ spec:
     limits:
       cpu: "500m"
       memory: "1Gi"
-  generateServiceAccount: false
   output:
     image: quay.io/olemefer/nodejs-ex:v1
     credentials:
@@ -112,6 +111,8 @@ metadata:
 spec:
   buildRef:
     name: buildpack-nodejs-build
+  serviceAccount:
+    generate: false
 ```
 
 The BuildRun resource is updated as soon as the current building status changes:
