@@ -28,6 +28,7 @@ var _ = Describe("Reconcile Build", func() {
 		buildSample                  *build.Build
 		client                       *fakes.FakeClient
 		ctl                          test.Catalog
+		statusWriter                 *fakes.FakeStatusWriter
 		registrySecret               string
 		buildName                    string
 		namespace, buildStrategyName string
@@ -55,6 +56,8 @@ var _ = Describe("Reconcile Build", func() {
 			}
 			return nil
 		})
+		statusWriter = &fakes.FakeStatusWriter{}
+		client.StatusCalls(func() crc.StatusWriter { return statusWriter })
 		manager.GetClientReturns(client)
 	})
 
@@ -83,8 +86,12 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
+				statusCall := ctl.StubFunc(corev1.ConditionFalse)
+				statusWriter.UpdateCalls(statusCall)
+
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("secret %s does not exist", registrySecret)))
 			})
 			It("succeed when the secret exists", func() {
@@ -103,8 +110,12 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
+				statusCall := ctl.StubFunc(corev1.ConditionTrue)
+				statusWriter.UpdateCalls(statusCall)
+
 				result, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})
@@ -125,8 +136,12 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
+				statusCall := ctl.StubFunc(corev1.ConditionFalse)
+				statusWriter.UpdateCalls(statusCall)
+
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("clusterBuildStrategy %s does not exist", buildStrategyName)))
 			})
 			It("succeed when the strategy exists", func() {
@@ -145,8 +160,12 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
+				statusCall := ctl.StubFunc(corev1.ConditionTrue)
+				statusWriter.UpdateCalls(statusCall)
+
 				result, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})
@@ -174,8 +193,12 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
+				statusCall := ctl.StubFunc(corev1.ConditionFalse)
+				statusWriter.UpdateCalls(statusCall)
+
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
 			})
 			It("succeed when the strategy exists", func() {
@@ -194,8 +217,12 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
+				statusCall := ctl.StubFunc(corev1.ConditionTrue)
+				statusWriter.UpdateCalls(statusCall)
+
 				result, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})

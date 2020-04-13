@@ -4,6 +4,10 @@ metadata:
   name: builds.build.dev
 spec:
   additionalPrinterColumns:
+  - JSONPath: .status.registered
+    description: The register status of the Build
+    name: Registered
+    type: string
   - JSONPath: .spec.strategy.kind
     description: The BuildStrategy type which is used for this Build
     name: BuildStrategyKind
@@ -189,6 +193,10 @@ spec:
           type: object
         status:
           description: BuildStatus defines the observed state of Build
+          properties:
+            registered:
+              description: The Register status of the Build
+              type: string
           type: object
       type: object
   version: v1alpha1

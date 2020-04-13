@@ -1,9 +1,14 @@
 package test
 
 import (
+	"context"
+
+	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Catalog allows you to access helper functions
@@ -133,5 +138,18 @@ func (c *Catalog) SecretList(name string) corev1.SecretList {
 				},
 			},
 		},
+	}
+}
+
+// StubFunc is used to simulate the status of the Build
+// after a .Status().Update() call in the controller. This
+// receives a parameter to return an specific status state
+func (c *Catalog) StubFunc(status corev1.ConditionStatus) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			Expect(object.Status.Registered).To(Equal(status))
+		}
+		return nil
 	}
 }

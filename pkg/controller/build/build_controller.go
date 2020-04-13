@@ -85,20 +85,32 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
+	b.Status.Registered = corev1.ConditionFalse
+
 	// Validate if the spec.output.secretref exist in the namespace
 	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
 		if err := r.validateOutputSecret(b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
-			return reconcile.Result{}, err
+			reqLogger.Error(err, "failed validating the ouput secret", "Build", b.Name)
+			updateErr := r.client.Status().Update(context.Background(), b)
+			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
 	}
 
 	// Validate if the build strategy is defined
 	if b.Spec.StrategyRef != nil {
 		if err := r.validateStrategyRef(b.Spec.StrategyRef, b.Namespace); err != nil {
-			return reconcile.Result{}, err
+			reqLogger.Error(err, "failed validating the strategy reference", "Build", b.Name)
+			updateErr := r.client.Status().Update(context.Background(), b)
+			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
 	}
 
+	b.Status.Registered = corev1.ConditionTrue
+	err = r.client.Status().Update(context.Background(), b)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update the Build status", "Build", b.Name)
+		return reconcile.Result{}, err
+	}
 	return reconcile.Result{}, nil
 }
 
