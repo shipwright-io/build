@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	defaultServiceAccountName  = "default"
 	pipelineServiceAccountName = "pipeline"
 	inputSourceResourceName    = "source"
 	inputGitSourceURL          = "url"

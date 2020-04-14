@@ -94,7 +94,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	buildRun := &buildv1alpha1.BuildRun{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, buildRun)
 	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Failed to get the build instance")
+		reqLogger.Error(err, "Failed to get the buildRun instance")
 		return reconcile.Result{}, err
 	} else if errors.IsNotFound(err) {
 		return reconcile.Result{}, nil
@@ -105,7 +105,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: buildRun.Spec.BuildRef.Name, Namespace: buildRun.Namespace}, build)
 	if err != nil {
 		reqLogger.Error(err, "Failed to get Build from BuildRun", "Build", buildRun.Spec.BuildRef.Name)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	lastTaskRun, err := r.retrieveTaskRun(build, buildRun)
@@ -135,7 +135,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	serviceAccount, err := r.retrieveServiceAccount(buildRun)
 	if err != nil {
 		reqLogger.Error(err, "Failed to get ServiceAccount from BuildRun", "BuildRun", buildRun.Name)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 	serviceAccount = applyCredentials(build, serviceAccount)
 	err = r.client.Update(context.TODO(), serviceAccount)
@@ -167,26 +167,26 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	} else {
 		log.Error(err, "Unsupported BuildStrategy Kind", "BuildStrategyKind", build.Spec.StrategyRef.Kind)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	// Set OwnerReference for Build and BuildRun
 	if err := controllerutil.SetControllerReference(build, buildRun, r.scheme); err != nil {
 		reqLogger.Error(err, "Setting owner reference fails", "Build", build.Name, "BuildRun", buildRun.Name)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun
 	if err := controllerutil.SetControllerReference(buildRun, generatedTaskRun, r.scheme); err != nil {
 		reqLogger.Error(err, "Setting owner reference fails", "BuildRun", buildRun.Name, "TaskRun", generatedTaskRun.Name)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	// create TaskRun if no TaskRun for that BuildRun exists
 	err = r.client.Create(context.TODO(), generatedTaskRun)
 	if err != nil {
 		reqLogger.Error(err, "Failed to create TaskRun", "Namespace", generatedTaskRun.Namespace, "Name", generatedTaskRun.Name)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	reqLogger.Info("Generate and create TaskRun from Build and BuildRun", "TaskRun", generatedTaskRun.Name, "Build", build.Name, "BuildRun", buildRun.Name)
@@ -213,16 +213,9 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(buildRun *buildv1alpha1.Build
 		serviceAccountName = *buildRun.Spec.ServiceAccount
 	}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil {
 		log.Error(err, "Failed to get ServiceAccount", "ServiceAccount", serviceAccountName)
 		return nil, err
-	} else if errors.IsNotFound(err) {
-		serviceAccountName = defaultServiceAccountName
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
-		if err != nil {
-			log.Error(err, "Failed to get default ServiceAccount")
-			return nil, err
-		}
 	}
 	log.Info("Retrieve ServiceAccount from BuildRun", "ServiceAccount", serviceAccountName)
 	return buildServiceAccount, nil

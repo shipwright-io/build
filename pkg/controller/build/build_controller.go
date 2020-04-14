@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -81,8 +82,11 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	b := &build.Build{}
 	err := r.client.Get(context.Background(), request.NamespacedName, b)
-	if err != nil {
+	if err != nil && !k8s_errors.IsNotFound(err) {
+		reqLogger.Error(err, "Failed to get the build instance")
 		return reconcile.Result{}, err
+	} else if k8s_errors.IsNotFound(err) {
+		return reconcile.Result{}, nil
 	}
 
 	b.Status.Registered = corev1.ConditionFalse
@@ -92,7 +96,11 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		if err := r.validateOutputSecret(b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
 			reqLogger.Error(err, "failed validating the ouput secret", "Build", b.Name)
 			updateErr := r.client.Status().Update(context.Background(), b)
-			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+			if updateErr != nil {
+				reqLogger.Error(err, "Failed to update the Build status", "Build", b.Name)
+				return reconcile.Result{}, updateErr
+			}
+			return reconcile.Result{}, nil
 		}
 	}
 
@@ -101,7 +109,11 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		if err := r.validateStrategyRef(b.Spec.StrategyRef, b.Namespace); err != nil {
 			reqLogger.Error(err, "failed validating the strategy reference", "Build", b.Name)
 			updateErr := r.client.Status().Update(context.Background(), b)
-			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+			if updateErr != nil {
+				reqLogger.Error(err, "Failed to update the Build status", "Build", b.Name)
+				return reconcile.Result{}, updateErr
+			}
+			return reconcile.Result{}, nil
 		}
 	}
 

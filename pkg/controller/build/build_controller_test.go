@@ -2,8 +2,6 @@ package build_test
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/redhat-developer/build/test"
 
 	. "github.com/onsi/ginkgo"
@@ -88,11 +86,10 @@ var _ = Describe("Reconcile Build", func() {
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse)
 				statusWriter.UpdateCalls(statusCall)
-
-				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("secret %s does not exist", registrySecret)))
+				Expect(reconcile.Result{}).To(Equal(result))
 			})
 			It("succeed when the secret exists", func() {
 
@@ -139,10 +136,10 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse)
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("clusterBuildStrategy %s does not exist", buildStrategyName)))
+				Expect(reconcile.Result{}).To(Equal(result))
 			})
 			It("succeed when the strategy exists", func() {
 
@@ -196,10 +193,10 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse)
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+				Expect(reconcile.Result{}).To(Equal(result))
 			})
 			It("succeed when the strategy exists", func() {
 
