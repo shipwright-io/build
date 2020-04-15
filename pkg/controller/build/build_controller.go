@@ -23,6 +23,9 @@ import (
 
 var log = logf.Log.WithName("controller_build")
 
+// succeedStatus default status for the Build CRD
+const succeedStatus string = "Succeeded"
+
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -85,14 +88,18 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
+	// Populate the status struct with default values
 	b.Status.Registered = corev1.ConditionFalse
+	b.Status.Reason = succeedStatus
 
 	// Validate if the spec.output.secretref exist in the namespace
 	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
 		if err := r.validateOutputSecret(b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
 			reqLogger.Error(err, "failed validating the ouput secret", "Build", b.Name)
+			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(context.Background(), b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+
 		}
 	}
 
@@ -100,6 +107,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	if b.Spec.StrategyRef != nil {
 		if err := r.validateStrategyRef(b.Spec.StrategyRef, b.Namespace); err != nil {
 			reqLogger.Error(err, "failed validating the strategy reference", "Build", b.Name)
+			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(context.Background(), b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
