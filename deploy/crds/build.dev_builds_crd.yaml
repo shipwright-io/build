@@ -8,6 +8,10 @@ spec:
     description: The register status of the Build
     name: Registered
     type: string
+  - JSONPath: .status.reason
+    description: The reason of the registered Build, either an error or succeed message
+    name: Reason
+    type: string
   - JSONPath: .spec.strategy.kind
     description: The BuildStrategy type which is used for this Build
     name: BuildStrategyKind
@@ -196,6 +200,9 @@ spec:
           properties:
             registered:
               description: The Register status of the Build
+              type: string
+            reason:
+              description: The reason of the registered Build, either an error or succeed message
               type: string
           type: object
       type: object
