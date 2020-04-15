@@ -209,18 +209,23 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(buildRun *buildv1alpha1.Build
 	var serviceAccountName string
 	if buildRun.Spec.ServiceAccount == nil {
 		serviceAccountName = pipelineServiceAccountName
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
+		if err != nil && !errors.IsNotFound(err) {
+			log.Error(err, "Failed to get ServiceAccount", "ServiceAccount", serviceAccountName)
+			return nil, err
+		} else if errors.IsNotFound(err) {
+			serviceAccountName = defaultServiceAccountName
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
+			if err != nil {
+				log.Error(err, "Failed to get default ServiceAccount")
+				return nil, err
+			}
+		}
 	} else {
 		serviceAccountName = *buildRun.Spec.ServiceAccount
-	}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
-	if err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "Failed to get ServiceAccount", "ServiceAccount", serviceAccountName)
-		return nil, err
-	} else if errors.IsNotFound(err) {
-		serviceAccountName = defaultServiceAccountName
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
-		if err != nil {
-			log.Error(err, "Failed to get default ServiceAccount")
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
+		if err != nil && !errors.IsNotFound(err) {
+			log.Error(err, "Failed to get ServiceAccount", "ServiceAccount", serviceAccountName)
 			return nil, err
 		}
 	}
