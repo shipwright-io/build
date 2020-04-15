@@ -29,6 +29,7 @@ spec:
   scope: Namespaced
   subresources:
     status: {}
+  preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       description: Build is the Schema for the builds API

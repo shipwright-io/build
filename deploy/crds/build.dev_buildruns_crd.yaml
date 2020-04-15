@@ -32,6 +32,7 @@ spec:
   scope: Namespaced
   subresources:
     status: {}
+  preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       description: BuildRun is the Schema for the buildruns API
