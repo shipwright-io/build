@@ -15,6 +15,11 @@ var regularTestCases = map[string]*SampleFiles{
 		Build:                "samples/build/build_kaniko_cr.yaml",
 		BuildRun:             "samples/buildrun/buildrun_kaniko_cr.yaml",
 	},
+	"kaniko-custom-context-dockerfile": {
+		ClusterBuildStrategy: "samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
+		Build:                "test/data/build_kaniko_cr_custom_context+dockerfile.yaml",
+		BuildRun:             "test/data/buildrun_kaniko_cr_custom_context+dockerfile.yaml",
+	},
 	"s2i": {
 		ClusterBuildStrategy: "samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml",
 		Build:                "samples/build/build_source-to-image_cr.yaml",
@@ -24,6 +29,11 @@ var regularTestCases = map[string]*SampleFiles{
 		ClusterBuildStrategy: "samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
 		Build:                "samples/build/build_buildah_cr.yaml",
 		BuildRun:             "samples/buildrun/buildrun_buildah_cr.yaml",
+	},
+	"buildah-custom-context-dockerfile": {
+		ClusterBuildStrategy: "samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
+		Build:                "test/data/build_buildah_cr_custom_context+dockerfile.yaml",
+		BuildRun:             "test/data/buildrun_buildah_cr_custom_context+dockerfile.yaml",
 	},
 	"buildpacks-v3": {
 		ClusterBuildStrategy: "samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
