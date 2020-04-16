@@ -123,13 +123,17 @@ func validateController(
 	err = f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
 	require.NoError(t, err)
 
-	time.Sleep(15 * time.Second)
-
 	// Ensure that a TaskRun has been created and is in pending or running state
-	generatedTaskRun, err := getTaskRun(f, testBuild, testBuildRun)
-	require.NoError(t, err)
-	conditionReason := generatedTaskRun.Status.Conditions[0].Reason
-	require.Contains(t, pendingAndRunningStatues, conditionReason, "TaskRun not pending or running")
+	require.Eventually(t, func() bool {
+		generatedTaskRun, err := getTaskRun(f, testBuild, testBuildRun)
+		if err != nil {
+			return false
+		}
+		conditionReason := generatedTaskRun.Status.Conditions[0].Reason
+		return conditionReason == pendingStatus || conditionReason == runningStatus
+	}, 60*time.Second, 3*time.Second, "BuildRun is pending or running")
+
+	time.Sleep(15 * time.Second)
 
 	// Ensure BuildRun is in pending or running state
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: ns}
