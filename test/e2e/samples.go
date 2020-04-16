@@ -79,12 +79,10 @@ func (s *SamplesTesting) Test(identifier string, files *SampleFiles) {
 
 	b, err := buildTestData(s.ns, identifier, files.Build)
 	require.NoError(s.t, err)
-	b.SetNamespace(s.ns)
 	s.amendBuild(identifier, b)
 
 	br, err := buildRunTestData(s.ns, identifier, files.BuildRun)
 	require.NoError(s.t, err)
-	br.SetNamespace(s.ns)
 
 	// on using an empty ClusterBuildStrategy it will fall back on namespaced BuildStrategy
 	if files.ClusterBuildStrategy != "" {
