@@ -225,7 +225,7 @@ func TestGenerateTaskRun(t *testing.T) {
 							},
 						},
 						ServiceAccount: &buildv1alpha1.ServiceAccount{
-							Name:     serviceAccountName,
+							Name:     &serviceAccountName,
 						},
 					},
 				},
@@ -305,7 +305,7 @@ func TestGenerateTaskRun(t *testing.T) {
 							},
 						},
 						ServiceAccount: &buildv1alpha1.ServiceAccount{
-							Name:     serviceAccountName,
+							Name:     &serviceAccountName,
 							Generate: false,
 						},
 					},

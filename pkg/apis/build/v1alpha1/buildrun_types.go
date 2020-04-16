@@ -63,7 +63,7 @@ type BuildRef struct {
 type ServiceAccount struct {
 	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
 	// +optional
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 	// If generates a new ServiceAccount for the build
 	// +optional
 	Generate bool `json:"generate,omitempty"`

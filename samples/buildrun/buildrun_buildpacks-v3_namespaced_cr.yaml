@@ -6,4 +6,5 @@ metadata:
 spec:
   buildRef:
     name: buildpack-nodejs-build-namespaced
-  serviceAccount: pipeline
+  serviceAccount:
+    name: pipeline

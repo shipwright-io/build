@@ -132,36 +132,16 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	// Choose a service account to use
-	serviceAccount := &corev1.ServiceAccount{}
-	if buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true {
-		serviceAccount.Name = build.Name + "-sa"
-		serviceAccount.Namespace = build.Namespace
-		serviceAccount.Labels = map[string]string{buildv1alpha1.LabelBuild: build.Name,}
-		ownerReferences := metav1.NewControllerRef(build, buildv1alpha1.SchemeGroupVersion.WithKind("Build"))
-		serviceAccount.OwnerReferences = append(serviceAccount.OwnerReferences, *ownerReferences)
-
-		// Add credentials to service account
-		serviceAccount = applyCredentials(build, serviceAccount)
-		err = r.client.Create(context.TODO(), serviceAccount)
+	serviceAccount, err := r.retrieveServiceAccount(build, buildRun)
+	if err != nil {
+		reqLogger.Error(err, "Failed to get the ServiceAccount from BuildRun", "BuildRun", buildRun.Name)
+		buildRun = r.updateBuildRunErrorStatus(buildRun, err)
+		err = r.client.Status().Update(context.TODO(), buildRun)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new ServiceAccount", "ServiceAccount", serviceAccount.Name)
+			reqLogger.Error(err, "Failed to update the BuildRun status", "BuildRun", buildRun.Name)
 			return reconcile.Result{}, err
 		}
-
-	} else {
-		serviceAccount, err = r.retrieveServiceAccount(buildRun)
-		if err != nil {
-			reqLogger.Error(err, "Failed to get the ServiceAccount from BuildRun", "BuildRun", buildRun.Name)
-			return reconcile.Result{}, err
-		}
-
-		// Add credentials to service account
-		serviceAccount = applyCredentials(build, serviceAccount)
-		err = r.client.Update(context.TODO(), serviceAccount)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update the ServiceAccount", "ServiceAccount", serviceAccount.Name)
-			return reconcile.Result{}, err
-		}
+		return reconcile.Result{}, err
 	}
 
 	// Everytime control enters the reconcile loop, we need to ensure
@@ -222,30 +202,54 @@ func isTaskRunRunning(tr *taskv1.TaskRun) bool {
 	return tr.Status.GetCondition(apis.ConditionSucceeded).IsUnknown()
 }
 
-func (r *ReconcileBuildRun) retrieveServiceAccount(buildRun *buildv1alpha1.BuildRun) (*corev1.ServiceAccount, error) {
-	buildServiceAccount := &corev1.ServiceAccount{}
+func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ServiceAccount, error) {
+	serviceAccount := &corev1.ServiceAccount{}
+	serviceAccountName := buildRun.Name + "-sa"
+	if buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true {
+		serviceAccount.Name = serviceAccountName
+		serviceAccount.Namespace = buildRun.Namespace
+		serviceAccount.Labels = map[string]string{buildv1alpha1.LabelBuildRun: buildRun.Name,}
+		ownerReferences := metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun"))
+		serviceAccount.OwnerReferences = append(serviceAccount.OwnerReferences, *ownerReferences)
 
-	// If ServiceAccount in Build Spec is nil, use default serviceaccount
-	var serviceAccountName string
-	if buildRun.Spec.ServiceAccount == nil {
-		serviceAccountName = pipelineServiceAccountName
-	} else {
-		serviceAccountName = buildRun.Spec.ServiceAccount.Name
-	}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
-	if err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "Failed to get ServiceAccount", "ServiceAccount", serviceAccountName)
-		return nil, err
-	} else if errors.IsNotFound(err) {
-		serviceAccountName = defaultServiceAccountName
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, buildServiceAccount)
+		// Add credentials and create the new service account
+		serviceAccount = applyCredentials(build, serviceAccount)
+		err := r.client.Create(context.TODO(), serviceAccount)
 		if err != nil {
-			log.Error(err, "Failed to get default ServiceAccount")
 			return nil, err
 		}
+		log.Info("Generate a new ServiceAccount for BuildRun", "ServiceAccount", serviceAccount.Name)
+	} else {
+		// If ServiceAccount or the name of ServiceAccount in buildRun is nil, use pipeline serviceaccount
+		if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Name == nil {
+			serviceAccountName = pipelineServiceAccountName
+			err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
+			if err != nil && !errors.IsNotFound(err) {
+				return nil, err
+			} else if errors.IsNotFound(err) {
+				serviceAccountName = defaultServiceAccountName
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			serviceAccountName = *buildRun.Spec.ServiceAccount.Name
+			err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Add credentials and update the service account
+		serviceAccount = applyCredentials(build, serviceAccount)
+		err := r.client.Update(context.TODO(), serviceAccount)
+		if err != nil {
+			return nil, err
+		}
+		log.Info("Retrieve ServiceAccount from BuildRun", "ServiceAccount", serviceAccount.Name)
 	}
-	log.Info("Retrieve ServiceAccount from BuildRun", "ServiceAccount", serviceAccountName)
-	return buildServiceAccount, nil
+	return serviceAccount, nil
 }
 
 func (r *ReconcileBuildRun) retrieveBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
@@ -292,4 +296,12 @@ func (r *ReconcileBuildRun) retrieveTaskRun(build *buildv1alpha1.Build, buildRun
 		return &taskRunList.Items[len(taskRunList.Items)-1], nil
 	}
 	return nil, nil
+}
+
+func (r *ReconcileBuildRun) updateBuildRunErrorStatus(buildRun *buildv1alpha1.BuildRun, err error) *buildv1alpha1.BuildRun {
+	buildRun.Status.Succeeded = corev1.ConditionFalse
+	buildRun.Status.Reason = err.Error()
+	now := metav1.Now()
+	buildRun.Status.StartTime = &now
+	return buildRun
 }
