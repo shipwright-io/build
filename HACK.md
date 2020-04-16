@@ -37,7 +37,6 @@ In the near future, the above would be setup by the operator.
 make clean && make build
 ```
 
-
 * This project uses Golang 1.13+ and operator-sdk 1.15.1.
 * The controllers create/watch Tekton objects.
 
@@ -71,7 +70,7 @@ When building unit-tests, try to follow:
 make test
 ```
 
-### End-to-end tests
+### End-to-End Tests
 
 The following is a list of environment variables you can use when running e2e tests, this will override specific paths under the **Build** CRD [examples](samples/build).
 
@@ -80,13 +79,29 @@ The following is a list of environment variables you can use when running e2e te
 | `TEST_IMAGE_REPO`        | `spec.output.image`            | Image repository for end-to-end tests |
 | `TEST_IMAGE_REPO_SECRET` | `spec.output.credentials.name` | Container credentials, JSON payload   |
 
-The contents of `TEST_IMAGE_REPO_SECRET` contents can be obtained from quay.io using a [robot account](https://docs.quay.io/glossary/robot-accounts.html).
+The contents of `TEST_IMAGE_REPO_SECRET` contents can be obtained from quay.io using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The contents of this file are like the following example:
+
+```json
+{
+  "auths": {
+    "quay.io": {
+      "auth": "<secret-credentials>",
+      "email": ""
+    }
+  }
+}
+```
 
 To execute the end-to-end tests, run:
 
 ```sh
 make test-e2e TEST_IMAGE_REPO_SECRET="<secret>"
 ```
+
+### Private Git Repositories
+
+End-to-end tests can also be executed with the context of private Git repositories, using the
+following environment variables to configure it.
 
 | Environment Variable  | Path                           | Description                           |
 |-----------------------|--------------------------------|---------------------------------------|
