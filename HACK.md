@@ -70,7 +70,7 @@ When building unit-tests, try to follow:
 make test
 ```
 
-### End-to-End Tests
+## End-to-End Tests
 
 The following is a list of environment variables you can use when running e2e tests, this will override specific paths under the **Build** CRD [examples](samples/build).
 
@@ -97,6 +97,8 @@ To execute the end-to-end tests, run:
 ```sh
 make test-e2e TEST_IMAGE_REPO_SECRET="<secret>"
 ```
+
+Currently the end-to-end tests are not run in parallel, and may take a few minutes to complete. In average you may expect up to 10 minutes to complete all test cases.
 
 ### Private Git Repositories
 
