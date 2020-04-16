@@ -144,7 +144,7 @@ func validateController(
 		require.NoError(t, err)
 
 		return testBuildRun.Status.Reason == runningStatus
-	}, 60*time.Second, 3*time.Second, "BuildRun not running")
+	}, 180*time.Second, 3*time.Second, "BuildRun not running")
 
 	// Ensure that eventually the Build moves to Succeeded.
 	require.Eventually(t, func() bool {
@@ -152,7 +152,7 @@ func validateController(
 		require.NoError(t, err)
 
 		return testBuildRun.Status.Succeeded == trueCondition
-	}, 300*time.Second, 10*time.Second, "BuildRun not succeeded")
+	}, 600*time.Second, 5*time.Second, "BuildRun not succeeded")
 }
 
 // readAndDecode read file path and decode.
