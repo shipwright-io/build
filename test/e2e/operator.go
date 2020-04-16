@@ -75,9 +75,8 @@ var privateTestCases = map[string]*SampleFiles{
 // OperatorTests execute test cases.
 func OperatorTests(t *testing.T, ctx *framework.TestCtx, f *framework.Framework) {
 	samplesTesting := NewSamplesTesting(t, ctx, f)
+	samplesTesting.TestAll(regularTestCases)
 	if os.Getenv(EnvVarEnablePrivateRepos) == "true" {
 		samplesTesting.TestAll(privateTestCases)
-	} else {
-		samplesTesting.TestAll(regularTestCases)
 	}
 }
