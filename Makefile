@@ -77,7 +77,7 @@ test-unit:
 		pkg/...
 
 .PHONY: test-e2e
-test-e2e:
+test-e2e: crds
 	operator-sdk --verbose test local ./test/e2e \
 		--up-local \
 		--namespace="$(TEST_NAMESPACE)" \
