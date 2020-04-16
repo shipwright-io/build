@@ -133,8 +133,6 @@ func validateController(
 		return conditionReason == pendingStatus || conditionReason == runningStatus
 	}, 60*time.Second, 3*time.Second, "BuildRun is pending or running")
 
-	time.Sleep(15 * time.Second)
-
 	// Ensure BuildRun is in pending or running state
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: ns}
 	err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
@@ -156,7 +154,7 @@ func validateController(
 		require.NoError(t, err)
 
 		return testBuildRun.Status.Succeeded == trueCondition
-	}, 600*time.Second, 5*time.Second, "BuildRun not succeeded")
+	}, 450*time.Second, 3*time.Second, "BuildRun not succeeded")
 }
 
 // readAndDecode read file path and decode.
