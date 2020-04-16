@@ -7,6 +7,8 @@ import (
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 )
 
+// regularTestCases contains all data in samples, the strategy shipped by the operator are verified
+// during CI.
 var regularTestCases = map[string]*SampleFiles{
 	"kaniko": {
 		ClusterBuildStrategy: "samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
@@ -35,6 +37,8 @@ var regularTestCases = map[string]*SampleFiles{
 	},
 }
 
+// privateTestCases contains all test cases design to run against private git repositories, those
+// tests are enabled via environment variable ("TEST_PRIVATE_REPO").
 var privateTestCases = map[string]*SampleFiles{
 	"private-github-kaniko": {
 		ClusterBuildStrategy: "samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
@@ -68,6 +72,7 @@ var privateTestCases = map[string]*SampleFiles{
 	},
 }
 
+// OperatorTests execute test cases.
 func OperatorTests(t *testing.T, ctx *framework.TestCtx, f *framework.Framework) {
 	samplesTesting := NewSamplesTesting(t, ctx, f)
 	if os.Getenv(EnvVarEnablePrivateRepos) == "true" {
