@@ -126,7 +126,7 @@ func validateController(
 	// Ensure that a TaskRun has been created and is in pending or running state
 	require.Eventually(t, func() bool {
 		generatedTaskRun, err := getTaskRun(f, testBuild, testBuildRun)
-		if err != nil {
+		if generatedTaskRun == nil || err != nil {
 			return false
 		}
 		conditionReason := generatedTaskRun.Status.Conditions[0].Reason
