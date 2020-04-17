@@ -37,7 +37,6 @@ In the near future, the above would be setup by the operator.
 make clean && make build
 ```
 
-
 * This project uses Golang 1.13+ and operator-sdk 1.15.1.
 * The controllers create/watch Tekton objects.
 
@@ -71,53 +70,68 @@ When building unit-tests, try to follow:
 make test
 ```
 
-## End-to-end tests
+## End-to-End Tests
 
 The following is a list of environment variables you can use when running e2e tests, this will override specific paths under the **Build** CRD [examples](samples/build).
 
-Env var | Path | Definition
---- | --- | --- |
-**TEST_IMAGE_REPO** | **spec.output.image** | Registry endpoint to push images |
-**TEST_IMAGE_REPO_SECRET** | **spec.output.credentials.name** | Registry endpoint secret(_usually of the type kubernetes.io/dockerconfigjson_) |
+| Environment Variable               | Path                           | Description                                         |
+|------------------------------------|--------------------------------|-----------------------------------------------------|
+| `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests               |
+| `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                   |
+| `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`  |
 
-For running E2E tests for private repositories, the **TEST_WITH_PRIVATE_REPO** environment variable needs to be set to **true**.
-If the Build private repositories [examples](test/data) contain references to private repositories you don´t have access, use
-the following variables for any related modification in the examples.
+The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io](quay.io) using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The JSON payload is for example:
 
-Env var | Path | Definition
---- | --- | --- |
-**TEST_PRIVATE_REPO** | _none_ | Enables running e2e tests for private repositories |
-**TEST_PRIVATE_GITHUB** | **spec.source.url** | Private URL for the samples of the form *git@github.com* |
-**TEST_PRIVATE_GITLAB** | **spec.source.url** | Private URL for the samples of the form *git@gitlab.com* |
-**TEST_SOURCE_SECRET** | **spec.source.credentials.name** | A secret containing the SSH private key for accessing the above private repository. See [ssh-authentication](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md#ssh-authentication-git). The secret definition must define two annotations: `tekton.dev/git-0: github.com` and `tekton.dev/git-1: gitlab.com`  |
-
-To run all strategies except buildpacks-v3 and none private git repositories tests, execute:
-
-```sh
-operator-sdk test local ./test/e2e --up-local --namespace build-examples
+```json
+{
+  "auths": {
+    "quay.io": {
+      "auth": "<secret-credentials>",
+      "email": ""
+    }
+  }
+}
 ```
 
-To run all strategies including buildpacks-v3 and none private git repositories tests, [setup your Quay credentials](samples/buildstrategy/buildpacks-v3#try-it-) and execute:
+When both `TEST_IMAGE_REPO_SECRET` and `TEST_IMAGE_REPO_DOCKERCONFIGJSON` are informed, a new secret is created for end-to-end tests, named `TEST_IMAGE_REPO_SECRET`. However, when `TEST_IMAGE_REPO_DOCKERCONFIGJSON` is empty, e2e tests are expecting to find a pre-existing one.
+
+To execute the end-to-end tests, run:
 
 ```sh
-TEST_IMAGE_REPO=quay.io/shbose/nodejs-ex:latest TEST_IMAGE_REPO_SECRET=regcred  operator-sdk test local ./test/e2e --up-local --namespace build-examples
+make test-e2e TEST_IMAGE_REPO_DOCKERCONFIGJSON="<JSON>"
 ```
 
-To run all strategies and also the private git repositories tests except buildpacks-v3, execute:
+Currently the end-to-end tests are not run in parallel, and may take a few minutes to complete. In average you may expect up to 10 minutes to complete all test cases.
+
+### Private Git Repositories
+
+End-to-end tests can also be executed with the context of private Git repositories, using the
+following environment variables to configure it.
+
+| Environment Variable  | Path                           | Description                           |
+|-----------------------|--------------------------------|---------------------------------------|
+| `TEST_PRIVATE_REPO`   | _none_                         | Enable private repository e2e tests   |
+| `TEST_PRIVATE_GITHUB` | `spec.source.url`              | Private URL, like `git@github.com`    |
+| `TEST_PRIVATE_GITLAB` | `spec.source.url`              | Private URL, like `git@gitlab.com`    |
+| `TEST_SOURCE_SECRET`  | `spec.source.credentials.name` | Private repository credentials        |
+
+On using `TEST_SOURCE_SECRET`, the environment variable must contain the name of the Kubernetes Secret containing SSH private key, for given private Git repository. See [ssh-authentication](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md#ssh-authentication-git). The secret definition must define the following annotations:
+- `tekton.dev/git-0: github.com`
+- `tekton.dev/git-1: gitlab.com`
+
+To run end-to-end tests which also includes private Git repositories, run:
 
 ```sh
-export TEST_PRIVATE_REPO=true
-export TEST_PRIVATE_GITHUB=git@github.com:<youruser>/<your-repo>.git
-export TEST_PRIVATE_GITLAB=git@gitlab.com:<youruser>/<your-repo>.git
-export TEST_SOURCE_SECRET=<your-github-ssh-all>
-operator-sdk test local ./test/e2e --up-local --namespace build-examples --go-test-flags "-timeout=20m"
+make test-e2e \
+  TEST_PRIVATE_REPO="true" \
+  TEST_PRIVATE_GITHUB="git@github.com:<youruser>/<your-repo>.git" \
+  TEST_PRIVATE_GITLAB="git@gitlab.com:<youruser>/<your-repo>.git" \
+  TEST_SOURCE_SECRET="<secret-name>"
 ```
 
-_Note:_ The e2e tests timeout defaults to 10min, when running with the private git repositories tests, more than 15 minutes is recommended.
+For private Git repositories tests, a secret of the type `kubernetes.io/ssh-auth` is required, here is an example:
 
-For private git repositories test a secret of the type `kubernetes.io/ssh-auth` is required, here is an example of such a secret:
-
-```yaml
+```yml
 apiVersion: v1
 kind: Secret
 metadata:
