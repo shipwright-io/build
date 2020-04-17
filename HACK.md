@@ -76,6 +76,7 @@ The following is a list of environment variables you can use when running e2e te
 
 | Environment Variable               | Path                           | Description                                         |
 |------------------------------------|--------------------------------|-----------------------------------------------------|
+| `TEST_NAMESPACE`                   | _none_                         | Target namespace to execute tests upon              |
 | `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests               |
 | `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                   |
 | `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`  |
@@ -98,15 +99,16 @@ When both `TEST_IMAGE_REPO_SECRET` and `TEST_IMAGE_REPO_DOCKERCONFIGJSON` are in
 To execute the end-to-end tests, run:
 
 ```sh
-make test-e2e TEST_IMAGE_REPO_DOCKERCONFIGJSON="<JSON>"
+make test-e2e \
+  TEST_NAMESPACE="default" \
+  TEST_IMAGE_REPO_DOCKERCONFIGJSON="<JSON>"
 ```
 
-Currently the end-to-end tests are not run in parallel, and may take a few minutes to complete. In average you may expect up to 10 minutes to complete all test cases.
+Currently the end-to-end tests are not run in parallel, and may take several minutes to complete.
 
 ### Private Git Repositories
 
-End-to-end tests can also be executed with the context of private Git repositories, using the
-following environment variables to configure it.
+End-to-end tests can also be executed with the context of private Git repositories, using the following environment variables to configure it.
 
 | Environment Variable  | Path                           | Description                           |
 |-----------------------|--------------------------------|---------------------------------------|
@@ -123,6 +125,7 @@ To run end-to-end tests which also includes private Git repositories, run:
 
 ```sh
 make test-e2e \
+  TEST_NAMESPACE="default" \
   TEST_PRIVATE_REPO="true" \
   TEST_PRIVATE_GITHUB="git@github.com:<youruser>/<your-repo>.git" \
   TEST_PRIVATE_GITLAB="git@gitlab.com:<youruser>/<your-repo>.git" \
