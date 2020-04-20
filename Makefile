@@ -17,7 +17,7 @@ GO_TEST_FLAGS ?= -failfast -timeout=20m
 # configure zap based logr
 OPERATOR_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
-OPERATOR_SDK_EXTRA_ARGS ?= --debug
+OPERATOR_SDK_EXTRA_ARGS ?= --verbose
 
 # test namespace name
 TEST_NAMESPACE ?= default
