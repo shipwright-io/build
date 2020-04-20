@@ -111,6 +111,8 @@ metadata:
 spec:
   buildRef:
     name: buildpack-nodejs-build
+  serviceAccount:
+    generate: false
 ```
 
 The BuildRun resource is updated as soon as the current building status changes:

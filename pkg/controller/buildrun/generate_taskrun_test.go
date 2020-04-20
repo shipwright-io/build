@@ -224,7 +224,9 @@ func TestGenerateTaskRun(t *testing.T) {
 								corev1.ResourceMemory: resource.MustParse("2Gi"),
 							},
 						},
-						ServiceAccount: &serviceAccountName,
+						ServiceAccount: &buildv1alpha1.ServiceAccount{
+							Name:     &serviceAccountName,
+						},
 					},
 				},
 				buildStrategy: &buildv1alpha1.BuildStrategy{
@@ -302,7 +304,10 @@ func TestGenerateTaskRun(t *testing.T) {
 								corev1.ResourceMemory: resource.MustParse("2Gi"),
 							},
 						},
-						ServiceAccount: &serviceAccountName,
+						ServiceAccount: &buildv1alpha1.ServiceAccount{
+							Name:     &serviceAccountName,
+							Generate: false,
+						},
 					},
 				},
 				buildStrategy: &buildv1alpha1.BuildStrategy{
