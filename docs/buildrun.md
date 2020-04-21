@@ -34,7 +34,7 @@ When the controller reconciles it:
 - Looks for any existing owned `TaskRuns` and update its parent `BuildRun` status.
 - Retrieves the specified `SA` and sets this with the specify output secret on the `Build` resource.
 - Generates a new tekton `TaskRun` if it does not exist, and set a reference to this resource(_as a child of the controller_).
-- One any subsequent updates on the `TaskRun`, the parent `BuildRun` resource instance will be updated.
+- On any subsequent updates on the `TaskRun`, the parent `BuildRun` resource instance will be updated.
 
 ## Configuring a BuildRun
 
@@ -47,7 +47,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.buildRef` - Specifies an existing `Build` resource instance to use.
 
 - Optional:
-  - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is build.
+  - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
 
 ### Defining the BuildRef
@@ -93,8 +93,11 @@ metadata:
 spec:
   buildRef:
     name: buildpack-nodejs-build-namespaced
-  serviceAccount: pipeline
+  serviceAccount:
+    name: pipeline
 ```
+
+You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you.
 
 _**Note**_: When the SA is not defined, the `BuildRun` will default to the `default` SA in the namespace.
 

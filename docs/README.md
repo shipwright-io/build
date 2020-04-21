@@ -21,3 +21,9 @@ See the following docs referencing each of the Kubernetes resources currently su
 - [`BuildRun`](buildrun.md)
 - [`BuildStrategy`](buildstrategy.md)
 - [`ClusterBuildStrategy`](clusterbuildstrategy.md)
+
+## Controllers Flow
+
+The following image illustrate the interactions between the `Build`, `BuildRun` controller and the Tekton `Pipeline` controller.
+
+![controllers flow](controllers_flow.png)

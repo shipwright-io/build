@@ -129,7 +129,7 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 
 ## Source to Image
 
-This BuildStrategy is composed by [`source-to-image`][s2i] and [`buildah`][buildah] in order to generate a `Dockerfile` and prepare the application to be built later on with a builder. Tipically `s2i` requires a specially crafted image, which can be
+This BuildStrategy is composed by [`source-to-image`][s2i] and [`buildah`][buildah] in order to generate a `Dockerfile` and prepare the application to be built later on with a builder. Typically `s2i` requires a specially crafted image, which can be
 informed as `builderImage` parameter on the `Build` resource.
 
 ### Installing Source to Image Strategy

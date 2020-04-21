@@ -43,23 +43,22 @@ The `Build` definition supports the following fields:
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `Build`.
   - `spec.source.URL` - Refers to the Git repository containing the source code.
   - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/buildstrategy)
-  - `spec.builder` - Refers to the image containing the build tools. (_when used, `spec.dockerfile` should not be used_)
-  - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_when used, `spec.builder` should not be used_)
+  - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies_)
   - `spec.output`- Refers to the location where the generated image would be pushed.
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
 - Optional:
-  - `spec.source.Revision` - Refers to the a git specific branch, default is master.
-  - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is build.
+  - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
+  - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
 
 ### Defining the Source
 
 A `Build` resource can specify a Git source, together with other parameters like:
 
 - `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the require `ssh` data.
-- `source.revision` - An specific branch to select from the source repository.
-- `source.contextDir` - A path to a subfolder on the git repository.
+- `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name.
+- `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently only supported by the `buildah` and `kaniko` build strategies.
 
 Example of a `Build` with a source with **credentials** defined by the user.
 
