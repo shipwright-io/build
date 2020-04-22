@@ -109,7 +109,6 @@ var _ = Describe("Reconcile Build", func() {
 					}
 					return nil
 				})
-
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
@@ -203,6 +202,61 @@ var _ = Describe("Reconcile Build", func() {
 			})
 			It("succeed when the strategy exists", func() {
 
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *build.ClusterBuildStrategyList:
+						list := ctl.FakeClusterBuildStrategyList()
+						list.DeepCopyInto(object)
+					case *build.BuildStrategyList:
+						list := ctl.BuildStrategyList(buildStrategyName, namespace)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
+		Context("when spec strategy kind is not specified", func() {
+			JustBeforeEach(func() {
+				buildStrategyName = "kaniko"
+				buildName = "kaniko-example-build-namespaced"
+				// Override the buildSample to use a BuildStrategy instead of the Cluster one, although the build strategy kind is nil
+				buildSample = ctl.BuildWithNilBuildStrategyKind(buildName, namespace, buildStrategyName)
+			})
+			It("default to BuildStrategy and fails when the strategy does not exists", func() {
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *build.ClusterBuildStrategyList:
+						list := ctl.FakeClusterBuildStrategyList()
+						list.DeepCopyInto(object)
+					case *build.BuildStrategyList:
+						list := ctl.FakeBuildStrategyList()
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+
+			})
+			It("default to BuildStrategy and succeed if the strategy exists", func() {
 				// Fake some client LIST calls and ensure we populate all
 				// different resources we could get during reconciliation
 				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {

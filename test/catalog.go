@@ -60,6 +60,24 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 	}
 }
 
+// BuildWithNilBuildStrategyKind gives you an Build CRD with nil build strategy kind
+func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategyName string) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: build.BuildSpec{
+			Source: build.GitSource{
+				URL: "foobar",
+			},
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+			},
+		},
+	}
+}
+
 // ClusterBuildStrategyList to support tests
 func (c *Catalog) ClusterBuildStrategyList(name string) *build.ClusterBuildStrategyList {
 	return &build.ClusterBuildStrategyList{
