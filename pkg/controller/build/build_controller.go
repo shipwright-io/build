@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -84,8 +85,11 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	b := &build.Build{}
 	err := r.client.Get(context.Background(), request.NamespacedName, b)
-	if err != nil {
+	if err != nil && !api_errors.IsNotFound(err) {
+		reqLogger.Error(err, "Failed to get the Build instance")
 		return reconcile.Result{}, err
+	} else if api_errors.IsNotFound(err) {
+		return reconcile.Result{}, nil
 	}
 
 	// Populate the status struct with default values
@@ -98,6 +102,10 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 			reqLogger.Error(err, "failed validating the ouput secret", "Build", b.Name)
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(context.Background(), b)
+			if updateErr != nil {
+				reqLogger.Error(err, "Failed to update the Build status", "Build", b.Name)
+				return reconcile.Result{}, err
+			}
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 
 		}
@@ -109,6 +117,10 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 			reqLogger.Error(err, "failed validating the strategy reference", "Build", b.Name)
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(context.Background(), b)
+			if updateErr != nil {
+				reqLogger.Error(err, "Failed to update the Build status", "Build", b.Name)
+				return reconcile.Result{}, err
+			}
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
 	}
