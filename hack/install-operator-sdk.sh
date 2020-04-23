@@ -38,10 +38,10 @@ gpg --keyserver="${KEY_SERVER}" --recv-key "${KEY_ID}"
 #
 
 echo "# Downloading operator-sdk bindary (${SDK_URL})"
-wget --output-document="${SDK_BIN}" "${SDK_URL}"
+wget --quiet --output-document="${SDK_BIN}" "${SDK_URL}"
 
 echo "# Downloading operator-sdk signature (${SDK_URL})"
-wget --output-document="${SDK_BIN}.asc" "${SDK_URL}.asc"
+wget --quiet --output-document="${SDK_BIN}.asc" "${SDK_URL}.asc"
 
 echo "# Validating download signature..."
 gpg --verify "${SDK_BIN}.asc" "${SDK_BIN}"
