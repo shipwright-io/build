@@ -60,6 +60,8 @@ spec:
                 name:
                   description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
                   type: string
+              required:
+              - name
               type: object
             resources:
               description: 'Compute Resources required by the build container which
