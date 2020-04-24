@@ -32,15 +32,33 @@ var log = logf.Log.WithName("controller_buildrun")
 * business logic.  Delete these comments after modifying this file.*
  */
 
+type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
+
 // Add creates a new BuildRun Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, NewReconciler(mgr))
+	return add(mgr, NewReconciler(mgr, controllerutil.SetControllerReference))
+}
+
+// blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileBuildRun{}
+
+// ReconcileBuildRun reconciles a BuildRun object
+type ReconcileBuildRun struct {
+	// This client, initialized using mgr.Client() above, is a split client
+	// that reads objects from the cache and writes to the apiserver
+	client                client.Client
+	scheme                *runtime.Scheme
+	setOwnerReferenceFunc setOwnerReferenceFunc
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileBuildRun{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+func NewReconciler(mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
+	return &ReconcileBuildRun{
+		client:                mgr.GetClient(),
+		scheme:                mgr.GetScheme(),
+		setOwnerReferenceFunc: ownerRef,
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -73,17 +91,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		IsController: true,
 		OwnerType:    &buildv1alpha1.BuildRun{},
 	})
-}
-
-// blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileBuildRun{}
-
-// ReconcileBuildRun reconciles a BuildRun object
-type ReconcileBuildRun struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
@@ -266,7 +273,7 @@ func (r *ReconcileBuildRun) retrieveBuildStrategy(instance *buildv1alpha1.Build,
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: instance.Namespace}, buildStrategyInstance)
 	if err != nil {
 		log.Error(err, "Failed to get BuildStrategy")
-		return buildStrategyInstance, err
+		return nil, err
 	}
 	return buildStrategyInstance, nil
 }
@@ -277,7 +284,7 @@ func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(instance *buildv1alpha1
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
 	if err != nil {
 		log.Error(err, "Failed to get ClusterBuildStrategy")
-		return clusterBuildStrategyInstance, err
+		return nil, err
 	}
 	return clusterBuildStrategyInstance, nil
 }

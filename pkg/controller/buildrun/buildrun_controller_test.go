@@ -14,11 +14,13 @@ import (
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -93,7 +95,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 	// this ensures that overrides on the BuildRun resource can happen under each
 	// Context() BeforeEach() block
 	JustBeforeEach(func() {
-		reconciler = buildRunCtl.NewReconciler(manager)
+		reconciler = buildRunCtl.NewReconciler(manager, controllerutil.SetControllerReference)
 		request = newReconcileRequest(buildRunSample)
 
 	})
@@ -142,16 +144,17 @@ var _ = Describe("Reconcile BuildRun", func() {
 			var (
 				saName           string
 				emptyTaskRunName *string
+				buildRunName     string
 			)
 			BeforeEach(func() {
 				saName = "foobar-sa"
-
+				buildRunName = "foobar-buildrun-with-sa"
 				// override the BuildRun resource to use a BuildRun with a specified
 				// serviceaccount
-				buildRunSample = ctl.BuildRunWithSA("foobar-buildrun-with-sa", buildName, saName)
+				buildRunSample = ctl.BuildRunWithSA(buildRunName, buildName, saName)
 			})
 
-			It("fails to create it due to missing service account", func() {
+			It("fails on creation due to missing service account", func() {
 
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
@@ -166,7 +169,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).To(HaveOccurred())
 			})
 
-			It("fails to created it due to missing namespaced buildstrategy", func() {
+			It("fails on creation due to missing namespaced buildstrategy", func() {
 				// override the Build to use a namespaced BuildStragegy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
@@ -183,7 +186,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
 			})
 
-			It("fails to created it due to missing cluster buildstrategy", func() {
+			It("fails on creation due to missing cluster buildstrategy", func() {
 				// override the Build to use a cluster BuildStragegy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
@@ -198,6 +201,29 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+			})
+
+			It("fails on creation due to owner references errors", func() {
+				// override the Build to use a namespaced BuildStragegy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy()),
+				)
+
+				reconciler = buildRunCtl.NewReconciler(manager,
+					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
+						return fmt.Errorf("foobar error")
+					})
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("setting owner reference failed for BuildRun %s", buildRunName)))
 			})
 
 			It("succeed creating a task from a namespaced buildstrategy", func() {
