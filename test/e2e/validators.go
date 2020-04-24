@@ -70,8 +70,8 @@ func createPipelineServiceAccount(t *testing.T, ctx *framework.TestCtx, f *frame
 func createContainerRegistrySecret(t *testing.T, ctx *framework.TestCtx, f *framework.Framework) {
 	secretName := os.Getenv(EnvVarImageRepoSecret)
 	secretPayload := os.Getenv(EnvVarSourceRepoSecretJSON)
-	if secretName == "" && secretPayload == "" {
-		t.Logf("Environment variable with container registry secret is not present.")
+	if secretName == "" || secretPayload == "" {
+		t.Logf("Container registry secret won't be created.")
 		return
 	}
 
