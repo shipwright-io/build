@@ -62,8 +62,11 @@ type Image struct {
 
 // BuildStatus defines the observed state of Build
 type BuildStatus struct {
-	// The Registered status of the TaskRun
+	// The Register status of the Build
 	Registered corev1.ConditionStatus `json:"registered,omitempty"`
+
+	// The reason of the registered Build, either an error or succeed message
+	Reason string `json:"reason,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -71,6 +74,8 @@ type BuildStatus struct {
 // Build is the Schema for the builds API
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=builds,scope=Namespaced
+// +kubebuilder:printcolumn:name="Registered",type="string",JSONPath=".status.registered",description="The register status of the Build"
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.reason",description="The reason of the registered Build, either an error or succeed message"
 // +kubebuilder:printcolumn:name="BuildStrategyKind",type="string",JSONPath=".spec.strategy.kind",description="The BuildStrategy type which is used for this Build"
 // +kubebuilder:printcolumn:name="BuildStrategyName",type="string",JSONPath=".spec.strategy.name",description="The BuildStrategy name which is used for this Build"
 // +kubebuilder:printcolumn:name="CreationTime",type="date",JSONPath=".metadata.creationTimestamp",description="The create time of this Build"

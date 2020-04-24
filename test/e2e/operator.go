@@ -35,6 +35,11 @@ var regularTestCases = map[string]*SampleFiles{
 		Build:                "samples/build/build_kaniko_cr.yaml",
 		BuildRun:             "samples/buildrun/buildrun_kaniko_cr.yaml",
 	},
+	"kaniko-advanced-dockerfile": {
+		ClusterBuildStrategy: "samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
+		Build:                "test/data/build_kaniko_cr_advanced_dockerfile.yaml",
+		BuildRun:             "test/data/buildrun_kaniko_cr_advanced_dockerfile.yaml",
+	},
 	"kaniko-custom-context-dockerfile": {
 		ClusterBuildStrategy: "samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
 		Build:                "test/data/build_kaniko_cr_custom_context+dockerfile.yaml",

@@ -9,3 +9,5 @@ spec:
   resources:
     limits:
       cpu: "1"
+  serviceAccount:
+    generate: true

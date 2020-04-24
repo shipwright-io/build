@@ -86,7 +86,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse)
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("secret %s does not exist", registrySecret))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
@@ -110,7 +110,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionTrue)
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
 				result, err := reconciler.Reconcile(request)
@@ -136,7 +136,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse)
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("clusterBuildStrategy %s does not exist", buildStrategyName))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
@@ -160,7 +160,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionTrue)
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
 				result, err := reconciler.Reconcile(request)
@@ -193,7 +193,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse)
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
@@ -217,7 +217,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionTrue)
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
 				result, err := reconciler.Reconcile(request)

@@ -26,7 +26,7 @@ type BuildRunSpec struct {
 	// which is used for resource control.
 	// Default serviceaccount will be set if it is empty
 	// +optional
-	ServiceAccount *string `json:"serviceAccount,omitempty"`
+	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun
@@ -53,10 +53,20 @@ type BuildRunStatus struct {
 // BuildRef can be used to refer to a specific instance of a Build.
 type BuildRef struct {
 	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// API version of the referent
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`
+}
+
+// ServiceAccount can be used to refer to a specific ServiceAccount.
+type ServiceAccount struct {
+	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	// +optional
+	Name *string `json:"name,omitempty"`
+	// If generates a new ServiceAccount for the build
+	// +optional
+	Generate bool `json:"generate,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
