@@ -109,6 +109,21 @@ func BuildCluster(t *testing.T) {
 	validateController(t, ctx, f, oE.build, oE.buildRun)
 	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
 
+	// Run e2e tests for kaniko with advanced Dockerfile operations
+	oE = newOperatorEmulation(namespace,
+		"kaniko-advanced-dockerfile",
+		"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
+		"test/data/build_kaniko_cr_advanced_dockerfile.yaml",
+		"test/data/buildrun_kaniko_cr_advanced_dockerfile.yaml",
+	)
+	err = BuildTestData(oE)
+	require.NoError(t, err)
+	validateOutputEnvVars(oE.build)
+
+	createClusterBuildStrategy(t, ctx, f, oE.clusterBuildStrategy)
+	validateController(t, ctx, f, oE.build, oE.buildRun)
+	deleteClusterBuildStrategy(t, f, oE.clusterBuildStrategy)
+
 	// Run e2e tests for source2image
 	oE = newOperatorEmulation(namespace,
 		"example-build-s2i",
