@@ -3,6 +3,7 @@ package buildrun
 import (
 	"context"
 	"fmt"
+
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,11 +35,11 @@ var log = logf.Log.WithName("controller_buildrun")
 // Add creates a new BuildRun Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+	return add(mgr, NewReconciler(mgr))
 }
 
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+// NewReconciler returns a new reconcile.Reconciler
+func NewReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileBuildRun{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
@@ -147,7 +148,10 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	// everything is in its desired state.
 	var generatedTaskRun *taskv1.TaskRun
 	if build.Spec.StrategyRef.Kind == nil || *build.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
-		buildStrategy := r.retrieveBuildStrategy(build, request)
+		buildStrategy, err := r.retrieveBuildStrategy(build, request)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		if buildStrategy != nil {
 			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
@@ -156,7 +160,10 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			}
 		}
 	} else if *build.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
-		clusterBuildStrategy := r.retrieveClusterBuildStrategy(build, request)
+		clusterBuildStrategy, err := r.retrieveClusterBuildStrategy(build, request)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		if clusterBuildStrategy != nil {
 			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
 			if err != nil {
@@ -253,26 +260,26 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, b
 	return serviceAccount, nil
 }
 
-func (r *ReconcileBuildRun) retrieveBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
+func (r *ReconcileBuildRun) retrieveBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.BuildStrategy, error) {
 	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: instance.Namespace}, buildStrategyInstance)
 	if err != nil {
 		log.Error(err, "Failed to get BuildStrategy")
-		return nil
+		return buildStrategyInstance, err
 	}
-	return buildStrategyInstance
+	return buildStrategyInstance, nil
 }
 
-func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.ClusterBuildStrategy {
+func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.ClusterBuildStrategy, error) {
 	clusterBuildStrategyInstance := &buildv1alpha1.ClusterBuildStrategy{}
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
 	if err != nil {
 		log.Error(err, "Failed to get ClusterBuildStrategy")
-		return nil
+		return clusterBuildStrategyInstance, err
 	}
-	return clusterBuildStrategyInstance
+	return clusterBuildStrategyInstance, nil
 }
 
 func (r *ReconcileBuildRun) retrieveTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*taskv1.TaskRun, error) {
