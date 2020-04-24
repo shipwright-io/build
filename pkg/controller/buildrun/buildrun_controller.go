@@ -186,13 +186,13 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	// Set OwnerReference for Build and BuildRun
-	if err := controllerutil.SetControllerReference(build, buildRun, r.scheme); err != nil {
+	if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
 		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun
-	if err := controllerutil.SetControllerReference(buildRun, generatedTaskRun, r.scheme); err != nil {
+	if err := r.setOwnerReferenceFunc(buildRun, generatedTaskRun, r.scheme); err != nil {
 		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}

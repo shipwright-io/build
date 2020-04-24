@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/build/pkg/apis"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	buildRunCtl "github.com/redhat-developer/build/pkg/controller/buildrun"
+	buildrunctl "github.com/redhat-developer/build/pkg/controller/buildrun"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
 	"github.com/redhat-developer/build/test"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -95,7 +95,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 	// this ensures that overrides on the BuildRun resource can happen under each
 	// Context() BeforeEach() block
 	JustBeforeEach(func() {
-		reconciler = buildRunCtl.NewReconciler(manager, controllerutil.SetControllerReference)
+		reconciler = buildrunctl.NewReconciler(manager, controllerutil.SetControllerReference)
 		request = newReconcileRequest(buildRunSample)
 
 	})
@@ -217,13 +217,13 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
-				reconciler = buildRunCtl.NewReconciler(manager,
+				reconciler = buildrunctl.NewReconciler(manager,
 					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
 						return fmt.Errorf("foobar error")
 					})
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("setting owner reference failed for BuildRun %s", buildRunName)))
+				Expect(err.Error()).To(ContainSubstring("errors: foobar error"))
 			})
 
 			It("succeed creating a task from a namespaced buildstrategy", func() {
