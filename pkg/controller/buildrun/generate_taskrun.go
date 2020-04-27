@@ -51,14 +51,6 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 		Inputs: &taskv1.Inputs{
 			Params: []taskv1.ParamSpec{
 				{
-					Description: "Image containing the build tools/logic",
-					Name:        inputParamBuilderImage,
-					Default: &taskv1.ArrayOrString{
-						Type:      taskv1.ParamTypeString,
-						StringVal: "docker.io/centos/nodejs-8-centos7", // not really needed.
-					},
-				},
-				{
 					Description: "Path to the Dockerfile",
 					Name:        inputParamDockerfile,
 					Default: &taskv1.ArrayOrString{
@@ -97,6 +89,18 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 			},
 		},
 		Steps: []v1alpha1.Step{},
+	}
+
+	if build.Spec.BuilderImage != nil {
+		InputBuilderImage := v1alpha2.ParamSpec {
+				Description: "Image containing the build tools/logic",
+				Name:        inputParamBuilderImage,
+				Default: &taskv1.ArrayOrString{
+					Type:      taskv1.ParamTypeString,
+					StringVal: build.Spec.BuilderImage.ImageURL,
+				},
+			}
+		generatedTaskSpec.Inputs.Params = append(generatedTaskSpec.Inputs.Params, InputBuilderImage)
 	}
 
 	var vols []corev1.Volume

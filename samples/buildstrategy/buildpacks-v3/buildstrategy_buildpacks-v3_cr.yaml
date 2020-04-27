@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-prepare
-      image: $(build.builder.image)
+      image: heroku/buildpacks:18
       securityContext:
         runAsUser: 0
         capabilities:
@@ -17,7 +17,7 @@ spec:
         - -c
         - chown -R "1000:1000" "/workspace/source"
     - name: step-detect
-      image: $(build.builder.image)
+      image: heroku/buildpacks:18
       securityContext:
         runAsUser: 1000
       command:
@@ -30,7 +30,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-restore
-      image: $(build.builder.image)
+      image: heroku/buildpacks:18
       securityContext:
         runAsUser: 1000
       command:
@@ -45,7 +45,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-build
-      image: $(build.builder.image)
+      image: heroku/buildpacks:18
       securityContext:
         runAsUser: 1000
       command:
@@ -59,7 +59,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-export
-      image: $(build.builder.image)
+      image: heroku/buildpacks:18
       securityContext:
         runAsUser: 0
       command:
