@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func applyCredentials(build *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
+func ApplyCredentials(build *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
 
 	// credentials of the source/git repo
 	sourceSecret := build.Spec.Source.SecretRef
