@@ -13,7 +13,8 @@ env:
 install:
   - make travis
 script:
+  - ./scripts/fake.sh
   - make
   # https://github.com/redhat-developer/build/issues/123
   - make test
-  - make test-e2e TEST_IMAGE_REPO_DOCKERCONFIGJSON="$(echo $CI_DOCKERCONFIGJSON |base64 -d)"
+  - make test-e2e TEST_IMAGE_REPO_DOCKERCONFIGJSON="$(echo $CI_DOCKERCONFIGJSON | base64 -d)"
