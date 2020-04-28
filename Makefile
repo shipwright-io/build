@@ -30,7 +30,7 @@ SDK_VERSION ?= v0.15.2
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
 # test container registyr secret name
-TEST_IMAGE_REPO_SECRET ?= e2e-registry
+TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime
 TEST_IMAGE_REPO_DOCKERCONFIGJSON ?=
 
@@ -102,6 +102,8 @@ gen-fakes:
 	./hack/generate-fakes.sh
 
 travis: install-ginkgo
-	./hack/install-operator-sdk.sh
+	./hack/install-kubectl.sh
+	./hack/install-registry.sh
 	./hack/install-kind.sh
 	./hack/install-tekton.sh
+	./hack/install-operator-sdk.sh
