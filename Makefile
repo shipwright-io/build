@@ -101,9 +101,13 @@ clean:
 gen-fakes:
 	./hack/generate-fakes.sh
 
-travis: install-ginkgo
+kubectl:
 	./hack/install-kubectl.sh
+
+kind:
 	./hack/install-registry.sh
 	./hack/install-kind.sh
+
+travis: install-ginkgo kubectl kind
 	./hack/install-tekton.sh
 	./hack/install-operator-sdk.sh

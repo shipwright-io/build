@@ -94,10 +94,22 @@ To execute the end-to-end tests, run:
 ```sh
 make test-e2e \
   TEST_NAMESPACE="default" \
+  TEST_IMAGE_REPO="<image-repository>" \
   TEST_IMAGE_REPO_DOCKERCONFIGJSON="<JSON>"
 ```
 
 Currently the end-to-end tests are not run in parallel, and may take several minutes to complete.
+
+### KinD
+
+When using [KinD](https://kind.sigs.k8s.io/) like jobs in Travis-CI, you can use a local container registry to store images created during end-to-end test execution. Run:
+
+```sh
+make kind
+make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/redhat-developer/build-e2e"
+```
+
+You only need to execute `make kind` only once, `make test-e2e ...` can be repeated many times.
 
 ### Private Git Repositories
 
