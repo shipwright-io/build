@@ -8,139 +8,42 @@
     </a>
 </p>
 
-## The `build` Kubernetes API 
+## The `build` Kubernetes API
 
 Codenamed build-v2
 
-An API to build container-images on Kubernetes using popular strategies and tools like
-`source-to-image`, `buildpack-v3`, `kaniko`, `jib` and `buildah`, in an extensible way.
-
+An API to build container-images on Kubernetes using popular strategies and tools like `source-to-image`, `buildpack-v3`, `kaniko`, `jib` and `buildah`, in an extensible way.
 
 ## How
 
 The following are the `BuildStrategies` supported by this operator, out-of-the-box:
 
-* [Source-to-Image](samples/buildstrategy/source-to-image/README.md);
-* [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md);
-* [Buildah](samples/buildstrategy/buildah/README.md);
-* [Kaniko](samples/buildstrategy/kaniko/README.md);
+* [Source-to-Image](samples/buildstrategy/source-to-image/README.md)
+* [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md)
+* [Buildah](samples/buildstrategy/buildah/README.md)
+* [Kaniko](samples/buildstrategy/kaniko/README.md)
 
-Users have the option to define their own(custom) `BuildStrategies` and make them available for consumption
-by `Builds`.
+Users have the option to define their own `BuildStrategies` resources and make them available for consumption
+via the `Build` resource.
 
 ## Operator Resources
 
-This operator ships two CRDs in order to register a strategy and then start the actual
-application builds using a registered strategy.
+This operator ships two CRDs(the `Build` and `BuildRun`) in order to register a strategy and then start the actual application builds using a registered strategy.
 
-### `BuildStrategy`
+## Read the Docs
 
-- The resource `BuildStrategy` (`buildstrategies.build.dev/v1alpha1`) allows you to define a shared group of
-steps needed to fullfil the application build in **namespaced** scope. Those steps are defined as
-[`containers/v1`][corev1container] entries.
+| Version | Docs | Examples |
+| ------- | ---- | -------- |
+| HEAD | [Docs @ HEAD](/docs/README.md) | [Examples @ HEAD](/samples) |
 
-```yaml
-apiVersion: build.dev/v1alpha1
-kind: BuildStrategy
-metadata:
-  name: source-to-image
-spec:
-  buildSteps:
-...
-```
-The secret can be created like `kubectl create secret generic <SECRET-NAME> --from-file=.dockerconfigjson=<PATH/TO/.docker/config.json> --type=kubernetes.io/dockerconfigjson`
-
-- The resource `ClusterBuildStrategy` (`clusterbuildstrategies.build.dev/v1alpha1`) allows you to define a shared group of
-steps needed to fullfil the application build in **cluster** scope. Those steps are defined as
-[`containers/v1`][corev1container] entries.
-
-```yaml
-apiVersion: build.dev/v1alpha1
-kind: ClusterBuildStrategy
-metadata:
-  name: source-to-image
-spec:
-  buildSteps:
-...
-```
-
-Well-known strategies can be boostrapped from [here](samples/buildstrategy).
-
-### `Build`
-
-The resource `Build` (`builds.dev/v1alpha1`) binds together source-code and `BuildStrategy` and related configuration as the build definition
-Please consider the following example:
-
-```yaml
-apiVersion: build.dev/v1alpha1
-kind: Build
-metadata:
-  name: buildpack-nodejs-build
-spec:
-  source:
-    url: https://github.com/sclorg/nodejs-ex
-    credentials:
-      name: source-repository-credentials
-  strategy:
-    name: buildpacks-v3
-    kind: ClusterBuildStrategy
-  builder:
-    image: heroku/buildpacks:18
-    credentials:
-      name: builder-registry-credentials
-  resources:
-    limits:
-      cpu: "500m"
-      memory: "1Gi"
-  output:
-    image: quay.io/olemefer/nodejs-ex:v1
-    credentials:
-      name: output-registry-credentials
-```
-
-### `BuildRun`
-
-The resource `BuildRun` (`buildruns.dev/v1alpha1`) is the build process of a build definition which is executed in Kubernetes. 
-Please consider the following example:
-
-```yaml
-apiVersion: build.dev/v1alpha1
-kind: BuildRun
-metadata:
-  name: buildpack-nodejs-buildrun
-spec:
-  buildRef:
-    name: buildpack-nodejs-build
-  serviceAccount:
-    generate: false
-```
-
-The BuildRun resource is updated as soon as the current building status changes:
-
-```
-$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
-NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
-buildpack-nodejs-buildrun     Unknown     Running     70s
-```
-
-And finally:
-
-```
-$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
-NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
-buildpack-nodejs-buildrun     True        Succeeded   2m10s       74s
-```
-
-#### Examples
+## Examples
 
 Examples of `Build` resource using the example strategies shipped with this operator.
 
-* [`buildah`](./samples/build/build_buildah_cr.yaml);
-* [`buildpacks-v3`](./samples/build/build_buildpacks-v3_cr.yaml);
-* [`kaniko`](./samples/build/build_kaniko_cr.yaml);
-* [`source-to-image`](.samples/build/build_source-to-image_cr.yaml);
-
-----
+* [`buildah`](./samples/build/build_buildah_cr.yaml)
+* [`buildpacks-v3`](./samples/build/build_buildpacks-v3_cr.yaml)
+* [`kaniko`](./samples/build/build_kaniko_cr.yaml)
+* [`source-to-image`](.samples/build/build_source-to-image_cr.yaml)
 
 ## Try it!
 
