@@ -11,7 +11,12 @@ spec:
       securityContext:
         runAsUser: 0
         capabilities:
-          add: ["CHOWN", "DAC_OVERRIDE", "FOWNER"]
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker

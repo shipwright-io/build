@@ -53,7 +53,7 @@ type BuildRunStatus struct {
 // BuildRef can be used to refer to a specific instance of a Build.
 type BuildRef struct {
 	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// API version of the referent
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`

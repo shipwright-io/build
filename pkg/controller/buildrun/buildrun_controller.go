@@ -209,12 +209,12 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, b
 	if buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true {
 		serviceAccount.Name = serviceAccountName
 		serviceAccount.Namespace = buildRun.Namespace
-		serviceAccount.Labels = map[string]string{buildv1alpha1.LabelBuildRun: buildRun.Name,}
+		serviceAccount.Labels = map[string]string{buildv1alpha1.LabelBuildRun: buildRun.Name}
 		ownerReferences := metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun"))
 		serviceAccount.OwnerReferences = append(serviceAccount.OwnerReferences, *ownerReferences)
 
 		// Add credentials and create the new service account
-		serviceAccount = applyCredentials(build, serviceAccount)
+		serviceAccount = ApplyCredentials(build, serviceAccount)
 		err := r.client.Create(context.TODO(), serviceAccount)
 		if err != nil {
 			return nil, err
@@ -243,7 +243,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, b
 		}
 
 		// Add credentials and update the service account
-		serviceAccount = applyCredentials(build, serviceAccount)
+		serviceAccount = ApplyCredentials(build, serviceAccount)
 		err := r.client.Update(context.TODO(), serviceAccount)
 		if err != nil {
 			return nil, err

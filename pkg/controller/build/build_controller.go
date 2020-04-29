@@ -125,17 +125,24 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 }
 
 func (r *ReconcileBuild) validateStrategyRef(s *build.StrategyRef, ns string) error {
-	switch *s.Kind {
-	case build.NamespacedBuildStrategyKind:
+	if s.Kind != nil {
+		switch *s.Kind {
+		case build.NamespacedBuildStrategyKind:
+			if err := r.validateBuildStrategy(s.Name, ns); err != nil {
+				return err
+			}
+		case build.ClusterBuildStrategyKind:
+			if err := r.validateClusterBuildStrategy(s.Name); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown strategy %v", *s.Kind)
+		}
+	} else {
+		log.Info("BuildStrategy kind is nil, use default NamespacedBuildStrategyKind")
 		if err := r.validateBuildStrategy(s.Name, ns); err != nil {
 			return err
 		}
-	case build.ClusterBuildStrategyKind:
-		if err := r.validateClusterBuildStrategy(s.Name); err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown strategy %v", *s.Kind)
 	}
 	return nil
 }

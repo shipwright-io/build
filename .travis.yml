@@ -5,9 +5,9 @@ go:
 services:
   - docker
 install:
-  - go get -u github.com/onsi/ginkgo/ginkgo
-  - go get -u github.com/onsi/gomega/...
   - make travis
 script:
   - make
+  # https://github.com/redhat-developer/build/issues/123
   - make test
+  - make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/redhat-developer/build-e2e"
