@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -84,8 +85,10 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	b := &build.Build{}
 	err := r.client.Get(context.Background(), request.NamespacedName, b)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return reconcile.Result{}, err
+	} else if apierrors.IsNotFound(err) {
+		return reconcile.Result{}, nil
 	}
 
 	// Populate the status struct with default values
@@ -95,11 +98,10 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	// Validate if the spec.output.secretref exist in the namespace
 	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
 		if err := r.validateOutputSecret(b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
-			reqLogger.Error(err, "failed validating the ouput secret", "Build", b.Name)
+			reqLogger.Error(err, "failed validating the output secret", "Build", b.Name)
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(context.Background(), b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
-
 		}
 	}
 

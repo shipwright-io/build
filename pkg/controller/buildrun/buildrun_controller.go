@@ -2,11 +2,11 @@ package buildrun
 
 import (
 	"context"
-
+	"fmt"
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -94,10 +94,9 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	// Fetch the BuildRun instance
 	buildRun := &buildv1alpha1.BuildRun{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, buildRun)
-	if err != nil && !errors.IsNotFound(err) {
-		reqLogger.Error(err, "Failed to get the build instance")
+	if err != nil && !apierrors.IsNotFound(err) {
 		return reconcile.Result{}, err
-	} else if errors.IsNotFound(err) {
+	} else if apierrors.IsNotFound(err) {
 		return reconcile.Result{}, nil
 	}
 
@@ -105,28 +104,33 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	build := &buildv1alpha1.Build{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: buildRun.Spec.BuildRef.Name, Namespace: buildRun.Namespace}, build)
 	if err != nil {
-		reqLogger.Error(err, "Failed to get Build from BuildRun", "Build", buildRun.Spec.BuildRef.Name)
-		return reconcile.Result{}, err
+		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	lastTaskRun, err := r.retrieveTaskRun(build, buildRun)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list existing TaskRuns from BuildRun", "BuildRun", buildRun.Name)
-		return reconcile.Result{}, err
+		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	if lastTaskRun != nil {
 		// TODO: Make this safer
 		if len(lastTaskRun.Status.Conditions) > 0 {
-			buildRun.Status.Succeeded = lastTaskRun.Status.Conditions[0].Status
-			buildRun.Status.Reason = lastTaskRun.Status.Conditions[0].Reason
+			taskRunStatus := lastTaskRun.Status.Conditions[0].Status
+			buildRun.Status.Succeeded = taskRunStatus
+			if taskRunStatus == corev1.ConditionFalse {
+				buildRun.Status.Reason = lastTaskRun.Status.Conditions[0].Message
+			} else {
+				buildRun.Status.Reason = lastTaskRun.Status.Conditions[0].Reason
+			}
 		}
 		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
 		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 		buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
 		err = r.client.Status().Update(context.TODO(), buildRun)
 		if err != nil {
-			reqLogger.Error(err, "Failed to update the BuildRun status", "BuildRun", buildRun.Name)
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
@@ -135,14 +139,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	// Choose a service account to use
 	serviceAccount, err := r.retrieveServiceAccount(build, buildRun)
 	if err != nil {
-		reqLogger.Error(err, "Failed to get the ServiceAccount from BuildRun", "BuildRun", buildRun.Name)
-		buildRun = r.updateBuildRunErrorStatus(buildRun, err)
-		err = r.client.Status().Update(context.TODO(), buildRun)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update the BuildRun status", "BuildRun", buildRun.Name)
-			return reconcile.Result{}, err
-		}
-		return reconcile.Result{}, err
+		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	// Everytime control enters the reconcile loop, we need to ensure
@@ -153,8 +151,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if buildStrategy != nil {
 			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
-				reqLogger.Error(err, "Failed to generate TaskRun", "BuildRun", buildRun.Name)
-				return reconcile.Result{}, err
+				updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 			}
 		}
 	} else if *build.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
@@ -162,32 +160,34 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if clusterBuildStrategy != nil {
 			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
 			if err != nil {
-				reqLogger.Error(err, "Failed to generate TaskRun", "BuildRun", buildRun.Name)
-				return reconcile.Result{}, err
+				updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 			}
 		}
 	} else {
-		log.Error(err, "Unsupported BuildStrategy Kind", "BuildStrategyKind", build.Spec.StrategyRef.Kind)
-		return reconcile.Result{}, err
+		err := fmt.Errorf("unknown strategy %s", string(*build.Spec.StrategyRef.Kind))
+		reqLogger.Error(err, "Unsupported BuildStrategy Kind", "BuildStrategyKind", build.Spec.StrategyRef.Kind)
+		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	// Set OwnerReference for Build and BuildRun
 	if err := controllerutil.SetControllerReference(build, buildRun, r.scheme); err != nil {
-		reqLogger.Error(err, "Setting owner reference fails", "Build", build.Name, "BuildRun", buildRun.Name)
-		return reconcile.Result{}, err
+		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun
 	if err := controllerutil.SetControllerReference(buildRun, generatedTaskRun, r.scheme); err != nil {
-		reqLogger.Error(err, "Setting owner reference fails", "BuildRun", buildRun.Name, "TaskRun", generatedTaskRun.Name)
-		return reconcile.Result{}, err
+		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	// create TaskRun if no TaskRun for that BuildRun exists
 	err = r.client.Create(context.TODO(), generatedTaskRun)
 	if err != nil {
-		reqLogger.Error(err, "Failed to create TaskRun", "Namespace", generatedTaskRun.Namespace, "Name", generatedTaskRun.Name)
-		return reconcile.Result{}, err
+		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
+		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	reqLogger.Info("Generate and create TaskRun from Build and BuildRun", "TaskRun", generatedTaskRun.Name, "Build", build.Name, "BuildRun", buildRun.Name)
@@ -225,9 +225,9 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, b
 		if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Name == nil {
 			serviceAccountName = pipelineServiceAccountName
 			err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
-			if err != nil && !errors.IsNotFound(err) {
+			if err != nil && !apierrors.IsNotFound(err) {
 				return nil, err
-			} else if errors.IsNotFound(err) {
+			} else if apierrors.IsNotFound(err) {
 				serviceAccountName = defaultServiceAccountName
 				err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 				if err != nil {
@@ -299,10 +299,11 @@ func (r *ReconcileBuildRun) retrieveTaskRun(build *buildv1alpha1.Build, buildRun
 	return nil, nil
 }
 
-func (r *ReconcileBuildRun) updateBuildRunErrorStatus(buildRun *buildv1alpha1.BuildRun, err error) *buildv1alpha1.BuildRun {
+func (r *ReconcileBuildRun) updateBuildRunErrorStatus(buildRun *buildv1alpha1.BuildRun, errorMessage string) error {
 	buildRun.Status.Succeeded = corev1.ConditionFalse
-	buildRun.Status.Reason = err.Error()
+	buildRun.Status.Reason = errorMessage
 	now := metav1.Now()
 	buildRun.Status.StartTime = &now
-	return buildRun
+	updateErr := r.client.Status().Update(context.TODO(), buildRun)
+	return updateErr
 }
