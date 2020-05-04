@@ -5,10 +5,10 @@
 
 set -eu
 
-TEKTON_VERSION="${TEKTON_VERSION:-v0.10.1}"
+TEKTON_VERSION="${TEKTON_VERSION:-v0.11.0}"
 
-TEKTON_HOST="storage.googleapis.com"
-TEKTON_HOST_PATH="tekton-releases/pipeline/previous"
+TEKTON_HOST="github.com"
+TEKTON_HOST_PATH="tektoncd/pipeline/releases/download"
 
 echo "# Deploying Tekton Pipelines Operator '${TEKTON_VERSION}'"
 
