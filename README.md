@@ -40,10 +40,10 @@ This operator ships two CRDs(the `Build` and `BuildRun`) in order to register a 
 
 Examples of `Build` resource using the example strategies shipped with this operator.
 
-* [`buildah`](./samples/build/build_buildah_cr.yaml)
-* [`buildpacks-v3`](./samples/build/build_buildpacks-v3_cr.yaml)
-* [`kaniko`](./samples/build/build_kaniko_cr.yaml)
-* [`source-to-image`](.samples/build/build_source-to-image_cr.yaml)
+* [`buildah`](samples/build/build_buildah_cr.yaml)
+* [`buildpacks-v3`](samples/build/build_buildpacks-v3_cr.yaml)
+* [`kaniko`](samples/build/build_kaniko_cr.yaml)
+* [`source-to-image`](samples/build/build_source-to-image_cr.yaml)
 
 ## Try it!
 
