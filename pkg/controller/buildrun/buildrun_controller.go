@@ -3,6 +3,7 @@ package buildrun
 import (
 	"context"
 	"fmt"
+
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,15 +32,33 @@ var log = logf.Log.WithName("controller_buildrun")
 * business logic.  Delete these comments after modifying this file.*
  */
 
+type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
+
 // Add creates a new BuildRun Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+	return add(mgr, NewReconciler(mgr, controllerutil.SetControllerReference))
 }
 
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileBuildRun{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+// blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileBuildRun{}
+
+// ReconcileBuildRun reconciles a BuildRun object
+type ReconcileBuildRun struct {
+	// This client, initialized using mgr.Client() above, is a split client
+	// that reads objects from the cache and writes to the apiserver
+	client                client.Client
+	scheme                *runtime.Scheme
+	setOwnerReferenceFunc setOwnerReferenceFunc
+}
+
+// NewReconciler returns a new reconcile.Reconciler
+func NewReconciler(mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
+	return &ReconcileBuildRun{
+		client:                mgr.GetClient(),
+		scheme:                mgr.GetScheme(),
+		setOwnerReferenceFunc: ownerRef,
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -72,17 +91,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		IsController: true,
 		OwnerType:    &buildv1alpha1.BuildRun{},
 	})
-}
-
-// blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileBuildRun{}
-
-// ReconcileBuildRun reconciles a BuildRun object
-type ReconcileBuildRun struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
@@ -147,7 +155,10 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	// everything is in its desired state.
 	var generatedTaskRun *taskv1.TaskRun
 	if build.Spec.StrategyRef.Kind == nil || *build.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
-		buildStrategy := r.retrieveBuildStrategy(build, request)
+		buildStrategy, err := r.retrieveBuildStrategy(build, request)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		if buildStrategy != nil {
 			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
@@ -156,7 +167,10 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			}
 		}
 	} else if *build.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
-		clusterBuildStrategy := r.retrieveClusterBuildStrategy(build, request)
+		clusterBuildStrategy, err := r.retrieveClusterBuildStrategy(build, request)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		if clusterBuildStrategy != nil {
 			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
 			if err != nil {
@@ -172,13 +186,13 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	// Set OwnerReference for Build and BuildRun
-	if err := controllerutil.SetControllerReference(build, buildRun, r.scheme); err != nil {
+	if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
 		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun
-	if err := controllerutil.SetControllerReference(buildRun, generatedTaskRun, r.scheme); err != nil {
+	if err := r.setOwnerReferenceFunc(buildRun, generatedTaskRun, r.scheme); err != nil {
 		updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
@@ -253,26 +267,26 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, b
 	return serviceAccount, nil
 }
 
-func (r *ReconcileBuildRun) retrieveBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.BuildStrategy {
+func (r *ReconcileBuildRun) retrieveBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.BuildStrategy, error) {
 	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: instance.Namespace}, buildStrategyInstance)
 	if err != nil {
 		log.Error(err, "Failed to get BuildStrategy")
-		return nil
+		return nil, err
 	}
-	return buildStrategyInstance
+	return buildStrategyInstance, nil
 }
 
-func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) *buildv1alpha1.ClusterBuildStrategy {
+func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(instance *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.ClusterBuildStrategy, error) {
 	clusterBuildStrategyInstance := &buildv1alpha1.ClusterBuildStrategy{}
 
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
 	if err != nil {
 		log.Error(err, "Failed to get ClusterBuildStrategy")
-		return nil
+		return nil, err
 	}
-	return clusterBuildStrategyInstance
+	return clusterBuildStrategyInstance, nil
 }
 
 func (r *ReconcileBuildRun) retrieveTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*taskv1.TaskRun, error) {

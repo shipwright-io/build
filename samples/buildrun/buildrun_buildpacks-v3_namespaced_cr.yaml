@@ -8,3 +8,4 @@ spec:
     name: buildpack-nodejs-build-namespaced
   serviceAccount:
     name: pipeline
+    generate: true
