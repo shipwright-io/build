@@ -60,49 +60,54 @@ type Framework struct {
 	KubeClient        kubernetes.Interface
 	Scheme            *runtime.Scheme
 	NamespacedManPath *string
-	Namespace         string
+	OperatorNamespace string
+	WatchNamespace    string
 
 	restMapper *restmapper.DeferredDiscoveryRESTMapper
 
-	projectRoot         string
-	globalManPath       string
-	localOperatorArgs   string
-	kubeconfigPath      string
-	schemeMutex         sync.Mutex
-	LocalOperator       bool
-	singleNamespaceMode bool
+	projectRoot        string
+	globalManPath      string
+	localOperatorArgs  string
+	kubeconfigPath     string
+	schemeMutex        sync.Mutex
+	LocalOperator      bool
+	skipCleanupOnError bool
 }
 
 type frameworkOpts struct {
-	projectRoot         string
-	kubeconfigPath      string
-	globalManPath       string
-	namespacedManPath   string
-	singleNamespaceMode bool
-	isLocalOperator     bool
-	localOperatorArgs   string
+	projectRoot        string
+	kubeconfigPath     string
+	globalManPath      string
+	namespacedManPath  string
+	localOperatorArgs  string
+	isLocalOperator    bool
+	skipCleanupOnError bool
 }
 
 const (
-	ProjRootFlag          = "root"
-	KubeConfigFlag        = "kubeconfig"
-	NamespacedManPathFlag = "namespacedMan"
-	GlobalManPathFlag     = "globalMan"
-	SingleNamespaceFlag   = "singleNamespace"
-	LocalOperatorFlag     = "localOperator"
-	LocalOperatorArgs     = "localOperatorArgs"
+	ProjRootFlag           = "root"
+	KubeConfigFlag         = "kubeconfig"
+	NamespacedManPathFlag  = "namespacedMan"
+	GlobalManPathFlag      = "globalMan"
+	LocalOperatorFlag      = "localOperator"
+	LocalOperatorArgs      = "localOperatorArgs"
+	SkipCleanupOnErrorFlag = "skipCleanupOnError"
 
-	TestNamespaceEnv = "TEST_NAMESPACE"
+	TestOperatorNamespaceEnv = "TEST_OPERATOR_NAMESPACE"
+	TestWatchNamespaceEnv    = "TEST_WATCH_NAMESPACE"
 )
 
 func (opts *frameworkOpts) addToFlagSet(flagset *flag.FlagSet) {
 	flagset.StringVar(&opts.projectRoot, ProjRootFlag, "", "path to project root")
 	flagset.StringVar(&opts.namespacedManPath, NamespacedManPathFlag, "", "path to rbac manifest")
-	flagset.BoolVar(&opts.isLocalOperator, LocalOperatorFlag, false, "enable if operator is running locally (not in cluster)")
-	flagset.StringVar(&opts.kubeconfigPath, KubeConfigFlag, "", "path to kubeconfig")
+	flagset.BoolVar(&opts.isLocalOperator, LocalOperatorFlag, false,
+		"enable if operator is running locally (not in cluster)")
 	flagset.StringVar(&opts.globalManPath, GlobalManPathFlag, "", "path to operator manifest")
-	flagset.BoolVar(&opts.singleNamespaceMode, SingleNamespaceFlag, false, "enable single namespace mode")
-	flagset.StringVar(&opts.localOperatorArgs, LocalOperatorArgs, "", "flags that the operator needs (while using --up-local). example: \"--flag1 value1 --flag2=value2\"")
+	flagset.StringVar(&opts.localOperatorArgs, LocalOperatorArgs, "",
+		"flags that the operator needs (while using --up-local). example: \"--flag1 value1 --flag2=value2\"")
+	flagset.BoolVar(&opts.skipCleanupOnError, SkipCleanupOnErrorFlag, false,
+		"If set as true, the cleanup function responsible to remove all artifacts "+
+			"will be skipped if an error is faced.")
 }
 
 func newFramework(opts *frameworkOpts) (*Framework, error) {
@@ -111,12 +116,10 @@ func newFramework(opts *frameworkOpts) (*Framework, error) {
 		return nil, fmt.Errorf("failed to build the kubeconfig: %w", err)
 	}
 
-	namespace := kcNamespace
-	if opts.singleNamespaceMode {
-		testNamespace := os.Getenv(TestNamespaceEnv)
-		if testNamespace != "" {
-			namespace = testNamespace
-		}
+	operatorNamespace := kcNamespace
+	ns, ok := os.LookupEnv(TestOperatorNamespaceEnv)
+	if ok && ns != "" {
+		operatorNamespace = ns
 	}
 
 	kubeclient, err := kubernetes.NewForConfig(kubeconfig)
@@ -146,15 +149,15 @@ func newFramework(opts *frameworkOpts) (*Framework, error) {
 		KubeClient:        kubeclient,
 		Scheme:            scheme,
 		NamespacedManPath: &opts.namespacedManPath,
-		Namespace:         namespace,
+		OperatorNamespace: operatorNamespace,
 		LocalOperator:     opts.isLocalOperator,
 
-		projectRoot:         opts.projectRoot,
-		singleNamespaceMode: opts.singleNamespaceMode,
-		globalManPath:       opts.globalManPath,
-		localOperatorArgs:   opts.localOperatorArgs,
-		kubeconfigPath:      opts.kubeconfigPath,
-		restMapper:          restMapper,
+		projectRoot:        opts.projectRoot,
+		globalManPath:      opts.globalManPath,
+		localOperatorArgs:  opts.localOperatorArgs,
+		kubeconfigPath:     opts.kubeconfigPath,
+		restMapper:         restMapper,
+		skipCleanupOnError: opts.skipCleanupOnError,
 	}
 	return framework, nil
 }
@@ -188,8 +191,9 @@ func (f *Framework) addToScheme(addToScheme addToSchemeFunc, obj runtime.Object)
 		return fmt.Errorf("failed to initialize new dynamic client: %w", err)
 	}
 	err = wait.PollImmediate(time.Second, time.Second*10, func() (done bool, err error) {
-		if f.singleNamespaceMode {
-			err = dynClient.List(goctx.TODO(), obj, dynclient.InNamespace(f.Namespace))
+		ns, ok := os.LookupEnv(TestOperatorNamespaceEnv)
+		if ok && ns != "" {
+			err = dynClient.List(goctx.TODO(), obj, dynclient.InNamespace(f.OperatorNamespace))
 		} else {
 			err = dynClient.List(goctx.TODO(), obj, dynclient.InNamespace("default"))
 		}
@@ -208,7 +212,7 @@ func (f *Framework) addToScheme(addToScheme addToSchemeFunc, obj runtime.Object)
 
 func (f *Framework) runM(m *testing.M) (int, error) {
 	// setup context to use when setting up crd
-	ctx := f.newTestCtx(nil)
+	ctx := f.newContext(nil)
 	defer ctx.Cleanup()
 
 	// go test always runs from the test directory; change to project root
@@ -281,8 +285,14 @@ func (f *Framework) setupLocalCommand() (*exec.Cmd, error) {
 	} else {
 		// we can hardcode index 0 as that is the highest priority kubeconfig to be loaded and will always
 		// be populated by NewDefaultClientConfigLoadingRules()
-		localCmd.Env = append(os.Environ(), fmt.Sprintf("%v=%v", k8sutil.KubeConfigEnvVar, clientcmd.NewDefaultClientConfigLoadingRules().Precedence[0]))
+		localCmd.Env = append(os.Environ(), fmt.Sprintf("%v=%v", k8sutil.KubeConfigEnvVar,
+			clientcmd.NewDefaultClientConfigLoadingRules().Precedence[0]))
 	}
-	localCmd.Env = append(localCmd.Env, fmt.Sprintf("%v=%v", k8sutil.WatchNamespaceEnvVar, f.Namespace))
+	watchNamespace := f.OperatorNamespace
+	ns, ok := os.LookupEnv(TestWatchNamespaceEnv)
+	if ok {
+		watchNamespace = ns
+	}
+	localCmd.Env = append(localCmd.Env, fmt.Sprintf("%v=%v", k8sutil.WatchNamespaceEnvVar, watchNamespace))
 	return localCmd, nil
 }
