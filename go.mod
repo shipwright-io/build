@@ -3,6 +3,7 @@ module github.com/redhat-developer/build
 go 1.13
 
 require (
+	github.com/go-openapi/spec v0.19.4
 	github.com/golang/protobuf v1.4.0 // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
