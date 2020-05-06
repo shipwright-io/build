@@ -83,7 +83,7 @@ test-unit:
 test-e2e: crds
 	operator-sdk --verbose test local ./test/e2e \
 		--up-local \
-		--namespace="$(TEST_NAMESPACE)" \
+		--operator-namespace="$(TEST_NAMESPACE)" \
 		--go-test-flags="$(GO_TEST_FLAGS)" \
 		--local-operator-flags="$(OPERATOR_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
