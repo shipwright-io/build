@@ -25,7 +25,7 @@ TEST_NAMESPACE ?= default
 # CI: tekton pipelines operator version
 TEKTON_VERSION ?= v0.10.1
 # CI: operator-sdk version
-SDK_VERSION ?= v0.15.2
+SDK_VERSION ?= v0.17.0
 
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
@@ -83,7 +83,7 @@ test-unit:
 test-e2e: crds
 	operator-sdk --verbose test local ./test/e2e \
 		--up-local \
-		--namespace="$(TEST_NAMESPACE)" \
+		--operator-namespace="$(TEST_NAMESPACE)" \
 		--go-test-flags="$(GO_TEST_FLAGS)" \
 		--local-operator-flags="$(OPERATOR_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
