@@ -160,7 +160,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		if buildStrategy != nil {
-			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
@@ -172,7 +172,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		if clusterBuildStrategy != nil {
-			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)

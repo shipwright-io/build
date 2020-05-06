@@ -44,7 +44,7 @@ func getStringTransformations(fullText string) string {
 	return fullText
 }
 
-func generateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskSpec, error) {
+func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskSpec, error) {
 
 	generatedTaskSpec := v1beta1.TaskSpec{
 		Resources: &v1beta1.TaskResources{
@@ -163,14 +163,14 @@ func generateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	return &generatedTaskSpec, nil
 }
 
-func generateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskRun, error) {
+func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskRun, error) {
 
 	revision := "master"
 	if build.Spec.Source.Revision != nil {
 		revision = *build.Spec.Source.Revision
 	}
 
-	taskSpec, err := generateTaskSpec(build, buildRun, buildSteps)
+	taskSpec, err := GenerateTaskSpec(build, buildRun, buildSteps)
 	if err != nil {
 		return nil, err
 	}
