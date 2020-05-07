@@ -3,12 +3,12 @@ package test
 import (
 	"context"
 
-	"knative.dev/pkg/apis/duck/v1beta1"
+	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -248,22 +248,22 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 }
 
 // DefaultTaskRunList returns a minimal tekton TaskRunList
-func (c *Catalog) DefaultTaskRunList(tr *taskv1.TaskRun) *taskv1.TaskRunList {
-	return &taskv1.TaskRunList{
-		Items: []taskv1.TaskRun{*tr},
+func (c *Catalog) DefaultTaskRunList(tr *v1beta1.TaskRun) *v1beta1.TaskRunList {
+	return &v1beta1.TaskRunList{
+		Items: []v1beta1.TaskRun{*tr},
 	}
 }
 
 // DefaultTaskRunWithStatus returns a minimal tektont TaskRun with an Status
-func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.ConditionStatus, reason string) *taskv1.TaskRun {
-	return &taskv1.TaskRun{
+func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: trName,
 		},
-		Spec: taskv1.TaskRunSpec{},
-		Status: taskv1.TaskRunStatus{
-			Status: v1beta1.Status{
-				Conditions: v1beta1.Conditions{
+		Spec: v1beta1.TaskRunSpec{},
+		Status: v1beta1.TaskRunStatus{
+			Status: knativev1beta1.Status{
+				Conditions: knativev1beta1.Conditions{
 					{
 						Reason: reason,
 						Status: status,
