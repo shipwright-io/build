@@ -60,24 +60,37 @@ $(OPERATOR): vendor
 install-ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 	go get -u github.com/onsi/gomega/...
+	ginkgo version
+
+install-gocov:
+	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
 
 # https://github.com/redhat-developer/build/issues/123
 test: test-unit
 
 .PHONY: test-unit
 test-unit:
+	rm -rf build/coverage
+	mkdir build/coverage
 	GO111MODULE=on ginkgo \
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
-		-nodes=4 \
+		-p \
 		-compilers=2 \
 		-slowSpecThreshold=240 \
 		-race \
 		-cover \
+		-outputdir=build/coverage \
 		-trace \
 		internal/... \
 		pkg/...
+
+test-unit-coverage: test-unit
+	echo "Combining coverage profiles"
+	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
+	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
+	gocov report build/coverage/coverprofile.json
 
 .PHONY: test-e2e
 test-e2e: crds
@@ -108,6 +121,6 @@ kind:
 	./hack/install-registry.sh
 	./hack/install-kind.sh
 
-travis: install-ginkgo kubectl kind
+travis: install-ginkgo install-gocov kubectl kind
 	./hack/install-tekton.sh
 	./hack/install-operator-sdk.sh
