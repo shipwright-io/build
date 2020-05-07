@@ -70,7 +70,6 @@ test-unit:
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
-		-nodes=4 \
 		-compilers=2 \
 		-slowSpecThreshold=240 \
 		-race \
