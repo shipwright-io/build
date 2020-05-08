@@ -63,9 +63,11 @@ type Image struct {
 // BuildStatus defines the observed state of Build
 type BuildStatus struct {
 	// The Register status of the Build
+	// +optional
 	Registered corev1.ConditionStatus `json:"registered,omitempty"`
 
 	// The reason of the registered Build, either an error or succeed message
+	// +optional
 	Reason string `json:"reason,omitempty"`
 }
 

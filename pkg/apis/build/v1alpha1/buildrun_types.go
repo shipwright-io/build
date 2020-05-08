@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	LabelBuildRun              = "buildrun.build.dev/name"
-	LabelBuildRunGeneration    = "buildrun.build.dev/generation"
+	LabelBuildRun           = "buildrun.build.dev/name"
+	LabelBuildRunGeneration = "buildrun.build.dev/generation"
 )
 
 // BuildRunSpec defines the desired state of BuildRun
@@ -33,12 +33,15 @@ type BuildRunSpec struct {
 type BuildRunStatus struct {
 
 	// The Succeeded status of the TaskRun
+	// +optional
 	Succeeded corev1.ConditionStatus `json:"succeeded,omitempty"`
 
 	// The Succeeded reason of the TaskRun
+	// +optional
 	Reason string `json:"reason,omitempty"`
 
 	// PodName is the name of the pod responsible for executing this task's steps.
+	// +optional
 	LatestTaskRunRef *string `json:"latestTaskRunRef,omitempty"`
 
 	// StartTime is the time the build is actually started.
