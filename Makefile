@@ -12,7 +12,7 @@ GOARCH ?= amd64
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor
 # golang test floags
-GO_TEST_FLAGS ?= -failfast -timeout=25m
+GO_TEST_FLAGS ?= -failfast -timeout=35m
 
 # configure zap based logr
 OPERATOR_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
