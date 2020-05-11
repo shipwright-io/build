@@ -74,12 +74,15 @@ make test
 
 The following is a list of environment variables you can use when running e2e tests, this will override specific paths under the **Build** CRD [examples](samples/build).
 
-| Environment Variable               | Path                           | Description                                         |
-|------------------------------------|--------------------------------|-----------------------------------------------------|
-| `TEST_NAMESPACE`                   | _none_                         | Target namespace to execute tests upon              |
-| `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests               |
-| `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                   |
-| `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`  |
+| Environment Variable               | Path                           | Description                                                   |
+|------------------------------------|--------------------------------|---------------------------------------------------------------|
+| `TEST_NAMESPACE`                   | _none_                         | Target namespace to execute tests upon, default is `default`. |
+| `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests                         |
+| `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                             |
+| `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`            |
+| `TEST_E2E_FLAGS`                   | _none_                         | Ginkgo flags.                                                 |
+
+The default for `TEST_E2E_FLAGS` is `-failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v`. See all Ginkgo flags here: [The Ginkgo CLI](https://onsi.github.io/ginkgo/#the-ginkgo-cli). Especially of interest are `--focus` and `--skip` to run selective tests.
 
 The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io](quay.io) using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The JSON payload is for example:
 
@@ -109,7 +112,7 @@ make kind
 make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/redhat-developer/build-e2e"
 ```
 
-You only need to execute `make kind` only once, `make test-e2e ...` can be repeated many times.
+You only need to execute `make kind` once, `make test-e2e ...` can be repeated many times.
 
 ### Private Git Repositories
 
