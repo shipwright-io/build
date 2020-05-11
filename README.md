@@ -18,10 +18,10 @@ An API to build container-images on Kubernetes using popular strategies and tool
 
 The following are the `BuildStrategies` supported by this operator, out-of-the-box:
 
-* [Source-to-Image](samples/buildstrategy/source-to-image/README.md)
-* [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md)
-* [Buildah](samples/buildstrategy/buildah/README.md)
-* [Kaniko](samples/buildstrategy/kaniko/README.md)
+* [Source-to-Image](docs/buildstrategies.md#source-to-image)
+* [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
+* [Buildah](docs/buildstrategies.md#buildah)
+* [Kaniko](docs/buildstrategies.md#kaniko)
 
 Users have the option to define their own `BuildStrategies` resources and make them available for consumption
 via the `Build` resource.

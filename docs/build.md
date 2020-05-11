@@ -104,10 +104,10 @@ spec:
 
 A `Build` resource can specify the `BuildStrategy` to use, these are:
 
-- [Source-to-Image](samples/buildstrategy/source-to-image/README.md)
-- [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md)
-- [Buildah](samples/buildstrategy/buildah/README.md)
-- [Kaniko](samples/buildstrategy/kaniko/README.md)
+- [Source-to-Image](docs/buildstrategies.md#source-to-image)
+- [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
+- [Buildah](docs/buildstrategies.md#buildah)
+- [Kaniko](docs/buildstrategies.md#kaniko)
 
 Defining the strategy is straightforward, you need to define the `name` and the `kind`. For example:
 
