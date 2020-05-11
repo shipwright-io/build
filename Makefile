@@ -11,8 +11,6 @@ GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 GOARCH ?= amd64
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor
-# golang test floags
-GO_TEST_FLAGS ?= -failfast -timeout=35m
 
 # configure zap based logr
 OPERATOR_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
@@ -26,6 +24,9 @@ TEST_NAMESPACE ?= default
 TEKTON_VERSION ?= v0.11.3
 # CI: operator-sdk version
 SDK_VERSION ?= v0.17.0
+
+# E2E test flags
+TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v
 
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
@@ -81,12 +82,7 @@ test-unit:
 
 .PHONY: test-e2e
 test-e2e: crds
-	operator-sdk --verbose test local ./test/e2e \
-		--up-local \
-		--operator-namespace="$(TEST_NAMESPACE)" \
-		--go-test-flags="$(GO_TEST_FLAGS)" \
-		--local-operator-flags="$(OPERATOR_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS)
+	GO111MODULE=on TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} ginkgo ${TEST_E2E_FLAGS} test/e2e
 
 crds:
 	-hack/crd.sh uninstall
