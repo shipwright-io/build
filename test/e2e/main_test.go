@@ -9,7 +9,7 @@ import (
 	"github.com/redhat-developer/build/pkg/apis"
 	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/stretchr/testify/require"
-	pipelinev1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
 func TestMain(m *testing.M) {
@@ -33,10 +33,13 @@ func TestBuild(t *testing.T) {
 	err = framework.AddToFrameworkScheme(apis.AddToScheme, &operator.ClusterBuildStrategyList{})
 	require.NoError(t, err, "unable to add ClusterBuildStrategyList to scheme")
 
-	err = framework.AddToFrameworkScheme(pipelinev1.AddToScheme, &pipelinev1.TaskList{})
+	err = framework.AddToFrameworkScheme(v1beta1.AddToScheme, &v1beta1.TaskRun{})
+	require.NoError(t, err, "unable to add TaskRunList to scheme")
+
+	err = framework.AddToFrameworkScheme(v1beta1.AddToScheme, &v1beta1.TaskList{})
 	require.NoError(t, err, "unable to add TaskList to scheme")
 
-	err = framework.AddToFrameworkScheme(pipelinev1.AddToScheme, &pipelinev1.TaskRunList{})
+	err = framework.AddToFrameworkScheme(v1beta1.AddToScheme, &v1beta1.TaskRunList{})
 	require.NoError(t, err, "unable to add TaskRunList to scheme")
 
 	prepareClusterAndTest(t)

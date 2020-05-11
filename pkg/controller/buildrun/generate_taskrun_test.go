@@ -10,7 +10,7 @@ import (
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,7 +38,7 @@ func TestGenerateTaskSpec(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *taskv1.TaskSpec
+		want *v1beta1.TaskSpec
 	}{
 		{
 			"taskSpec generation",
@@ -121,7 +121,7 @@ func TestGenerateTaskSpec(t *testing.T) {
 					},
 				},
 			},
-			&taskv1.TaskSpec{}, // not using it for now
+			&v1beta1.TaskSpec{}, // not using it for now
 		},
 	}
 	for _, tt := range tests {
@@ -183,7 +183,7 @@ func TestGenerateTaskRun(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *taskv1.TaskRun
+		want *v1beta1.TaskRun
 	}{
 		{
 			"taskrun generation by default",
@@ -225,7 +225,7 @@ func TestGenerateTaskRun(t *testing.T) {
 							},
 						},
 						ServiceAccount: &buildv1alpha1.ServiceAccount{
-							Name:     &serviceAccountName,
+							Name: &serviceAccountName,
 						},
 					},
 				},
@@ -253,7 +253,7 @@ func TestGenerateTaskRun(t *testing.T) {
 					},
 				},
 			},
-			&taskv1.TaskRun{}, // not using it for now
+			&v1beta1.TaskRun{}, // not using it for now
 		},
 		{
 			"taskrun generation by special settings",
@@ -334,7 +334,7 @@ func TestGenerateTaskRun(t *testing.T) {
 					},
 				},
 			},
-			&taskv1.TaskRun{}, // not using it for now
+			&v1beta1.TaskRun{}, // not using it for now
 		},
 	}
 	for _, tt := range tests {
@@ -349,10 +349,10 @@ func TestGenerateTaskRun(t *testing.T) {
 			assert.True(t, reflect.DeepEqual(got.Labels[buildv1alpha1.LabelBuildRun], tt.args.buildRun.Name))
 
 			// ensure generated TaskRun's input and output resources are correct
-			inputResources := got.Spec.Inputs.Resources
+			inputResources := got.Spec.Resources.Inputs
 			for _, inputResource := range inputResources {
 				if inputResource.Name == inputSourceResourceName {
-					assert.True(t, reflect.DeepEqual(inputResource.ResourceSpec.Type, taskv1.PipelineResourceTypeGit))
+					assert.True(t, reflect.DeepEqual(inputResource.ResourceSpec.Type, v1beta1.PipelineResourceTypeGit))
 					params := inputResource.ResourceSpec.Params
 					for _, param := range params {
 						if param.Name == inputGitSourceURL {
@@ -365,10 +365,10 @@ func TestGenerateTaskRun(t *testing.T) {
 
 				}
 			}
-			outputResources := got.Spec.Outputs.Resources
+			outputResources := got.Spec.Resources.Inputs
 			for _, outputResource := range outputResources {
 				if outputResource.Name == outputImageResourceName {
-					assert.True(t, reflect.DeepEqual(outputResource.ResourceSpec.Type, taskv1.PipelineResourceTypeImage))
+					assert.True(t, reflect.DeepEqual(outputResource.ResourceSpec.Type, v1beta1.PipelineResourceTypeImage))
 					params := outputResource.ResourceSpec.Params
 					for _, param := range params {
 						if param.Name == outputImageResourceURL {
@@ -380,7 +380,7 @@ func TestGenerateTaskRun(t *testing.T) {
 			}
 
 			// ensure generated TaskRun's spec special input params are correct
-			params := got.Spec.Inputs.Params
+			params := got.Spec.Params
 			for _, param := range params {
 				if param.Name == inputParamBuilderImage {
 					assert.True(t, reflect.DeepEqual(param.Value.StringVal, builderImage.ImageURL))

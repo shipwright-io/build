@@ -11,7 +11,7 @@ import (
 	buildrunctl "github.com/redhat-developer/build/pkg/controller/buildrun"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
 	"github.com/redhat-developer/build/test"
-	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +33,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 		ctl               test.Catalog
 		buildSample       *build.Build
 		buildRunSample    *build.BuildRun
-		taskRunListSample *taskv1.TaskRunList
+		taskRunListSample *v1beta1.TaskRunList
 		statusWriter      *fakes.FakeStatusWriter
 		taskRunName       string
 		buildName         string
@@ -116,7 +116,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub that fakes the output when listing resources with the client
 				client.ListCalls(func(contet context.Context, object runtime.Object, _ ...crc.ListOption) error {
 					switch object := object.(type) {
-					case *taskv1.TaskRunList:
+					case *v1beta1.TaskRunList:
 						taskRunListSample.DeepCopyInto(object)
 					}
 					return nil
@@ -243,7 +243,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub the create calls for a TaskRun
 				client.CreateCalls(func(context context.Context, object runtime.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
-					case *taskv1.TaskRun:
+					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
 					}
 					return nil
@@ -270,7 +270,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub the create calls for a TaskRun
 				client.CreateCalls(func(context context.Context, object runtime.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
-					case *taskv1.TaskRun:
+					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
 					}
 					return nil

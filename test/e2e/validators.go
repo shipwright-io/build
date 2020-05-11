@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -268,8 +268,8 @@ func getTaskRun(
 	f *framework.Framework,
 	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
-) (*taskv1.TaskRun, error) {
-	taskRunList := &taskv1.TaskRunList{}
+) (*v1beta1.TaskRun, error) {
+	taskRunList := &v1beta1.TaskRunList{}
 	lbls := map[string]string{
 		buildv1alpha1.LabelBuild:    build.Name,
 		buildv1alpha1.LabelBuildRun: buildRun.Name,

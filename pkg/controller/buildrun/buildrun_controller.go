@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +87,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch TaskRuns
-	return c.Watch(&source.Kind{Type: &taskv1.TaskRun{}}, &handler.EnqueueRequestForOwner{
+	return c.Watch(&source.Kind{Type: &v1beta1.TaskRun{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &buildv1alpha1.BuildRun{},
 	})
@@ -153,7 +153,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Everytime control enters the reconcile loop, we need to ensure
 	// everything is in its desired state.
-	var generatedTaskRun *taskv1.TaskRun
+	var generatedTaskRun *v1beta1.TaskRun
 	if build.Spec.StrategyRef.Kind == nil || *build.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
 		buildStrategy, err := r.retrieveBuildStrategy(build, request)
 		if err != nil {
@@ -210,7 +210,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 }
 
 // IsRunning return if the TaskRun is running
-func isTaskRunRunning(tr *taskv1.TaskRun) bool {
+func isTaskRunRunning(tr *v1beta1.TaskRun) bool {
 	if tr == nil {
 		return false
 	}
@@ -289,9 +289,9 @@ func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(instance *buildv1alpha1
 	return clusterBuildStrategyInstance, nil
 }
 
-func (r *ReconcileBuildRun) retrieveTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*taskv1.TaskRun, error) {
+func (r *ReconcileBuildRun) retrieveTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*v1beta1.TaskRun, error) {
 
-	taskRunList := &taskv1.TaskRunList{}
+	taskRunList := &v1beta1.TaskRunList{}
 
 	lbls := map[string]string{
 		buildv1alpha1.LabelBuild:    build.Name,
