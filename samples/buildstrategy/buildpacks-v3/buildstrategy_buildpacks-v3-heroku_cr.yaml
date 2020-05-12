@@ -1,8 +1,8 @@
 ---
 apiVersion: build.dev/v1alpha1
-kind: BuildStrategy
+kind: ClusterBuildStrategy
 metadata:
-  name: buildpacks-v3
+  name: buildpacks-v3-heroku
 spec:
   buildSteps:
     - name: step-prepare
@@ -15,9 +15,7 @@ spec:
         - /bin/bash
       args:
         - -c
-        - >
-          chown -R "1000:1000" "/workspace/source" &&
-          chown -R "1000:1000" "/tekton/home"
+        - chown -R "1000:1000" "/workspace/source"
     - name: step-detect
       image: $(build.builder.image)
       securityContext:
@@ -63,7 +61,7 @@ spec:
     - name: step-export
       image: $(build.builder.image)
       securityContext:
-        runAsUser: 1000
+        runAsUser: 0
       command:
         - /cnb/lifecycle/exporter
       args:
@@ -71,6 +69,7 @@ spec:
         - -layers=/layers
         - -cache-dir=/cache
         - -group=/layers/group.toml
+        - -helpers=true
         - $(build.output.image)
       volumeMounts:
         - name: cache-dir

@@ -18,6 +18,7 @@ CRDS=(
     deploy/crds/build.dev_builds_crd.yaml
     deploy/crds/build.dev_buildruns_crd.yaml
     # cluster scope build strategies
+    samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml
     samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
     samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml
     samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml

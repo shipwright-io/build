@@ -22,6 +22,7 @@ var (
 
 	clusterBuildStrategies = []string{
 		"samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
+		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml",
 		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
 		"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
 		"samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml",
@@ -29,6 +30,7 @@ var (
 	}
 
 	namespaceBuildStrategies = []string{
+		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml",
 		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml",
 	}
 

@@ -25,6 +25,7 @@ A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is a
 Well-known strategies can be boostrapped from [here](samples/buildstrategy). The current supported Cluster BuildStrategy are:
 
 - [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
+- [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)
 - [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)
 - [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)
 - [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml)
@@ -33,6 +34,7 @@ Well-known strategies can be boostrapped from [here](samples/buildstrategy). The
 
 The current supported namespaces BuildStrategy are:
 
+- [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml)
 - [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml)
 
 ---
@@ -57,21 +59,22 @@ The [buildpacks-v3][buildpacks] BuildStrategy/ClusterBuildStrategy uses a Cloud 
 
 - [`heroku/buildpacks:18`][hubheroku]
 - [`cloudfoundry/cnb:bionic`][hubcloudfoundry]
+- [`gcr.io/paketo-buildpacks/builder:latest`](https://console.cloud.google.com/gcr/images/paketo-buildpacks/GLOBAL/builder?gcrImageListsize=30)
 
 ### Installing Buildpacks v3 Strategy
 
 You can install the `BuildStrategy` in your namespace or install the `ClusterBuildStrategy` at cluster scope so that it can be shared across namespaces.
 
-To install the cluster scope strategy, use:
+To install the cluster scope strategy, use (below is a heroku example, you can also use paketo sample):
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
+kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml
 ```
 
 To install the namespaced scope strategy, use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml
+kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml
 ```
 
 ### Try it
@@ -93,7 +96,7 @@ To use this strategy follow this steps:
     strategy:
       name: buildpacks-v3
       kind: ClusterBuildStrategy
-    builderImage: heroku/buildpacks:18
+    builderImage: gcr.io/paketo-buildpacks/builder:latest
     output:
       image: quay.io/yourorg/yourrepo
       credentials: <your-kubernetes-container-registry-secret>
