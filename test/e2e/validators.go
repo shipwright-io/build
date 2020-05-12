@@ -182,7 +182,7 @@ func validateController(
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
-	Logf("Test build complete '%s'!", testBuildRun.GetName())
+	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
 }
 
 // readAndDecode read file path and decode.
