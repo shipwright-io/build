@@ -237,4 +237,19 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 	})
+
+	Context("when a kaniko buildrun with output image is defined", func() {
+
+		BeforeEach(func() {
+			// create the build definition
+			createBuild(namespace, "kaniko-image-tag", "test/data/build_image_tag.yaml")
+		})
+
+		It("successfully runs a build", func() {
+			br, err := buildRunTestData(namespace, "kaniko-image-tag", "test/data/buildrun_image_tag.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
 })

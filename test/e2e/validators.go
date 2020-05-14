@@ -2,6 +2,7 @@ package e2e
 
 import (
 	goctx "context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -28,6 +29,7 @@ import (
 )
 
 const (
+	EnvVarImageRepoBuildRun    = "TEST_IMAGE_REPO_BUILDRUN"
 	EnvVarImageRepo            = "TEST_IMAGE_REPO"
 	EnvVarEnablePrivateRepos   = "TEST_PRIVATE_REPO"
 	EnvVarImageRepoSecret      = "TEST_IMAGE_REPO_SECRET"
@@ -120,6 +122,20 @@ func createClusterBuildStrategy(
 	}
 }
 
+func amendBuildRun(br *operator.BuildRun, imageRepoBuildRun string)  {
+	if imageRepoBuildRun != "" {
+		imageURLBuildRun := fmt.Sprintf("%s:%s", imageRepoBuildRun, br.Name)
+		if br.Spec.Output != nil {
+			br.Spec.Output.ImageURL = imageURLBuildRun
+			Logf("Amended object: name='%s', build-run-image-url='%s'", br.Name, imageURLBuildRun)
+		} else {
+			return
+		}
+	} else {
+		return
+	}
+}
+
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
 func validateBuildRunToSucceed(
 	namespace string,
@@ -132,6 +148,7 @@ func validateBuildRunToSucceed(
 	trueCondition := v1.ConditionTrue
 	pendingAndRunningStatues := []string{pendingStatus, runningStatus}
 
+	amendBuildRun(testBuildRun, os.Getenv(EnvVarImageRepoBuildRun))
 	// Ensure the BuildRun has been created
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
@@ -194,6 +211,7 @@ func validateBuildRunToFail(
 	f := framework.Global
 	falseCondition := v1.ConditionFalse
 
+	amendBuildRun(testBuildRun, os.Getenv(EnvVarImageRepoBuildRun))
 	// Create the BuildRun
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")

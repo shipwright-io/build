@@ -1,0 +1,10 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildrun-image-tag
+spec:
+  buildRef:
+    name: build-image-tag
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/imagev2
