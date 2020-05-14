@@ -1,0 +1,19 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: build-timeout
+spec:
+  source:
+    url: https://github.com/SaschaSchwarze0/java-simple
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/advanced-dockerfile
+  timeout: 15s
+    

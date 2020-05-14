@@ -102,6 +102,9 @@ spec:
                   description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
                   type: string
               type: object
+            timeout:
+              description: Timeout defines the maximum run time of this build run.
+              type: string
           required:
           - buildRef
           type: object

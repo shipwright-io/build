@@ -27,6 +27,10 @@ type BuildRunSpec struct {
 	// Default serviceaccount will be set if it is empty
 	// +optional
 	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
+
+	// Timeout defines the maximum run time of this build run.
+	// +optional
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun

@@ -120,9 +120,8 @@ func createClusterBuildStrategy(
 	}
 }
 
-// validateController create and watch the build flow happening, probing each step for a image
-// successfully created.
-func validateController(
+// validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
+func validateBuildRunToSucceed(
 	namespace string,
 	testBuildRun *operator.BuildRun,
 ) {
@@ -174,15 +173,43 @@ func validateController(
 		return testBuildRun.Status.Reason
 	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun not running")
 
-	// Ensure that eventually the Build moves to Succeeded.
+	// Ensure that eventually the BuildRun moves to Succeeded.
 	Eventually(func() v1.ConditionStatus {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		Expect(testBuildRun.Status.BuildSpec).ToNot(Equal(nil))
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
-	Logf("Test build complete '%s'!", testBuildRun.GetName())
+	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
+}
+
+// validateBuildRunToFail creates the build run and watches its flow until it fails
+// and verifies the reason using a regular expression.
+func validateBuildRunToFail(
+	namespace string,
+	testBuildRun *operator.BuildRun,
+	expectedReasonRegexp string,
+) {
+	f := framework.Global
+	falseCondition := v1.ConditionFalse
+
+	// Create the BuildRun
+	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
+	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
+
+	// Ensure that eventually the BuildRun moves to Failed.
+	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
+	Eventually(func() v1.ConditionStatus {
+		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
+
+		return testBuildRun.Status.Succeeded
+	}, 550*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
+
+	// Verify the build run failure
+	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
 }
 
 // readAndDecode read file path and decode.

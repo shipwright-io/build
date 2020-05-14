@@ -46,6 +46,10 @@ type BuildSpec struct {
 	// Output refers to the location where the generated
 	// image would be pushed to.
 	Output Image `json:"output"`
+
+	// Timeout defines the maximum run time of a build run.
+	// +optional
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
 // Image refers to an container image with credentials

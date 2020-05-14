@@ -128,6 +128,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					"Succeeded",
 					&taskRunName,
 					corev1.ConditionTrue,
+					buildSample.Spec,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
@@ -162,6 +163,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					fmt.Sprintf(" \"%s\" not found", saName),
 					emptyTaskRunName,
 					corev1.ConditionFalse,
+					buildSample.Spec,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
@@ -250,7 +252,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 				})
 
 				_, err := reconciler.Reconcile(request)
-				Expect(buildRunSample.Status.BuildSpec).ToNot(nil)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -278,7 +279,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 				})
 
 				_, err := reconciler.Reconcile(request)
-				Expect(buildRunSample.Status.BuildSpec).To(Equal(buildSample.Spec))
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
