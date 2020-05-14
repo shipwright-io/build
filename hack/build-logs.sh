@@ -5,7 +5,7 @@ set -euo pipefail
 # Read the build run name
 
 if [ $# -eq 0 ]; then
-    echo "Usage: build-logs <BUILD_RUN_NAME> [-f|--follow] [-n|--namespace <NAMESPACE_NAME>]"
+    echo "Usage: build-logs <BUILD_RUN_NAME> [-f|--follow] [-n|--namespace <NAMESPACE_NAME>] [--timestamps]"
     exit 1
 fi
 
@@ -15,6 +15,7 @@ shift
 # Read the other arguments
 FOLLOW=0
 NAMESPACE=
+TIMESTAMPS=0
 
 while [[ $# -gt 0 ]]
 do
@@ -27,8 +28,11 @@ do
         NAMESPACE=$2
         shift
         shift
+    elif [ "${ARGKEY}" == "--timestamps" ]; then
+        TIMESTAMPS=1
+        shift
     else
-        echo "Usage: build-logs <BUILD_RUN_NAME> [-f|--follow] [-n|--namespace <NAMESPACE_NAME>]"
+        echo "Usage: build-logs <BUILD_RUN_NAME> [-f|--follow] [-n|--namespace <NAMESPACE_NAME>] [--timestamps]"
         exit 1
     fi
 done
@@ -123,7 +127,11 @@ do
 
     if [ ${FOLLOW} = 1 ] && [ "${EXIT_CODE}" == "null" ]; then
         # Container is still running and follow logs is requested
-        kubectl logs -f "${POD_NAME}" "${CONTAINER_NAME}" -n "${NAMESPACE}" 
+        if [ ${TIMESTAMPS} = 1 ]; then
+            kubectl logs "${POD_NAME}" "${CONTAINER_NAME}" -f -n "${NAMESPACE}" --timestamps
+        else
+            kubectl logs "${POD_NAME}" "${CONTAINER_NAME}" -f -n "${NAMESPACE}"
+        fi
         
         # Refresh the pod to get the exit code of the container, sometimes this takes a moment
         while [ "${EXIT_CODE}" == "null" ]; do
@@ -132,7 +140,11 @@ do
         done
     else
         # Just print the logs that we have
-        kubectl logs "${POD_NAME}" "${CONTAINER_NAME}" -n "${NAMESPACE}" 
+        if [ ${TIMESTAMPS} = 1 ]; then
+            kubectl logs "${POD_NAME}" "${CONTAINER_NAME}" -n "${NAMESPACE}" --timestamps
+        else
+            kubectl logs "${POD_NAME}" "${CONTAINER_NAME}" -n "${NAMESPACE}"
+        fi
 
         if [ "${EXIT_CODE}" == "null" ]; then
             # Refresh the pod to get the exit code of the container if it terminated in the meantime
