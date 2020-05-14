@@ -230,6 +230,13 @@ func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 		},
 	}
 
+	// assign the timeout
+	if buildRun.Spec.Timeout != nil {
+		expectedTaskRun.Spec.Timeout = buildRun.Spec.Timeout
+	} else if build.Spec.Timeout != nil {
+		expectedTaskRun.Spec.Timeout = build.Spec.Timeout
+	}
+
 	var inputParams []v1beta1.Param
 	if build.Spec.BuilderImage != nil {
 		inputParams = append(inputParams, v1beta1.Param{
