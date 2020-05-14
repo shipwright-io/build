@@ -13,7 +13,7 @@ GOARCH ?= amd64
 GO_FLAGS ?= -v -mod=vendor
 
 # configure zap based logr
-OPERATOR_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
+ZAP_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
 OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
@@ -102,7 +102,7 @@ crds:
 	@hack/crd.sh install
 
 local: crds build
-	operator-sdk run --local --operator-flags="$(ZAP_ENCODER_FLAG)" $(OPERATOR_SDK_EXTRA_ARGS)
+	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
 clean:
 	rm -rf $(OUTPUT_DIR)
