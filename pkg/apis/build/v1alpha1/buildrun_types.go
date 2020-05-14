@@ -51,6 +51,10 @@ type BuildRunStatus struct {
 	// CompletionTime is the time the build completed.
 	// +optional
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+
+	// BuildSpec is the Build Spec of this BuildRun.
+	// +optional
+	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
 }
 
 // BuildRef can be used to refer to a specific instance of a Build.

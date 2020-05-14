@@ -250,6 +250,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				})
 
 				_, err := reconciler.Reconcile(request)
+				Expect(buildRunSample.Status.BuildSpec).ToNot(nil)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -277,6 +278,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				})
 
 				_, err := reconciler.Reconcile(request)
+				Expect(buildRunSample.Status.BuildSpec).To(Equal(buildSample.Spec))
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
