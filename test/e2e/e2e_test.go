@@ -79,7 +79,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks build is defined", func() {
+	Context("when a Buildpacks build is defined without contextDir", func() {
 
 		BeforeEach(func() {
 			// create the build definition
@@ -92,6 +92,35 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			validateBuildRunToSucceed(namespace, br)
 		})
+
+	})
+
+	Context("when a Buildpacks build is defined with contextDir", func() {
+
+		It("successfully runs a build with nodejs runtime", func() {
+			createBuild(namespace, "buildpacks-v3-nodejs", "samples/build/build_buildpacks-v3_nodejs_cr.yaml")
+			br, err := buildRunTestData(namespace, "buildpacks-v3-nodejs", "samples/buildrun/buildrun_buildpacks-v3_nodejs_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+
+		It("successfully runs a build with php runtime", func() {
+			createBuild(namespace, "buildpacks-v3-php", "samples/build/build_buildpacks-v3_php_cr.yaml")
+			br, err := buildRunTestData(namespace, "buildpacks-v3-php", "samples/buildrun/buildrun_buildpacks-v3_php_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+
+		It("successfully runs a build with ruby runtime", func() {
+			createBuild(namespace, "buildpacks-v3-ruby", "samples/build/build_buildpacks-v3_ruby_cr.yaml")
+			br, err := buildRunTestData(namespace, "buildpacks-v3-ruby", "samples/buildrun/buildrun_buildpacks-v3_ruby_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+
 	})
 
 	Context("when a Buildpacks build that uses a namespaced build strategy is defined", func() {
