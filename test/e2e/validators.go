@@ -165,6 +165,9 @@ func validateBuildRunToSucceed(
 		return testBuildRun.Status.Reason
 	}, 30*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun not pending or running")
 
+	// Verify that the BuildSpec is available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+
 	// Ensure that BuildRun moves to Running State
 	Eventually(func() string {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
@@ -173,14 +176,19 @@ func validateBuildRunToSucceed(
 		return testBuildRun.Status.Reason
 	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun not running")
 
+	// Verify that the BuildSpec is still available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+
 	// Ensure that eventually the BuildRun moves to Succeeded.
 	Eventually(func() v1.ConditionStatus {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
-		Expect(testBuildRun.Status.BuildSpec).ToNot(Equal(nil))
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
+
+	// Verify that the BuildSpec is still available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
 	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
 }
@@ -207,6 +215,9 @@ func validateBuildRunToFail(
 
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
+
+	// Verify that the BuildSpec is available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
 	// Verify the build run failure
 	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
