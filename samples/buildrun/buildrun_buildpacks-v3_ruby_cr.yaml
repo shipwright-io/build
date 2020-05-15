@@ -2,10 +2,9 @@
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
 metadata:
-  name: buildpack-nodejs-buildrun
+  name: buildpack-ruby-buildrun
 spec:
   buildRef:
-    name: buildpack-nodejs-build-root-dir
+    name: buildpack-ruby-build
   serviceAccount:
-    name: pipeline
     generate: true

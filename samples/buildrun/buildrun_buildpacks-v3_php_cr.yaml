@@ -2,10 +2,9 @@
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
 metadata:
-  name: buildpack-nodejs-buildrun
+  name: buildpack-php-buildrun
 spec:
   buildRef:
-    name: buildpack-nodejs-build-root-dir
+    name: buildpack-php-build
   serviceAccount:
-    name: pipeline
     generate: true

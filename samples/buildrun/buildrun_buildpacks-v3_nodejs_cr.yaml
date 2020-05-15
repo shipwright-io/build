@@ -5,7 +5,6 @@ metadata:
   name: buildpack-nodejs-buildrun
 spec:
   buildRef:
-    name: buildpack-nodejs-build-root-dir
+    name: buildpack-nodejs-build
   serviceAccount:
-    name: pipeline
     generate: true

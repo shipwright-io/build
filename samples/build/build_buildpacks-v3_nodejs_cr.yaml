@@ -2,14 +2,15 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildpack-nodejs-build-root-dir
+  name: buildpack-nodejs-build
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
+    url: https://github.com/cloudfoundry/cf-acceptance-tests
+    contextDir: assets/node
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
   builder:
-    image: gcr.io/paketo-buildpacks/builder:latest
+    image: heroku/buildpacks:18
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
