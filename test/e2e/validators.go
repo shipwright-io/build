@@ -176,6 +176,7 @@ func validateBuildRunToSucceed(
 	// Ensure that eventually the BuildRun moves to Succeeded.
 	Eventually(func() v1.ConditionStatus {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		Expect(testBuildRun.Status.BuildSpec).ToNot(Equal(nil))
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		return testBuildRun.Status.Succeeded

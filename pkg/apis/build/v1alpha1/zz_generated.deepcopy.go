@@ -194,6 +194,11 @@ func (in *BuildRunStatus) DeepCopyInto(out *BuildRunStatus) {
 		in, out := &in.CompletionTime, &out.CompletionTime
 		*out = (*in).DeepCopy()
 	}
+	if in.BuildSpec != nil {
+		in, out := &in.BuildSpec, &out.BuildSpec
+		*out = new(BuildSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

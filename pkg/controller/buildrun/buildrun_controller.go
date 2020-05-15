@@ -137,6 +137,9 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
 		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 		buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
+		if buildRun.Status.BuildSpec == nil {
+			buildRun.Status.BuildSpec = &build.Spec
+		}
 		err = r.client.Status().Update(context.TODO(), buildRun)
 		if err != nil {
 			return reconcile.Result{}, err
