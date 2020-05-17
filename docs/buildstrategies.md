@@ -22,7 +22,7 @@ A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is a
 
 ## Available ClusterBuildStrategies
 
-Well-known strategies can be boostrapped from [here](samples/buildstrategy). The current supported Cluster BuildStrategy are:
+Well-known strategies can be boostrapped from [here](../samples/buildstrategy). The current supported Cluster BuildStrategy are:
 
 - [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
 - [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)
