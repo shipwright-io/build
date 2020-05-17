@@ -1,0 +1,10 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-java-buildrun
+spec:
+  buildRef:
+    name: buildpack-java-build
+  serviceAccount:
+    generate: true

@@ -15,7 +15,9 @@ spec:
         - /bin/bash
       args:
         - -c
-        - chown -R "1000:1000" "/workspace/source"
+        - >
+          chown -R "1000:1000" "/workspace/source" &&
+          chown -R "1000:1000" "/tekton/home"
     - name: step-detect
       image: $(build.builder.image)
       securityContext:
@@ -23,7 +25,7 @@ spec:
       command:
         - /cnb/lifecycle/detector
       args:
-        - -app=/workspace/source
+        - -app=/workspace/source/$(build.source.contextDir)
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
       volumeMounts:
@@ -51,7 +53,7 @@ spec:
       command:
         - /cnb/lifecycle/builder
       args:
-        - -app=/workspace/source
+        - -app=/workspace/source/$(build.source.contextDir)
         - -layers=/layers
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
@@ -65,7 +67,7 @@ spec:
       command:
         - /cnb/lifecycle/exporter
       args:
-        - -app=/workspace/source
+        - -app=/workspace/source/$(build.source.contextDir)
         - -layers=/layers
         - -cache-dir=/cache
         - -group=/layers/group.toml
