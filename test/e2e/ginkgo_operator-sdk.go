@@ -47,24 +47,27 @@ func configureOperatorSDKTestFramework() error {
 	// specify the file name of the global resource manifest
 	globalManFile := fmt.Sprintf("%s/global-manifest-%s.yaml", os.TempDir(), ginkgoSeed)
 	if ginkgoNode == 1 {
-		// write the file
-		files, err := ioutil.ReadDir(rootDir + "/deploy/crds")
-		if err != nil {
-			Logf("Failed to read directory %s %s", rootDir+"/deploy/crds", err.Error())
-			return err
-		}
-
-		combined := []byte{}
-		for _, file := range files {
-			bytes, err := ioutil.ReadFile(rootDir + "/deploy/crds/" + file.Name())
+		// determine the file content
+		content := []byte{}
+		if os.Getenv(EnvVarCreateGlobalObjects) == "true" {
+			files, err := ioutil.ReadDir(rootDir + "/deploy/crds")
 			if err != nil {
-				Logf("Failed to read file %s %s", rootDir+"/deploy/crds/"+file.Name(), err.Error())
+				Logf("Failed to read directory %s %s", rootDir+"/deploy/crds", err.Error())
 				return err
 			}
-			combined = append(combined, bytes...)
+
+			for _, file := range files {
+				bytes, err := ioutil.ReadFile(rootDir + "/deploy/crds/" + file.Name())
+				if err != nil {
+					Logf("Failed to read file %s %s", rootDir+"/deploy/crds/"+file.Name(), err.Error())
+					return err
+				}
+				content = append(content, bytes...)
+			}
 		}
 
-		err = ioutil.WriteFile(globalManFile, combined, 0644)
+		// write the file
+		err = ioutil.WriteFile(globalManFile, content, 0644)
 		if err != nil {
 			Logf("Failed to write file %s %s", globalManFile, err.Error())
 			return err
@@ -178,28 +181,32 @@ func populateOperatorSDKTestFrameworkScheme() error {
 		return err
 	}
 
-	err = framework.AddToFrameworkScheme(apis.AddToScheme, &operator.BuildStrategyList{})
-	if err != nil {
-		Logf("Failed to add BuildStrategyList to schema %s", err.Error())
-		return err
+	if os.Getenv(EnvVarCreateGlobalObjects) == "true" {
+		err = framework.AddToFrameworkScheme(apis.AddToScheme, &operator.BuildStrategyList{})
+		if err != nil {
+			Logf("Failed to add BuildStrategyList to schema %s", err.Error())
+			return err
+		}
+
+		err = framework.AddToFrameworkScheme(apis.AddToScheme, &operator.ClusterBuildStrategyList{})
+		if err != nil {
+			Logf("Failed to add ClusterBuildStrategyList to schema %s", err.Error())
+			return err
+		}
 	}
 
-	err = framework.AddToFrameworkScheme(apis.AddToScheme, &operator.ClusterBuildStrategyList{})
-	if err != nil {
-		Logf("Failed to add ClusterBuildStrategyList to schema %s", err.Error())
-		return err
-	}
+	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+		err = framework.AddToFrameworkScheme(v1beta1.AddToScheme, &v1beta1.TaskList{})
+		if err != nil {
+			Logf("Failed to add TaskList to schema %s", err.Error())
+			return err
+		}
 
-	err = framework.AddToFrameworkScheme(v1beta1.AddToScheme, &v1beta1.TaskList{})
-	if err != nil {
-		Logf("Failed to add TaskList to schema %s", err.Error())
-		return err
-	}
-
-	err = framework.AddToFrameworkScheme(v1beta1.AddToScheme, &v1beta1.TaskRunList{})
-	if err != nil {
-		Logf("Failed to add TaskRunList to schema %s", err.Error())
-		return err
+		err = framework.AddToFrameworkScheme(v1beta1.AddToScheme, &v1beta1.TaskRunList{})
+		if err != nil {
+			Logf("Failed to add TaskRunList to schema %s", err.Error())
+			return err
+		}
 	}
 
 	return nil

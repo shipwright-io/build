@@ -28,6 +28,18 @@ SDK_VERSION ?= v0.17.0
 # E2E test flags
 TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v
 
+# E2E test operator behavior, can be start_local or managed_outside
+TEST_E2E_OPERATOR ?= start_local
+
+# E2E test service account name to be used for the build runs, can be set to generated to use the generated service account feature
+TEST_E2E_SERVICEACCOUNT_NAME ?= pipeline
+
+# E2E test build global object creation (custom resource definitions and build strategies)
+TEST_E2E_CREATE_GLOBALOBJECTS ?= true
+
+# E2E test verify Tekton objects
+TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
+
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
 # test container registyr secret name
@@ -94,8 +106,18 @@ test-unit-coverage: test-unit
 	gocov report build/coverage/coverprofile.json
 
 .PHONY: test-e2e
-test-e2e: crds
-	GO111MODULE=on TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} ginkgo ${TEST_E2E_FLAGS} test/e2e
+test-e2e: crds test-e2e-plain
+
+.PHONY: test-e2e-plain
+test-e2e-plain:
+	GO111MODULE=on \
+	TEST_OPERATOR_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_E2E_OPERATOR=${TEST_E2E_OPERATOR} \
+	TEST_E2E_CREATE_GLOBALOBJECTS=${TEST_E2E_CREATE_GLOBALOBJECTS} \
+	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
+	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
+	ginkgo ${TEST_E2E_FLAGS} test/e2e
 
 crds:
 	-hack/crd.sh uninstall
