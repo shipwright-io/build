@@ -156,7 +156,7 @@ spec:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
   builder:
-    image: heroku/buildpacks:18
+    image: gcr.io/paketo-buildpacks/builder:latest
 ```
 
 ### Defining Resources

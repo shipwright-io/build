@@ -49,6 +49,36 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a heroku Buildpacks build is defined", func() {
+
+		BeforeEach(func() {
+			// create the build definition
+			createBuild(namespace, "buildpacks-v3-heroku", "samples/build/build_buildpacks-v3-heroku_cr.yaml")
+		})
+
+		It("successfully runs a build", func() {
+			br, err := buildRunTestData(namespace, "buildpacks-v3-heroku", "samples/buildrun/buildrun_buildpacks-v3-heroku_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
+	Context("when a heroku Buildpacks build that uses a namespaced heroku build strategy is defined", func() {
+
+		BeforeEach(func() {
+			// create the build definition
+			createBuild(namespace, "buildpacks-v3-heroku-namespaced", "samples/build/build_buildpacks-v3-heroku_namespaced_cr.yaml")
+		})
+
+		It("successfully runs a build", func() {
+			br, err := buildRunTestData(namespace, "buildpacks-v3-heroku-namespaced", "samples/buildrun/buildrun_buildpacks-v3-heroku_namespaced_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
 	Context("when a Buildpacks build is defined", func() {
 
 		BeforeEach(func() {

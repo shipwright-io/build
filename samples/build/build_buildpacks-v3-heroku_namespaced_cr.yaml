@@ -2,15 +2,15 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildpack-nodejs-build-namespaced
+  name: buildpack-nodejs-build-namespaced-heroku
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
-    name: buildpacks-v3
+    name: buildpacks-v3-heroku
     kind: BuildStrategy
   builder:
-    image: gcr.io/paketo-buildpacks/builder:latest
+    image: heroku/buildpacks:18
   resources:
     limits:
       cpu: "500m"

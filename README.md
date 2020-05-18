@@ -47,6 +47,7 @@ This operator ships two CRDs(the `Build` and `BuildRun`) in order to register a 
 Examples of `Build` resource using the example strategies shipped with this operator.
 
 * [`buildah`](samples/build/build_buildah_cr.yaml)
+* [`buildpacks-v3-heroku`](samples/build/build_buildpacks-v3-heroku_cr.yaml)
 * [`buildpacks-v3`](samples/build/build_buildpacks-v3_cr.yaml)
 * [`kaniko`](samples/build/build_kaniko_cr.yaml)
 * [`source-to-image`](samples/build/build_source-to-image_cr.yaml)
@@ -106,7 +107,8 @@ spec:
 | Build Strategy                                                                  | Alpha | Beta | GA |
 | ------------------------------------------------------------------------------- | ----- | ---- | -- |
 | [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑     |      |    |
-| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3-cr.yaml)      | ☑️     |      |    |
+| [Buildpacks-v3-heroku](samples/buildstrategy/buildstrategy_buildpacks-v3-heroku_cr.yaml)      | ☑️     |      |    |
+| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3_cr.yaml)      | ☑️     |      |    |
 | [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)                    | ☑️     |      |    |
 | [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)                  | ☑️     |      |    |
 
