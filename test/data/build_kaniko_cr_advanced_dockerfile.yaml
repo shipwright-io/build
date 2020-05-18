@@ -3,6 +3,8 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
   name: kaniko-advanced-dockerfile
+  annotations:
+    build.build.dev/buildRunDeletion: "false"
 spec:
   source:
     url: https://github.com/SaschaSchwarze0/java-simple

@@ -128,7 +128,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					"Succeeded",
 					&taskRunName,
 					corev1.ConditionTrue,
-					buildSample.Spec,
+					buildSample,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
@@ -163,7 +163,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					fmt.Sprintf(" \"%s\" not found", saName),
 					emptyTaskRunName,
 					corev1.ConditionFalse,
-					buildSample.Spec,
+					buildSample,
 				)
 				statusWriter.UpdateCalls(statusCall)
 

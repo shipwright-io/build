@@ -6,8 +6,10 @@ import (
 )
 
 var (
-	LabelBuild           = "build.build.dev/name"
-	LabelBuildGeneration = "build.build.dev/generation"
+	LabelBuild                 = "build.build.dev/name"
+	LabelBuildGeneration       = "build.build.dev/generation"
+	AnnotationBuildRunDeletion = "build.build.dev/buildRunDeletion"
+	BuildFinalizer             = "finalizer.build.build.dev"
 )
 
 // BuildSpec defines the desired state of Build

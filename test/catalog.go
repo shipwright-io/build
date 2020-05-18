@@ -2,13 +2,14 @@ package test
 
 import (
 	"context"
+	"strconv"
 
 	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,7 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
+			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
@@ -175,13 +177,16 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(co
 		case *build.Build:
 			Expect(object.Status.Registered).To(Equal(status))
 			Expect(object.Status.Reason).To(ContainSubstring(reason))
+			if object.Annotations != nil && object.Annotations[build.AnnotationBuildRunDeletion] == "true" {
+				Expect(object.Finalizers[0]).To(Equal(build.BuildFinalizer))
+			}
 		}
 		return nil
 	}
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSample *build.Build) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
@@ -189,8 +194,10 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.
 			Expect(object.Status.Succeeded).To(Equal(status))
 			Expect(object.Status.LatestTaskRunRef).To(Equal(name))
 			if object.Status.BuildSpec != nil {
-				Expect(*object.Status.BuildSpec).To(Equal(buildSpec))
+				Expect(*object.Status.BuildSpec).To(Equal(buildSample.Spec))
 			}
+			Expect(object.Labels[build.LabelBuild]).To(Equal(buildSample.Name))
+			Expect(object.Labels[build.LabelBuildGeneration]).To(Equal(strconv.FormatInt(buildSample.Generation, 10)))
 		}
 		return nil
 	}

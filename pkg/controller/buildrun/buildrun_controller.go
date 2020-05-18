@@ -3,9 +3,8 @@ package buildrun
 import (
 	"context"
 	"fmt"
-
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strconv"
 )
 
 var log = logf.Log.WithName("controller_buildrun")
@@ -116,6 +116,18 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
+	if buildRun.Labels == nil {
+		buildRun.Labels = make(map[string]string)
+	}
+	if buildRun.Labels[buildv1alpha1.LabelBuild] == "" {
+		buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
+		buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+		err = r.client.Update(context.TODO(), buildRun)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	lastTaskRun, err := r.retrieveTaskRun(build, buildRun)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list existing TaskRuns from BuildRun", "BuildRun", buildRun.Name)
@@ -144,6 +156,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+
 		return reconcile.Result{}, nil
 	}
 
