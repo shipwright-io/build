@@ -132,6 +132,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
+				// Stub that asserts the BuildRun label fields when
+				// Label updates for a BuildRun take place
+				labelCall := ctl.StubBuildRunLabel(buildSample)
+				statusWriter.UpdateCalls(labelCall)
+
 				// Assert for none errors while we exit the Reconcile
 				// after updating the BuildRun status with the existing
 				// TaskRun one
@@ -166,6 +171,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 					buildSample.Spec,
 				)
 				statusWriter.UpdateCalls(statusCall)
+
+				// Stub that asserts the BuildRun label fields when
+				// Label updates for a BuildRun take place
+				labelCall := ctl.StubBuildRunLabel(buildSample)
+				statusWriter.UpdateCalls(labelCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())

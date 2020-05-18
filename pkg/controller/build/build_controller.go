@@ -3,11 +3,14 @@ package build
 import (
 	"context"
 	"fmt"
+	"reflect"
 
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -48,8 +51,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
+			buildRunFinalizer := false
+			// Check if the AnnotationBuildRunDeletion annotation is updated
+			oldAnnot := e.MetaOld.GetAnnotations()
+			newAnnot := e.MetaNew.GetAnnotations()
+			if !reflect.DeepEqual(oldAnnot, newAnnot) {
+				if oldAnnot[build.AnnotationBuildRunDeletion] != newAnnot[build.AnnotationBuildRunDeletion] {
+					buildRunFinalizer = true
+				}
+			}
+
 			// Ignore updates to CR status in which case metadata.Generation does not change
-			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+			// or BuildRunDeletion annotation does not change
+			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration() || buildRunFinalizer
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Evaluates to false if the object has been confirmed deleted.
@@ -89,6 +103,16 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	} else if apierrors.IsNotFound(err) {
 		return reconcile.Result{}, nil
+	}
+
+	// Add finalizer for build
+	if err := r.configFinalizer(b, reqLogger); err != nil {
+		return reconcile.Result{}, err
+	}
+	// Check if the build is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	if !b.DeletionTimestamp.IsZero() {
+		return reconcile.Result{}, r.finalizeBuildRun(b, reqLogger)
 	}
 
 	// Populate the status struct with default values
@@ -217,4 +241,86 @@ func (r *ReconcileBuild) validateOutputSecret(n string, ns string) error {
 		return fmt.Errorf("secret %s does not exist", n)
 	}
 	return nil
+}
+
+func (r *ReconcileBuild) configFinalizer(b *build.Build, logger logr.Logger) error {
+	if b.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
+		if !contains(b.GetFinalizers(), build.BuildFinalizer) {
+			logger.Info("Add finalizer to Build", "Build", b.Name)
+			b.SetFinalizers(append(b.GetFinalizers(), build.BuildFinalizer))
+			if err := r.client.Update(context.TODO(), b); err != nil {
+				return err
+			}
+		}
+	} else {
+		if contains(b.GetFinalizers(), build.BuildFinalizer) {
+			logger.Info("Remove finalizer from Build", "Build", b.Name)
+			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
+			if err := r.client.Update(context.TODO(), b); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (r *ReconcileBuild) finalizeBuildRun(b *build.Build, logger logr.Logger) error {
+	if contains(b.GetFinalizers(), build.BuildFinalizer) {
+		// Run finalization logic for buildFinalizer. If the
+		// finalization logic fails, don't remove the finalizer so
+		// that we can retry during the next reconciliation.
+		if err := r.cleanBuildRun(b, logger); err != nil {
+			return err
+		}
+
+		// Remove buildFinalizer. Once all finalizers have been
+		// removed, the object will be deleted.
+		b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
+		err := r.client.Update(context.TODO(), b)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *ReconcileBuild) cleanBuildRun(b *build.Build, logger logr.Logger) error {
+	buildRunList := &build.BuildRunList{}
+
+	lbls := map[string]string{
+		buildv1alpha1.LabelBuild: b.Name,
+	}
+	opts := client.ListOptions{
+		Namespace:     b.Namespace,
+		LabelSelector: labels.SelectorFromSet(lbls),
+	}
+	if err := r.client.List(context.TODO(), buildRunList, &opts); err != nil {
+		return err
+	}
+
+	for _, buildRun := range buildRunList.Items {
+		logger.Info("Finalize BuildRun automatically", "BuildRun", buildRun.Name)
+		if err := r.client.Delete(context.TODO(), &buildRun); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func remove(list []string, s string) []string {
+	for i, v := range list {
+		if v == s {
+			list = append(list[:i], list[i+1:]...)
+		}
+	}
+	return list
 }

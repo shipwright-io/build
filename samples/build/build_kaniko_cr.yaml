@@ -3,6 +3,8 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
   name: kaniko-golang-build
+  annotations:
+    build.build.dev/build-run-deletion: "true"
 spec:
   source:
     url: https://github.com/sbose78/taxi
