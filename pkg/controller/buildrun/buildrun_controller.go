@@ -137,6 +137,9 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
 		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 		buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
+		if buildRun.Status.BuildSpec == nil {
+			buildRun.Status.BuildSpec = &build.Spec
+		}
 		err = r.client.Status().Update(context.TODO(), buildRun)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -160,7 +163,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		if buildStrategy != nil {
-			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
@@ -172,7 +175,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		if clusterBuildStrategy != nil {
-			generatedTaskRun, err = generateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(buildRun, err.Error())
 				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)

@@ -198,6 +198,9 @@ spec:
               required:
               - name
               type: object
+            timeout:
+              description: Timeout defines the maximum run time of a build run.
+              type: string
           required:
           - output
           - source

@@ -19,8 +19,8 @@ See the following docs referencing each of the Kubernetes resources currently su
 
 - [`Build`](build.md)
 - [`BuildRun`](buildrun.md)
-- [`BuildStrategy`](buildstrategy.md)
-- [`ClusterBuildStrategy`](clusterbuildstrategy.md)
+- [`BuildStrategy`](buildstrategies.md)
+- [`ClusterBuildStrategy`](buildstrategies.md)
 
 ## Controllers Flow
 

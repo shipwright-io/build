@@ -51,6 +51,7 @@ The `Build` definition supports the following fields:
   - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
+  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
 
 ### Defining the Source
 
@@ -104,10 +105,10 @@ spec:
 
 A `Build` resource can specify the `BuildStrategy` to use, these are:
 
-- [Source-to-Image](samples/buildstrategy/source-to-image/README.md)
-- [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md)
-- [Buildah](samples/buildstrategy/buildah/README.md)
-- [Kaniko](samples/buildstrategy/kaniko/README.md)
+- [Source-to-Image](docs/buildstrategies.md#source-to-image)
+- [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
+- [Buildah](docs/buildstrategies.md#buildah)
+- [Kaniko](docs/buildstrategies.md#kaniko)
 
 Defining the strategy is straightforward, you need to define the `name` and the `kind`. For example:
 

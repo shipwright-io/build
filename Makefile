@@ -13,7 +13,7 @@ GOARCH ?= amd64
 GO_FLAGS ?= -v -mod=vendor
 
 # configure zap based logr
-OPERATOR_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
+ZAP_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
 OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
@@ -61,24 +61,37 @@ $(OPERATOR): vendor
 install-ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 	go get -u github.com/onsi/gomega/...
+	ginkgo version
+
+install-gocov:
+	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
 
 # https://github.com/redhat-developer/build/issues/123
 test: test-unit
 
 .PHONY: test-unit
 test-unit:
+	rm -rf build/coverage
+	mkdir build/coverage
 	GO111MODULE=on ginkgo \
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
-		-nodes=4 \
+		-p \
 		-compilers=2 \
 		-slowSpecThreshold=240 \
 		-race \
 		-cover \
+		-outputdir=build/coverage \
 		-trace \
 		internal/... \
 		pkg/...
+
+test-unit-coverage: test-unit
+	echo "Combining coverage profiles"
+	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
+	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
+	gocov report build/coverage/coverprofile.json
 
 .PHONY: test-e2e
 test-e2e: crds
@@ -89,7 +102,7 @@ crds:
 	@hack/crd.sh install
 
 local: crds build
-	operator-sdk run --local --operator-flags="$(ZAP_ENCODER_FLAG)" $(OPERATOR_SDK_EXTRA_ARGS)
+	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
 clean:
 	rm -rf $(OUTPUT_DIR)
@@ -104,6 +117,6 @@ kind:
 	./hack/install-registry.sh
 	./hack/install-kind.sh
 
-travis: install-ginkgo kubectl kind
+travis: install-ginkgo install-gocov kubectl kind
 	./hack/install-tekton.sh
 	./hack/install-operator-sdk.sh

@@ -30,7 +30,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "buildah", "samples/buildrun/buildrun_buildah_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -45,7 +45,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "buildah-custom-context-dockerfile", "test/data/buildrun_buildah_cr_custom_context+dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -90,7 +90,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "buildpacks-v3", "samples/buildrun/buildrun_buildpacks-v3_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -105,7 +105,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "buildpacks-v3-namespaced", "samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -120,7 +120,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "kaniko", "samples/buildrun/buildrun_kaniko_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -135,7 +135,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "kaniko-advanced-dockerfile", "test/data/buildrun_kaniko_cr_advanced_dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -150,7 +150,22 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "kaniko-custom-context-dockerfile", "test/data/buildrun_kaniko_cr_custom_context+dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
+	Context("when a Kaniko build with a short timeout is defined", func() {
+
+		BeforeEach(func() {
+			// create the build definition
+			createBuild(namespace, "kaniko-timeout", "test/data/build_timeout.yaml")
+		})
+
+		It("fails the build run", func() {
+			br, err := buildRunTestData(namespace, "kaniko-timeout", "test/data/buildrun_timeout.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToFail(namespace, br, "kaniko-timeout.*failed to finish within \"15s\"")
 		})
 	})
 
@@ -165,7 +180,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "s2i", "samples/buildrun/buildrun_source-to-image_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -188,7 +203,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				br, err := buildRunTestData(namespace, "private-github-buildah", "samples/buildrun/buildrun_buildah_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateController(namespace, br)
+				validateBuildRunToSucceed(namespace, br)
 			})
 		})
 
@@ -203,7 +218,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				br, err := buildRunTestData(namespace, "private-gitlab-buildah", "samples/buildrun/buildrun_buildah_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateController(namespace, br)
+				validateBuildRunToSucceed(namespace, br)
 			})
 		})
 
@@ -218,7 +233,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				br, err := buildRunTestData(namespace, "private-github-kaniko", "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateController(namespace, br)
+				validateBuildRunToSucceed(namespace, br)
 			})
 		})
 
@@ -233,7 +248,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				br, err := buildRunTestData(namespace, "private-gitlab-kaniko", "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateController(namespace, br)
+				validateBuildRunToSucceed(namespace, br)
 			})
 		})
 
@@ -248,7 +263,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				br, err := buildRunTestData(namespace, "private-github-s2i", "samples/buildrun/buildrun_source-to-image_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateController(namespace, br)
+				validateBuildRunToSucceed(namespace, br)
 			})
 		})
 	})
