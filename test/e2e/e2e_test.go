@@ -60,7 +60,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "buildpacks-v3-heroku", "samples/buildrun/buildrun_buildpacks-v3-heroku_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
@@ -75,7 +75,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			br, err := buildRunTestData(namespace, "buildpacks-v3-heroku-namespaced", "samples/buildrun/buildrun_buildpacks-v3-heroku_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateController(namespace, br)
+			validateBuildRunToSucceed(namespace, br)
 		})
 	})
 
