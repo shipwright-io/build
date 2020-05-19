@@ -49,14 +49,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a heroku Buildpacks build is defined", func() {
-
-		BeforeEach(func() {
-			// create the build definition
-			createBuild(namespace, "buildpacks-v3-heroku", "samples/build/build_buildpacks-v3-heroku_cr.yaml")
-		})
-
+	Context("when a heroku Buildpacks build is defined using a cluster strategy", func() {
 		It("successfully runs a build", func() {
+			createBuild(namespace, "buildpacks-v3-heroku", "samples/build/build_buildpacks-v3-heroku_cr.yaml")
 			br, err := buildRunTestData(namespace, "buildpacks-v3-heroku", "samples/buildrun/buildrun_buildpacks-v3-heroku_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -64,14 +59,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a heroku Buildpacks build that uses a namespaced heroku build strategy is defined", func() {
-
-		BeforeEach(func() {
-			// create the build definition
-			createBuild(namespace, "buildpacks-v3-heroku-namespaced", "samples/build/build_buildpacks-v3-heroku_namespaced_cr.yaml")
-		})
-
+	Context("when a heroku Buildpacks build is defined using a namespaced strategy", func() {
 		It("successfully runs a build", func() {
+			createBuild(namespace, "buildpacks-v3-heroku-namespaced", "samples/build/build_buildpacks-v3-heroku_namespaced_cr.yaml")
 			br, err := buildRunTestData(namespace, "buildpacks-v3-heroku-namespaced", "samples/buildrun/buildrun_buildpacks-v3-heroku_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -79,14 +69,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks build is defined", func() {
-
-		BeforeEach(func() {
-			// create the build definition
+	Context("when a Buildpacks v3 build is defined using a cluster strategy", func() {
+		It("successfully runs with a cluster scope strategy", func() {
 			createBuild(namespace, "buildpacks-v3", "samples/build/build_buildpacks-v3_cr.yaml")
-		})
-
-		It("successfully runs a build", func() {
 			br, err := buildRunTestData(namespace, "buildpacks-v3", "samples/buildrun/buildrun_buildpacks-v3_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -94,15 +79,50 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks build that uses a namespaced build strategy is defined", func() {
-
-		BeforeEach(func() {
-			// create the build definition
-			createBuild(namespace, "buildpacks-v3-namespaced", "samples/build/build_buildpacks-v3_namespaced_cr.yaml")
-		})
-
+	Context("when a Buildpacks v3 build is defined using a namespaced strategy", func() {
 		It("successfully runs a build", func() {
+			createBuild(namespace, "buildpacks-v3-namespaced", "samples/build/build_buildpacks-v3_namespaced_cr.yaml")
 			br, err := buildRunTestData(namespace, "buildpacks-v3-namespaced", "samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
+	Context("when a Buildpacks v3 build is defined for a php runtime", func() {
+		It("successfully runs a build", func() {
+			createBuild(namespace, "buildpacks-v3-php", "test/data/build_buildpacks-v3_php_cr.yaml")
+			br, err := buildRunTestData(namespace, "buildpacks-v3-php", "test/data/buildrun_buildpacks-v3_php_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
+	Context("when a Buildpacks v3 build is defined for a ruby runtime", func() {
+		It("successfully runs a build", func() {
+			createBuild(namespace, "buildpacks-v3-ruby", "test/data/build_buildpacks-v3_ruby_cr.yaml")
+			br, err := buildRunTestData(namespace, "buildpacks-v3-ruby", "test/data/buildrun_buildpacks-v3_ruby_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
+	Context("when a Buildpacks v3 build is defined for a golang runtime", func() {
+		It("successfully runs a build", func() {
+			createBuild(namespace, "buildpacks-v3-golang", "test/data/build_buildpacks-v3_golang_cr.yaml")
+			br, err := buildRunTestData(namespace, "buildpacks-v3-golang", "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
+	Context("when a Buildpacks v3 build is defined for a java runtime", func() {
+		It("successfully runs a build", func() {
+			createBuild(namespace, "buildpacks-v3-java", "test/data/build_buildpacks-v3_java_cr.yaml")
+			br, err := buildRunTestData(namespace, "buildpacks-v3-java", "test/data/buildrun_buildpacks-v3_java_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(namespace, br)
