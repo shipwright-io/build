@@ -104,14 +104,13 @@ spec:
 
 ### Build Strategies Support
 
-| Build Strategy                                                                  | Alpha | Beta | GA |
-| ------------------------------------------------------------------------------- | ----- | ---- | -- |
-| [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑     |      |    |
-| [Buildpacks-v3-heroku](samples/buildstrategy/buildstrategy_buildpacks-v3-heroku_cr.yaml)      | ☑️     |      |    |
-| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3_cr.yaml)      | ☑️     |      |    |
-| [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)                    | ☑️     |      |    |
-| [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)                  | ☑️     |      |    |
-
+| Build Strategy                                                                                  | Alpha | Beta | GA |
+| ----------------------------------------------------------------------------------------------- | ----- | ---- | -- |
+| [Source-to-Image](samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml)  | ☑     |      |    |
+| [Buildpacks-v3-heroku](samples/buildstrategy/buildstrategy_buildpacks-v3-heroku_cr.yaml)        | ☑️     |      |    |
+| [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)        | ☑️     |      |    |
+| [Kaniko](samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)                             | ☑️     |      |    |
+| [Buildah](samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)                          | ☑️     |      |    |
 
 ### Features
 
