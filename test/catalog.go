@@ -196,6 +196,16 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.
 			if object.Status.BuildSpec != nil {
 				Expect(*object.Status.BuildSpec).To(Equal(buildSample.Spec))
 			}
+		}
+		return nil
+	}
+}
+
+// StubBuildRunLabel asserts Label fields on a BuildRun resource
+func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.BuildRun:
 			Expect(object.Labels[build.LabelBuild]).To(Equal(buildSample.Name))
 			Expect(object.Labels[build.LabelBuildGeneration]).To(Equal(strconv.FormatInt(buildSample.Generation, 10)))
 		}

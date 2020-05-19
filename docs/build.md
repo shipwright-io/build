@@ -52,7 +52,7 @@ The `Build` definition supports the following fields:
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
-  - `metadata.annotations[build.build.dev/buildRunDeletion]` - Defines if delete all related BuildRuns when deleting the Build
+  - `metadata.annotations[build.build.dev/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
 
 ### Defining the Source
 

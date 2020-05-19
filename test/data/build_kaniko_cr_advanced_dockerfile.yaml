@@ -4,7 +4,7 @@ kind: Build
 metadata:
   name: kaniko-advanced-dockerfile
   annotations:
-    build.build.dev/buildRunDeletion: "false"
+    build.build.dev/build-run-deletion: "false"
 spec:
   source:
     url: https://github.com/SaschaSchwarze0/java-simple

@@ -116,10 +116,10 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 	}
 
-	if buildRun.Labels == nil {
+	if buildRun.GetLabels() == nil {
 		buildRun.Labels = make(map[string]string)
 	}
-	if buildRun.Labels[buildv1alpha1.LabelBuild] == "" {
+	if buildRun.GetLabels()[buildv1alpha1.LabelBuild] == "" {
 		buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
 		buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
 		err = r.client.Update(context.TODO(), buildRun)
@@ -156,7 +156,6 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-
 		return reconcile.Result{}, nil
 	}
 

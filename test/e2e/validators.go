@@ -16,12 +16,12 @@ import (
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	operatorapis "github.com/redhat-developer/build/pkg/apis"
-	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
@@ -234,6 +234,38 @@ func validateBuildRunToFail(
 
 	// Verify the build run failure
 	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
+}
+
+// validateBuildDeletion verifies if the BuildRun is deleted after Build is deleted.
+func validateBuildDeletion(
+	namespace string,
+	testBuildName string,
+	testBuildRun *operator.BuildRun,
+	expectedDeletion bool,
+) {
+	f := framework.Global
+
+	// Delete the Build
+	buildNsName := types.NamespacedName{Name: testBuildName, Namespace: namespace}
+	testBuild := &buildv1alpha1.Build{}
+	err := f.Client.Get(goctx.TODO(), buildNsName, testBuild)
+	Expect(err).ToNot(HaveOccurred(), "Build doesn't exist")
+	err = f.Client.Delete(goctx.TODO(), testBuild)
+	Expect(err).ToNot(HaveOccurred(), "Failed to delete build")
+	Logf("Build is deleted!")
+
+	Eventually(func() error {
+		err = f.Client.Get(goctx.TODO(), buildNsName, testBuild)
+		return err
+	}, 30*time.Second, 3*time.Second).ShouldNot(BeNil(), "Build is not deleted yet")
+
+	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
+	err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+	if expectedDeletion {
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "BuildRun was not deleted together with the Build")
+	} else {
+		Expect(err).ToNot(HaveOccurred(), "BuildRun was deleted together with the Build")
+	}
 }
 
 // readAndDecode read file path and decode.

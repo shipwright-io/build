@@ -46,6 +46,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(namespace, br)
+			validateBuildDeletion(namespace, "buildah-custom-context-dockerfile", br, false)
 		})
 	})
 
@@ -76,6 +77,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(namespace, br)
+			validateBuildDeletion(namespace, "buildpacks-v3", br, false)
 		})
 	})
 
@@ -141,6 +143,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(namespace, br)
+			validateBuildDeletion(namespace, "kaniko", br, true)
 		})
 	})
 

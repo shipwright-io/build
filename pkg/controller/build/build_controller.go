@@ -9,6 +9,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -24,10 +25,8 @@ import (
 
 var log = logf.Log.WithName("controller_build")
 
-const (
-	// succeedStatus default status for the Build CRD
-	succeedStatus  string = "Succeeded"
-)
+// succeedStatus default status for the Build CRD
+const succeedStatus string = "Succeeded"
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -52,17 +51,16 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			buildRunFinalizer := false
 			// Check if the AnnotationBuildRunDeletion annotation is updated
-			if len(e.MetaOld.GetAnnotations()) > 0 && len(e.MetaNew.GetAnnotations()) > 0 {
-				if e.MetaOld.GetAnnotations()[build.AnnotationBuildRunDeletion] != e.MetaNew.GetAnnotations()[build.AnnotationBuildRunDeletion] {
+			oldAnnot := e.MetaOld.GetAnnotations()
+			newAnnot := e.MetaNew.GetAnnotations()
+			if !reflect.DeepEqual(oldAnnot, newAnnot) {
+				if oldAnnot[build.AnnotationBuildRunDeletion] != newAnnot[build.AnnotationBuildRunDeletion] {
 					buildRunFinalizer = true
 				}
-			} else if len(e.MetaOld.GetAnnotations()) == 0 && e.MetaNew.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
-				buildRunFinalizer = true
-			} else if e.MetaOld.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" && len(e.MetaNew.GetAnnotations()) == 0 {
-				buildRunFinalizer = true
 			}
 
 			// Ignore updates to CR status in which case metadata.Generation does not change
+			// or BuildRunDeletion annotation does not change
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration() || buildRunFinalizer
 
 		},
@@ -110,13 +108,16 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	if err := r.configFinalizer(b); err != nil {
 		return reconcile.Result{}, err
 	}
-	// Add buildRuns finalization for build
-	finishClean, err := r.finalizeBuildRun(b)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if finishClean {
-		return reconcile.Result{}, nil
+	// Check if the build is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	if !b.DeletionTimestamp.IsZero() {
+		finishClean, err := r.finalizeBuildRun(b)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		if finishClean {
+			return reconcile.Result{}, nil
+		}
 	}
 
 	// Populate the status struct with default values
@@ -248,19 +249,17 @@ func (r *ReconcileBuild) validateOutputSecret(n string, ns string) error {
 }
 
 func (r *ReconcileBuild) configFinalizer(b *build.Build) error {
-	if b.Annotations != nil && b.Annotations[build.AnnotationBuildRunDeletion] == "true" {
+	if b.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
 		if !contains(b.GetFinalizers(), build.BuildFinalizer) {
 			b.SetFinalizers(append(b.GetFinalizers(), build.BuildFinalizer))
-			err := r.client.Update(context.TODO(), b)
-			if err != nil {
+			if err := r.client.Update(context.TODO(), b); err != nil {
 				return err
 			}
 		}
 	} else {
 		if contains(b.GetFinalizers(), build.BuildFinalizer) {
 			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-			err := r.client.Update(context.TODO(), b)
-			if err != nil {
+			if err := r.client.Update(context.TODO(), b); err != nil {
 				return err
 			}
 		}
@@ -269,26 +268,22 @@ func (r *ReconcileBuild) configFinalizer(b *build.Build) error {
 }
 
 func (r *ReconcileBuild) finalizeBuildRun(b *build.Build) (bool, error) {
-	// Check if the build is marked to be deleted, which is
-	// indicated by the deletion timestamp being set.
-	if !b.DeletionTimestamp.IsZero() {
-		if contains(b.GetFinalizers(), build.BuildFinalizer) {
-			// Run finalization logic for buildFinalizer. If the
-			// finalization logic fails, don't remove the finalizer so
-			// that we can retry during the next reconciliation.
-			if err := r.cleanBuildRun(b); err != nil {
-				return false, err
-			}
-
-			// Remove buildFinalizer. Once all finalizers have been
-			// removed, the object will be deleted.
-			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-			err := r.client.Update(context.TODO(), b)
-			if err != nil {
-				return false, err
-			}
-			return true, nil
+	if contains(b.GetFinalizers(), build.BuildFinalizer) {
+		// Run finalization logic for buildFinalizer. If the
+		// finalization logic fails, don't remove the finalizer so
+		// that we can retry during the next reconciliation.
+		if err := r.cleanBuildRun(b); err != nil {
+			return false, err
 		}
+
+		// Remove buildFinalizer. Once all finalizers have been
+		// removed, the object will be deleted.
+		b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
+		err := r.client.Update(context.TODO(), b)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
 	}
 	return false, nil
 }
@@ -303,14 +298,12 @@ func (r *ReconcileBuild) cleanBuildRun(b *build.Build) error {
 		Namespace:     b.Namespace,
 		LabelSelector: labels.SelectorFromSet(lbls),
 	}
-	err := r.client.List(context.TODO(), buildRunList, &opts)
-	if err != nil {
+	if err := r.client.List(context.TODO(), buildRunList, &opts); err != nil {
 		return err
 	}
 
 	for _, buildRun := range buildRunList.Items {
-		err = r.client.Delete(context.TODO(), &buildRun)
-		if err != nil {
+		if err := r.client.Delete(context.TODO(), &buildRun); err != nil {
 			return err
 		}
 	}

@@ -8,7 +8,7 @@ import (
 var (
 	LabelBuild                 = "build.build.dev/name"
 	LabelBuildGeneration       = "build.build.dev/generation"
-	AnnotationBuildRunDeletion = "build.build.dev/buildRunDeletion"
+	AnnotationBuildRunDeletion = "build.build.dev/build-run-deletion"
 	BuildFinalizer             = "finalizer.build.build.dev"
 )
 
