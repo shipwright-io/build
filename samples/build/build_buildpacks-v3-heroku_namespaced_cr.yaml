@@ -9,8 +9,6 @@ spec:
   strategy:
     name: buildpacks-v3-heroku
     kind: BuildStrategy
-  builder:
-    image: heroku/buildpacks:18
   resources:
     limits:
       cpu: "500m"

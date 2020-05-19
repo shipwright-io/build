@@ -9,7 +9,5 @@ spec:
   strategy:
     name: buildpacks-v3-heroku
     kind: ClusterBuildStrategy
-  builder:
-    image: heroku/buildpacks:18
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
