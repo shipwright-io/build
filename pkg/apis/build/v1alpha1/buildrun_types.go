@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	LabelBuildRun              = "buildrun.build.dev/name"
-	LabelBuildRunGeneration    = "buildrun.build.dev/generation"
+	LabelBuildRun           = "buildrun.build.dev/name"
+	LabelBuildRunGeneration = "buildrun.build.dev/generation"
 )
 
 // BuildRunSpec defines the desired state of BuildRun
@@ -27,18 +27,25 @@ type BuildRunSpec struct {
 	// Default serviceaccount will be set if it is empty
 	// +optional
 	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
+
+	// Timeout defines the maximum run time of this build run.
+	// +optional
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun
 type BuildRunStatus struct {
 
 	// The Succeeded status of the TaskRun
+	// +optional
 	Succeeded corev1.ConditionStatus `json:"succeeded,omitempty"`
 
 	// The Succeeded reason of the TaskRun
+	// +optional
 	Reason string `json:"reason,omitempty"`
 
 	// PodName is the name of the pod responsible for executing this task's steps.
+	// +optional
 	LatestTaskRunRef *string `json:"latestTaskRunRef,omitempty"`
 
 	// StartTime is the time the build is actually started.
@@ -48,6 +55,10 @@ type BuildRunStatus struct {
 	// CompletionTime is the time the build completed.
 	// +optional
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+
+	// BuildSpec is the Build Spec of this BuildRun.
+	// +optional
+	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
 }
 
 // BuildRef can be used to refer to a specific instance of a Build.

@@ -8,23 +8,29 @@
     </a>
 </p>
 
-## The `build` Kubernetes API
+# The `build` Kubernetes API
 
 Codenamed build-v2
 
 An API to build container-images on Kubernetes using popular strategies and tools like `source-to-image`, `buildpack-v3`, `kaniko`, `jib` and `buildah`, in an extensible way.
 
+## Dependencies
+
+| Dependency                                | Supported versions           |
+| ----------------------------------------- | ---------------------------- |
+| [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\* |
+| [Tekton](https://cloud.google.com/tekton) | v0.11.\*                     |
+
 ## How
 
-The following are the `BuildStrategies` supported by this operator, out-of-the-box:
+The following are the build strategies supported by this operator, out-of-the-box:
 
-* [Source-to-Image](samples/buildstrategy/source-to-image/README.md)
-* [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/README.md)
-* [Buildah](samples/buildstrategy/buildah/README.md)
-* [Kaniko](samples/buildstrategy/kaniko/README.md)
+* [Source-to-Image](docs/buildstrategies.md#source-to-image)
+* [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
+* [Buildah](docs/buildstrategies.md#buildah)
+* [Kaniko](docs/buildstrategies.md#kaniko)
 
-Users have the option to define their own `BuildStrategies` resources and make them available for consumption
-via the `Build` resource.
+Users have the option to define their own `BuildStrategy` or `ClusterBuildStrategy` resources and make them available for consumption via the `Build` resource.
 
 ## Operator Resources
 
@@ -32,32 +38,28 @@ This operator ships two CRDs(the `Build` and `BuildRun`) in order to register a 
 
 ## Read the Docs
 
-| Version | Docs | Examples |
-| ------- | ---- | -------- |
-| HEAD | [Docs @ HEAD](/docs/README.md) | [Examples @ HEAD](/samples) |
+| Version | Docs                           | Examples                    |
+| ------- | ------------------------------ | --------------------------- |
+| HEAD    | [Docs @ HEAD](/docs/README.md) | [Examples @ HEAD](/samples) |
 
 ## Examples
 
 Examples of `Build` resource using the example strategies shipped with this operator.
 
 * [`buildah`](samples/build/build_buildah_cr.yaml)
+* [`buildpacks-v3-heroku`](samples/build/build_buildpacks-v3-heroku_cr.yaml)
 * [`buildpacks-v3`](samples/build/build_buildpacks-v3_cr.yaml)
 * [`kaniko`](samples/build/build_kaniko_cr.yaml)
 * [`source-to-image`](samples/build/build_source-to-image_cr.yaml)
 
 ## Try it!
 
-- Install Tekton, optionally you could use
-[OpenShift Pipelines Community Operator][pipelinesoperator]
-
-- Install [operator-sdk][operatorsdk]
-
-- Create a project or namespace called **build-examples** by using `kubectl create namespace build-examples`
-
-- Execute `make local` to register [well-known build strategies](samples/buildstrategies) including **Kaniko**
-and start the operator.
-
-- Create a [Kaniko](samples/build/build_kaniko_cr.yaml) build
+* Get a [Kubernetes](https://kubernetes.io/) cluster and [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) set up to connect to your cluster.
+* Install [Tekton](https://cloud.google.com/tekton) by running [install-tekton.sh](hack/install-tekton.sh), it installs v0.11.3.
+* Install [operator-sdk][operatorsdk] by running [install-operator-sdk.sh](hack/install-operator-sdk.sh), it installs v0.17.0.
+* Create a namespace called **build-examples** by running `kubectl create namespace build-examples`.
+* Execute `make local` to register [well-known build strategies](samples/buildstrategy) including **Kaniko** and start the operator locally.
+* Create a [Kaniko](samples/build/build_kaniko_cr.yaml) build.
 
 ```yaml
 apiVersion: build.dev/v1alpha1
@@ -77,7 +79,7 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
 ```
 
-- Start a [Kaniko](samples/buildrun/buildrun_kaniko_cr.yaml) buildrun
+* Start a [Kaniko](samples/buildrun/buildrun_kaniko_cr.yaml) buildrun
 
 ```yaml
 apiVersion: build.dev/v1alpha1
@@ -88,6 +90,8 @@ metadata:
 spec:
   buildRef:
     name: kaniko-golang-build
+  serviceAccount:
+    generate: true
 ```
 
 ## Development
@@ -100,13 +104,13 @@ spec:
 
 ### Build Strategies Support
 
-| Build Strategy                                                                  | Alpha | Beta | GA |
-| ------------------------------------------------------------------------------- | ----- | ---- | -- |
-| [Source-to-Image](samples/buildstrategy/buildstrategy_source-to-image_cr.yaml)  | ☑     |      |    |
-| [Buildpacks-v3](samples/buildstrategy/buildstrategy_buildpacks-v3-cr.yaml)      | ☑️     |      |    |
-| [Kaniko](samples/buildstrategy/buildstrategy_kaniko_cr.yaml)                    | ☑️     |      |    |
-| [Buildah](samples/buildstrategy/buildstrategy_buildah_cr.yaml)                  | ☑️     |      |    |
-
+| Build Strategy                                                                                  | Alpha | Beta | GA |
+| ----------------------------------------------------------------------------------------------- | ----- | ---- | -- |
+| [Source-to-Image](samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml)  | ☑     |      |    |
+| [Buildpacks-v3-heroku](samples/buildstrategy/buildstrategy_buildpacks-v3-heroku_cr.yaml)        | ☑️     |      |    |
+| [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)        | ☑️     |      |    |
+| [Kaniko](samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)                             | ☑️     |      |    |
+| [Buildah](samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)                          | ☑️     |      |    |
 
 ### Features
 

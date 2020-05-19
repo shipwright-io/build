@@ -4,8 +4,9 @@ import (
 	goctx "context"
 	"io/ioutil"
 	"os"
-	"testing"
 	"time"
+
+	. "github.com/onsi/gomega"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -16,10 +17,9 @@ import (
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	operatorapis "github.com/redhat-developer/build/pkg/apis"
 	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	"github.com/stretchr/testify/require"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +28,10 @@ import (
 )
 
 const (
+	EnvVarCreateGlobalObjects  = "TEST_E2E_CREATE_GLOBALOBJECTS"
+	EnvVarOperator             = "TEST_E2E_OPERATOR"
+	EnvVarServiceAccountName   = "TEST_E2E_SERVICEACCOUNT_NAME"
+	EnvVarVerifyTektonObjects  = "TEST_E2E_VERIFY_TEKTONOBJECTS"
 	EnvVarImageRepo            = "TEST_IMAGE_REPO"
 	EnvVarEnablePrivateRepos   = "TEST_PRIVATE_REPO"
 	EnvVarImageRepoSecret      = "TEST_IMAGE_REPO_SECRET"
@@ -36,8 +40,6 @@ const (
 	EnvVarSourceURLGitlab      = "TEST_PRIVATE_GITLAB"
 	EnvVarSourceURLSecret      = "TEST_SOURCE_SECRET"
 )
-
-const TestServiceAccountName = "pipeline"
 
 // cleanupOptions return a CleanupOptions instance.
 func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
@@ -48,47 +50,49 @@ func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
 	}
 }
 
-// createPipelineServiceAccount make sure the "pipeline" SA is created, or already exists.
-func createPipelineServiceAccount(t *testing.T, ctx *framework.TestCtx, f *framework.Framework) {
-	ns, err := ctx.GetNamespace()
-	require.NoError(t, err, "unable to obtain test namespace")
-	serviceAccount := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      TestServiceAccountName,
-		},
-	}
-	t.Logf("Creating '%s' service-account", TestServiceAccountName)
-	err = f.Client.Create(goctx.TODO(), serviceAccount, cleanupOptions(ctx))
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		t.Fatal(err)
+// createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
+// Otherwise it will create the service account. No error occurs if the service account already exists.
+func createPipelineServiceAccount(ctx *framework.TestCtx, f *framework.Framework, namespace string) {
+	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
+
+	if serviceAccountName == "generated" {
+		Logf("Skipping creation of service account, generated one will be used per build run.")
+	} else {
+		serviceAccount := &corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      serviceAccountName,
+			},
+		}
+		Logf("Creating '%s' service-account", serviceAccountName)
+		err := f.Client.Create(goctx.TODO(), serviceAccount, cleanupOptions(ctx))
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			Expect(err).ToNot(HaveOccurred(), "Error creating service account")
+		}
 	}
 }
 
 // createContainerRegistrySecret use environment variables to check for container registry
 // credentials secret, when not found a new secret is created.
-func createContainerRegistrySecret(t *testing.T, ctx *framework.TestCtx, f *framework.Framework) {
+func createContainerRegistrySecret(ctx *framework.TestCtx, f *framework.Framework, namespace string) {
 	secretName := os.Getenv(EnvVarImageRepoSecret)
 	secretPayload := os.Getenv(EnvVarSourceRepoSecretJSON)
 	if secretName == "" || secretPayload == "" {
-		t.Logf("Container registry secret won't be created.")
+		Logf("Container registry secret won't be created.")
 		return
 	}
 
-	ns, err := ctx.GetNamespace()
-	require.NoError(t, err, "unable to obtain test namespace")
-
-	secretNsName := types.NamespacedName{Namespace: ns, Name: secretName}
+	secretNsName := types.NamespacedName{Namespace: namespace, Name: secretName}
 	secret := &corev1.Secret{}
-	if err = f.Client.Get(goctx.TODO(), secretNsName, secret); err == nil {
-		t.Logf("Container registry secret is found at '%s/%s'", ns, secretName)
+	if err := f.Client.Get(goctx.TODO(), secretNsName, secret); err == nil {
+		Logf("Container registry secret is found at '%s/%s'", namespace, secretName)
 		return
 	}
 
 	payload := []byte(secretPayload)
 	secret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
+			Namespace: namespace,
 			Name:      secretName,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
@@ -96,103 +100,140 @@ func createContainerRegistrySecret(t *testing.T, ctx *framework.TestCtx, f *fram
 			".dockerconfigjson": payload,
 		},
 	}
-	t.Logf("Creating container-registry secret '%s/%s' (%d bytes)", ns, secretName, len(payload))
-	err = f.Client.Create(goctx.TODO(), secret, cleanupOptions(ctx))
-	require.NoError(t, err, "on creating container registry secret")
+	Logf("Creating container-registry secret '%s/%s' (%d bytes)", namespace, secretName, len(payload))
+	err := f.Client.Create(goctx.TODO(), secret, cleanupOptions(ctx))
+	Expect(err).ToNot(HaveOccurred(), "on creating container registry secret")
 }
 
 // createNamespacedBuildStrategy create a namespaced BuildStrategy.
 func createNamespacedBuildStrategy(
-	t *testing.T,
 	ctx *framework.TestCtx,
 	f *framework.Framework,
 	testBuildStrategy *operator.BuildStrategy,
 ) {
 	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx))
 	if err != nil {
-		t.Fatal(err)
+		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
 // createClusterBuildStrategy create ClusterBuildStrategy resource.
 func createClusterBuildStrategy(
-	t *testing.T,
 	ctx *framework.TestCtx,
 	f *framework.Framework,
 	testBuildStrategy *operator.ClusterBuildStrategy,
 ) {
 	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx))
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		t.Fatal(err)
+		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
-// validateController create and watch the build flow happening, probing each step for a image
-// successfully created.
-func validateController(
-	t *testing.T,
-	ctx *framework.TestCtx,
-	f *framework.Framework,
-	testBuild *operator.Build,
+// validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
+func validateBuildRunToSucceed(
+	namespace string,
 	testBuildRun *operator.BuildRun,
 ) {
-	ns, _ := ctx.GetNamespace()
+	f := framework.Global
+
 	pendingStatus := "Pending"
 	runningStatus := "Running"
 	trueCondition := v1.ConditionTrue
 	pendingAndRunningStatues := []string{pendingStatus, runningStatus}
 
-	// Ensure the Build has been created
-	err := f.Client.Create(goctx.TODO(), testBuild, cleanupOptions(ctx))
-	require.NoError(t, err)
-
 	// Ensure the BuildRun has been created
-	err = f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
-	require.NoError(t, err)
+	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
+	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
 
 	// Ensure that a TaskRun has been created and is in pending or running state
-	require.Eventually(t, func() bool {
-		taskRun, err := getTaskRun(f, testBuild, testBuildRun)
-		if err != nil {
-			t.Logf("Retrieveing TaskRun error: '%s'", err)
-			return false
-		}
-		if taskRun == nil {
-			t.Log("TaskRun is not yet generated!")
-			return false
-		}
-		if len(taskRun.Status.Conditions) == 0 {
-			return false
-		}
-		conditionReason := taskRun.Status.Conditions[0].Reason
-		t.Logf("TaskRun condition reason: '%s'", conditionReason)
-		return conditionReason == pendingStatus || conditionReason == runningStatus
-	}, 300*time.Second, 5*time.Second, "TaskRun is not pending or running")
+	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+		Eventually(func() string {
+			taskRun, err := getTaskRun(f, testBuildRun)
+			if err != nil {
+				Logf("Retrieving TaskRun error: '%s'", err)
+				return ""
+			}
+			if taskRun == nil {
+				Logf("TaskRun is not yet generated!")
+				return ""
+			}
+			if len(taskRun.Status.Conditions) == 0 {
+				Logf("TaskRun has not yet conditions.")
+				return ""
+			}
+			return taskRun.Status.Conditions[0].Reason
+		}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun not pending or running")
+	} else {
+		Logf("TaskRun verification skipped.")
+	}
 
 	// Ensure BuildRun is in pending or running state
-	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: ns}
-	err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
-	require.NoError(t, err)
-	reason := testBuildRun.Status.Reason
-	require.Contains(t, pendingAndRunningStatues, reason, "BuildRun not pending or running")
-
-	// Ensure that Build moves to Running State
-	require.Eventually(t, func() bool {
+	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
+	Eventually(func() string {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
-		require.NoError(t, err)
+		if err != nil {
+			Logf("Retrieving BuildRun error: '%s'", err)
+			return ""
+		}
+		return testBuildRun.Status.Reason
+	}, 30*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun not pending or running")
 
-		return testBuildRun.Status.Reason == runningStatus
-	}, 180*time.Second, 3*time.Second, "BuildRun not running")
+	// Verify that the BuildSpec is available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
-	// Ensure that eventually the Build moves to Succeeded.
-	require.Eventually(t, func() bool {
+	// Ensure that BuildRun moves to Running State
+	Eventually(func() string {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
-		require.NoError(t, err)
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
-		return testBuildRun.Status.Succeeded == trueCondition
-	}, 550*time.Second, 5*time.Second, "BuildRun not succeeded")
+		return testBuildRun.Status.Reason
+	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun not running")
 
-	t.Logf("Test build complete '%s'!", testBuildRun.GetName())
+	// Verify that the BuildSpec is still available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+
+	// Ensure that eventually the BuildRun moves to Succeeded.
+	Eventually(func() v1.ConditionStatus {
+		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
+
+		return testBuildRun.Status.Succeeded
+	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
+
+	// Verify that the BuildSpec is still available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+
+	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
+}
+
+// validateBuildRunToFail creates the build run and watches its flow until it fails
+// and verifies the reason using a regular expression.
+func validateBuildRunToFail(
+	namespace string,
+	testBuildRun *operator.BuildRun,
+	expectedReasonRegexp string,
+) {
+	f := framework.Global
+	falseCondition := v1.ConditionFalse
+
+	// Create the BuildRun
+	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
+	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
+
+	// Ensure that eventually the BuildRun moves to Failed.
+	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
+	Eventually(func() v1.ConditionStatus {
+		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
+
+		return testBuildRun.Status.Succeeded
+	}, 550*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
+
+	// Verify that the BuildSpec is available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+
+	// Verify the build run failure
+	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
 }
 
 // readAndDecode read file path and decode.
@@ -251,7 +292,12 @@ func buildTestData(ns string, identifier string, buildCRPath string) (*operator.
 
 // buildTestData gets the us the Build test data set up
 func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*operator.BuildRun, error) {
-	obj, err := readAndDecode(buildRunCRPath)
+	rootDir, err := getRootDir()
+	if err != nil {
+		return nil, err
+	}
+
+	obj, err := readAndDecode(rootDir + "/" + buildRunCRPath)
 	if err != nil {
 		return nil, err
 	}
@@ -260,18 +306,30 @@ func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*ope
 	buildRun.SetNamespace(ns)
 	buildRun.SetName(identifier)
 	buildRun.Spec.BuildRef.Name = identifier
+
+	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
+
+	if serviceAccountName == "generated" {
+		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
+			Generate: true,
+		}
+	} else {
+		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
+			Name: &serviceAccountName,
+		}
+	}
+
 	return buildRun, err
 }
 
 // getTaskRun retrieve Tekton's Task based on BuildRun instance.
 func getTaskRun(
 	f *framework.Framework,
-	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
-) (*taskv1.TaskRun, error) {
-	taskRunList := &taskv1.TaskRunList{}
+) (*v1beta1.TaskRun, error) {
+	taskRunList := &v1beta1.TaskRunList{}
 	lbls := map[string]string{
-		buildv1alpha1.LabelBuild:    build.Name,
+		buildv1alpha1.LabelBuild:    buildRun.Spec.BuildRef.Name,
 		buildv1alpha1.LabelBuildRun: buildRun.Name,
 	}
 	opts := client.ListOptions{

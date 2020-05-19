@@ -1,0 +1,22 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-nodejs-build-namespaced-heroku
+spec:
+  source:
+    url: https://github.com/sclorg/nodejs-ex
+  strategy:
+    name: buildpacks-v3-heroku
+    kind: BuildStrategy
+  builder:
+    image: heroku/buildpacks:18
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+    request:
+      cpu: "500m"
+      memory: "1Gi"
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

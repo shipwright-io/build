@@ -9,6 +9,8 @@ spec:
   strategy:
     name: buildpacks-v3
     kind: BuildStrategy
+  builder:
+    image: gcr.io/paketo-buildpacks/builder:latest
   resources:
     limits:
       cpu: "500m"

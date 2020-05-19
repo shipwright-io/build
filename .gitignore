@@ -77,4 +77,4 @@ tags
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 # JetBrains IDE config
 .idea
-**/*.coverprofile*
+**/*coverprofile*

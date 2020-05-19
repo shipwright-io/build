@@ -11,11 +11,9 @@ GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 GOARCH ?= amd64
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor
-# golang test floags
-GO_TEST_FLAGS ?= -failfast -timeout=25m
 
 # configure zap based logr
-OPERATOR_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
+ZAP_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
 OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
@@ -23,9 +21,24 @@ OPERATOR_SDK_EXTRA_ARGS ?= --debug
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines operator version
-TEKTON_VERSION ?= v0.10.1
+TEKTON_VERSION ?= v0.11.3
 # CI: operator-sdk version
-SDK_VERSION ?= v0.15.2
+SDK_VERSION ?= v0.17.0
+
+# E2E test flags
+TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v
+
+# E2E test operator behavior, can be start_local or managed_outside
+TEST_E2E_OPERATOR ?= start_local
+
+# E2E test service account name to be used for the build runs, can be set to generated to use the generated service account feature
+TEST_E2E_SERVICEACCOUNT_NAME ?= pipeline
+
+# E2E test build global object creation (custom resource definitions and build strategies)
+TEST_E2E_CREATE_GLOBALOBJECTS ?= true
+
+# E2E test verify Tekton objects
+TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
 
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
@@ -60,40 +73,58 @@ $(OPERATOR): vendor
 install-ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 	go get -u github.com/onsi/gomega/...
+	ginkgo version
+
+install-gocov:
+	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
 
 # https://github.com/redhat-developer/build/issues/123
 test: test-unit
 
 .PHONY: test-unit
 test-unit:
+	rm -rf build/coverage
+	mkdir build/coverage
 	GO111MODULE=on ginkgo \
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
-		-nodes=4 \
+		-p \
 		-compilers=2 \
 		-slowSpecThreshold=240 \
 		-race \
 		-cover \
+		-outputdir=build/coverage \
 		-trace \
 		internal/... \
 		pkg/...
 
+test-unit-coverage: test-unit
+	echo "Combining coverage profiles"
+	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
+	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
+	gocov report build/coverage/coverprofile.json
+
 .PHONY: test-e2e
-test-e2e: crds
-	operator-sdk --verbose test local ./test/e2e \
-		--up-local \
-		--namespace="$(TEST_NAMESPACE)" \
-		--go-test-flags="$(GO_TEST_FLAGS)" \
-		--local-operator-flags="$(OPERATOR_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS)
+test-e2e: crds test-e2e-plain
+
+.PHONY: test-e2e-plain
+test-e2e-plain:
+	GO111MODULE=on \
+	TEST_OPERATOR_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_E2E_OPERATOR=${TEST_E2E_OPERATOR} \
+	TEST_E2E_CREATE_GLOBALOBJECTS=${TEST_E2E_CREATE_GLOBALOBJECTS} \
+	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
+	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
+	ginkgo ${TEST_E2E_FLAGS} test/e2e
 
 crds:
 	-hack/crd.sh uninstall
 	@hack/crd.sh install
 
 local: crds build
-	operator-sdk run --local --operator-flags="$(ZAP_ENCODER_FLAG)" $(OPERATOR_SDK_EXTRA_ARGS)
+	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
 clean:
 	rm -rf $(OUTPUT_DIR)
@@ -108,6 +139,6 @@ kind:
 	./hack/install-registry.sh
 	./hack/install-kind.sh
 
-travis: install-ginkgo kubectl kind
+travis: install-ginkgo install-gocov kubectl kind
 	./hack/install-tekton.sh
 	./hack/install-operator-sdk.sh

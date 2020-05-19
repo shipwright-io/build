@@ -15,7 +15,9 @@ spec:
         - /bin/bash
       args:
         - -c
-        - chown -R "1000:1000" "/workspace/source"
+        - >
+          chown -R "1000:1000" "/workspace/source" &&
+          chown -R "1000:1000" "/tekton/home"
     - name: step-detect
       image: heroku/buildpacks:18
       securityContext:
@@ -61,7 +63,7 @@ spec:
     - name: step-export
       image: heroku/buildpacks:18
       securityContext:
-        runAsUser: 0
+        runAsUser: 1000
       command:
         - /cnb/lifecycle/exporter
       args:
@@ -69,7 +71,6 @@ spec:
         - -layers=/layers
         - -cache-dir=/cache
         - -group=/layers/group.toml
-        - -helpers=true
         - $(build.output.image)
       volumeMounts:
         - name: cache-dir

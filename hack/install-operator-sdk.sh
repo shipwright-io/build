@@ -5,7 +5,7 @@
 
 set -eu
 
-SDK_VERSION="${SDK_VERSION:-v0.15.2}"
+SDK_VERSION="${SDK_VERSION:-v0.17.0}"
 
 SDK_HOST="github.com"
 SDK_HOST_PATH="operator-framework/operator-sdk/releases/download"
@@ -27,7 +27,7 @@ sudo apt-get update > /dev/null && \
 #
 
 # publisher public key id
-KEY_ID="A75BBA1528FE0D8E3C6AE5086B1D07CB9391EA2A"
+KEY_ID="8018D6F1B58E194625E38581D16086E39AF46519"
 # keyserver host
 KEY_SERVER="keyserver.ubuntu.com"
 
