@@ -1,0 +1,16 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-php-build
+spec:
+  source:
+    url: https://github.com/cloudfoundry/cf-acceptance-tests
+    contextDir: assets/php
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  builder:
+    image: gcr.io/paketo-buildpacks/builder:latest
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

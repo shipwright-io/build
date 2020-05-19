@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-prepare
-      image: heroku/buildpacks:18
+      image: gcr.io/paketo-buildpacks/builder:latest
       securityContext:
         runAsUser: 0
         capabilities:
@@ -19,20 +19,20 @@ spec:
           chown -R "1000:1000" "/workspace/source" &&
           chown -R "1000:1000" "/tekton/home"
     - name: step-detect
-      image: heroku/buildpacks:18
+      image: gcr.io/paketo-buildpacks/builder:latest
       securityContext:
         runAsUser: 1000
       command:
         - /cnb/lifecycle/detector
       args:
-        - -app=/workspace/source
+        - -app=/workspace/source/$(build.source.contextDir)
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
     - name: step-restore
-      image: heroku/buildpacks:18
+      image: gcr.io/paketo-buildpacks/builder:latest
       securityContext:
         runAsUser: 1000
       command:
@@ -47,13 +47,13 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-build
-      image: heroku/buildpacks:18
+      image: gcr.io/paketo-buildpacks/builder:latest
       securityContext:
         runAsUser: 1000
       command:
         - /cnb/lifecycle/builder
       args:
-        - -app=/workspace/source
+        - -app=/workspace/source/$(build.source.contextDir)
         - -layers=/layers
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
@@ -61,13 +61,13 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-export
-      image: heroku/buildpacks:18
+      image: gcr.io/paketo-buildpacks/builder:latest
       securityContext:
         runAsUser: 1000
       command:
         - /cnb/lifecycle/exporter
       args:
-        - -app=/workspace/source
+        - -app=/workspace/source/$(build.source.contextDir)
         - -layers=/layers
         - -cache-dir=/cache
         - -group=/layers/group.toml
