@@ -57,7 +57,10 @@ The above information wraps the know-how that drives the process of converting s
 * Execution-time resource requiements.
 
 As an example,
-the source code https://github.com/nodeshift-starters/nodejs-rest-http-crud might be pushed to different image repositories depending on who is executing the build. 
+the source code https://github.com/nodeshift-starters/nodejs-rest-http-crud might be pushed to different image repositories depending on who is executing the build.
+
+Note:
+In some scenarios, the source code 'revision' may not necessarily be deterministic as well, especially in case of builds triggered from PRs/forks.
 
 ### Deciding what should be overriden
 
