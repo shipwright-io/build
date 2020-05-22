@@ -64,7 +64,45 @@ type BuildRunStatus struct {
 	// BuildSpec is the Build Spec of this BuildRun.
 	// +optional
 	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
+
+	//stages containes the details about the stage for each build with stage start time 
+	// completion and duration
+	Stages []StageInfo `json:"stages,omitempty"`
 }
+
+// StageInfo contains details about a build stage.
+type StageInfo struct {
+	// name is a unique identifier for each stage of the builds
+	Name StageName `json:"name,omitempty"`
+
+	//startTime is timestamp indicating strting time for the perticular stage
+	StartTime *metav1.Time `json:"startTime, omitempty"`
+
+	//durationMilliseconds
+	DurationMilliseconds int64 `json:"durationMillisencods, omitempty"`
+}
+
+// StageName is the unique identifier for each build stage.
+type StageName string
+
+// Valid values for StageName
+const (
+	// StageFetchInputs fetches any inputs such as source code.
+	StageFetchInputs StageName = "FetchInputs"
+
+	// StagePullImages pulls any images that are needed such as
+	// base images or input images.
+	StagePullImages StageName = "PullImages"
+
+	// StageBuild performs the steps necessary to build the image.
+	StageBuild StageName = "Build"
+
+	// StagePostCommit executes any post commit steps.
+	StagePostCommit StageName = "PostCommit"
+
+	// StagePushImage pushes the image to the node.
+	StagePushImage StageName = "PushImage"
+)
 
 // BuildRef can be used to refer to a specific instance of a Build.
 type BuildRef struct {
