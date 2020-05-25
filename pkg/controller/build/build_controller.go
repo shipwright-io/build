@@ -3,13 +3,15 @@ package build
 import (
 	"context"
 	"fmt"
+	"reflect"
+
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -62,7 +64,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			// or BuildRunDeletion annotation does not change
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration() || buildRunFinalizer
-
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Evaluates to false if the object has been confirmed deleted.
@@ -105,19 +106,13 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	// Add finalizer for build
-	if err := r.configFinalizer(b); err != nil {
+	if err := r.configFinalizer(b, reqLogger); err != nil {
 		return reconcile.Result{}, err
 	}
 	// Check if the build is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	if !b.DeletionTimestamp.IsZero() {
-		finishClean, err := r.finalizeBuildRun(b)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		if finishClean {
-			return reconcile.Result{}, nil
-		}
+		return reconcile.Result{}, r.finalizeBuildRun(b, reqLogger)
 	}
 
 	// Populate the status struct with default values
@@ -248,9 +243,10 @@ func (r *ReconcileBuild) validateOutputSecret(n string, ns string) error {
 	return nil
 }
 
-func (r *ReconcileBuild) configFinalizer(b *build.Build) error {
+func (r *ReconcileBuild) configFinalizer(b *build.Build, logger logr.Logger) error {
 	if b.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
 		if !contains(b.GetFinalizers(), build.BuildFinalizer) {
+			logger.Info("Add finalizer to Build", "Build", b.Name)
 			b.SetFinalizers(append(b.GetFinalizers(), build.BuildFinalizer))
 			if err := r.client.Update(context.TODO(), b); err != nil {
 				return err
@@ -258,6 +254,7 @@ func (r *ReconcileBuild) configFinalizer(b *build.Build) error {
 		}
 	} else {
 		if contains(b.GetFinalizers(), build.BuildFinalizer) {
+			logger.Info("Remove finalizer from Build", "Build", b.Name)
 			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
 			if err := r.client.Update(context.TODO(), b); err != nil {
 				return err
@@ -267,13 +264,13 @@ func (r *ReconcileBuild) configFinalizer(b *build.Build) error {
 	return nil
 }
 
-func (r *ReconcileBuild) finalizeBuildRun(b *build.Build) (bool, error) {
+func (r *ReconcileBuild) finalizeBuildRun(b *build.Build, logger logr.Logger) error {
 	if contains(b.GetFinalizers(), build.BuildFinalizer) {
 		// Run finalization logic for buildFinalizer. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
-		if err := r.cleanBuildRun(b); err != nil {
-			return false, err
+		if err := r.cleanBuildRun(b, logger); err != nil {
+			return err
 		}
 
 		// Remove buildFinalizer. Once all finalizers have been
@@ -281,14 +278,13 @@ func (r *ReconcileBuild) finalizeBuildRun(b *build.Build) (bool, error) {
 		b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
 		err := r.client.Update(context.TODO(), b)
 		if err != nil {
-			return false, err
+			return err
 		}
-		return true, nil
 	}
-	return false, nil
+	return nil
 }
 
-func (r *ReconcileBuild) cleanBuildRun(b *build.Build) error {
+func (r *ReconcileBuild) cleanBuildRun(b *build.Build, logger logr.Logger) error {
 	buildRunList := &build.BuildRunList{}
 
 	lbls := map[string]string{
@@ -303,6 +299,7 @@ func (r *ReconcileBuild) cleanBuildRun(b *build.Build) error {
 	}
 
 	for _, buildRun := range buildRunList.Items {
+		logger.Info("Finalize BuildRun automatically", "BuildRun", buildRun.Name)
 		if err := r.client.Delete(context.TODO(), &buildRun); err != nil {
 			return err
 		}

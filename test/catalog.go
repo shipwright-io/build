@@ -29,7 +29,6 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
-			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
@@ -194,7 +193,7 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.
 			Expect(object.Status.Succeeded).To(Equal(status))
 			Expect(object.Status.LatestTaskRunRef).To(Equal(name))
 			if object.Status.BuildSpec != nil {
-				Expect(*object.Status.BuildSpec).To(Equal(buildSample.Spec))
+				Expect(*object.Status.BuildSpec).To(Equal(buildSpec))
 			}
 		}
 		return nil
