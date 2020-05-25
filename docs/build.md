@@ -8,6 +8,7 @@
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining Resources](#defining-resources)
   - [Defining the Output](#defining-the-output)
+- [Using Finalizers](#using-finalizers)
 
 ## Overview
 
@@ -224,4 +225,18 @@ spec:
     image: us.icr.io/source-to-image-build/nodejs-ex
     credentials:
       name: icr-knbuild
+```
+
+## Using Finalizers
+
+The Build controller support Kubernetes finalizers in order to asynchronously delete resources. For the case of a Build instance with a particular annotation,
+related `BuildRuns` will be deleted prior to deleting the `Build` instance. The flow is very simple, if you want to garbage collect BuildRuns then the `build.build.dev/build-run-deletion` annotation needs to be set to `true` in the `Build` definition, if this behaviour is not desired, then the annotation needs to be set to `false`. By default the annotation is never present in a `Build` definition. See an example of how to define this annotation:
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-golang-build
+  annotations:
+    build.build.dev/build-run-deletion: "true"
 ```
