@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -81,6 +82,30 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
+			},
+		},
+	}
+}
+
+// BuildWithCustomAnnotationAndFinalizer provides a Build CRD with a customize annotation
+// and optional finalizer
+func (c *Catalog) BuildWithCustomAnnotationAndFinalizer(
+	name string,
+	ns string,
+	strategyName string,
+	a map[string]string,
+	f []string,
+) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   ns,
+			Annotations: a,
+			Finalizers:  f,
+		},
+		Spec: build.BuildSpec{
+			Source: build.GitSource{
+				URL: "foobar",
 			},
 		},
 	}
@@ -176,16 +201,37 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(co
 		case *build.Build:
 			Expect(object.Status.Registered).To(Equal(status))
 			Expect(object.Status.Reason).To(ContainSubstring(reason))
-			if object.Annotations != nil && object.Annotations[build.AnnotationBuildRunDeletion] == "true" {
-				Expect(object.Finalizers[0]).To(Equal(build.BuildFinalizer))
-			}
+		}
+		return nil
+	}
+}
+
+// StubBuildUpdateWithFinalizers is used to simulate the state of the Build
+// finalizers after a client Update on the Object happened.
+func (c *Catalog) StubBuildUpdateWithFinalizers(finalizer string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			Expect(object.Finalizers).To(ContainElement(finalizer))
+		}
+		return nil
+	}
+}
+
+// StubBuildUpdateWithoutFinalizers is used to simulate the state of the Build
+// finalizers after a client Update on the Object happened.
+func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			Expect(len(object.Finalizers)).To(BeZero())
 		}
 		return nil
 	}
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSample *build.Build) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:

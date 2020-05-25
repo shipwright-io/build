@@ -280,5 +280,49 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})
+		Context("when the annotation build-run-deletion is defined", func() {
+			var annotationFinalizer map[string]string
+
+			JustBeforeEach(func() {
+				annotationFinalizer = map[string]string{}
+			})
+
+			It("sets a finalizer if annotation equals true", func() {
+				// override Build definition with one annotation
+				annotationFinalizer[build.AnnotationBuildRunDeletion] = "true"
+				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
+					buildName,
+					namespace,
+					buildStrategyName,
+					annotationFinalizer,
+					[]string{},
+				)
+
+				clientUpdateCalls := ctl.StubBuildUpdateWithFinalizers(build.BuildFinalizer)
+				client.UpdateCalls(clientUpdateCalls)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			It("removes a finalizer if annotation equals false and finalizer exists", func() {
+				// override Build definition with one annotation
+				annotationFinalizer[build.AnnotationBuildRunDeletion] = "false"
+				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
+					buildName,
+					namespace,
+					buildStrategyName,
+					annotationFinalizer,
+					[]string{build.BuildFinalizer},
+				)
+				clientUpdateCalls := ctl.StubBuildUpdateWithoutFinalizers()
+				client.UpdateCalls(clientUpdateCalls)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
 	})
 })
