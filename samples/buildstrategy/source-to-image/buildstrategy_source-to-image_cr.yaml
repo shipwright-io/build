@@ -32,6 +32,9 @@ spec:
       securityContext:
         runAsUser: 0
         allowPrivilegeEscalation: false
+        capabilities:
+          add:
+            - CHOWN
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
