@@ -3,6 +3,7 @@ module github.com/redhat-developer/build
 go 1.13
 
 require (
+	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/gobuffalo/envy v1.7.1 // indirect
 	github.com/golang/protobuf v1.4.0 // indirect
