@@ -49,7 +49,7 @@ The `BuildRun` definition supports the following fields:
 - Optional:
   - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
-  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default overwrites the value that is defined in the `Build`.
+  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The value overwrites the value that is defined in the `Build`.
 
 ### Defining the BuildRef
 
@@ -119,6 +119,10 @@ $ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
 NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
 buildpack-nodejs-buildrun     True        Succeeded   2m10s       74s
 ```
+
+### Build Snapshot
+
+For every BuildRun controller reconciliation, the `buildSpec` in the Status of the `BuildRun` is updated if an existing owned `TaskRun` is present. During this update, a `Build` resource snapshot is generated and embedded into the `status.buildSpec` path of the `BuildRun`. A `buildSpec` is just a copy of the original `Build` spec, from where the `BuildRun` executed a particular image build. The snapshot approach allows developers to see the original `Build` configuration.
 
 ## Relationship with Tekton Tasks
 

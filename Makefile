@@ -13,7 +13,7 @@ GOARCH ?= amd64
 GO_FLAGS ?= -v -mod=vendor
 
 # configure zap based logr
-OPERATOR_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
+ZAP_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
 OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
@@ -28,8 +28,21 @@ SDK_VERSION ?= v0.17.0
 # E2E test flags
 TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v
 
+# E2E test operator behavior, can be start_local or managed_outside
+TEST_E2E_OPERATOR ?= start_local
+
+# E2E test service account name to be used for the build runs, can be set to generated to use the generated service account feature
+TEST_E2E_SERVICEACCOUNT_NAME ?= pipeline
+
+# E2E test build global object creation (custom resource definitions and build strategies)
+TEST_E2E_CREATE_GLOBALOBJECTS ?= true
+
+# E2E test verify Tekton objects
+TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
+
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
+TEST_IMAGE_REPO_BUILDRUN ?= quay.io/redhat-developer/buildrun-e2e
 # test container registyr secret name
 TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime
@@ -94,15 +107,25 @@ test-unit-coverage: test-unit
 	gocov report build/coverage/coverprofile.json
 
 .PHONY: test-e2e
-test-e2e: crds
-	GO111MODULE=on TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} ginkgo ${TEST_E2E_FLAGS} test/e2e
+test-e2e: crds test-e2e-plain
+
+.PHONY: test-e2e-plain
+test-e2e-plain:
+	GO111MODULE=on \
+	TEST_OPERATOR_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_E2E_OPERATOR=${TEST_E2E_OPERATOR} \
+	TEST_E2E_CREATE_GLOBALOBJECTS=${TEST_E2E_CREATE_GLOBALOBJECTS} \
+	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
+	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
+	ginkgo ${TEST_E2E_FLAGS} test/e2e
 
 crds:
 	-hack/crd.sh uninstall
 	@hack/crd.sh install
 
 local: crds build
-	operator-sdk run --local --operator-flags="$(ZAP_ENCODER_FLAG)" $(OPERATOR_SDK_EXTRA_ARGS)
+	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
 clean:
 	rm -rf $(OUTPUT_DIR)

@@ -51,7 +51,7 @@ The `Build` definition supports the following fields:
   - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
-  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. Can be overwritten in the `BuildRun`.
+  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
 
 ### Defining the Source
 
@@ -59,7 +59,7 @@ A `Build` resource can specify a Git source, together with other parameters like
 
 - `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the require `ssh` data.
 - `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name.
-- `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently only supported by the `buildah` and `kaniko` build strategies.
+- `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently only supported by `buildah`, `kaniko` and `buildpacks` build strategies.
 
 Example of a `Build` with a source with **credentials** defined by the user.
 
@@ -156,7 +156,7 @@ spec:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
   builder:
-    image: heroku/buildpacks:18
+    image: gcr.io/paketo-buildpacks/builder:latest
 ```
 
 ### Defining Resources

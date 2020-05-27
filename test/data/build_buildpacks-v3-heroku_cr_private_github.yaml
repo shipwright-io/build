@@ -2,14 +2,14 @@
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildpack-nodejs-build
+  name: buildpack-nodejs-build-heroku
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
+    url: git@github.com:qu1queee/new-nodejs-ex.git
   strategy:
-    name: buildpacks-v3
+    name: buildpacks-v3-heroku
     kind: ClusterBuildStrategy
   builder:
-    image: gcr.io/paketo-buildpacks/builder:latest
+    image: heroku/buildpacks:18
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

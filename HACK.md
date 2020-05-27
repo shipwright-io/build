@@ -72,17 +72,23 @@ make test
 
 ## End-to-End Tests
 
-The following is a list of environment variables you can use when running e2e tests, this will override specific paths under the **Build** CRD [examples](samples/build).
+The following table contains a set of environment variables that control the behavior of the e2e tests.
+
+| Environment Variable            | Default                                                                         | Description                                                   |
+|---------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------|
+| `TEST_NAMESPACE`                | `default`                                                                       | Target namespace to execute tests upon, default is `default`. |
+| `TEST_E2E_FLAGS`                | `-failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v` | Ginkgo flags. See all Ginkgo flags here: [The Ginkgo CLI](https://onsi.github.io/ginkgo/#the-ginkgo-cli). Especially of interest are `--focus` and `--skip` to run selective tests. |
+| `TEST_E2E_CREATE_GLOBALOBJECTS` | `true`                                                                          | Boolean, if `false`, the custom resource definitions and (cluster) build strategies are not created and deleted by the e2e test code |
+| `TEST_E2E_OPERATOR`             | `start_local`                                                                   | String with allowed values `start_local` (will start the local operator and print its logs add the end of the test run) and `managed_outside` (will assume that the operator is running through whatever means) |
+| `TEST_E2E_VERIFY_TEKTONOBJECTS` | `true`                                                                          | Boolean, if false, the verification code will not try to verify the TaskRun object status |
+
+The following table contains a list of environment variables you that will override specific paths under the **Build** CRD.
 
 | Environment Variable               | Path                           | Description                                                   |
 |------------------------------------|--------------------------------|---------------------------------------------------------------|
-| `TEST_NAMESPACE`                   | _none_                         | Target namespace to execute tests upon, default is `default`. |
 | `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests                         |
 | `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                             |
 | `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`            |
-| `TEST_E2E_FLAGS`                   | _none_                         | Ginkgo flags.                                                 |
-
-The default for `TEST_E2E_FLAGS` is `-failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v`. See all Ginkgo flags here: [The Ginkgo CLI](https://onsi.github.io/ginkgo/#the-ginkgo-cli). Especially of interest are `--focus` and `--skip` to run selective tests.
 
 The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io](quay.io) using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The JSON payload is for example:
 
@@ -90,7 +96,13 @@ The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io
 { "auths": { "quay.io": { "auth": "<secret-credentials>" } } }
 ```
 
-When both `TEST_IMAGE_REPO_SECRET` and `TEST_IMAGE_REPO_DOCKERCONFIGJSON` are informed, a new secret is created for end-to-end tests, named by  `TEST_IMAGE_REPO_SECRET`. However, when `TEST_IMAGE_REPO_DOCKERCONFIGJSON` is empty, e2e tests are expecting to find a pre-existing one.
+When both `TEST_IMAGE_REPO_SECRET` and `TEST_IMAGE_REPO_DOCKERCONFIGJSON` are informed, a new secret is created for end-to-end tests, named by `TEST_IMAGE_REPO_SECRET`. However, when `TEST_IMAGE_REPO_DOCKERCONFIGJSON` is empty, e2e tests are expecting to find a pre-existing one.
+
+The following table contains a list of environment variables that will override specific paths under the **BuildRun** CRD.
+
+| Environment Variable          | Path                   | Description |
+|--------------------------------|-----------------------|-------------|
+| `TEST_E2E_SERVICEACCOUNT_NAME` | `spec.serviceAccount` | The name of the service account used by the build runs, the code will try to create the service account but not fail if it already exists. Special value is `generated`, which will lead to using the auto-generation feature for each build run. |
 
 To execute the end-to-end tests, run:
 

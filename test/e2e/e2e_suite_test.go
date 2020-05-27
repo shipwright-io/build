@@ -22,6 +22,7 @@ var (
 
 	clusterBuildStrategies = []string{
 		"samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml",
+		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml",
 		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml",
 		"samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml",
 		"samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml",
@@ -29,6 +30,7 @@ var (
 	}
 
 	namespaceBuildStrategies = []string{
+		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml",
 		"samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml",
 	}
 
@@ -58,9 +60,17 @@ func TestBuildRun(t *testing.T) {
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
 
-	Logf("Starting local operator")
-	operatorCmd, err = startLocalOperator()
-	Expect(err).ToNot(HaveOccurred(), "Failed to start local operator")
+	operator := os.Getenv(EnvVarOperator)
+	switch operator {
+	case "start_local":
+		Logf("Starting local operator")
+		operatorCmd, err = startLocalOperator()
+		Expect(err).ToNot(HaveOccurred(), "Failed to start local operator")
+	case "managed_outside":
+		Logf("Using operator that is started outside of the e2e test suite.")
+	default:
+		Fail("Unexpected value for " + EnvVarOperator + ": '" + operator + "'")
+	}
 
 	// add schemes to operator-sdk test framework
 	Logf("Adding schemes to operator-sdk test framework")
@@ -81,19 +91,24 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).ToNot(HaveOccurred(), "unable to obtain namespace")
 	Logf("Namespace is %s", namespace)
 
-	// wait for operator deployment
-	Logf("Waiting for operator deployment")
 	f := framework.Global
-	err = e2eutil.WaitForOperatorDeployment(
-		testingT,
-		f.KubeClient,
-		namespace,
-		"build-operator",
-		1,
-		operatorDeploymentRetryInterval,
-		operatorDeploymentTimeout,
-	)
-	Expect(err).ToNot(HaveOccurred(), "error on waiting for operator deployment")
+
+	if operator != "managed_outside" {
+		// wait for operator deployment
+		Logf("Waiting for operator deployment")
+		err = e2eutil.WaitForOperatorDeployment(
+			testingT,
+			f.KubeClient,
+			// TODO we currently have no codepath where this is relevant, but this namespace is the wrong one
+			// it is the watch namespace, but needs to be the operator namespace
+			namespace,
+			"build-operator",
+			1,
+			operatorDeploymentRetryInterval,
+			operatorDeploymentTimeout,
+		)
+		Expect(err).ToNot(HaveOccurred(), "error on waiting for operator deployment")
+	}
 
 	// create the pipeline service account
 	Logf("Creating the pipeline service account")
@@ -103,25 +118,29 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Logf("Creating the container registry secret")
 	createContainerRegistrySecret(globalCtx, f, namespace)
 
-	// create cluster build strategies
-	Logf("Creating cluster build strategies")
-	for _, clusterBuildStrategy := range clusterBuildStrategies {
-		Logf("Creating cluster build strategy %s", clusterBuildStrategy)
-		cbs, err := clusterBuildStrategyTestData(clusterBuildStrategy)
-		Expect(err).ToNot(HaveOccurred())
-		cbs.SetNamespace(namespace)
+	if os.Getenv(EnvVarCreateGlobalObjects) == "true" {
+		// create cluster build strategies
+		Logf("Creating cluster build strategies")
+		for _, clusterBuildStrategy := range clusterBuildStrategies {
+			Logf("Creating cluster build strategy %s", clusterBuildStrategy)
+			cbs, err := clusterBuildStrategyTestData(clusterBuildStrategy)
+			Expect(err).ToNot(HaveOccurred())
+			cbs.SetNamespace(namespace)
 
-		createClusterBuildStrategy(globalCtx, f, cbs)
-	}
+			createClusterBuildStrategy(globalCtx, f, cbs)
+		}
 
-	// create namespace build strategies
-	Logf("Creating namespace build strategies")
-	for _, namespaceBuildStrategy := range namespaceBuildStrategies {
-		Logf("Creating namespace build strategy %s", namespaceBuildStrategy)
-		nbs, err := buildStrategyTestData(namespace, namespaceBuildStrategy)
-		Expect(err).ToNot(HaveOccurred())
+		// create namespace build strategies
+		Logf("Creating namespace build strategies")
+		for _, namespaceBuildStrategy := range namespaceBuildStrategies {
+			Logf("Creating namespace build strategy %s", namespaceBuildStrategy)
+			nbs, err := buildStrategyTestData(namespace, namespaceBuildStrategy)
+			Expect(err).ToNot(HaveOccurred())
 
-		createNamespacedBuildStrategy(globalCtx, f, nbs)
+			createNamespacedBuildStrategy(globalCtx, f, nbs)
+		}
+	} else {
+		Logf("Build strategy creation skipped.")
 	}
 
 	return nil

@@ -30,6 +30,10 @@ import (
 
 const (
 	EnvVarImageRepoBuildRun    = "TEST_IMAGE_REPO_BUILDRUN"
+	EnvVarCreateGlobalObjects  = "TEST_E2E_CREATE_GLOBALOBJECTS"
+	EnvVarOperator             = "TEST_E2E_OPERATOR"
+	EnvVarServiceAccountName   = "TEST_E2E_SERVICEACCOUNT_NAME"
+	EnvVarVerifyTektonObjects  = "TEST_E2E_VERIFY_TEKTONOBJECTS"
 	EnvVarImageRepo            = "TEST_IMAGE_REPO"
 	EnvVarEnablePrivateRepos   = "TEST_PRIVATE_REPO"
 	EnvVarImageRepoSecret      = "TEST_IMAGE_REPO_SECRET"
@@ -38,8 +42,6 @@ const (
 	EnvVarSourceURLGitlab      = "TEST_PRIVATE_GITLAB"
 	EnvVarSourceURLSecret      = "TEST_SOURCE_SECRET"
 )
-
-const TestServiceAccountName = "pipeline"
 
 // cleanupOptions return a CleanupOptions instance.
 func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
@@ -50,18 +52,25 @@ func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
 	}
 }
 
-// createPipelineServiceAccount make sure the "pipeline" SA is created, or already exists.
+// createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
+// Otherwise it will create the service account. No error occurs if the service account already exists.
 func createPipelineServiceAccount(ctx *framework.TestCtx, f *framework.Framework, namespace string) {
-	serviceAccount := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      TestServiceAccountName,
-		},
-	}
-	Logf("Creating '%s' service-account", TestServiceAccountName)
-	err := f.Client.Create(goctx.TODO(), serviceAccount, cleanupOptions(ctx))
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		Expect(err).ToNot(HaveOccurred(), "Error creating service account")
+	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
+
+	if serviceAccountName == "generated" {
+		Logf("Skipping creation of service account, generated one will be used per build run.")
+	} else {
+		serviceAccount := &corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      serviceAccountName,
+			},
+		}
+		Logf("Creating '%s' service-account", serviceAccountName)
+		err := f.Client.Create(goctx.TODO(), serviceAccount, cleanupOptions(ctx))
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			Expect(err).ToNot(HaveOccurred(), "Error creating service account")
+		}
 	}
 }
 
@@ -154,22 +163,26 @@ func validateBuildRunToSucceed(
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
 
 	// Ensure that a TaskRun has been created and is in pending or running state
-	Eventually(func() string {
-		taskRun, err := getTaskRun(f, testBuildRun)
-		if err != nil {
-			Logf("Retrieving TaskRun error: '%s'", err)
-			return ""
-		}
-		if taskRun == nil {
-			Logf("TaskRun is not yet generated!")
-			return ""
-		}
-		if len(taskRun.Status.Conditions) == 0 {
-			Logf("TaskRun has not yet conditions.")
-			return ""
-		}
-		return taskRun.Status.Conditions[0].Reason
-	}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun not pending or running")
+	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+		Eventually(func() string {
+			taskRun, err := getTaskRun(f, testBuildRun)
+			if err != nil {
+				Logf("Retrieving TaskRun error: '%s'", err)
+				return ""
+			}
+			if taskRun == nil {
+				Logf("TaskRun is not yet generated!")
+				return ""
+			}
+			if len(taskRun.Status.Conditions) == 0 {
+				Logf("TaskRun has not yet conditions.")
+				return ""
+			}
+			return taskRun.Status.Conditions[0].Reason
+		}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun not pending or running")
+	} else {
+		Logf("TaskRun verification skipped.")
+	}
 
 	// Ensure BuildRun is in pending or running state
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
@@ -182,6 +195,9 @@ func validateBuildRunToSucceed(
 		return testBuildRun.Status.Reason
 	}, 30*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun not pending or running")
 
+	// Verify that the BuildSpec is available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+
 	// Ensure that BuildRun moves to Running State
 	Eventually(func() string {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
@@ -190,6 +206,9 @@ func validateBuildRunToSucceed(
 		return testBuildRun.Status.Reason
 	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun not running")
 
+	// Verify that the BuildSpec is still available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+
 	// Ensure that eventually the BuildRun moves to Succeeded.
 	Eventually(func() v1.ConditionStatus {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
@@ -197,6 +216,9 @@ func validateBuildRunToSucceed(
 
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
+
+	// Verify that the BuildSpec is still available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
 	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
 }
@@ -224,6 +246,9 @@ func validateBuildRunToFail(
 
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
+
+	// Verify that the BuildSpec is available in the status
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
 	// Verify the build run failure
 	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
@@ -299,6 +324,19 @@ func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*ope
 	buildRun.SetNamespace(ns)
 	buildRun.SetName(identifier)
 	buildRun.Spec.BuildRef.Name = identifier
+
+	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
+
+	if serviceAccountName == "generated" {
+		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
+			Generate: true,
+		}
+	} else {
+		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
+			Name: &serviceAccountName,
+		}
+	}
+
 	return buildRun, err
 }
 
