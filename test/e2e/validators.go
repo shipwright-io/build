@@ -1,10 +1,13 @@
 package e2e
 
 import (
+	//"bytes"
 	goctx "context"
 	"fmt"
+	//"io"
 	"io/ioutil"
 	"os"
+	//"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -213,6 +216,41 @@ func validateBuildRunToSucceed(
 	Eventually(func() v1.ConditionStatus {
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
+
+		//Logf("BuildRun is %s status is %s", testBuildRun.Name, testBuildRun.Status.Succeeded)
+		//if testBuildRun.Status.Succeeded == v1.ConditionFalse {
+		//	PodList, _ := f.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+		//	var BuildRunPodName string
+		//	var BuildRunPodContainersList []string
+		//	for _, pod := range PodList.Items {
+		//		if strings.Contains(pod.Name, testBuildRun.Name) {
+		//			BuildRunPodName = pod.Name
+		//			for _, container := range pod.Spec.Containers {
+		//				BuildRunPodContainersList = append(BuildRunPodContainersList, container.Name)
+		//			}
+		//		}
+		//	}
+		//
+		//	for _, container := range BuildRunPodContainersList {
+		//		req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(BuildRunPodName, &v1.PodLogOptions{
+		//			TypeMeta:                     metav1.TypeMeta{},
+		//			Container:                    container,
+		//			Follow:                       false,
+		//		})
+		//
+		//		podLogs, err := req.Stream()
+		//		if err != nil {
+		//			return "error in opening stream"
+		//		}
+		//		buf := new(bytes.Buffer)
+		//		_, err = io.Copy(buf, podLogs)
+		//		if err != nil {
+		//			return "error in copy information from podLogs to buf"
+		//		}
+		//		str := buf.String()
+		//		Logf("container %s log is %s", container, str)
+		//	}
+		//}
 
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")

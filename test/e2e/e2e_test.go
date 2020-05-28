@@ -1,7 +1,10 @@
 package e2e
 
 import (
+	//operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
+	framework "github.com/operator-framework/operator-sdk/pkg/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,12 +14,35 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 	var (
 		namespace string
+		//f *framework.Framework
 	)
 
 	BeforeEach(func() {
 		ns, err := ctx.GetWatchNamespace()
 		Expect(err).ToNot(HaveOccurred())
 		namespace = ns
+	})
+
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			//getFailedPodLogs(namespace, br, f)
+			Logf("", CurrentGinkgoTestDescription().FullTestText)
+		}
+	})
+
+	Context("when a kaniko buildrun with output image is defined", func() {
+
+		BeforeEach(func() {
+			// create the build definition
+			createBuild(namespace, "kaniko-image-tag", "test/data/build_image_tag.yaml")
+		})
+
+		It("successfully runs a build", func() {
+			br, err := buildRunTestData(namespace, "kaniko-image-tag", "test/data/buildrun_image_tag.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
 	})
 
 	Context("when a Buildah build is defined", func() {
@@ -288,18 +314,18 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a kaniko buildrun with output image is defined", func() {
-
-		BeforeEach(func() {
-			// create the build definition
-			createBuild(namespace, "kaniko-image-tag", "test/data/build_image_tag.yaml")
-		})
-
-		It("successfully runs a build", func() {
-			br, err := buildRunTestData(namespace, "kaniko-image-tag", "test/data/buildrun_image_tag.yaml")
-			Expect(err).ToNot(HaveOccurred())
-
-			validateBuildRunToSucceed(namespace, br)
-		})
-	})
+	//Context("when a kaniko buildrun with output image is defined", func() {
+	//
+	//	BeforeEach(func() {
+	//		// create the build definition
+	//		createBuild(namespace, "kaniko-image-tag", "test/data/build_image_tag.yaml")
+	//	})
+	//
+	//	It("successfully runs a build", func() {
+	//		br, err := buildRunTestData(namespace, "kaniko-image-tag", "test/data/buildrun_image_tag.yaml")
+	//		Expect(err).ToNot(HaveOccurred())
+	//
+	//		validateBuildRunToSucceed(namespace, br)
+	//	})
+	//})
 })
