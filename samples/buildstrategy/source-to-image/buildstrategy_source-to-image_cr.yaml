@@ -35,6 +35,10 @@ spec:
         capabilities:
           add:
             - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
