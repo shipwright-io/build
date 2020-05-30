@@ -42,7 +42,6 @@ TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
 
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
-TEST_IMAGE_REPO_BUILDRUN ?= quay.io/redhat-developer/buildrun-e2e
 # test container registyr secret name
 TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime

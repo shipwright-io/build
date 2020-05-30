@@ -1,13 +1,9 @@
 package e2e
 
 import (
-	//"bytes"
 	goctx "context"
-	"fmt"
-	//"io"
 	"io/ioutil"
 	"os"
-	//"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -32,7 +28,6 @@ import (
 )
 
 const (
-	EnvVarImageRepoBuildRun    = "TEST_IMAGE_REPO_BUILDRUN"
 	EnvVarCreateGlobalObjects  = "TEST_E2E_CREATE_GLOBALOBJECTS"
 	EnvVarOperator             = "TEST_E2E_OPERATOR"
 	EnvVarServiceAccountName   = "TEST_E2E_SERVICEACCOUNT_NAME"
@@ -134,20 +129,6 @@ func createClusterBuildStrategy(
 	}
 }
 
-func amendBuildRun(br *operator.BuildRun, imageRepoBuildRun string)  {
-	if imageRepoBuildRun != "" {
-		imageURLBuildRun := fmt.Sprintf("%s:%s", imageRepoBuildRun, br.Name)
-		if br.Spec.Output != nil {
-			br.Spec.Output.ImageURL = imageURLBuildRun
-			Logf("Amended object: name='%s', build-run-image-url='%s'", br.Name, imageURLBuildRun)
-		} else {
-			return
-		}
-	} else {
-		return
-	}
-}
-
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
 func validateBuildRunToSucceed(
 	namespace string,
@@ -160,7 +141,6 @@ func validateBuildRunToSucceed(
 	trueCondition := v1.ConditionTrue
 	pendingAndRunningStatues := []string{pendingStatus, runningStatus}
 
-	amendBuildRun(testBuildRun, os.Getenv(EnvVarImageRepoBuildRun))
 	// Ensure the BuildRun has been created
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
@@ -217,41 +197,6 @@ func validateBuildRunToSucceed(
 		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
-		//Logf("BuildRun is %s status is %s", testBuildRun.Name, testBuildRun.Status.Succeeded)
-		//if testBuildRun.Status.Succeeded == v1.ConditionFalse {
-		//	PodList, _ := f.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-		//	var BuildRunPodName string
-		//	var BuildRunPodContainersList []string
-		//	for _, pod := range PodList.Items {
-		//		if strings.Contains(pod.Name, testBuildRun.Name) {
-		//			BuildRunPodName = pod.Name
-		//			for _, container := range pod.Spec.Containers {
-		//				BuildRunPodContainersList = append(BuildRunPodContainersList, container.Name)
-		//			}
-		//		}
-		//	}
-		//
-		//	for _, container := range BuildRunPodContainersList {
-		//		req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(BuildRunPodName, &v1.PodLogOptions{
-		//			TypeMeta:                     metav1.TypeMeta{},
-		//			Container:                    container,
-		//			Follow:                       false,
-		//		})
-		//
-		//		podLogs, err := req.Stream()
-		//		if err != nil {
-		//			return "error in opening stream"
-		//		}
-		//		buf := new(bytes.Buffer)
-		//		_, err = io.Copy(buf, podLogs)
-		//		if err != nil {
-		//			return "error in copy information from podLogs to buf"
-		//		}
-		//		str := buf.String()
-		//		Logf("container %s log is %s", container, str)
-		//	}
-		//}
-
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
@@ -271,7 +216,6 @@ func validateBuildRunToFail(
 	f := framework.Global
 	falseCondition := v1.ConditionFalse
 
-	amendBuildRun(testBuildRun, os.Getenv(EnvVarImageRepoBuildRun))
 	// Create the BuildRun
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")

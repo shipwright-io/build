@@ -1,12 +1,8 @@
 package e2e
 
 import (
-	//"bytes"
 	goctx "context"
 	"fmt"
-	//"io"
-	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strings"
 
@@ -84,37 +80,3 @@ func createBuild(namespace string, identifier string, filePath string) {
 
 	Logf("Build %s created", identifier)
 }
-
-//func getFailedPodLogs(namespace string, buildRunName string, f *framework.Framework) {
-//	var BuildRunPodName string
-//	var BuildRunPodContainersList []string
-//	buildRunNsName := types.NamespacedName{Name: buildRunName, Namespace: namespace}
-//	err := f.Client.Get(goctx.TODO(),)
-//	PodList, _ := f.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-//	for _, pod := range PodList.Items {
-//		if strings.Contains(pod.Name, buildRun.Name) {
-//			BuildRunPodName = pod.Name
-//			for _, container := range pod.Spec.Containers {
-//				BuildRunPodContainersList = append(BuildRunPodContainersList, container.Name)
-//			}
-//		}
-//	}
-//	for _, container := range BuildRunPodContainersList {
-//		req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(BuildRunPodName, &v1.PodLogOptions{
-//			TypeMeta:                     metav1.TypeMeta{},
-//			Container:                    container,
-//			Follow:                       false,
-//		})
-//		podLogs, err := req.Stream()
-//		if err != nil {
-//			Logf("error in opening stream")
-//		}
-//		buf := new(bytes.Buffer)
-//		_, err = io.Copy(buf, podLogs)
-//		if err != nil {
-//			Logf("error in copy information from podLogs to buf")
-//		}
-//		str := buf.String()
-//		Logf("container %s log is %s", container, str)
-//	}
-//}

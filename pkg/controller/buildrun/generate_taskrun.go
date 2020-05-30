@@ -170,7 +170,7 @@ func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 		revision = *build.Spec.Source.Revision
 	}
 
-	// update output image in build spec
+	// retrieve expected imageURL form build or buildRun
 	var ImageURL string
 	if buildRun.Spec.Output != nil {
 		ImageURL = buildRun.Spec.Output.ImageURL
