@@ -1,8 +1,12 @@
 package e2e
 
 import (
+	"bytes"
 	goctx "context"
 	"fmt"
+	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strings"
 
@@ -79,4 +83,58 @@ func createBuild(namespace string, identifier string, filePath string) {
 	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
 
 	Logf("Build %s created", identifier)
+}
+
+// retrieveBuildRun will retrieve the buildRun
+func retrieveBuildRun(namespace string, buildRunName string) (*operator.BuildRun, error) {
+	f := framework.Global
+	buildRun := &operator.BuildRun{}
+	err := f.Client.Client.Get(goctx.TODO(), types.NamespacedName{Name: buildRunName, Namespace: namespace}, buildRun)
+	if err != nil {
+		Logf("Failed to get BuildRun %s", buildRunName)
+		Logf("error is %s", err)
+		return nil, err
+	}
+	return buildRun, nil
+}
+
+// buildRunPodLogs will output the log of buildRun
+func buildRunPodLogs(namespace string, buildRunName string,) {
+	var BuildRunPodName string
+	var BuildRunPodContainersList []string
+	f := framework.Global
+	buildRun, _ := retrieveBuildRun(namespace, buildRunName)
+	PodList, _ := f.KubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	for _, pod := range PodList.Items {
+		if strings.Contains(pod.Name, *buildRun.Status.LatestTaskRunRef) {
+			BuildRunPodName = pod.Name
+			for _, container := range pod.Spec.Containers {
+				BuildRunPodContainersList = append(BuildRunPodContainersList, container.Name)
+			}
+		}
+	}
+
+	if BuildRunPodName == "" {
+		Logf("error in getting buildRun pod")
+	}
+
+	for _, container := range BuildRunPodContainersList {
+		req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(BuildRunPodName, &v1.PodLogOptions{
+			TypeMeta:                     metav1.TypeMeta{},
+			Container:                    container,
+			Follow:                       false,
+		})
+		podLogs, err := req.Stream()
+		if err != nil {
+			Logf("error in opening stream")
+		}
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, podLogs)
+		if err != nil {
+			Logf("error in copy information from podLogs to buf")
+		}
+		strLogs := buf.String()
+		Logf("container is %s", container)
+		Logf("container's log is %s", strLogs)
+	}
 }
