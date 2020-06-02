@@ -8,10 +8,9 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
@@ -50,6 +49,26 @@ func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
 	}
 }
 
+// clientGet is a wrapper around f.Client.Get that performs retries in case of retryable errors
+func clientGet(key types.NamespacedName, obj runtime.Object) error {
+	f := framework.Global
+
+	return wait.PollImmediate(4*time.Second, 60*time.Second, func() (bool, error) {
+		if err := f.Client.Get(goctx.TODO(), key, obj); err != nil {
+			// check if we have an error that we want to retry
+			if apierrors.IsServerTimeout(err) || apierrors.IsTimeout(err) || apierrors.IsTooManyRequests(err) {
+				return false, nil
+			}
+
+			// return all other errors directly
+			return true, err
+		}
+
+		// successful call
+		return true, nil
+	})
+}
+
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
 // Otherwise it will create the service account. No error occurs if the service account already exists.
 func createPipelineServiceAccount(ctx *framework.TestCtx, f *framework.Framework, namespace string) {
@@ -66,7 +85,7 @@ func createPipelineServiceAccount(ctx *framework.TestCtx, f *framework.Framework
 		}
 		Logf("Creating '%s' service-account", serviceAccountName)
 		err := f.Client.Create(goctx.TODO(), serviceAccount, cleanupOptions(ctx))
-		if err != nil && !k8serrors.IsAlreadyExists(err) {
+		if err != nil && !apierrors.IsAlreadyExists(err) {
 			Expect(err).ToNot(HaveOccurred(), "Error creating service account")
 		}
 	}
@@ -84,7 +103,7 @@ func createContainerRegistrySecret(ctx *framework.TestCtx, f *framework.Framewor
 
 	secretNsName := types.NamespacedName{Namespace: namespace, Name: secretName}
 	secret := &corev1.Secret{}
-	if err := f.Client.Get(goctx.TODO(), secretNsName, secret); err == nil {
+	if err := clientGet(secretNsName, secret); err == nil {
 		Logf("Container registry secret is found at '%s/%s'", namespace, secretName)
 		return
 	}
@@ -124,7 +143,7 @@ func createClusterBuildStrategy(
 	testBuildStrategy *operator.ClusterBuildStrategy,
 ) {
 	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx))
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
@@ -170,7 +189,7 @@ func validateBuildRunToSucceed(
 	// Ensure BuildRun is in pending or running state
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
 	Eventually(func() string {
-		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		err = clientGet(buildRunNsName, testBuildRun)
 		if err != nil {
 			Logf("Retrieving BuildRun error: '%s'", err)
 			return ""
@@ -183,7 +202,7 @@ func validateBuildRunToSucceed(
 
 	// Ensure that BuildRun moves to Running State
 	Eventually(func() string {
-		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		return testBuildRun.Status.Reason
@@ -194,7 +213,7 @@ func validateBuildRunToSucceed(
 
 	// Ensure that eventually the BuildRun moves to Succeeded.
 	Eventually(func() v1.ConditionStatus {
-		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		return testBuildRun.Status.Succeeded
@@ -223,7 +242,7 @@ func validateBuildRunToFail(
 	// Ensure that eventually the BuildRun moves to Failed.
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
 	Eventually(func() v1.ConditionStatus {
-		err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		return testBuildRun.Status.Succeeded
@@ -248,19 +267,19 @@ func validateBuildDeletion(
 	// Delete the Build
 	buildNsName := types.NamespacedName{Name: testBuildName, Namespace: namespace}
 	testBuild := &buildv1alpha1.Build{}
-	err := f.Client.Get(goctx.TODO(), buildNsName, testBuild)
+	err := clientGet(buildNsName, testBuild)
 	Expect(err).ToNot(HaveOccurred(), "Build doesn't exist")
 	err = f.Client.Delete(goctx.TODO(), testBuild)
 	Expect(err).ToNot(HaveOccurred(), "Failed to delete build")
 	Logf("Build is deleted!")
 
 	Eventually(func() error {
-		err = f.Client.Get(goctx.TODO(), buildNsName, testBuild)
+		err = clientGet(buildNsName, testBuild)
 		return err
 	}, 30*time.Second, 3*time.Second).ShouldNot(BeNil(), "Build is not deleted yet")
 
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
-	err = f.Client.Get(goctx.TODO(), buildRunNsName, testBuildRun)
+	err = clientGet(buildRunNsName, testBuildRun)
 	if expectedDeletion {
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "BuildRun was not deleted together with the Build")
 	} else {
