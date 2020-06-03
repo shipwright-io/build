@@ -29,7 +29,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildah")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildah")
 			}
 		})
 
@@ -51,7 +51,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildah-custom-context-dockerfile")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildah-custom-context-dockerfile")
 			}
 		})
 
@@ -69,7 +69,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3-heroku")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3-heroku")
 			}
 		})
 
@@ -87,7 +87,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3-heroku-namespaced")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3-heroku-namespaced")
 			}
 		})
 
@@ -105,7 +105,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3")
 			}
 		})
 
@@ -124,7 +124,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3-namespaced")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3-namespaced")
 			}
 		})
 
@@ -142,7 +142,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3-php")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3-php")
 			}
 		})
 
@@ -160,7 +160,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3-ruby")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3-ruby")
 			}
 		})
 
@@ -178,7 +178,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3-golang")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3-golang")
 			}
 		})
 
@@ -196,7 +196,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "buildpacks-v3-java")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "buildpacks-v3-java")
 			}
 		})
 
@@ -219,7 +219,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "kaniko")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "kaniko")
 			}
 		})
 
@@ -242,7 +242,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "kaniko-advanced-dockerfile")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "kaniko-advanced-dockerfile")
 			}
 		})
 
@@ -264,7 +264,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "kaniko-custom-context-dockerfile")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "kaniko-custom-context-dockerfile")
 			}
 		})
 
@@ -286,7 +286,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "kaniko-timeout")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "kaniko-timeout")
 			}
 		})
 
@@ -308,7 +308,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
-				buildRunPodLogs(namespace, "s2i")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, "s2i")
 			}
 		})
 
@@ -338,7 +338,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			AfterEach(func() {
 				if CurrentGinkgoTestDescription().Failed {
 					Logf("Print failed BuildRun's log")
-					buildRunPodLogs(namespace, "private-github-buildah")
+					outputBuildAndBuildRunStatusAndPodLogs(namespace, "private-github-buildah")
 				}
 			})
 
@@ -360,7 +360,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			AfterEach(func() {
 				if CurrentGinkgoTestDescription().Failed {
 					Logf("Print failed BuildRun's log")
-					buildRunPodLogs(namespace, "private-gitlab-buildah")
+					outputBuildAndBuildRunStatusAndPodLogs(namespace, "private-gitlab-buildah")
 				}
 			})
 
@@ -382,7 +382,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			AfterEach(func() {
 				if CurrentGinkgoTestDescription().Failed {
 					Logf("Print failed BuildRun's log")
-					buildRunPodLogs(namespace, "private-github-kaniko")
+					outputBuildAndBuildRunStatusAndPodLogs(namespace, "private-github-kaniko")
 				}
 			})
 
@@ -404,7 +404,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			AfterEach(func() {
 				if CurrentGinkgoTestDescription().Failed {
 					Logf("Print failed BuildRun's log")
-					buildRunPodLogs(namespace, "private-gitlab-kaniko")
+					outputBuildAndBuildRunStatusAndPodLogs(namespace, "private-gitlab-kaniko")
 				}
 			})
 
@@ -426,7 +426,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			AfterEach(func() {
 				if CurrentGinkgoTestDescription().Failed {
 					Logf("Print failed BuildRun's log")
-					buildRunPodLogs(namespace, "private-github-s2i")
+					outputBuildAndBuildRunStatusAndPodLogs(namespace, "private-github-s2i")
 				}
 			})
 
