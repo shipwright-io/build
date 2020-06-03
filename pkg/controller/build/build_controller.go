@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -16,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -25,24 +25,27 @@ import (
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 )
 
-var log = logf.Log.WithName("controller_build")
-
 // succeedStatus default status for the Build CRD
 const succeedStatus string = "Succeeded"
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(mgr manager.Manager) error {
-	return add(mgr, NewReconciler(mgr))
+func Add(ctx context.Context, mgr manager.Manager) error {
+	ctx = ctxlog.NewContext(ctx, "build-controller")
+	return add(ctx, mgr, NewReconciler(ctx, mgr))
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileBuild{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+func NewReconciler(ctx context.Context, mgr manager.Manager) reconcile.Reconciler {
+	return &ReconcileBuild{
+		ctx:    ctx,
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
+func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	c, err := controller.New("build-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -57,6 +60,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			newAnnot := e.MetaNew.GetAnnotations()
 			if !reflect.DeepEqual(oldAnnot, newAnnot) {
 				if oldAnnot[build.AnnotationBuildRunDeletion] != newAnnot[build.AnnotationBuildRunDeletion] {
+					ctxlog.Debug(
+						ctx,
+						fmt.Sprintf("Update predicated passed for %s/%s, the annotation was modified",
+							e.MetaNew.GetNamespace(),
+							e.MetaNew.GetName(),
+						),
+					)
 					buildRunFinalizer = true
 				}
 			}
@@ -87,6 +97,7 @@ var _ reconcile.Reconciler = &ReconcileBuild{}
 type ReconcileBuild struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
+	ctx    context.Context
 	client client.Client
 	scheme *runtime.Scheme
 }
@@ -94,11 +105,14 @@ type ReconcileBuild struct {
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
 func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Build")
+	// Set the ctx to be Background, as the top-level context for incoming requests.
+	ctx, cancel := context.WithTimeout(r.ctx, 300*time.Second)
+	defer cancel()
+
+	ctxlog.Info(ctx, "reconciling Build", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
 
 	b := &build.Build{}
-	err := r.client.Get(context.Background(), request.NamespacedName, b)
+	err := r.client.Get(ctx, request.NamespacedName, b)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return reconcile.Result{}, err
 	} else if apierrors.IsNotFound(err) {
@@ -106,13 +120,14 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	// Add finalizer for build
-	if err := r.configFinalizer(b, reqLogger); err != nil {
+	if err := r.configFinalizer(ctx, b); err != nil {
 		return reconcile.Result{}, err
 	}
 	// Check if the build is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	if !b.DeletionTimestamp.IsZero() {
-		return reconcile.Result{}, r.finalizeBuildRun(b, reqLogger)
+		ctxlog.Debug(ctx, "build is marked for deletion", "Request.Namespace", b.Namespace, "Request.Name", b.Name)
+		return reconcile.Result{}, r.finalizeBuildRun(ctx, b)
 	}
 
 	// Populate the status struct with default values
@@ -121,60 +136,60 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	// Validate if the spec.output.secretref exist in the namespace
 	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
-		if err := r.validateOutputSecret(b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
-			reqLogger.Error(err, "failed validating the output secret", "Build", b.Name)
+		if err := r.validateOutputSecret(ctx, b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
+			ctxlog.Error(ctx, err, "failed validating the output secret", "Build", b.Name)
 			b.Status.Reason = err.Error()
-			updateErr := r.client.Status().Update(context.Background(), b)
+			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
 	}
 
 	// Validate if the build strategy is defined
 	if b.Spec.StrategyRef != nil {
-		if err := r.validateStrategyRef(b.Spec.StrategyRef, b.Namespace); err != nil {
-			reqLogger.Error(err, "failed validating the strategy reference", "Build", b.Name)
+		if err := r.validateStrategyRef(ctx, b.Spec.StrategyRef, b.Namespace); err != nil {
+			ctxlog.Error(ctx, err, "failed validating the strategy reference", b.Namespace, "Build", b.Name)
 			b.Status.Reason = err.Error()
-			updateErr := r.client.Status().Update(context.Background(), b)
+			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
 	}
 
 	b.Status.Registered = corev1.ConditionTrue
-	err = r.client.Status().Update(context.Background(), b)
+	err = r.client.Status().Update(ctx, b)
 	if err != nil {
-		reqLogger.Error(err, "Failed to update the Build status", "Build", b.Name)
+		ctxlog.Error(ctx, err, "failed to update the Build status", "Build", b.Name)
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileBuild) validateStrategyRef(s *build.StrategyRef, ns string) error {
+func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.StrategyRef, ns string) error {
 	if s.Kind != nil {
 		switch *s.Kind {
 		case build.NamespacedBuildStrategyKind:
-			if err := r.validateBuildStrategy(s.Name, ns); err != nil {
+			if err := r.validateBuildStrategy(ctx, s.Name, ns); err != nil {
 				return err
 			}
 		case build.ClusterBuildStrategyKind:
-			if err := r.validateClusterBuildStrategy(s.Name); err != nil {
+			if err := r.validateClusterBuildStrategy(ctx, s.Name); err != nil {
 				return err
 			}
 		default:
 			return fmt.Errorf("unknown strategy %v", *s.Kind)
 		}
 	} else {
-		log.Info("BuildStrategy kind is nil, use default NamespacedBuildStrategyKind")
-		if err := r.validateBuildStrategy(s.Name, ns); err != nil {
+		ctxlog.Info(ctx, "BuildStrategy kind is nil, use default NamespacedBuildStrategyKind")
+		if err := r.validateBuildStrategy(ctx, s.Name, ns); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *ReconcileBuild) validateBuildStrategy(n string, ns string) error {
+func (r *ReconcileBuild) validateBuildStrategy(ctx context.Context, n string, ns string) error {
 	list := &build.BuildStrategyList{}
 
-	if err := r.client.List(context.Background(), list, &client.ListOptions{Namespace: ns}); err != nil {
+	if err := r.client.List(ctx, list, &client.ListOptions{Namespace: ns}); err != nil {
 		return errors.Wrapf(err, "listing BuildStrategies in ns %s failed", ns)
 	}
 
@@ -193,10 +208,10 @@ func (r *ReconcileBuild) validateBuildStrategy(n string, ns string) error {
 	return nil
 }
 
-func (r *ReconcileBuild) validateClusterBuildStrategy(n string) error {
+func (r *ReconcileBuild) validateClusterBuildStrategy(ctx context.Context, n string) error {
 	list := &build.ClusterBuildStrategyList{}
 
-	if err := r.client.List(context.Background(), list); err != nil {
+	if err := r.client.List(ctx, list); err != nil {
 		return errors.Wrapf(err, "listing ClusterBuildStrategies failed")
 	}
 
@@ -215,11 +230,11 @@ func (r *ReconcileBuild) validateClusterBuildStrategy(n string) error {
 	return nil
 }
 
-func (r *ReconcileBuild) validateOutputSecret(n string, ns string) error {
+func (r *ReconcileBuild) validateOutputSecret(ctx context.Context, n string, ns string) error {
 	list := &corev1.SecretList{}
 
 	if err := r.client.List(
-		context.Background(),
+		ctx,
 		list,
 		&client.ListOptions{
 			Namespace: ns,
@@ -243,20 +258,20 @@ func (r *ReconcileBuild) validateOutputSecret(n string, ns string) error {
 	return nil
 }
 
-func (r *ReconcileBuild) configFinalizer(b *build.Build, logger logr.Logger) error {
+func (r *ReconcileBuild) configFinalizer(ctx context.Context, b *build.Build) error {
 	if b.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
 		if !contains(b.GetFinalizers(), build.BuildFinalizer) {
-			logger.Info("Add finalizer to Build", "Build", b.Name)
+			ctxlog.Info(ctx, "Add finalizer to Build", "Build", b.Name, "Namespace", b.Namespace)
 			b.SetFinalizers(append(b.GetFinalizers(), build.BuildFinalizer))
-			if err := r.client.Update(context.TODO(), b); err != nil {
+			if err := r.client.Update(ctx, b); err != nil {
 				return err
 			}
 		}
 	} else {
 		if contains(b.GetFinalizers(), build.BuildFinalizer) {
-			logger.Info("Remove finalizer from Build", "Build", b.Name)
+			ctxlog.Info(ctx, "Remove finalizer from Build", "Build", b.Name, "Namespace", b.Namespace)
 			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-			if err := r.client.Update(context.TODO(), b); err != nil {
+			if err := r.client.Update(ctx, b); err != nil {
 				return err
 			}
 		}
@@ -264,19 +279,19 @@ func (r *ReconcileBuild) configFinalizer(b *build.Build, logger logr.Logger) err
 	return nil
 }
 
-func (r *ReconcileBuild) finalizeBuildRun(b *build.Build, logger logr.Logger) error {
+func (r *ReconcileBuild) finalizeBuildRun(ctx context.Context, b *build.Build) error {
 	if contains(b.GetFinalizers(), build.BuildFinalizer) {
 		// Run finalization logic for buildFinalizer. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
-		if err := r.cleanBuildRun(b, logger); err != nil {
+		if err := r.cleanBuildRun(ctx, b); err != nil {
 			return err
 		}
 
 		// Remove buildFinalizer. Once all finalizers have been
 		// removed, the object will be deleted.
 		b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-		err := r.client.Update(context.TODO(), b)
+		err := r.client.Update(ctx, b)
 		if err != nil {
 			return err
 		}
@@ -284,7 +299,7 @@ func (r *ReconcileBuild) finalizeBuildRun(b *build.Build, logger logr.Logger) er
 	return nil
 }
 
-func (r *ReconcileBuild) cleanBuildRun(b *build.Build, logger logr.Logger) error {
+func (r *ReconcileBuild) cleanBuildRun(ctx context.Context, b *build.Build) error {
 	buildRunList := &build.BuildRunList{}
 
 	lbls := map[string]string{
@@ -294,13 +309,13 @@ func (r *ReconcileBuild) cleanBuildRun(b *build.Build, logger logr.Logger) error
 		Namespace:     b.Namespace,
 		LabelSelector: labels.SelectorFromSet(lbls),
 	}
-	if err := r.client.List(context.TODO(), buildRunList, &opts); err != nil {
+	if err := r.client.List(ctx, buildRunList, &opts); err != nil {
 		return err
 	}
 
 	for _, buildRun := range buildRunList.Items {
-		logger.Info("Finalize BuildRun automatically", "BuildRun", buildRun.Name)
-		if err := r.client.Delete(context.TODO(), &buildRun); err != nil {
+		ctxlog.Info(ctx, "Finalize BuildRun automatically", "Request.Namespace", buildRun.Namespace, "Request.Name", buildRun.Name)
+		if err := r.client.Delete(ctx, &buildRun); err != nil {
 			return err
 		}
 	}
