@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	"github.com/redhat-developer/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,15 +30,16 @@ const succeedStatus string = "Succeeded"
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(ctx context.Context, mgr manager.Manager) error {
+func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "build-controller")
-	return add(ctx, mgr, NewReconciler(ctx, mgr))
+	return add(ctx, mgr, NewReconciler(ctx, c, mgr))
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, mgr manager.Manager) reconcile.Reconciler {
+func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileBuild{
 		ctx:    ctx,
+		config: c,
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 	}
@@ -98,6 +99,7 @@ type ReconcileBuild struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	ctx    context.Context
+	config *config.Config
 	client client.Client
 	scheme *runtime.Scheme
 }
@@ -106,7 +108,7 @@ type ReconcileBuild struct {
 // and what is in the Build.Spec
 func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Set the ctx to be Background, as the top-level context for incoming requests.
-	ctx, cancel := context.WithTimeout(r.ctx, 300*time.Second)
+	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
 	ctxlog.Info(ctx, "reconciling Build", "Request.Namespace", request.Namespace, "Request.Name", request.Name)

@@ -8,7 +8,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/go-logr/logr"
+	buildconfig "github.com/redhat-developer/build/pkg/config"
+
 	"github.com/redhat-developer/build/pkg/ctxlog"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -42,11 +43,11 @@ var (
 	operatorMetricsPort int32 = 8686
 )
 
-func printVersion(l logr.Logger) {
-	l.Info(fmt.Sprintf("Operator Version: %s", version.Version))
-	l.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
-	l.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	l.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+func printVersion(ctx context.Context) {
+	ctxlog.Info(ctx, fmt.Sprintf("Operator Version: %s", version.Version))
+	ctxlog.Info(ctx, fmt.Sprintf("Go Version: %s", runtime.Version()))
+	ctxlog.Info(ctx, fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
+	ctxlog.Info(ctx, fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 }
 
 func main() {
@@ -70,70 +71,77 @@ func main() {
 	// uniform and structured logs.
 
 	l := ctxlog.NewLogger("build")
-	printVersion(l)
+
+	ctx := ctxlog.NewParentContext(l)
+
+	printVersion(ctx)
 
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		l.Error(err, "Failed to get watch namespace")
+		ctxlog.Error(ctx, err, "Failed to get watch namespace")
 		os.Exit(1)
 	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		l.Error(err, "")
+		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
-
-	ctx := ctxlog.NewParentContext(l)
 
 	// Become the leader before proceeding
 	err = leader.Become(ctx, "build-operator-lock")
 	if err != nil {
-		l.Error(err, "")
+		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{
-		LeaderElection: true,
-		LeaderElectionID: "build-operator-lock",
+		LeaderElection:          true,
+		LeaderElectionID:        "build-operator-lock",
 		LeaderElectionNamespace: "default",
-		Namespace:          "",
-		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+		Namespace:               "",
+		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
-		l.Error(err, "")
+		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
 
-	l.Info("Registering Components.")
+	ctxlog.Info(ctx, "Registering Components.")
 
 	if err := v1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		l.Error(err, "")
+		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		l.Error(err, "")
+		ctxlog.Error(ctx, err, "")
+		os.Exit(1)
+	}
+
+	c := buildconfig.NewDefaultConfig()
+	if err := c.SetConfigTimeOutFromEnv(); err != nil {
+		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
 
 	// Setup all Controllers
-	if err := controller.AddToManager(ctx, mgr); err != nil {
-		l.Error(err, "")
+	if err := controller.AddToManager(ctx, c, mgr); err != nil {
+		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
 
 	// Add the Metrics Service
 	addMetrics(ctx, cfg, namespace)
 
-	l.Info("Starting the Cmd.")
+	ctxlog.Info(ctx, "Starting the Cmd.")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		l.Error(err, "Manager exited non-zero")
+		ctxlog.Error(ctx, err, "Manager exited non-zero")
 		os.Exit(1)
 	}
 }
@@ -141,13 +149,12 @@ func main() {
 // addMetrics will create the Services and Service Monitors to allow the operator export the metrics by using
 // the Prometheus operator
 func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
-	l := ctxlog.ExtractLogger(ctx)
 	if err := serveCRMetrics(cfg); err != nil {
 		if errors.Is(err, k8sutil.ErrRunLocal) {
-			l.Info("Skipping CR metrics server creation; not running in a cluster.")
+			ctxlog.Info(ctx, "Skipping CR metrics server creation; not running in a cluster.")
 			return
 		}
-		l.Info("Could not generate and serve custom resource metrics", "error", err.Error())
+		ctxlog.Info(ctx, "Could not generate and serve custom resource metrics", "error", err.Error())
 	}
 
 	// Add to the below struct any other metrics ports you want to expose.
@@ -159,7 +166,7 @@ func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
 	// Create Service object to expose the metrics port(s).
 	service, err := metrics.CreateMetricsService(ctx, cfg, servicePorts)
 	if err != nil {
-		l.Info("Could not create metrics Service", "error", err.Error())
+		ctxlog.Info(ctx, "Could not create metrics Service", "error", err.Error())
 	}
 
 	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
@@ -167,11 +174,11 @@ func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
 	services := []*v1.Service{service}
 	_, err = metrics.CreateServiceMonitors(cfg, namespace, services)
 	if err != nil {
-		l.Info("Could not create ServiceMonitor object", "error", err.Error())
+		ctxlog.Info(ctx, "Could not create ServiceMonitor object", "error", err.Error())
 		// If this operator is deployed to a cluster without the prometheus-operator running, it will return
 		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
 		if err == metrics.ErrServiceMonitorNotPresent {
-			l.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
+			ctxlog.Info(ctx, "Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
 		}
 	}
 }

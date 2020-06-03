@@ -2,9 +2,9 @@ package buildstrategy
 
 import (
 	"context"
-	"time"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	"github.com/redhat-developer/build/pkg/ctxlog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,15 +17,16 @@ import (
 
 // Add creates a new BuildStrategy Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(ctx context.Context, mgr manager.Manager) error {
+func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "buildstrategy-controller")
-	return add(ctx, mgr, NewReconciler(ctx, mgr))
+	return add(ctx, mgr, NewReconciler(ctx, c, mgr))
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, mgr manager.Manager) reconcile.Reconciler {
+func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileBuildStrategy{
 		ctx:    ctx,
+		config: c,
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 	}
@@ -56,6 +57,7 @@ type ReconcileBuildStrategy struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	ctx    context.Context
+	config *config.Config
 	client client.Client
 	scheme *runtime.Scheme
 }
@@ -65,7 +67,7 @@ type ReconcileBuildStrategy struct {
 func (r *ReconcileBuildStrategy) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
 	// Set the ctx to be Background, as the top-level context for incoming requests.
-	ctx, cancel := context.WithTimeout(r.ctx, 300*time.Second)
+	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
 	ctxlog.Info(ctx, "Reconciling BuildStrategy", "Request.Namespace", request.Namespace, "Request.Name", request.Name)

@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/redhat-developer/build/pkg/config"
 	buildstrategyController "github.com/redhat-developer/build/pkg/controller/buildstrategy"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
 	"github.com/redhat-developer/build/pkg/ctxlog"
@@ -32,7 +33,7 @@ var _ = Describe("Reconcile BuildStrategy", func() {
 	JustBeforeEach(func() {
 		// Reconcile
 		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildstrategyController.NewReconciler(testCtx, manager)
+		reconciler = buildstrategyController.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
 	})
 
 	Describe("Reconcile", func() {

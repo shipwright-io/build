@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	"github.com/redhat-developer/build/pkg/ctxlog"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,9 +37,9 @@ type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Sch
 
 // Add creates a new BuildRun Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(ctx context.Context, mgr manager.Manager) error {
+func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "buildrun-controller")
-	return add(ctx, mgr, NewReconciler(ctx, mgr, controllerutil.SetControllerReference))
+	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference))
 }
 
 // blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
@@ -50,15 +50,17 @@ type ReconcileBuildRun struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	ctx                   context.Context
+	config                *config.Config
 	client                client.Client
 	scheme                *runtime.Scheme
 	setOwnerReferenceFunc setOwnerReferenceFunc
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
+func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
 	return &ReconcileBuildRun{
 		ctx:                   ctx,
+		config:                c,
 		client:                mgr.GetClient(),
 		scheme:                mgr.GetScheme(),
 		setOwnerReferenceFunc: ownerRef,
@@ -114,7 +116,7 @@ func handleError(message string, listOfErrors ...error) error {
 func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
 	// Set the ctx to be Background, as the top-level context for incoming requests.
-	ctx, cancel := context.WithTimeout(r.ctx, 300*time.Second)
+	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
 	ctxlog.Info(ctx, "Reconciling BuildRun", "Request.Namespace", request.Namespace, "Request.Name", request.Name)

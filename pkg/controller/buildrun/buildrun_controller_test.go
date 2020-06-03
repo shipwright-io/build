@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/build/pkg/apis"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	buildrunctl "github.com/redhat-developer/build/pkg/controller/buildrun"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
 	"github.com/redhat-developer/build/pkg/ctxlog"
@@ -97,7 +98,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 	// Context() BeforeEach() block
 	JustBeforeEach(func() {
 		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildrunctl.NewReconciler(testCtx, manager, controllerutil.SetControllerReference)
+		reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
 		request = newReconcileRequest(buildRunSample)
 
 	})
@@ -232,7 +233,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-				reconciler = buildrunctl.NewReconciler(testCtx, manager,
+				reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager,
 					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
 						return fmt.Errorf("foobar error")
 					})

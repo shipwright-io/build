@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	buildController "github.com/redhat-developer/build/pkg/controller/build"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
 	"github.com/redhat-developer/build/pkg/ctxlog"
@@ -67,7 +68,7 @@ var _ = Describe("Reconcile Build", func() {
 		buildSample = ctl.BuildWithClusterBuildStrategy(buildName, namespace, buildStrategyName, registrySecret)
 		// Reconcile
 		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildController.NewReconciler(testCtx, manager)
+		reconciler = buildController.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
 	})
 
 	Describe("Reconcile", func() {
