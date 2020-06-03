@@ -147,7 +147,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	// Validate if the build strategy is defined
 	if b.Spec.StrategyRef != nil {
 		if err := r.validateStrategyRef(ctx, b.Spec.StrategyRef, b.Namespace); err != nil {
-			ctxlog.Error(ctx, err, "failed validating the strategy reference", b.Namespace, "Build", b.Name)
+			ctxlog.Error(ctx, err, "failed validating the strategy reference", "Build", b.Name)
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
