@@ -10,6 +10,7 @@ import (
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	buildrunctl "github.com/redhat-developer/build/pkg/controller/buildrun"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
+	"github.com/redhat-developer/build/pkg/ctxlog"
 	"github.com/redhat-developer/build/test"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -95,7 +96,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 	// this ensures that overrides on the BuildRun resource can happen under each
 	// Context() BeforeEach() block
 	JustBeforeEach(func() {
-		reconciler = buildrunctl.NewReconciler(manager, controllerutil.SetControllerReference)
+		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
+		reconciler = buildrunctl.NewReconciler(testCtx, manager, controllerutil.SetControllerReference)
 		request = newReconcileRequest(buildRunSample)
 
 	})
@@ -229,7 +231,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
-				reconciler = buildrunctl.NewReconciler(manager,
+				testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
+				reconciler = buildrunctl.NewReconciler(testCtx, manager,
 					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
 						return fmt.Errorf("foobar error")
 					})

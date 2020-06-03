@@ -11,6 +11,7 @@ import (
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	buildController "github.com/redhat-developer/build/pkg/controller/build"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
+	"github.com/redhat-developer/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,7 +66,8 @@ var _ = Describe("Reconcile Build", func() {
 		// Generate a Build CRD instance
 		buildSample = ctl.BuildWithClusterBuildStrategy(buildName, namespace, buildStrategyName, registrySecret)
 		// Reconcile
-		reconciler = buildController.NewReconciler(manager)
+		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
+		reconciler = buildController.NewReconciler(testCtx, manager)
 	})
 
 	Describe("Reconcile", func() {
