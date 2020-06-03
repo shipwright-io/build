@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type contextLogger struct{}
@@ -36,7 +37,7 @@ func NewContext(ctx context.Context, name string) context.Context {
 func ExtractLogger(ctx context.Context) logr.Logger {
 	log, ok := ctx.Value(loggerKey).(logr.Logger)
 	if !ok || log == nil {
-		return nil
+		return logf.NullLogger{}
 	}
 	return log
 }
