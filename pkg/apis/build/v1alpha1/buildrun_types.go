@@ -31,6 +31,11 @@ type BuildRunSpec struct {
 	// Timeout defines the maximum run time of this build run.
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
+
+	// Output refers to the location where the generated
+	// image would be pushed to. It will overwrite the output image in build spec
+	// +optional
+	Output *Image `json:"output,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun
