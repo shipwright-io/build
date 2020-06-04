@@ -56,8 +56,11 @@ func clientGet(key types.NamespacedName, obj runtime.Object) error {
 	return wait.PollImmediate(4*time.Second, 60*time.Second, func() (bool, error) {
 		if err := f.Client.Get(goctx.TODO(), key, obj); err != nil {
 			// check if we have an error that we want to retry
-			if apierrors.IsServerTimeout(err) || apierrors.IsTimeout(err) || apierrors.IsTooManyRequests(err) {
+			if apierrors.IsServerTimeout(err) || apierrors.IsTimeout(err) || apierrors.IsTooManyRequests(err) || err.Error() == "etcdserver: request timed out" {
+				Logf("Error during client get is retried: '%s'", err.Error())
 				return false, nil
+			} else {
+				Logf("Error during client get is not retried: '%s'", err.Error())
 			}
 
 			// return all other errors directly
