@@ -1,9 +1,15 @@
 package e2e
 
 import (
+	"bytes"
 	goctx "context"
 	"fmt"
+	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
@@ -79,4 +85,62 @@ func createBuild(namespace string, identifier string, filePath string) {
 	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
 
 	Logf("Build %s created", identifier)
+}
+
+// retrieveBuildAndBuildRun will retrieve the build and buildRun
+func retrieveBuildAndBuildRun(namespace string, buildRunName string) (*operator.BuildRun, *operator.Build, error) {
+	buildRun := &operator.BuildRun{}
+	build := &operator.Build{}
+	err := clientGet(types.NamespacedName{Name: buildRunName, Namespace: namespace}, buildRun)
+	if err != nil {
+		Logf("Failed to get BuildRun %s: %s", buildRunName, err)
+		return nil, nil, err
+	}
+	buildName := buildRun.Spec.BuildRef.Name
+	err = clientGet(types.NamespacedName{Name: buildName, Namespace: namespace}, build)
+	if err != nil {
+		Logf("Failed to get Build %s: %s", buildName, err)
+		return nil, nil, err
+	}
+	return buildRun, build, nil
+}
+
+// outputBuildAndBuildRunStatusAndPodLogs will output the status of build and buildRun, print logs of taskRun pod
+func outputBuildAndBuildRunStatusAndPodLogs(namespace string, buildRunName string,) {
+	f := framework.Global
+	buildRun, build, err := retrieveBuildAndBuildRun(namespace, buildRunName)
+	Expect(err).ToNot(HaveOccurred(), "Failed to retrieve build and buildRun")
+	Logf("The status of Build %s: %s, %s", build.Name, build.Status.Reason, build.Status.Registered)
+	Logf("The status of BuildRun %s: %s", buildRun.Name, buildRun.Status.Succeeded)
+	Logf("The reason of BuildRun %s: %s", buildRun.Name, buildRun.Status.Reason)
+
+	lbls := map[string]string{
+		operator.LabelBuildRun: buildRunName,
+	}
+	listOptions := client.ListOptions{
+		Namespace: namespace,
+		LabelSelector: labels.SelectorFromSet(lbls),
+	}
+
+	podList := &v1.PodList{}
+	err = f.Client.List(goctx.TODO(), podList, &listOptions)
+	Expect(err).ToNot(HaveOccurred(), "Failed to retrieve pods.")
+	Expect(len(podList.Items)).To(Equal(1), "Did not retrieve one pod.")
+
+	pod := &podList.Items[0]
+
+	for _, container := range pod.Spec.Containers {
+		req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{
+			TypeMeta:                     metav1.TypeMeta{},
+			Container:                    container.Name,
+			Follow:                       false,
+		})
+		podLogs, err := req.Stream()
+		Expect(err).ToNot(HaveOccurred(), "Failed to retrieve logs of container.")
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, podLogs)
+		Expect(err).ToNot(HaveOccurred(), "Failed to copy container logs to buffer.")
+		strLogs := buf.String()
+		Logf("Logs of container %s: %s", container.Name, strLogs)
+	}
 }
