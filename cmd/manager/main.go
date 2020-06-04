@@ -94,6 +94,9 @@ func main() {
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{
+		LeaderElection: true,
+		LeaderElectionID: "build-operator-lock",
+		LeaderElectionNamespace: "default",
 		Namespace:          "",
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
