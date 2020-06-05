@@ -157,6 +157,11 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 	Context("when a Buildpacks v3 build is defined for a ruby runtime", func() {
 
+		BeforeEach(func() {
+			// issue track in paketo side: https://github.com/paketo-community/ruby/issues/59
+			Skip("Skipping test case because Ruby support in paketo is still under development.")
+		})
+
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				Logf("Print failed BuildRun's log")
