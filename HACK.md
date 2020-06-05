@@ -74,13 +74,13 @@ make test
 
 The following table contains a set of environment variables that control the behavior of the e2e tests.
 
-| Environment Variable            | Default                                                                         | Description                                                   |
-|---------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `TEST_NAMESPACE`                | `default`                                                                       | Target namespace to execute tests upon, default is `default`. |
-| `TEST_E2E_FLAGS`                | `-failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=15m -trace -v` | Ginkgo flags. See all Ginkgo flags here: [The Ginkgo CLI](https://onsi.github.io/ginkgo/#the-ginkgo-cli). Especially of interest are `--focus` and `--skip` to run selective tests. |
-| `TEST_E2E_CREATE_GLOBALOBJECTS` | `true`                                                                          | Boolean, if `false`, the custom resource definitions and (cluster) build strategies are not created and deleted by the e2e test code |
-| `TEST_E2E_OPERATOR`             | `start_local`                                                                   | String with allowed values `start_local` (will start the local operator and print its logs add the end of the test run) and `managed_outside` (will assume that the operator is running through whatever means) |
-| `TEST_E2E_VERIFY_TEKTONOBJECTS` | `true`                                                                          | Boolean, if false, the verification code will not try to verify the TaskRun object status |
+| Environment Variable            | Default                                                                                          | Description                                                   |
+|---------------------------------|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| `TEST_NAMESPACE`                | `default`                                                                                        | Target namespace to execute tests upon, default is `default`. |
+| `TEST_E2E_FLAGS`                | `-failFast -flakeAttempts=2 -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=20m -trace -v` | Ginkgo flags. See all Ginkgo flags here: [The Ginkgo CLI](https://onsi.github.io/ginkgo/#the-ginkgo-cli). Especially of interest are `--focus` and `--skip` to run selective tests. |
+| `TEST_E2E_CREATE_GLOBALOBJECTS` | `true`                                                                                           | Boolean, if `false`, the custom resource definitions and (cluster) build strategies are not created and deleted by the e2e test code |
+| `TEST_E2E_OPERATOR`             | `start_local`                                                                                    | String with allowed values `start_local` (will start the local operator and print its logs add the end of the test run) and `managed_outside` (will assume that the operator is running through whatever means) |
+| `TEST_E2E_VERIFY_TEKTONOBJECTS` | `true`                                                                                           | Boolean, if false, the verification code will not try to verify the TaskRun object status |
 
 The following table contains a list of environment variables you that will override specific paths under the **Build** CRD.
 
