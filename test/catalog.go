@@ -258,6 +258,25 @@ func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context conte
 	}
 }
 
+// StubBuildRunGetWithoutSA simulates the output of client GET calls
+// for the BuildRun unit tests
+func (c *Catalog) StubBuildRunGetWithoutSA(
+	b *build.Build,
+	br *build.BuildRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
 // StubBuildRunGetWithSA simulates the output of client GET calls
 // for the BuildRun unit tests
 func (c *Catalog) StubBuildRunGetWithSA(
@@ -411,6 +430,24 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 			ServiceAccount: &build.ServiceAccount{
 				Name:     &saName,
 				Generate: false,
+			},
+		},
+	}
+}
+
+// BuildRunWithSA returns a customized BuildRun object that defines a
+// service account
+func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+			ServiceAccount: &build.ServiceAccount{
+				Generate: true,
 			},
 		},
 	}

@@ -3,7 +3,9 @@ package buildrun
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
+
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strconv"
 )
 
 var log = logf.Log.WithName("controller_buildrun")
@@ -249,17 +250,23 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, b
 	if buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true {
 		serviceAccount.Name = serviceAccountName
 		serviceAccount.Namespace = buildRun.Namespace
-		serviceAccount.Labels = map[string]string{buildv1alpha1.LabelBuildRun: buildRun.Name}
-		ownerReferences := metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun"))
-		serviceAccount.OwnerReferences = append(serviceAccount.OwnerReferences, *ownerReferences)
 
-		// Add credentials and create the new service account
-		serviceAccount = ApplyCredentials(build, serviceAccount)
-		err := r.client.Create(context.TODO(), serviceAccount)
+		// Create the service account, use CreateOrUpdate as it might exist already from a previous reconcilation that
+		// succeeded to create the service account but failed to update the build run that references it
+		op, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, serviceAccount, func() error {
+			serviceAccount.SetLabels(map[string]string{buildv1alpha1.LabelBuildRun: buildRun.Name})
+
+			ownerReference := metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun"))
+			serviceAccount.SetOwnerReferences([]metav1.OwnerReference{*ownerReference})
+
+			ApplyCredentials(build, serviceAccount)
+
+			return nil
+		})
 		if err != nil {
 			return nil, err
 		}
-		log.Info("Generate a new ServiceAccount for BuildRun", "ServiceAccount", serviceAccount.Name)
+		log.Info("Automatic generation of service account", "ServiceAccount", serviceAccount.Name, "Operation", op)
 	} else {
 		// If ServiceAccount or the name of ServiceAccount in buildRun is nil, use pipeline serviceaccount
 		if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Name == nil {
@@ -283,11 +290,12 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(build *buildv1alpha1.Build, b
 		}
 
 		// Add credentials and update the service account
-		serviceAccount = ApplyCredentials(build, serviceAccount)
-		err := r.client.Update(context.TODO(), serviceAccount)
-		if err != nil {
-			return nil, err
+		if modified := ApplyCredentials(build, serviceAccount); modified {
+			if err := r.client.Update(context.TODO(), serviceAccount); err != nil {
+				return nil, err
+			}
 		}
+
 		log.Info("Retrieve ServiceAccount from BuildRun", "ServiceAccount", serviceAccount.Name)
 	}
 	return serviceAccount, nil

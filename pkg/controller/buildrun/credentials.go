@@ -6,30 +6,34 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func ApplyCredentials(build *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
+// ApplyCredentials adds all credentials that are referenced by the build and adds them to the service account.
+// The function returns true if the service account was modified.
+func ApplyCredentials(build *buildv1alpha1.Build, serviceAccount *corev1.ServiceAccount) bool {
+
+	modified := false
 
 	// credentials of the source/git repo
 	sourceSecret := build.Spec.Source.SecretRef
 	if sourceSecret != nil {
-		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
+		modified = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount) || modified
 	}
 
 	// credentials of the 'Builder' image registry
 	builderImage := build.Spec.BuilderImage
 	if builderImage != nil && builderImage.SecretRef != nil {
-		serviceAccount = updateServiceAccountIfSecretNotLinked(builderImage.SecretRef, serviceAccount)
+		modified = updateServiceAccountIfSecretNotLinked(builderImage.SecretRef, serviceAccount) || modified
 	}
 
 	// credentials of the 'output' image registry
 	sourceSecret = build.Spec.Output.SecretRef
 	if sourceSecret != nil {
-		serviceAccount = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount)
+		modified = updateServiceAccountIfSecretNotLinked(sourceSecret, serviceAccount) || modified
 	}
 
-	return serviceAccount
+	return modified
 }
 
-func updateServiceAccountIfSecretNotLinked(sourceSecret *corev1.LocalObjectReference, serviceAccount *corev1.ServiceAccount) *corev1.ServiceAccount {
+func updateServiceAccountIfSecretNotLinked(sourceSecret *corev1.LocalObjectReference, serviceAccount *corev1.ServiceAccount) bool {
 	isSecretPresent := false
 	for _, credentialSecret := range serviceAccount.Secrets {
 		if credentialSecret.Name == sourceSecret.Name {
@@ -42,7 +46,8 @@ func updateServiceAccountIfSecretNotLinked(sourceSecret *corev1.LocalObjectRefer
 		serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{
 			Name: sourceSecret.Name,
 		})
+		return true
 	}
 
-	return serviceAccount
+	return false
 }
