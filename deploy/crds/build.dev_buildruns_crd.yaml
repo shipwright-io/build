@@ -63,6 +63,26 @@ spec:
               required:
               - name
               type: object
+            output:
+              description: Output refers to the location where the generated image
+                would be pushed to. It will overwrite the output image in build spec
+              properties:
+                credentials:
+                  description: SecretRef is a reference to the Secret containing the
+                    credentials to push the image to the registry
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                image:
+                  description: ImageURL is the URL where the image will be pushed
+                    to.
+                  type: string
+              required:
+              - image
+              type: object
             resources:
               description: 'Compute Resources required by the build container which
                 can overwrite the configuration in Build. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
@@ -262,6 +282,9 @@ spec:
                   required:
                   - name
                   type: object
+                timeout:
+                  description: Timeout defines the maximum run time of a build run.
+                  type: string
               required:
               - output
               - source
