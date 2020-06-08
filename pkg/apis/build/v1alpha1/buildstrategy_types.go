@@ -25,7 +25,6 @@ type BuildStrategyStatus struct {
 // BuildStrategy is the Schema for the buildstrategies API
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=buildstrategies,scope=Namespaced,shortName=bs;bss
-// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.strategy.kind",description="The BuildStrategy type which is used for this Build"
 type BuildStrategy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
