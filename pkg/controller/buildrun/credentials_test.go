@@ -59,8 +59,10 @@ var _ = Describe("Credentials", func() {
 		})
 
 		It("adds the credentials to the service account", func() {
-			afterServiceAccount := buildRunController.ApplyCredentials(build, beforeServiceAccount)
+			afterServiceAccount := beforeServiceAccount.DeepCopy()
+			modified := buildRunController.ApplyCredentials(build, afterServiceAccount)
 
+			Expect(modified).To(BeTrue())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
 		})
 	})
@@ -73,7 +75,7 @@ var _ = Describe("Credentials", func() {
 					Source: buildv1alpha1.GitSource{
 						URL: "a/b/c",
 						SecretRef: &corev1.LocalObjectReference{
-							Name: "secret_a",
+							Name: "secret_b",
 						},
 					},
 				},
@@ -83,8 +85,10 @@ var _ = Describe("Credentials", func() {
 		})
 
 		It("keeps the service account unchanged", func() {
-			afterServiceAccount := buildRunController.ApplyCredentials(build, beforeServiceAccount)
+			afterServiceAccount := beforeServiceAccount.DeepCopy()
+			modified := buildRunController.ApplyCredentials(build, afterServiceAccount)
 
+			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
 		})
 	})
@@ -105,8 +109,10 @@ var _ = Describe("Credentials", func() {
 		})
 
 		It("keeps the service account unchanged", func() {
-			afterServiceAccount := buildRunController.ApplyCredentials(build, beforeServiceAccount)
+			afterServiceAccount := beforeServiceAccount.DeepCopy()
+			modified := buildRunController.ApplyCredentials(build, afterServiceAccount)
 
+			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
 		})
 	})

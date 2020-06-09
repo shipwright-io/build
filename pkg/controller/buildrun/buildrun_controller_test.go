@@ -185,7 +185,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("fails on creation due to missing namespaced buildstrategy", func() {
-				// override the Build to use a namespaced BuildStragegy
+				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -202,7 +202,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("fails on creation due to missing cluster buildstrategy", func() {
-				// override the Build to use a cluster BuildStragegy
+				// override the Build to use a cluster BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -218,8 +218,54 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
 			})
 
+			It("only generates the service account once if the task run cannot be created", func() {
+				// override the Build to use a cluster BuildStrategy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
+
+				// override buildrun to use a generated service account
+				buildRunName = "foobar-buildrun-sa-generate"
+				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunName, buildName)
+				buildRunSample.Labels = make(map[string]string)
+				buildRunSample.Labels[build.LabelBuild] = buildName
+
+				// Override stub calls to include only build and buildrun
+				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
+
+				// Call the reconciler
+				_, err := reconciler.Reconcile(request)
+
+				// Expect an error stating that the strategy does not exist
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+
+				// Expect one create call (service account)
+				Expect(client.CreateCallCount()).To(Equal(1))
+				_, obj, _ := client.CreateArgsForCall(0)
+				serviceAccount, castSuccessful := obj.(*corev1.ServiceAccount)
+				Expect(castSuccessful).To(BeTrue())
+
+				// Expect zero update calls
+				Expect(client.UpdateCallCount()).To(Equal(0))
+
+				// Change the Get stub to also return the service account
+				client.GetCalls(ctl.StubBuildRunGetWithSA(buildSample, buildRunSample, serviceAccount))
+
+				// Call the reconciler again
+				_, err = reconciler.Reconcile(request)
+
+				// Expect an error stating that the strategy does not exist
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+
+				// Expect no more create call because service account already existed
+				Expect(client.CreateCallCount()).To(Equal(1))
+
+				// Expect zero update calls because service account already existed and did not need to be modified
+				Expect(client.UpdateCallCount()).To(Equal(0))
+			})
+
 			It("fails on creation due to owner references errors", func() {
-				// override the Build to use a namespaced BuildStragegy
+				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -243,7 +289,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("succeed creating a task from a namespaced buildstrategy", func() {
-				// override the Build to use a namespaced BuildStragegy
+				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -270,7 +316,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("succeed creating a task from a cluster buildstrategy", func() {
-				// override the Build to use a cluster BuildStragegy
+				// override the Build to use a cluster BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
