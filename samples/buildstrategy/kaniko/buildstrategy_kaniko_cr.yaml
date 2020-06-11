@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v0.19.0
+      image: gcr.io/kaniko-project/executor:v0.23.0
       workingdir: /workspace/source
       securityContext:
         runAsUser: 0
@@ -20,6 +20,10 @@ spec:
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
       command:
         - /kaniko/executor
       args:
