@@ -1,6 +1,8 @@
 package buildrun_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
@@ -60,7 +62,7 @@ var _ = Describe("Credentials", func() {
 
 		It("adds the credentials to the service account", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := buildRunController.ApplyCredentials(build, afterServiceAccount)
+			modified := buildRunController.ApplyCredentials(context.TODO(), build, afterServiceAccount)
 
 			Expect(modified).To(BeTrue())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
@@ -86,7 +88,7 @@ var _ = Describe("Credentials", func() {
 
 		It("keeps the service account unchanged", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := buildRunController.ApplyCredentials(build, afterServiceAccount)
+			modified := buildRunController.ApplyCredentials(context.TODO(), build, afterServiceAccount)
 
 			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
@@ -110,7 +112,7 @@ var _ = Describe("Credentials", func() {
 
 		It("keeps the service account unchanged", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := buildRunController.ApplyCredentials(build, afterServiceAccount)
+			modified := buildRunController.ApplyCredentials(context.TODO(), build, afterServiceAccount)
 
 			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))

@@ -10,14 +10,13 @@ import (
 type contextLogger struct{}
 
 var (
-	nopLogger logr.Logger = logf.NullLogger{}
-	loggerKey             = &contextLogger{}
+	loggerKey = &contextLogger{}
 )
 
 // NewParentContext returns a new context from the
 // parent context.Background one. This new context
 // stores our logger implementation
-func NewParentContext(log *logr.Logger) context.Context {
+func NewParentContext(log logr.Logger) context.Context {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, loggerKey, log)
 	return ctx
@@ -29,8 +28,7 @@ func NewParentContext(log *logr.Logger) context.Context {
 func NewContext(ctx context.Context, name string) context.Context {
 	l := ExtractLogger(ctx)
 
-	lWithName := (*l).WithName(name)
-	l = &lWithName
+	l = l.WithName(name)
 
 	return context.WithValue(ctx, loggerKey, l)
 }
@@ -38,10 +36,10 @@ func NewContext(ctx context.Context, name string) context.Context {
 // ExtractLogger returns a logger based on the loggerKey
 // This function retrieves from an existing context the value,
 // which in this case is an instance of our logger
-func ExtractLogger(ctx context.Context) *logr.Logger {
-	log, ok := ctx.Value(loggerKey).(*logr.Logger)
+func ExtractLogger(ctx context.Context) logr.Logger {
+	log, ok := ctx.Value(loggerKey).(logr.Logger)
 	if !ok || log == nil {
-		return &nopLogger
+		return logf.NullLogger{}
 	}
 	return log
 }

@@ -27,6 +27,8 @@ import (
 
 // succeedStatus default status for the Build CRD
 const succeedStatus string = "Succeeded"
+const namespace string = "namespace"
+const name string = "name"
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -63,10 +65,11 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 				if oldAnnot[build.AnnotationBuildRunDeletion] != newAnnot[build.AnnotationBuildRunDeletion] {
 					ctxlog.Debug(
 						ctx,
-						fmt.Sprintf("Update predicated passed for %s/%s, the annotation was modified",
-							e.MetaNew.GetNamespace(),
-							e.MetaNew.GetName(),
-						),
+						"Updating predicated passed, the annotation was modified.",
+						namespace,
+						e.MetaNew.GetNamespace(),
+						name,
+						e.MetaNew.GetName(),
 					)
 					buildRunFinalizer = true
 				}
@@ -111,13 +114,14 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
-	ctxlog.Info(ctx, "reconciling Build", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	ctxlog.Debug(ctx, "start reconciling Build", namespace, request.Namespace, name, request.Name)
 
 	b := &build.Build{}
 	err := r.client.Get(ctx, request.NamespacedName, b)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return reconcile.Result{}, err
 	} else if apierrors.IsNotFound(err) {
+		ctxlog.Debug(ctx, "finishing reconciling build. build was not found", namespace, request.Namespace, name, request.Name)
 		return reconcile.Result{}, nil
 	}
 
@@ -128,7 +132,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	// Check if the build is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	if !b.DeletionTimestamp.IsZero() {
-		ctxlog.Debug(ctx, "build is marked for deletion", "Request.Namespace", b.Namespace, "Request.Name", b.Name)
+		ctxlog.Info(ctx, "build is marked for deletion", namespace, b.Namespace, name, b.Name)
 		return reconcile.Result{}, r.finalizeBuildRun(ctx, b)
 	}
 
@@ -139,7 +143,6 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	// Validate if the spec.output.secretref exist in the namespace
 	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
 		if err := r.validateOutputSecret(ctx, b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
-			ctxlog.Error(ctx, err, "failed validating the output secret", "Build", b.Name)
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
@@ -148,20 +151,22 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	// Validate if the build strategy is defined
 	if b.Spec.StrategyRef != nil {
-		if err := r.validateStrategyRef(ctx, b.Spec.StrategyRef, b.Namespace); err != nil {
-			ctxlog.Error(ctx, err, "failed validating the strategy reference", "Build", b.Name)
+		err := r.validateStrategyRef(ctx, b.Spec.StrategyRef, b.Namespace)
+		if err != nil {
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
+		ctxlog.Info(ctx, "build strategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
 	}
 
 	b.Status.Registered = corev1.ConditionTrue
 	err = r.client.Status().Update(ctx, b)
 	if err != nil {
-		ctxlog.Error(ctx, err, "failed to update the Build status", "Build", b.Name)
 		return reconcile.Result{}, err
 	}
+
+	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
 	return reconcile.Result{}, nil
 }
 
@@ -263,7 +268,7 @@ func (r *ReconcileBuild) validateOutputSecret(ctx context.Context, n string, ns 
 func (r *ReconcileBuild) configFinalizer(ctx context.Context, b *build.Build) error {
 	if b.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
 		if !contains(b.GetFinalizers(), build.BuildFinalizer) {
-			ctxlog.Info(ctx, "Add finalizer to Build", "Build", b.Name, "Namespace", b.Namespace)
+			ctxlog.Info(ctx, "add finalizer to build", namespace, b.Namespace, name, b.Name)
 			b.SetFinalizers(append(b.GetFinalizers(), build.BuildFinalizer))
 			if err := r.client.Update(ctx, b); err != nil {
 				return err
@@ -271,7 +276,7 @@ func (r *ReconcileBuild) configFinalizer(ctx context.Context, b *build.Build) er
 		}
 	} else {
 		if contains(b.GetFinalizers(), build.BuildFinalizer) {
-			ctxlog.Info(ctx, "Remove finalizer from Build", "Build", b.Name, "Namespace", b.Namespace)
+			ctxlog.Info(ctx, "remove finalizer from build", namespace, b.Namespace, name, b.Name)
 			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
 			if err := r.client.Update(ctx, b); err != nil {
 				return err
@@ -316,7 +321,7 @@ func (r *ReconcileBuild) cleanBuildRun(ctx context.Context, b *build.Build) erro
 	}
 
 	for _, buildRun := range buildRunList.Items {
-		ctxlog.Info(ctx, "Finalize BuildRun automatically", "Request.Namespace", buildRun.Namespace, "Request.Name", buildRun.Name)
+		ctxlog.Info(ctx, "deleting buildrun", namespace, b.Namespace, name, b.Name, "buildrunname", buildRun.Name)
 		if err := r.client.Delete(ctx, &buildRun); err != nil {
 			return err
 		}

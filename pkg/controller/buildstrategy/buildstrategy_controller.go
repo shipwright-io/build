@@ -70,6 +70,6 @@ func (r *ReconcileBuildStrategy) Reconcile(request reconcile.Request) (reconcile
 	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
-	ctxlog.Info(ctx, "Reconciling BuildStrategy", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	ctxlog.Info(ctx, "reconciling BuildStrategy", "namespace", request.Namespace, "name", request.Name)
 	return reconcile.Result{}, nil
 }

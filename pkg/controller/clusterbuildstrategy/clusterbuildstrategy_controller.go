@@ -70,6 +70,6 @@ func (r *ReconcileClusterBuildStrategy) Reconcile(request reconcile.Request) (re
 	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
-	ctxlog.Info(ctx, "Reconciling ClusterBuildStrategy", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	ctxlog.Info(ctx, "reconciling ClusterBuildStrategy", "name", request.Name)
 	return reconcile.Result{}, nil
 }
