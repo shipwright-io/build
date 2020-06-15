@@ -290,6 +290,33 @@ func validateBuildDeletion(
 	}
 }
 
+// validateServiceAccountDeletion validates that a service account is correctly deleted after the end of
+// a build run and depending on the state of the build run
+func validateServiceAccountDeletion(buildRun *operator.BuildRun, namespace string) {
+	if buildRun.Status.Succeeded == "" || buildRun.Status.Succeeded == corev1.ConditionUnknown {
+		Logf("Skipping validation of service account deletion because build run did not end.")
+		return
+	}
+
+	if buildRun.Spec.ServiceAccount == nil || !buildRun.Spec.ServiceAccount.Generate {
+		Logf("Skipping validation of service account deletion because service account is not generated")
+		return
+	}
+
+	saNamespacedName := types.NamespacedName{
+		Name:      buildRun.Name + "-sa",
+		Namespace: namespace,
+	}
+
+	serviceAccount := &corev1.ServiceAccount{}
+
+	Logf("Verifying that service account '%s' has been deleted.", saNamespacedName.Name)
+
+	err := clientGet(saNamespacedName, serviceAccount)
+	Expect(err).To(HaveOccurred(), "Expected error to retrieve the generated service account after build run completion.")
+	Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Expected service account to be deleted.")
+}
+
 // readAndDecode read file path and decode.
 func readAndDecode(filePath string) (runtime.Object, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode

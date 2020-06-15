@@ -160,6 +160,19 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		// TODO: Make this safer
 		if len(lastTaskRun.Status.Conditions) > 0 {
 			taskRunStatus := lastTaskRun.Status.Conditions[0].Status
+
+			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
+			if isGeneratedServiceAccountUsed(buildRun) && (taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse) {
+				serviceAccount := &corev1.ServiceAccount{}
+				serviceAccount.Name = getGeneratedServiceAccountName(buildRun)
+				serviceAccount.Namespace = buildRun.Namespace
+
+				if err = r.client.Delete(ctx, serviceAccount); err != nil && !apierrors.IsNotFound(err) {
+					ctxlog.Error(ctx, err, "Error during deletion of generated service account.")
+					return reconcile.Result{}, err
+				}
+			}
+
 			buildRun.Status.Succeeded = taskRunStatus
 			if taskRunStatus == corev1.ConditionFalse {
 				buildRun.Status.Reason = lastTaskRun.Status.Conditions[0].Message
@@ -254,8 +267,10 @@ func isTaskRunRunning(tr *v1beta1.TaskRun) bool {
 
 func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ServiceAccount, error) {
 	serviceAccount := &corev1.ServiceAccount{}
-	serviceAccountName := buildRun.Name + "-sa"
-	if buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true {
+
+	if isGeneratedServiceAccountUsed(buildRun) {
+		serviceAccountName := getGeneratedServiceAccountName(buildRun)
+
 		serviceAccount.Name = serviceAccountName
 		serviceAccount.Namespace = buildRun.Namespace
 
@@ -278,7 +293,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 	} else {
 		// If ServiceAccount or the name of ServiceAccount in buildRun is nil, use pipeline serviceaccount
 		if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Name == nil {
-			serviceAccountName = pipelineServiceAccountName
+			serviceAccountName := pipelineServiceAccountName
 			err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 			if err != nil && !apierrors.IsNotFound(err) {
 				return nil, err
@@ -290,7 +305,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 				}
 			}
 		} else {
-			serviceAccountName = *buildRun.Spec.ServiceAccount.Name
+			serviceAccountName := *buildRun.Spec.ServiceAccount.Name
 			err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 			if err != nil {
 				return nil, err
@@ -361,4 +376,14 @@ func (r *ReconcileBuildRun) updateBuildRunErrorStatus(ctx context.Context, build
 	buildRun.Status.StartTime = &now
 	updateErr := r.client.Status().Update(ctx, buildRun)
 	return updateErr
+}
+
+// getGeneratedServiceAccountName returns the name of the generated service account for a build run
+func getGeneratedServiceAccountName(buildRun *buildv1alpha1.BuildRun) string {
+	return buildRun.Name + "-sa"
+}
+
+// isGeneratedServiceAccountUsed checks if a build run uses a generated service account
+func isGeneratedServiceAccountUsed(buildRun *buildv1alpha1.BuildRun) bool {
+	return buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true
 }

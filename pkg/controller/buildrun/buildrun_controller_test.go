@@ -147,6 +147,43 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
+
+			It("deletes a generated service account when the task run ends", func() {
+				// Stub that fakes the output when listing resources with the client
+				client.ListCalls(func(contet context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *v1beta1.TaskRunList:
+						taskRunListSample.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				// setup a buildrun to use a generated service account
+				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunSample.Name, buildName)
+				buildRunSample.Labels = make(map[string]string)
+				buildRunSample.Labels[build.LabelBuild] = buildName
+
+				// Override Stub get calls to include a service account
+				client.GetCalls(ctl.StubBuildRunGetWithSA(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(buildRunSample.Name+"-sa")),
+				)
+
+				// Call the reconciler
+				_, err := reconciler.Reconcile(request)
+
+				// Expect no error
+				Expect(err).ToNot(HaveOccurred())
+
+				// Expect one delete call for the service account
+				Expect(client.DeleteCallCount()).To(Equal(1))
+				_, obj, _ := client.DeleteArgsForCall(0)
+				serviceAccount, castSuccessful := obj.(*corev1.ServiceAccount)
+				Expect(castSuccessful).To(BeTrue())
+				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name + "-sa"))
+				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
+			})
 		})
 
 		Context("when a TaskRun does not exists", func() {
