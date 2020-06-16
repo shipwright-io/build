@@ -34,7 +34,11 @@ Users have the option to define their own `BuildStrategy` or `ClusterBuildStrate
 
 ## Operator Resources
 
-This operator ships two primary CRDs(the `BuildStragegy` and the `Build` CRD) in order to register a strategy and then start the actual application builds using a registered strategy.
+This operator ships four CRDs :
+
+* The `BuildStragegy` CRD and the `ClusterBuildStrategy` CRD is used to register a strategy.
+* The `Build` CRD is used to define a build configuration.
+* The `BuildRun` CRD is used to start the actually image build using a registered strategy.
 
 ## Read the Docs
 
