@@ -4,6 +4,7 @@ import (
 	goctx "context"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -56,7 +57,7 @@ func clientGet(key types.NamespacedName, obj runtime.Object) error {
 	return wait.PollImmediate(4*time.Second, 60*time.Second, func() (bool, error) {
 		if err := f.Client.Get(goctx.TODO(), key, obj); err != nil {
 			// check if we have an error that we want to retry
-			if apierrors.IsServerTimeout(err) || apierrors.IsTimeout(err) || apierrors.IsTooManyRequests(err) || err.Error() == "etcdserver: request timed out" {
+			if isRetryableError(err) {
 				Logf("Error during client get is retried: '%s'", err.Error())
 				return false, nil
 			} else {
@@ -70,6 +71,17 @@ func clientGet(key types.NamespacedName, obj runtime.Object) error {
 		// successful call
 		return true, nil
 	})
+}
+
+func isRetryableError(err error) bool {
+	if apierrors.IsServerTimeout(err) ||
+		apierrors.IsTimeout(err) ||
+		apierrors.IsTooManyRequests(err) ||
+		err.Error() == "etcdserver: request timed out" ||
+		strings.Contains(err.Error(), "net/http: request canceled while waiting for connection") {
+		return true
+	}
+	return false
 }
 
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
