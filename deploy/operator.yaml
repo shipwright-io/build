@@ -17,10 +17,6 @@ spec:
         - name: build-operator
           # Replace this with the built image name
           image: REPLACE_IMAGE
-          args:
-            - /bin/sh
-            - -c
-            - touch /tmp/build-operator-healthy
           command:
           - build-operator
           imagePullPolicy: Always
@@ -36,16 +32,14 @@ spec:
             - name: OPERATOR_NAME
               value: "build-operator"
           livenessProbe:
-            exec:
-              command:
-                - cat
-                - /tmp/build-operator-healthy
+            httpGet:
+              path: /metrics
+              port: 8383
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
-            exec:
-              command:
-                - cat
-                - /tmp/build-operator-healthy
+            httpGet:
+              path: /metrics
+              port: 8383
             initialDelaySeconds: 5
             periodSeconds: 10
