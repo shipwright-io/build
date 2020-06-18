@@ -8,8 +8,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/build/pkg/apis"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	buildrunctl "github.com/redhat-developer/build/pkg/controller/buildrun"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
+	"github.com/redhat-developer/build/pkg/ctxlog"
 	"github.com/redhat-developer/build/test"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -95,7 +97,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 	// this ensures that overrides on the BuildRun resource can happen under each
 	// Context() BeforeEach() block
 	JustBeforeEach(func() {
-		reconciler = buildrunctl.NewReconciler(manager, controllerutil.SetControllerReference)
+		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
+		reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
 		request = newReconcileRequest(buildRunSample)
 
 	})
@@ -132,12 +135,54 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
+				// Stub that asserts the BuildRun label fields when
+				// Label updates for a BuildRun take place
+				labelCall := ctl.StubBuildRunLabel(buildSample)
+				statusWriter.UpdateCalls(labelCall)
+
 				// Assert for none errors while we exit the Reconcile
 				// after updating the BuildRun status with the existing
 				// TaskRun one
 				result, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			It("deletes a generated service account when the task run ends", func() {
+				// Stub that fakes the output when listing resources with the client
+				client.ListCalls(func(contet context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *v1beta1.TaskRunList:
+						taskRunListSample.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				// setup a buildrun to use a generated service account
+				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunSample.Name, buildName)
+				buildRunSample.Labels = make(map[string]string)
+				buildRunSample.Labels[build.LabelBuild] = buildName
+
+				// Override Stub get calls to include a service account
+				client.GetCalls(ctl.StubBuildRunGetWithSA(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(buildRunSample.Name+"-sa")),
+				)
+
+				// Call the reconciler
+				_, err := reconciler.Reconcile(request)
+
+				// Expect no error
+				Expect(err).ToNot(HaveOccurred())
+
+				// Expect one delete call for the service account
+				Expect(client.DeleteCallCount()).To(Equal(1))
+				_, obj, _ := client.DeleteArgsForCall(0)
+				serviceAccount, castSuccessful := obj.(*corev1.ServiceAccount)
+				Expect(castSuccessful).To(BeTrue())
+				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name + "-sa"))
+				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
 			})
 		})
 
@@ -167,12 +212,17 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
+				// Stub that asserts the BuildRun label fields when
+				// Label updates for a BuildRun take place
+				labelCall := ctl.StubBuildRunLabel(buildSample)
+				statusWriter.UpdateCalls(labelCall)
+
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 			})
 
 			It("fails on creation due to missing namespaced buildstrategy", func() {
-				// override the Build to use a namespaced BuildStragegy
+				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -189,7 +239,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("fails on creation due to missing cluster buildstrategy", func() {
-				// override the Build to use a cluster BuildStragegy
+				// override the Build to use a cluster BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -205,8 +255,54 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
 			})
 
+			It("only generates the service account once if the task run cannot be created", func() {
+				// override the Build to use a cluster BuildStrategy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
+
+				// override buildrun to use a generated service account
+				buildRunName = "foobar-buildrun-sa-generate"
+				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunName, buildName)
+				buildRunSample.Labels = make(map[string]string)
+				buildRunSample.Labels[build.LabelBuild] = buildName
+
+				// Override stub calls to include only build and buildrun
+				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
+
+				// Call the reconciler
+				_, err := reconciler.Reconcile(request)
+
+				// Expect an error stating that the strategy does not exist
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+
+				// Expect one create call (service account)
+				Expect(client.CreateCallCount()).To(Equal(1))
+				_, obj, _ := client.CreateArgsForCall(0)
+				serviceAccount, castSuccessful := obj.(*corev1.ServiceAccount)
+				Expect(castSuccessful).To(BeTrue())
+
+				// Expect zero update calls
+				Expect(client.UpdateCallCount()).To(Equal(0))
+
+				// Change the Get stub to also return the service account
+				client.GetCalls(ctl.StubBuildRunGetWithSA(buildSample, buildRunSample, serviceAccount))
+
+				// Call the reconciler again
+				_, err = reconciler.Reconcile(request)
+
+				// Expect an error stating that the strategy does not exist
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+
+				// Expect no more create call because service account already existed
+				Expect(client.CreateCallCount()).To(Equal(1))
+
+				// Expect zero update calls because service account already existed and did not need to be modified
+				Expect(client.UpdateCallCount()).To(Equal(0))
+			})
+
 			It("fails on creation due to owner references errors", func() {
-				// override the Build to use a namespaced BuildStragegy
+				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -219,7 +315,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
-				reconciler = buildrunctl.NewReconciler(manager,
+				testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
+				reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager,
 					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
 						return fmt.Errorf("foobar error")
 					})
@@ -229,7 +326,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("succeed creating a task from a namespaced buildstrategy", func() {
-				// override the Build to use a namespaced BuildStragegy
+				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
@@ -256,7 +353,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("succeed creating a task from a cluster buildstrategy", func() {
-				// override the Build to use a cluster BuildStragegy
+				// override the Build to use a cluster BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// Override Stub get calls to include a service account

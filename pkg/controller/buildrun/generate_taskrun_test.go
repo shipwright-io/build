@@ -179,7 +179,7 @@ var _ = Describe("GenerateTaskrun", func() {
 		var (
 			k8sDuration30s                                                  *metav1.Duration
 			k8sDuration1m                                                   *metav1.Duration
-			namespace, contextDir, revision, outputPath, serviceAccountName string
+			namespace, contextDir, revision, outputPath, outputPathBuildRun, serviceAccountName string
 			got                                                             *v1beta1.TaskRun
 			err                                                             error
 		)
@@ -202,6 +202,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				ImageURL: "heroku/buildpacks:18",
 			}
 			outputPath = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
+			outputPathBuildRun = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2"
 			serviceAccountName = buildpacks + "-serviceaccount"
 		})
 
@@ -536,6 +537,96 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			It("should use the timeout from the BuildRun", func() {
 				Expect(got.Spec.Timeout).To(Equal(k8sDuration1m))
+			})
+		})
+
+		Context("when the build and buildrun both contain an output imageURL", func() {
+			BeforeEach(func() {
+				build = &buildv1alpha1.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      buildah,
+						Namespace: namespace,
+					},
+					Spec: buildv1alpha1.BuildSpec{
+						Source: buildv1alpha1.GitSource{
+							URL: url,
+						},
+						StrategyRef: &buildv1alpha1.StrategyRef{
+							Name: buildah,
+						},
+						Output: buildv1alpha1.Image{
+							ImageURL: outputPath,
+						},
+					},
+				}
+				buildRun = &buildv1alpha1.BuildRun{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      buildah + "-run",
+						Namespace: namespace,
+					},
+					Spec: buildv1alpha1.BuildRunSpec{
+						BuildRef: &buildv1alpha1.BuildRef{
+							Name: buildah,
+						},
+						Resources: &corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+						},
+						ServiceAccount: &buildv1alpha1.ServiceAccount{
+							Name: &serviceAccountName,
+						},
+						Output: &buildv1alpha1.Image{
+							ImageURL: outputPathBuildRun,
+						},
+					},
+				}
+				buildStrategy = &buildv1alpha1.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{Name: buildah},
+					Spec: buildv1alpha1.BuildStrategySpec{
+						BuildSteps: []buildv1alpha1.BuildStep{
+							{
+								Container: corev1.Container{
+									Name:       "build",
+									Image:      "$(build.builder.image)",
+									WorkingDir: "/workspace/source",
+									Command: []string{
+										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "varlibcontainers",
+											MountPath: "/var/lib/containers",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+			})
+
+			JustBeforeEach(func() {
+				got, err = buildrunCtl.GenerateTaskRun(build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				Expect(err).To(BeNil())
+			})
+
+			It("should use the imageURL from the BuildRun", func() {
+				outputResources := got.Spec.Resources.Outputs
+				for _, outputResource := range outputResources {
+					Expect(outputResource.ResourceSpec.Type).To(Equal(v1beta1.PipelineResourceTypeImage))
+					params := outputResource.ResourceSpec.Params
+					for _, param := range params {
+						if param.Name == "url" {
+							Expect(param.Value).To(Equal(outputPathBuildRun))
+						}
+					}
+				}
 			})
 		})
 	})

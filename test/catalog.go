@@ -2,19 +2,21 @@ package test
 
 import (
 	"context"
+	"strconv"
 
 	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,6 +82,30 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
+			},
+		},
+	}
+}
+
+// BuildWithCustomAnnotationAndFinalizer provides a Build CRD with a customize annotation
+// and optional finalizer
+func (c *Catalog) BuildWithCustomAnnotationAndFinalizer(
+	name string,
+	ns string,
+	strategyName string,
+	a map[string]string,
+	f []string,
+) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   ns,
+			Annotations: a,
+			Finalizers:  f,
+		},
+		Spec: build.BuildSpec{
+			Source: build.GitSource{
+				URL: "foobar",
 			},
 		},
 	}
@@ -180,6 +206,30 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(co
 	}
 }
 
+// StubBuildUpdateWithFinalizers is used to simulate the state of the Build
+// finalizers after a client Update on the Object happened.
+func (c *Catalog) StubBuildUpdateWithFinalizers(finalizer string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			Expect(object.Finalizers).To(ContainElement(finalizer))
+		}
+		return nil
+	}
+}
+
+// StubBuildUpdateWithoutFinalizers is used to simulate the state of the Build
+// finalizers after a client Update on the Object happened.
+func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			Expect(len(object.Finalizers)).To(BeZero())
+		}
+		return nil
+	}
+}
+
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
 func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
@@ -193,6 +243,37 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.
 			}
 		}
 		return nil
+	}
+}
+
+// StubBuildRunLabel asserts Label fields on a BuildRun resource
+func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.BuildRun:
+			Expect(object.Labels[build.LabelBuild]).To(Equal(buildSample.Name))
+			Expect(object.Labels[build.LabelBuildGeneration]).To(Equal(strconv.FormatInt(buildSample.Generation, 10)))
+		}
+		return nil
+	}
+}
+
+// StubBuildRunGetWithoutSA simulates the output of client GET calls
+// for the BuildRun unit tests
+func (c *Catalog) StubBuildRunGetWithoutSA(
+	b *build.Build,
+	br *build.BuildRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
 	}
 }
 
@@ -349,6 +430,24 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 			ServiceAccount: &build.ServiceAccount{
 				Name:     &saName,
 				Generate: false,
+			},
+		},
+	}
+}
+
+// BuildRunWithSA returns a customized BuildRun object that defines a
+// service account
+func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+			ServiceAccount: &build.ServiceAccount{
+				Generate: true,
 			},
 		},
 	}

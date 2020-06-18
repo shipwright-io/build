@@ -8,6 +8,7 @@
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining Resources](#defining-resources)
   - [Defining the Output](#defining-the-output)
+- [Using Finalizers](#using-finalizers)
 
 ## Overview
 
@@ -52,6 +53,7 @@ The `Build` definition supports the following fields:
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
+  - `metadata.annotations[build.build.dev/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
 
 ### Defining the Source
 
@@ -223,4 +225,18 @@ spec:
     image: us.icr.io/source-to-image-build/nodejs-ex
     credentials:
       name: icr-knbuild
+```
+
+## Using Finalizers
+
+The Build controller support Kubernetes finalizers in order to asynchronously delete resources. For the case of a Build instance with a particular annotation,
+related `BuildRuns` will be deleted prior to deleting the `Build` instance. The flow is very simple, if you want to garbage collect BuildRuns then the `build.build.dev/build-run-deletion` annotation needs to be set to `true` in the `Build` definition, if this behaviour is not desired, then the annotation needs to be set to `false`. By default the annotation is never present in a `Build` definition. See an example of how to define this annotation:
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-golang-build
+  annotations:
+    build.build.dev/build-run-deletion: "true"
 ```

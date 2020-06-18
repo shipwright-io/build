@@ -71,7 +71,6 @@ spec:
         - -layers=/layers
         - -cache-dir=/cache
         - -group=/layers/group.toml
-        - -helpers=true
         - $(build.output.image)
       volumeMounts:
         - name: cache-dir

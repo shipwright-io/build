@@ -174,6 +174,14 @@ func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 		revision = *build.Spec.Source.Revision
 	}
 
+	// retrieve expected imageURL form build or buildRun
+	var ImageURL string
+	if buildRun.Spec.Output != nil {
+		ImageURL = buildRun.Spec.Output.ImageURL
+	} else {
+		ImageURL = build.Spec.Output.ImageURL
+	}
+
 	taskSpec, err := GenerateTaskSpec(build, buildRun, buildSteps)
 	if err != nil {
 		return nil, err
@@ -223,7 +231,7 @@ func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  outputImageResourceURL,
-										Value: build.Spec.Output.ImageURL,
+										Value: ImageURL,
 									},
 								},
 							},

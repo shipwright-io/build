@@ -1,10 +1,14 @@
 package buildstrategy_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/redhat-developer/build/pkg/config"
 	buildstrategyController "github.com/redhat-developer/build/pkg/controller/buildstrategy"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
+	"github.com/redhat-developer/build/pkg/ctxlog"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -28,7 +32,8 @@ var _ = Describe("Reconcile BuildStrategy", func() {
 
 	JustBeforeEach(func() {
 		// Reconcile
-		reconciler = buildstrategyController.NewReconciler(manager)
+		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
+		reconciler = buildstrategyController.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
 	})
 
 	Describe("Reconcile", func() {

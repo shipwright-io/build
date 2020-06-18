@@ -31,3 +31,15 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "build-operator"
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 8383
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 8383
+            initialDelaySeconds: 5
+            periodSeconds: 10

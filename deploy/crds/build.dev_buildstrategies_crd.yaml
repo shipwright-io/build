@@ -3,11 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   name: buildstrategies.build.dev
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .spec.strategy.kind
-    description: The BuildStrategy type which is used for this Build
-    name: Version
-    type: string
   group: build.dev
   names:
     kind: BuildStrategy

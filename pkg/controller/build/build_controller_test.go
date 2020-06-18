@@ -9,8 +9,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	buildController "github.com/redhat-developer/build/pkg/controller/build"
 	"github.com/redhat-developer/build/pkg/controller/fakes"
+	"github.com/redhat-developer/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,7 +67,8 @@ var _ = Describe("Reconcile Build", func() {
 		// Generate a Build CRD instance
 		buildSample = ctl.BuildWithClusterBuildStrategy(buildName, namespace, buildStrategyName, registrySecret)
 		// Reconcile
-		reconciler = buildController.NewReconciler(manager)
+		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
+		reconciler = buildController.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
 	})
 
 	Describe("Reconcile", func() {
@@ -277,6 +280,50 @@ var _ = Describe("Reconcile Build", func() {
 				result, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
+		Context("when the annotation build-run-deletion is defined", func() {
+			var annotationFinalizer map[string]string
+
+			JustBeforeEach(func() {
+				annotationFinalizer = map[string]string{}
+			})
+
+			It("sets a finalizer if annotation equals true", func() {
+				// override Build definition with one annotation
+				annotationFinalizer[build.AnnotationBuildRunDeletion] = "true"
+				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
+					buildName,
+					namespace,
+					buildStrategyName,
+					annotationFinalizer,
+					[]string{},
+				)
+
+				clientUpdateCalls := ctl.StubBuildUpdateWithFinalizers(build.BuildFinalizer)
+				client.UpdateCalls(clientUpdateCalls)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			It("removes a finalizer if annotation equals false and finalizer exists", func() {
+				// override Build definition with one annotation
+				annotationFinalizer[build.AnnotationBuildRunDeletion] = "false"
+				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
+					buildName,
+					namespace,
+					buildStrategyName,
+					annotationFinalizer,
+					[]string{build.BuildFinalizer},
+				)
+				clientUpdateCalls := ctl.StubBuildUpdateWithoutFinalizers()
+				client.UpdateCalls(clientUpdateCalls)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})

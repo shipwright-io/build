@@ -4,51 +4,42 @@ metadata:
   name: source-to-image
 spec:
   buildSteps:
-    - name: s2i-build-as-dockerfile
-      image: quay.io/openshift-pipeline/s2i:nightly
-      workingDir: /workspace/source
-      command:
+    - command:
         - /usr/local/bin/s2i
         - build
         - .
-        - "$(build.builder.image)" # strong type from Build CR
-        - --as-dockerfile
+        - $(build.builder.image)
+        - '--as-dockerfile'
         - /gen-source/Dockerfile.gen
+      image: 'quay.io/openshift-pipeline/s2i:nightly'
+      name: s2i-build-as-dockerfile
       volumeMounts:
-      - mountPath: /gen-source
-        name: gen-source
-
-    - name: buildah-bud
-      image: quay.io/buildah/stable
-      workingDir: /gen-source
-      securityContext:
-        privileged: true
+        - mountPath: /gen-source
+          name: gen-source
+      workingDir: /workspace/source
+    - args:
+        - '--skip-tls-verify=true'
+        - '--dockerfile=/gen-source/Dockerfile.gen'
+        - '--context=/gen-source'
+        - '--destination=$(build.output.image)'
       command:
-        - buildah
-        - bud
-        - --tls-verify=false
-        - --layers
-        - -f
-        - /gen-source/Dockerfile.gen
-        - -t
-        - $(build.output.image)  # strong type from Build CR
-        - .
-      volumeMounts:
-      - mountPath: /var/lib/containers
-        name: varlibcontainers
-      - mountPath: /gen-source
-        name: gen-source
-
-    - command:
-      - buildah
-      - push
-      - --tls-verify=false
-      - $(build.output.image)
-      - docker://$(build.output.image)    # strong type from Build CR
-      image: quay.io/buildah/stable
-      name: push
+        - /kaniko/executor
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+      image: 'gcr.io/kaniko-project/executor:v0.19.0'
+      name: step-build-and-push
       securityContext:
-        privileged: true
+        runAsUser: 0
+        allowPrivilegeEscalation: false
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
       volumeMounts:
-      - mountPath: /var/lib/containers
-        name: varlibcontainers
+        - mountPath: /gen-source
+          name: gen-source
+      workingdir: /gen-source
