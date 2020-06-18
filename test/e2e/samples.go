@@ -22,11 +22,15 @@ import (
 )
 
 // amendOutputImageURL amend container image URL based on informed image repository.
-func amendOuputImageURL(b *operator.Build, imageRepo string) {
+func amendOutputImageURL(b *operator.Build, imageRepo string) {
 	if imageRepo == "" {
 		return
 	}
-	imageURL := fmt.Sprintf("%s:%s", imageRepo, b.Name)
+
+	// image tag is the build name without the test id suffix as this would pollute the container registry
+	imageTag := removeTestIDSuffix(b.Name)
+
+	imageURL := fmt.Sprintf("%s:%s", imageRepo, imageTag)
 	b.Spec.Output.ImageURL = imageURL
 	Logf("Amended object: name='%s', image-url='%s'", b.Name, imageURL)
 }
@@ -65,7 +69,7 @@ func amendBuild(identifier string, b *operator.Build) {
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGitlab))
 	}
 
-	amendOuputImageURL(b, os.Getenv(EnvVarImageRepo))
+	amendOutputImageURL(b, os.Getenv(EnvVarImageRepo))
 	amendOutputSecretRef(b, os.Getenv(EnvVarImageRepoSecret))
 }
 
@@ -149,4 +153,8 @@ func outputBuildAndBuildRunStatusAndPodLogs(namespace string, buildRunName strin
 
 func generateTestID(id string) string {
 	return id + "-" + utilrand.String(5)
+}
+
+func removeTestIDSuffix(id string) string {
+	return id[:len(id)-6]
 }
