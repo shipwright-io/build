@@ -32,14 +32,16 @@ spec:
             - name: OPERATOR_NAME
               value: "build-operator"
           livenessProbe:
-            httpGet:
-              path: /metrics
-              port: 8383
+            exec:
+              command:
+                - stat
+                - /tmp/operator-sdk-ready
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /metrics
-              port: 8383
+            exec:
+              command:
+                - stat
+                - /tmp/operator-sdk-ready
             initialDelaySeconds: 5
             periodSeconds: 10

@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"github.com/operator-framework/operator-sdk/pkg/ready"
 
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
@@ -88,6 +89,14 @@ func main() {
 		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
+
+	r := ready.NewFileReady()
+	err = r.Set()
+	if err != nil {
+		ctxlog.Error(ctx, err, "Checking for /tmp/operator-sdk-ready failed")
+		os.Exit(1)
+	}
+	defer r.Unset()
 
 	// Become the leader before proceeding
 	err = leader.Become(ctx, "build-operator-lock")
