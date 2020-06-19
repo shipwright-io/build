@@ -44,7 +44,7 @@ The `Build` definition supports the following fields:
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `Build`.
   - `spec.source.URL` - Refers to the Git repository containing the source code.
   - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/buildstrategy)
-  - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies_)
+  - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies, this is just required for `source-to-image` buildStrategy_)
   - `spec.output`- Refers to the location where the generated image would be pushed.
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
@@ -144,21 +144,21 @@ spec:
   dockerfile: Dockerfile
 ```
 
-Another example, when the user chooses to use a `builder` image:
+Another example, when the user chooses to use a `builder` image ( This is required for `source-to-image` buildStrategy, because for different code languages, they have different builders. ):
 
 ```yaml
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: buildpack-nodejs-build
+  name: s2i-nodejs-build
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex
   strategy:
-    name: buildpacks-v3
+    name: source-to-image
     kind: ClusterBuildStrategy
   builder:
-    image: gcr.io/paketo-buildpacks/builder:latest
+    image: docker.io/centos/nodejs-10-centos7
 ```
 
 ### Defining Resources
