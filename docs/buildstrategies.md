@@ -131,12 +131,13 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 
 ## Source to Image
 
-This BuildStrategy is composed by [`source-to-image`][s2i] and [`buildah`][buildah] in order to generate a `Dockerfile` and prepare the application to be built later on with a builder. Typically `s2i` requires a specially crafted image, which can be
-informed as `builderImage` parameter on the `Build` resource.
+This BuildStrategy is composed by [`source-to-image`][s2i] and [`kaniko`][kaniko] in order to generate a `Dockerfile` and prepare the application to be built later on with a builder.
+
+`s2i` requires a specially crafted image, which can be informed as `builderImage` parameter on the `Build` resource.
 
 ### Installing Source to Image Strategy
 
-To install the ClusterBuildStratey use:
+To install the cluster scope strategy use:
 
 ```sh
 kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml
@@ -145,8 +146,7 @@ kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-i
 ### Build Steps
 
 1. `s2i` in order to generate a `Dockerfile` and prepare source-code for image build;
-2. `buildah` to create the container image;
-3. `buildah` to push container-image on `output.image` parameter;
+2. `kaniko` to create and push the container image to what is defined as `output.image`;
 
 [buildpacks]: https://buildpacks.io/
 [cnb]: https://buildpacks.io/docs/concepts/components/builder/
