@@ -49,7 +49,7 @@ The `Build` definition supports the following fields:
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
 - Optional:
-  - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
+  - `spec.resources` - Refers to the [compute resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
@@ -59,9 +59,9 @@ The `Build` definition supports the following fields:
 
 A `Build` resource can specify a Git source, together with other parameters like:
 
-- `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the require `ssh` data.
+- `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the `ssh` data.
 - `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name.
-- `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently only supported by `buildah`, `kaniko` and `buildpacks` build strategies.
+- `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently, only supported by `buildah`, `kaniko` and `buildpacks` build strategies.
 
 Example of a `Build` with a source with **credentials** defined by the user.
 
@@ -107,10 +107,10 @@ spec:
 
 A `Build` resource can specify the `BuildStrategy` to use, these are:
 
-- [Source-to-Image](docs/buildstrategies.md#source-to-image)
-- [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
-- [Buildah](docs/buildstrategies.md#buildah)
-- [Kaniko](docs/buildstrategies.md#kaniko)
+- [Source-to-Image](buildstrategies.md#source-to-image)
+- [Buildpacks-v3](buildstrategies.md#buildpacks-v3)
+- [Buildah](buildstrategies.md#buildah)
+- [Kaniko](buildstrategies.md#kaniko)
 
 Defining the strategy is straightforward, you need to define the `name` and the `kind`. For example:
 
@@ -206,7 +206,7 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex
 ```
 
-Another example, is when the user specify a private registry:
+Another example, is when the user specifies a private registry:
 
 ```yaml
 apiVersion: build.dev/v1alpha1
