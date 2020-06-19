@@ -96,7 +96,6 @@ To use this strategy follow this steps:
     strategy:
       name: buildpacks-v3
       kind: ClusterBuildStrategy
-    builderImage: gcr.io/paketo-buildpacks/builder:latest
     output:
       image: quay.io/yourorg/yourrepo
       credentials: <your-kubernetes-container-registry-secret>
