@@ -173,6 +173,18 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if buildRun.Status.BuildSpec == nil {
 			buildRun.Status.BuildSpec = &build.Spec
 		}
+
+		if len(lastTaskRun.Status.Steps) > 0{
+			for iter := range lastTaskRun.Status.Steps {
+				buildStep := lastTaskRun.Status.Steps[iter]
+				buildRun.StageInfo.Name = buildStep.Name
+				buildRun.StageInfo.Status = buildStep.Terminated.Reason
+				buildRun.StageInfo.StartTime = buildStep.Terminated.StartedAt
+				//buildRun.StageInfo.DurationMilliSeconds = buildStep.Terminated.FinishedAt
+				buildRun.Status.Stages = append(buildRun.Status.Stages, buildRun.StageInfo)
+			}
+		}
+
 		err = r.client.Status().Update(ctx, buildRun)
 		if err != nil {
 			return reconcile.Result{}, err

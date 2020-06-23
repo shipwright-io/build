@@ -67,19 +67,23 @@ type BuildRunStatus struct {
 
 	//stages containes the details about the stage for each build with stage start time 
 	// completion and duration
+	// +optional
 	Stages []StageInfo `json:"stages,omitempty"`
 }
 
 // StageInfo contains details about a build stage.
 type StageInfo struct {
 	// name is a unique identifier for each stage of the builds
-	Name StageName `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
+
+	//status is timestamp indicating strting time for the perticular stage
+	Status string `json:"status, omitempty"`
 
 	//startTime is timestamp indicating strting time for the perticular stage
-	StartTime *metav1.Time `json:"startTime, omitempty"`
+	StartTime metav1.Time `json:"startTime, omitempty"`
 
 	//durationMilliseconds
-	DurationMilliseconds int64 `json:"durationMillisencods, omitempty"`
+	DurationMilliSeconds int64 `json:"durationMilliSencods, omitempty"`
 }
 
 // StageName is the unique identifier for each build stage.
@@ -138,6 +142,7 @@ type BuildRun struct {
 
 	Spec   BuildRunSpec   `json:"spec,omitempty"`
 	Status BuildRunStatus `json:"status,omitempty"`
+	StageInfo StageInfo   `json:"stageInfo,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
