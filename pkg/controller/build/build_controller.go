@@ -121,7 +121,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	if err != nil && !apierrors.IsNotFound(err) {
 		return reconcile.Result{}, err
 	} else if apierrors.IsNotFound(err) {
-		ctxlog.Debug(ctx, "finishing reconciling build. build was not found", namespace, request.Namespace, name, request.Name)
+		ctxlog.Debug(ctx, "finish reconciling build. build was not found", namespace, request.Namespace, name, request.Name)
 		return reconcile.Result{}, nil
 	}
 
@@ -151,8 +151,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	// Validate if the build strategy is defined
 	if b.Spec.StrategyRef != nil {
-		err := r.validateStrategyRef(ctx, b.Spec.StrategyRef, b.Namespace)
-		if err != nil {
+		if err := r.validateStrategyRef(ctx, b.Spec.StrategyRef, b.Namespace); err != nil {
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)

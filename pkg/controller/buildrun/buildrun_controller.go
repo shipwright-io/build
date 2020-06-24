@@ -324,7 +324,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 
 		// Add credentials and update the service account
 		if modified := ApplyCredentials(ctx, build, serviceAccount); modified {
-			ctxlog.Info(ctx, "update ServiceAccount with secrets from build", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
+			ctxlog.Info(ctx, "updating ServiceAccount with secrets from build", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
 			if err := r.client.Update(ctx, serviceAccount); err != nil {
 				return nil, err
 			}
