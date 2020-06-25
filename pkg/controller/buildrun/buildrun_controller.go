@@ -28,6 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const namespace string = "namespace"
+const name string = "name"
+
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
@@ -119,7 +122,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
-	ctxlog.Info(ctx, "Reconciling BuildRun", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	ctxlog.Debug(ctx, "start reconciling BuildRun", namespace, request.Namespace, name, request.Name)
 
 	// Fetch the BuildRun instance
 	buildRun := &buildv1alpha1.BuildRun{}
@@ -144,6 +147,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	if buildRun.GetLabels()[buildv1alpha1.LabelBuild] == "" {
 		buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
 		buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+		ctxlog.Info(ctx, "updating buildRun labels", namespace, request.Namespace, name, request.Name)
 		err = r.client.Update(ctx, buildRun)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -167,6 +171,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				serviceAccount.Name = getGeneratedServiceAccountName(buildRun)
 				serviceAccount.Namespace = buildRun.Namespace
 
+				ctxlog.Info(ctx, "deleting service account", namespace, request.Namespace, name, request.Name)
 				if err = r.client.Delete(ctx, serviceAccount); err != nil && !apierrors.IsNotFound(err) {
 					ctxlog.Error(ctx, err, "Error during deletion of generated service account.")
 					return reconcile.Result{}, err
@@ -186,6 +191,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if buildRun.Status.BuildSpec == nil {
 			buildRun.Status.BuildSpec = &build.Spec
 		}
+
+		ctxlog.Info(ctx, "updating buildRun status", namespace, request.Namespace, name, request.Name)
 		err = r.client.Status().Update(ctx, buildRun)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -246,14 +253,15 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	// create TaskRun if no TaskRun for that BuildRun exists
-	err = r.client.Create(context.TODO(), generatedTaskRun)
+	ctxlog.Info(ctx, "creating TaskRun from BuildRun", namespace, request.Namespace, name, generatedTaskRun.Name, "BuildRun", buildRun.Name)
+	err = r.client.Create(ctx, generatedTaskRun)
 	if err != nil {
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 		return reconcile.Result{}, handleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
 	}
 
-	ctxlog.Info(ctx, "Generate and create TaskRun from Build and BuildRun", "TaskRun", generatedTaskRun.Name, "Build", build.Name, "BuildRun", buildRun.Name)
-	ctxlog.Info(ctx, "Reconciled Build", "Build.Namespace", buildRun.Namespace, "Build.Name", buildRun.Name)
+	ctxlog.Debug(ctx, "finishing reconciling BuildRun", namespace, request.Namespace, name, request.Name)
+
 	return reconcile.Result{}, nil
 }
 
@@ -276,70 +284,72 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 
 		// Create the service account, use CreateOrUpdate as it might exist already from a previous reconcilation that
 		// succeeded to create the service account but failed to update the build run that references it
-		op, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, serviceAccount, func() error {
+		ctxlog.Info(ctx, "create or update serviceAccount for BuildRun", namespace, buildRun.Namespace, name, serviceAccountName, "BuildRun", buildRun.Name)
+		op, err := controllerutil.CreateOrUpdate(ctx, r.client, serviceAccount, func() error {
 			serviceAccount.SetLabels(map[string]string{buildv1alpha1.LabelBuildRun: buildRun.Name})
 
 			ownerReference := metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun"))
 			serviceAccount.SetOwnerReferences([]metav1.OwnerReference{*ownerReference})
 
-			ApplyCredentials(build, serviceAccount)
+			ApplyCredentials(ctx, build, serviceAccount)
 
 			return nil
 		})
 		if err != nil {
 			return nil, err
 		}
-		ctxlog.Info(ctx, "Automatic generation of service account", "ServiceAccount", serviceAccount.Name, "Operation", op)
+		ctxlog.Debug(ctx, "Automatic generation of service account", namespace, serviceAccount.Namespace, name, serviceAccount.Name, "Operation", op)
 	} else {
 		// If ServiceAccount or the name of ServiceAccount in buildRun is nil, use pipeline serviceaccount
 		if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Name == nil {
 			serviceAccountName := pipelineServiceAccountName
-			err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
+			err := r.client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 			if err != nil && !apierrors.IsNotFound(err) {
 				return nil, err
 			} else if apierrors.IsNotFound(err) {
 				serviceAccountName = defaultServiceAccountName
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
+				ctxlog.Info(ctx, "falling back to default serviceAccount", namespace, buildRun.Namespace)
+				err = r.client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 				if err != nil {
 					return nil, err
 				}
 			}
 		} else {
 			serviceAccountName := *buildRun.Spec.ServiceAccount.Name
-			err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
+			err := r.client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 		// Add credentials and update the service account
-		if modified := ApplyCredentials(build, serviceAccount); modified {
-			if err := r.client.Update(context.TODO(), serviceAccount); err != nil {
+		if modified := ApplyCredentials(ctx, build, serviceAccount); modified {
+			ctxlog.Info(ctx, "updating ServiceAccount with secrets from build", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
+			if err := r.client.Update(ctx, serviceAccount); err != nil {
 				return nil, err
 			}
 		}
-		ctxlog.Info(ctx, "Retrieve ServiceAccount from BuildRun", "ServiceAccount", serviceAccount.Name)
 	}
 	return serviceAccount, nil
 }
 
-func (r *ReconcileBuildRun) retrieveBuildStrategy(ctx context.Context, instance *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.BuildStrategy, error) {
+func (r *ReconcileBuildRun) retrieveBuildStrategy(ctx context.Context, build *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.BuildStrategy, error) {
 	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
 
-	err := r.client.Get(ctx, types.NamespacedName{Name: instance.Spec.StrategyRef.Name, Namespace: instance.Namespace}, buildStrategyInstance)
+	ctxlog.Debug(ctx, "retrieving BuildStrategy", namespace, build.Namespace, name, build.Name)
+	err := r.client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name, Namespace: build.Namespace}, buildStrategyInstance)
 	if err != nil {
-		ctxlog.Error(ctx, err, "Failed to get BuildStrategy")
 		return nil, err
 	}
 	return buildStrategyInstance, nil
 }
 
-func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(ctx context.Context, instance *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.ClusterBuildStrategy, error) {
+func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(ctx context.Context, build *buildv1alpha1.Build, request reconcile.Request) (*buildv1alpha1.ClusterBuildStrategy, error) {
 	clusterBuildStrategyInstance := &buildv1alpha1.ClusterBuildStrategy{}
 
-	err := r.client.Get(ctx, types.NamespacedName{Name: instance.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
+	ctxlog.Debug(ctx, "retrieving ClusterBuildStrategy", namespace, build.Namespace, name, build.Name)
+	err := r.client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
 	if err != nil {
-		ctxlog.Error(ctx, err, "Failed to get ClusterBuildStrategy")
 		return nil, err
 	}
 	return clusterBuildStrategyInstance, nil
@@ -357,9 +367,9 @@ func (r *ReconcileBuildRun) retrieveTaskRun(ctx context.Context, build *buildv1a
 		Namespace:     buildRun.Namespace,
 		LabelSelector: labels.SelectorFromSet(lbls),
 	}
-	err := r.client.List(ctx, taskRunList, &opts)
 
-	if err != nil {
+	ctxlog.Info(ctx, "listing taskruns", namespace, buildRun.Namespace, name, buildRun.Name)
+	if err := r.client.List(ctx, taskRunList, &opts); err != nil {
 		return nil, err
 	}
 
@@ -374,6 +384,7 @@ func (r *ReconcileBuildRun) updateBuildRunErrorStatus(ctx context.Context, build
 	buildRun.Status.Reason = errorMessage
 	now := metav1.Now()
 	buildRun.Status.StartTime = &now
+	ctxlog.Debug(ctx, "updating buildRun status", namespace, buildRun.Namespace, name, buildRun.Name)
 	updateErr := r.client.Status().Update(ctx, buildRun)
 	return updateErr
 }
