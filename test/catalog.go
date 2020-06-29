@@ -96,6 +96,7 @@ func (c *Catalog) BuildWithCustomAnnotationAndFinalizer(
 	a map[string]string,
 	f []string,
 ) *build.Build {
+	buildStrategy := build.ClusterBuildStrategyKind
 	return &build.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -106,6 +107,10 @@ func (c *Catalog) BuildWithCustomAnnotationAndFinalizer(
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
 				URL: "foobar",
+			},
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &buildStrategy,
 			},
 		},
 	}

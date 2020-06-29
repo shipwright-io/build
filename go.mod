@@ -11,6 +11,7 @@ require (
 	github.com/onsi/gomega v1.9.0
 	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.5.1
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.11.3
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect

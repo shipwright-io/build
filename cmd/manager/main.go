@@ -22,9 +22,11 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
+	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/redhat-developer/build/pkg/apis"
 	"github.com/redhat-developer/build/pkg/controller"
+	buildMetrics "github.com/redhat-developer/build/pkg/metrics"
 	"github.com/redhat-developer/build/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
@@ -32,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-	"github.com/operator-framework/operator-sdk/pkg/ready"
 
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
@@ -145,6 +146,7 @@ func main() {
 
 	// Add the Metrics Service
 	addMetrics(ctx, cfg, namespace)
+	buildMetrics.InitPrometheus(c)
 
 	ctxlog.Info(ctx, "Starting the Cmd.")
 
