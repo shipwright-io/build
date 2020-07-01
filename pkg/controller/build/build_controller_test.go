@@ -291,6 +291,20 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("sets a finalizer if annotation equals true", func() {
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.SecretList(registrySecret)
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
 				// override Build definition with one annotation
 				annotationFinalizer[build.AnnotationBuildRunDeletion] = "true"
 				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
@@ -310,6 +324,20 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("removes a finalizer if annotation equals false and finalizer exists", func() {
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.SecretList(registrySecret)
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
 				// override Build definition with one annotation
 				annotationFinalizer[build.AnnotationBuildRunDeletion] = "false"
 				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(

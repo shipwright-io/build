@@ -3,16 +3,17 @@ package build
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
 	"github.com/redhat-developer/build/pkg/ctxlog"
+	buildmetrics "github.com/redhat-developer/build/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -164,6 +165,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	// Increase Build count in metrics
+	buildmetrics.BuildCountInc(b.Spec.StrategyRef.Name)
 
 	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
 	return reconcile.Result{}, nil

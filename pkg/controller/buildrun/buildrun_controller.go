@@ -9,6 +9,7 @@ import (
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
 	"github.com/redhat-developer/build/pkg/ctxlog"
+	buildmetrics "github.com/redhat-developer/build/pkg/metrics"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -185,12 +186,24 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildRun.Status.Reason = lastTaskRun.Status.Conditions[0].Reason
 			}
 		}
-		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
-		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
-		buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
 		if buildRun.Status.BuildSpec == nil {
 			buildRun.Status.BuildSpec = &build.Spec
 		}
+
+		if lastTaskRun.Status.CompletionTime != nil && buildRun.Status.CompletionTime == nil {
+			buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
+
+			// Increase BuildRun count in metrics
+			buildmetrics.BuildRunCountInc(build.Spec.StrategyRef.Name)
+			// Add BuildRun establish and completion times in metrics
+			buildRunCompletionDuring := buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time)
+			buildRunEstablishDuring := buildRun.Status.StartTime.Time.Sub(buildRun.CreationTimestamp.Time)
+			buildmetrics.BuildRunEstablishObserve(build.Spec.StrategyRef.Name, buildRun.Namespace, buildRunEstablishDuring)
+			buildmetrics.BuildRunCompletionObserve(build.Spec.StrategyRef.Name, buildRun.Namespace, buildRunCompletionDuring)
+		}
+
+		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
+		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 
 		ctxlog.Info(ctx, "updating buildRun status", namespace, request.Namespace, name, request.Name)
 		err = r.client.Status().Update(ctx, buildRun)
