@@ -40,11 +40,6 @@ type BuildSpec struct {
 	// +optional
 	Parameters *[]Parameter `json:"parameters,omitempty"`
 
-	// Compute Resources required by the build container.
-	// More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-	// +optional
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-
 	// Output refers to the location where the generated
 	// image would be pushed to.
 	Output Image `json:"output"`
