@@ -79,7 +79,7 @@ type BuildStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Build is the Schema for the builds API
+// Build is the Schema representing a Build definition
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=builds,scope=Namespaced
 // +kubebuilder:printcolumn:name="Registered",type="string",JSONPath=".status.registered",description="The register status of the Build"

@@ -87,7 +87,7 @@ type ServiceAccount struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// BuildRun is the Schema for the buildruns API
+// BuildRun is the Schema representing an instance of build execution
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=buildruns,scope=Namespaced,shortName=br;brs
 // +kubebuilder:printcolumn:name="Succeeded",type="string",JSONPath=".status.succeeded",description="The Succeeded status of the TaskRun"
