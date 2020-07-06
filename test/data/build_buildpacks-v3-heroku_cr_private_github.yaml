@@ -9,12 +9,5 @@ spec:
   strategy:
     name: buildpacks-v3-heroku
     kind: ClusterBuildStrategy
-  resources:
-    limits:
-      cpu: "500m"
-      memory: "1Gi"
-    request:
-      cpu: "250m"
-      memory: "65Mi"
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

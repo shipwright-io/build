@@ -18,6 +18,13 @@ spec:
         - >
           chown -R "1000:1000" "/workspace/source" &&
           chown -R "1000:1000" "/tekton/home"
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
     - name: step-detect
       image: gcr.io/paketo-buildpacks/builder:latest
       securityContext:
@@ -28,6 +35,13 @@ spec:
         - -app=/workspace/source/$(build.source.contextDir)
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
@@ -41,6 +55,13 @@ spec:
         - -layers=/layers
         - -cache-dir=/cache
         - -group=/layers/group.toml
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
       volumeMounts:
         - name: cache-dir
           mountPath: /cache
@@ -57,6 +78,13 @@ spec:
         - -layers=/layers
         - -group=/layers/group.toml
         - -plan=/layers/plan.toml
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
       volumeMounts:
         - name: layers-dir
           mountPath: /layers
@@ -72,6 +100,13 @@ spec:
         - -cache-dir=/cache
         - -group=/layers/group.toml
         - $(build.output.image)
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
       volumeMounts:
         - name: cache-dir
           mountPath: /cache

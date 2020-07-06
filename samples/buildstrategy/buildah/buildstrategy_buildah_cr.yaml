@@ -17,6 +17,13 @@ spec:
         - --tag=$(build.output.image)
         - --file=$(build.dockerfile)
         - $(build.source.contextDir)
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
@@ -30,6 +37,13 @@ spec:
         - push
         - --tls-verify=false
         - docker://$(build.output.image)
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
