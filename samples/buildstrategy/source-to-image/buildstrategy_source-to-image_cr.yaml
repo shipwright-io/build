@@ -42,4 +42,4 @@ spec:
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
-      workingdir: /gen-source
+      workingDir: /gen-source
