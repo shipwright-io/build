@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v0.23.0
+      image: gcr.io/kaniko-project/executor:v0.24.0
       workingDir: /workspace/source
       securityContext:
         runAsUser: 0
@@ -31,3 +31,4 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=/workspace/source/$(build.source.contextDir)
         - --destination=$(build.output.image)
+        - --snapshotMode=redo
