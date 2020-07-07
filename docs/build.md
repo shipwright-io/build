@@ -6,7 +6,6 @@
   - [Defining the Source](#defining-the-source)
   - [Defining the Strategy](#defining-the-strategy)
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
-  - [Defining Resources](#defining-resources)
   - [Defining the Output](#defining-the-output)
 - [Using Finalizers](#using-finalizers)
 
@@ -18,7 +17,6 @@ A `Build` resource allows the user to define:
 - strategy
 - builder
 - dockerfile
-- resources
 - output
 
 A `Build` is available within a namespace.
@@ -49,7 +47,6 @@ The `Build` definition supports the following fields:
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
 - Optional:
-  - `spec.resources` - Refers to the [compute resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
@@ -159,28 +156,6 @@ spec:
     kind: ClusterBuildStrategy
   builder:
     image: docker.io/centos/nodejs-10-centos7
-```
-
-### Defining Resources
-
-A `Build` CRD instance can specify resources for the pod that builds the image, for example:
-
-```yaml
-apiVersion: build.dev/v1alpha1
-kind: Build
-metadata:
-  name: kaniko-golang-build
-spec:
-  source:
-    url: https://github.com/sbose78/taxi
-  strategy:
-    name: kaniko
-    kind: ClusterBuildStrategy
-  dockerfile: Dockerfile
-  resources:
-    limits:
-      cpu: "500m"
-      memory: "1Gi"
 ```
 
 ### Defining the Output

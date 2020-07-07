@@ -13,6 +13,10 @@
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
+- [Steps resources definition](#steps-resources-definition)
+  - [Strategies with different resources](#strategies-with-different-resources)
+  - [How does Tekton Pipelines handles resources](#how-does-tekton-pipelines-handles-resources)
+  - [Examples of Tekton resources management](#examples-of-tekton-resources-management)
 
 ## Overview
 
@@ -156,3 +160,312 @@ kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-i
 [kaniko]: https://github.com/GoogleContainerTools/kaniko
 [s2i]: https://github.com/openshift/source-to-image
 [buildah]: https://github.com/containers/buildah
+
+## Steps Resource Definition
+
+All strategies steps can include a definition of resources(_limits and requests_) for CPU, memory and disk. For strategies with more than one step, each step(_container_) could require more resources than others. Strategy admins are free to define the values that they consider the best fit for each step. Also, identical strategies with the same steps that are only different in their name and step resources can be installed on the cluster to allow users to create a build with smaller and larger resource requirements.
+
+### Strategies with different resources
+
+If the strategy admins would require to have multiple flavours of the same strategy, where one strategy has more resources that the other. Then, multiple strategies for the same type should be defined on the cluster. In the following example, we use Kaniko as the type:
+
+```yaml
+---
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: kaniko-small
+spec:
+  buildSteps:
+    - name: step-build-and-push
+      image: gcr.io/kaniko-project/executor:v0.23.0
+      workingDir: /workspace/source
+      securityContext:
+        runAsUser: 0
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
+      command:
+        - /kaniko/executor
+      args:
+        - --skip-tls-verify=true
+        - --dockerfile=$(build.dockerfile)
+        - --context=/workspace/source/$(build.source.contextDir)
+        - --destination=$(build.output.image)
+      resources:
+        limits:
+          cpu: 250m
+          memory: 65Mi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+---
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: kaniko-medium
+spec:
+  buildSteps:
+    - name: step-build-and-push
+      image: gcr.io/kaniko-project/executor:v0.23.0
+      workingDir: /workspace/source
+      securityContext:
+        runAsUser: 0
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
+      command:
+        - /kaniko/executor
+      args:
+        - --skip-tls-verify=true
+        - --dockerfile=$(build.dockerfile)
+        - --context=/workspace/source/$(build.source.contextDir)
+        - --destination=$(build.output.image)
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 500m
+          memory: 1Gi
+```
+
+The above provides more control and flexibility for the strategy admins. For `end-users`, all they need to do, is to reference the proper strategy. For example:
+
+```yaml
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-medium
+spec:
+  source:
+    url: https://github.com/sbose78/taxi
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile
+```
+
+### How does Tekton Pipelines handle resources
+
+The **Build** operator relies on the Tekton [pipeline controller](https://github.com/tektoncd/pipeline) to schedule the `pods` that execute the above strategy steps. In a nutshell, the **Build** operator creates on run-time a Tekton **TaskRun**, and the **TaskRun** generates a new pod in the particular namespace. In order to build an image, the pod executes all the strategy steps one-by-one.
+
+Tekton manage each step resources **request** in a very particular way, see the [docs](https://github.com/tektoncd/pipeline/blob/master/docs/tasks.md#defining-steps). From this document, it mentions the following:
+
+> The CPU, memory, and ephemeral storage resource requests will be set to zero, or, if specified, the minimums set through LimitRanges in that Namespace, if the container image does not have the largest resource request out of all container images in the Task. This ensures that the Pod that executes the Task only requests enough resources to run a single container image in the Task rather than hoard resources for all container images in the Task at once.
+
+### Examples of Tekton resources management
+
+For a more concrete example, let´s take a look on the following scenarios:
+
+---
+
+**Scenario 1.**  Namespace without `LimitRange`, both steps with the same resource values.
+
+If we will apply the following resources:
+
+- [buildahBuild](../samples/build/buildah/build_buildah_cr.yaml)
+- [buildahBuildRun](../samples/buildrun/buildah/buildrun_buildah_cr.yaml)
+- [buildahClusterBuildStrategy](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
+
+We will see some differences between the `TaskRun` definition and the `pod` definition.
+
+For the `TaskRun`, as expected we can see the resources on each `step`, as we previously define on our [strategy](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml).
+
+```sh
+$ kubectl -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-bud" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "250m",
+    "memory": "65Mi"
+  }
+}
+
+$ kubectl -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-push" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "250m",
+    "memory": "65Mi"
+  }
+}
+```
+
+The pod definition is different, while Tekton will only use the **highest** values of one container, and set the rest(lowest) to zero:
+
+```sh
+$ kubectl -n test-build get pods buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-bud" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "250m",
+    "ephemeral-storage": "0",
+    "memory": "65Mi"
+  }
+}
+
+$ kubectl -n test-build get pods buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-push" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "0",               <------------------- See how the request is set to ZERO.
+    "ephemeral-storage": "0", <------------------- See how the request is set to ZERO.
+    "memory": "0"             <------------------- See how the request is set to ZERO.
+  }
+}
+```
+
+In this scenario, only one container can have the `spec.resources.requests` definition. Even when both steps have the same values, only one container will get them, the others will be set to zero.
+
+---
+
+**Scenario 2.**  Namespace without `LimitRange`, steps with different resources:
+
+If we will apply the following resources:
+
+- [buildahBuild](../samples/build/buildah/build_buildah_cr.yaml)
+- [buildahBuildRun](../samples/buildrun/buildah/buildrun_buildah_cr.yaml)
+- We will use a modified buildah strategy, with the following steps resources:
+
+  ```yaml
+    - name: step-buildah-bud
+      image: quay.io/buildah/stable:latest
+      workingDir: /workspace/source
+      securityContext:
+        privileged: true
+      command:
+        - /usr/bin/buildah
+      args:
+        - bud
+        - --tag=$(build.output.image)
+        - --file=$(build.dockerfile)
+        - $(build.source.contextDir)
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+      volumeMounts:
+        - name: buildah-images
+          mountPath: /var/lib/containers/storage
+    - name: step-buildah-push
+      image: quay.io/buildah/stable:latest
+      securityContext:
+        privileged: true
+      command:
+        - /usr/bin/buildah
+      args:
+        - push
+        - --tls-verify=false
+        - docker://$(build.output.image)
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 100Mi  <------ See how we provide more memory to step-buildah-push, compared to the 65Mi of the other step
+  ```
+
+For the `TaskRun`, as expected we can see the resources on each `step`.
+
+```sh
+$ kubectl -n test-build get tr buildah-golang-buildrun-skgrp -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-bud" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "250m",
+    "memory": "65Mi"
+  }
+}
+
+$ kubectl -n test-build get tr buildah-golang-buildrun-skgrp -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-push" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "250m",
+    "memory": "100Mi"
+  }
+}
+```
+
+The pod definition is different, while Tekton will only use the **highest** values of one container, and set the rest(lowest) to zero:
+
+```sh
+$ kubectl -n test-build get pods buildah-golang-buildrun-95xq8-pod-mww8d -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-bud" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "250m",                <------------------- See how the CPU is preserved
+    "ephemeral-storage": "0",
+    "memory": "0"                 <------------------- See how the memory is set to ZERO
+  }
+}
+$ kubectl -n test-build get pods buildah-golang-buildrun-95xq8-pod-mww8d -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-push" ) | .resources'
+{
+  "limits": {
+    "cpu": "500m",
+    "memory": "1Gi"
+  },
+  "requests": {
+    "cpu": "0",                     <------------------- See how the CPU is set to zero.
+    "ephemeral-storage": "0",
+    "memory": "100Mi"               <------------------- See how the memory is preserved on this container
+  }
+}
+```
+
+In the above scenario, we can see how the maximum numbers for resource requests are distributed between containers. The container `step-buildah-push` gets the `100mi` for the memory requests, while it was the one defining the highest number. At the same time, the container `step-buildah-bud` is assigned a `0` for its memory request.
+
+---
+
+**Scenario 3.**  Namespace **with** a `LimitRange`.
+
+When a `LimitRange` exists on the namespace, `Tekton Pipeline` controller will do the same approach as stated in the above two scenarios. The difference is that for the containers that have lower values, instead of zero, they will get the `minimum values of the LimitRange`.
