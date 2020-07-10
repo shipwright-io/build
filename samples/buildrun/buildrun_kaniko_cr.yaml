@@ -6,8 +6,5 @@ metadata:
 spec:
   buildRef:
     name: kaniko-golang-build
-  resources:
-    limits:
-      cpu: "1"
   serviceAccount:
     generate: true

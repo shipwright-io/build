@@ -23,6 +23,7 @@ require (
 	k8s.io/kubectl v0.17.4
 	knative.dev/pkg v0.0.0-20200207155214-fef852970f43
 	sigs.k8s.io/controller-runtime v0.5.2
+	sigs.k8s.io/yaml v1.1.0
 )
 
 replace (
