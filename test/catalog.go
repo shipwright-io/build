@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	"sigs.k8s.io/yaml"
 
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
@@ -12,6 +13,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -456,4 +458,51 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			},
 		},
 	}
+}
+
+// LoadCustomResources returns a container set of resources based on cpu and memory
+func (c *Catalog) LoadCustomResources(cpu string, mem string) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse(cpu),
+			corev1.ResourceMemory: resource.MustParse(mem),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse(cpu),
+			corev1.ResourceMemory: resource.MustParse(mem),
+		},
+	}
+}
+
+// LoadBuildYAML parses YAML bytes into JSON and from JSON
+// into a Build struct
+func (c *Catalog) LoadBuildYAML(d []byte) (*buildv1alpha1.Build, error) {
+	b := &buildv1alpha1.Build{}
+	err := yaml.Unmarshal(d, b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// LoadBuildRunYAML parses YAML bytes into JSON and from JSON
+// into a BuildRun struct
+func (c *Catalog) LoadBuildRunYAML(d []byte) (*buildv1alpha1.BuildRun, error) {
+	b := &buildv1alpha1.BuildRun{}
+	err := yaml.Unmarshal(d, b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// LoadBuildStrategyYAML parses YAML bytes into JSON and from JSON
+// into a BuildStrategy struct
+func (c *Catalog) LoadBuildStrategyYAML(d []byte) (*buildv1alpha1.BuildStrategy, error) {
+	b := &buildv1alpha1.BuildStrategy{}
+	err := yaml.Unmarshal(d, b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }

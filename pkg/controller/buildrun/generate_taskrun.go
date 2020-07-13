@@ -1,7 +1,6 @@
 package buildrun
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -44,6 +43,7 @@ func getStringTransformations(fullText string) string {
 	return fullText
 }
 
+// GenerateTaskSpec constructs a TaskSpec from a Build and BuildRun objects
 func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskSpec, error) {
 
 	generatedTaskSpec := v1beta1.TaskSpec{
@@ -89,14 +89,14 @@ func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	}
 
 	if build.Spec.BuilderImage != nil {
-		InputBuilderImage := v1beta1.ParamSpec {
-				Description: "Image containing the build tools/logic",
-				Name:        inputParamBuilderImage,
-				Default: &v1beta1.ArrayOrString{
-					Type:      v1beta1.ParamTypeString,
-					StringVal: build.Spec.BuilderImage.ImageURL,
-				},
-			}
+		InputBuilderImage := v1beta1.ParamSpec{
+			Description: "Image containing the build tools/logic",
+			Name:        inputParamBuilderImage,
+			Default: &v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: build.Spec.BuilderImage.ImageURL,
+			},
+		}
 		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilderImage)
 	}
 
@@ -125,23 +125,9 @@ func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 				Args:            taskArgs,
 				SecurityContext: containerValue.SecurityContext,
 				WorkingDir:      containerValue.WorkingDir,
+				Resources:       containerValue.Resources,
 				Env:             containerValue.Env,
 			},
-		}
-		if build.Spec.Resources != nil {
-			step.Resources = *build.Spec.Resources
-			if buildRun.Spec.Resources != nil {
-				// Merge the resources from build and buildRun
-				mergedResources, err := mergedResources(build, buildRun)
-				if err != nil {
-					return nil, err
-				}
-				step.Resources = *mergedResources
-			}
-		} else {
-			if buildRun.Spec.Resources != nil {
-				step.Resources = *buildRun.Spec.Resources
-			}
 		}
 
 		generatedTaskSpec.Steps = append(generatedTaskSpec.Steps, step)
@@ -167,6 +153,7 @@ func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	return &generatedTaskSpec, nil
 }
 
+// GenerateTaskRun constructs a TaskRun from a Build and BuildRun objects
 func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskRun, error) {
 
 	revision := "master"
@@ -280,26 +267,4 @@ func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 
 	expectedTaskRun.Spec.Params = inputParams
 	return expectedTaskRun, nil
-}
-
-// mergedResources merges the resources from build spec and buildRun spec
-func mergedResources(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ResourceRequirements, error) {
-	mergedResources := corev1.ResourceRequirements{}
-	buildResourceJson, err := json.Marshal(*build.Spec.Resources)
-	if err != nil {
-		return nil, err
-	}
-	json.Unmarshal(buildResourceJson, &mergedResources)
-	if err != nil {
-		return nil, err
-	}
-	buildRunResourceJson, err := json.Marshal(*buildRun.Spec.Resources)
-	if err != nil {
-		return nil, err
-	}
-	json.Unmarshal(buildRunResourceJson, &mergedResources)
-	if err != nil {
-		return nil, err
-	}
-	return &mergedResources, nil
 }

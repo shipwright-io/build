@@ -12,9 +12,5 @@ spec:
     name: kaniko
     kind: ClusterBuildStrategy
   dockerfile: Dockerfile
-  resources:
-    limits:
-      cpu: "500m"
-      memory: "1Gi"
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

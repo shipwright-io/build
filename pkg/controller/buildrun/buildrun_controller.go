@@ -190,6 +190,9 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			buildRun.Status.BuildSpec = &build.Spec
 		}
 
+		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
+		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
+
 		if lastTaskRun.Status.CompletionTime != nil && buildRun.Status.CompletionTime == nil {
 			buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
 
@@ -201,9 +204,6 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			buildmetrics.BuildRunEstablishObserve(build.Spec.StrategyRef.Name, buildRun.Namespace, buildRunEstablishDuring)
 			buildmetrics.BuildRunCompletionObserve(build.Spec.StrategyRef.Name, buildRun.Namespace, buildRunCompletionDuring)
 		}
-
-		buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
-		buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 
 		ctxlog.Info(ctx, "updating buildRun status", namespace, request.Namespace, name, request.Name)
 		err = r.client.Status().Update(ctx, buildRun)

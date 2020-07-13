@@ -9,10 +9,6 @@ spec:
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy
-  resources:
-    limits:
-      cpu: "500m"
-      memory: "1Gi"
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/advanced-dockerfile
   timeout: 15s

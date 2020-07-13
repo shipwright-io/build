@@ -7,9 +7,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	buildrunCtl "github.com/redhat-developer/build/pkg/controller/buildrun"
+	"github.com/redhat-developer/build/test"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -19,132 +19,45 @@ import (
 var _ = Describe("GenerateTaskrun", func() {
 
 	var (
-		build                                *buildv1alpha1.Build
-		buildRun                             *buildv1alpha1.BuildRun
-		buildStrategy                        *buildv1alpha1.BuildStrategy
-		builderImage                         *buildv1alpha1.Image
-		clusterBuildStrategy                 buildv1alpha1.BuildStrategyKind
-		dockerfile, buildah, buildpacks, url string
+		build                       *buildv1alpha1.Build
+		buildRun                    *buildv1alpha1.BuildRun
+		buildStrategy               *buildv1alpha1.BuildStrategy
+		builderImage                *buildv1alpha1.Image
+		dockerfile, buildpacks, url string
+		ctl                         test.Catalog
 	)
 
 	BeforeEach(func() {
-		buildah = "buildah"
 		buildpacks = "buildpacks-v3"
 		url = "https://github.com/sbose78/taxi"
 		dockerfile = "Dockerfile"
-		clusterBuildStrategy = buildv1alpha1.ClusterBuildStrategyKind
 	})
 
 	Describe("Generate the TaskSpec", func() {
 		var (
-			truePtr               bool
-			expectedCommandOrArg  []string
-			expectedResourceOrArg corev1.ResourceRequirements
-			got                   *v1beta1.TaskSpec
-			err                   error
+			expectedCommandOrArg []string
+			got                  *v1beta1.TaskSpec
+			err                  error
 		)
 		BeforeEach(func() {
 			builderImage = &buildv1alpha1.Image{
 				ImageURL: "quay.io/builder/image",
 			}
-			truePtr = true
 		})
 
 		Context("when the task spec is generated", func() {
 			BeforeEach(func() {
-				build = &buildv1alpha1.Build{
-					ObjectMeta: metav1.ObjectMeta{Name: buildah},
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL: url,
-						},
-						StrategyRef: &buildv1alpha1.StrategyRef{
-							Name: buildah,
-							Kind: &clusterBuildStrategy,
-						},
-						Dockerfile:   &dockerfile,
-						BuilderImage: builderImage,
-						Resources: &corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("1Gi"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("1Gi"),
-							},
-						},
-					},
-				}
+				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuild))
+				Expect(err).To(BeNil())
 
-				buildRun = &buildv1alpha1.BuildRun{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: buildah + "-run",
-					},
-					Spec: buildv1alpha1.BuildRunSpec{
-						BuildRef: &buildv1alpha1.BuildRef{
-							Name: buildah,
-						},
-					},
-				}
+				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.MinimalBuildahBuildRun))
+				Expect(err).To(BeNil())
 
-				buildStrategy = &buildv1alpha1.BuildStrategy{
-					ObjectMeta: metav1.ObjectMeta{Name: buildah},
-					Spec: buildv1alpha1.BuildStrategySpec{
-						BuildSteps: []buildv1alpha1.BuildStep{
-							{
-								Container: corev1.Container{
-									Name:       "build",
-									Image:      "$(build.builder.image)",
-									WorkingDir: "/workspace/source",
-									Command: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.source.contextDir)",
-									},
-									Args: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.source.contextDir)",
-									},
-									VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "varlibcontainers",
-											MountPath: "/var/lib/containers",
-										},
-									},
-									SecurityContext: &corev1.SecurityContext{
-										Privileged: &truePtr,
-									},
-								},
-							},
-							{
-								Container: corev1.Container{
-									VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "varlibcontainers",
-											MountPath: "/var/lib/containers",
-										},
-										{
-											Name:      "something-else",
-											MountPath: "/var/lib/containers",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
+				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.MinimalBuildahBuildStrategy))
+				Expect(err).To(BeNil())
 
 				expectedCommandOrArg = []string{
-					"buildah", "bud", "--tls-verify=false", "--layers", "-f", fmt.Sprintf("$(inputs.params.%s)", "DOCKERFILE"), "-t", "$(outputs.resources.image.url)", fmt.Sprintf("$(inputs.params.%s)", "PATH_CONTEXT"),
-				}
-
-				expectedResourceOrArg = corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("1Gi"),
-					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("1Gi"),
-					},
+					"bud", "--tag=$(outputs.resources.image.url)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), fmt.Sprintf("$(inputs.params.%s)", "PATH_CONTEXT"),
 				}
 			})
 
@@ -154,15 +67,19 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure IMAGE is replaced by builder image when needed.", func() {
-				Expect(got.Steps[0].Container.Image).To(Equal(fmt.Sprintf("$(inputs.params.%s)", "BUILDER_IMAGE")))
+				Expect(got.Steps[0].Container.Image).To(Equal("quay.io/buildah/stable:latest"))
 			})
 
 			It("should ensure command replacements happen when needed", func() {
-				Expect(got.Steps[0].Container.Command).To(Equal(expectedCommandOrArg))
+				Expect(got.Steps[0].Container.Command[0]).To(Equal("/usr/bin/buildah"))
 			})
 
-			It("should ensure resource replacements happen when needed", func() {
-				Expect(got.Steps[0].Container.Resources).To(Equal(expectedResourceOrArg))
+			It("should ensure resource replacements happen for the first step", func() {
+				Expect(got.Steps[0].Container.Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
+			})
+
+			It("should ensure resource replacements happen for the second step", func() {
+				Expect(got.Steps[1].Container.Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
 			})
 
 			It("should ensure arg replacements happen when needed", func() {
@@ -170,18 +87,18 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure top level volumes are populated", func() {
-				Expect(len(got.Volumes)).To(Equal(2))
+				Expect(len(got.Volumes)).To(Equal(1))
 			})
 		})
 	})
 
 	Describe("Generate the TaskRun", func() {
 		var (
-			k8sDuration30s                                                  *metav1.Duration
-			k8sDuration1m                                                   *metav1.Duration
+			k8sDuration30s                                                                      *metav1.Duration
+			k8sDuration1m                                                                       *metav1.Duration
 			namespace, contextDir, revision, outputPath, outputPathBuildRun, serviceAccountName string
-			got                                                             *v1beta1.TaskRun
-			err                                                             error
+			got                                                                                 *v1beta1.TaskRun
+			err                                                                                 error
 		)
 		BeforeEach(func() {
 			duration, err := time.ParseDuration("30s")
@@ -208,70 +125,15 @@ var _ = Describe("GenerateTaskrun", func() {
 
 		Context("when the taskrun is generated by default", func() {
 			BeforeEach(func() {
-				build = &buildv1alpha1.Build{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildah,
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL: url,
-						},
-						StrategyRef: &buildv1alpha1.StrategyRef{
-							Name: buildah,
-						},
-						Output: buildv1alpha1.Image{
-							ImageURL: outputPath,
-						},
-					},
-				}
-				buildRun = &buildv1alpha1.BuildRun{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildah + "-run",
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildRunSpec{
-						BuildRef: &buildv1alpha1.BuildRef{
-							Name: buildah,
-						},
-						Resources: &corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-						},
-						ServiceAccount: &buildv1alpha1.ServiceAccount{
-							Name: &serviceAccountName,
-						},
-					},
-				}
-				buildStrategy = &buildv1alpha1.BuildStrategy{
-					ObjectMeta: metav1.ObjectMeta{Name: buildah},
-					Spec: buildv1alpha1.BuildStrategySpec{
-						BuildSteps: []buildv1alpha1.BuildStep{
-							{
-								Container: corev1.Container{
-									Name:       "build",
-									Image:      "$(build.builder.image)",
-									WorkingDir: "/workspace/source",
-									Command: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
-									},
-									VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "varlibcontainers",
-											MountPath: "/var/lib/containers",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildahBuildRunWithSA))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildahBuildStrategySingleStep))
+				Expect(err).To(BeNil())
+
 			})
 
 			JustBeforeEach(func() {
@@ -335,82 +197,14 @@ var _ = Describe("GenerateTaskrun", func() {
 
 		Context("when the taskrun is generated by special settings", func() {
 			BeforeEach(func() {
-				build = &buildv1alpha1.Build{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildpacks,
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL:        url,
-							Revision:   &revision,
-							ContextDir: &contextDir,
-						},
-						StrategyRef: &buildv1alpha1.StrategyRef{
-							Name: buildpacks,
-							Kind: &clusterBuildStrategy,
-						},
-						Dockerfile:   &dockerfile,
-						BuilderImage: builderImage,
-						Output: buildv1alpha1.Image{
-							ImageURL: outputPath,
-						},
-						Resources: &corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("1Gi"),
-							},
-						},
-						Timeout: k8sDuration30s,
-					},
-				}
-				buildRun = &buildv1alpha1.BuildRun{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildpacks + "-run",
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildRunSpec{
-						BuildRef: &buildv1alpha1.BuildRef{
-							Name: buildpacks,
-						},
-						Resources: &corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-						},
-						ServiceAccount: &buildv1alpha1.ServiceAccount{
-							Name:     &serviceAccountName,
-							Generate: false,
-						},
-					},
-				}
-				buildStrategy = &buildv1alpha1.BuildStrategy{
-					ObjectMeta: metav1.ObjectMeta{Name: buildpacks},
-					Spec: buildv1alpha1.BuildStrategySpec{
-						BuildSteps: []buildv1alpha1.BuildStep{
-							{
-								Container: corev1.Container{
-									Name:       "build",
-									Image:      "$(build.builder.image)",
-									WorkingDir: "/workspace/source",
-									Command: []string{
-										"/cnb/lifecycle/builder", "-app", "/workspace/source", "-layers", "/layers", "-group", "/layers/group.toml", "plan", "/layers/plan.toml",
-									},
-									VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "varlibcontainers",
-											MountPath: "/var/lib/containers",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildpacksBuildWithBuilderAndTimeOut))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildpacksBuildRunWithSA))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildpacksBuildStrategySingleStep))
+				Expect(err).To(BeNil())
 			})
 
 			JustBeforeEach(func() {
@@ -462,72 +256,14 @@ var _ = Describe("GenerateTaskrun", func() {
 
 		Context("when the build and buildrun contain a timeout", func() {
 			BeforeEach(func() {
-				build = &buildv1alpha1.Build{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildah,
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL: url,
-						},
-						StrategyRef: &buildv1alpha1.StrategyRef{
-							Name: buildah,
-						},
-						Output: buildv1alpha1.Image{
-							ImageURL: outputPath,
-						},
-						Timeout: k8sDuration30s,
-					},
-				}
-				buildRun = &buildv1alpha1.BuildRun{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildah + "-run",
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildRunSpec{
-						BuildRef: &buildv1alpha1.BuildRef{
-							Name: buildah,
-						},
-						Resources: &corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-						},
-						ServiceAccount: &buildv1alpha1.ServiceAccount{
-							Name: &serviceAccountName,
-						},
-						Timeout: k8sDuration1m,
-					},
-				}
-				buildStrategy = &buildv1alpha1.BuildStrategy{
-					ObjectMeta: metav1.ObjectMeta{Name: buildah},
-					Spec: buildv1alpha1.BuildStrategySpec{
-						BuildSteps: []buildv1alpha1.BuildStep{
-							{
-								Container: corev1.Container{
-									Name:       "build",
-									Image:      "$(build.builder.image)",
-									WorkingDir: "/workspace/source",
-									Command: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
-									},
-									VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "varlibcontainers",
-											MountPath: "/var/lib/containers",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithTimeOut))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildahBuildRunWithTimeOutAndSA))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildahBuildStrategySingleStep))
+				Expect(err).To(BeNil())
 			})
 
 			JustBeforeEach(func() {
@@ -542,73 +278,15 @@ var _ = Describe("GenerateTaskrun", func() {
 
 		Context("when the build and buildrun both contain an output imageURL", func() {
 			BeforeEach(func() {
-				build = &buildv1alpha1.Build{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildah,
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildSpec{
-						Source: buildv1alpha1.GitSource{
-							URL: url,
-						},
-						StrategyRef: &buildv1alpha1.StrategyRef{
-							Name: buildah,
-						},
-						Output: buildv1alpha1.Image{
-							ImageURL: outputPath,
-						},
-					},
-				}
-				buildRun = &buildv1alpha1.BuildRun{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      buildah + "-run",
-						Namespace: namespace,
-					},
-					Spec: buildv1alpha1.BuildRunSpec{
-						BuildRef: &buildv1alpha1.BuildRef{
-							Name: buildah,
-						},
-						Resources: &corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("500m"),
-								corev1.ResourceMemory: resource.MustParse("2Gi"),
-							},
-						},
-						ServiceAccount: &buildv1alpha1.ServiceAccount{
-							Name: &serviceAccountName,
-						},
-						Output: &buildv1alpha1.Image{
-							ImageURL: outputPathBuildRun,
-						},
-					},
-				}
-				buildStrategy = &buildv1alpha1.BuildStrategy{
-					ObjectMeta: metav1.ObjectMeta{Name: buildah},
-					Spec: buildv1alpha1.BuildStrategySpec{
-						BuildSteps: []buildv1alpha1.BuildStep{
-							{
-								Container: corev1.Container{
-									Name:       "build",
-									Image:      "$(build.builder.image)",
-									WorkingDir: "/workspace/source",
-									Command: []string{
-										"buildah", "bud", "--tls-verify=false", "--layers", "-f", "$(build.dockerfile)", "-t", "$(build.output.image)", "$(build.pathContext)",
-									},
-									VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "varlibcontainers",
-											MountPath: "/var/lib/containers",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
+
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildahBuildRunWithSAAndOutput))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildahBuildStrategySingleStep))
+				Expect(err).To(BeNil())
 			})
 
 			JustBeforeEach(func() {

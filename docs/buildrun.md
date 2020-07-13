@@ -4,7 +4,6 @@
 - [BuildRun Controller](#buildrun-controller)
 - [Configuring a BuildRun](#configuring-a-buildrun)
   - [Defining the BuildRef](#defining-the-buildref)
-  - [Defining Resources](#defining-resources)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
 - [BuildRun Status](#buildrun-status)
 - [Relationship with Tekton Tasks](#relationship-with-tekton-tasks)
@@ -17,7 +16,6 @@ A `BuildRun` resource allows the user to define:
 
 - The `BuildRun` name, through which the user can monitor the status of the image construction.
 - A referenced `Build` instance to use during the build construction.
-- Compute resources.
 - A service account for hosting all related secrets in order to build the image.
 
 A `BuildRun` is available within a namespace.
@@ -47,10 +45,10 @@ The `BuildRun` definition supports the following fields:
   - `spec.buildRef` - Specifies an existing `Build` resource instance to use.
 
 - Optional:
-  - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The value overwrites the value that is defined in the `Build`.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value which is defined in `Build`. ( Note: other properties of the output, for example, the credentials cannot be specified in the buildRun spec. )
+
 ### Defining the BuildRef
 
 A `BuildRun` resource can reference a `Build` resource, that indicates what image to build. For example:
@@ -63,23 +61,6 @@ metadata:
 spec:
   buildRef:
     name: buildpack-nodejs-build-namespaced
-```
-
-### Defining Resources
-
-A `BuildRun` resource can define resources, like **limits** to use in the pod where the build execution will take place, for example:
-
-```yaml
-apiVersion: build.dev/v1alpha1
-kind: BuildRun
-metadata:
-  name: kaniko-golang-buildrun
-spec:
-  buildRef:
-    name: kaniko-golang-build
-  resources:
-    limits:
-      cpu: "1"
 ```
 
 ### Defining the ServiceAccount

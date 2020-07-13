@@ -5,7 +5,8 @@
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -155,14 +156,19 @@ func (in *BuildRunSpec) DeepCopyInto(out *BuildRunSpec) {
 		*out = new(BuildRef)
 		**out = **in
 	}
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = new(v1.ResourceRequirements)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.ServiceAccount != nil {
 		in, out := &in.ServiceAccount, &out.ServiceAccount
 		*out = new(ServiceAccount)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Timeout != nil {
+		in, out := &in.Timeout, &out.Timeout
+		*out = new(v1.Duration)
+		**out = **in
+	}
+	if in.Output != nil {
+		in, out := &in.Output, &out.Output
+		*out = new(Image)
 		(*in).DeepCopyInto(*out)
 	}
 	return
@@ -240,12 +246,12 @@ func (in *BuildSpec) DeepCopyInto(out *BuildSpec) {
 			copy(*out, *in)
 		}
 	}
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = new(v1.ResourceRequirements)
-		(*in).DeepCopyInto(*out)
-	}
 	in.Output.DeepCopyInto(&out.Output)
+	if in.Timeout != nil {
+		in, out := &in.Timeout, &out.Timeout
+		*out = new(v1.Duration)
+		**out = **in
+	}
 	return
 }
 
@@ -468,7 +474,7 @@ func (in *GitSource) DeepCopyInto(out *GitSource) {
 	}
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		*out = new(v1.LocalObjectReference)
+		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
 	return
@@ -489,7 +495,7 @@ func (in *Image) DeepCopyInto(out *Image) {
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		*out = new(v1.LocalObjectReference)
+		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
 	return
