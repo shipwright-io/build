@@ -3,9 +3,9 @@ package clusterbuildstrategy
 import (
 	"context"
 
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	"github.com/redhat-developer/build/pkg/config"
-	"github.com/redhat-developer/build/pkg/ctxlog"
+	buildv1alpha1 "github.com/k8s-build/build/pkg/apis/build/v1alpha1"
+	"github.com/k8s-build/build/pkg/config"
+	"github.com/k8s-build/build/pkg/ctxlog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"

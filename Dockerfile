@@ -5,7 +5,7 @@ ENV GIT_COMMITTER_NAME devtools
 ENV GIT_COMMITTER_EMAIL devtools@redhat.com
 LABEL com.redhat.delivery.appregistry=true
 
-WORKDIR /go/src/github.com/redhat-developer/build-operator
+WORKDIR /go/src/github.com/k8s-build/build-operator
 
 # Copy only relevant things (instead of all) to speed-up the build.
 COPY . .
@@ -21,7 +21,7 @@ LABEL maintainer "Devtools <devtools@redhat.com>"
 LABEL author "Shoubhik Bose <shbose@redhat.com>"
 ENV LANG=en_US.utf8
 
-COPY --from=builder /go/src/github.com/redhat-developer/build-operator/build/_output/bin/build-operator /usr/local/bin/build-operator
+COPY --from=builder /go/src/github.com/k8s-build/build-operator/build/_output/bin/build-operator /usr/local/bin/build-operator
 
 USER 10001
 

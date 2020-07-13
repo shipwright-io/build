@@ -29,9 +29,9 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/redhat-developer/build/pkg/apis/core/v1alpha1.Condition":    schema_pkg_apis_core_v1alpha1_Condition(ref),
-		"github.com/redhat-developer/build/pkg/apis/core/v1alpha1.Status":       schema_pkg_apis_core_v1alpha1_Status(ref),
-		"github.com/redhat-developer/build/pkg/apis/core/v1alpha1.VolatileTime": schema_pkg_apis_core_v1alpha1_VolatileTime(ref),
+		"github.com/k8s-build/build/pkg/apis/core/v1alpha1.Condition":    schema_pkg_apis_core_v1alpha1_Condition(ref),
+		"github.com/k8s-build/build/pkg/apis/core/v1alpha1.Status":       schema_pkg_apis_core_v1alpha1_Status(ref),
+		"github.com/k8s-build/build/pkg/apis/core/v1alpha1.VolatileTime": schema_pkg_apis_core_v1alpha1_VolatileTime(ref),
 	}
 }
 
@@ -66,7 +66,7 @@ func schema_pkg_apis_core_v1alpha1_Condition(ref common.ReferenceCallback) commo
 					"lastTransitionTime": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LastTransitionTime is the last time the condition transitioned from one status to another. We use VolatileTime in place of metav1.Time to exclude this from creating equality.Semantic differences (all other things held constant).",
-							Ref:         ref("github.com/redhat-developer/build/pkg/apis/core/v1alpha1.VolatileTime"),
+							Ref:         ref("github.com/k8s-build/build/pkg/apis/core/v1alpha1.VolatileTime"),
 						},
 					},
 					"reason": {
@@ -88,7 +88,7 @@ func schema_pkg_apis_core_v1alpha1_Condition(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/build/pkg/apis/core/v1alpha1.VolatileTime"},
+			"github.com/k8s-build/build/pkg/apis/core/v1alpha1.VolatileTime"},
 	}
 }
 
@@ -119,7 +119,7 @@ func schema_pkg_apis_core_v1alpha1_Status(ref common.ReferenceCallback) common.O
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/redhat-developer/build/pkg/apis/core/v1alpha1.Condition"),
+										Ref: ref("github.com/k8s-build/build/pkg/apis/core/v1alpha1.Condition"),
 									},
 								},
 							},
@@ -129,7 +129,7 @@ func schema_pkg_apis_core_v1alpha1_Status(ref common.ReferenceCallback) common.O
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/build/pkg/apis/core/v1alpha1.Condition"},
+			"github.com/k8s-build/build/pkg/apis/core/v1alpha1.Condition"},
 	}
 }
 

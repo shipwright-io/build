@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	buildv1alpha1 "github.com/k8s-build/build/pkg/apis/build/v1alpha1"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"

@@ -1,4 +1,4 @@
-module github.com/redhat-developer/build
+module github.com/k8s-build/build
 
 go 1.13
 

@@ -8,15 +8,19 @@ import (
 	"os"
 	"runtime"
 
-	buildconfig "github.com/redhat-developer/build/pkg/config"
+	buildconfig "github.com/k8s-build/build/pkg/config"
 
-	"github.com/redhat-developer/build/pkg/ctxlog"
+	"github.com/k8s-build/build/pkg/ctxlog"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
+	"github.com/k8s-build/build/pkg/apis"
+	"github.com/k8s-build/build/pkg/controller"
+	buildMetrics "github.com/k8s-build/build/pkg/metrics"
+	"github.com/k8s-build/build/version"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -24,10 +28,6 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
-	"github.com/redhat-developer/build/pkg/apis"
-	"github.com/redhat-developer/build/pkg/controller"
-	buildMetrics "github.com/redhat-developer/build/pkg/metrics"
-	"github.com/redhat-developer/build/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

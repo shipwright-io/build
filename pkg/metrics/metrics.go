@@ -1,8 +1,9 @@
 package metrics
 
 import (
-	"github.com/redhat-developer/build/pkg/config"
 	"time"
+
+	"github.com/k8s-build/build/pkg/config"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -10,7 +11,7 @@ import (
 
 const (
 	buildStrategyLabel string = "buildstrategy"
-	namespaceLabel string = "namespace"
+	namespaceLabel     string = "namespace"
 )
 
 var (
@@ -30,8 +31,8 @@ var (
 
 	buildRunEstablishDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "build_buildrun_establish_duration_seconds",
-			Help: "BuildRun establish duration in seconds.",
+			Name:    "build_buildrun_establish_duration_seconds",
+			Help:    "BuildRun establish duration in seconds.",
 			Buckets: prometheus.LinearBuckets(0, 0.5, 10),
 		},
 		[]string{buildStrategyLabel, namespaceLabel})
@@ -52,7 +53,7 @@ func InitPrometheus(config *config.Config) {
 		buildCount,
 		buildRunCount,
 		buildRunEstablishDuration,
-		buildRunCompletionDuration,)
+		buildRunCompletionDuration)
 }
 
 // BuildCountInc increases a number of the existing build total count

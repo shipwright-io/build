@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/k8s-build/build/pkg/apis"
+	operator "github.com/k8s-build/build/pkg/apis/build/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	"github.com/redhat-developer/build/pkg/apis"
-	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	. "github.com/onsi/ginkgo"

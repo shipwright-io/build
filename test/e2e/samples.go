@@ -14,8 +14,8 @@ import (
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operator "github.com/k8s-build/build/pkg/apis/build/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/gomega"

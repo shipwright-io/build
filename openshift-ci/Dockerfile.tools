@@ -1,7 +1,7 @@
 FROM centos:7 as build-tools
 ENV LANG=en_US.utf8
 ENV GOPATH /tmp/go
-ARG GO_PACKAGE_PATH=github.com/redhat-developer/build
+ARG GO_PACKAGE_PATH=github.com/k8s-build/build
 
 ENV GIT_COMMITTER_NAME devtools
 ENV GIT_COMMITTER_EMAIL devtools@redhat.com

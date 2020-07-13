@@ -3,7 +3,7 @@ package e2e
 import (
 	"os"
 
-	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	operator "github.com/k8s-build/build/pkg/apis/build/v1alpha1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

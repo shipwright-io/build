@@ -3,12 +3,12 @@ package buildstrategy_test
 import (
 	"context"
 
+	"github.com/k8s-build/build/pkg/config"
+	buildstrategyController "github.com/k8s-build/build/pkg/controller/buildstrategy"
+	"github.com/k8s-build/build/pkg/controller/fakes"
+	"github.com/k8s-build/build/pkg/ctxlog"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/build/pkg/config"
-	buildstrategyController "github.com/redhat-developer/build/pkg/controller/buildstrategy"
-	"github.com/redhat-developer/build/pkg/controller/fakes"
-	"github.com/redhat-developer/build/pkg/ctxlog"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )

@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/redhat-developer/build/pkg/controller/buildrun"
+	"github.com/k8s-build/build/pkg/controller/buildrun"
 )
 
 func init() {

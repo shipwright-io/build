@@ -14,10 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorapis "github.com/k8s-build/build/pkg/apis"
+	buildv1alpha1 "github.com/k8s-build/build/pkg/apis/build/v1alpha1"
+	operator "github.com/k8s-build/build/pkg/apis/build/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	operatorapis "github.com/redhat-developer/build/pkg/apis"
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"

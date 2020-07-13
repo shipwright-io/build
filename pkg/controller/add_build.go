@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/redhat-developer/build/pkg/controller/build"
+	"github.com/k8s-build/build/pkg/controller/build"
 )
 
 func init() {
