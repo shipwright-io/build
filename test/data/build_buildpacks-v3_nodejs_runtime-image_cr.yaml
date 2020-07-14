@@ -1,0 +1,24 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-nodejs-ex-runtime-image
+spec:
+  source:
+    url: https://github.com/sclorg/nodejs-ex.git
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  builder:
+    image: heroku/buildpacks:18
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex:runtime
+  runtime:
+    base:
+      image: docker.io/node:latest
+    workDir: /home/node/app
+    paths:
+      - $(workspace):/home/node/app
+    entrypoint:
+      - npm
+      - start

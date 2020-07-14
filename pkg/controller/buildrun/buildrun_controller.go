@@ -229,7 +229,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		if buildStrategy != nil {
-			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 				return reconcile.Result{}, handleError("Failed to generate the taskrun with buildStrategy", err, updateErr)
@@ -241,7 +241,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 		if clusterBuildStrategy != nil {
-			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 				return reconcile.Result{}, handleError("Failed to generate the taskrun with clusterBuildStrategy", err, updateErr)
@@ -295,7 +295,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 		serviceAccount.Name = serviceAccountName
 		serviceAccount.Namespace = buildRun.Namespace
 
-		// Create the service account, use CreateOrUpdate as it might exist already from a previous reconcilation that
+		// Create the service account, use CreateOrUpdate as it might exist already from a previous reconciliation that
 		// succeeded to create the service account but failed to update the build run that references it
 		ctxlog.Info(ctx, "create or update serviceAccount for BuildRun", namespace, buildRun.Namespace, name, serviceAccountName, "BuildRun", buildRun.Name)
 		op, err := controllerutil.CreateOrUpdate(ctx, r.client, serviceAccount, func() error {

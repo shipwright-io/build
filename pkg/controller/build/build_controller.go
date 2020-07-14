@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
+	"github.com/redhat-developer/build/pkg/controller/utils"
 	"github.com/redhat-developer/build/pkg/ctxlog"
 	buildmetrics "github.com/redhat-developer/build/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
@@ -160,6 +161,16 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		ctxlog.Info(ctx, "build strategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
 	}
 
+	// validate if "spec.runtime" attributes are valid
+	if utils.IsRuntimeDefined(b) {
+		if err := r.validateRuntime(b.Spec.Runtime); err != nil {
+			ctxlog.Error(ctx, err, "failed validating runtime attributes", "Build", b.Name)
+			b.Status.Reason = err.Error()
+			updateErr := r.client.Status().Update(ctx, b)
+			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+		}
+	}
+
 	b.Status.Registered = corev1.ConditionTrue
 	err = r.client.Status().Update(ctx, b)
 	if err != nil {
@@ -171,6 +182,13 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuild) validateRuntime(runtime *buildv1alpha1.Runtime) error {
+	if len(runtime.Paths) == 0 {
+		return fmt.Errorf("the property 'spec.runtime.paths' must not be empty")
+	}
+	return nil
 }
 
 func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.StrategyRef, ns string) error {
