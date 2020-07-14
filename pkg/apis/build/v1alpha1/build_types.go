@@ -14,7 +14,6 @@ var (
 
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
-
 	// Source refers to the Git repository containing the
 	// source code to be built.
 	Source GitSource `json:"source"`
@@ -40,6 +39,10 @@ type BuildSpec struct {
 	// +optional
 	Parameters *[]Parameter `json:"parameters,omitempty"`
 
+	// Runtime represents the runtime-image
+	// +optional
+	Runtime *Runtime `json:"runtime,omitempty"`
+
 	// Output refers to the location where the generated
 	// image would be pushed to.
 	Output Image `json:"output"`
@@ -51,7 +54,6 @@ type BuildSpec struct {
 
 // Image refers to an container image with credentials
 type Image struct {
-
 	// ImageURL is the URL where the image will be pushed to.
 	ImageURL string `json:"image"`
 
@@ -59,6 +61,51 @@ type Image struct {
 	// credentials to push the image to the registry
 	// +optional
 	SecretRef *corev1.LocalObjectReference `json:"credentials,omitempty"`
+}
+
+// Runtime represents the runtime-image, created using parts of builder-image, and a different
+// base-image than originally.
+type Runtime struct {
+	// Base runtime base image.
+	// +optional
+	Base Image `json:"base,omitempty"`
+
+	// Env environment variables for runtime.
+	// +optional
+	Env map[string]string `json:"env,omitempty"`
+
+	// Labels map of additional labels to be applied on image.
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// WorkDir runtime image working directory `WORKDIR`.
+	// +optional
+	WorkDir string `json:"workDir,omitempty"`
+
+	// Run arbitrary commands to run before copying data into runtime-image.
+	// +optional
+	Run []string `json:"run,omitempty"`
+
+	// Paths list of directories/files to be copied into runtime-image, using colon ":" to split up source and destination paths.
+	// +optional
+	Paths []string `json:"paths,omitempty"`
+
+	// User definitions of user and group for runtime-image.
+	User *User `json:"user,omitempty"`
+
+	// Entrypoint runtime-image entrypoint.
+	// +optional
+	Entrypoint []string `json:"entrypoint,omitempty"`
+}
+
+// UUser holds the user name and group information for runtime-image.
+type User struct {
+	// Name user name to be employed in runtime-image.
+	Name string `json:"name"`
+
+	// Group group name or GID employed in runtime-image.
+	// +optional
+	Group string `json:"group,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build
