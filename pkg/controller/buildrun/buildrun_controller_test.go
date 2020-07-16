@@ -28,18 +28,18 @@ import (
 
 var _ = Describe("Reconcile BuildRun", func() {
 	var (
-		manager           *fakes.FakeManager
-		reconciler        reconcile.Reconciler
-		request           reconcile.Request
-		client            *fakes.FakeClient
-		ctl               test.Catalog
-		buildSample       *build.Build
-		buildRunSample    *build.BuildRun
-		taskRunListSample *v1beta1.TaskRunList
-		statusWriter      *fakes.FakeStatusWriter
-		taskRunName       string
-		buildName         string
-		strategyName      string
+		manager        *fakes.FakeManager
+		reconciler     reconcile.Reconciler
+		request        reconcile.Request
+		client         *fakes.FakeClient
+		ctl            test.Catalog
+		buildSample    *build.Build
+		buildRunSample *build.BuildRun
+		taskRunSample  *v1beta1.TaskRun
+		statusWriter   *fakes.FakeStatusWriter
+		taskRunName    string
+		buildName      string
+		strategyName   string
 	)
 
 	// returns a reconcile.Request based on a buildRun instance
@@ -61,6 +61,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 			return nil
 		case *build.BuildRun:
 			buildRunSample.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			taskRunSample.DeepCopyInto(object)
 			return nil
 		}
 		return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -106,24 +109,14 @@ var _ = Describe("Reconcile BuildRun", func() {
 	Describe("Reconciling", func() {
 		Context("when a TaskRun exists", func() {
 			BeforeEach(func() {
-				// init a TaskRunList, we need this to fake the existance of a Tekton TaskRun
-				taskRunListSample = ctl.DefaultTaskRunList(
-					ctl.DefaultTaskRunWithStatus(taskRunName, corev1.ConditionTrue, "Succeeded"),
-				)
+				// init a TaskRun, we need this to fake the existance of a Tekton TaskRun
+				taskRunSample = ctl.DefaultTaskRunWithStatus("foobar-buildrun", corev1.ConditionTrue, "Succeeded")
 
 				// init the BuildRun resource from catalog
 				buildRunSample = ctl.DefaultBuildRun("foobar-buildrun", buildName)
 			})
 
 			It("Updates the BuildRun status", func() {
-				// Stub that fakes the output when listing resources with the client
-				client.ListCalls(func(contet context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *v1beta1.TaskRunList:
-						taskRunListSample.DeepCopyInto(object)
-					}
-					return nil
-				})
 
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
@@ -149,14 +142,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("deletes a generated service account when the task run ends", func() {
-				// Stub that fakes the output when listing resources with the client
-				client.ListCalls(func(contet context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *v1beta1.TaskRunList:
-						taskRunListSample.DeepCopyInto(object)
-					}
-					return nil
-				})
 
 				// setup a buildrun to use a generated service account
 				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunSample.Name, buildName)
@@ -164,9 +149,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildRunSample.Labels[build.LabelBuild] = buildName
 
 				// Override Stub get calls to include a service account
-				client.GetCalls(ctl.StubBuildRunGetWithSA(
+				client.GetCalls(ctl.StubBuildRunGetWithTaskRunAndSA(
 					buildSample,
 					buildRunSample,
+					taskRunSample,
 					ctl.DefaultServiceAccount(buildRunSample.Name+"-sa")),
 				)
 
@@ -195,12 +181,30 @@ var _ = Describe("Reconcile BuildRun", func() {
 			BeforeEach(func() {
 				saName = "foobar-sa"
 				buildRunName = "foobar-buildrun-with-sa"
+
+				// init a TaskRun, we need this to fake the existance of a Tekton TaskRun
+				// taskRunSample = ctl.DefaultTaskRunWithStatus(buildRunName, corev1.ConditionTrue, "Succeeded")
+
 				// override the BuildRun resource to use a BuildRun with a specified
 				// serviceaccount
 				buildRunSample = ctl.BuildRunWithSA(buildRunName, buildName, saName)
 			})
 
 			It("fails on creation due to missing service account", func() {
+
+				getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						buildSample.DeepCopyInto(object)
+						return nil
+					case *build.BuildRun:
+						buildRunSample.DeepCopyInto(object)
+						return nil
+					}
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+
+				client.GetCalls(getClientStub)
 
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
@@ -211,11 +215,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 					buildSample.Spec,
 				)
 				statusWriter.UpdateCalls(statusCall)
-
-				// Stub that asserts the BuildRun label fields when
-				// Label updates for a BuildRun take place
-				labelCall := ctl.StubBuildRunLabel(buildSample)
-				statusWriter.UpdateCalls(labelCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
@@ -350,6 +349,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())
+
+				Expect(client.CreateCallCount()).To(Equal(1))
 			})
 
 			It("succeed creating a task from a cluster buildstrategy", func() {
@@ -379,5 +380,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
+
+		// TODO: we need unit-tests for validating the BuildRun STATUS coming from the TASKRUN conditions
 	})
 })
