@@ -3,8 +3,8 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
   name: kaniko-golang-build
-  annotations:
-    build.build.dev/build-run-deletion: "true"
+  # annotations:
+  #   build.build.dev/build-run-deletion: "true"
 spec:
   source:
     url: https://github.com/sbose78/taxi
@@ -13,4 +13,6 @@ spec:
     kind: ClusterBuildStrategy
   dockerfile: Dockerfile
   output:
-    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+    image: us.icr.io/source-to-image-build/docker-simple
+    credentials:
+      name: icr-knbuild
