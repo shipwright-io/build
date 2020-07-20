@@ -124,6 +124,7 @@ crds:
 	@hack/crd.sh install
 
 local: crds build
+	OPERATOR_NAME=build-operator \
 	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
 clean:

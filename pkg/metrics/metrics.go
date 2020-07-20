@@ -1,16 +1,16 @@
 package metrics
 
 import (
-	"github.com/redhat-developer/build/pkg/config"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redhat-developer/build/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
 	buildStrategyLabel string = "buildstrategy"
-	namespaceLabel string = "namespace"
+	namespaceLabel     string = "namespace"
 )
 
 var (
@@ -28,11 +28,26 @@ var (
 		},
 		[]string{buildStrategyLabel})
 
+	buildRunEstablishDuration *prometheus.HistogramVec
+
+	buildRunCompletionDuration *prometheus.HistogramVec
+
+	initialized = false
+)
+
+// InitPrometheus initializes the prometheus stuff
+func InitPrometheus(config *config.Config) {
+	if initialized {
+		return
+	}
+
+	initialized = true
+
 	buildRunEstablishDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "build_buildrun_establish_duration_seconds",
-			Help: "BuildRun establish duration in seconds.",
-			Buckets: prometheus.LinearBuckets(0, 0.5, 10),
+			Name:    "build_buildrun_establish_duration_seconds",
+			Help:    "BuildRun establish duration in seconds.",
+			Buckets: config.Prometheus.BuildRunEstablishDurationBuckets,
 		},
 		[]string{buildStrategyLabel, namespaceLabel})
 
@@ -40,19 +55,16 @@ var (
 		prometheus.HistogramOpts{
 			Name:    "build_buildrun_completion_duration_seconds",
 			Help:    "BuildRun completion duration in seconds.",
-			Buckets: prometheus.LinearBuckets(50, 50, 10),
+			Buckets: config.Prometheus.BuildRunCompletionDurationBuckets,
 		},
 		[]string{buildStrategyLabel, namespaceLabel})
-)
 
-// InitPrometheus initializes the prometheus stuff
-func InitPrometheus(config *config.Config) {
 	// Register custom metrics with the global prometheus registry
 	metrics.Registry.MustRegister(
 		buildCount,
 		buildRunCount,
 		buildRunEstablishDuration,
-		buildRunCompletionDuration,)
+		buildRunCompletionDuration)
 }
 
 // BuildCountInc increases a number of the existing build total count
@@ -60,7 +72,7 @@ func BuildCountInc(buildStrategy string) {
 	buildCount.WithLabelValues(buildStrategy).Inc()
 }
 
-// BuildCountInc increases a number of the existing build run total count
+// BuildRunCountInc increases a number of the existing build run total count
 func BuildRunCountInc(buildStrategy string) {
 	buildRunCount.WithLabelValues(buildStrategy).Inc()
 }
