@@ -133,7 +133,7 @@ func main() {
 	}
 
 	c := buildconfig.NewDefaultConfig()
-	if err := c.SetConfigTimeOutFromEnv(); err != nil {
+	if err := c.SetConfigFromEnv(); err != nil {
 		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}

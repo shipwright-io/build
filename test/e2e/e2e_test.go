@@ -273,6 +273,29 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a buildpacks-v3 build is defined for a nodejs app with runtime-image", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildpacks-v3-nodejs-ex-runtime")
+
+			createBuild(namespace, testID, "test/data/build_buildpacks-v3_nodejs_runtime-image_cr.yaml")
+		})
+
+		AfterEach(func() {
+			if CurrentGinkgoTestDescription().Failed {
+				Logf("Print failed BuildRun's log")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
+			}
+		})
+
+		It("successfully runs a build", func() {
+			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_nodejs_runtime-image_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
 	Context("when a Kaniko build is defined", func() {
 
 		BeforeEach(func() {

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/k8s-build/build/pkg/config"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
@@ -29,11 +28,26 @@ var (
 		},
 		[]string{buildStrategyLabel})
 
+	buildRunEstablishDuration *prometheus.HistogramVec
+
+	buildRunCompletionDuration *prometheus.HistogramVec
+
+	initialized = false
+)
+
+// InitPrometheus initializes the prometheus stuff
+func InitPrometheus(config *config.Config) {
+	if initialized {
+		return
+	}
+
+	initialized = true
+
 	buildRunEstablishDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "build_buildrun_establish_duration_seconds",
 			Help:    "BuildRun establish duration in seconds.",
-			Buckets: prometheus.LinearBuckets(0, 0.5, 10),
+			Buckets: config.Prometheus.BuildRunEstablishDurationBuckets,
 		},
 		[]string{buildStrategyLabel, namespaceLabel})
 
@@ -41,13 +55,10 @@ var (
 		prometheus.HistogramOpts{
 			Name:    "build_buildrun_completion_duration_seconds",
 			Help:    "BuildRun completion duration in seconds.",
-			Buckets: prometheus.LinearBuckets(50, 50, 10),
+			Buckets: config.Prometheus.BuildRunCompletionDurationBuckets,
 		},
 		[]string{buildStrategyLabel, namespaceLabel})
-)
 
-// InitPrometheus initializes the prometheus stuff
-func InitPrometheus(config *config.Config) {
 	// Register custom metrics with the global prometheus registry
 	metrics.Registry.MustRegister(
 		buildCount,
@@ -61,7 +72,7 @@ func BuildCountInc(buildStrategy string) {
 	buildCount.WithLabelValues(buildStrategy).Inc()
 }
 
-// BuildCountInc increases a number of the existing build run total count
+// BuildRunCountInc increases a number of the existing build run total count
 func BuildRunCountInc(buildStrategy string) {
 	buildRunCount.WithLabelValues(buildStrategy).Inc()
 }

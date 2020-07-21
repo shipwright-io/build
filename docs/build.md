@@ -7,6 +7,7 @@
   - [Defining the Strategy](#defining-the-strategy)
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining the Output](#defining-the-output)
+  - [Runtime-Image](#Runtime-Image)
 - [Using Finalizers](#using-finalizers)
 
 ## Overview
@@ -49,6 +50,7 @@ The `Build` definition supports the following fields:
 - Optional:
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
+  - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build.
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
   - `metadata.annotations[build.build.dev/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
 
@@ -201,6 +203,60 @@ spec:
     credentials:
       name: icr-knbuild
 ```
+
+### Runtime-Image
+
+Runtime-image is a new image composed with build-strategy outcome. On which you can compose a multi-stage image build, copying parts out the original image into a new one. This feature allows replacing the base-image of any container-image, creating leaner images, and other use-cases.
+
+The following examples illustrates how to the `runtime`:
+
+```yml
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: nodejs-ex-runtime
+spec:
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  source:
+    url: https://github.com/sclorg/nodejs-ex.git
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex
+  runtime:
+    base:
+      image: docker.io/node:latest
+    workDir: /home/node/app
+    run:
+      - echo "Before copying data..."
+    user:
+      name: node
+      group: "1000"
+    paths:
+      - $(workspace):/home/node/app
+    entrypoint:
+      - npm
+      - start
+```
+
+This build will produce a Node.js based application where a single directory is imported from the image built by buildpacks strategy. The data copied is using the `.spec.runtime.user` directive, and the image also runs based on it.
+
+Please consider the description of the attributes under `.spec.runtime`:
+
+- `.base`: specifies the runtime base-image to be used, using Image as type
+- `.workDir`: path to WORKDIR in runtime-image
+- `.env`: runtime-image additional environment variables, key-value
+- `.labels`: runtime-image additional labels, key-value
+- `.run`: arbitrary commands to be executed as `RUN` blocks, before `COPY`
+- `.user.name`: username employed on `USER` directive, and also to change ownership of files copied to the runtime-image
+- `.user.group`: group name (or GID), employed to change ownership and on `USER` directive
+- `.paths`: list of files or directory paths to be copied to runtime-image, those can be defined as `<source>:<destination>` split by colon (`:`). You can use the `$(workspace)` placeholder to access the directory where your source repository is cloned, if `spec.source.contextDir` is defined, then `$(workspace)` to context directory location
+- `.entrypoint`: entrypoint command, specified as a list
+
+> ⚠️ **Image Tag Overwrite**
+>
+> Specifying the runtime section will cause a `BuildRun` to push `spec.output.image` twice. First, the image produced by chosen `BuildStrategy` is pushed, and next it gets reused to construct the runtime-image, which is pushed again, overwriting `BuildStrategy` outcome.
+> Be aware, specially in situations where the image push action triggers automation steps. Since the same tag will be reused, you might need to take this in consideration when using runtime-images.
 
 ## Using Finalizers
 
