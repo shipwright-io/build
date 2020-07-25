@@ -375,7 +375,7 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alp
 			return nil, err
 		}
 		if buildStrategy != nil {
-			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 				return nil, handleError("Failed to generate the taskrun with buildStrategy", err, updateErr)
@@ -387,7 +387,7 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alp
 			return nil, err
 		}
 		if clusterBuildStrategy != nil {
-			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
+			generatedTaskRun, err = GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
 			if err != nil {
 				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 				return nil, handleError("Failed to generate the taskrun with clusterBuildStrategy", err, updateErr)
