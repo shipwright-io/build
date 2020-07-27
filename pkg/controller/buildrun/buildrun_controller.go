@@ -131,7 +131,8 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 		return err
 	}
 
-	// handler.EnqueueRequestsFromMapFunc
+	// enqueue Reconciles requests only for events where a TaskRun already exists and that is related
+	// to a BuildRun
 	return c.Watch(&source.Kind{Type: &v1beta1.TaskRun{}}, &handler.EnqueueRequestsFromMapFunc{
 		ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
 			taskRun := o.Object.(*v1beta1.TaskRun)
@@ -213,7 +214,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	lastTaskRun := &v1beta1.TaskRun{}
 
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
-	if err = r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); apierrors.IsNotFound(err) {
+	if err = r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil && apierrors.IsNotFound(err) {
 		generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -255,7 +256,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
 			buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 
-			if lastTaskRun.Status.CompletionTime != nil && buildRun.Status.CompletionTime == nil && buildRun.Status.StartTime != nil {
+			if lastTaskRun.Status.CompletionTime != nil && buildRun.Status.CompletionTime == nil {
 				buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
 
 				// Increase BuildRun count in metrics
@@ -272,9 +273,11 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			ctxlog.Debug(ctx, "finishing reconciling BuildRun", namespace, request.Namespace, name, request.Name)
 		}
 	}
+
+	ctxlog.Debug(ctx, "finishing reconciling BuildRun", namespace, request.Namespace, name, request.Name)
+
 	return reconcile.Result{}, nil
 }
 

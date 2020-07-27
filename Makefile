@@ -67,7 +67,7 @@ vendor: go.mod go.sum
 .PHONY: build
 build: $(OPERATOR)
 
-$(OPERATOR):
+$(OPERATOR): vendor
 	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
 
 install-ginkgo:
@@ -124,7 +124,8 @@ crds:
 	@hack/crd.sh install
 
 local: crds build
-	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)" --watch-namespace="test-build"
+	OPERATOR_NAME=build-operator \
+	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
 clean:
 	rm -rf $(OUTPUT_DIR)
