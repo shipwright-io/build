@@ -171,7 +171,92 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
 			})
 		})
+		Context("when a TaskRun exists and have conditions", func() {
+			BeforeEach(func() {
 
+				// init the BuildRun resource from catalog
+				buildRunSample = ctl.DefaultBuildRun("foobar-buildrun", buildName)
+			})
+
+			// Docs on the TaskRun conditions can be found here
+			// https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md#monitoring-execution-status
+			It("updates the BuildRun status with a PENDING reason", func() {
+
+				taskRunSample = ctl.DefaultTaskRunWithStatus("foobar-task", corev1.ConditionUnknown, "Pending")
+
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					"Pending",
+					&taskRunName,
+					corev1.ConditionUnknown,
+					buildSample.Spec,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				// Assert for none errors while we exit the Reconcile
+				// after updating the BuildRun status with the existing
+				// TaskRun one
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			It("updates the BuildRun status with a RUNNING reason", func() {
+
+				taskRunSample = ctl.DefaultTaskRunWithStatus("foobar-task", corev1.ConditionUnknown, "Running")
+
+				statusCall := ctl.StubBuildRunStatus(
+					"Running",
+					&taskRunName,
+					corev1.ConditionUnknown,
+					buildSample.Spec,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			It("updates the BuildRun status with a SUCCEEDED reason", func() {
+
+				taskRunSample = ctl.DefaultTaskRunWithStatus("foobar-task", corev1.ConditionTrue, "Succeeded")
+
+				statusCall := ctl.StubBuildRunStatus(
+					"Succeeded",
+					&taskRunName,
+					corev1.ConditionTrue,
+					buildSample.Spec,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			It("updates the BuildRun status when a FALSE status occurs", func() {
+
+				taskRunSample = ctl.DefaultTaskRunWithFalseStatus("foobar-task")
+
+				// Based on the current buildRun controller, if the TaskRun condition.Status
+				// is FALSE, we will then populate our buildRun.Status.Reason with the
+				// TaskRun condition.Message, rather than the condition.Reason
+				statusCall := ctl.StubBuildRunStatus(
+					"some message",
+					&taskRunName,
+					corev1.ConditionFalse,
+					buildSample.Spec,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+		})
 		Context("when a TaskRun does not exists", func() {
 			var (
 				saName           string

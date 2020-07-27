@@ -387,6 +387,28 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.Conditio
 	}
 }
 
+// DefaultTaskRunWithFalseStatus returns a minimal tektont TaskRun with a FALSE status
+func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: trName,
+		},
+		Spec: v1beta1.TaskRunSpec{},
+		Status: v1beta1.TaskRunStatus{
+			Status: knativev1beta1.Status{
+				Conditions: knativev1beta1.Conditions{
+					{
+						Type:    apis.ConditionSucceeded,
+						Reason:  "something bad happened",
+						Status:  corev1.ConditionFalse,
+						Message: "some message",
+					},
+				},
+			},
+		},
+	}
+}
+
 // DefaultBuild returns a minimal Build object
 func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
 	return &build.Build{
