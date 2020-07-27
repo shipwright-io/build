@@ -18,6 +18,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -27,8 +28,6 @@ import (
 )
 
 const (
-	// ConfigName is the name of the configmap
-	DefaultsConfigName            = "config-defaults"
 	DefaultTimeoutMinutes         = 60
 	NoTimeoutDuration             = 0 * time.Minute
 	defaultTimeoutMinutesKey      = "default-timeout-minutes"
@@ -36,6 +35,8 @@ const (
 	defaultManagedByLabelValueKey = "default-managed-by-label-value"
 	DefaultManagedByLabelValue    = "tekton-pipelines"
 	defaultPodTemplateKey         = "default-pod-template"
+	defaultCloudEventsSinkKey     = "default-cloud-events-sink"
+	DefaultCloudEventSinkValue    = ""
 )
 
 // Defaults holds the default configurations
@@ -45,6 +46,16 @@ type Defaults struct {
 	DefaultServiceAccount      string
 	DefaultManagedByLabelValue string
 	DefaultPodTemplate         *pod.Template
+	DefaultCloudEventsSink     string
+}
+
+// GetBucketConfigName returns the name of the configmap containing all
+// customizations for the storage bucket.
+func GetDefaultsConfigName() string {
+	if e := os.Getenv("CONFIG_DEFAULTS_NAME"); e != "" {
+		return e
+	}
+	return "config-defaults"
 }
 
 // Equals returns true if two Configs are identical
@@ -60,7 +71,8 @@ func (cfg *Defaults) Equals(other *Defaults) bool {
 	return other.DefaultTimeoutMinutes == cfg.DefaultTimeoutMinutes &&
 		other.DefaultServiceAccount == cfg.DefaultServiceAccount &&
 		other.DefaultManagedByLabelValue == cfg.DefaultManagedByLabelValue &&
-		other.DefaultPodTemplate.Equals(cfg.DefaultPodTemplate)
+		other.DefaultPodTemplate.Equals(cfg.DefaultPodTemplate) &&
+		other.DefaultCloudEventsSink == cfg.DefaultCloudEventsSink
 }
 
 // NewDefaultsFromMap returns a Config given a map corresponding to a ConfigMap
@@ -68,6 +80,7 @@ func NewDefaultsFromMap(cfgMap map[string]string) (*Defaults, error) {
 	tc := Defaults{
 		DefaultTimeoutMinutes:      DefaultTimeoutMinutes,
 		DefaultManagedByLabelValue: DefaultManagedByLabelValue,
+		DefaultCloudEventsSink:     DefaultCloudEventSinkValue,
 	}
 
 	if defaultTimeoutMin, ok := cfgMap[defaultTimeoutMinutesKey]; ok {
@@ -92,6 +105,10 @@ func NewDefaultsFromMap(cfgMap map[string]string) (*Defaults, error) {
 			return nil, fmt.Errorf("failed to unmarshal %v", defaultPodTemplate)
 		}
 		tc.DefaultPodTemplate = &podTemplate
+	}
+
+	if defaultCloudEventsSink, ok := cfgMap[defaultCloudEventsSinkKey]; ok {
+		tc.DefaultCloudEventsSink = defaultCloudEventsSink
 	}
 
 	return &tc, nil

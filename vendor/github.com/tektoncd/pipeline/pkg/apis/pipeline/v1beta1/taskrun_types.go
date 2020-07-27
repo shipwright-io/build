@@ -20,11 +20,21 @@ import (
 	"fmt"
 	"time"
 
+	apisconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+)
+
+var (
+	taskRunGroupVersionKind = schema.GroupVersionKind{
+		Group:   SchemeGroupVersion.Group,
+		Version: SchemeGroupVersion.Version,
+		Kind:    pipeline.TaskRunControllerName,
+	}
 )
 
 // TaskRunSpec defines the desired state of TaskRun
@@ -72,17 +82,6 @@ type TaskRunInputs struct {
 	Params []Param `json:"params,omitempty"`
 }
 
-// TaskResourceBinding points to the PipelineResource that
-// will be used for the Task input or output called Name.
-type TaskResourceBinding struct {
-	PipelineResourceBinding `json:",inline"`
-	// Paths will probably be removed in #1284, and then PipelineResourceBinding can be used instead.
-	// The optional Path field corresponds to a path on disk at which the Resource can be found
-	// (used when providing the resource via mounted volume, overriding the default logic to fetch the Resource).
-	// +optional
-	Paths []string `json:"paths,omitempty"`
-}
-
 // TaskRunOutputs holds the output values that this task was invoked with.
 type TaskRunOutputs struct {
 	// +optional
@@ -99,6 +98,43 @@ type TaskRunStatus struct {
 	TaskRunStatusFields `json:",inline"`
 }
 
+// TaskRunReason is an enum used to store all TaskRun reason for
+// the Succeeded condition that are controlled by the TaskRun itself. Failure
+// reasons that emerge from underlying resources are not included here
+type TaskRunReason string
+
+const (
+	// TaskRunReasonStarted is the reason set when the TaskRun has just started
+	TaskRunReasonStarted TaskRunReason = "Started"
+	// TaskRunReasonRunning is the reason set when the TaskRun is running
+	TaskRunReasonRunning TaskRunReason = "Running"
+	// TaskRunReasonSuccessful is the reason set when the TaskRun completed successfully
+	TaskRunReasonSuccessful TaskRunReason = "Succeeded"
+	// TaskRunReasonFailed is the reason set when the TaskRun completed with a failure
+	TaskRunReasonFailed TaskRunReason = "Failed"
+	// TaskRunReasonCancelled is the reason set when the Taskrun is cancelled by the user
+	TaskRunReasonCancelled TaskRunReason = "TaskRunCancelled"
+	// TaskRunReasonTimedOut is the reason set when the Taskrun has timed out
+	TaskRunReasonTimedOut TaskRunReason = "TaskRunTimeout"
+)
+
+func (t TaskRunReason) String() string {
+	return string(t)
+}
+
+// GetStartedReason returns the reason set to the "Succeeded" condition when
+// InitializeConditions is invoked
+func (trs *TaskRunStatus) GetStartedReason() string {
+	return TaskRunReasonStarted.String()
+}
+
+// GetRunningReason returns the reason set to the "Succeeded" condition when
+// the RunsToCompletion starts running. This is used indicate that the resource
+// could be validated is starting to perform its job.
+func (trs *TaskRunStatus) GetRunningReason() string {
+	return TaskRunReasonRunning.String()
+}
+
 // MarkResourceNotConvertible adds a Warning-severity condition to the resource noting
 // that it cannot be converted to a higher version.
 func (trs *TaskRunStatus) MarkResourceNotConvertible(err *CannotConvertError) {
@@ -108,6 +144,17 @@ func (trs *TaskRunStatus) MarkResourceNotConvertible(err *CannotConvertError) {
 		Severity: apis.ConditionSeverityWarning,
 		Reason:   err.Field,
 		Message:  err.Message,
+	})
+}
+
+// MarkResourceFailed sets the ConditionSucceeded condition to ConditionFalse
+// based on an error that occurred and a reason
+func (trs *TaskRunStatus) MarkResourceFailed(reason TaskRunReason, err error) {
+	taskRunCondSet.Manage(trs).SetCondition(apis.Condition{
+		Type:    apis.ConditionSucceeded,
+		Status:  corev1.ConditionFalse,
+		Reason:  reason.String(),
+		Message: err.Error(),
 	})
 }
 
@@ -152,6 +199,9 @@ type TaskRunStatusFields struct {
 	// The list has one entry per sidecar in the manifest. Each entry is
 	// represents the imageid of the corresponding sidecar.
 	Sidecars []SidecarState `json:"sidecars,omitempty"`
+
+	// TaskSpec contains the Spec from the dereferenced Task definition used to instantiate this TaskRun.
+	TaskSpec *TaskSpec `json:"taskSpec,omitempty"`
 }
 
 // TaskRunResult used to describe the results of a task
@@ -163,6 +213,16 @@ type TaskRunResult struct {
 	Value string `json:"value"`
 }
 
+// GetOwnerReference gets the task run as owner reference for any related objects
+func (tr *TaskRun) GetOwnerReference() metav1.OwnerReference {
+	return *metav1.NewControllerRef(tr, taskRunGroupVersionKind)
+}
+
+// GetStatusCondition returns the task run status as a ConditionAccessor
+func (tr *TaskRun) GetStatusCondition() apis.ConditionAccessor {
+	return &tr.Status
+}
+
 // GetCondition returns the Condition matching the given type.
 func (trs *TaskRunStatus) GetCondition(t apis.ConditionType) *apis.Condition {
 	return taskRunCondSet.Manage(trs).GetCondition(t)
@@ -171,10 +231,19 @@ func (trs *TaskRunStatus) GetCondition(t apis.ConditionType) *apis.Condition {
 // InitializeConditions will set all conditions in taskRunCondSet to unknown for the TaskRun
 // and set the started time to the current time
 func (trs *TaskRunStatus) InitializeConditions() {
+	started := false
 	if trs.StartTime.IsZero() {
 		trs.StartTime = &metav1.Time{Time: time.Now()}
+		started = true
 	}
-	taskRunCondSet.Manage(trs).InitializeConditions()
+	conditionManager := taskRunCondSet.Manage(trs)
+	conditionManager.InitializeConditions()
+	// Ensure the started reason is set for the "Succeeded" condition
+	if started {
+		initialCondition := conditionManager.GetCondition(apis.ConditionSucceeded)
+		initialCondition.Reason = TaskRunReasonStarted.String()
+		conditionManager.SetCondition(*initialCondition)
+	}
 }
 
 // SetCondition sets the condition, unsetting previous conditions with the same
@@ -187,18 +256,18 @@ func (trs *TaskRunStatus) SetCondition(newCond *apis.Condition) {
 
 // StepState reports the results of running a step in a Task.
 type StepState struct {
-	corev1.ContainerState
-	Name          string `json:"name,omitempty"`
-	ContainerName string `json:"container,omitempty"`
-	ImageID       string `json:"imageID,omitempty"`
+	corev1.ContainerState `json:",inline"`
+	Name                  string `json:"name,omitempty"`
+	ContainerName         string `json:"container,omitempty"`
+	ImageID               string `json:"imageID,omitempty"`
 }
 
 // SidecarState reports the results of running a sidecar in a Task.
 type SidecarState struct {
-	corev1.ContainerState
-	Name          string `json:"name,omitempty"`
-	ContainerName string `json:"container,omitempty"`
-	ImageID       string `json:"imageID,omitempty"`
+	corev1.ContainerState `json:",inline"`
+	Name                  string `json:"name,omitempty"`
+	ContainerName         string `json:"container,omitempty"`
+	ImageID               string `json:"imageID,omitempty"`
 }
 
 // CloudEventDelivery is the target of a cloud event along with the state of
@@ -237,6 +306,7 @@ type CloudEventDeliveryState struct {
 }
 
 // +genclient
+// +genreconciler
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TaskRun represents a single execution of a Task. TaskRuns are how the steps
@@ -319,6 +389,28 @@ func (tr *TaskRun) IsCancelled() bool {
 	return tr.Spec.Status == TaskRunSpecStatusCancelled
 }
 
+// HasTimedOut returns true if the TaskRun runtime is beyond the allowed timeout
+func (tr *TaskRun) HasTimedOut() bool {
+	if tr.Status.StartTime.IsZero() {
+		return false
+	}
+	timeout := tr.GetTimeout()
+	// If timeout is set to 0 or defaulted to 0, there is no timeout.
+	if timeout == apisconfig.NoTimeoutDuration {
+		return false
+	}
+	runtime := time.Since(tr.Status.StartTime.Time)
+	return runtime > timeout
+}
+
+func (tr *TaskRun) GetTimeout() time.Duration {
+	// Use the platform default is no timeout is set
+	if tr.Spec.Timeout == nil {
+		return apisconfig.DefaultTimeoutMinutes * time.Minute
+	}
+	return tr.Spec.Timeout.Duration
+}
+
 // GetRunKey return the taskrun key for timeout handler map
 func (tr *TaskRun) GetRunKey() string {
 	// The address of the pointer is a threadsafe unique identifier for the taskrun
@@ -337,4 +429,15 @@ func (tr *TaskRun) IsPartOfPipeline() (bool, string, string) {
 	}
 
 	return false, "", ""
+}
+
+// HasVolumeClaimTemplate returns true if TaskRun contains volumeClaimTemplates that is
+// used for creating PersistentVolumeClaims with an OwnerReference for each run
+func (tr *TaskRun) HasVolumeClaimTemplate() bool {
+	for _, ws := range tr.Spec.Workspaces {
+		if ws.VolumeClaimTemplate != nil {
+			return true
+		}
+	}
+	return false
 }

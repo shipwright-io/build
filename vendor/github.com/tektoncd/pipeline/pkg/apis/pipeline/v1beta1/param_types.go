@@ -45,6 +45,7 @@ type ParamSpec struct {
 	Default *ArrayOrString `json:"default,omitempty"`
 }
 
+// SetDefaults set the default type
 func (pp *ParamSpec) SetDefaults(ctx context.Context) {
 	if pp != nil && pp.Type == "" {
 		if pp.Default != nil {
@@ -113,6 +114,7 @@ func (arrayOrString ArrayOrString) MarshalJSON() ([]byte, error) {
 	}
 }
 
+// ApplyReplacements applyes replacements for ArrayOrString type
 func (arrayOrString *ArrayOrString) ApplyReplacements(stringReplacements map[string]string, arrayReplacements map[string][]string) {
 	if arrayOrString.Type == ParamTypeString {
 		arrayOrString.StringVal = ApplyReplacements(arrayOrString.StringVal, stringReplacements)

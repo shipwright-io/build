@@ -91,6 +91,9 @@ type PipelineRunSpec struct {
 	// with those declared in the pipeline.
 	// +optional
 	Workspaces []WorkspaceBinding `json:"workspaces,omitempty"`
+	// TaskRunSpecs holds a set of task specific specs
+	// +optional
+	TaskRunSpecs []PipelineTaskRunSpec `json:"taskRunSpecs,omitempty"`
 }
 
 // PipelineRunSpecStatus defines the pipelinerun spec status the user can provide
@@ -152,10 +155,8 @@ func (pr *PipelineRun) GetTaskRunRef() corev1.ObjectReference {
 }
 
 // GetOwnerReference gets the pipeline run as owner reference for any related objects
-func (pr *PipelineRun) GetOwnerReference() []metav1.OwnerReference {
-	return []metav1.OwnerReference{
-		*metav1.NewControllerRef(pr, groupVersionKind),
-	}
+func (pr *PipelineRun) GetOwnerReference() metav1.OwnerReference {
+	return *metav1.NewControllerRef(pr, groupVersionKind)
 }
 
 // IsDone returns true if the PipelineRun's status indicates that it is done.
@@ -207,4 +208,36 @@ func (pr *PipelineRun) GetServiceAccountName(pipelineTaskName string) string {
 		}
 	}
 	return serviceAccountName
+}
+
+// HasVolumeClaimTemplate returns true if PipelineRun contains volumeClaimTemplates that is
+// used for creating PersistentVolumeClaims with an OwnerReference for each run
+func (pr *PipelineRun) HasVolumeClaimTemplate() bool {
+	for _, ws := range pr.Spec.Workspaces {
+		if ws.VolumeClaimTemplate != nil {
+			return true
+		}
+	}
+	return false
+}
+
+// PipelineTaskRunSpec holds task specific specs
+type PipelineTaskRunSpec struct {
+	PipelineTaskName       string       `json:"pipelineTaskName,omitempty"`
+	TaskServiceAccountName string       `json:"taskServiceAccountName,omitempty"`
+	TaskPodTemplate        *PodTemplate `json:"taskPodTemplate,omitempty"`
+}
+
+// GetTaskRunSpecs returns the task specific spec for a given
+// PipelineTask if configured, otherwise it returns the PipelineRun's default.
+func (pr *PipelineRun) GetTaskRunSpecs(pipelineTaskName string) (string, *PodTemplate) {
+	serviceAccountName := pr.GetServiceAccountName(pipelineTaskName)
+	taskPodTemplate := pr.Spec.PodTemplate
+	for _, task := range pr.Spec.TaskRunSpecs {
+		if task.PipelineTaskName == pipelineTaskName {
+			taskPodTemplate = task.TaskPodTemplate
+			serviceAccountName = task.TaskServiceAccountName
+		}
+	}
+	return serviceAccountName, taskPodTemplate
 }
