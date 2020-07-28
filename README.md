@@ -19,7 +19,7 @@ An API to build container-images on Kubernetes using popular strategies and tool
 | Dependency                                | Supported versions           |
 | ----------------------------------------- | ---------------------------- |
 | [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\* |
-| [Tekton](https://cloud.google.com/tekton) | v0.11.\*                     |
+| [Tekton](https://cloud.google.com/tekton) | v0.14.2                      |
 
 ## How
 
@@ -59,7 +59,7 @@ Examples of `Build` resource using the example strategies shipped with this oper
 ## Try it!
 
 * Get a [Kubernetes](https://kubernetes.io/) cluster and [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) set up to connect to your cluster.
-* Install [Tekton](https://cloud.google.com/tekton) by running [install-tekton.sh](hack/install-tekton.sh), it installs v0.11.3.
+* Install [Tekton](https://cloud.google.com/tekton) by running [install-tekton.sh](hack/install-tekton.sh), it installs v0.14.2.
 * Install [operator-sdk][operatorsdk] by running [install-operator-sdk.sh](hack/install-operator-sdk.sh), it installs v0.17.0.
 * Create a namespace called **build-examples** by running `kubectl create namespace build-examples`.
 * Execute `make local` to register [well-known build strategies](samples/buildstrategy) including **Kaniko** and start the operator locally.

@@ -131,6 +131,13 @@ func (i *impl) TrackReference(ref Reference, obj interface{}) error {
 	key := types.NamespacedName{Namespace: object.GetNamespace(), Name: object.GetName()}
 
 	i.m.Lock()
+	// Call the callback without the lock held.
+	var keys []types.NamespacedName
+	defer func(cb func(types.NamespacedName)) {
+		for _, key := range keys {
+			cb(key)
+		}
+	}(i.cb) // read i.cb with the lock held
 	defer i.m.Unlock()
 	if i.exact == nil {
 		i.exact = make(map[Reference]set)
@@ -152,13 +159,13 @@ func (i *impl) TrackReference(ref Reference, obj interface{}) error {
 			// doesn't create problems:
 			//    foo, err := lister.Get(key)
 			//    // Later...
-			//    err := tracker.Track(fooRef, parent)
+			//    err := tracker.TrackReference(fooRef, parent)
 			// In this example, "Later" represents a window where "foo" may
 			// have changed or been created while the Track is not active.
 			// The simplest way of eliminating such a window is to call the
 			// callback to "catch up" immediately following new
 			// registrations.
-			i.cb(key)
+			keys = append(keys, key)
 		}
 		// Overwrite the key with a new expiration.
 		l[key] = time.Now().Add(i.leaseDuration)
@@ -185,13 +192,13 @@ func (i *impl) TrackReference(ref Reference, obj interface{}) error {
 		// doesn't create problems:
 		//    foo, err := lister.Get(key)
 		//    // Later...
-		//    err := tracker.Track(fooRef, parent)
+		//    err := tracker.TrackReference(fooRef, parent)
 		// In this example, "Later" represents a window where "foo" may
 		// have changed or been created while the Track is not active.
 		// The simplest way of eliminating such a window is to call the
 		// callback to "catch up" immediately following new
 		// registrations.
-		i.cb(key)
+		keys = append(keys, key)
 	}
 	// Overwrite the key with a new expiration.
 	l[key] = matcher{
@@ -223,6 +230,13 @@ func (i *impl) OnChanged(obj interface{}) {
 	}
 
 	i.m.Lock()
+	// Call the callbacks without the lock held.
+	var keys []types.NamespacedName
+	defer func(cb func(types.NamespacedName)) {
+		for _, key := range keys {
+			cb(key)
+		}
+	}(i.cb) // read i.cb with the lock held
 	defer i.m.Unlock()
 
 	// Handle exact matches.
@@ -234,7 +248,7 @@ func (i *impl) OnChanged(obj interface{}) {
 				delete(s, key)
 				continue
 			}
-			i.cb(key)
+			keys = append(keys, key)
 		}
 		if len(s) == 0 {
 			delete(i.exact, ref)
@@ -253,10 +267,39 @@ func (i *impl) OnChanged(obj interface{}) {
 				continue
 			}
 			if m.selector.Matches(ls) {
-				i.cb(key)
+				keys = append(keys, key)
 			}
 		}
 		if len(s) == 0 {
+			delete(i.exact, ref)
+		}
+	}
+}
+
+// OnChanged implements Interface.
+func (i *impl) OnDeletedObserver(obj interface{}) {
+	item, err := kmeta.DeletionHandlingAccessor(obj)
+	if err != nil {
+		return
+	}
+
+	key := types.NamespacedName{Namespace: item.GetNamespace(), Name: item.GetName()}
+
+	i.m.Lock()
+	defer i.m.Unlock()
+
+	// Remove exact matches.
+	for ref, matchers := range i.exact {
+		delete(matchers, key)
+		if len(matchers) == 0 {
+			delete(i.exact, ref)
+		}
+	}
+
+	// Remove inexact matches.
+	for ref, matchers := range i.inexact {
+		delete(matchers, key)
+		if len(matchers) == 0 {
 			delete(i.exact, ref)
 		}
 	}

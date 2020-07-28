@@ -39,8 +39,14 @@ type PipelineSpec struct {
 	// Workspaces declares a set of named workspaces that are expected to be
 	// provided by a PipelineRun.
 	// +optional
-	Workspaces []WorkspacePipelineDeclaration `json:"workspaces,omitempty"`
+	Workspaces []PipelineWorkspaceDeclaration `json:"workspaces,omitempty"`
+	// Results are values that this pipeline can output once run
+	// +optional
+	Results []PipelineResult `json:"results,omitempty"`
 }
+
+// PipelineResult used to describe the results of a pipeline
+type PipelineResult = v1beta1.PipelineResult
 
 // Check that Pipeline may be validated and defaulted.
 // TaskKind defines the type of Task used by the pipeline.

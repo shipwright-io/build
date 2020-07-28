@@ -55,6 +55,10 @@ type WorkspaceBinding struct {
 	// for this binding (i.e. the volume will be mounted at this sub directory).
 	// +optional
 	SubPath string `json:"subPath,omitempty"`
+	// VolumeClaimTemplate is a template for a claim that will be created in the same namespace.
+	// The PipelineRun controller is responsible for creating a unique claim for each instance of PipelineRun.
+	// +optional
+	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 	// PersistentVolumeClaimVolumeSource represents a reference to a
 	// PersistentVolumeClaim in the same namespace. Either this OR EmptyDir can be used.
 	// +optional
@@ -74,7 +78,12 @@ type WorkspaceBinding struct {
 
 // WorkspacePipelineDeclaration creates a named slot in a Pipeline that a PipelineRun
 // is expected to populate with a workspace binding.
-type WorkspacePipelineDeclaration struct {
+// Deprecated: use PipelineWorkspaceDeclaration type instead
+type WorkspacePipelineDeclaration = PipelineWorkspaceDeclaration
+
+// PipelineWorkspaceDeclaration creates a named slot in a Pipeline that a PipelineRun
+// is expected to populate with a workspace binding.
+type PipelineWorkspaceDeclaration struct {
 	// Name is the name of a workspace to be provided by a PipelineRun.
 	Name string `json:"name"`
 	// Description is a human readable string describing how the workspace will be
@@ -91,4 +100,8 @@ type WorkspacePipelineTaskBinding struct {
 	Name string `json:"name"`
 	// Workspace is the name of the workspace declared by the pipeline
 	Workspace string `json:"workspace"`
+	// SubPath is optionally a directory on the volume which should be used
+	// for this binding (i.e. the volume will be mounted at this sub directory).
+	// +optional
+	SubPath string `json:"subPath,omitempty"`
 }
