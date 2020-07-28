@@ -14,13 +14,7 @@ The following set of steps highlight how to deploy a Build operator pod into an 
 
 2. Reference the generated image name in the [operator.yaml](../../deploy/operator.yaml). The `spec.template.containers[0].image` value should be modified.
 
-3. Target your Kubernetes cluster and create the `build-operator` namespace.
-
-    ```sh
-    kubectl create ns build-operator
-    ```
-
-4. Install Tekton pipeline controller:
+3. Target your Kubernetes cluster and install the Tekton pipeline:
 
     ```sh
     pushd $GOPATH/src/github.com/redhat-developer/build
@@ -28,7 +22,7 @@ The following set of steps highlight how to deploy a Build operator pod into an 
     popd
     ```
 
-5. Install the Build operator pod.
+4. Install the Build operator pod and all related resources.
 
     ```sh
     pushd $GOPATH/src/github.com/redhat-developer/build
@@ -36,5 +30,4 @@ The following set of steps highlight how to deploy a Build operator pod into an 
     popd
     ```
 
-The above five steps give you a running Build operator that executes the code from your current branch.
-
+The above four steps give you a running Build operator that executes the code from your current branch.
