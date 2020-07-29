@@ -143,7 +143,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure generated TaskRun's basic information are correct", func() {
-				Expect(strings.Contains(got.GenerateName, buildRun.Name+"-")).To(Equal(true))
+				Expect(strings.Contains(got.Name, buildRun.Name)).To(Equal(true))
 				Expect(got.Namespace).To(Equal(namespace))
 				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
 				Expect(got.Labels[buildv1alpha1.LabelBuild]).To(Equal(build.Name))
@@ -214,7 +214,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure generated TaskRun's basic information are correct", func() {
-				Expect(strings.Contains(got.GenerateName, buildRun.Name+"-")).To(Equal(true))
+				Expect(strings.Contains(got.Name, buildRun.Name)).To(Equal(true))
 				Expect(got.Namespace).To(Equal(namespace))
 				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
 				Expect(got.Labels[buildv1alpha1.LabelBuild]).To(Equal(build.Name))

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"knative.dev/pkg/apis"
 	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	"sigs.k8s.io/yaml"
 
@@ -284,8 +285,35 @@ func (c *Catalog) StubBuildRunGetWithoutSA(
 	}
 }
 
-// StubBuildRunGetWithSA simulates the output of client GET calls
-// for the BuildRun unit tests
+// StubBuildRunGetWithTaskRunAndSA returns fake object for different
+// client calls
+func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
+	b *build.Build,
+	br *build.BuildRun,
+	tr *v1beta1.TaskRun,
+	sa *corev1.ServiceAccount,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		case *corev1.ServiceAccount:
+			sa.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// StubBuildRunGetWithSA returns fake object for different
+// client calls
 func (c *Catalog) StubBuildRunGetWithSA(
 	b *build.Build,
 	br *build.BuildRun,
@@ -338,13 +366,6 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	}
 }
 
-// DefaultTaskRunList returns a minimal tekton TaskRunList
-func (c *Catalog) DefaultTaskRunList(tr *v1beta1.TaskRun) *v1beta1.TaskRunList {
-	return &v1beta1.TaskRunList{
-		Items: []v1beta1.TaskRun{*tr},
-	}
-}
-
 // DefaultTaskRunWithStatus returns a minimal tektont TaskRun with an Status
 func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
 	return &v1beta1.TaskRun{
@@ -356,8 +377,31 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.Conditio
 			Status: knativev1beta1.Status{
 				Conditions: knativev1beta1.Conditions{
 					{
+						Type:   apis.ConditionSucceeded,
 						Reason: reason,
 						Status: status,
+					},
+				},
+			},
+		},
+	}
+}
+
+// DefaultTaskRunWithFalseStatus returns a minimal tektont TaskRun with a FALSE status
+func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: trName,
+		},
+		Spec: v1beta1.TaskRunSpec{},
+		Status: v1beta1.TaskRunStatus{
+			Status: knativev1beta1.Status{
+				Conditions: knativev1beta1.Conditions{
+					{
+						Type:    apis.ConditionSucceeded,
+						Reason:  "something bad happened",
+						Status:  corev1.ConditionFalse,
+						Message: "some message",
 					},
 				},
 			},
@@ -442,7 +486,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 	}
 }
 
-// BuildRunWithSA returns a customized BuildRun object that defines a
+// BuildRunWithSAGenerate returns a customized BuildRun object that defines a
 // service account
 func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *build.BuildRun {
 	return &build.BuildRun{
