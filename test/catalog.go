@@ -486,7 +486,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 	}
 }
 
-// BuildRunWithSA returns a customized BuildRun object that defines a
+// BuildRunWithSAGenerate returns a customized BuildRun object that defines a
 // service account
 func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *build.BuildRun {
 	return &build.BuildRun{

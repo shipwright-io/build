@@ -14,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis"
@@ -107,8 +106,11 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			n := e.ObjectNew.(*v1beta1.TaskRun)
 			// Process an update event when the old TR resource is not yet started and the new TR resource is in Pending state.
 			// This allow us to catch the PENDING condition.Reason in the BuildRun
-			if o.Status.StartTime.IsZero() && n.Status.GetCondition(apis.ConditionSucceeded).Reason == pendingReason {
-				return true
+
+			if n.Status.GetCondition(apis.ConditionSucceeded) != nil {
+				if o.Status.StartTime.IsZero() && n.Status.GetCondition(apis.ConditionSucceeded).Reason == pendingReason {
+					return true
+				}
 			}
 
 			// Process an update event for every change in the condition.Reason between the old and new TR resource
@@ -135,26 +137,22 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 	// to a BuildRun
 	return c.Watch(&source.Kind{Type: &v1beta1.TaskRun{}}, &handler.EnqueueRequestsFromMapFunc{
 		ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+
 			taskRun := o.Object.(*v1beta1.TaskRun)
 
-			mgrClient := mgr.GetClient()
-			taskRunList := &v1beta1.TaskRunList{}
+			// check if TaskRun is related to BuildRun
+			if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1alpha1.LabelBuildRun] == "" {
+				return []reconcile.Request{}
+			}
 
-			lbls := map[string]string{
-				buildv1alpha1.LabelBuildRun: taskRun.Name,
+			return []reconcile.Request{
+				{
+					NamespacedName: types.NamespacedName{
+						Name:      taskRun.GetLabels()[buildv1alpha1.LabelBuildRun],
+						Namespace: taskRun.Namespace,
+					},
+				},
 			}
-			opts := client.ListOptions{
-				Namespace:     taskRun.Namespace,
-				LabelSelector: labels.SelectorFromSet(lbls),
-			}
-			_ = mgrClient.List(ctx, taskRunList, &opts)
-
-			res := make([]reconcile.Request, len(taskRunList.Items))
-			for i, tr := range taskRunList.Items {
-				res[i].Name = tr.Name
-				res[i].Namespace = tr.Namespace
-			}
-			return res
 		}),
 	}, predTaskRun)
 }
@@ -226,9 +224,10 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, handleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
 		}
 	} else {
-		ctxlog.Info(ctx, "TaskRun already exists", namespace, request.Namespace, name, request.Name, "jodido", lastTaskRun.Name)
-		if lastTaskRun.Status.GetCondition(apis.ConditionSucceeded) != nil {
-			taskRunStatus := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded).Status
+		ctxlog.Info(ctx, "TaskRun already exists", namespace, request.Namespace, name, request.Name)
+		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
+		if trCondition != nil {
+			taskRunStatus := trCondition.Status
 			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
 			if isGeneratedServiceAccountUsed(buildRun) && (taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse) {
 				serviceAccount := &corev1.ServiceAccount{}
@@ -244,9 +243,9 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 			buildRun.Status.Succeeded = taskRunStatus
 			if taskRunStatus == corev1.ConditionFalse {
-				buildRun.Status.Reason = lastTaskRun.Status.GetCondition(apis.ConditionSucceeded).Message
+				buildRun.Status.Reason = trCondition.Message
 			} else {
-				buildRun.Status.Reason = lastTaskRun.Status.GetCondition(apis.ConditionSucceeded).Reason
+				buildRun.Status.Reason = trCondition.Reason
 			}
 
 			if buildRun.Status.BuildSpec == nil {

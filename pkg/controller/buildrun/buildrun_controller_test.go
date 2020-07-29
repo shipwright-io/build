@@ -466,6 +466,5 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 		})
 
-		// TODO: we need unit-tests for validating the BuildRun STATUS coming from the TASKRUN conditions
 	})
 })
