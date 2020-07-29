@@ -9,6 +9,7 @@
 ACTION="${1}"
 CRDS=(
     # operator components
+    deploy/namespace.yaml
     deploy/role.yaml
     deploy/role_binding.yaml
     deploy/service_account.yaml

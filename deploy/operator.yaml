@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: build-operator
+  namespace: build-operator
 spec:
   replicas: 1
   selector:
