@@ -171,6 +171,90 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
 			})
 		})
+
+		Context("when a TaskRun exists with a non-matching BuildRun UID", func() {
+			BeforeEach(func() {
+				buildRunName := "foobar-buildrun-with-sa"
+				saName := "foobar-sa"
+
+				// override the Build to use a cluster BuildStrategy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
+
+				// use a BuildRun sample with a service account reference so that the service account generation does not happen
+				buildRunSample = ctl.BuildRunWithSA(buildRunName, buildName, saName)
+
+				// init a TaskRun, we need this to fake the existance of a Tekton TaskRun
+				taskRunSample = ctl.DefaultTaskRunWithStatus(buildRunName, corev1.ConditionTrue, "Succeeded")
+				taskRunSample.Labels[build.LabelBuildRunUid] = "non-matching"
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategiesAndTaskRun(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy(),
+					taskRunSample),
+				)
+			})
+
+			It("deletes the existing TaskRun and creates a new one", func() {
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+
+				// Expect one delete call for the old TaskRun
+				Expect(client.DeleteCallCount()).To(Equal(1))
+				_, obj, _ := client.DeleteArgsForCall(0)
+				deletedTaskRun, castSuccessful := obj.(*v1beta1.TaskRun)
+				Expect(castSuccessful).To(BeTrue())
+				Expect(deletedTaskRun.Labels[build.LabelBuildRunUid]).To(Equal("non-matching"))
+
+				// Expect one create call for the new TaskRun
+				Expect(client.CreateCallCount()).To(Equal(1))
+				_, obj, _ = client.CreateArgsForCall(0)
+				createdTaskRun, castSuccessful := obj.(*v1beta1.TaskRun)
+				Expect(castSuccessful).To(BeTrue())
+				Expect(createdTaskRun.Labels[build.LabelBuildRunUid]).To(Equal(string(buildRunSample.UID)))
+			})
+		})
+
+		Context("when a TaskRun exists without a BuildRun UID", func() {
+			BeforeEach(func() {
+				buildRunName := "foobar-buildrun-with-sa"
+				saName := "foobar-sa"
+
+				// override the Build to use a cluster BuildStrategy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
+
+				// use a BuildRun sample with a service account reference so that the service account generation does not happen
+				buildRunSample = ctl.BuildRunWithSA(buildRunName, buildName, saName)
+
+				// init a TaskRun, we need this to fake the existance of a Tekton TaskRun
+				taskRunSample = ctl.DefaultTaskRunWithStatus(buildRunName, corev1.ConditionTrue, "Succeeded")
+				taskRunSample.Labels[build.LabelBuildRunUid] = ""
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategiesAndTaskRun(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy(),
+					taskRunSample),
+				)
+			})
+
+			It("fails reporting the unexpected TaskRun", func() {
+				result, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Failed to create TaskRun because an object with that name already exists"))
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
+
 		Context("when a TaskRun exists and have conditions", func() {
 			BeforeEach(func() {
 

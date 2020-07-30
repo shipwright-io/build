@@ -202,6 +202,7 @@ func GenerateTaskRun(
 				buildv1alpha1.LabelBuildGeneration:    strconv.FormatInt(build.Generation, 10),
 				buildv1alpha1.LabelBuildRun:           buildRun.Name,
 				buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+				buildv1alpha1.LabelBuildRunUid:        string(buildRun.UID),
 			},
 		},
 		Spec: v1beta1.TaskRunSpec{

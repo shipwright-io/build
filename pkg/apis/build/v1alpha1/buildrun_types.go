@@ -8,6 +8,7 @@ import (
 var (
 	LabelBuildRun           = "buildrun.build.dev/name"
 	LabelBuildRunGeneration = "buildrun.build.dev/generation"
+	LabelBuildRunUid        = "buildrun.build.dev/uid"
 )
 
 // BuildRunSpec defines the desired state of BuildRun

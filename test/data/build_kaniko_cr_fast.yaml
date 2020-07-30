@@ -1,0 +1,14 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-fast
+spec:
+  source:
+    url: https://github.com/SaschaSchwarze0/docker-simple
+    revision: busybox
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/kaniko-fast

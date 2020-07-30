@@ -4,6 +4,7 @@ import (
 	"os"
 
 	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -342,6 +343,68 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(namespace, br)
+		})
+	})
+
+	Context("when a Kaniko build is defined which is fast", func() {
+
+		BeforeEach(func() {
+			if os.Getenv(EnvVarVerifyTektonObjects) != "true" {
+				Skip("Skipping test case that can only run with access to Tekton objects")
+			}
+
+			testID = generateTestID("kaniko-fast")
+
+			// create the build definition
+			createBuild(namespace, testID, "test/data/build_kaniko_cr_fast.yaml")
+		})
+
+		AfterEach(func() {
+			if CurrentGinkgoTestDescription().Failed {
+				Logf("Print failed BuildRun's log")
+				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
+			}
+		})
+
+		It("successfully runs a build and then successfully runs another build with the same name if the buildrun is deleted but the taskrun is still there", func() {
+			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+
+			// We are going to fake a system state now. What we want to reach is that the buildrun is deleted but the dependent taskrun
+			// is still there. In reality, this can happen if the Kubernetes garabage collector has not yet picked up the dependent
+			// taskrun. As we here cannot rely on this being as slow as we want it, we are going to remove the owner reference of the
+			// taskrun.
+
+			// retrieve the taskrun
+			taskRun, err := getTaskRun(br)
+			Expect(err).ToNot(HaveOccurred())
+
+			// capture the uid of the taskrun
+			oldTaskRunUID := taskRun.UID
+
+			// delete the owner reference
+			taskRun.SetOwnerReferences([]metav1.OwnerReference{})
+			err = updateTaskRun(taskRun)
+			Expect(err).ToNot(HaveOccurred())
+
+			// delete the build run
+			err = deleteBuildRun(br)
+			Expect(err).ToNot(HaveOccurred())
+
+			// we have now faked the situation that a buildrun was deleted and the kube deletion has not yet deleted the associated taskrun
+
+			// run another build
+			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(namespace, br)
+
+			// verify that the uid of the taskrun is now a new one
+			taskRun, err = getTaskRun(br)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun.UID).ToNot(Equal(oldTaskRunUID))
 		})
 	})
 

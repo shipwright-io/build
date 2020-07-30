@@ -23,6 +23,8 @@ import (
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const buildRunUID = "806228c0-d248-11ea-a68b-54ee75c0ba67"
+
 // Catalog allows you to access helper functions
 type Catalog struct{}
 
@@ -366,11 +368,49 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	}
 }
 
+// StubBuildRunGetWithSAandStrategiesAndTaskRun simulates the ouput of client GET
+// calls for the BuildRun unit tests
+func (c *Catalog) StubBuildRunGetWithSAandStrategiesAndTaskRun(
+	b *build.Build,
+	br *build.BuildRun,
+	sa *corev1.ServiceAccount,
+	cb *buildv1alpha1.ClusterBuildStrategy,
+	bs *buildv1alpha1.BuildStrategy,
+	tr *v1beta1.TaskRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		case *corev1.ServiceAccount:
+			sa.DeepCopyInto(object)
+			return nil
+		case *buildv1alpha1.ClusterBuildStrategy:
+			cb.DeepCopyInto(object)
+			return nil
+		case *buildv1alpha1.BuildStrategy:
+			bs.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
 // DefaultTaskRunWithStatus returns a minimal tektont TaskRun with an Status
 func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
 	return &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: trName,
+			Labels: map[string]string{
+				buildv1alpha1.LabelBuildRunUid: string(buildRunUID),
+			},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
@@ -392,6 +432,9 @@ func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string) *v1beta1.TaskRun 
 	return &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: trName,
+			Labels: map[string]string{
+				buildv1alpha1.LabelBuildRunUid: string(buildRunUID),
+			},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
@@ -429,6 +472,7 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 	return &build.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
+			UID:  buildRunUID,
 		},
 		Spec: build.BuildRunSpec{
 			BuildRef: &build.BuildRef{
@@ -473,6 +517,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 	return &build.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
+			UID:  buildRunUID,
 		},
 		Spec: build.BuildRunSpec{
 			BuildRef: &build.BuildRef{
@@ -492,6 +537,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 	return &build.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
+			UID:  buildRunUID,
 		},
 		Spec: build.BuildRunSpec{
 			BuildRef: &build.BuildRef{

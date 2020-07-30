@@ -212,7 +212,39 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	lastTaskRun := &v1beta1.TaskRun{}
 
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
-	if err = r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil && apierrors.IsNotFound(err) {
+	if err = r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil {
+		if apierrors.IsNotFound(err) {
+			generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			ctxlog.Info(ctx, "creating TaskRun from BuildRun", namespace, request.Namespace, name, generatedTaskRun.Name, "BuildRun", buildRun.Name)
+			if err = r.client.Create(ctx, generatedTaskRun); err != nil {
+				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+				return reconcile.Result{}, handleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
+			}
+		} else {
+			return reconcile.Result{}, err
+		}
+	} else if lastTaskRun.GetLabels() == nil || lastTaskRun.GetLabels()[buildv1alpha1.LabelBuildRunUid] == "" {
+		// there is a TaskRun with the name that we want to pick that was not created by us
+		ctxlog.Info(ctx, "A TaskRun with the BuildRun's name already exists but is not created by this controller.", namespace, request.Namespace, name, request.Name)
+
+		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, "Failed to create TaskRun because an object with that name already exists that is not created by this controller")
+		return reconcile.Result{}, handleError("Failed to create TaskRun because an object with that name already exists", err, updateErr)
+	} else if lastTaskRun.GetLabels()[buildv1alpha1.LabelBuildRunUid] != string(buildRun.UID) {
+		// There is a TaskRun with the name but its BuildRun uid does not match. This can happen if a BuildRun with
+		// the same name was just deleted and the k8s garbage collection has not yet deleted the dependent TaskRun.
+		// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#background-cascading-deletion
+		ctxlog.Info(ctx, "A TaskRun with the BuildRun's name already exists but is not for this BuildRun (UID mismatch), trying to delete it.", namespace, request.Namespace, name, request.Name)
+
+		// Delete the old TaskRun
+		if err = r.client.Delete(ctx, lastTaskRun); err != nil && !apierrors.IsNotFound(err) {
+			return reconcile.Result{}, err
+		}
+
+		// Create the new TaskRun
 		generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
 		if err != nil {
 			return reconcile.Result{}, err

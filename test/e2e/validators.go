@@ -182,7 +182,7 @@ func validateBuildRunToSucceed(
 	// Ensure that a TaskRun has been created and is in pending or running state
 	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
 		Eventually(func() string {
-			taskRun, err := getTaskRun(f, testBuildRun)
+			taskRun, err := getTaskRun(testBuildRun)
 			if err != nil {
 				Logf("Retrieving TaskRun error: '%s'", err)
 				return ""
@@ -416,10 +416,9 @@ func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*ope
 }
 
 // getTaskRun retrieve Tekton's Task based on BuildRun instance.
-func getTaskRun(
-	f *framework.Framework,
-	buildRun *buildv1alpha1.BuildRun,
-) (*v1beta1.TaskRun, error) {
+func getTaskRun(buildRun *buildv1alpha1.BuildRun) (*v1beta1.TaskRun, error) {
+	f := framework.Global
+
 	taskRunList := &v1beta1.TaskRunList{}
 	lbls := map[string]string{
 		buildv1alpha1.LabelBuild:    buildRun.Spec.BuildRef.Name,
@@ -437,4 +436,16 @@ func getTaskRun(
 		return &taskRunList.Items[len(taskRunList.Items)-1], nil
 	}
 	return nil, nil
+}
+
+func deleteBuildRun(buildRun *buildv1alpha1.BuildRun) error {
+	f := framework.Global
+
+	return f.Client.Delete(goctx.TODO(), buildRun)
+}
+
+func updateTaskRun(taskRun *v1beta1.TaskRun) error {
+	f := framework.Global
+
+	return f.Client.Update(goctx.TODO(), taskRun)
 }
