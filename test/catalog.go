@@ -421,6 +421,28 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 				Kind: &strategyKind,
 			},
 		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
+// DefaultBuildWithFalseRegistered returns a minimal Build object with a FALSE Registered
+func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildName,
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &strategyKind,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionFalse,
+			Reason: "something bad happened",
+		},
 	}
 }
 
