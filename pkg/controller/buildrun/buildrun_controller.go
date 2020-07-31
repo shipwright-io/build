@@ -104,13 +104,11 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			o := e.ObjectOld.(*v1beta1.TaskRun)
 			n := e.ObjectNew.(*v1beta1.TaskRun)
-			// Process an update event when the old TR resource is not yet started and the new TR resource is in Pending state.
-			// This allow us to catch the PENDING condition.Reason in the BuildRun
 
-			if n.Status.GetCondition(apis.ConditionSucceeded) != nil {
-				if o.Status.StartTime.IsZero() && n.Status.GetCondition(apis.ConditionSucceeded).Reason == pendingReason {
-					return true
-				}
+			// Process an update event when the old TR resource is not yet started and the new TR resource got a
+			// condition of the type Succeeded
+			if o.Status.StartTime.IsZero() && n.Status.GetCondition(apis.ConditionSucceeded) != nil {
+				return true
 			}
 
 			// Process an update event for every change in the condition.Reason between the old and new TR resource
