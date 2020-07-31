@@ -465,6 +465,28 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
+		Context("When a build is not ready", func() {
+			It("stops creation when a FALSE registered status of the build occurs", func() {
+				// Init the Build with registered status false
+				buildSample = ctl.DefaultBuildWithFalseRegistered(buildName, strategyName, build.ClusterBuildStrategyKind)
+				getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						buildSample.DeepCopyInto(object)
+						return nil
+					case *build.BuildRun:
+						buildRunSample.DeepCopyInto(object)
+						return nil
+					}
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+
+				client.GetCalls(getClientStub)
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("reason: something bad happened"))
+			})
+		})
 
 	})
 })

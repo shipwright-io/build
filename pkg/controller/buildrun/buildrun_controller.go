@@ -193,6 +193,11 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 		return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
 	}
+	if build.Status.Registered != corev1.ConditionTrue {
+		err := fmt.Errorf("The Build is not registered correctly, registered status: %s, reason: %s", build.Status.Registered, build.Status.Reason)
+		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+		return reconcile.Result{}, handleError("Build is not ready", err, updateErr)
+	}
 
 	if buildRun.GetLabels() == nil {
 		buildRun.Labels = make(map[string]string)
