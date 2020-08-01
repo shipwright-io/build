@@ -146,7 +146,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			return []reconcile.Request{
 				{
 					NamespacedName: types.NamespacedName{
-						Name:      taskRun.GetLabels()[buildv1alpha1.LabelBuildRun],
+						Name:      taskRun.Name,
 						Namespace: taskRun.Namespace,
 					},
 				},
@@ -167,6 +167,30 @@ func handleError(message string, listOfErrors ...error) error {
 	return fmt.Errorf("errors: %s, msg: %s", strings.Join(errSlice, ", "), message)
 }
 
+// GetBuildRunObject retrieves an existing BuildRun based on a name and namespace
+func (r *ReconcileBuildRun) GetBuildRunObject(ctx context.Context, objectName string, objectNS string) (*buildv1alpha1.BuildRun, error) {
+	var buildRun buildv1alpha1.BuildRun
+	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, &buildRun); err != nil {
+		return nil, err
+	}
+	return &buildRun, nil
+}
+
+// GetBuildObject retrieves an existing Build based on a name and namespace
+func (r *ReconcileBuildRun) GetBuildObject(ctx context.Context, objectName string, objectNS string, buildRun *buildv1alpha1.BuildRun) (*buildv1alpha1.Build, error) {
+	var build buildv1alpha1.Build
+	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, &build); err != nil {
+		return nil, err
+	}
+
+	if build.Status.Registered != corev1.ConditionTrue {
+		err := fmt.Errorf("The Build is not registered correctly, registered status: %s, reason: %s", build.Status.Registered, build.Status.Reason)
+		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+		return nil, handleError("Build is not ready", err, updateErr)
+	}
+	return &build, nil
+}
+
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
 func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -177,45 +201,27 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	ctxlog.Debug(ctx, "start reconciling BuildRun", namespace, request.Namespace, name, request.Name)
 
-	// Fetch the BuildRun instance
-	buildRun := &buildv1alpha1.BuildRun{}
-	err := r.client.Get(ctx, request.NamespacedName, buildRun)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return reconcile.Result{}, err
-	} else if apierrors.IsNotFound(err) {
-		return reconcile.Result{}, nil
-	}
-
-	// Fetch the Build instance
-	build := &buildv1alpha1.Build{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: buildRun.Spec.BuildRef.Name, Namespace: buildRun.Namespace}, build)
-	if err != nil {
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
-	}
-	if build.Status.Registered != corev1.ConditionTrue {
-		err := fmt.Errorf("The Build is not registered correctly, registered status: %s, reason: %s", build.Status.Registered, build.Status.Reason)
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return reconcile.Result{}, handleError("Build is not ready", err, updateErr)
-	}
-
-	if buildRun.GetLabels() == nil {
-		buildRun.Labels = make(map[string]string)
-	}
-	if buildRun.GetLabels()[buildv1alpha1.LabelBuild] == "" {
-		buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
-		buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
-		ctxlog.Info(ctx, "updating buildRun labels", namespace, request.Namespace, name, request.Name)
-		err = r.client.Update(ctx, buildRun)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
+	var buildRun *buildv1alpha1.BuildRun
+	var build *buildv1alpha1.Build
 	lastTaskRun := &v1beta1.TaskRun{}
 
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
-	if err = r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil && apierrors.IsNotFound(err) {
+	if err := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil && apierrors.IsNotFound(err) {
+
+		buildRun, err = r.GetBuildRunObject(ctx, request.Name, request.Namespace)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return reconcile.Result{}, err
+		} else if apierrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+
+		// Fetch the Build instance
+		build, err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, buildRun)
+		if err != nil {
+			updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+			return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
+		}
+
 		generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -228,6 +234,21 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	} else {
 		ctxlog.Info(ctx, "TaskRun already exists", namespace, request.Namespace, name, request.Name)
+
+		buildRun, err = r.GetBuildRunObject(ctx, lastTaskRun.Labels[buildv1alpha1.LabelBuildRun], request.Namespace)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return reconcile.Result{}, err
+		} else if apierrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+
+		// Fetch the Build instance
+		build, err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, buildRun)
+		if err != nil {
+			updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+			return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
+		}
+
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
 		if trCondition != nil {
 			taskRunStatus := trCondition.Status
@@ -275,6 +296,20 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			if err != nil {
 				return reconcile.Result{}, err
 			}
+		}
+	}
+
+	if buildRun.GetLabels() == nil {
+		buildRun.Labels = make(map[string]string)
+	}
+
+	if buildRun.GetLabels()[buildv1alpha1.LabelBuild] == "" {
+		buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
+		buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+		ctxlog.Info(ctx, "updating buildRun labels", namespace, request.Namespace, name, request.Name)
+		err := r.client.Update(ctx, buildRun)
+		if err != nil {
+			return reconcile.Result{}, err
 		}
 	}
 
@@ -402,12 +437,6 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alp
 		err := fmt.Errorf("unknown strategy %s", string(*build.Spec.StrategyRef.Kind))
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 		return nil, handleError(fmt.Sprintf("Unsupported BuildStrategy Kind: %v", build.Spec.StrategyRef.Kind), err, updateErr)
-	}
-
-	// Set OwnerReference for Build and BuildRun
-	if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, handleError("Failed to set OwnerReference for Build and BuildRun", err, updateErr)
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun

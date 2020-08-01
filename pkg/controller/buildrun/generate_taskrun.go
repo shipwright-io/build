@@ -195,8 +195,8 @@ func GenerateTaskRun(
 
 	expectedTaskRun := &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      buildRun.Name,
-			Namespace: buildRun.Namespace,
+			GenerateName: buildRun.Name + "-",
+			Namespace:    buildRun.Namespace,
 			Labels: map[string]string{
 				buildv1alpha1.LabelBuild:              build.Name,
 				buildv1alpha1.LabelBuildGeneration:    strconv.FormatInt(build.Generation, 10),

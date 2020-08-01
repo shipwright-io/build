@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"reflect"
+
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
@@ -14,7 +16,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
