@@ -71,7 +71,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 		strategyName = "foobar-strategy"
 		buildName = "foobar-build"
 		buildRunName = "foobar-buildrun"
-		taskRunName = "foobar-buildrun-jwiopq"
+		taskRunName = "foobar-buildrun-p8nts"
 		ns = "default"
 
 		// ensure resources are added to the Scheme

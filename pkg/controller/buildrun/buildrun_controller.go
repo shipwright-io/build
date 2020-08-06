@@ -3,6 +3,7 @@ package buildrun
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -29,9 +30,10 @@ import (
 )
 
 const (
-	namespace     string = "namespace"
-	name          string = "name"
-	pendingReason string = "Pending"
+	namespace          string = "namespace"
+	name               string = "name"
+	pendingReason      string = "Pending"
+	generatedNameRegex        = "-[a-z0-9]{5,5}$"
 )
 
 /**
@@ -167,59 +169,87 @@ func handleError(message string, listOfErrors ...error) error {
 	return fmt.Errorf("errors: %s, msg: %s", strings.Join(errSlice, ", "), message)
 }
 
-// GetBuildRunObject retrieves an existing BuildRun based on a name and namespace
-func (r *ReconcileBuildRun) GetBuildRunObject(ctx context.Context, objectName string, objectNS string) (*buildv1alpha1.BuildRun, error) {
-	var buildRun buildv1alpha1.BuildRun
-	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, &buildRun); err != nil {
-		return nil, err
-	}
-	return &buildRun, nil
-}
-
-// GetBuildObject retrieves an existing Build based on a name and namespace
-func (r *ReconcileBuildRun) GetBuildObject(ctx context.Context, objectName string, objectNS string, buildRun *buildv1alpha1.BuildRun) (*buildv1alpha1.Build, error) {
-	var build buildv1alpha1.Build
-	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, &build); err != nil {
-		return nil, err
-	}
-
+// ValidateBuildRegistration verifies that a referenced Build is properly register
+func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) error {
 	if build.Status.Registered != corev1.ConditionTrue {
 		err := fmt.Errorf("The Build is not registered correctly, registered status: %s, reason: %s", build.Status.Registered, build.Status.Reason)
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, handleError("Build is not ready", err, updateErr)
+		return handleError("Build is not ready", err, updateErr)
 	}
-	return &build, nil
+	return nil
+}
+
+// GetBuildRunObject retrieves an existing BuildRun based on a name and namespace
+func (r *ReconcileBuildRun) GetBuildRunObject(ctx context.Context, objectName string, objectNS string, buildRun *buildv1alpha1.BuildRun) error {
+	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, buildRun); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetBuildObject retrieves an existing Build based on a name and namespace
+func (r *ReconcileBuildRun) GetBuildObject(ctx context.Context, objectName string, objectNS string, build *buildv1alpha1.Build) error {
+	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, build); err != nil {
+		return err
+	}
+	return nil
+}
+
+// VerifyRequestName parse a Reconcile request name and looks for an associated BuildRun name
+// If the BuildRun object exists, it will update it with an error.
+func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request reconcile.Request, buildRun *buildv1alpha1.BuildRun) {
+	// Check if the name belongs to a TaskRun generated name https://regex101.com/r/Wjs3bV/9
+	matched, _ := regexp.MatchString(generatedNameRegex, request.Name)
+	if matched {
+		if split := regexp.MustCompile(generatedNameRegex).Split(request.Name, 2); len(split) == 2 {
+			// Update the related BuildRun
+			err := r.GetBuildRunObject(ctx, split[0], request.Namespace, buildRun)
+			if err == nil {
+				r.updateBuildRunErrorStatus(ctx, buildRun, fmt.Sprintf("taskRun %s doesn´t exist", request.Name))
+			}
+		}
+	}
 }
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
 func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
+	var buildRun *buildv1alpha1.BuildRun
+	var build *buildv1alpha1.Build
+
 	// Set the ctx to be Background, as the top-level context for incoming requests.
 	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
 
-	ctxlog.Debug(ctx, "start reconciling BuildRun", namespace, request.Namespace, name, request.Name)
+	ctxlog.Debug(ctx, "starting reconciling request from a BuildRun or TaskRun event", namespace, request.Namespace, name, request.Name)
 
-	var buildRun *buildv1alpha1.BuildRun
-	var build *buildv1alpha1.Build
+	buildRun = &buildv1alpha1.BuildRun{}
+	build = &buildv1alpha1.Build{}
 	lastTaskRun := &v1beta1.TaskRun{}
 
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
 	if err := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil && apierrors.IsNotFound(err) {
 
-		buildRun, err = r.GetBuildRunObject(ctx, request.Name, request.Namespace)
+		err = r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		} else if apierrors.IsNotFound(err) {
+			// If the BuildRun and TaskRun are not found, it might mean that we are running a Reconcile after a TaskRun was deleted. If this is the case, we need
+			// to identify from the request the BuildRun name associate to it and update the BuildRun Status.
+			r.VerifyRequestName(ctx, request, buildRun)
 			return reconcile.Result{}, nil
 		}
 
-		// Fetch the Build instance
-		build, err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, buildRun)
+		err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, build)
 		if err != nil {
 			updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 			return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
+		}
+
+		// Validate if the Build was successfully register
+		if err := r.ValidateBuildRegistration(ctx, build, buildRun); err != nil {
+			return reconcile.Result{}, err
 		}
 
 		generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
@@ -235,15 +265,14 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	} else {
 		ctxlog.Info(ctx, "TaskRun already exists", namespace, request.Namespace, name, request.Name)
 
-		buildRun, err = r.GetBuildRunObject(ctx, lastTaskRun.Labels[buildv1alpha1.LabelBuildRun], request.Namespace)
+		err = r.GetBuildRunObject(ctx, lastTaskRun.Labels[buildv1alpha1.LabelBuildRun], request.Namespace, buildRun)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		} else if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 
-		// Fetch the Build instance
-		build, err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, buildRun)
+		err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, build)
 		if err != nil {
 			updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 			return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
@@ -313,7 +342,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	}
 
-	ctxlog.Debug(ctx, "finishing reconciling BuildRun", namespace, request.Namespace, name, request.Name)
+	ctxlog.Debug(ctx, "finishing reconciling request from a BuildRun or TaskRun event", namespace, request.Namespace, name, request.Name)
 
 	return reconcile.Result{}, nil
 }

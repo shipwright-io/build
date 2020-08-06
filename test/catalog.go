@@ -483,7 +483,7 @@ func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName
 		},
 		Status: build.BuildStatus{
 			Registered: corev1.ConditionFalse,
-			Reason: "something bad happened",
+			Reason:     "something bad happened",
 		},
 	}
 }
