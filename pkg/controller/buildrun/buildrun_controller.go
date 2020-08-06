@@ -198,13 +198,20 @@ func (r *ReconcileBuildRun) GetBuildObject(ctx context.Context, objectName strin
 // VerifyRequestName parse a Reconcile request name and looks for an associated BuildRun name
 // If the BuildRun object exists, it will update it with an error.
 func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request reconcile.Request, buildRun *buildv1alpha1.BuildRun) {
-	// Check if the name belongs to a TaskRun generated name https://regex101.com/r/Wjs3bV/9
-	matched, _ := regexp.MatchString(generatedNameRegex, request.Name)
+
+	regxBuildRun, _ := regexp.Compile(generatedNameRegex)
+
+	// Check if the name belongs to a TaskRun generated name https://regex101.com/r/Wjs3bV/10
+	// and extract the BuildRun name
+	matched := regxBuildRun.MatchString(request.Name)
 	if matched {
-		if split := regexp.MustCompile(generatedNameRegex).Split(request.Name, 2); len(split) == 2 {
+		if split := regxBuildRun.Split(request.Name, 2); len(split) > 0 {
 			// Update the related BuildRun
 			err := r.GetBuildRunObject(ctx, split[0], request.Namespace, buildRun)
 			if err == nil {
+				// We ignore the errors from the following call, because the parent call of this function will always
+				// return back a reconcile.Result{}, nil. This is done to avoid infinite reconcile loops when a BuildRun
+				// does not longer exists
 				r.updateBuildRunErrorStatus(ctx, buildRun, fmt.Sprintf("taskRun %s doesn´t exist", request.Name))
 			}
 		}
