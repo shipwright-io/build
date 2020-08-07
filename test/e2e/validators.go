@@ -180,6 +180,7 @@ func validateBuildRunToSucceed(
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
 
 	// Ensure that a TaskRun has been created and is in pending or running state
+	// for more info refer to https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md#monitoring-execution-status
 	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
 		Eventually(func() string {
 			taskRun, err := getTaskRun(f, testBuildRun)
@@ -196,7 +197,7 @@ func validateBuildRunToSucceed(
 				return ""
 			}
 			return taskRun.Status.Conditions[0].Reason
-		}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun not pending or running")
+		}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun REASON not pending or running")
 	} else {
 		Logf("TaskRun verification skipped.")
 	}
@@ -215,21 +216,21 @@ func validateBuildRunToSucceed(
 	// Verify that the BuildSpec is available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
-	// Ensure that BuildRun moves to Running State
+	// Ensure a BuildRun moves to a running Reason
 	Eventually(func() string {
 		err = clientGet(buildRunNsName, testBuildRun)
-		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		return testBuildRun.Status.Reason
-	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun not running")
+	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun REASON not running")
 
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
-	// Ensure that eventually the BuildRun moves to Succeeded.
+	// Ensure a BuildRun eventually moves to a succeeded TRUE status
 	Eventually(func() v1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
-		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		return testBuildRun.Status.Succeeded
 	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
