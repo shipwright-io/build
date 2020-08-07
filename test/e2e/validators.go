@@ -16,11 +16,9 @@ import (
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	operatorapis "github.com/redhat-developer/build/pkg/apis"
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	operator "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -42,7 +40,7 @@ const (
 )
 
 // cleanupOptions return a CleanupOptions instance.
-func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
+func cleanupOptions(ctx *framework.Context) *framework.CleanupOptions {
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
 		Timeout:       cleanupTimeout,
@@ -86,7 +84,7 @@ func isRetryableError(err error) bool {
 
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
 // Otherwise it will create the service account. No error occurs if the service account already exists.
-func createPipelineServiceAccount(ctx *framework.TestCtx, f *framework.Framework, namespace string) {
+func createPipelineServiceAccount(ctx *framework.Context, f *framework.Framework, namespace string) {
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 
 	if serviceAccountName == "generated" {
@@ -108,7 +106,7 @@ func createPipelineServiceAccount(ctx *framework.TestCtx, f *framework.Framework
 
 // createContainerRegistrySecret use environment variables to check for container registry
 // credentials secret, when not found a new secret is created.
-func createContainerRegistrySecret(ctx *framework.TestCtx, f *framework.Framework, namespace string) {
+func createContainerRegistrySecret(ctx *framework.Context, f *framework.Framework, namespace string) {
 	secretName := os.Getenv(EnvVarImageRepoSecret)
 	secretPayload := os.Getenv(EnvVarSourceRepoSecretJSON)
 	if secretName == "" || secretPayload == "" {
@@ -141,7 +139,7 @@ func createContainerRegistrySecret(ctx *framework.TestCtx, f *framework.Framewor
 
 // createNamespacedBuildStrategy create a namespaced BuildStrategy.
 func createNamespacedBuildStrategy(
-	ctx *framework.TestCtx,
+	ctx *framework.Context,
 	f *framework.Framework,
 	testBuildStrategy *operator.BuildStrategy,
 ) {
@@ -153,7 +151,7 @@ func createNamespacedBuildStrategy(
 
 // createClusterBuildStrategy create ClusterBuildStrategy resource.
 func createClusterBuildStrategy(
-	ctx *framework.TestCtx,
+	ctx *framework.Context,
 	f *framework.Framework,
 	testBuildStrategy *operator.ClusterBuildStrategy,
 ) {
@@ -172,7 +170,7 @@ func validateBuildRunToSucceed(
 
 	pendingStatus := "Pending"
 	runningStatus := "Running"
-	trueCondition := v1.ConditionTrue
+	trueCondition := corev1.ConditionTrue
 	pendingAndRunningStatues := []string{pendingStatus, runningStatus}
 
 	// Ensure the BuildRun has been created
@@ -197,7 +195,7 @@ func validateBuildRunToSucceed(
 				return ""
 			}
 			return taskRun.Status.Conditions[0].Reason
-		}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun REASON not pending or running")
+		}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun REASON is not pending or running")
 	} else {
 		Logf("TaskRun verification skipped.")
 	}
@@ -211,7 +209,7 @@ func validateBuildRunToSucceed(
 			return ""
 		}
 		return testBuildRun.Status.Reason
-	}, 30*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun not pending or running")
+	}, 30*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun is not pending or running")
 
 	// Verify that the BuildSpec is available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
@@ -222,13 +220,13 @@ func validateBuildRunToSucceed(
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		return testBuildRun.Status.Reason
-	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun REASON not running")
+	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun REASON is not running")
 
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
-	Eventually(func() v1.ConditionStatus {
+	Eventually(func() corev1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
@@ -249,7 +247,7 @@ func validateBuildRunToFail(
 	expectedReasonRegexp string,
 ) {
 	f := framework.Global
-	falseCondition := v1.ConditionFalse
+	falseCondition := corev1.ConditionFalse
 
 	// Create the BuildRun
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
@@ -257,7 +255,7 @@ func validateBuildRunToFail(
 
 	// Ensure that eventually the BuildRun moves to Failed.
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
-	Eventually(func() v1.ConditionStatus {
+	Eventually(func() corev1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
@@ -282,7 +280,7 @@ func validateBuildDeletion(
 
 	// Delete the Build
 	buildNsName := types.NamespacedName{Name: testBuildName, Namespace: namespace}
-	testBuild := &buildv1alpha1.Build{}
+	testBuild := &operator.Build{}
 	err := clientGet(buildNsName, testBuild)
 	Expect(err).ToNot(HaveOccurred(), "Build doesn't exist")
 	err = f.Client.Delete(goctx.TODO(), testBuild)
@@ -404,11 +402,11 @@ func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*ope
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 
 	if serviceAccountName == "generated" {
-		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
+		buildRun.Spec.ServiceAccount = &operator.ServiceAccount{
 			Generate: true,
 		}
 	} else {
-		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
+		buildRun.Spec.ServiceAccount = &operator.ServiceAccount{
 			Name: &serviceAccountName,
 		}
 	}
@@ -419,12 +417,12 @@ func buildRunTestData(ns string, identifier string, buildRunCRPath string) (*ope
 // getTaskRun retrieve Tekton's Task based on BuildRun instance.
 func getTaskRun(
 	f *framework.Framework,
-	buildRun *buildv1alpha1.BuildRun,
+	buildRun *operator.BuildRun,
 ) (*v1beta1.TaskRun, error) {
 	taskRunList := &v1beta1.TaskRunList{}
 	lbls := map[string]string{
-		buildv1alpha1.LabelBuild:    buildRun.Spec.BuildRef.Name,
-		buildv1alpha1.LabelBuildRun: buildRun.Name,
+		operator.LabelBuild:    buildRun.Spec.BuildRef.Name,
+		operator.LabelBuildRun: buildRun.Name,
 	}
 	opts := client.ListOptions{
 		Namespace:     buildRun.Namespace,

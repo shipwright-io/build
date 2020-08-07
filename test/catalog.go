@@ -10,7 +10,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -19,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -217,7 +215,7 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(co
 // StubBuildUpdateWithFinalizers is used to simulate the state of the Build
 // finalizers after a client Update on the Object happened.
 func (c *Catalog) StubBuildUpdateWithFinalizers(finalizer string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(object.Finalizers).To(ContainElement(finalizer))
@@ -229,7 +227,7 @@ func (c *Catalog) StubBuildUpdateWithFinalizers(finalizer string) func(context c
 // StubBuildUpdateWithoutFinalizers is used to simulate the state of the Build
 // finalizers after a client Update on the Object happened.
 func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(len(object.Finalizers)).To(BeZero())
@@ -379,8 +377,8 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	b *build.Build,
 	br *build.BuildRun,
 	sa *corev1.ServiceAccount,
-	cb *buildv1alpha1.ClusterBuildStrategy,
-	bs *buildv1alpha1.BuildStrategy,
+	cb *build.ClusterBuildStrategy,
+	bs *build.BuildStrategy,
 ) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 		switch object := object.(type) {
@@ -393,10 +391,10 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 		case *corev1.ServiceAccount:
 			sa.DeepCopyInto(object)
 			return nil
-		case *buildv1alpha1.ClusterBuildStrategy:
+		case *build.ClusterBuildStrategy:
 			cb.DeepCopyInto(object)
 			return nil
-		case *buildv1alpha1.BuildStrategy:
+		case *build.BuildStrategy:
 			bs.DeepCopyInto(object)
 			return nil
 		}
@@ -523,8 +521,8 @@ func (c *Catalog) DefaultServiceAccount(name string) *corev1.ServiceAccount {
 
 // DefaultClusterBuildStrategy returns a minimal ClusterBuildStrategy
 // object with a inmutable name
-func (c *Catalog) DefaultClusterBuildStrategy() *buildv1alpha1.ClusterBuildStrategy {
-	return &buildv1alpha1.ClusterBuildStrategy{
+func (c *Catalog) DefaultClusterBuildStrategy() *build.ClusterBuildStrategy {
+	return &build.ClusterBuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
 		},
@@ -533,8 +531,8 @@ func (c *Catalog) DefaultClusterBuildStrategy() *buildv1alpha1.ClusterBuildStrat
 
 // DefaultNamespacedBuildStrategy returns a minimal BuildStrategy
 // object with a inmutable name
-func (c *Catalog) DefaultNamespacedBuildStrategy() *buildv1alpha1.BuildStrategy {
-	return &buildv1alpha1.BuildStrategy{
+func (c *Catalog) DefaultNamespacedBuildStrategy() *build.BuildStrategy {
+	return &build.BuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
 		},
@@ -594,8 +592,8 @@ func (c *Catalog) LoadCustomResources(cpu string, mem string) corev1.ResourceReq
 
 // LoadBuildYAML parses YAML bytes into JSON and from JSON
 // into a Build struct
-func (c *Catalog) LoadBuildYAML(d []byte) (*buildv1alpha1.Build, error) {
-	b := &buildv1alpha1.Build{}
+func (c *Catalog) LoadBuildYAML(d []byte) (*build.Build, error) {
+	b := &build.Build{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -605,8 +603,8 @@ func (c *Catalog) LoadBuildYAML(d []byte) (*buildv1alpha1.Build, error) {
 
 // LoadBuildRunYAML parses YAML bytes into JSON and from JSON
 // into a BuildRun struct
-func (c *Catalog) LoadBuildRunYAML(d []byte) (*buildv1alpha1.BuildRun, error) {
-	b := &buildv1alpha1.BuildRun{}
+func (c *Catalog) LoadBuildRunYAML(d []byte) (*build.BuildRun, error) {
+	b := &build.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -616,8 +614,8 @@ func (c *Catalog) LoadBuildRunYAML(d []byte) (*buildv1alpha1.BuildRun, error) {
 
 // LoadBuildStrategyYAML parses YAML bytes into JSON and from JSON
 // into a BuildStrategy struct
-func (c *Catalog) LoadBuildStrategyYAML(d []byte) (*buildv1alpha1.BuildStrategy, error) {
-	b := &buildv1alpha1.BuildStrategy{}
+func (c *Catalog) LoadBuildStrategyYAML(d []byte) (*build.BuildStrategy, error) {
+	b := &build.BuildStrategy{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err

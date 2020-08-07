@@ -501,5 +501,5 @@ func getGeneratedServiceAccountName(buildRun *buildv1alpha1.BuildRun) string {
 
 // isGeneratedServiceAccountUsed checks if a build run uses a generated service account
 func isGeneratedServiceAccountUsed(buildRun *buildv1alpha1.BuildRun) bool {
-	return buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate == true
+	return buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate
 }

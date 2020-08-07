@@ -16,8 +16,8 @@ import (
 var (
 	operatorCmd *exec.Cmd
 
-	ctx       *framework.TestCtx
-	globalCtx *framework.TestCtx
+	ctx       *framework.Context
+	globalCtx *framework.Context
 	testingT  *testing.T
 
 	clusterBuildStrategies = []string{
@@ -78,7 +78,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).ToNot(HaveOccurred(), "Failed to add schemes to operator-sdk test framework")
 
 	// setup the Operator SDK testing global context
-	globalCtx = framework.NewTestCtx(testingT)
+	globalCtx = framework.NewContext(testingT)
 
 	// initialize cluster resources
 	Logf("Initializing cluster resources")
@@ -152,7 +152,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// setup the operator-sdk test framework node context
 	Logf("Creating node test context")
-	ctx = framework.NewTestCtx(testingT)
+	ctx = framework.NewContext(testingT)
 })
 
 var _ = SynchronizedAfterSuite(func() {
