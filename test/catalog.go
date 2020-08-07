@@ -238,6 +238,44 @@ func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Contex
 	}
 }
 
+// StubBuildRunAndTaskRun is used to simulate the existance of a Build
+// and a TaskRun when there is a client GET on this two objects
+func (c *Catalog) StubBuildRunAndTaskRun(
+	b *build.BuildRun,
+	tr *v1beta1.TaskRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.BuildRun:
+			b.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// StubBuildAndTaskRun is used to simulate the existance of a Build
+// and a TaskRun when there is a client GET on this two objects
+func (c *Catalog) StubBuildAndTaskRun(
+	b *build.Build,
+	tr *v1beta1.TaskRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
 func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
@@ -367,10 +405,12 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 }
 
 // DefaultTaskRunWithStatus returns a minimal tektont TaskRun with an Status
-func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
+func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, ns string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
 	return &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: trName,
+			Name:      trName,
+			Namespace: ns,
+			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
@@ -388,10 +428,12 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.Conditio
 }
 
 // DefaultTaskRunWithFalseStatus returns a minimal tektont TaskRun with a FALSE status
-func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string) *v1beta1.TaskRun {
+func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName string, ns string) *v1beta1.TaskRun {
 	return &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: trName,
+			Name:      trName,
+			Namespace: ns,
+			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
@@ -441,7 +483,7 @@ func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName
 		},
 		Status: build.BuildStatus{
 			Registered: corev1.ConditionFalse,
-			Reason: "something bad happened",
+			Reason:     "something bad happened",
 		},
 	}
 }
@@ -456,6 +498,16 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
+		},
+	}
+}
+
+// DefaultTaskRun returns a minimal TaskRun object
+func (c *Catalog) DefaultTaskRun(taskRunName string, ns string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      taskRunName,
+			Namespace: ns,
 		},
 	}
 }
