@@ -24,8 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 )
 
 // succeedStatus default status for the Build CRD
@@ -89,7 +87,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 	}
 
 	// Watch for changes to primary resource Build
-	err = c.Watch(&source.Kind{Type: &buildv1alpha1.Build{}}, &handler.EnqueueRequestForObject{}, pred)
+	err = c.Watch(&source.Kind{Type: &build.Build{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
@@ -185,7 +183,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileBuild) validateRuntime(runtime *buildv1alpha1.Runtime) error {
+func (r *ReconcileBuild) validateRuntime(runtime *build.Runtime) error {
 	if len(runtime.Paths) == 0 {
 		return fmt.Errorf("the property 'spec.runtime.paths' must not be empty")
 	}
@@ -332,7 +330,7 @@ func (r *ReconcileBuild) cleanBuildRun(ctx context.Context, b *build.Build) erro
 	buildRunList := &build.BuildRunList{}
 
 	lbls := map[string]string{
-		buildv1alpha1.LabelBuild: b.Name,
+		build.LabelBuild: b.Name,
 	}
 	opts := client.ListOptions{
 		Namespace:     b.Namespace,

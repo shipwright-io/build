@@ -13,7 +13,7 @@ GOARCH ?= amd64
 GO_FLAGS ?= -v -mod=vendor
 
 # configure zap based logr
-ZAP_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
+ZAP_FLAGS ?= --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
 OPERATOR_SDK_EXTRA_ARGS ?= --debug
 

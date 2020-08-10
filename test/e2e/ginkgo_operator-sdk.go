@@ -166,7 +166,7 @@ func getRootDir() (string, error) {
 	for info, err := os.Stat(rootDir + "/LICENSE"); os.IsNotExist(err) || (err == nil && info.IsDir()); {
 		rootDir = filepath.Dir(rootDir)
 		if rootDir == "/" {
-			return "", errors.New("Failed to determine root directory")
+			return "", errors.New("failed to determine root directory")
 		}
 		info, err = os.Stat(rootDir + "/LICENSE")
 	}

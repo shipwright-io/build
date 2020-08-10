@@ -74,7 +74,6 @@ var _ = Describe("runtime-image", func() {
 	Context("rendering entrypoint", func() {
 		It("expect entrypoint concatenated", func() {
 			entrypoint := renderEntrypoint(b.Spec.Runtime.Entrypoint)
-			// fmt.Printf("Entrypoint: ---\n%s\n---\n", entrypoint)
 
 			Expect(entrypoint).To(Equal("\"/bin/bash\", \"-x\", \"-c\""))
 		})
@@ -84,7 +83,6 @@ var _ = Describe("runtime-image", func() {
 
 		It("expect a complete dockerfile", func() {
 			dockerfile, err := renderRuntimeDockerfile(b)
-			// fmt.Printf("Dockerfile.runtime: ---\n%s\n---\n", dockerfile)
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(dockerfile).ToNot(BeNil())
