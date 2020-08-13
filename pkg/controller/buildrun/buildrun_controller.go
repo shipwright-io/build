@@ -84,6 +84,17 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 	}
 
 	predBuildRun := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			o := e.Object.(*buildv1alpha1.BuildRun)
+
+			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have a TaskRun referenced already,
+			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun.
+			if o.Status.LatestTaskRunRef != nil {
+				return false
+			}
+
+			return true
+		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
@@ -232,42 +243,77 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	ctxlog.Debug(ctx, "starting reconciling request from a BuildRun or TaskRun event", namespace, request.Namespace, name, request.Name)
 
 	buildRun = &buildv1alpha1.BuildRun{}
-	build = &buildv1alpha1.Build{}
 	lastTaskRun := &v1beta1.TaskRun{}
 
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
-	if err := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil && apierrors.IsNotFound(err) {
+	if err := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil {
+		if apierrors.IsNotFound(err) {
+			err = r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
+			if err != nil && !apierrors.IsNotFound(err) {
+				return reconcile.Result{}, err
+			} else if apierrors.IsNotFound(err) {
+				// If the BuildRun and TaskRun are not found, it might mean that we are running a Reconcile after a TaskRun was deleted. If this is the case, we need
+				// to identify from the request the BuildRun name associate to it and update the BuildRun Status.
+				r.VerifyRequestName(ctx, request, buildRun)
+				return reconcile.Result{}, nil
+			}
 
-		err = r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
-		if err != nil && !apierrors.IsNotFound(err) {
+			build = &buildv1alpha1.Build{}
+			if err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, build); err != nil {
+				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+				return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
+			}
+
+			// Validate if the Build was successfully register
+			if err = r.ValidateBuildRegistration(ctx, build, buildRun); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Ensure the build-related labels on the BuildRun
+			if buildRun.GetLabels() == nil {
+				buildRun.Labels = make(map[string]string)
+			}
+
+			buildGeneration := strconv.FormatInt(build.Generation, 10)
+			if buildRun.GetLabels()[buildv1alpha1.LabelBuild] != build.Name || buildRun.GetLabels()[buildv1alpha1.LabelBuildGeneration] != buildGeneration {
+				buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
+				buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = buildGeneration
+				ctxlog.Info(ctx, "updating BuildRun labels", namespace, request.Namespace, name, request.Name)
+				if err = r.client.Update(ctx, buildRun); err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+
+			// Set the Build spec in the BuildRun status
+			buildRun.Status.BuildSpec = &build.Spec
+			ctxlog.Info(ctx, "updating BuildRun status", namespace, request.Namespace, name, request.Name)
+			if err = r.client.Status().Update(ctx, buildRun); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Create the TaskRun, this needs to be the last step in this block to be idempotent
+			generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			ctxlog.Info(ctx, "creating TaskRun from BuildRun", namespace, request.Namespace, name, generatedTaskRun.GenerateName, "BuildRun", buildRun.Name)
+			if err = r.client.Create(ctx, generatedTaskRun); err != nil {
+				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+				return reconcile.Result{}, handleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
+			}
+
+			// Set the LastTaskRunRef in the BuildRun status
+			buildRun.Status.LatestTaskRunRef = &generatedTaskRun.Name
+			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name)
+			if err = r.client.Status().Update(ctx, buildRun); err != nil {
+				// we ignore the error here to prevent another reconcilation that would create another TaskRun,
+				// the LatestTaskRunRef field will also be set in the reconciliation from a TaskRun
+				// risk is that when the controller is now restarted before the field is set, another TaskRun will be created
+				ctxlog.Error(ctx, err, "Failed to update BuildRun status is ignored", namespace, request.Namespace, name, request.Name)
+			}
+		} else {
 			return reconcile.Result{}, err
-		} else if apierrors.IsNotFound(err) {
-			// If the BuildRun and TaskRun are not found, it might mean that we are running a Reconcile after a TaskRun was deleted. If this is the case, we need
-			// to identify from the request the BuildRun name associate to it and update the BuildRun Status.
-			r.VerifyRequestName(ctx, request, buildRun)
-			return reconcile.Result{}, nil
-		}
-
-		err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, build)
-		if err != nil {
-			updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-			return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
-		}
-
-		// Validate if the Build was successfully register
-		if err := r.ValidateBuildRegistration(ctx, build, buildRun); err != nil {
-			return reconcile.Result{}, err
-		}
-
-		generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		ctxlog.Info(ctx, "creating TaskRun from BuildRun", namespace, request.Namespace, name, generatedTaskRun.Name, "BuildRun", buildRun.Name)
-		if err = r.client.Create(ctx, generatedTaskRun); err != nil {
-			updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-			return reconcile.Result{}, handleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
 		}
 	} else {
 		ctxlog.Info(ctx, "TaskRun already exists", namespace, request.Namespace, name, request.Name)
@@ -277,12 +323,6 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		} else if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
-		}
-
-		err = r.GetBuildObject(ctx, buildRun.Spec.BuildRef.Name, buildRun.Namespace, build)
-		if err != nil {
-			updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-			return reconcile.Result{}, handleError("Failed to fetch the Build instance", err, updateErr)
 		}
 
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
@@ -308,10 +348,6 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildRun.Status.Reason = trCondition.Reason
 			}
 
-			if buildRun.Status.BuildSpec == nil {
-				buildRun.Status.BuildSpec = &build.Spec
-			}
-
 			buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
 			buildRun.Status.StartTime = lastTaskRun.Status.StartTime
 
@@ -319,33 +355,18 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
 
 				// Increase BuildRun count in metrics
-				buildmetrics.BuildRunCountInc(build.Spec.StrategyRef.Name)
+				buildmetrics.BuildRunCountInc(buildRun.Status.BuildSpec.StrategyRef.Name)
 				// Add BuildRun establish and completion times in metrics
 				buildRunCompletionDuring := buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time)
 				buildRunEstablishDuring := buildRun.Status.StartTime.Time.Sub(buildRun.CreationTimestamp.Time)
-				buildmetrics.BuildRunEstablishObserve(build.Spec.StrategyRef.Name, buildRun.Namespace, buildRunEstablishDuring)
-				buildmetrics.BuildRunCompletionObserve(build.Spec.StrategyRef.Name, buildRun.Namespace, buildRunCompletionDuring)
+				buildmetrics.BuildRunEstablishObserve(buildRun.Status.BuildSpec.StrategyRef.Name, buildRun.Namespace, buildRunEstablishDuring)
+				buildmetrics.BuildRunCompletionObserve(buildRun.Status.BuildSpec.StrategyRef.Name, buildRun.Namespace, buildRunCompletionDuring)
 			}
 
 			ctxlog.Info(ctx, "updating buildRun status", namespace, request.Namespace, name, request.Name)
-			err = r.client.Status().Update(ctx, buildRun)
-			if err != nil {
+			if err = r.client.Status().Update(ctx, buildRun); err != nil {
 				return reconcile.Result{}, err
 			}
-		}
-	}
-
-	if buildRun.GetLabels() == nil {
-		buildRun.Labels = make(map[string]string)
-	}
-
-	if buildRun.GetLabels()[buildv1alpha1.LabelBuild] == "" {
-		buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
-		buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
-		ctxlog.Info(ctx, "updating buildRun labels", namespace, request.Namespace, name, request.Name)
-		err := r.client.Update(ctx, buildRun)
-		if err != nil {
-			return reconcile.Result{}, err
 		}
 	}
 
@@ -488,7 +509,7 @@ func (r *ReconcileBuildRun) updateBuildRunErrorStatus(ctx context.Context, build
 	buildRun.Status.Succeeded = corev1.ConditionFalse
 	buildRun.Status.Reason = errorMessage
 	now := metav1.Now()
-	buildRun.Status.StartTime = &now
+	buildRun.Status.CompletionTime = &now
 	ctxlog.Debug(ctx, "updating buildRun status", namespace, buildRun.Namespace, name, buildRun.Name)
 	updateErr := r.client.Status().Update(ctx, buildRun)
 	return updateErr
