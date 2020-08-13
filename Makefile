@@ -59,6 +59,8 @@ TEST_PRIVATE_GITLAB ?=
 # private repository authentication secret
 TEST_SOURCE_SECRET ?=
 
+INTEGRATION_PKGS= github.com/redhat-developer/build/pkg/...
+
 export GO111MODULE=on
 
 .EXPORT_ALL_VARIABLES:
@@ -87,13 +89,15 @@ install-gocov:
 test: test-unit test-integration
 
 .PHONY: test-unit
-test-unit:
-	$(GO) test -timeout $(TIMEOUT_UNIT) -race ./cmd/... ./pkg/...
+test-unit: clean-coverage
+	$(GO) test -timeout $(TIMEOUT_UNIT) \
+		-race \
+		-coverprofile build/coverage/unit.coverprofile \
+		./cmd/... \
+		./pkg/...
 
 .PHONY: test-integration
-test-integration:
-	rm -rf build/coverage
-	mkdir -p build/coverage/integration
+test-integration: clean-coverage
 	ginkgo \
 		-randomizeAllSpecs \
 		-randomizeSuites \
@@ -102,16 +106,16 @@ test-integration:
 		-compilers=2 \
 		-slowSpecThreshold=240 \
 		-race \
-		-cover \
-		-outputdir=build/coverage/integration \
+		-coverpkg=$(INTEGRATION_PKGS) \
+		-outputdir=build/coverage \
 		-trace \
 		test/integration/...
 
-test-integration-coverage: test-integration
+coverage-report:
 	echo "Combining coverage profiles"
-	cat build/coverage/integration/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/integration/coverprofile
-	gocov convert build/coverage/integration/coverprofile > build/coverage/integration/coverprofile.json
-	gocov report build/coverage/integration/coverprofile.json
+	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
+	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
+	gocov report build/coverage/coverprofile.json
 
 .PHONY: test-e2e
 test-e2e: crds test-e2e-plain
@@ -137,6 +141,10 @@ local: crds build
 
 clean:
 	rm -rf $(OUTPUT_DIR)
+
+clean-coverage:
+	rm -rf build/coverage
+	mkdir -p build/coverage
 
 gen-fakes:
 	./hack/generate-fakes.sh
