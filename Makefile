@@ -5,6 +5,9 @@ OUTPUT_DIR ?= build/_output
 # relative path to operator binary
 OPERATOR = $(OUTPUT_DIR)/bin/build-operator
 
+GO           = go
+TIMEOUT_UNIT = 5m
+
 # golang cache directory path
 GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 # golang target architecture
@@ -56,6 +59,8 @@ TEST_PRIVATE_GITLAB ?=
 # private repository authentication secret
 TEST_SOURCE_SECRET ?=
 
+export GO111MODULE=on
+
 .EXPORT_ALL_VARIABLES:
 
 default: build
@@ -79,13 +84,17 @@ install-gocov:
 	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
 
 # https://github.com/redhat-developer/build/issues/123
-test: test-integration
+test: test-unit test-integration
+
+.PHONY: test-unit
+test-unit:
+	$(GO) test -timeout $(TIMEOUT_UNIT) -race ./cmd/... ./pkg/...
 
 .PHONY: test-integration
 test-integration:
 	rm -rf build/coverage
 	mkdir -p build/coverage/integration
-	GO111MODULE=on ginkgo \
+	ginkgo \
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
@@ -96,8 +105,6 @@ test-integration:
 		-cover \
 		-outputdir=build/coverage/integration \
 		-trace \
-		internal/... \
-		pkg/... \
 		test/integration/...
 
 test-integration-coverage: test-integration

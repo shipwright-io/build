@@ -10,6 +10,7 @@ script:
   - set -e
   - make
   # https://github.com/redhat-developer/build/issues/123
+  - make test-unit
   - make test-integration-coverage
   - make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/redhat-developer/build-e2e"
   - set +e

@@ -1,84 +1,73 @@
 package metrics
 
 import (
+	"testing"
 	"time"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/redhat-developer/build/pkg/config"
 )
 
-var _ = Describe("Custom Metrics", func() {
+func TestBuildRunMetrics(t *testing.T) {
+	testCases := []struct {
+		name      string
+		namespace string
+		strategy  string
+	}{
+		{
+			name:      "buildpacks",
+			namespace: "test",
+			strategy:  "buildpacks",
+		},
+		{
+			name:      "kaniko",
+			namespace: "default",
+			strategy:  "kaniko",
+		},
+	}
 
-	var (
-		buildStrategy, namespace string
-	)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			InitPrometheus(config.NewDefaultConfig())
 
-	Context("when create a new kaniko buildrun", func() {
-		buildStrategy = "kaniko"
-		namespace = "default"
+			BuildCountInc(tc.strategy)
+			BuildRunCountInc(tc.strategy)
+			buildRunEstablishTime := time.Duration(1) * time.Second
+			buildRunExecutionTime := time.Duration(100) * time.Second
+			BuildRunEstablishObserve(tc.strategy, tc.namespace, buildRunEstablishTime)
+			BuildRunCompletionObserve(tc.strategy, tc.namespace, buildRunExecutionTime)
 
-		InitPrometheus(config.NewDefaultConfig())
+			buildCount, err := buildCount.GetMetricWithLabelValues(tc.strategy)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if testutil.ToFloat64(buildCount) != float64(1) {
+				t.Errorf("expected build count to equal %f, got %f", float64(1), testutil.ToFloat64(buildCount))
+			}
 
-		BuildCountInc(buildStrategy)
-		BuildRunCountInc(buildStrategy)
-		buildRunEstablishTime := time.Duration(1) * time.Second
-		buildRunExecutionTime := time.Duration(200) * time.Second
-		BuildRunEstablishObserve(buildStrategy, namespace, buildRunEstablishTime)
-		BuildRunCompletionObserve(buildStrategy, namespace, buildRunExecutionTime)
+			buildRunCount, err := buildRunCount.GetMetricWithLabelValues(tc.strategy)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if testutil.ToFloat64(buildRunCount) != float64(1) {
+				t.Errorf("expected buildRun count to equal %f, got %f", float64(1), testutil.ToFloat64(buildRunCount))
+			}
 
-		It("should increase the kaniko build count", func() {
-			buildCount, _ := buildCount.GetMetricWithLabelValues(buildStrategy)
-			Expect(testutil.ToFloat64(buildCount)).To(Equal(float64(1)))
+			buildRunEstablishDuration, err := buildRunEstablishDuration.GetMetricWithLabelValues(tc.strategy, tc.namespace)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if buildRunEstablishDuration == nil {
+				t.Error("expected buildRunEstablishDuration to not be nil")
+			}
+
+			buildRunCompletionDuration, err := buildRunCompletionDuration.GetMetricWithLabelValues(tc.strategy, tc.namespace)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if buildRunCompletionDuration == nil {
+				t.Error("expected buildRunCompletionDuration to not be nil")
+			}
 		})
-		It("should increase the kaniko buildrun count", func() {
-			buildRunCount, _ := buildRunCount.GetMetricWithLabelValues(buildStrategy)
-			Expect(testutil.ToFloat64(buildRunCount)).To(Equal(float64(1)))
-		})
-		It("should record the kaniko buildrun establish time", func() {
-			buildRunEstablishDuration, err := buildRunEstablishDuration.GetMetricWithLabelValues(buildStrategy, namespace)
-			Expect(buildRunEstablishDuration).NotTo(BeNil())
-			Expect(err).To(BeNil())
-		})
-		It("should record the kaniko buildrun completion time", func() {
-			buildRunCompletionDuration, err := buildRunCompletionDuration.GetMetricWithLabelValues(buildStrategy, namespace)
-			Expect(buildRunCompletionDuration).NotTo(BeNil())
-			Expect(err).To(BeNil())
-		})
-	})
-
-	Context("when create a new buildpacks buildrun", func() {
-		buildStrategy = "buildpacks"
-		namespace = "test"
-
-		InitPrometheus(config.NewDefaultConfig())
-
-		BuildCountInc(buildStrategy)
-		BuildRunCountInc(buildStrategy)
-		buildRunEstablishTime := time.Duration(1) * time.Second
-		buildRunExecutionTime := time.Duration(100) * time.Second
-		BuildRunEstablishObserve(buildStrategy, namespace, buildRunEstablishTime)
-		BuildRunCompletionObserve(buildStrategy, namespace, buildRunExecutionTime)
-
-		It("should increase the buildpacks build count", func() {
-			buildCount, _ := buildCount.GetMetricWithLabelValues(buildStrategy)
-			Expect(testutil.ToFloat64(buildCount)).To(Equal(float64(1)))
-		})
-		It("should increase the buildpacks buildrun count", func() {
-			buildRunCount, _ := buildRunCount.GetMetricWithLabelValues(buildStrategy)
-			Expect(testutil.ToFloat64(buildRunCount)).To(Equal(float64(1)))
-		})
-		It("should record the buildpacks buildrun establish time", func() {
-			buildRunEstablishDuration, err := buildRunEstablishDuration.GetMetricWithLabelValues(buildStrategy, namespace)
-			Expect(buildRunEstablishDuration).NotTo(BeNil())
-			Expect(err).To(BeNil())
-		})
-		It("should record the buildpacks buildrun completion time", func() {
-			buildRunCompletionDuration, err := buildRunCompletionDuration.GetMetricWithLabelValues(buildStrategy, namespace)
-			Expect(buildRunCompletionDuration).NotTo(BeNil())
-			Expect(err).To(BeNil())
-		})
-	})
-})
+	}
+}
