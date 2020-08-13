@@ -1,94 +1,46 @@
 package buildrun
 
 import (
-	"fmt"
+	"reflect"
+	"testing"
+
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("runtime-image", func() {
-	b := &buildv1alpha1.Build{
-		Spec: buildv1alpha1.BuildSpec{
-			BuilderImage: &buildv1alpha1.Image{
-				ImageURL: "test/builder-image:latest",
-			},
-			Output: buildv1alpha1.Image{
-				ImageURL: "test/output-image:latest",
-			},
-			Runtime: &buildv1alpha1.Runtime{
-				Base: buildv1alpha1.Image{
-					ImageURL: "test/base-image:latest",
-				},
-				Env: map[string]string{
-					"ENVIRONMENT_VARIABLE": "VALUE",
-				},
-				Labels: map[string]string{
-					"label": "value",
-				},
-				WorkDir: "/workdir",
-				Run:     []string{"command --args"},
-				User: &buildv1alpha1.User{
-					Name:  "username",
-					Group: "1001",
-				},
-				Paths:      []string{"/path/to/a:/new/path/to/a", "/path/to/b"},
-				Entrypoint: []string{"/bin/bash", "-x", "-c"},
-			},
+var runtimeBuild = &buildv1alpha1.Build{
+	Spec: buildv1alpha1.BuildSpec{
+		BuilderImage: &buildv1alpha1.Image{
+			ImageURL: "test/builder-image:latest",
 		},
-	}
+		Output: buildv1alpha1.Image{
+			ImageURL: "test/output-image:latest",
+		},
+		Runtime: &buildv1alpha1.Runtime{
+			Base: buildv1alpha1.Image{
+				ImageURL: "test/base-image:latest",
+			},
+			Env: map[string]string{
+				"ENVIRONMENT_VARIABLE": "VALUE",
+			},
+			Labels: map[string]string{
+				"label": "value",
+			},
+			WorkDir: "/workdir",
+			Run:     []string{"command --args"},
+			User: &buildv1alpha1.User{
+				Name:  "username",
+				Group: "1001",
+			},
+			Paths:      []string{"/path/to/a:/new/path/to/a", "/path/to/b"},
+			Entrypoint: []string{"/bin/bash", "-x", "-c"},
+		},
+	},
+}
 
-	Context("rendering user and group", func() {
-		It("expect empty when user is not informed", func() {
-			u := renderUserAndGroup(&buildv1alpha1.User{})
-			Expect(u).To(BeEmpty())
-
-			// when only group is informed, it also expects empty string
-			u = renderUserAndGroup(&buildv1alpha1.User{Group: "group"})
-			Expect(u).To(BeEmpty())
-		})
-
-		It("expect user and group joined by colon", func() {
-			u := renderUserAndGroup(b.Spec.Runtime.User)
-			Expect(u).To(Equal("username:1001"))
-
-			u = renderUserAndGroup(&buildv1alpha1.User{Name: "username"})
-			Expect(u).To(Equal("username"))
-		})
-	})
-
-	Context("splitting paths", func() {
-		It("expect paths splitted by \":\" ", func() {
-			parts := splitPaths("a:b")
-			Expect(parts).To(Equal([]string{"a", "b"}))
-
-			parts = splitPaths("a")
-			Expect(parts).To(Equal([]string{"a", "a"}))
-		})
-	})
-
-	Context("rendering entrypoint", func() {
-		It("expect entrypoint concatenated", func() {
-			entrypoint := renderEntrypoint(b.Spec.Runtime.Entrypoint)
-
-			Expect(entrypoint).To(Equal("\"/bin/bash\", \"-x\", \"-c\""))
-		})
-	})
-
-	Context("rendering runtime Dockerfile", func() {
-
-		It("expect a complete dockerfile", func() {
-			dockerfile, err := renderRuntimeDockerfile(b)
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(dockerfile).ToNot(BeNil())
-
-			Expect(fmt.Sprintf("\n%s", dockerfile)).To(Equal(`
-FROM test/output-image:latest as builder
+const dockerfile = `FROM test/output-image:latest as builder
 
 FROM test/base-image:latest
 ENV ENVIRONMENT_VARIABLE="VALUE"
@@ -98,20 +50,107 @@ COPY --chown="username:1001" --from=builder "/path/to/a" "/new/path/to/a"
 COPY --chown="username:1001" --from=builder "/path/to/b" "/path/to/b"
 WORKDIR "/workdir"
 USER username:1001
-ENTRYPOINT [ "/bin/bash", "-x", "-c" ]`,
-			))
-		})
-	})
+ENTRYPOINT [ "/bin/bash", "-x", "-c" ]`
 
-	Context("amend build-strategy with extra steps", func() {
-		taskSpec := &v1beta1.TaskSpec{
-			Steps: []v1beta1.Step{},
-		}
+func TestAmendTaskSpecWithRuntimeImage(t *testing.T) {
+	taskSpec := &v1beta1.TaskSpec{
+		Steps: []v1beta1.Step{},
+	}
+	err := AmendTaskSpecWithRuntimeImage(config.NewDefaultConfig(), taskSpec, runtimeBuild)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(taskSpec.Steps) != 2 {
+		t.Errorf("expected taskSpec to have %d steps, got %d", 2, len(taskSpec.Steps))
+	}
 
-		It("expect to have Tekton's Task amended", func() {
-			err := AmendTaskSpecWithRuntimeImage(config.NewDefaultConfig(), taskSpec, b)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(taskSpec.Steps)).To(Equal(2))
+}
+
+func TestRenderEntrypoint(t *testing.T) {
+	entrypointArray := []string{"/bin/bash", "-x", "-c"}
+	expectedResult := "\"/bin/bash\", \"-x\", \"-c\""
+	renderedEntrypoint := renderEntrypoint(entrypointArray)
+	if renderedEntrypoint != expectedResult {
+		t.Errorf("expected entrypoint to render to %s, got %s", renderedEntrypoint, expectedResult)
+	}
+}
+
+func TestRenderUserAndGroup(t *testing.T) {
+	testCases := []struct {
+		name           string
+		user           *buildv1alpha1.User
+		expectedResult string
+	}{
+		{
+			name: "empty",
+			user: &buildv1alpha1.User{},
+		},
+		{
+			name: "group only",
+			user: &buildv1alpha1.User{
+				Group: "group",
+			},
+		},
+		{
+			name: "user only",
+			user: &buildv1alpha1.User{
+				Name: "username",
+			},
+			expectedResult: "username",
+		},
+		{
+			name: "user and group",
+			user: &buildv1alpha1.User{
+				Name:  "username",
+				Group: "1001",
+			},
+			expectedResult: "username:1001",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			userGroup := renderUserAndGroup(tc.user)
+			if userGroup != tc.expectedResult {
+				t.Errorf("expected user:group %s, got %s", tc.expectedResult, userGroup)
+			}
 		})
-	})
-})
+	}
+}
+
+func TestSplitPaths(t *testing.T) {
+	testCases := []struct {
+		name           string
+		input          string
+		expectedResult []string
+	}{
+		{
+			name:           "single",
+			input:          "a",
+			expectedResult: []string{"a", "a"},
+		},
+		{
+			name:           "double",
+			input:          "a:b",
+			expectedResult: []string{"a", "b"},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			output := splitPaths(tc.input)
+			if !reflect.DeepEqual(output, tc.expectedResult) {
+				t.Errorf("expected split paths to be %s, got %s", tc.expectedResult, output)
+			}
+		})
+	}
+}
+
+func TestRenderRuntimeDockerfile(t *testing.T) {
+	result, err := renderRuntimeDockerfile(runtimeBuild)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultString := result.String()
+	if resultString != dockerfile {
+		t.Errorf("expected runtime dockerfile to be:\n%s\n\ngot:\n%s", dockerfile, resultString)
+	}
+}
