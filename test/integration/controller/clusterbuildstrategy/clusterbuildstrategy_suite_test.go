@@ -1,4 +1,4 @@
-package clusterbuildstrategy_test
+package clusterbuildstrategy
 
 import (
 	"testing"
