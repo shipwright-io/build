@@ -1,4 +1,4 @@
-package controller_test
+package controller
 
 import (
 	. "github.com/onsi/ginkgo"
