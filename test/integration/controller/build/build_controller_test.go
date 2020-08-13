@@ -1,4 +1,4 @@
-package build_test
+package build
 
 import (
 	"context"

@@ -79,12 +79,12 @@ install-gocov:
 	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
 
 # https://github.com/redhat-developer/build/issues/123
-test: test-unit
+test: test-integration
 
-.PHONY: test-unit
-test-unit:
+.PHONY: test-integration
+test-integration:
 	rm -rf build/coverage
-	mkdir build/coverage
+	mkdir -p build/coverage/integration
 	GO111MODULE=on ginkgo \
 		-randomizeAllSpecs \
 		-randomizeSuites \
@@ -94,16 +94,17 @@ test-unit:
 		-slowSpecThreshold=240 \
 		-race \
 		-cover \
-		-outputdir=build/coverage \
+		-outputdir=build/coverage/integration \
 		-trace \
 		internal/... \
-		pkg/...
+		pkg/... \
+		test/integration/...
 
-test-unit-coverage: test-unit
+test-integration-coverage: test-integration
 	echo "Combining coverage profiles"
-	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
-	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
-	gocov report build/coverage/coverprofile.json
+	cat build/coverage/integration/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/integration/coverprofile
+	gocov convert build/coverage/integration/coverprofile > build/coverage/integration/coverprofile.json
+	gocov report build/coverage/integration/coverprofile.json
 
 .PHONY: test-e2e
 test-e2e: crds test-e2e-plain

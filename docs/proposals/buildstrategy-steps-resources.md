@@ -258,7 +258,7 @@ made for this repository.
 ### Test Plan
 
 - Unit-tests require an update. We need to validate that resources defined in the strategies are propagated to the TaskRun steps resources.
-- CI would run the same `test-unit` make target, for validation.
+- CI would run the same `test-integration` make target, for validation.
 
 ### Graduation Criteria
 
