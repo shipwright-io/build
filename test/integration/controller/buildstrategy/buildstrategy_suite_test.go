@@ -1,4 +1,4 @@
-package buildstrategy_test
+package buildstrategy
 
 import (
 	"testing"
