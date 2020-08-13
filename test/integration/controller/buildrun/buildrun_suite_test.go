@@ -1,4 +1,4 @@
-package buildrun_test
+package buildrun
 
 import (
 	"testing"
