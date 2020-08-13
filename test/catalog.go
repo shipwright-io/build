@@ -238,7 +238,22 @@ func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Contex
 	}
 }
 
-// StubBuildRunAndTaskRun is used to simulate the existance of a Build
+// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
+// only when there is a client GET on this object type
+func (c *Catalog) StubBuildRun(
+	b *build.BuildRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.BuildRun:
+			b.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildRunAndTaskRun(
 	b *build.BuildRun,
@@ -277,13 +292,15 @@ func (c *Catalog) StubBuildAndTaskRun(
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
-			Expect(object.Status.Reason).To(Equal(reason))
-			Expect(object.Status.Succeeded).To(Equal(status))
-			Expect(object.Status.LatestTaskRunRef).To(Equal(name))
+			if !tolerateEmptyStatus || object.Status.Succeeded != "" {
+				Expect(object.Status.Succeeded).To(Equal(status))
+				Expect(object.Status.Reason).To(Equal(reason))
+				Expect(object.Status.LatestTaskRunRef).To(Equal(name))
+			}
 			if object.Status.BuildSpec != nil {
 				Expect(*object.Status.BuildSpec).To(Equal(buildSpec))
 			}
@@ -404,7 +421,7 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	}
 }
 
-// DefaultTaskRunWithStatus returns a minimal tektont TaskRun with an Status
+// DefaultTaskRunWithStatus returns a minimal tekton TaskRun with an Status
 func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, ns string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
 	return &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{

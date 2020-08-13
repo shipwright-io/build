@@ -3,6 +3,7 @@ package buildrun_test
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -100,10 +101,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 	// this ensures that overrides on the BuildRun resource can happen under each
 	// Context() BeforeEach() block
 	JustBeforeEach(func() {
+		// l := ctxlog.NewLogger("buildrun-controller-test")
+		// testCtx := ctxlog.NewParentContext(l)
 		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
 		reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
-		// request = newReconcileRequest(buildRunSample)
-
 	})
 
 	Describe("Reconciling", func() {
@@ -129,7 +130,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				result, err := reconciler.Reconcile(taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
-				Expect(client.GetCallCount()).To(Equal(3))
+				Expect(client.GetCallCount()).To(Equal(2))
 			})
 			It("does not fail when the BuildRun does not exist", func() {
 
@@ -143,7 +144,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
 			})
-			It("fails when the Build does not exist", func() {
+			It("does not fail when the Build does not exist", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a BuildRun and TaskRun, none Build
@@ -151,11 +152,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 				client.GetCalls(stubGetCalls)
 
 				result, err := reconciler.Reconcile(taskRunRequest)
-				Expect(err).To(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
-				Expect(err.Error()).To(ContainSubstring("\"foobar-build\" not found"))
-				Expect(err.Error()).To(ContainSubstring("Failed to fetch the Build instance"))
-				Expect(client.GetCallCount()).To(Equal(3))
+				Expect(client.GetCallCount()).To(Equal(2))
 			})
 			It("updates the BuildRun status", func() {
 
@@ -166,14 +165,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					corev1.ConditionTrue,
 					buildSample.Spec,
+					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
-
-				// Stub that asserts the BuildRun label fields when
-				// Label updates for a BuildRun take place. This basically
-				// ensures that a BuildRun references a Build via a label
-				labelCall := ctl.StubBuildRunLabel(buildSample)
-				client.UpdateCalls(labelCall)
 
 				// Assert for none errors while we exit the Reconcile
 				// after updating the BuildRun status with the existing
@@ -181,8 +175,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				result, err := reconciler.Reconcile(taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
-				Expect(client.GetCallCount()).To(Equal(3))
-				Expect(client.UpdateCallCount()).To(Equal(1))
+				Expect(client.GetCallCount()).To(Equal(2))
+				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
 			It("deletes a generated service account when the task run ends", func() {
@@ -239,6 +233,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					corev1.ConditionUnknown,
 					buildSample.Spec,
+					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
@@ -248,7 +243,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				result, err := reconciler.Reconcile(taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
-				Expect(client.GetCallCount()).To(Equal(3))
+				Expect(client.GetCallCount()).To(Equal(2))
 				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
@@ -263,13 +258,14 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					corev1.ConditionUnknown,
 					buildSample.Spec,
+					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
 				result, err := reconciler.Reconcile(taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
-				Expect(client.GetCallCount()).To(Equal(3))
+				Expect(client.GetCallCount()).To(Equal(2))
 				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
@@ -284,13 +280,14 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					corev1.ConditionTrue,
 					buildSample.Spec,
+					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
 				result, err := reconciler.Reconcile(taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
-				Expect(client.GetCallCount()).To(Equal(3))
+				Expect(client.GetCallCount()).To(Equal(2))
 				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
@@ -306,6 +303,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
@@ -355,6 +353,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					true,
 				)
 				statusWriter.UpdateCalls(statusCall)
 
@@ -362,7 +361,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Failed to choose a service account to use"))
 				Expect(client.GetCallCount()).To(Equal(4))
-				Expect(client.StatusCallCount()).To(Equal(1))
+				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
 			It("fails on a TaskRun creation due to missing namespaced buildstrategy", func() {
@@ -409,6 +408,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunName, buildName)
 				buildRunSample.Labels = make(map[string]string)
 				buildRunSample.Labels[build.LabelBuild] = buildName
+				buildRunSample.Labels[build.LabelBuildGeneration] = strconv.FormatInt(buildSample.Generation, 10)
 
 				// Override stub calls to include only build and buildrun
 				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
@@ -470,7 +470,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err.Error()).To(ContainSubstring("errors: foobar error"))
 			})
 
-			It("succeed creating a TaskRun from a namespaced buildstrategy", func() {
+			It("succeeds creating a TaskRun from a namespaced buildstrategy", func() {
 				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
@@ -499,7 +499,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.CreateCallCount()).To(Equal(1))
 			})
 
-			It("succeed creating a TaskRun from a cluster buildstrategy", func() {
+			It("succeeds creating a TaskRun from a cluster buildstrategy", func() {
 				// override the Build to use a cluster BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
@@ -544,6 +544,38 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("reason: something bad happened"))
+			})
+			It("succeeds creating a TaskRun even if the BuildSpec is already referenced", func() {
+				// Set the build spec
+				buildRunSample = ctl.DefaultBuildRun(buildRunName, buildName)
+				buildRunSample.Status.BuildSpec = &buildSample.Spec
+
+				// override the Build to use a namespaced BuildStrategy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy()),
+				)
+
+				// Stub the create calls for a TaskRun
+				client.CreateCalls(func(context context.Context, object runtime.Object, _ ...crc.CreateOption) error {
+					switch object := object.(type) {
+					case *v1beta1.TaskRun:
+						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(client.CreateCallCount()).To(Equal(1))
 			})
 		})
 	})
