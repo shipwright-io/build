@@ -325,6 +325,15 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, nil
 		}
 
+		// Check if the BuildRun is already finished, this happens if the build controller is restarted.
+		// It then reconciles all TaskRuns. This is valuable if the build controller was down while the TaskRun
+		// finishes which would be missed otherwise. But, if the TaskRun was already completed and the status
+		// synchronized into the BuildRun, then yet another reconciliation is not necessary.
+		if buildRun.Status.CompletionTime != nil {
+			ctxlog.Info(ctx, "BuildRun already marked completed", namespace, request.Namespace, name, request.Name)
+			return reconcile.Result{}, nil
+		}
+
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
 		if trCondition != nil {
 			taskRunStatus := trCondition.Status

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -177,6 +178,26 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
 				Expect(client.StatusCallCount()).To(Equal(1))
+			})
+
+			It("does not update the BuildRun status if the BuildRun is already completed", func() {
+				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunName, buildName)
+				buildRunSample.Status.CompletionTime = &metav1.Time{
+					Time: time.Now(),
+				}
+
+				client.GetCalls(ctl.StubBuildRunAndTaskRun(buildRunSample, taskRunSample))
+
+				// Call the reconciler
+				_, err := reconciler.Reconcile(taskRunRequest)
+
+				// Expect no error
+				Expect(err).ToNot(HaveOccurred())
+
+				// Expect no delete call and no status update
+				Expect(client.GetCallCount()).To(Equal(2))
+				Expect(client.DeleteCallCount()).To(Equal(0))
+				Expect(client.StatusCallCount()).To(Equal(0))
 			})
 
 			It("deletes a generated service account when the task run ends", func() {
