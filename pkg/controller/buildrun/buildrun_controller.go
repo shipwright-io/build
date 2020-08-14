@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
@@ -181,13 +182,19 @@ func handleError(message string, listOfErrors ...error) error {
 }
 
 // ValidateBuildRegistration verifies that a referenced Build is properly register
-func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) error {
+func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*reconcile.Result, error) {
+	if build.Status.Registered == "" {
+		ctxlog.Info(ctx, "Build is not yet validated. Checking again in five seconds.", namespace, buildRun.Namespace, name, buildRun.Name, "build", build.Name)
+		return &reconcile.Result{
+			RequeueAfter: 5 * time.Second,
+		}, nil
+	}
 	if build.Status.Registered != corev1.ConditionTrue {
 		err := fmt.Errorf("The Build is not registered correctly, registered status: %s, reason: %s", build.Status.Registered, build.Status.Reason)
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return handleError("Build is not ready", err, updateErr)
+		return &reconcile.Result{}, handleError("Build is not ready", err, updateErr)
 	}
-	return nil
+	return nil, nil
 }
 
 // GetBuildRunObject retrieves an existing BuildRun based on a name and namespace
@@ -265,8 +272,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			}
 
 			// Validate if the Build was successfully register
-			if err = r.ValidateBuildRegistration(ctx, build, buildRun); err != nil {
-				return reconcile.Result{}, err
+			if result, err := r.ValidateBuildRegistration(ctx, build, buildRun); result != nil {
+				return *result, err
 			}
 
 			// Ensure the build-related labels on the BuildRun
