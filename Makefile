@@ -40,6 +40,9 @@ TEST_E2E_CREATE_GLOBALOBJECTS ?= true
 # E2E test verify Tekton objects
 TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
 
+# E2E test timeout multiplier
+TEST_E2E_TIMEOUT_MULTIPLIER ?= 1
+
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
 # test container registyr secret name
@@ -120,6 +123,7 @@ test-e2e-plain:
 	TEST_E2E_OPERATOR=${TEST_E2E_OPERATOR} \
 	TEST_E2E_CREATE_GLOBALOBJECTS=${TEST_E2E_CREATE_GLOBALOBJECTS} \
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
+	TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
 	ginkgo ${TEST_E2E_FLAGS} test/e2e
 
