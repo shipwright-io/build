@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"reflect"
+
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
+	"github.com/redhat-developer/build/pkg/controller/utils"
 	"github.com/redhat-developer/build/pkg/ctxlog"
 	buildmetrics "github.com/redhat-developer/build/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -22,8 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 )
 
 // succeedStatus default status for the Build CRD
@@ -87,7 +87,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 	}
 
 	// Watch for changes to primary resource Build
-	err = c.Watch(&source.Kind{Type: &buildv1alpha1.Build{}}, &handler.EnqueueRequestForObject{}, pred)
+	err = c.Watch(&source.Kind{Type: &build.Build{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
@@ -160,6 +160,16 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		ctxlog.Info(ctx, "build strategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
 	}
 
+	// validate if "spec.runtime" attributes are valid
+	if utils.IsRuntimeDefined(b) {
+		if err := r.validateRuntime(b.Spec.Runtime); err != nil {
+			ctxlog.Error(ctx, err, "failed validating runtime attributes", "Build", b.Name)
+			b.Status.Reason = err.Error()
+			updateErr := r.client.Status().Update(ctx, b)
+			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+		}
+	}
+
 	b.Status.Registered = corev1.ConditionTrue
 	err = r.client.Status().Update(ctx, b)
 	if err != nil {
@@ -171,6 +181,13 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuild) validateRuntime(runtime *build.Runtime) error {
+	if len(runtime.Paths) == 0 {
+		return fmt.Errorf("the property 'spec.runtime.paths' must not be empty")
+	}
+	return nil
 }
 
 func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.StrategyRef, ns string) error {
@@ -313,7 +330,7 @@ func (r *ReconcileBuild) cleanBuildRun(ctx context.Context, b *build.Build) erro
 	buildRunList := &build.BuildRunList{}
 
 	lbls := map[string]string{
-		buildv1alpha1.LabelBuild: b.Name,
+		build.LabelBuild: b.Name,
 	}
 	opts := client.ListOptions{
 		Namespace:     b.Namespace,

@@ -4,12 +4,12 @@ import (
 	"context"
 	"strconv"
 
+	"knative.dev/pkg/apis"
 	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	"sigs.k8s.io/yaml"
 
 	. "github.com/onsi/gomega"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -18,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -216,7 +215,7 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(co
 // StubBuildUpdateWithFinalizers is used to simulate the state of the Build
 // finalizers after a client Update on the Object happened.
 func (c *Catalog) StubBuildUpdateWithFinalizers(finalizer string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(object.Finalizers).To(ContainElement(finalizer))
@@ -228,7 +227,7 @@ func (c *Catalog) StubBuildUpdateWithFinalizers(finalizer string) func(context c
 // StubBuildUpdateWithoutFinalizers is used to simulate the state of the Build
 // finalizers after a client Update on the Object happened.
 func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(len(object.Finalizers)).To(BeZero())
@@ -237,14 +236,69 @@ func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Contex
 	}
 }
 
+// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
+// only when there is a client GET on this object type
+func (c *Catalog) StubBuildRun(
+	b *build.BuildRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.BuildRun:
+			b.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
+// and a TaskRun when there is a client GET on this two objects
+func (c *Catalog) StubBuildRunAndTaskRun(
+	b *build.BuildRun,
+	tr *v1beta1.TaskRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.BuildRun:
+			b.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// StubBuildAndTaskRun is used to simulate the existance of a Build
+// and a TaskRun when there is a client GET on this two objects
+func (c *Catalog) StubBuildAndTaskRun(
+	b *build.Build,
+	tr *v1beta1.TaskRun,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
-			Expect(object.Status.Reason).To(Equal(reason))
-			Expect(object.Status.Succeeded).To(Equal(status))
-			Expect(object.Status.LatestTaskRunRef).To(Equal(name))
+			if !tolerateEmptyStatus || object.Status.Succeeded != "" {
+				Expect(object.Status.Succeeded).To(Equal(status))
+				Expect(object.Status.Reason).To(Equal(reason))
+				Expect(object.Status.LatestTaskRunRef).To(Equal(name))
+			}
 			if object.Status.BuildSpec != nil {
 				Expect(*object.Status.BuildSpec).To(Equal(buildSpec))
 			}
@@ -284,8 +338,35 @@ func (c *Catalog) StubBuildRunGetWithoutSA(
 	}
 }
 
-// StubBuildRunGetWithSA simulates the output of client GET calls
-// for the BuildRun unit tests
+// StubBuildRunGetWithTaskRunAndSA returns fake object for different
+// client calls
+func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
+	b *build.Build,
+	br *build.BuildRun,
+	tr *v1beta1.TaskRun,
+	sa *corev1.ServiceAccount,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		case *corev1.ServiceAccount:
+			sa.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// StubBuildRunGetWithSA returns fake object for different
+// client calls
 func (c *Catalog) StubBuildRunGetWithSA(
 	b *build.Build,
 	br *build.BuildRun,
@@ -313,8 +394,8 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	b *build.Build,
 	br *build.BuildRun,
 	sa *corev1.ServiceAccount,
-	cb *buildv1alpha1.ClusterBuildStrategy,
-	bs *buildv1alpha1.BuildStrategy,
+	cb *build.ClusterBuildStrategy,
+	bs *build.BuildStrategy,
 ) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 		switch object := object.(type) {
@@ -327,10 +408,10 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 		case *corev1.ServiceAccount:
 			sa.DeepCopyInto(object)
 			return nil
-		case *buildv1alpha1.ClusterBuildStrategy:
+		case *build.ClusterBuildStrategy:
 			cb.DeepCopyInto(object)
 			return nil
-		case *buildv1alpha1.BuildStrategy:
+		case *build.BuildStrategy:
 			bs.DeepCopyInto(object)
 			return nil
 		}
@@ -338,26 +419,46 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	}
 }
 
-// DefaultTaskRunList returns a minimal tekton TaskRunList
-func (c *Catalog) DefaultTaskRunList(tr *v1beta1.TaskRun) *v1beta1.TaskRunList {
-	return &v1beta1.TaskRunList{
-		Items: []v1beta1.TaskRun{*tr},
-	}
-}
-
-// DefaultTaskRunWithStatus returns a minimal tektont TaskRun with an Status
-func (c *Catalog) DefaultTaskRunWithStatus(trName string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
+// DefaultTaskRunWithStatus returns a minimal tekton TaskRun with an Status
+func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, ns string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
 	return &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: trName,
+			Name:      trName,
+			Namespace: ns,
+			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
 			Status: knativev1beta1.Status{
 				Conditions: knativev1beta1.Conditions{
 					{
+						Type:   apis.ConditionSucceeded,
 						Reason: reason,
 						Status: status,
+					},
+				},
+			},
+		},
+	}
+}
+
+// DefaultTaskRunWithFalseStatus returns a minimal tektont TaskRun with a FALSE status
+func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName string, ns string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      trName,
+			Namespace: ns,
+			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
+		},
+		Spec: v1beta1.TaskRunSpec{},
+		Status: v1beta1.TaskRunStatus{
+			Status: knativev1beta1.Status{
+				Conditions: knativev1beta1.Conditions{
+					{
+						Type:    apis.ConditionSucceeded,
+						Reason:  "something bad happened",
+						Status:  corev1.ConditionFalse,
+						Message: "some message",
 					},
 				},
 			},
@@ -377,6 +478,28 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 				Kind: &strategyKind,
 			},
 		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
+// DefaultBuildWithFalseRegistered returns a minimal Build object with a FALSE Registered
+func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildName,
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &strategyKind,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionFalse,
+			Reason:     "something bad happened",
+		},
 	}
 }
 
@@ -394,6 +517,16 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 	}
 }
 
+// DefaultTaskRun returns a minimal TaskRun object
+func (c *Catalog) DefaultTaskRun(taskRunName string, ns string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      taskRunName,
+			Namespace: ns,
+		},
+	}
+}
+
 // DefaultServiceAccount returns a minimal SA object
 func (c *Catalog) DefaultServiceAccount(name string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -405,8 +538,8 @@ func (c *Catalog) DefaultServiceAccount(name string) *corev1.ServiceAccount {
 
 // DefaultClusterBuildStrategy returns a minimal ClusterBuildStrategy
 // object with a inmutable name
-func (c *Catalog) DefaultClusterBuildStrategy() *buildv1alpha1.ClusterBuildStrategy {
-	return &buildv1alpha1.ClusterBuildStrategy{
+func (c *Catalog) DefaultClusterBuildStrategy() *build.ClusterBuildStrategy {
+	return &build.ClusterBuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
 		},
@@ -415,8 +548,8 @@ func (c *Catalog) DefaultClusterBuildStrategy() *buildv1alpha1.ClusterBuildStrat
 
 // DefaultNamespacedBuildStrategy returns a minimal BuildStrategy
 // object with a inmutable name
-func (c *Catalog) DefaultNamespacedBuildStrategy() *buildv1alpha1.BuildStrategy {
-	return &buildv1alpha1.BuildStrategy{
+func (c *Catalog) DefaultNamespacedBuildStrategy() *build.BuildStrategy {
+	return &build.BuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
 		},
@@ -442,7 +575,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 	}
 }
 
-// BuildRunWithSA returns a customized BuildRun object that defines a
+// BuildRunWithSAGenerate returns a customized BuildRun object that defines a
 // service account
 func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *build.BuildRun {
 	return &build.BuildRun{
@@ -476,8 +609,8 @@ func (c *Catalog) LoadCustomResources(cpu string, mem string) corev1.ResourceReq
 
 // LoadBuildYAML parses YAML bytes into JSON and from JSON
 // into a Build struct
-func (c *Catalog) LoadBuildYAML(d []byte) (*buildv1alpha1.Build, error) {
-	b := &buildv1alpha1.Build{}
+func (c *Catalog) LoadBuildYAML(d []byte) (*build.Build, error) {
+	b := &build.Build{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -487,8 +620,8 @@ func (c *Catalog) LoadBuildYAML(d []byte) (*buildv1alpha1.Build, error) {
 
 // LoadBuildRunYAML parses YAML bytes into JSON and from JSON
 // into a BuildRun struct
-func (c *Catalog) LoadBuildRunYAML(d []byte) (*buildv1alpha1.BuildRun, error) {
-	b := &buildv1alpha1.BuildRun{}
+func (c *Catalog) LoadBuildRunYAML(d []byte) (*build.BuildRun, error) {
+	b := &build.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -498,8 +631,8 @@ func (c *Catalog) LoadBuildRunYAML(d []byte) (*buildv1alpha1.BuildRun, error) {
 
 // LoadBuildStrategyYAML parses YAML bytes into JSON and from JSON
 // into a BuildStrategy struct
-func (c *Catalog) LoadBuildStrategyYAML(d []byte) (*buildv1alpha1.BuildStrategy, error) {
-	b := &buildv1alpha1.BuildStrategy{}
+func (c *Catalog) LoadBuildStrategyYAML(d []byte) (*build.BuildStrategy, error) {
+	b := &build.BuildStrategy{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err

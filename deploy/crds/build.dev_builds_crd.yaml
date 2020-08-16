@@ -1,29 +1,8 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: builds.build.dev
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .status.registered
-    description: The register status of the Build
-    name: Registered
-    type: string
-  - JSONPath: .status.reason
-    description: The reason of the registered Build, either an error or succeed message
-    name: Reason
-    type: string
-  - JSONPath: .spec.strategy.kind
-    description: The BuildStrategy type which is used for this Build
-    name: BuildStrategyKind
-    type: string
-  - JSONPath: .spec.strategy.name
-    description: The BuildStrategy name which is used for this Build
-    name: BuildStrategyName
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    description: The create time of this Build
-    name: CreationTime
-    type: date
   group: build.dev
   names:
     kind: Build
@@ -31,168 +10,256 @@ spec:
     plural: builds
     singular: build
   scope: Namespaced
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: Build is the Schema representing a Build definition
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: BuildSpec defines the desired state of Build
-          properties:
-            builder:
-              description: BuilderImage refers to the image containing the build tools
-                inside which the source code would be built.
-              properties:
-                credentials:
-                  description: SecretRef is a reference to the Secret containing the
-                    credentials to push the image to the registry
-                  properties:
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                  type: object
-                image:
-                  description: ImageURL is the URL where the image will be pushed
-                    to.
-                  type: string
-              required:
-              - image
-              type: object
-            dockerfile:
-              description: Dockerfile is the path to the Dockerfile to be used for
-                build strategies which bank on the Dockerfile for building an image.
-              type: string
-            output:
-              description: Output refers to the location where the generated image
-                would be pushed to.
-              properties:
-                credentials:
-                  description: SecretRef is a reference to the Secret containing the
-                    credentials to push the image to the registry
-                  properties:
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                  type: object
-                image:
-                  description: ImageURL is the URL where the image will be pushed
-                    to.
-                  type: string
-              required:
-              - image
-              type: object
-            parameters:
-              description: Parameters contains name-value that could be used to loosely
-                type parameters in the BuildStrategy.
-              items:
-                description: Parameter defines the data structure that would be used
-                  for expressing arbitrary key/value pairs for the execution of a
-                  build
+  versions:
+  - additionalPrinterColumns:
+    - description: The register status of the Build
+      jsonPath: .status.registered
+      name: Registered
+      type: string
+    - description: The reason of the registered Build, either an error or succeed
+        message
+      jsonPath: .status.reason
+      name: Reason
+      type: string
+    - description: The BuildStrategy type which is used for this Build
+      jsonPath: .spec.strategy.kind
+      name: BuildStrategyKind
+      type: string
+    - description: The BuildStrategy name which is used for this Build
+      jsonPath: .spec.strategy.name
+      name: BuildStrategyName
+      type: string
+    - description: The create time of this Build
+      jsonPath: .metadata.creationTimestamp
+      name: CreationTime
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Build is the Schema for the builds API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BuildSpec defines the desired state of Build
+            properties:
+              builder:
+                description: BuilderImage refers to the image containing the build
+                  tools inside which the source code would be built.
                 properties:
-                  name:
+                  credentials:
+                    description: SecretRef is a reference to the Secret containing
+                      the credentials to push the image to the registry
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                  image:
+                    description: ImageURL is the URL where the image will be pushed
+                      to.
                     type: string
-                  value:
+                required:
+                - image
+                type: object
+              dockerfile:
+                description: Dockerfile is the path to the Dockerfile to be used for
+                  build strategies which bank on the Dockerfile for building an image.
+                type: string
+              output:
+                description: Output refers to the location where the generated image
+                  would be pushed to.
+                properties:
+                  credentials:
+                    description: SecretRef is a reference to the Secret containing
+                      the credentials to push the image to the registry
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                  image:
+                    description: ImageURL is the URL where the image will be pushed
+                      to.
+                    type: string
+                required:
+                - image
+                type: object
+              parameters:
+                description: Parameters contains name-value that could be used to
+                  loosely type parameters in the BuildStrategy.
+                items:
+                  description: Parameter defines the data structure that would be
+                    used for expressing arbitrary key/value pairs for the execution
+                    of a build
+                  properties:
+                    name:
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - name
+                  - value
+                  type: object
+                type: array
+              runtime:
+                description: Runtime represents the runtime-image
+                properties:
+                  base:
+                    description: Base runtime base image.
+                    properties:
+                      credentials:
+                        description: SecretRef is a reference to the Secret containing
+                          the credentials to push the image to the registry
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                      image:
+                        description: ImageURL is the URL where the image will be pushed
+                          to.
+                        type: string
+                    required:
+                    - image
+                    type: object
+                  entrypoint:
+                    description: Entrypoint runtime-image entrypoint.
+                    items:
+                      type: string
+                    type: array
+                  env:
+                    additionalProperties:
+                      type: string
+                    description: Env environment variables for runtime.
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels map of additional labels to be applied on
+                      image.
+                    type: object
+                  paths:
+                    description: Paths list of directories/files to be copied into
+                      runtime-image, using colon ":" to split up source and destination
+                      paths.
+                    items:
+                      type: string
+                    type: array
+                  run:
+                    description: Run arbitrary commands to run before copying data
+                      into runtime-image.
+                    items:
+                      type: string
+                    type: array
+                  user:
+                    description: User definitions of user and group for runtime-image.
+                    properties:
+                      group:
+                        description: Group group name or GID employed in runtime-image.
+                        type: string
+                      name:
+                        description: Name user name to be employed in runtime-image.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  workDir:
+                    description: WorkDir runtime image working directory `WORKDIR`.
+                    type: string
+                type: object
+              source:
+                description: Source refers to the Git repository containing the source
+                  code to be built.
+                properties:
+                  contextDir:
+                    description: ContextDir is a path to subfolder in the repo. Optional.
+                    type: string
+                  credentials:
+                    description: SecretRef refers to the secret that contains credentials
+                      to access the git repo. Optional.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                  flavor:
+                    description: Flavor of the git provider like github, gitlab, bitbucket,
+                      generic, etc. Optional.
+                    type: string
+                  httpProxy:
+                    description: HTTPProxy is optional.
+                    type: string
+                  httpsProxy:
+                    description: HTTPSProxy is optional.
+                    type: string
+                  noProxy:
+                    description: NoProxy can be used to specify domains for which
+                      no proxying should be performed. Optional.
+                    type: string
+                  revision:
+                    description: Ref is a git reference. Optional. "master" is used
+                      by default.
+                    type: string
+                  url:
+                    description: URL of the git repo
+                    type: string
+                required:
+                - url
+                type: object
+              strategy:
+                description: StrategyRef refers to the BuildStrategy to be used to
+                  build the container image. There are namespaced scope and cluster
+                  scope BuildStrategy
+                properties:
+                  apiVersion:
+                    description: API version of the referent
+                    type: string
+                  kind:
+                    description: BuildStrategyKind indicates the kind of the buildstrategy,
+                      namespaced or cluster scoped.
+                    type: string
+                  name:
+                    description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
                     type: string
                 required:
                 - name
-                - value
                 type: object
-              type: array
-            source:
-              description: Source refers to the Git repository containing the source
-                code to be built.
-              properties:
-                contextDir:
-                  description: ContextDir is a path to subfolder in the repo. Optional.
-                  type: string
-                credentials:
-                  description: SecretRef refers to the secret that contains credentials
-                    to access the git repo. Optional.
-                  properties:
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                  type: object
-                flavor:
-                  description: Flavor of the git provider like github, gitlab, bitbucket,
-                    generic, etc. Optional.
-                  type: string
-                httpProxy:
-                  description: HTTPProxy is optional.
-                  type: string
-                httpsProxy:
-                  description: HTTPSProxy is optional.
-                  type: string
-                noProxy:
-                  description: NoProxy can be used to specify domains for which no
-                    proxying should be performed. Optional.
-                  type: string
-                revision:
-                  description: Ref is a git reference. Optional. "master" is used
-                    by default.
-                  type: string
-                url:
-                  description: URL of the git repo
-                  type: string
-              required:
-              - url
-              type: object
-            strategy:
-              description: StrategyRef refers to the BuildStrategy to be used to build
-                the container image. There are namespaced scope and cluster scope
-                BuildStrategy
-              properties:
-                apiVersion:
-                  description: API version of the referent
-                  type: string
-                kind:
-                  description: BuildStrategyKind indicates the kind of the buildstrategy,
-                    namespaced or cluster scoped.
-                  type: string
-                name:
-                  description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
-                  type: string
-              required:
-              - name
-              type: object
-            timeout:
-              description: Timeout defines the maximum run time of a build run.
-              type: string
-          required:
-          - output
-          - source
-          - strategy
-          type: object
-        status:
-          description: BuildStatus defines the observed state of Build
-          properties:
-            reason:
-              description: The reason of the registered Build, either an error or
-                succeed message
-              type: string
-            registered:
-              description: The Register status of the Build
-              type: string
-          type: object
-      type: object
-  version: v1alpha1
-  versions:
-  - name: v1alpha1
+              timeout:
+                description: Timeout defines the maximum run time of a build run.
+                type: string
+            required:
+            - output
+            - source
+            - strategy
+            type: object
+          status:
+            description: BuildStatus defines the observed state of Build
+            properties:
+              reason:
+                description: The reason of the registered Build, either an error or
+                  succeed message
+                type: string
+              registered:
+                description: The Register status of the Build
+                type: string
+            type: object
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}

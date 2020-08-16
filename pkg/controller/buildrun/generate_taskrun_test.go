@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
 	buildrunCtl "github.com/redhat-developer/build/pkg/controller/buildrun"
 	"github.com/redhat-developer/build/test"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
@@ -62,7 +63,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskSpec(build, buildRun, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps)
 				Expect(err).To(BeNil())
 			})
 
@@ -137,7 +138,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
 				Expect(err).To(BeNil())
 			})
 
@@ -208,7 +209,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
 				Expect(err).To(BeNil())
 			})
 
@@ -267,7 +268,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
 				Expect(err).To(BeNil())
 			})
 
@@ -290,7 +291,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
 				Expect(err).To(BeNil())
 			})
 

@@ -1,10 +1,13 @@
 package metrics
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	"time"
+	"github.com/redhat-developer/build/pkg/config"
 )
 
 var _ = Describe("Custom Metrics", func() {
@@ -16,6 +19,8 @@ var _ = Describe("Custom Metrics", func() {
 	Context("when create a new kaniko buildrun", func() {
 		buildStrategy = "kaniko"
 		namespace = "default"
+
+		InitPrometheus(config.NewDefaultConfig())
 
 		BuildCountInc(buildStrategy)
 		BuildRunCountInc(buildStrategy)
@@ -47,6 +52,8 @@ var _ = Describe("Custom Metrics", func() {
 	Context("when create a new buildpacks buildrun", func() {
 		buildStrategy = "buildpacks"
 		namespace = "test"
+
+		InitPrometheus(config.NewDefaultConfig())
 
 		BuildCountInc(buildStrategy)
 		BuildRunCountInc(buildStrategy)

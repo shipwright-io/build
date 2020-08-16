@@ -13,7 +13,7 @@ GOARCH ?= amd64
 GO_FLAGS ?= -v -mod=vendor
 
 # configure zap based logr
-ZAP_FLAGS ?= --zap-level=1 --zap-level=debug --zap-encoder=console
+ZAP_FLAGS ?= --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
 OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
@@ -21,7 +21,7 @@ OPERATOR_SDK_EXTRA_ARGS ?= --debug
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines operator version
-TEKTON_VERSION ?= v0.11.3
+TEKTON_VERSION ?= v0.14.2
 # CI: operator-sdk version
 SDK_VERSION ?= v0.17.0
 
@@ -68,6 +68,10 @@ vendor: go.mod go.sum
 build: $(OPERATOR)
 
 $(OPERATOR): vendor
+	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
+
+.PHONY: build-plain
+build-plain: 
 	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
 
 install-ginkgo:
@@ -124,6 +128,11 @@ crds:
 	@hack/crd.sh install
 
 local: crds build
+	OPERATOR_NAME=build-operator \
+	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
+
+local-plain: build-plain
+	OPERATOR_NAME=build-operator \
 	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
 clean:

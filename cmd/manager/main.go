@@ -19,7 +19,6 @@ import (
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
@@ -99,13 +98,6 @@ func main() {
 	}
 	defer r.Unset()
 
-	// Become the leader before proceeding
-	err = leader.Become(ctx, "build-operator-lock")
-	if err != nil {
-		ctxlog.Error(ctx, err, "")
-		os.Exit(1)
-	}
-
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{
 		LeaderElection:          true,
@@ -133,7 +125,7 @@ func main() {
 	}
 
 	c := buildconfig.NewDefaultConfig()
-	if err := c.SetConfigTimeOutFromEnv(); err != nil {
+	if err := c.SetConfigFromEnv(); err != nil {
 		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}

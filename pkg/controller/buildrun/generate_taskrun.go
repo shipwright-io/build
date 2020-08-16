@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/config"
+	"github.com/redhat-developer/build/pkg/controller/utils"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,8 +45,12 @@ func getStringTransformations(fullText string) string {
 	return fullText
 }
 
-// GenerateTaskSpec constructs a TaskSpec from a Build and BuildRun objects
-func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskSpec, error) {
+func GenerateTaskSpec(
+	cfg *config.Config,
+	build *buildv1alpha1.Build,
+	buildRun *buildv1alpha1.BuildRun,
+	buildSteps []buildv1alpha1.BuildStep,
+) (*v1beta1.TaskSpec, error) {
 
 	generatedTaskSpec := v1beta1.TaskSpec{
 		Resources: &v1beta1.TaskResources{
@@ -150,11 +156,24 @@ func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	}
 
 	generatedTaskSpec.Volumes = vols
+
+	// checking for runtime-image settings, and appending more steps to the strategy
+	if utils.IsRuntimeDefined(build) {
+		if err := AmendTaskSpecWithRuntimeImage(cfg, &generatedTaskSpec, build); err != nil {
+			return nil, err
+		}
+	}
+
 	return &generatedTaskSpec, nil
 }
 
-// GenerateTaskRun constructs a TaskRun from a Build and BuildRun objects
-func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun, serviceAccountName string, buildSteps []buildv1alpha1.BuildStep) (*v1beta1.TaskRun, error) {
+func GenerateTaskRun(
+	cfg *config.Config,
+	build *buildv1alpha1.Build,
+	buildRun *buildv1alpha1.BuildRun,
+	serviceAccountName string,
+	buildSteps []buildv1alpha1.BuildStep,
+) (*v1beta1.TaskRun, error) {
 
 	revision := "master"
 	if build.Spec.Source.Revision != nil {
@@ -169,7 +188,7 @@ func GenerateTaskRun(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRu
 		ImageURL = build.Spec.Output.ImageURL
 	}
 
-	taskSpec, err := GenerateTaskSpec(build, buildRun, buildSteps)
+	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, buildSteps)
 	if err != nil {
 		return nil, err
 	}
