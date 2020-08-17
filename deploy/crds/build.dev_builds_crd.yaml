@@ -36,7 +36,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Build is the Schema for the builds API
+        description: Build is the Schema representing a Build definition
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
