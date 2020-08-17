@@ -34,7 +34,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: BuildRun is the Schema for the buildruns API
+        description: BuildRun is the Schema representing an instance of build execution
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
