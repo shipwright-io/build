@@ -4,6 +4,7 @@ import (
 	goctx "context"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +31,7 @@ const (
 	EnvVarOperator             = "TEST_E2E_OPERATOR"
 	EnvVarServiceAccountName   = "TEST_E2E_SERVICEACCOUNT_NAME"
 	EnvVarVerifyTektonObjects  = "TEST_E2E_VERIFY_TEKTONOBJECTS"
+	EnvVarTimeoutMultiplier    = "TEST_E2E_TIMEOUT_MULTIPLIER"
 	EnvVarImageRepo            = "TEST_IMAGE_REPO"
 	EnvVarEnablePrivateRepos   = "TEST_PRIVATE_REPO"
 	EnvVarImageRepoSecret      = "TEST_IMAGE_REPO_SECRET"
@@ -195,7 +197,7 @@ func validateBuildRunToSucceed(
 				return ""
 			}
 			return taskRun.Status.Conditions[0].Reason
-		}, 300*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun REASON is not pending or running")
+		}, time.Duration(300*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun REASON is not pending or running")
 	} else {
 		Logf("TaskRun verification skipped.")
 	}
@@ -209,7 +211,7 @@ func validateBuildRunToSucceed(
 			return ""
 		}
 		return testBuildRun.Status.Reason
-	}, 30*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun is not pending or running")
+	}, time.Duration(30*getTimeoutMultiplier())*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun is not pending or running")
 
 	// Verify that the BuildSpec is available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
@@ -220,7 +222,7 @@ func validateBuildRunToSucceed(
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		return testBuildRun.Status.Reason
-	}, 180*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun REASON is not running")
+	}, time.Duration(180*getTimeoutMultiplier())*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun REASON is not running")
 
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
@@ -231,7 +233,7 @@ func validateBuildRunToSucceed(
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		return testBuildRun.Status.Succeeded
-	}, 550*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
+	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
@@ -260,7 +262,7 @@ func validateBuildRunToFail(
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		return testBuildRun.Status.Succeeded
-	}, 550*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
+	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
 
 	// Verify that the BuildSpec is available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
@@ -290,7 +292,7 @@ func validateBuildDeletion(
 	Eventually(func() error {
 		err = clientGet(buildNsName, testBuild)
 		return err
-	}, 30*time.Second, 3*time.Second).ShouldNot(BeNil(), "Build is not deleted yet")
+	}, time.Duration(30*getTimeoutMultiplier())*time.Second, 3*time.Second).ShouldNot(BeNil(), "Build is not deleted yet")
 
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
 	err = clientGet(buildRunNsName, testBuildRun)
@@ -436,4 +438,15 @@ func getTaskRun(
 		return &taskRunList.Items[len(taskRunList.Items)-1], nil
 	}
 	return nil, nil
+}
+
+func getTimeoutMultiplier() int64 {
+	value := os.Getenv(EnvVarTimeoutMultiplier)
+	if value == "" {
+		return 1
+	} else {
+		intValue, err := strconv.ParseInt(value, 10, 64)
+		Expect(err).ToNot(HaveOccurred())
+		return intValue
+	}
 }
