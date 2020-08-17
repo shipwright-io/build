@@ -44,7 +44,7 @@ TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
 TEST_E2E_TIMEOUT_MULTIPLIER ?= 1
 
 # test repository to store images build during end-to-end tests
-TEST_IMAGE_REPO ?= quay.io/redhat-developer/build-e2e
+TEST_IMAGE_REPO ?= quay.io/shipwright-io/build-e2e
 # test container registyr secret name
 TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime
@@ -85,7 +85,7 @@ install-ginkgo:
 install-gocov:
 	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
 
-# https://github.com/redhat-developer/build/issues/123
+# https://github.com/shipwright-io/build/issues/123
 test: test-unit
 
 .PHONY: test-unit

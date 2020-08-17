@@ -5,10 +5,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/build/pkg/config"
-	buildstrategyController "github.com/redhat-developer/build/pkg/controller/buildstrategy"
-	"github.com/redhat-developer/build/pkg/controller/fakes"
-	"github.com/redhat-developer/build/pkg/ctxlog"
+	"github.com/shipwright-io/build/pkg/config"
+	buildstrategyController "github.com/shipwright-io/build/pkg/controller/buildstrategy"
+	"github.com/shipwright-io/build/pkg/controller/fakes"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )

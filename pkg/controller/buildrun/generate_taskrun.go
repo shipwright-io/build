@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	"github.com/redhat-developer/build/pkg/config"
-	"github.com/redhat-developer/build/pkg/controller/utils"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/controller/utils"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"

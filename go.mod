@@ -1,4 +1,4 @@
-module github.com/redhat-developer/build
+module github.com/shipwright-io/build
 
 go 1.13
 

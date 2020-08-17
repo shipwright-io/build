@@ -3,8 +3,8 @@ package buildrun
 import (
 	"fmt"
 
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	"github.com/redhat-developer/build/pkg/config"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/config"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	. "github.com/onsi/ginkgo"

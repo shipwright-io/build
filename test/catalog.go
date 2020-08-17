@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	. "github.com/onsi/gomega"
-	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

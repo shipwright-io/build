@@ -122,7 +122,7 @@ When using [KinD](https://kind.sigs.k8s.io/) like jobs in Travis-CI, you can use
 
 ```sh
 make kind
-make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/redhat-developer/build-e2e"
+make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/shipwright-io/build-e2e"
 ```
 
 You only need to execute `make kind` once, `make test-e2e ...` can be repeated many times.

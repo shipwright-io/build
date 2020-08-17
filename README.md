@@ -1,10 +1,10 @@
 <p align="center">
     <img alt="Work in Progress" src="https://img.shields.io/badge/Status-Work%20in%20Progress-informational">
-    <a alt="GoReport" href="https://goreportcard.com/report/github.com/redhat-developer/build">
-        <img src="https://goreportcard.com/badge/github.com/redhat-developer/build">
+    <a alt="GoReport" href="https://goreportcard.com/report/github.com/shipwright-io/build">
+        <img src="https://goreportcard.com/badge/github.com/shipwright-io/build">
     </a>
-    <a alt="Travis-CI Status" href="https://travis-ci.com/redhat-developer/build">
-        <img src="https://travis-ci.com/redhat-developer/build.svg?branch=master">
+    <a alt="Travis-CI Status" href="https://travis-ci.com/shipwright-io/build">
+        <img src="https://travis-ci.com/shipwright-io/build.svg?branch=master">
     </a>
 </p>
 

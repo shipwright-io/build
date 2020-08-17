@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/redhat-developer/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/config"
 )
 
 var _ = Describe("Custom Metrics", func() {

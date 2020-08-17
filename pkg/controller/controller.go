@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 
-	"github.com/redhat-developer/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/config"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
