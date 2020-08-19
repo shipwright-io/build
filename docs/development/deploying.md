@@ -5,7 +5,7 @@ The following set of steps highlight how to deploy a Build operator pod into an 
 1. Build a custom docker image from this repository. This can be done with Docker, for example:
 
    ```sh
-   pushd $GOPATH/src/github.com/redhat-developer/build
+   pushd $GOPATH/src/github.com/shipwright-io/build
    docker build -t eeeoo/build-operator:master .
    docker push eeeoo/build-operator:master
    popd
@@ -17,7 +17,7 @@ The following set of steps highlight how to deploy a Build operator pod into an 
 3. Target your Kubernetes cluster and install the Tekton pipeline:
 
     ```sh
-    pushd $GOPATH/src/github.com/redhat-developer/build
+    pushd $GOPATH/src/github.com/shipwright-io/build
     ./hack/install-tekton.sh
     popd
     ```
@@ -25,7 +25,7 @@ The following set of steps highlight how to deploy a Build operator pod into an 
 4. Install the Build operator pod and all related resources.
 
     ```sh
-    pushd $GOPATH/src/github.com/redhat-developer/build
+    pushd $GOPATH/src/github.com/shipwright-io/build
     ./hack/crd.sh install
     popd
     ```

@@ -3,8 +3,8 @@ package buildrun
 import (
 	"context"
 
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
-	"github.com/redhat-developer/build/pkg/ctxlog"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 
 	corev1 "k8s.io/api/core/v1"
 )

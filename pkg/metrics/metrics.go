@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-developer/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 

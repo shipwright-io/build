@@ -60,7 +60,7 @@ spec:
 
 The new attributes added are:
 
-- `spec.runtime.base`: specifies the runtime base-image to be used, using [Image](https://github.com/redhat-developer/build/blob/97012ab56417ce1691a70896d90e490ea6a4d23c/pkg/apis/build/v1alpha1/build_types.go#L58) as type;
+- `spec.runtime.base`: specifies the runtime base-image to be used, using [Image](https://github.com/shipwright-io/build/blob/97012ab56417ce1691a70896d90e490ea6a4d23c/pkg/apis/build/v1alpha1/build_types.go#L58) as type;
 - `spec.runtime.workDir`: path to `WORKDIR` in runtime-image;
 - `spec.runtime.env`: runtime-image additional environment variables, key-value;
 - `spec.runtime.labels`: runtime-image additional labels, key-value;
@@ -104,7 +104,7 @@ As for `.spec.runtime.user.group`, it will take part of `USER` and `COPY --chown
 
 ### Tekton Tasks
 
-During the generation of [Tekton's `TaskRun`](https://github.com/redhat-developer/build/blob/17fa2792cc14288adea0bafa624e85b6db7232e0/pkg/controller/buildrun/generate_taskrun.go#L47), we have the opportunity to add extra steps. The first one to be added is the rendering of the `Dockerfile.runtime`, for instance:
+During the generation of [Tekton's `TaskRun`](https://github.com/shipwright-io/build/blob/17fa2792cc14288adea0bafa624e85b6db7232e0/pkg/controller/buildrun/generate_taskrun.go#L47), we have the opportunity to add extra steps. The first one to be added is the rendering of the `Dockerfile.runtime`, for instance:
 
 ```yml
 ---
@@ -131,7 +131,7 @@ spec:
 
 During the implementation phase `DOCKERFILE_CONTENT` will become the actual [runtime Dockerfile](#Runtime-Dockerfile).
 
-And, the last step to be added is the container-image build, for this position we can take either [`buildah`](https://github.com/redhat-developer/build/blob/97012ab56417ce1691a70896d90e490ea6a4d23c/samples/build/build_buildah_cr.yaml) or [`kaniko`](https://github.com/redhat-developer/build/blob/97012ab56417ce1691a70896d90e490ea6a4d23c/samples/build/build_kaniko_cr.yaml) strategies for guidance.
+And, the last step to be added is the container-image build, for this position we can take either [`buildah`](https://github.com/shipwright-io/build/blob/97012ab56417ce1691a70896d90e490ea6a4d23c/samples/build/build_buildah_cr.yaml) or [`kaniko`](https://github.com/shipwright-io/build/blob/97012ab56417ce1691a70896d90e490ea6a4d23c/samples/build/build_kaniko_cr.yaml) strategies for guidance.
 
 ## Experiments
 

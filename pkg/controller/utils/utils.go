@@ -1,7 +1,7 @@
 package utils
 
 import (
-	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // IsRuntimeDefined inspect if build has `.spec.runtime` defined, checking intermediary attributes
