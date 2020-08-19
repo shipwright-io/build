@@ -565,20 +565,20 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("reason: something bad happened"))
+				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
-			It("Delays creation if the registered status of the build is not yet set", func() {
+			It("delays creation if the registered status of the build is not yet set", func() {
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 				buildSample.Status.Registered = ""
 				buildSample.Status.Reason = ""
 
 				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
 
-				result, err := reconciler.Reconcile(buildRunRequest)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(result).To(Equal(reconcile.Result{
-					RequeueAfter: 5 * time.Second,
-				}))
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(fmt.Sprintf("The Build is not yet validated, build: %s", buildName)))
+				Expect(client.StatusCallCount()).To(Equal(0))
 			})
 
 			It("succeeds creating a TaskRun even if the BuildSpec is already referenced", func() {
