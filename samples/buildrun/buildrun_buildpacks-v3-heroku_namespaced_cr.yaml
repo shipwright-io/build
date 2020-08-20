@@ -7,5 +7,4 @@ spec:
   buildRef:
     name: buildpack-nodejs-build-namespaced-heroku
   serviceAccount:
-    name: pipeline
     generate: true
