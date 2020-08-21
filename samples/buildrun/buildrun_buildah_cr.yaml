@@ -6,4 +6,3 @@ metadata:
 spec:
   buildRef:
     name: buildah-golang-build
-
