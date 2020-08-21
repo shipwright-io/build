@@ -79,3 +79,48 @@ spec:
     name: buildpacks-v3-serviceaccount
   timeout: 1m
 `
+
+// MinimalBuildRun defines a minimal BuildRun
+// with a reference to a not existing Build
+const MinimalBuildRun = `
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+spec:
+  buildRef:
+    name: foobar
+`
+
+// MinimalBuildRunWithSAGeneration defines a minimal BuildRun
+// with a reference to a not existing Build
+const MinimalBuildRunWithSAGeneration = `
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+spec:
+  serviceAccount:
+    generate: true
+  buildRef:
+    name: foobar
+`
+
+// MinimalBuildRunWithTimeOut defines a BuildRun with
+// an override for the Build Timeout
+const MinimalBuildRunWithTimeOut = `
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+spec:
+  timeout: 1s
+  buildRef:
+    name: foobar
+`
+
+// MinimalBuildRunWithOutput defines a BuildRun with
+// an override for the Build Output
+const MinimalBuildRunWithOutput = `
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+spec:
+  output:
+    image: foobar.registry.com
+  buildRef:
+    name: foobar
+`

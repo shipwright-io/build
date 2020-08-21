@@ -261,7 +261,7 @@ func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Contex
 	}
 }
 
-// StubBuildRunAndTaskRun is used to simulate the existence of a BuildRun
+// StubBuildRun is used to simulate the existence of a BuildRun
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
 	b *build.BuildRun,
@@ -775,9 +775,20 @@ func (c *Catalog) LoadBuildYAML(d []byte) (*build.Build, error) {
 	return b, nil
 }
 
-// LoadBuildRunYAML parses YAML bytes into JSON and from JSON
-// into a BuildRun struct
-func (c *Catalog) LoadBuildRunYAML(d []byte) (*build.BuildRun, error) {
+// LoadBuildWithNameAndStrategy returns a populated Build with name and a referenced strategy
+func (c *Catalog) LoadBuildWithNameAndStrategy(name string, strategy string, d []byte) (*build.Build, error) {
+	b := &build.Build{}
+	err := yaml.Unmarshal(d, b)
+	if err != nil {
+		return nil, err
+	}
+	b.Name = name
+	b.Spec.StrategyRef.Name = strategy
+	return b, nil
+}
+
+// LoadBuildRunFromBytes returns a populated BuildRun
+func (c *Catalog) LoadBuildRunFromBytes(d []byte) (*build.BuildRun, error) {
 	b := &build.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
@@ -786,13 +797,35 @@ func (c *Catalog) LoadBuildRunYAML(d []byte) (*build.BuildRun, error) {
 	return b, nil
 }
 
-// LoadBuildStrategyYAML parses YAML bytes into JSON and from JSON
-// into a BuildStrategy struct
-func (c *Catalog) LoadBuildStrategyYAML(d []byte) (*build.BuildStrategy, error) {
+// LoadBRWithNameAndRef returns a populated BuildRun with a name and a referenced Build
+func (c *Catalog) LoadBRWithNameAndRef(name string, buildRef string, d []byte) (*build.BuildRun, error) {
+	b := &build.BuildRun{}
+	err := yaml.Unmarshal(d, b)
+	if err != nil {
+		return nil, err
+	}
+	b.Name = name
+	b.Spec.BuildRef.Name = buildRef
+	return b, nil
+}
+
+// LoadBuildStrategyFromBytes returns a populated BuildStrategy
+func (c *Catalog) LoadBuildStrategyFromBytes(d []byte) (*build.BuildStrategy, error) {
 	b := &build.BuildStrategy{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
 	}
+	return b, nil
+}
+
+// LoadCBSWithName returns a populated ClusterBuildStrategy with a name
+func (c *Catalog) LoadCBSWithName(name string, d []byte) (*build.ClusterBuildStrategy, error) {
+	b := &build.ClusterBuildStrategy{}
+	err := yaml.Unmarshal(d, b)
+	if err != nil {
+		return nil, err
+	}
+	b.Name = name
 	return b, nil
 }

@@ -80,3 +80,80 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
   timeout: 30s
 `
+
+// BuildCBSMinimal defines a Build with a
+// ClusterBuildStrategy
+const BuildCBSMinimal = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildCBSMinimalWithFakeSecret defines a Build with a
+// ClusterBuildStrategy and an not existing secret
+const BuildCBSMinimalWithFakeSecret = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+    credentials:
+      name: fake-secret
+`
+
+// BuildCBSWithShortTimeOut defines a Build with a
+// ClusterBuildStrategy and a short timeout
+const BuildCBSWithShortTimeOut = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  timeout: 5s
+`
+
+// BuildCBSWithWrongURL defines a Build with a
+// ClusterBuildStrategy and a non-existing url
+const BuildCBSWithWrongURL = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.foobar.com/sbose78/taxi"
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildCBSWithBuildRunDeletion defines a Build with a
+// ClusterBuildStrategy and the annotation for automatic BuildRun
+// deletion
+const BuildCBSWithBuildRunDeletion = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  annotations:
+    build.build.dev/build-run-deletion: "true"
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
