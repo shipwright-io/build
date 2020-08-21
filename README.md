@@ -10,11 +10,13 @@
     <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"> <img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
 </p>
 
-# The `build` Kubernetes API
+# Shipwright - a framework for building container images on Kubernetes
 
-Codenamed build-v2
-
-An API to build container-images on Kubernetes using popular strategies and tools like `source-to-image`, `buildpack-v3`, `kaniko` and `buildah`, in an extensible way.
+Shipwright is an extensible framework for building container images on Kubernetes. With Shipwright,
+developers can define and reuse build strategies that build container images for their CI/CD
+pipelines. Any tool that builds images within a container can be supported, such
+as [Kaniko](https://github.com/GoogleContainerTools/kaniko),
+[Cloud Native Buildpacks](https://buildpacks.io/), and [Buildah](https://buildah.io/).
 
 ## Dependencies
 
@@ -23,7 +25,7 @@ An API to build container-images on Kubernetes using popular strategies and tool
 | [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\* |
 | [Tekton](https://cloud.google.com/tekton) | v0.14.2                      |
 
-## How
+## Build Strategies
 
 The following are the build strategies supported by this operator, out-of-the-box:
 
@@ -103,6 +105,10 @@ spec:
 ## Development
 
 * Build, test & run using [HACK.md](HACK.md).
+
+## Contacts
+
+Kubernetes slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright)
 
 ----
 
