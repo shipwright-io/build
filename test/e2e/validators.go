@@ -78,6 +78,7 @@ func isRetryableError(err error) bool {
 		apierrors.IsTimeout(err) ||
 		apierrors.IsTooManyRequests(err) ||
 		err.Error() == "etcdserver: request timed out" ||
+		err.Error() == "rpc error: code = Unavailable desc = transport is closing" ||
 		strings.Contains(err.Error(), "net/http: request canceled while waiting for connection") {
 		return true
 	}
