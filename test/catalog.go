@@ -593,6 +593,21 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 	}
 }
 
+// BuildRunWithNamespace returns a customized BuildRun object that defines a namespace
+func (c *Catalog) BuildRunWithNamespace(buildRunName string, buildName string, nameSpace string) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+			Namespace: nameSpace,
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+		},
+	}
+}
+
 // LoadCustomResources returns a container set of resources based on cpu and memory
 func (c *Catalog) LoadCustomResources(cpu string, mem string) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
