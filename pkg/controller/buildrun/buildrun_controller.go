@@ -278,6 +278,15 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildRun.Labels = make(map[string]string)
 			}
 
+			// Set OwnerReference for Build and BuildRun only when build.build.dev/build-run-deletion is set "true"
+			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true"{
+				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
+					build.Status.Reason = err.Error()
+					updateErr := r.client.Status().Update(ctx, build)
+					return reconcile.Result{}, handleError("Failed to set OwnerReference for Build and BuildRun", err, updateErr)
+				}
+			}
+
 			buildGeneration := strconv.FormatInt(build.Generation, 10)
 			if buildRun.GetLabels()[buildv1alpha1.LabelBuild] != build.Name || buildRun.GetLabels()[buildv1alpha1.LabelBuildGeneration] != buildGeneration {
 				buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name

@@ -126,16 +126,6 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, nil
 	}
 
-	// Add finalizer for build
-	if err := r.configFinalizer(ctx, b); err != nil {
-		return reconcile.Result{}, err
-	}
-	// Check if the build is marked to be deleted, which is
-	// indicated by the deletion timestamp being set.
-	if !b.DeletionTimestamp.IsZero() {
-		ctxlog.Info(ctx, "build is marked for deletion", namespace, b.Namespace, name, b.Name)
-		return reconcile.Result{}, r.finalizeBuildRun(ctx, b)
-	}
 
 	// Populate the status struct with default values
 	b.Status.Registered = corev1.ConditionFalse
@@ -285,46 +275,6 @@ func (r *ReconcileBuild) validateOutputSecret(ctx context.Context, n string, ns 
 	return nil
 }
 
-func (r *ReconcileBuild) configFinalizer(ctx context.Context, b *build.Build) error {
-	if b.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
-		if !contains(b.GetFinalizers(), build.BuildFinalizer) {
-			ctxlog.Info(ctx, "add finalizer to build", namespace, b.Namespace, name, b.Name)
-			b.SetFinalizers(append(b.GetFinalizers(), build.BuildFinalizer))
-			if err := r.client.Update(ctx, b); err != nil {
-				return err
-			}
-		}
-	} else {
-		if contains(b.GetFinalizers(), build.BuildFinalizer) {
-			ctxlog.Info(ctx, "remove finalizer from build", namespace, b.Namespace, name, b.Name)
-			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-			if err := r.client.Update(ctx, b); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (r *ReconcileBuild) finalizeBuildRun(ctx context.Context, b *build.Build) error {
-	if contains(b.GetFinalizers(), build.BuildFinalizer) {
-		// Run finalization logic for buildFinalizer. If the
-		// finalization logic fails, don't remove the finalizer so
-		// that we can retry during the next reconciliation.
-		if err := r.cleanBuildRun(ctx, b); err != nil {
-			return err
-		}
-
-		// Remove buildFinalizer. Once all finalizers have been
-		// removed, the object will be deleted.
-		b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-		err := r.client.Update(ctx, b)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 func (r *ReconcileBuild) cleanBuildRun(ctx context.Context, b *build.Build) error {
 	buildRunList := &build.BuildRunList{}
