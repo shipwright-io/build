@@ -11,6 +11,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -87,35 +88,6 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
-			},
-		},
-	}
-}
-
-// BuildWithCustomAnnotationAndFinalizer provides a Build CRD with a customize annotation
-// and optional finalizer
-func (c *Catalog) BuildWithCustomAnnotationAndFinalizer(
-	name string,
-	ns string,
-	strategyName string,
-	a map[string]string,
-	f []string,
-) *build.Build {
-	buildStrategy := build.ClusterBuildStrategyKind
-	return &build.Build{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   ns,
-			Annotations: a,
-			Finalizers:  f,
-		},
-		Spec: build.BuildSpec{
-			Source: build.GitSource{
-				URL: "foobar",
-			},
-			StrategyRef: &build.StrategyRef{
-				Name: strategyName,
-				Kind: &buildStrategy,
 			},
 		},
 	}
@@ -237,31 +209,23 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(co
 	}
 }
 
-// StubBuildUpdateWithFinalizers is used to simulate the state of the Build
-// finalizers after a client Update on the Object happened.
-func (c *Catalog) StubBuildUpdateWithFinalizers(finalizer string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+// StubBuildUpdateOwnerReferences simulates and assert an updated
+// BuildRun object ownerreferences
+func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName string, isOwnerController *bool, blockOwnerDeletion *bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
-		case *build.Build:
-			Expect(object.Finalizers).To(ContainElement(finalizer))
+		case *build.BuildRun:
+			Expect(object.OwnerReferences[0].Kind).To(Equal(ownerKind))
+			Expect(object.OwnerReferences[0].Name).To(Equal(ownerName))
+			Expect(object.OwnerReferences[0].Controller).To(Equal(isOwnerController))
+			Expect(object.OwnerReferences[0].BlockOwnerDeletion).To(Equal(blockOwnerDeletion))
+			Expect(len(object.OwnerReferences)).ToNot(Equal(0))
 		}
 		return nil
 	}
 }
 
-// StubBuildUpdateWithoutFinalizers is used to simulate the state of the Build
-// finalizers after a client Update on the Object happened.
-func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-		switch object := object.(type) {
-		case *build.Build:
-			Expect(len(object.Finalizers)).To(BeZero())
-		}
-		return nil
-	}
-}
-
-// StubBuildRun is used to simulate the existence of a BuildRun
+// StubBuildRun is used to simulate the existance of a BuildRun
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
 	b *build.BuildRun,
@@ -311,6 +275,19 @@ func (c *Catalog) StubBuildAndTaskRun(
 			return nil
 		}
 		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// StubBuildStatusReason asserts Status fields on a Build resource
+func (c *Catalog) StubBuildStatusReason(reason string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			if object.Status.Reason != "" {
+				Expect(*&object.Status.Reason).To(Equal(reason))
+			}
+		}
+		return nil
 	}
 }
 
@@ -582,6 +559,47 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 	}
 }
 
+// BuildWithBuildRunDeletions returns a minimal Build object with the
+// build.build.dev/build-run-deletion annotation set to true
+func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        buildName,
+			Annotations: map[string]string{buildv1alpha1.AnnotationBuildRunDeletion: "true"},
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &strategyKind,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
+// BuildWithBuildRunDeletionsAndFakeNS returns a minimal Build object with the
+// build.build.dev/build-run-deletion annotation set to true in a fake namespace
+func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        buildName,
+			Namespace:   "fakens",
+			Annotations: map[string]string{buildv1alpha1.AnnotationBuildRunDeletion: "true"},
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &strategyKind,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
 // DefaultBuildWithFalseRegistered returns a minimal Build object with a FALSE Registered
 func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
 	return &build.Build{
@@ -648,6 +666,48 @@ func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName strin
 					Name: "foobar",
 				},
 			},
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+		},
+	}
+}
+
+// BuildRunWithExistingOwnerReferences returns a BuildRun object that is
+// already owned by some fake object
+func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, buildName string, ownerName string) *build.BuildRun {
+
+	managingController := true
+
+	fakeOwnerRef := metav1.OwnerReference{
+		APIVersion: ownerName,
+		Kind:       ownerName,
+		Controller: &managingController,
+	}
+
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            buildRunName,
+			OwnerReferences: []metav1.OwnerReference{fakeOwnerRef},
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+		},
+	}
+}
+
+// BuildRunWithFakeNamespace returns a BuildRun object with
+// a namespace that does not exist
+func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName string) *build.BuildRun {
+
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      buildRunName,
+			Namespace: "foobarns",
 		},
 		Spec: build.BuildRunSpec{
 			BuildRef: &build.BuildRef{

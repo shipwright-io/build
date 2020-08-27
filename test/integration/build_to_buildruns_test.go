@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -221,7 +222,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("The Build is not registered correctly, build: %s, registered status: False, reason: secret fake-secret does not exist", BUILD+tb.Namespace)))
+			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: False, reason: secret fake-secret does not exist", BUILD+tb.Namespace)))
 		})
 	})
 
@@ -293,6 +294,124 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(tr02.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/sbose78/taxi"))
 
+		})
+	})
+
+	Context("when a build is annotated for deleting the buildrun", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSWithBuildRunDeletion)
+		})
+
+		var ownerReferenceNames = func(list []metav1.OwnerReference) []string {
+			var result = make([]string, len(list))
+			for i, ownerReference := range list {
+				result[i] = ownerReference.Name
+			}
+			return result
+		}
+
+		It("deletes the buildrun when the build is deleted", func() {
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
+				BUILDRUN+tb.Namespace,
+				BUILD+tb.Namespace,
+				[]byte(test.MinimalBuildRun),
+			)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
+
+			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
+			Expect(err).To(BeNil())
+
+			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(ownerReferenceNames(br.OwnerReferences)).Should(ContainElement(buildObject.Name))
+
+			err = tb.DeleteBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
+
+			buildIsDeleted, err := tb.GetBRTillDeletion(BUILDRUN + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(buildIsDeleted).To(Equal(true))
+
+		})
+
+		It("does not deletes the buildrun if the annotation is changed", func() {
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
+				BUILDRUN+tb.Namespace,
+				BUILD+tb.Namespace,
+				[]byte(test.MinimalBuildRun),
+			)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
+
+			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
+			Expect(err).To(BeNil())
+
+			// we modify the annotation so automatic delete does not take place
+			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"false"}}}`, v1alpha1.AnnotationBuildRunDeletion))
+			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
+			Expect(err).To(BeNil())
+
+			err = tb.DeleteBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
+
+			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
+
+		})
+		It("does delete the buildrun after several modifications of the annotation", func() {
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
+				BUILDRUN+tb.Namespace,
+				BUILD+tb.Namespace,
+				[]byte(test.MinimalBuildRun),
+			)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
+
+			// we modify the annotation for the automatic deletion to not take place
+			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"false"}}}`, v1alpha1.AnnotationBuildRunDeletion))
+			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
+			Expect(err).To(BeNil())
+
+			patchedBuild, err := tb.GetBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(patchedBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]).To(Equal("false"))
+
+			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
+			Expect(err).To(BeNil())
+
+			// we modify the annotation one more time, to validate that the build should be deleted this time
+			data = []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"true"}}}`, v1alpha1.AnnotationBuildRunDeletion))
+			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
+			Expect(err).To(BeNil())
+
+			patchedBuild, err = tb.GetBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(patchedBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]).To(Equal("true"))
+
+			err = tb.DeleteBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
+
+			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(ownerReferenceNames(br.OwnerReferences)).Should(ContainElement(buildObject.Name))
+
+			buildIsDeleted, err := tb.GetBRTillDeletion(BUILDRUN + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(buildIsDeleted).To(Equal(true))
 		})
 	})
 })
