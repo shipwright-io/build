@@ -22,7 +22,7 @@ const (
 	inputGitSourceRevision     = "revision"
 	inputParamBuilderImage     = "BUILDER_IMAGE"
 	inputParamDockerfile       = "DOCKERFILE"
-	inputParamPathContext      = "PATH_CONTEXT"
+	inputParamContextDir       = "CONTEXT_DIR"
 	outputImageResourceName    = "image"
 	outputImageResourceURL     = "url"
 )
@@ -35,7 +35,7 @@ func getStringTransformations(fullText string) string {
 		"$(build.output.image)":      "$(outputs.resources.image.url)",
 		"$(build.builder.image)":     fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
 		"$(build.dockerfile)":        fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
-		"$(build.source.contextDir)": fmt.Sprintf("$(inputs.params.%s)", inputParamPathContext),
+		"$(build.source.contextDir)": fmt.Sprintf("$(inputs.params.%s)", inputParamContextDir),
 	}
 
 	// Run the text through all possible replacements
@@ -81,10 +81,10 @@ func GenerateTaskSpec(
 				},
 			},
 			{
-				// PATH_CONTEXT comes from the git source specification
+				// CONTEXT_DIR comes from the git source specification
 				// in the Build object
 				Description: "The root of the code",
-				Name:        inputParamPathContext,
+				Name:        inputParamContextDir,
 				Default: &v1beta1.ArrayOrString{
 					Type:      v1beta1.ParamTypeString,
 					StringVal: ".",
@@ -276,7 +276,7 @@ func GenerateTaskRun(
 	}
 	if build.Spec.Source.ContextDir != nil {
 		inputParams = append(inputParams, v1beta1.Param{
-			Name: inputParamPathContext,
+			Name: inputParamContextDir,
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: *build.Spec.Source.ContextDir,

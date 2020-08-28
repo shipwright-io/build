@@ -76,7 +76,7 @@ spec:
         - $(build.dockerfile)
         - -t
         - $(build.output.image)
-        - $(build.pathContext)
+        - $(build.source.contextDir)
       resources:
         limits:
           cpu: 500m
