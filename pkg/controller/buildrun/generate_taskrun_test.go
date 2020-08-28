@@ -58,7 +58,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(err).To(BeNil())
 
 				expectedCommandOrArg = []string{
-					"bud", "--tag=$(outputs.resources.image.url)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), fmt.Sprintf("$(inputs.params.%s)", "PATH_CONTEXT"),
+					"bud", "--tag=$(outputs.resources.image.url)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), fmt.Sprintf("$(inputs.params.%s)", "CONTEXT_DIR"),
 				}
 			})
 
@@ -230,7 +230,7 @@ var _ = Describe("GenerateTaskrun", func() {
 					if param.Name == "DOCKERFILE" {
 						Expect(param.Value.StringVal).To(Equal(dockerfile))
 					}
-					if param.Name == "PATH_CONTEXT" {
+					if param.Name == "CONTEXT_DIR" {
 						Expect(param.Value.StringVal).To(Equal(contextDir))
 					}
 				}
