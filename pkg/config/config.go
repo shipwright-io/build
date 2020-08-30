@@ -23,12 +23,14 @@ const (
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
+	metricBuildRunRampUpDurationBucketsEnvVar     = "PROMETHEUS_BR_RAMPUP_DUR_BUCKETS"
 )
 
 var (
 	// arrays are not possible as constants
 	metricBuildRunCompletionDurationBuckets = prometheus.LinearBuckets(50, 50, 10)
 	metricBuildRunEstablishDurationBuckets  = []float64{0, 1, 2, 3, 5, 7, 10, 15, 20, 30}
+	metricBuildRunRampUpDurationBuckets     = prometheus.LinearBuckets(0, 1, 10)
 )
 
 // Config hosts different parameters that
@@ -43,6 +45,7 @@ type Config struct {
 type PrometheusConfig struct {
 	BuildRunCompletionDurationBuckets []float64
 	BuildRunEstablishDurationBuckets  []float64
+	BuildRunRampUpDurationBuckets     []float64
 }
 
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
@@ -53,6 +56,7 @@ func NewDefaultConfig() *Config {
 		Prometheus: PrometheusConfig{
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
+			BuildRunRampUpDurationBuckets:     metricBuildRunRampUpDurationBuckets,
 		},
 	}
 }
@@ -89,6 +93,15 @@ func (c *Config) SetConfigFromEnv() error {
 			return err
 		}
 		c.Prometheus.BuildRunEstablishDurationBuckets = buildRunEstablishDurationBuckets
+	}
+
+	buildRunRampUpDurationBucketsEnvVarValue := os.Getenv(metricBuildRunRampUpDurationBucketsEnvVar)
+	if buildRunRampUpDurationBucketsEnvVarValue != "" {
+		buildRunRampUpDurationBuckets, err := stringToFloat64Array(strings.Split(buildRunRampUpDurationBucketsEnvVarValue, ","))
+		if err != nil {
+			return err
+		}
+		c.Prometheus.BuildRunRampUpDurationBuckets = buildRunRampUpDurationBuckets
 	}
 
 	return nil
