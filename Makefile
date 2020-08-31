@@ -59,6 +59,13 @@ TEST_PRIVATE_GITLAB ?=
 # private repository authentication secret
 TEST_SOURCE_SECRET ?=
 
+# Image settings for building and pushing images
+IMAGE_HOST ?= quay.io
+IMAGE ?= shipwright/shipwright-operator
+TAG ?= latest
+CONTAINER_RUNTIME ?= docker
+DOCKERFILE ?= Dockerfile
+
 .EXPORT_ALL_VARIABLES:
 
 default: build
@@ -76,6 +83,18 @@ $(OPERATOR): vendor
 .PHONY: build-plain
 build-plain: 
 	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
+
+.PHONY: build-image
+build-image:
+	$(CONTAINER_RUNTIME) build -t $(IMAGE_HOST)/$(IMAGE):$(TAG) -f $(DOCKERFILE) .
+
+.PHONY: push-image 
+push-image:
+	$(CONTAINER_RUNTIME) push $(IMAGE_HOST)/$(IMAGE):$(TAG)
+
+.PHONY: release
+release:
+	hack/release.sh
 
 install-ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
