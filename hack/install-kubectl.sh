@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# Copyright The Shipwright Contributors
+# 
+# SPDX-License-Identifier: Apache-2.0
+
 #
 # Installs "kubectl" on Travis-CI Ubuntu.
 #

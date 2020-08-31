@@ -1,3 +1,7 @@
+# Copyright The Shipwright Contributors
+# 
+# SPDX-License-Identifier: Apache-2.0
+
 FROM centos:7 as build-tools
 ENV LANG=en_US.utf8
 ENV GOPATH /tmp/go

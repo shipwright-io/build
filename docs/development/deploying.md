@@ -1,3 +1,9 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Deploying the operator pod
 
 The following set of steps highlight how to deploy a Build operator pod into an existing Kubernetes cluster.

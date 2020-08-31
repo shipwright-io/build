@@ -1,3 +1,9 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Enhancement Proposals
 
 An Enhancement Proposal is a way to propose, communicate, and coordinate on new efforts for the `build` project.

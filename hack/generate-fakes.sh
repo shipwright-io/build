@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Copyright The Shipwright Contributors
+# 
+# SPDX-License-Identifier: Apache-2.0
+
+
 set -euo pipefail
 
 [ ! -d "vendor" ] && echo "$0 requires vendor/ folder, run 'go mod vendor'"

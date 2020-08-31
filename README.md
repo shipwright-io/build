@@ -1,3 +1,9 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 <p align="center">
     <img alt="Work in Progress" src="https://img.shields.io/badge/Status-Work%20in%20Progress-informational">
     <a alt="GoReport" href="https://goreportcard.com/report/github.com/shipwright-io/build">

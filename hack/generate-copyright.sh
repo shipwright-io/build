@@ -12,13 +12,14 @@ spdxTxt="SPDX-License-Identifier: Apache-2.0"
 function listPkgDirs() {
 	go list -f '{{.Dir}}' ./cmd/... ./pkg/... ./test/... ./version/...
   local goFiles=$?
-  go list -f '{{.Dir}}' -tags tools ./
-  goFiles="$goFiles $?"
 }
 
 function listGoFiles() {
 	# pipeline is much faster than for loop
 	listPkgDirs | xargs -I {} find {} -name '*.go'
+  local goFiles=$?
+  echo $PWD/tools.go
+  goFiles="$goFiles $?"
 }
 
 function listDockerfiles() {

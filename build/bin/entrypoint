@@ -1,5 +1,10 @@
 #!/bin/sh -e
 
+# Copyright The Shipwright Contributors
+# 
+# SPDX-License-Identifier: Apache-2.0
+
+
 # This is documented here:
 # https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
 
