@@ -96,6 +96,10 @@ push-image:
 release:
 	hack/release.sh
 
+.PHONY: gen-copyright
+gen-copyright:
+	hack/generate-copyright.sh
+
 install-ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 	go get -u github.com/onsi/gomega/...
