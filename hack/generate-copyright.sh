@@ -23,18 +23,18 @@ function listGoFiles() {
 }
 
 function listDockerfiles() {
-  find -name 'Dockerfile*' -not -path './vendor/*'
+  find . -name 'Dockerfile*' -not -path './vendor/*'
 }
 
 function listBashFiles() {
-  find -name '*.sh' -not -path './vendor/*'
+  find . -name '*.sh' -not -path './vendor/*'
   local bashFiles=$?
   find ./build/bin -type f
   bashFiles="$bashFiles $?"
 }
 
 function listMarkdownFiles() {
-  find -name '*.md' -not -path './vendor/*'
+  find . -name '*.md' -not -path './vendor/*'
 }
 
 function generateGoCopyright() {
@@ -44,7 +44,7 @@ function generateGoCopyright() {
     if ! head -n3 "${file}" | grep -Eq "(Copyright|SPDX-License-Identifier)" ; then
       cp "${file}" "${file}.bak"
       echo "// ${copyrightTxt}" > "${file}"
-      echo "// " >> "${file}"
+      echo "//" >> "${file}"
       echo "// ${spdxTxt}" >> "${file}"
       echo "" >> "${file}"
       cat "${file}.bak" >> "${file}"
@@ -77,7 +77,7 @@ function generateBashCopyright() {
       head -n1 "${file}.bak" > "${file}"
       echo "" >> "${file}"
       echo "# ${copyrightTxt}" >> "${file}"
-      echo "# " >> "${file}"
+      echo "#" >> "${file}"
       echo "# ${spdxTxt}" >> "${file}"
       echo "" >> "${file}"
       tail -n +2 "${file}.bak" >> "${file}"
