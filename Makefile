@@ -96,6 +96,16 @@ push-image:
 release:
 	hack/release.sh
 
+.PHONY: gen-copyright
+gen-copyright:
+	hack/generate-copyright.sh
+
+.PHONY: verify-copyright
+verify-copyright: gen-copyright
+	# TODO: Fix travis issue with ginkgo install updating go.mod and go.sum
+	# TODO: Verify vendor tree is accurate
+	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
+
 install-ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 	go get -u github.com/onsi/gomega/...
