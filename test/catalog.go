@@ -149,6 +149,16 @@ func (c *Catalog) FakeClusterBuildStrategyList() *build.ClusterBuildStrategyList
 	}
 }
 
+
+// FakeNoClusterBuildStrategyList to support tests
+func (c *Catalog) FakeNoClusterBuildStrategyList() *build.ClusterBuildStrategyList {
+	return &build.ClusterBuildStrategyList{
+		Items: []build.ClusterBuildStrategy{
+
+		},
+	}
+}
+
 // BuildStrategyList to support tests
 func (c *Catalog) BuildStrategyList(name string, ns string) *build.BuildStrategyList {
 	return &build.BuildStrategyList{
@@ -176,6 +186,14 @@ func (c *Catalog) FakeBuildStrategyList() *build.BuildStrategyList {
 	}
 }
 
+// FakeNoBuildStrategyList to support tests
+func (c *Catalog) FakeNoBuildStrategyList() *build.BuildStrategyList {
+	return &build.BuildStrategyList{
+		Items: []build.BuildStrategy{
+		},
+	}
+}
+
 // FakeSecretList to support tests
 func (c *Catalog) FakeSecretList() corev1.SecretList {
 	return corev1.SecretList{
@@ -185,6 +203,14 @@ func (c *Catalog) FakeSecretList() corev1.SecretList {
 					Name: "foobar",
 				},
 			},
+		},
+	}
+}
+
+// FakeSecretListInNamespace to support test
+func (c *Catalog) FakeNoSecretListInNamespace() corev1.SecretList {
+	return corev1.SecretList{
+		Items: []corev1.Secret{
 		},
 	}
 }
@@ -579,6 +605,23 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 	}
 }
 
+// BuildRunWithoutSA returns a buildrun without serviceAccountName and generate serviceAccount is false
+func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+			ServiceAccount: &build.ServiceAccount{
+				Generate: false,
+			},
+		},
+	}
+}
+
 // BuildRunWithSAGenerate returns a customized BuildRun object that defines a
 // service account
 func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *build.BuildRun {
@@ -592,21 +635,6 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			},
 			ServiceAccount: &build.ServiceAccount{
 				Generate: true,
-			},
-		},
-	}
-}
-
-// BuildRunWithNamespace returns a customized BuildRun object that defines a namespace
-func (c *Catalog) BuildRunWithNamespace(buildRunName string, buildName string, nameSpace string) *build.BuildRun {
-	return &build.BuildRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: buildRunName,
-			Namespace: nameSpace,
-		},
-		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
-				Name: buildName,
 			},
 		},
 	}

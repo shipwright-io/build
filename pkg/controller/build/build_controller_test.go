@@ -28,18 +28,15 @@ import (
 
 var _ = Describe("Reconcile Build", func() {
 	var (
-		ctx context.Context
 		manager                      *fakes.FakeManager
 		reconciler                   reconcile.Reconciler
 		request                      reconcile.Request
 		buildSample                  *build.Build
-		buildRunSample *build.BuildRun
 		client                       *fakes.FakeClient
 		ctl                          test.Catalog
 		statusWriter                 *fakes.FakeStatusWriter
 		registrySecret               string
 		buildName                    string
-		buildRunName string
 		namespace, buildStrategyName string
 	)
 
@@ -48,21 +45,18 @@ var _ = Describe("Reconcile Build", func() {
 		buildStrategyName = "buildah"
 		namespace = "build-examples"
 		buildName = "buildah-golang-build"
-		buildRunName = "buildah-golang-buildRun"
 
 		// Fake the manager and get a reconcile Request
 		manager = &fakes.FakeManager{}
 		request = reconcile.Request{NamespacedName: types.NamespacedName{Name: buildName, Namespace: namespace}}
 
 		// Fake the client GET calls when reconciling,
-		// in order to get our Build and BuildRun CRD instance
+		// in order to get our Build CRD instance
 		client = &fakes.FakeClient{}
 		client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 			switch object := object.(type) {
 			case *build.Build:
 				buildSample.DeepCopyInto(object)
-			case *build.BuildRun:
-				buildRunSample.DeepCopyInto(object)
 			default:
 				return errors.NewNotFound(schema.GroupResource{}, "schema not found")
 			}
@@ -76,8 +70,6 @@ var _ = Describe("Reconcile Build", func() {
 	JustBeforeEach(func() {
 		// Generate a Build CRD instance
 		buildSample = ctl.BuildWithClusterBuildStrategy(buildName, namespace, buildStrategyName, registrySecret)
-		// Generate a BuildRun CRD instance
-		buildRunSample = ctl.BuildRunWithNamespace(buildRunName, buildName, namespace)
 		// Reconcile
 		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
 		reconciler = buildController.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
@@ -132,6 +124,29 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
+			It("fails when no any secret exists in namespace", func() {
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeNoSecretListInNamespace()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("there are no secrets in namespace %s", namespace))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("there are no secrets in namespace %s", namespace)))
+
+			})
 		})
 		Context("when spec strategy ClusterBuildStrategy is specified", func() {
 			It("fails when the strategy does not exists", func() {
@@ -181,6 +196,30 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
+			})
+			It("fails when no any clusterStrategy exists", func() {
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.SecretList(registrySecret)
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.FakeNoClusterBuildStrategyList()
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("none ClusterBuildStrategies found"))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("none ClusterBuildStrategies found")))
 			})
 		})
 		Context("when spec strategy BuildStrategy is specified", func() {
@@ -238,6 +277,30 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
+			})
+			It("fails when no any strategy exists in namespace", func() {
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *build.ClusterBuildStrategyList:
+						list := ctl.FakeNoClusterBuildStrategyList()
+						list.DeepCopyInto(object)
+					case *build.BuildStrategyList:
+						list := ctl.FakeNoBuildStrategyList()
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("none BuildStrategies found in namespace %s", namespace))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("none BuildStrategies found in namespace %s", namespace)))
 			})
 		})
 		Context("when spec strategy kind is not specified", func() {
@@ -366,89 +429,6 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
-
-			It("delete the related buildRun when delete a build if annotation equals true", func() {
-				// Fake some client LIST calls and ensure we populate all
-				// different resources we could get during reconciliation
-				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *corev1.SecretList:
-						list := ctl.SecretList(registrySecret)
-						list.DeepCopyInto(object)
-					case *build.ClusterBuildStrategyList:
-						list := ctl.ClusterBuildStrategyList(buildStrategyName)
-						list.DeepCopyInto(object)
-					}
-					return nil
-				})
-
-				// override Build definition with one annotation
-				annotationFinalizer[build.AnnotationBuildRunDeletion] = "true"
-				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
-					buildName,
-					namespace,
-					buildStrategyName,
-					annotationFinalizer,
-					[]string{},
-				)
-
-				err := client.Create(ctx, buildSample)
-				Expect(err).ToNot(HaveOccurred())
-				err = client.Create(ctx, buildRunSample)
-				Expect(err).ToNot(HaveOccurred())
-
-				// Delete the build with Finalizer
-				err = client.Delete(ctx, buildSample)
-				Expect(err).ToNot(HaveOccurred())
-				// Check the buildRun should not exist
-				err = client.Get(ctx, types.NamespacedName{
-					Namespace: namespace,
-					Name:      buildRunName,
-				}, &build.BuildRun{} )
-				Expect(err).ToNot(HaveOccurred())
-				//Expect(err).To(ContainSubstring(fmt.Sprintf("Error from server (NotFound): buildruns.build.dev \"%s\" not found", buildRunName)))
-
-			})
-
-
-
-			It("don't delete the related buildRun when delete a build if annotation equals false", func() {
-				// Fake some client LIST calls and ensure we populate all
-				// different resources we could get during reconciliation
-				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *corev1.SecretList:
-						list := ctl.SecretList(registrySecret)
-						list.DeepCopyInto(object)
-					case *build.ClusterBuildStrategyList:
-						list := ctl.ClusterBuildStrategyList(buildStrategyName)
-						list.DeepCopyInto(object)
-					}
-					return nil
-				})
-
-				// override Build definition with one annotation
-				annotationFinalizer[build.AnnotationBuildRunDeletion] = "false"
-				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
-					buildName,
-					namespace,
-					buildStrategyName,
-					annotationFinalizer,
-					[]string{},
-				)
-				err := client.Create(ctx, buildSample)
-				Expect(err).ToNot(HaveOccurred())
-				err = client.Create(ctx, buildRunSample)
-				Expect(err).ToNot(HaveOccurred())
-				err = client.Delete(ctx, buildSample)
-				Expect(err).ToNot(HaveOccurred())
-				err = client.Get(ctx, types.NamespacedName{
-					Namespace: namespace,
-					Name:      buildRunSample.Name,
-				}, &build.BuildRun{} )
-				Expect(err).ToNot(HaveOccurred())
-			})
-
 		})
 	})
 })
