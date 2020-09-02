@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Copyright The Shipwright Contributors
+# 
+# SPDX-License-Identifier: Apache-2.0
+
+
 set -euo pipefail
 
 # Read the build run name

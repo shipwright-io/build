@@ -1,3 +1,7 @@
+// Copyright The Shipwright Contributors
+// 
+// SPDX-License-Identifier: Apache-2.0
+
 package test
 
 // MinimalBuildahBuildStrategy defines a
@@ -76,7 +80,7 @@ spec:
         - $(build.dockerfile)
         - -t
         - $(build.output.image)
-        - $(build.pathContext)
+        - $(build.source.contextDir)
       resources:
         limits:
           cpu: 500m

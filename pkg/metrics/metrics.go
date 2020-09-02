@@ -1,3 +1,7 @@
+// Copyright The Shipwright Contributors
+// 
+// SPDX-License-Identifier: Apache-2.0
+
 package metrics
 
 import (
@@ -28,9 +32,12 @@ var (
 		},
 		[]string{buildStrategyLabel})
 
-	buildRunEstablishDuration *prometheus.HistogramVec
-
+	buildRunEstablishDuration  *prometheus.HistogramVec
 	buildRunCompletionDuration *prometheus.HistogramVec
+
+	buildRunRampUpDuration   *prometheus.HistogramVec
+	taskRunRampUpDuration    *prometheus.HistogramVec
+	taskRunPodRampUpDuration *prometheus.HistogramVec
 
 	initialized = false
 )
@@ -59,6 +66,30 @@ func InitPrometheus(config *config.Config) {
 		},
 		[]string{buildStrategyLabel, namespaceLabel})
 
+	buildRunRampUpDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "build_buildrun_rampup_duration_seconds",
+			Help:    "BuildRun ramp-up duration in seconds (time between buildrun creation and taskrun creation).",
+			Buckets: config.Prometheus.BuildRunRampUpDurationBuckets,
+		},
+		[]string{buildStrategyLabel, namespaceLabel})
+
+	taskRunRampUpDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "build_buildrun_taskrun_rampup_duration_seconds",
+			Help:    "BuildRun taskrun ramp-up duration in seconds (time between taskrun creation and taskrun pod creation).",
+			Buckets: config.Prometheus.BuildRunRampUpDurationBuckets,
+		},
+		[]string{buildStrategyLabel, namespaceLabel})
+
+	taskRunPodRampUpDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "build_buildrun_taskrun_pod_rampup_duration_seconds",
+			Help:    "BuildRun taskrun pod ramp-up duration in seconds (time between pod creation and last init container completion).",
+			Buckets: config.Prometheus.BuildRunRampUpDurationBuckets,
+		},
+		[]string{buildStrategyLabel, namespaceLabel})
+
 	// Register custom metrics with the global prometheus registry
 	metrics.Registry.MustRegister(
 		buildCount,
@@ -84,5 +115,20 @@ func BuildRunEstablishObserve(buildStrategy, namespace string, duration time.Dur
 
 // BuildRunCompletionObserve sets the build run completion time
 func BuildRunCompletionObserve(buildStrategy, namespace string, duration time.Duration) {
+	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+}
+
+// BuildRunRampUpDurationObserve processes the observation of a new buildrun ramp-up duration
+func BuildRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
+	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+}
+
+// TaskRunRampUpDurationObserve processes the observation of a new taskrun ramp-up duration
+func TaskRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
+	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+}
+
+// TaskRunPodRampUpDurationObserve processes the observation of a new taskrun pod ramp-up duration
+func TaskRunPodRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
 	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
 }

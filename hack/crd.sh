@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# Copyright The Shipwright Contributors
+# 
+# SPDX-License-Identifier: Apache-2.0
+
 #
 # Manages the deployment and removal of CRDs in a cluster. Usage:
 #

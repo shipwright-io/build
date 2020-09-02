@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# Copyright The Shipwright Contributors
+# 
+# SPDX-License-Identifier: Apache-2.0
+
 #
 # Installs KinD (Kubernetes in Docker) via "go get" and configure it as current context.
 #
