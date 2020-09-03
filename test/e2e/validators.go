@@ -290,10 +290,10 @@ func validateBuildDeletion(
 	Expect(err).ToNot(HaveOccurred(), "Failed to delete build")
 	Logf("Build is deleted!")
 
-	Eventually(func() error {
-		err = clientGet(buildNsName, testBuild)
-		return err
-	}, time.Duration(30*getTimeoutMultiplier())*time.Second, 3*time.Second).ShouldNot(BeNil(), "Build is not deleted yet")
+	// Eventually(func() error {
+	// 	err = clientGet(buildNsName, testBuild)
+	// 	return err
+	// }, time.Duration(30*getTimeoutMultiplier())*time.Second, 3*time.Second).ShouldNot(BeNil(), "Build is not deleted yet")
 
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
 	err = clientGet(buildRunNsName, testBuildRun)
