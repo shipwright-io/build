@@ -285,6 +285,9 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 					updateErr := r.client.Status().Update(ctx, build)
 					return reconcile.Result{}, handleError("Failed to set OwnerReference for Build and BuildRun", err, updateErr)
 				}
+				if err = r.client.Update(ctx, buildRun); err != nil {
+					return reconcile.Result{}, err
+				}
 			}
 
 			buildGeneration := strconv.FormatInt(build.Generation, 10)
