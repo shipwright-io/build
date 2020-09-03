@@ -124,6 +124,29 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
+			It("fails when no any secret exists in namespace", func() {
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeNoSecretListInNamespace()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("there are no secrets in namespace %s", namespace))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("there are no secrets in namespace %s", namespace)))
+
+			})
 		})
 		Context("when spec strategy ClusterBuildStrategy is specified", func() {
 			It("fails when the strategy does not exists", func() {
@@ -173,6 +196,30 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
+			})
+			It("fails when no any clusterStrategy exists", func() {
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.SecretList(registrySecret)
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.FakeNoClusterBuildStrategyList()
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("none ClusterBuildStrategies found"))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("none ClusterBuildStrategies found")))
 			})
 		})
 		Context("when spec strategy BuildStrategy is specified", func() {
@@ -230,6 +277,30 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
+			})
+			It("fails when no any strategy exists in namespace", func() {
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *build.ClusterBuildStrategyList:
+						list := ctl.FakeNoClusterBuildStrategyList()
+						list.DeepCopyInto(object)
+					case *build.BuildStrategyList:
+						list := ctl.FakeNoBuildStrategyList()
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("none BuildStrategies found in namespace %s", namespace))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("none BuildStrategies found in namespace %s", namespace)))
 			})
 		})
 		Context("when spec strategy kind is not specified", func() {

@@ -43,6 +43,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 		buildRunSample                                         *build.BuildRun
 		taskRunSample                                          *v1beta1.TaskRun
 		statusWriter                                           *fakes.FakeStatusWriter
+		fakeBuildStrategyKind build.BuildStrategyKind
 		taskRunName, buildRunName, buildName, strategyName, ns string
 	)
 
@@ -389,6 +390,30 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
+			It("use the default serviceAccount when pipeline serviceAccount doesn't exist and generate serviceAccount is false", func() {
+				// override the BuildRun without serviceAccount and generate is false
+				buildRunSample = ctl.BuildRunWithoutSA(buildRunName, buildName)
+
+				// override the initial getClientStub, and generate a new stub
+				// that only contains a Build and Buildrun, none TaskRun
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						buildSample.DeepCopyInto(object)
+						return nil
+					case *build.BuildRun:
+						buildRunSample.DeepCopyInto(object)
+						return nil
+					}
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+				client.GetCalls(stubGetCalls)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("\"default\" not found, msg: Failed to choose a service account to use")))
+			})
+
 			It("fails on a TaskRun creation due to missing namespaced buildstrategy", func() {
 
 				// override the Build to use a namespaced BuildStrategy
@@ -422,6 +447,22 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+			})
+
+			It("fails on a TaskRun creation due to unknown buildStrategy kind", func() {
+				buildSample = ctl.DefaultBuild(buildName, strategyName, fakeBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// but none BuildStrategy
+				client.GetCalls(ctl.StubBuildRunGetWithSA(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName)),
+				)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" Unsupported BuildStrategy Kind")))
 			})
 
 			It("only generates the service account once if the taskRun cannot be created", func() {
