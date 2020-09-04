@@ -7,6 +7,7 @@ package test
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"knative.dev/pkg/apis"
 	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -50,6 +51,51 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 					Name: secretName,
 				},
 			},
+		},
+	}
+}
+
+func (c *Catalog) BuildWithInvalidTimeout(name string, ns string, strategyName string) *build.Build {
+	timeout, _ := time.ParseDuration("")
+
+	buildStrategy := build.ClusterBuildStrategyKind
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: build.BuildSpec{
+			Source:       build.GitSource{
+				URL: "foobar",
+			},
+			StrategyRef:  &build.StrategyRef{
+				Name: strategyName,
+				Kind: &buildStrategy,
+			},
+			Timeout:
+				&metav1.Duration{timeout},
+		},
+	}
+}
+
+func (c *Catalog) BuildWithValidTimeout(name string, ns string, strategyName string) *build.Build {
+	timeout, _ := time.ParseDuration("60s")
+
+	buildStrategy := build.ClusterBuildStrategyKind
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: build.BuildSpec{
+			Source:       build.GitSource{
+				URL: "foobar",
+			},
+			StrategyRef:  &build.StrategyRef{
+				Name: strategyName,
+				Kind: &buildStrategy,
+			},
+			Timeout:     &metav1.Duration{timeout},
 		},
 	}
 }
@@ -237,6 +283,17 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(co
 		case *build.Build:
 			Expect(object.Status.Registered).To(Equal(status))
 			Expect(object.Status.Reason).To(ContainSubstring(reason))
+		}
+		return nil
+	}
+}
+
+func (c *Catalog) StubBuildUpdate (b *build.Build) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
 		}
 		return nil
 	}

@@ -7,9 +7,6 @@ package build
 import (
 	"context"
 	"fmt"
-
-	"reflect"
-
 	"github.com/pkg/errors"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
@@ -18,8 +15,10 @@ import (
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -164,6 +163,20 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		ctxlog.Info(ctx, "build strategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
 	}
 
+	// validate if "spec.timeout" is valid
+	if b.Spec.Timeout != nil {
+		fmt.Print("timeout is not nil")
+		if err := r.validateTimeout(b.Spec.Timeout); err != nil {
+			ctxlog.Error(ctx, err, "failed validating timeout property", "Build", b.Name)
+			b.Status.Reason = err.Error()
+			updateErr := r.client.Status().Update(ctx, b)
+			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+		}
+	} else {
+		fmt.Print("timeout is nil")
+	}
+
+
 	// validate if "spec.runtime" attributes are valid
 	if utils.IsRuntimeDefined(b) {
 		if err := r.validateRuntime(b.Spec.Runtime); err != nil {
@@ -185,6 +198,15 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuild) validateTimeout(timeout *metav1.Duration) error {
+	time := timeout.String()
+	if time == "&Duration{Duration:0s,}" {
+		fmt.Print("invalid timeout duration")
+		return fmt.Errorf("\ninvalid timeout duration\n")
+	}
+	return nil
 }
 
 func (r *ReconcileBuild) validateRuntime(runtime *build.Runtime) error {

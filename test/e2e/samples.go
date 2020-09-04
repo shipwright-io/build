@@ -101,17 +101,23 @@ func createBuild(namespace string, identifier string, filePath string) {
 func retrieveBuildAndBuildRun(namespace string, buildRunName string) (*operator.BuildRun, *operator.Build, error) {
 	buildRun := &operator.BuildRun{}
 	build := &operator.Build{}
-	err := clientGet(types.NamespacedName{Name: buildRunName, Namespace: namespace}, buildRun)
-	if err != nil {
-		Logf("Failed to get BuildRun %s: %s", buildRunName, err)
-		return nil, nil, err
-	}
 	buildName := buildRun.Spec.BuildRef.Name
-	err = clientGet(types.NamespacedName{Name: buildName, Namespace: namespace}, build)
+	err := clientGet(types.NamespacedName{Name: buildName, Namespace: namespace}, build)
 	if err != nil {
 		Logf("Failed to get Build %s: %s", buildName, err)
 		return nil, nil, err
 	}
+	//err = clientGet(types.NamespacedName{Name: buildRunName, Namespace: namespace}, buildRun)
+	//if err != nil {
+	//	Logf("Failed to get BuildRun %s: %s", buildRunName, err)
+	//	return nil, nil, err
+	//}
+	//buildName := buildRun.Spec.BuildRef.Name
+	//err = clientGet(types.NamespacedName{Name: buildName, Namespace: namespace}, build)
+	//if err != nil {
+	//	Logf("Failed to get Build %s: %s", buildName, err)
+	//	return nil, nil, err
+	//}
 	return buildRun, build, nil
 }
 

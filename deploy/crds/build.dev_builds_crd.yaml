@@ -242,6 +242,7 @@ spec:
               timeout:
                 description: Timeout defines the maximum run time of a build run.
                 type: string
+                format: duration
             required:
             - output
             - source
