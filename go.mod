@@ -10,6 +10,7 @@ require (
 	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/client_model v0.2.0
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.14.2
 	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
