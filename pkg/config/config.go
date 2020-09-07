@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package config
@@ -28,6 +28,9 @@ const (
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
 	metricBuildRunRampUpDurationBucketsEnvVar     = "PROMETHEUS_BR_RAMPUP_DUR_BUCKETS"
+
+	// environment variable to enable histogram labels
+	prometheusHistogramEnabledLabelsEnvVar = "PROMETHEUS_HISTOGRAM_ENABLED_LABELS"
 )
 
 var (
@@ -50,6 +53,7 @@ type PrometheusConfig struct {
 	BuildRunCompletionDurationBuckets []float64
 	BuildRunEstablishDurationBuckets  []float64
 	BuildRunRampUpDurationBuckets     []float64
+	HistogramEnabledLabels            []string
 }
 
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
@@ -107,6 +111,8 @@ func (c *Config) SetConfigFromEnv() error {
 		}
 		c.Prometheus.BuildRunRampUpDurationBuckets = buildRunRampUpDurationBuckets
 	}
+
+	c.Prometheus.HistogramEnabledLabels = strings.Split(os.Getenv(prometheusHistogramEnabledLabelsEnvVar), ",")
 
 	return nil
 }

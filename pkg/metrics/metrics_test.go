@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package metrics
@@ -25,7 +25,10 @@ var _ = Describe("Custom Metrics", func() {
 		buildStrategy = "kaniko"
 		namespace = "default"
 
-		InitPrometheus(config.NewDefaultConfig())
+		config := config.NewDefaultConfig()
+		config.Prometheus.HistogramEnabledLabels = []string{"buildstrategy", "namespace"}
+
+		InitPrometheus(config)
 
 		BuildCountInc(buildStrategy)
 		BuildRunCountInc(buildStrategy)

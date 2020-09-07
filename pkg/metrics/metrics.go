@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package metrics
@@ -39,6 +39,9 @@ var (
 	taskRunRampUpDuration    *prometheus.HistogramVec
 	taskRunPodRampUpDuration *prometheus.HistogramVec
 
+	histogramBuildStrategyLabelEnabled = false
+	histogramNamespaceLabelEnabled     = false
+
 	initialized = false
 )
 
@@ -50,13 +53,23 @@ func InitPrometheus(config *config.Config) {
 
 	initialized = true
 
+	var histogramLabels []string
+	if contains(config.Prometheus.HistogramEnabledLabels, buildStrategyLabel) {
+		histogramLabels = append(histogramLabels, buildStrategyLabel)
+		histogramBuildStrategyLabelEnabled = true
+	}
+	if contains(config.Prometheus.HistogramEnabledLabels, namespaceLabel) {
+		histogramLabels = append(histogramLabels, namespaceLabel)
+		histogramNamespaceLabelEnabled = true
+	}
+
 	buildRunEstablishDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "build_buildrun_establish_duration_seconds",
 			Help:    "BuildRun establish duration in seconds.",
 			Buckets: config.Prometheus.BuildRunEstablishDurationBuckets,
 		},
-		[]string{buildStrategyLabel, namespaceLabel})
+		histogramLabels)
 
 	buildRunCompletionDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -64,7 +77,7 @@ func InitPrometheus(config *config.Config) {
 			Help:    "BuildRun completion duration in seconds.",
 			Buckets: config.Prometheus.BuildRunCompletionDurationBuckets,
 		},
-		[]string{buildStrategyLabel, namespaceLabel})
+		histogramLabels)
 
 	buildRunRampUpDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -72,7 +85,7 @@ func InitPrometheus(config *config.Config) {
 			Help:    "BuildRun ramp-up duration in seconds (time between buildrun creation and taskrun creation).",
 			Buckets: config.Prometheus.BuildRunRampUpDurationBuckets,
 		},
-		[]string{buildStrategyLabel, namespaceLabel})
+		histogramLabels)
 
 	taskRunRampUpDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -80,7 +93,7 @@ func InitPrometheus(config *config.Config) {
 			Help:    "BuildRun taskrun ramp-up duration in seconds (time between taskrun creation and taskrun pod creation).",
 			Buckets: config.Prometheus.BuildRunRampUpDurationBuckets,
 		},
-		[]string{buildStrategyLabel, namespaceLabel})
+		histogramLabels)
 
 	taskRunPodRampUpDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -88,14 +101,40 @@ func InitPrometheus(config *config.Config) {
 			Help:    "BuildRun taskrun pod ramp-up duration in seconds (time between pod creation and last init container completion).",
 			Buckets: config.Prometheus.BuildRunRampUpDurationBuckets,
 		},
-		[]string{buildStrategyLabel, namespaceLabel})
+		histogramLabels)
 
 	// Register custom metrics with the global prometheus registry
 	metrics.Registry.MustRegister(
 		buildCount,
 		buildRunCount,
 		buildRunEstablishDuration,
-		buildRunCompletionDuration)
+		buildRunCompletionDuration,
+		buildRunRampUpDuration,
+		taskRunRampUpDuration,
+		taskRunPodRampUpDuration,
+	)
+}
+
+func contains(slice []string, element string) bool {
+	for _, candidate := range slice {
+		if candidate == element {
+			return true
+		}
+	}
+	return false
+}
+
+func createHistogramLabels(buildStrategy string, namespace string) prometheus.Labels {
+	labels := prometheus.Labels{}
+
+	if histogramBuildStrategyLabelEnabled {
+		labels[buildStrategyLabel] = buildStrategy
+	}
+	if histogramNamespaceLabelEnabled {
+		labels[namespaceLabel] = namespace
+	}
+
+	return labels
 }
 
 // BuildCountInc increases a number of the existing build total count
@@ -109,26 +148,26 @@ func BuildRunCountInc(buildStrategy string) {
 }
 
 // BuildRunEstablishObserve sets the build run establish time
-func BuildRunEstablishObserve(buildStrategy, namespace string, duration time.Duration) {
-	buildRunEstablishDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+func BuildRunEstablishObserve(buildStrategy string, namespace string, duration time.Duration) {
+	buildRunEstablishDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
 }
 
 // BuildRunCompletionObserve sets the build run completion time
-func BuildRunCompletionObserve(buildStrategy, namespace string, duration time.Duration) {
-	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+func BuildRunCompletionObserve(buildStrategy string, namespace string, duration time.Duration) {
+	buildRunCompletionDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
 }
 
 // BuildRunRampUpDurationObserve processes the observation of a new buildrun ramp-up duration
 func BuildRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
-	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+	buildRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
 }
 
 // TaskRunRampUpDurationObserve processes the observation of a new taskrun ramp-up duration
 func TaskRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
-	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+	taskRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
 }
 
 // TaskRunPodRampUpDurationObserve processes the observation of a new taskrun pod ramp-up duration
 func TaskRunPodRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
-	buildRunCompletionDuration.WithLabelValues(buildStrategy, namespace).Observe(duration.Seconds())
+	taskRunPodRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
 }
