@@ -9,9 +9,9 @@ install:
 script:
   - set -e
   - make
-#  - make verify-copyright
+  - make verify-copyright
   # https://github.com/shipwright-io/build/issues/123
-#  - make test-unit-coverage
+  - make test-unit-coverage
   - make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/shipwright-io/build-e2e"
   - set +e
 deploy:

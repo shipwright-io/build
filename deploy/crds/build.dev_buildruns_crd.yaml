@@ -98,8 +98,8 @@ spec:
                 type: object
               timeout:
                 description: Timeout defines the maximum run time of this build run.
-                type: string
                 format: duration
+                type: string
             required:
             - buildRef
             type: object
@@ -300,6 +300,7 @@ spec:
                     type: object
                   timeout:
                     description: Timeout defines the maximum run time of a build run.
+                    format: duration
                     type: string
                 required:
                 - output

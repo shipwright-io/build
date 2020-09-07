@@ -53,6 +53,7 @@ type BuildSpec struct {
 
 	// Timeout defines the maximum run time of a build run.
 	// +optional
+	// +kubebuilder:validation:Format=duration
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 

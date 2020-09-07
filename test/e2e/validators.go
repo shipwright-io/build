@@ -276,28 +276,6 @@ func validateBuildRunToFail(
 	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
 }
 
-func validateBuildToFail(
-	namespace string,
-	testBuild *operator.Build,
-	expectedReasonRegexp string, )  {
-
-	//f := framework.Global
-	falseCondition := corev1.ConditionFalse
-
-
-	// Ensure that eventually the BuildRun moves to Failed.
-	buildNsName := types.NamespacedName{Name: testBuild.Name, Namespace: namespace}
-	Eventually(func() corev1.ConditionStatus {
-		err := clientGet(buildNsName, testBuild)
-		Expect(err).ToNot(HaveOccurred(), "Error retrieving build")
-
-		return testBuild.Status.Registered
-	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "Build did not fail")
-
-
-	Expect(testBuild.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
-}
-
 // validateBuildDeletion verifies if the BuildRun is deleted after Build is deleted.
 func validateBuildDeletion(
 	namespace string,

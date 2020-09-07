@@ -7,7 +7,6 @@ package build_test
 import (
 	"context"
 	"fmt"
-	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/shipwright-io/build/test"
 
@@ -430,55 +429,6 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
-		})
-
-		Context("when spec timeout is specified", func() {
-			It("fails when the timeout is invalid", func() {
-
-				buildSample = ctl.BuildWithInvalidTimeout(buildName, namespace, buildStrategyName)
-
-				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *build.ClusterBuildStrategyList:
-						list := ctl.ClusterBuildStrategyList(buildStrategyName)
-						list.DeepCopyInto(object)
-					}
-					return nil
-				})
-
-				statusCall := ctl.StubBuildUpdate(buildSample)
-				statusWriter.UpdateCalls(statusCall)
-
-				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
-				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("invalid timeout duration")))
-			})
-
-			It("succeed when the timeout is valid", func() {
-
-				buildSample = ctl.BuildWithValidTimeout(buildName, namespace, buildStrategyName)
-
-				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *build.ClusterBuildStrategyList:
-						list := ctl.ClusterBuildStrategyList(buildStrategyName)
-						list.DeepCopyInto(object)
-					}
-					return nil
-				})
-
-				statusCall := ctl.StubBuildUpdate(buildSample)
-				statusWriter.UpdateCalls(statusCall)
-
-
-				result, err := reconciler.Reconcile(request)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(reconcile.Result{}).To(Equal(result))
-			})
-
-
 		})
 	})
 })
