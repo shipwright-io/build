@@ -1,3 +1,9 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Running on development mode
 
 The following document highlights how to deploy a Build operator locally for running on development mode.

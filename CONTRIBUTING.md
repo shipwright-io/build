@@ -1,3 +1,9 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Contributing Guidelines
 
 Welcome to Shipwright Build. We are excited about the prospect of you contributing to our project. Your support is more than welcome!
