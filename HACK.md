@@ -144,7 +144,9 @@ End-to-end tests can also be executed with the context of private Git repositori
 | `TEST_PRIVATE_GITLAB` | `spec.source.url`              | Private URL, like `git@gitlab.com`    |
 | `TEST_SOURCE_SECRET`  | `spec.source.credentials.name` | Private repository credentials        |
 
-On using `TEST_SOURCE_SECRET`, the environment variable must contain the name of the Kubernetes Secret containing SSH private key, for given private Git repository. See [ssh-authentication](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md#ssh-authentication-git). The secret definition must define the following annotations:
+On using `TEST_SOURCE_SECRET`, the environment variable must contain the name of the Kubernetes Secret containing SSH private key, for given private Git repository. See the [docs](/docs/development/authentication.md) for more information about authentication methods in the Build.
+
+The secret definition must define the following annotations:
 - `tekton.dev/git-0: github.com`
 - `tekton.dev/git-1: gitlab.com`
 

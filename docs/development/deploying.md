@@ -16,6 +16,7 @@ The following set of steps highlight how to deploy a Build operator pod into an 
    docker push eeeoo/build-operator:master
    popd
    ```
+
    Just to illustrate the above, you can find the image in [dockerhub](https://hub.docker.com/repository/docker/eeeoo/build-operator)
 
 2. Reference the generated image name in the [operator.yaml](../../deploy/operator.yaml). The `spec.template.containers[0].image` value should be modified.
