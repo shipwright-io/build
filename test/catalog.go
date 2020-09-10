@@ -10,6 +10,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -289,6 +290,19 @@ func (c *Catalog) StubBuildAndTaskRun(
 	}
 }
 
+// StubBuildStatusReason asserts Status fields on a Build resource
+func (c *Catalog) StubBuildStatusReason(reason string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			if object.Status.Reason != "" {
+				Expect(*&object.Status.Reason).To(Equal(reason))
+			}
+		}
+		return nil
+	}
+}
+
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
 func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
@@ -484,6 +498,47 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 	}
 }
 
+// BuildWithBuildRunDeletions returns a minimal Build object with the
+// build.build.dev/build-run-deletion annotation set to true
+func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        buildName,
+			Annotations: map[string]string{buildv1alpha1.AnnotationBuildRunDeletion: "true"},
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &strategyKind,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
+// BuildWithBuildRunDeletionsAndFakeNS returns a minimal Build object with the
+// build.build.dev/build-run-deletion annotation set to true in a fake namespace
+func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        buildName,
+			Namespace:   "fakens",
+			Annotations: map[string]string{buildv1alpha1.AnnotationBuildRunDeletion: "true"},
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &strategyKind,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
 // DefaultBuildWithFalseRegistered returns a minimal Build object with a FALSE Registered
 func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
 	return &build.Build{
@@ -508,6 +563,48 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 	return &build.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+		},
+	}
+}
+
+// BuildRunWithExistingOwnerReferences returns a BuildRun object that is
+// already owned by some fake object
+func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, buildName string, ownerName string) *build.BuildRun {
+
+	managingController := true
+
+	fakeOwnerRef := metav1.OwnerReference{
+		APIVersion: ownerName,
+		Kind:       ownerName,
+		Controller: &managingController,
+	}
+
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            buildRunName,
+			OwnerReferences: []metav1.OwnerReference{fakeOwnerRef},
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+		},
+	}
+}
+
+// BuildRunWithFakeNamespace returns a BuildRun object with
+// a namespace that does not exist
+func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName string) *build.BuildRun {
+
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      buildRunName,
+			Namespace: "foobarns",
 		},
 		Spec: build.BuildRunSpec{
 			BuildRef: &build.BuildRef{

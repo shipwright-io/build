@@ -613,6 +613,67 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				Expect(client.CreateCallCount()).To(Equal(1))
 			})
+
+			It("updates Build with error when BuildRun is already owned", func() {
+
+				fakeOwnerName := "fakeOwner"
+
+				// Set the build spec
+				buildRunSample = ctl.BuildRunWithExistingOwnerReferences(buildRunName, buildName, fakeOwnerName)
+				buildRunSample.Status.BuildSpec = &buildSample.Spec
+
+				// override the Build to use a namespaced BuildStrategy
+				buildSample = ctl.BuildWithBuildRunDeletions(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy()),
+				)
+
+				statusCall := ctl.StubBuildStatusReason(
+					fmt.Sprintf("Object /%s is already owned by another %s controller ", buildRunName, fakeOwnerName),
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(client.CreateCallCount()).To(Equal(1))
+			})
+
+			It("updates Build with error when BuildRun and Build are not in the same ns when setting ownerreferences", func() {
+				// Set the build spec
+				buildRunSample = ctl.BuildRunWithFakeNamespace(buildRunName, buildName)
+				buildRunSample.Status.BuildSpec = &buildSample.Spec
+
+				// override the Build to use a namespaced BuildStrategy
+				buildSample = ctl.BuildWithBuildRunDeletionsAndFakeNS(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy()),
+				)
+
+				statusCall := ctl.StubBuildStatusReason(
+					fmt.Sprintf("cross-namespace owner references are disallowed, owner's namespace %s, obj's namespace %s", buildSample.Namespace, buildRunSample.Namespace),
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(client.CreateCallCount()).To(Equal(1))
+			})
 		})
 	})
 })

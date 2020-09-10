@@ -278,12 +278,23 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildRun.Labels = make(map[string]string)
 			}
 
+			// TODOS:
+			// add unit-test for failed ownership settings -> DONE
+			// add unit-test for successful ownership settings -> NOT DONE
+			// add documentation on Build STATUS reflecting ownership failures -> NOT DONE
+			// consolidate client updates for labels and ownerreferences
+
 			// Set OwnerReference for Build and BuildRun only when build.build.dev/build-run-deletion is set "true"
-			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true"{
+			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true" {
 				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
 					build.Status.Reason = err.Error()
-					updateErr := r.client.Status().Update(ctx, build)
-					return reconcile.Result{}, handleError("Failed to set OwnerReference for Build and BuildRun", err, updateErr)
+					err := r.client.Status().Update(ctx, build)
+					if err != nil {
+						return reconcile.Result{}, err
+					}
+
+					// We dont wanna reconcile again because of https://github.com/shipwright-io/build/pull/371#discussion_r484109591
+					// return reconcile.Result{}, handleError("Failed to set OwnerReference for Build and BuildRun", err, updateErr)
 				}
 				if err = r.client.Update(ctx, buildRun); err != nil {
 					return reconcile.Result{}, err
