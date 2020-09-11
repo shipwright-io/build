@@ -145,7 +145,7 @@ The following set of steps highlight how to deploy a Build operator pod into an 
 
     ```sh
     pushd $GOPATH/src/github.com/shipwright-io/build
-    ./hack/crd.sh install
+    ./hack/shipwright-build.sh install
     popd
     ```
 
@@ -157,7 +157,7 @@ As you make changes to the code, you can redeploy your operator with:
 
 ```sh
 pushd $GOPATH/src/github.com/shipwright-io/build
-./hack/crd.sh install
+./hack/shipwright-build.sh install
 popd
 ```
 
@@ -167,7 +167,7 @@ You can clean up everything with:
 
 ```sh
 pushd $GOPATH/src/github.com/shipwright-io/build
-./hack/crd.sh uninstall
+./hack/shipwright-build.sh uninstall
 popd
 ```
 
