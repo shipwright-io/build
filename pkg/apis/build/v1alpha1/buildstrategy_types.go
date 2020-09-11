@@ -24,6 +24,8 @@ type BuildStep struct {
 type BuildStrategyStatus struct {
 }
 
+// +genclient
+// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // BuildStrategy is the Schema representing a strategy in the namespace scope to build images from source code.

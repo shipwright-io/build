@@ -84,6 +84,8 @@ type ServiceAccount struct {
 	Generate bool `json:"generate,omitempty"`
 }
 
+// +genclient
+// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // BuildRun is the Schema representing an instance of build execution

@@ -124,6 +124,8 @@ type BuildStatus struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+// +genclient
+// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Build is the Schema representing a Build definition
