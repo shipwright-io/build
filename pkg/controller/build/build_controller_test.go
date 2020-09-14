@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package build_test
@@ -76,8 +76,134 @@ var _ = Describe("Reconcile Build", func() {
 	})
 
 	Describe("Reconcile", func() {
+		Context("when source secret is specified", func() {
+			It("fails when the secret does not exist", func() {
+				buildSample.Spec.Source.SecretRef = &corev1.LocalObjectReference{
+					Name: "non-existing",
+				}
+				buildSample.Spec.Output.SecretRef = nil
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeSecretList()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, "secret non-existing does not exist")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring("secret non-existing does not exist"))
+			})
+
+			It("succeeds when the secret exists", func() {
+				buildSample.Spec.Source.SecretRef = &corev1.LocalObjectReference{
+					Name: "existing",
+				}
+				buildSample.Spec.Output.SecretRef = nil
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.SecretList("existing")
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
+
+		Context("when builder image secret is specified", func() {
+			It("fails when the secret does not exist", func() {
+				buildSample.Spec.BuilderImage = &build.Image{
+					ImageURL: "busybox",
+					SecretRef: &corev1.LocalObjectReference{
+						Name: "non-existing",
+					},
+				}
+				buildSample.Spec.Output.SecretRef = nil
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeSecretList()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, "secret non-existing does not exist")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring("secret non-existing does not exist"))
+			})
+
+			It("succeeds when the secret exists", func() {
+				buildSample.Spec.BuilderImage = &build.Image{
+					ImageURL: "busybox",
+					SecretRef: &corev1.LocalObjectReference{
+						Name: "existing",
+					},
+				}
+				buildSample.Spec.Output.SecretRef = nil
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.SecretList("existing")
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
+
 		Context("when spec output registry secret is specified", func() {
-			It("fails when the secret does not exists", func() {
+			It("fails when the secret does not exist", func() {
 
 				// Fake some client LIST calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -145,9 +271,41 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("there are no secrets in namespace %s", namespace)))
-
 			})
 		})
+
+		Context("when source secret and output secret are specified", func() {
+			It("fails when both secrets do not exist", func() {
+				buildSample.Spec.Source.SecretRef = &corev1.LocalObjectReference{
+					Name: "non-existing-source",
+				}
+				buildSample.Spec.Output.SecretRef = &corev1.LocalObjectReference{
+					Name: "non-existing-output",
+				}
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeSecretList()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring("do not exist"))
+				Expect(err.Error()).To(ContainSubstring("non-existing-source"))
+				Expect(err.Error()).To(ContainSubstring("non-existing-output"))
+			})
+		})
+
 		Context("when spec strategy ClusterBuildStrategy is specified", func() {
 			It("fails when the strategy does not exists", func() {
 
