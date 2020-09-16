@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package build
@@ -7,8 +7,8 @@ package build
 import (
 	"context"
 	"fmt"
-
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -145,9 +145,20 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	b.Status.Registered = corev1.ConditionFalse
 	b.Status.Reason = succeedStatus
 
-	// Validate if the spec.output.secretref exist in the namespace
+	// Validate if the referenced secrets exist in the namespace
+	var secretNames []string
 	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
-		if err := r.validateOutputSecret(ctx, b.Spec.Output.SecretRef.Name, b.Namespace); err != nil {
+		secretNames = append(secretNames, b.Spec.Output.SecretRef.Name)
+	}
+	if b.Spec.Source.SecretRef != nil && b.Spec.Source.SecretRef.Name != "" {
+		secretNames = append(secretNames, b.Spec.Source.SecretRef.Name)
+	}
+	if b.Spec.BuilderImage != nil && b.Spec.BuilderImage.SecretRef != nil && b.Spec.BuilderImage.SecretRef.Name != "" {
+		secretNames = append(secretNames, b.Spec.BuilderImage.SecretRef.Name)
+	}
+
+	if len(secretNames) > 0 {
+		if err := r.validateSecrets(ctx, secretNames, b.Namespace); err != nil {
 			b.Status.Reason = err.Error()
 			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
@@ -261,7 +272,7 @@ func (r *ReconcileBuild) validateClusterBuildStrategy(ctx context.Context, n str
 	return nil
 }
 
-func (r *ReconcileBuild) validateOutputSecret(ctx context.Context, n string, ns string) error {
+func (r *ReconcileBuild) validateSecrets(ctx context.Context, secretNames []string, ns string) error {
 	list := &corev1.SecretList{}
 
 	if err := r.client.List(
@@ -278,14 +289,26 @@ func (r *ReconcileBuild) validateOutputSecret(ctx context.Context, n string, ns 
 		return errors.Errorf("there are no secrets in namespace %s", ns)
 	}
 
-	if len(list.Items) > 0 {
-		for _, secret := range list.Items {
-			if secret.Name == n {
-				return nil
-			}
-		}
-		return fmt.Errorf("secret %s does not exist", n)
+	var lookUp = map[string]bool{}
+	for _, secretName := range secretNames {
+		lookUp[secretName] = false
 	}
+	for _, secret := range list.Items {
+		lookUp[secret.Name] = true
+	}
+	var missingSecrets []string
+	for name, found := range lookUp {
+		if !found {
+			missingSecrets = append(missingSecrets, name)
+		}
+	}
+
+	if len(missingSecrets) > 1 {
+		return fmt.Errorf("secrets %s do not exist", strings.Join(missingSecrets, ", "))
+	} else if len(missingSecrets) > 0 {
+		return fmt.Errorf("secret %s does not exist", missingSecrets[0])
+	}
+
 	return nil
 }
 
