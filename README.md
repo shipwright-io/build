@@ -109,16 +109,6 @@ spec:
     generate: true
 ```
 
-## Development
-
-* Build, test & run using [HACK.md](HACK.md).
-
-## Contacts
-
-Kubernetes slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright)
-
-----
-
 ## Roadmap
 
 ### Build Strategies Support
@@ -131,19 +121,19 @@ Kubernetes slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright
 | [Kaniko](samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)                             | ☑️     |      |    |
 | [Buildah](samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)                          | ☑️     |      |    |
 
-### Features
+## Want to contribute
 
-| Feature               | Alpha | Beta | GA |
-| --------------------- | ----- | ---- | -- |
-| Private Git Repos     | ☑️     |      |    |
-| Private Output Image Registry     | ☑️     |      |    |
-| Private Builder Image Registry     | ☑️     |      |    |
-| Cluster scope BuildStrategy     | ☑️     |      |    |
-| Runtime Base Image    | ⚪️    |      |    |
-| Binary builds         |       |      |    |
-| Image Caching         |       |      |    |
-| ImageStreams support  |       |      |    |
-| Entitlements          |       |      |    |
+We are so excited to have you!
+
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for an overview of our processes
+- See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
+- See [HACK.md](HACK.md) for how to build, test & run
+  (advanced reading material)
+- Contact us in Kubernetes slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright)
+- Look at our
+  [good first issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  and our
+  [help wanted issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 
 [corev1container]: https://github.com/kubernetes/api/blob/v0.17.3/core/v1/types.go#L2106
 [pipelinesoperator]: https://www.openshift.com/learn/topics/pipelines
