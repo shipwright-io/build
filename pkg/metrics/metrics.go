@@ -144,30 +144,42 @@ func BuildCountInc(buildStrategy string) {
 
 // BuildRunCountInc increases a number of the existing build run total count
 func BuildRunCountInc(buildStrategy string) {
-	buildRunCount.WithLabelValues(buildStrategy).Inc()
+	if buildRunCount != nil {
+		buildRunCount.WithLabelValues(buildStrategy).Inc()
+	}
 }
 
 // BuildRunEstablishObserve sets the build run establish time
 func BuildRunEstablishObserve(buildStrategy string, namespace string, duration time.Duration) {
-	buildRunEstablishDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	if buildRunEstablishDuration != nil {
+		buildRunEstablishDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	}
 }
 
 // BuildRunCompletionObserve sets the build run completion time
 func BuildRunCompletionObserve(buildStrategy string, namespace string, duration time.Duration) {
-	buildRunCompletionDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	if buildRunCompletionDuration != nil {
+		buildRunCompletionDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	}
 }
 
 // BuildRunRampUpDurationObserve processes the observation of a new buildrun ramp-up duration
 func BuildRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
-	buildRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	if buildRunRampUpDuration != nil {
+		buildRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	}
 }
 
 // TaskRunRampUpDurationObserve processes the observation of a new taskrun ramp-up duration
 func TaskRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
-	taskRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	if taskRunRampUpDuration != nil {
+		taskRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	}
 }
 
 // TaskRunPodRampUpDurationObserve processes the observation of a new taskrun pod ramp-up duration
 func TaskRunPodRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
-	taskRunPodRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	if taskRunPodRampUpDuration != nil {
+		taskRunPodRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+	}
 }
