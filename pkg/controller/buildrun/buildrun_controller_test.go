@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package buildrun_test
@@ -43,7 +43,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 		buildRunSample                                         *build.BuildRun
 		taskRunSample                                          *v1beta1.TaskRun
 		statusWriter                                           *fakes.FakeStatusWriter
-		fakeBuildStrategyKind build.BuildStrategyKind
+		fakeBuildStrategyKind                                  build.BuildStrategyKind
 		taskRunName, buildRunName, buildName, strategyName, ns string
 	)
 
@@ -336,6 +336,32 @@ var _ = Describe("Reconcile BuildRun", func() {
 				result, err := reconciler.Reconcile(taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			It("does not break the reconcile when a taskrun pod initcontainers are not ready", func() {
+				taskRunSample = ctl.TaskRunWithCompletionAndStartTime(taskRunName, buildRunName, ns)
+
+				buildRunSample = ctl.BuildRunWithBuildSnapshot(buildRunName, buildName)
+
+				// Override Stub get calls to include a completed TaskRun
+				// and a Pod with one initContainer Status
+				client.GetCalls(ctl.StubBuildCRDsPodAndTaskRun(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount("foobar"),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy(),
+					taskRunSample,
+					ctl.PodWithInitContainerStatus("foobar", "init-foobar")),
+				)
+
+				result, err := reconciler.Reconcile(taskRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+
+				// Three client calls because based on the Stub, we should
+				// trigger a call to get the related TaskRun pod.
+				Expect(client.GetCallCount()).To(Equal(3))
 			})
 		})
 		Context("from an existing BuildRun resource", func() {

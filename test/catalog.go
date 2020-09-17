@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package test
@@ -7,10 +7,7 @@ package test
 import (
 	"context"
 	"strconv"
-
-	"knative.dev/pkg/apis"
-	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
-	"sigs.k8s.io/yaml"
+	"time"
 
 	. "github.com/onsi/gomega"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -22,7 +19,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"knative.dev/pkg/apis"
+	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 // Catalog allows you to access helper functions
@@ -149,13 +149,10 @@ func (c *Catalog) FakeClusterBuildStrategyList() *build.ClusterBuildStrategyList
 	}
 }
 
-
 // FakeNoClusterBuildStrategyList to support tests
 func (c *Catalog) FakeNoClusterBuildStrategyList() *build.ClusterBuildStrategyList {
 	return &build.ClusterBuildStrategyList{
-		Items: []build.ClusterBuildStrategy{
-
-		},
+		Items: []build.ClusterBuildStrategy{},
 	}
 }
 
@@ -189,8 +186,7 @@ func (c *Catalog) FakeBuildStrategyList() *build.BuildStrategyList {
 // FakeNoBuildStrategyList to support tests
 func (c *Catalog) FakeNoBuildStrategyList() *build.BuildStrategyList {
 	return &build.BuildStrategyList{
-		Items: []build.BuildStrategy{
-		},
+		Items: []build.BuildStrategy{},
 	}
 }
 
@@ -210,8 +206,7 @@ func (c *Catalog) FakeSecretList() corev1.SecretList {
 // FakeSecretListInNamespace to support test
 func (c *Catalog) FakeNoSecretListInNamespace() corev1.SecretList {
 	return corev1.SecretList{
-		Items: []corev1.Secret{
-		},
+		Items: []corev1.Secret{},
 	}
 }
 
@@ -449,6 +444,45 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	}
 }
 
+// StubBuildCRDsPodAndTaskRun stubs different objects in case a client
+// GET call is executed against them
+func (c *Catalog) StubBuildCRDsPodAndTaskRun(
+	b *build.Build,
+	br *build.BuildRun,
+	sa *corev1.ServiceAccount,
+	cb *build.ClusterBuildStrategy,
+	bs *build.BuildStrategy,
+	tr *v1beta1.TaskRun,
+	pod *corev1.Pod,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		case *corev1.ServiceAccount:
+			sa.DeepCopyInto(object)
+			return nil
+		case *build.ClusterBuildStrategy:
+			cb.DeepCopyInto(object)
+			return nil
+		case *build.BuildStrategy:
+			bs.DeepCopyInto(object)
+			return nil
+		case *v1beta1.TaskRun:
+			tr.DeepCopyInto(object)
+			return nil
+		case *corev1.Pod:
+			pod.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
 // DefaultTaskRunWithStatus returns a minimal tekton TaskRun with an Status
 func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, ns string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
 	return &v1beta1.TaskRun{
@@ -465,6 +499,40 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, n
 						Type:   apis.ConditionSucceeded,
 						Reason: reason,
 						Status: status,
+					},
+				},
+			},
+		},
+	}
+}
+
+// TaskRunWithCompletionAndStartTime provides a TaskRun object with a
+// Completion and StartTime
+func (c *Catalog) TaskRunWithCompletionAndStartTime(trName string, buildRunName string, ns string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      trName,
+			Namespace: ns,
+			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
+		},
+		Spec: v1beta1.TaskRunSpec{},
+		Status: v1beta1.TaskRunStatus{
+			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+				CompletionTime: &metav1.Time{
+					Time: time.Now(),
+				},
+				StartTime: &metav1.Time{
+					Time: time.Now(),
+				},
+				PodName: "foobar",
+			},
+			Status: knativev1beta1.Status{
+				Conditions: knativev1beta1.Conditions{
+					{
+						Type:    apis.ConditionSucceeded,
+						Reason:  "something bad happened",
+						Status:  corev1.ConditionFalse,
+						Message: "some message",
 					},
 				},
 			},
@@ -538,6 +606,48 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 	return &build.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			BuildRef: &build.BuildRef{
+				Name: buildName,
+			},
+		},
+	}
+}
+
+// PodWithInitContainerStatus returns a pod with a single
+// entry under the Status field for InitContainer Status
+func (c *Catalog) PodWithInitContainerStatus(podName string, initContainerName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: podName,
+		},
+		Status: corev1.PodStatus{
+			InitContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: initContainerName,
+				},
+			},
+		},
+	}
+}
+
+// BuildRunWithBuildSnapshot returns BuildRun Object with a populated
+// BuildSpec in the Status field
+func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName string) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+			CreationTimestamp: metav1.Time{
+				Time: time.Now(),
+			},
+		},
+		Status: build.BuildRunStatus{
+			BuildSpec: &build.BuildSpec{
+				StrategyRef: &build.StrategyRef{
+					Name: "foobar",
+				},
+			},
 		},
 		Spec: build.BuildRunSpec{
 			BuildRef: &build.BuildRef{
