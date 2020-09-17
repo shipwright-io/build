@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package e2e
@@ -199,30 +199,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_php_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
-
-			validateBuildRunToSucceed(namespace, br)
-		})
-	})
-
-	Context("when a Buildpacks v3 build is defined for a ruby runtime", func() {
-
-		BeforeEach(func() {
-			testID = generateTestID("buildpacks-v3-ruby")
-
-			// create the build definition
-			createBuild(namespace, testID, "test/data/build_buildpacks-v3_ruby_cr.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
-		It("successfully runs a build", func() {
-			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_ruby_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(namespace, br)
