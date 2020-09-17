@@ -1,7 +1,10 @@
 <!--
+Copyright 2018, 2020 The Tekton Authors
 Copyright The Shipwright Contributors
 
 SPDX-License-Identifier: Apache-2.0
+
+Documentation inspired from https://github.com/tektoncd/pipeline/blob/ce7591acec8a6aa726d88e5cc057588665881ace/DEVELOPMENT.md
 -->
 
 # Developing
@@ -13,9 +16,9 @@ SPDX-License-Identifier: Apache-2.0
 1.  Setup
     [GitHub access via SSH](https://help.github.com/articles/connecting-to-github-with-ssh/)
 1.  [Create and checkout a repo fork](#checkout-your-fork)
-1.  Set up your [shell environment](#environment-setup)
 1.  Install [requirements](#requirements)
-1.  [Set up a Kubernetes cluster](#kubernetes-cluster)
+1.  [Set up a Kubernetes cluster](#create-a-cluster-and-a-repo)
+1.  Set up your [shell environment](#environment-setup)
 1.  [Configure kubectl to use your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 1.  [Install Shipwright Build in your cluster](#install-shipwright-build)
 
@@ -78,51 +81,21 @@ You must install these tools:
 1.  [`go`](https://golang.org/doc/install): The language Shipwright Build is
     built in
 1.  [`git`](https://help.github.com/articles/set-up-git/): For source control
-1.  [`docker`](https://docs.docker.com/get-docker/): For building operator image
+1.  A container runtime to build the operator image, such as [`docker`](https://docs.docker.com/get-docker/) or [podman](https://podman.io/)
 1.  [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/): For
     interacting with your kube cluster
 
-## Kubernetes cluster
+### Create a cluster and a repo
 
-The recommended configuration is:
+1. [Set up a kubernetes cluster](https://kubernetes.io/docs/setup/)
+   - Follow the instructions in the Kubernetes doc.
+1. Set up a docker repository for pushing images. You can use any container
+   image registry by adjusting the authentication methods and repository paths
+   mentioned in the sections below.
+   - [Docker Hub quickstart](https://docs.docker.com/docker-hub/)
+   - [IBM Container Registry quickstart](https://cloud.ibm.com/docs/Registry)
 
--   Kubernetes version `1.17` or later
--   4 vCPU nodes (`n1-standard-4`)
--   Node autoscaling, up to 3 nodes
--   API scopes for cloud-platform
-
-
-### To setup a cluster using MiniKube:
-
-- Follow instructions for your platform to [Install Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) and start a session as follows:
-
-```bash
-minikube start eval $(minikube docker-env)
-```
-
-### To setup a cluster with Docker Desktop:
-
-Docker Desktop versions come integrated with an edge version of Kubernetes that has been proven to work for both developing and running Shipwright Build. To find out what Kubernetes a specific version of Docker Desktop includes, please refer to the release notes for your platform here: https://docs.docker.com/.
-
-To enable the Kubernetes that comes with Docker Desktop:
-
-1.  From the Docker Desktop dropdown menu, open the `preferences...` interface.
-
-1. Under the `Resources` tab ensure that in the `ADVANCED` menuitem you have at allocated at least 4 CPUs, 8.0 GiB Memory, and 1.0 GiB Swap.
-
-1.  Under the `Kubernetes` tab, check the   `Enable Kubernetes` box.
-
-    * *Note: the Kubernetes version Docker Desktop will use is displayed at the top of the window.*
-
-1.  Click the `Apply and Restart` button to save the preferences.
-
-1.  Switch the proper `kubectl` config context:
-
-    ```bash
-    kubectl config get-contexts # You should see docker-for-desktop in the previous command output
-    kubectl config use-context docker-for-desktop
-    ```
-    * *Note: Docker Desktop menu provides a `Kubernetes` menuitem that allows you to select between contexts which is equivalent to the `kubectl` command.*
+**Note**: We support Kubernetes version `1.17` and `1.18`, 1 cluster worker node for basic usage, 2+ cluster worker nodes for HA
 
 ## Environment Setup
 
