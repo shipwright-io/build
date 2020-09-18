@@ -19,7 +19,7 @@ const (
 	// E.g. if 5 seconds is wanted, the CTX_TIMEOUT=5
 	contextTimeoutEnvVar = "CTX_TIMEOUT"
 
-	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v0.24.0"
+	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.0.0"
 	// kanikoImageEnvVar environment variable for Kaniko container image, for instance:
 	// KANIKO_CONTAINER_IMAGE="gcr.io/kaniko-project/executor:v0.24.0"
 	kanikoImageEnvVar = "KANIKO_CONTAINER_IMAGE"
