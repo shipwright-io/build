@@ -87,13 +87,8 @@ You must install these tools:
 
 ### Create a cluster and a repo
 
-1. [Set up a kubernetes cluster](https://kubernetes.io/docs/setup/)
-   - Follow the instructions in the Kubernetes doc.
-1. Set up a docker repository for pushing images. You can use any container
-   image registry by adjusting the authentication methods and repository paths
-   mentioned in the sections below.
-   - [Docker Hub quickstart](https://docs.docker.com/docker-hub/)
-   - [IBM Container Registry quickstart](https://cloud.ibm.com/docs/Registry)
+1. Follow the instructions in the Kubernetes doc to [Set up a kubernetes cluster](https://kubernetes.io/docs/setup/)
+1. Set up a container image repository for pushing images. Any container image registry that is accessible to your cluster can be used for your repository. This can be a public registry like [Docker Hub](https://docs.docker.com/docker-hub/), [quay.io](https://quay.io), or a container registry runs by your cloud provider
 
 **Note**: We support Kubernetes version `1.17` and `1.18`, 1 cluster worker node for basic usage, 2+ cluster worker nodes for HA
 
@@ -183,3 +178,4 @@ To look at the operator logs, run:
 ```sh
 kubectl -n build-operator logs $(kubectl -n build-operator get pods -l name=build-operator -o name)
 ```
+
