@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package e2e
@@ -64,9 +64,9 @@ func clientGet(key types.NamespacedName, obj runtime.Object) error {
 			if isRetryableError(err) {
 				Logf("Error during client get is retried: '%s'", err.Error())
 				return false, nil
-			} else {
-				Logf("Error during client get is not retried: '%s'", err.Error())
 			}
+
+			Logf("Error during client get is not retried: '%s'", err.Error())
 
 			// return all other errors directly
 			return true, err
@@ -449,9 +449,9 @@ func getTimeoutMultiplier() int64 {
 	value := os.Getenv(EnvVarTimeoutMultiplier)
 	if value == "" {
 		return 1
-	} else {
-		intValue, err := strconv.ParseInt(value, 10, 64)
-		Expect(err).ToNot(HaveOccurred())
-		return intValue
 	}
+
+	intValue, err := strconv.ParseInt(value, 10, 64)
+	Expect(err).ToNot(HaveOccurred())
+	return intValue
 }
