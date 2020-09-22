@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package e2e
@@ -7,10 +7,13 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+
+	"knative.dev/pkg/apis"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -110,48 +113,101 @@ func retrieveBuildAndBuildRun(namespace string, buildRunName string) (*operator.
 	err = clientGet(types.NamespacedName{Name: buildName, Namespace: namespace}, build)
 	if err != nil {
 		Logf("Failed to get Build %s: %s", buildName, err)
-		return nil, nil, err
+		return buildRun, nil, err
 	}
 	return buildRun, build, nil
 }
 
-// outputBuildAndBuildRunStatusAndPodLogs will output the status of build and buildRun, print logs of taskRun pod
-func outputBuildAndBuildRunStatusAndPodLogs(namespace string, buildRunName string) {
+// printTestFailureDebugInfo will output the status of Build, BuildRun, TaskRun and Pod, also print logs of Pod
+func printTestFailureDebugInfo(namespace string, buildRunName string) {
+	Logf("Print failed BuildRun's log")
+
 	f := framework.Global
+
 	buildRun, build, err := retrieveBuildAndBuildRun(namespace, buildRunName)
-	Expect(err).ToNot(HaveOccurred(), "Failed to retrieve build and buildRun")
-	Logf("The status of Build %s: %s, %s", build.Name, build.Status.Reason, build.Status.Registered)
-	Logf("The status of BuildRun %s: %s", buildRun.Name, buildRun.Status.Succeeded)
-	Logf("The reason of BuildRun %s: %s", buildRun.Name, buildRun.Status.Reason)
-
-	lbls := map[string]string{
-		operator.LabelBuildRun: buildRunName,
-	}
-	listOptions := client.ListOptions{
-		Namespace:     namespace,
-		LabelSelector: labels.SelectorFromSet(lbls),
+	if build != nil {
+		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, build.Status.Registered, build.Status.Reason)
+		if buildJSON, err := json.Marshal(build); err == nil {
+			Logf("The full Build: %s", string(buildJSON))
+		}
 	}
 
-	podList := &v1.PodList{}
-	err = f.Client.List(context.TODO(), podList, &listOptions)
-	Expect(err).ToNot(HaveOccurred(), "Failed to retrieve pods.")
-	Expect(len(podList.Items)).To(Equal(1), "Did not retrieve one pod.")
+	if buildRun != nil {
+		Logf("The status of BuildRun %s: succeeded=%s, reason=%s", buildRun.Name, buildRun.Status.Succeeded, buildRun.Status.Reason)
+		if buildRunJSON, err := json.Marshal(buildRun); err == nil {
+			Logf("The full BuildRun: %s", string(buildRunJSON))
+		}
 
-	pod := &podList.Items[0]
+		podName := ""
 
-	for _, container := range pod.Spec.Containers {
-		req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{
-			TypeMeta:  metav1.TypeMeta{},
-			Container: container.Name,
-			Follow:    false,
-		})
-		podLogs, err := req.Stream()
-		Expect(err).ToNot(HaveOccurred(), "Failed to retrieve logs of container.")
-		buf := new(bytes.Buffer)
-		_, err = io.Copy(buf, podLogs)
-		Expect(err).ToNot(HaveOccurred(), "Failed to copy container logs to buffer.")
-		strLogs := buf.String()
-		Logf("Logs of container %s: %s", container.Name, strLogs)
+		// Only log details of TaskRun if Tekton objects can be accessed
+		if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+			if taskRun, _ := getTaskRun(f, buildRun); taskRun != nil {
+				condition := taskRun.Status.GetCondition(apis.ConditionSucceeded)
+				if condition != nil {
+					Logf("The status of TaskRun %s: reason=%s, message=%s", taskRun.Name, condition.Reason, condition.Message)
+				}
+
+				if taskRunJSON, err := json.Marshal(taskRun); err == nil {
+					Logf("The full TaskRun: %s", string(taskRunJSON))
+				}
+
+				podName = taskRun.Status.PodName
+			}
+		}
+
+		// retrieve or query pod depending on whether we have the pod name from the TaskRun
+		var pod *v1.Pod
+		if podName != "" {
+			pod = &v1.Pod{}
+			if err = clientGet(types.NamespacedName{Name: podName, Namespace: namespace}, pod); err != nil {
+				Logf("Error retrieving pod %s: %v", podName, err)
+				pod = nil
+			}
+		} else {
+			listOptions := client.ListOptions{
+				Namespace: namespace,
+				LabelSelector: labels.SelectorFromSet(map[string]string{
+					operator.LabelBuildRun: buildRunName,
+				}),
+			}
+
+			podList := &v1.PodList{}
+			if err = f.Client.List(context.TODO(), podList, &listOptions); err == nil && len(podList.Items) > 0 {
+				pod = &podList.Items[0]
+			}
+		}
+
+		if pod != nil {
+			Logf("The status of Pod %s: phase=%s, reason=%s, message=%s", pod.Name, pod.Status.Phase, pod.Status.Reason, pod.Status.Message)
+			if podJSON, err := json.Marshal(pod); err == nil {
+				Logf("The full Pod: %s", string(podJSON))
+			}
+
+			// Loop through the containers to print their logs
+			for _, container := range pod.Spec.Containers {
+				req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{
+					TypeMeta:  metav1.TypeMeta{},
+					Container: container.Name,
+					Follow:    false,
+				})
+
+				podLogs, err := req.Stream()
+				if err != nil {
+					Logf("Failed to retrieve the logs of container %s: %v", container.Name, err)
+					continue
+				}
+
+				buf := new(bytes.Buffer)
+				_, err = io.Copy(buf, podLogs)
+				if err != nil {
+					Logf("Failed to copy logs of container %s to buffer: %v", container.Name, err)
+					continue
+				}
+
+				Logf("Logs of container %s: %s", container.Name, buf.String())
+			}
+		}
 	}
 }
 

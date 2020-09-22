@@ -30,7 +30,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	})
 
 	AfterEach(func() {
-		if br != nil {
+		if CurrentGinkgoTestDescription().Failed {
+			printTestFailureDebugInfo(namespace, testID)
+		} else if br != nil {
 			validateServiceAccountDeletion(br, namespace)
 		}
 	})
@@ -42,13 +44,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "samples/build/build_buildah_cr.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -66,13 +61,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "test/data/build_buildah_cr_custom_context+dockerfile.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -93,13 +81,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createBuild(namespace, testID, "samples/build/build_buildpacks-v3-heroku_cr.yaml")
 		})
 
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -117,13 +98,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createBuild(namespace, testID, "samples/build/build_buildpacks-v3-heroku_namespaced_cr.yaml")
 		})
 
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -139,13 +113,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "samples/build/build_buildpacks-v3_cr.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -166,13 +133,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createBuild(namespace, testID, "samples/build/build_buildpacks-v3_namespaced_cr.yaml")
 		})
 
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -188,13 +148,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "test/data/build_buildpacks-v3_php_cr.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -214,13 +167,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createBuild(namespace, testID, "test/data/build_buildpacks-v3_golang_cr.yaml")
 		})
 
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -236,13 +182,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "test/data/build_buildpacks-v3_java_cr.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -261,13 +200,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createBuild(namespace, testID, "test/data/build_buildpacks-v3_nodejs_runtime-image_cr.yaml")
 		})
 
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_nodejs_runtime-image_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -283,13 +215,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "samples/build/build_kaniko_cr.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -310,13 +235,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createBuild(namespace, testID, "test/data/build_kaniko_cr_advanced_dockerfile.yaml")
 		})
 
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_kaniko_cr_advanced_dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -332,13 +250,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "test/data/build_kaniko_cr_custom_context+dockerfile.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -358,13 +269,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createBuild(namespace, testID, "test/data/build_timeout.yaml")
 		})
 
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
-		})
-
 		It("fails the build run", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_timeout.yaml")
 			Expect(err).ToNot(HaveOccurred())
@@ -380,13 +284,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			// create the build definition
 			createBuild(namespace, testID, "samples/build/build_source-to-image_cr.yaml")
-		})
-
-		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				Logf("Print failed BuildRun's log")
-				outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-			}
 		})
 
 		It("successfully runs a build", func() {
@@ -414,13 +311,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				createBuild(namespace, testID, "test/data/build_buildah_cr_private_github.yaml")
 			})
 
-			AfterEach(func() {
-				if CurrentGinkgoTestDescription().Failed {
-					Logf("Print failed BuildRun's log")
-					outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-				}
-			})
-
 			It("successfully runs a build", func() {
 				br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
@@ -436,13 +326,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 				// create the build definition
 				createBuild(namespace, testID, "test/data/build_buildah_cr_private_gitlab.yaml")
-			})
-
-			AfterEach(func() {
-				if CurrentGinkgoTestDescription().Failed {
-					Logf("Print failed BuildRun's log")
-					outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-				}
 			})
 
 			It("successfully runs a build", func() {
@@ -462,13 +345,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				createBuild(namespace, testID, "test/data/build_kaniko_cr_private_github.yaml")
 			})
 
-			AfterEach(func() {
-				if CurrentGinkgoTestDescription().Failed {
-					Logf("Print failed BuildRun's log")
-					outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-				}
-			})
-
 			It("successfully runs a build", func() {
 				br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
@@ -486,13 +362,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				createBuild(namespace, testID, "test/data/build_kaniko_cr_private_gitlab.yaml")
 			})
 
-			AfterEach(func() {
-				if CurrentGinkgoTestDescription().Failed {
-					Logf("Print failed BuildRun's log")
-					outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-				}
-			})
-
 			It("successfully runs a build", func() {
 				br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
@@ -508,13 +377,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 				// create the build definition
 				createBuild(namespace, testID, "test/data/build_source-to-image_cr_private_github.yaml")
-			})
-
-			AfterEach(func() {
-				if CurrentGinkgoTestDescription().Failed {
-					Logf("Print failed BuildRun's log")
-					outputBuildAndBuildRunStatusAndPodLogs(namespace, testID)
-				}
 			})
 
 			It("successfully runs a build", func() {
