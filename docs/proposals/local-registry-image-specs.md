@@ -71,7 +71,7 @@ to a cluster-local image registry.
 Per [KEP 1755](https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry),
 a cluster has a local registry if a `ConfigMap` named `local-registry-hosting`  is present in the
 `kube-public` namespace. The data in this `ConfigMap` contains hosname information for the image
-registry installed on the cluster. The build controller/operator will this `ConfigMap` to check if
+registry installed on the cluster. The build controller/operator will read this `ConfigMap` to check if
 a local image registry is declared. If declared, it will infer the local registry host information
 from what is provided in the `ConfigMap`.
 
