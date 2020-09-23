@@ -141,9 +141,6 @@ test-unit-coverage: test-unit
 	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
 	gocov report build/coverage/coverprofile.json
 
-
-# TODO: clarify overlap on e2e vs integration
-# TODO: ginkgo -race does not work, why?
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
 .PHONY: test-integration
 test-integration: crds
