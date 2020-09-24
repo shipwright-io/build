@@ -40,11 +40,11 @@ design. For instance:
 
 ## Summary
 
-The performance of [shipwright-io/build] depends on the cluster capabilities and the actual application that is build into a container image. Using well-known synthetic applications for different cluster build strategies allows for reproducible execution times. In order to be able to detect performance regressions over time, it is useful to re-use the same test load all the time. Furthermore, the load generation should use the custom resrouce definition provided by `build` directly to avoid any additional overhead by a wrapper or convenienve layer.
+The performance of [shipwright-io/build] depends on the cluster capabilities and the actual application that is build into a container image. Using well-known synthetic applications for different cluster build strategies allows for reproducible execution times. In order to be able to detect performance regressions over time, it is useful to re-use the same test load all the time. Furthermore, the load generation should use the custom resource definition provided by `build` directly to avoid any additional overhead by a wrapper or convenience layer.
 
 ## Motivation
 
-We test our [shipwright-io/build] setup in different cluster setups using the same load to verify certain performance assumptions. This includes scenarions where a lot of concurrent builds are required. At this level, more simple load drivers such as Shell scripts become hard to maintain or impracticle.
+We test our [shipwright-io/build] setup in different cluster setups using the same load to verify certain performance assumptions. This includes scenarios where a lot of concurrent builds are required. At this level, more simple load drivers such as Shell scripts become hard to maintain or impractical.
 
 ### Goals
 
