@@ -11,7 +11,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -284,7 +283,7 @@ func (c *Catalog) StubBuildStatusReason(reason string) func(context context.Cont
 		switch object := object.(type) {
 		case *build.Build:
 			if object.Status.Reason != "" {
-				Expect(*&object.Status.Reason).To(Equal(reason))
+				Expect(object.Status.Reason).To(Equal(reason))
 			}
 		}
 		return nil
@@ -565,7 +564,7 @@ func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName stri
 	return &build.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        buildName,
-			Annotations: map[string]string{buildv1alpha1.AnnotationBuildRunDeletion: "true"},
+			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
 			StrategyRef: &build.StrategyRef{
@@ -586,7 +585,7 @@ func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategy
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        buildName,
 			Namespace:   "fakens",
-			Annotations: map[string]string{buildv1alpha1.AnnotationBuildRunDeletion: "true"},
+			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
 			StrategyRef: &build.StrategyRef{

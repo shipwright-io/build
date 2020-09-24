@@ -93,11 +93,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 
 			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have a TaskRun referenced already,
 			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun.
-			if o.Status.LatestTaskRunRef != nil {
-				return false
-			}
-
-			return true
+			return o.Status.LatestTaskRunRef == nil
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
@@ -187,11 +183,11 @@ func handleError(message string, listOfErrors ...error) error {
 // ValidateBuildRegistration verifies that a referenced Build is properly registered
 func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) error {
 	if build.Status.Registered == "" {
-		err := fmt.Errorf("The Build is not yet validated, build: %s", build.Name)
+		err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
 		return err
 	}
 	if build.Status.Registered != corev1.ConditionTrue {
-		err := fmt.Errorf("The Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
+		err := fmt.Errorf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 		return handleError("Build is not ready", err, updateErr)
 	}
