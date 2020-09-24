@@ -1,0 +1,10 @@
+# Default values for s2i-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+operator: 
+  # Replace this with the built image name
+  name: build-operator
+  image: REPLACE_IMAGE
+
+namespace:
+  name: build-operator
