@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 Assuming you are logged in to an OpenShift/Kubernetes cluster, run
 
 ```sh
-make clean && make build && make local
+make clean build local
 ```
 
 If the `pipeline` service account isn't already created, here are the steps to create the same:
