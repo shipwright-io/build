@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 // NOTE: Boilerplate only.  Ignore this file.
@@ -20,4 +20,7 @@ var (
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+
+	// AddToScheme is used in the generated kube code
+	AddToScheme = SchemeBuilder.AddToScheme
 )
