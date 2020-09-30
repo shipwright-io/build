@@ -16,7 +16,7 @@ function listPkgDirs() {
 
 function listGoFiles() {
 	# pipeline is much faster than for loop
-	listPkgDirs | xargs -I {} find {} -name '*.go'
+	listPkgDirs | xargs -I {} find {} \( -name '*.go' -a ! -name "zz_generated*.go" \)
   local goFiles=$?
   echo $PWD/tools.go
   goFiles="$goFiles $?"
