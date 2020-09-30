@@ -39,6 +39,7 @@ spec:
             - FOWNER
             - SETGID
             - SETUID
+            - SETFCAP
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
