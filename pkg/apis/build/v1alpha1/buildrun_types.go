@@ -1,5 +1,5 @@
 // Copyright The Shipwright Contributors
-// 
+//
 // SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
@@ -84,6 +84,7 @@ type ServiceAccount struct {
 	Generate bool `json:"generate,omitempty"`
 }
 
+// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // BuildRun is the Schema representing an instance of build execution
