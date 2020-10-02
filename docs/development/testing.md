@@ -8,9 +8,9 @@ SPDX-License-Identifier: Apache-2.0
 
 - [Overview](#overview)
 - [Ginkgo](#ginkgo)
-- [Unit Tests](#unit-tests)
+- [Verifying your code](#verifying-your-code)
   - [Counterfeiter](#counterfeiter)
-  - [Running unit tests](#running-unit-tests)
+- [Unit Tests](#unit-tests)
 - [Integration Tests](#integration-tests)
   - [Running integration tests](#running-integration-tests)
 - [E2E Tests](#e2e-tests)
@@ -24,12 +24,26 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-Before opening a pull requests, please ensure that your changes are passing unit and integration tests. In the following sections, the three levels of tests we cover are explained in detail.
+Before opening a pull requests, please ensure that your changes are passing unit, integration, and verification tests.
+In the following sections, the three levels of tests we cover are explained in detail.
 Our testing implementation follows the Kubernetes community recommendations, see the [community docs](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/testing.md) for more information.
 
 ## Ginkgo
 
 For all the testing levels, we rely on Gingko as the testing framework for defining test cases and executing them. Ginkgo is a go testing framework that use the Go´s **testing** package. The framework have many [features](https://github.com/onsi/ginkgo#feature-list) on top of Go´s built-in testing primitives.
+
+## Verifying your code
+
+Our Travis builds verify that your code conforms to project standards and that all generated code is up to date.
+When adding files or updating APIs, please run `make generate` before submitting your code.
+
+### Counterfeiter
+
+Counterfeiter is used to generate and update fake implementations of objects. Currently only used for the `manager` and `client` package interface of the `sigs.k8s.io/controller-runtime`.
+
+This allow us to use test doubles in the unit tests, from where we can instantiate the fakes and then stub return values. This is very useful, for example we can mock all **client** calls that happened during the k8s controllers reconciliation and stub the result. Same case for the **manager** when creating controllers.
+
+Counterfeiter is required by the code generator scripts. Run `make install-counterfeiter` to add counterfeiter to your `GOPATH`.
 
 ## Unit Tests
 
@@ -53,17 +67,7 @@ When building unit-tests, try to follow:
 - Assert all errors.
 - Assert that function invocations generate the expected values.
 
-### Counterfeiter
-
-Counterfeiter is used to generate and update fake implementations of objects. Currently only used for the `manager` and `client` package interface of the `sigs.k8s.io/controller-runtime`.
-
-This allow us to use test doubles in the unit tests, from where we can instantiate the fakes and then stub return values. This is very useful, for example we can mock all **client** calls that happened during the k8s controllers reconciliation and stub the result. Same case for the **manager** when creating controllers. For installing the binary, refer to [installing counterfeiter](https://github.com/maxbrunsfeld/counterfeiter#installing-counterfeiter-to-gopathbin).
-
-### Running unit tests
-
-```sh
-make test
-```
+To run the unit tests, run `make test` from the command line.
 
 ## Integration Tests
 

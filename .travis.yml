@@ -9,7 +9,7 @@ install:
 script:
   - set -e
   - make
-  - make verify-copyright
+  - make verify-codegen
   # https://github.com/shipwright-io/build/issues/123
   - make test-unit-coverage
   - make test-integration
