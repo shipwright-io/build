@@ -10,7 +10,10 @@ import (
 )
 
 var (
-	LabelBuildRun           = "buildrun.build.dev/name"
+	// LabelBuildRun is a label key for BuildRuns to define the name of the BuildRun
+	LabelBuildRun = "buildrun.build.dev/name"
+
+	// LabelBuildRunGeneration is a label key for BuildRuns to define the generation
 	LabelBuildRunGeneration = "buildrun.build.dev/generation"
 )
 

@@ -20,7 +20,7 @@ func IsRuntimeDefined(b *buildv1alpha1.Build) bool {
 	return true
 }
 
-// IsIsBuilderImageDefined inspect if build contains `.spec.BuilderImage` defined.
+// IsBuilderImageDefined inspect if build contains `.spec.BuilderImage` defined.
 func IsBuilderImageDefined(b *buildv1alpha1.Build) bool {
 	if b.Spec.BuilderImage == nil {
 		return false
