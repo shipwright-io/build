@@ -315,7 +315,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			buildRun.Status.LatestTaskRunRef = &generatedTaskRun.Name
 			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name)
 			if err = r.client.Status().Update(ctx, buildRun); err != nil {
-				// we ignore the error here to prevent another reconcilation that would create another TaskRun,
+				// we ignore the error here to prevent another reconciliation that would create another TaskRun,
 				// the LatestTaskRunRef field will also be set in the reconciliation from a TaskRun
 				// risk is that when the controller is now restarted before the field is set, another TaskRun will be created
 				ctxlog.Error(ctx, err, "Failed to update BuildRun status is ignored", namespace, request.Namespace, name, request.Name)
@@ -381,7 +381,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 						buildRun.Status.StartTime.Time.Sub(buildRun.CreationTimestamp.Time),
 					)
 
-					// buildrun completetion duration (total time between the creation of the buildrun and the buildrun completion)
+					// buildrun completion duration (total time between the creation of the buildrun and the buildrun completion)
 					buildmetrics.BuildRunCompletionObserve(
 						buildRun.Status.BuildSpec.StrategyRef.Name,
 						buildRun.Namespace,

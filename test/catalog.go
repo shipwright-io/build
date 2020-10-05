@@ -261,7 +261,7 @@ func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Contex
 	}
 }
 
-// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
+// StubBuildRunAndTaskRun is used to simulate the existence of a BuildRun
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
 	b *build.BuildRun,
@@ -276,7 +276,7 @@ func (c *Catalog) StubBuildRun(
 	}
 }
 
-// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
+// StubBuildRunAndTaskRun is used to simulate the existence of a BuildRun
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildRunAndTaskRun(
 	b *build.BuildRun,
@@ -295,7 +295,7 @@ func (c *Catalog) StubBuildRunAndTaskRun(
 	}
 }
 
-// StubBuildAndTaskRun is used to simulate the existance of a Build
+// StubBuildAndTaskRun is used to simulate the existence of a Build
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildAndTaskRun(
 	b *build.Build,
@@ -413,7 +413,7 @@ func (c *Catalog) StubBuildRunGetWithSA(
 	}
 }
 
-// StubBuildRunGetWithSAandStrategies simulates the ouput of client GET
+// StubBuildRunGetWithSAandStrategies simulates the output of client GET
 // calls for the BuildRun unit tests
 func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	b *build.Build,
