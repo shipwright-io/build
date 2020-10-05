@@ -120,16 +120,16 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Generate a new Reconcile Request using the existing TaskRun name and namespace
 				taskRunRequest = newReconcileRequest(taskRunName, ns)
 
-				// initialize a TaskRun, we need this to fake the existance of a Tekton TaskRun
+				// initialize a TaskRun, we need this to fake the existence of a Tekton TaskRun
 				taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded")
 
-				// initialize a BuildRun, we need this to fake the existance of a BuildRun
+				// initialize a BuildRun, we need this to fake the existence of a BuildRun
 				buildRunSample = ctl.DefaultBuildRun(buildRunName, buildName)
 			})
 
 			It("is able to retrieve a TaskRun, Build and a BuildRun", func() {
 
-				// stub the existance of a Build, BuildRun and
+				// stub the existence of a Build, BuildRun and
 				// a TaskRun via the getClientStub, therefore we
 				// expect the Reconcile to Succeed because all resources
 				// exist
@@ -241,7 +241,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Generate a new Reconcile Request using the existing TaskRun name and namespace
 				taskRunRequest = newReconcileRequest(taskRunName, ns)
 
-				// initialize a BuildRun, we need this to fake the existance of a BuildRun
+				// initialize a BuildRun, we need this to fake the existence of a BuildRun
 				buildRunSample = ctl.DefaultBuildRun(buildRunName, buildName)
 			})
 
@@ -249,7 +249,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			// https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md#monitoring-execution-status
 			It("updates the BuildRun status with a PENDING reason", func() {
 
-				// initialize a TaskRun, we need this to fake the existance of a Tekton TaskRun
+				// initialize a TaskRun, we need this to fake the existence of a Tekton TaskRun
 				taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionUnknown, "Pending")
 
 				// Stub that asserts the BuildRun status fields when

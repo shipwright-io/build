@@ -63,7 +63,6 @@ type StrategyRef struct {
 	APIVersion string `json:"apiVersion,omitempty"`
 }
 
-// Check that Build may be validated and defaulted.
 // BuildStrategyKind defines the type of BuildStrategy used by the build.
 type BuildStrategyKind string
 

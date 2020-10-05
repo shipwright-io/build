@@ -10,8 +10,13 @@ import (
 )
 
 var (
-	LabelBuild                 = "build.build.dev/name"
-	LabelBuildGeneration       = "build.build.dev/generation"
+	// LabelBuild is a label key for defining the build name
+	LabelBuild = "build.build.dev/name"
+
+	// LabelBuildGeneration is a label key for defining the build generation
+	LabelBuildGeneration = "build.build.dev/generation"
+
+	// AnnotationBuildRunDeletion is a label key for enabling/disabling the BuildRun deletion
 	AnnotationBuildRunDeletion = "build.build.dev/build-run-deletion"
 	BuildFinalizer             = "finalizer.build.build.dev"
 )
@@ -103,7 +108,7 @@ type Runtime struct {
 	Entrypoint []string `json:"entrypoint,omitempty"`
 }
 
-// UUser holds the user name and group information for runtime-image.
+// User holds the user name and group information for runtime-image.
 type User struct {
 	// Name user name to be employed in runtime-image.
 	Name string `json:"name"`

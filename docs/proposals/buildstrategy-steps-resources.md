@@ -255,7 +255,7 @@ spec:
 
 ### Risks and Mitigations
 
-Proper documentation needs to be made to communicate the existance of `flavours` for strategies of the same type to users. When it comes to UI, is the decision of the UI team to decide
+Proper documentation needs to be made to communicate the existence of `flavours` for strategies of the same type to users. When it comes to UI, is the decision of the UI team to decide
 how they will expose(_interface_) this flavours to their end-users. Strategy admins have full responsability on the flavours they decide to define, but recommendations of flavours should be
 made for this repository.
 

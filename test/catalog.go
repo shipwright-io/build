@@ -125,7 +125,7 @@ func (c *Catalog) BuildWithCustomAnnotationAndFinalizer(
 func (c *Catalog) ClusterBuildStrategyList(name string) *build.ClusterBuildStrategyList {
 	return &build.ClusterBuildStrategyList{
 		Items: []build.ClusterBuildStrategy{
-			build.ClusterBuildStrategy{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
 					Namespace: "build-examples",
@@ -139,7 +139,7 @@ func (c *Catalog) ClusterBuildStrategyList(name string) *build.ClusterBuildStrat
 func (c *Catalog) FakeClusterBuildStrategyList() *build.ClusterBuildStrategyList {
 	return &build.ClusterBuildStrategyList{
 		Items: []build.ClusterBuildStrategy{
-			build.ClusterBuildStrategy{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "foobar",
 					Namespace: "build-examples",
@@ -160,7 +160,7 @@ func (c *Catalog) FakeNoClusterBuildStrategyList() *build.ClusterBuildStrategyLi
 func (c *Catalog) BuildStrategyList(name string, ns string) *build.BuildStrategyList {
 	return &build.BuildStrategyList{
 		Items: []build.BuildStrategy{
-			build.BuildStrategy{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
 					Namespace: ns,
@@ -174,7 +174,7 @@ func (c *Catalog) BuildStrategyList(name string, ns string) *build.BuildStrategy
 func (c *Catalog) FakeBuildStrategyList() *build.BuildStrategyList {
 	return &build.BuildStrategyList{
 		Items: []build.BuildStrategy{
-			build.BuildStrategy{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "foobar",
 				},
@@ -194,7 +194,7 @@ func (c *Catalog) FakeNoBuildStrategyList() *build.BuildStrategyList {
 func (c *Catalog) FakeSecretList() corev1.SecretList {
 	return corev1.SecretList{
 		Items: []corev1.Secret{
-			corev1.Secret{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "foobar",
 				},
@@ -214,7 +214,7 @@ func (c *Catalog) FakeNoSecretListInNamespace() corev1.SecretList {
 func (c *Catalog) SecretList(name string) corev1.SecretList {
 	return corev1.SecretList{
 		Items: []corev1.Secret{
-			corev1.Secret{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
 				},
@@ -261,7 +261,7 @@ func (c *Catalog) StubBuildUpdateWithoutFinalizers() func(context context.Contex
 	}
 }
 
-// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
+// StubBuildRunAndTaskRun is used to simulate the existence of a BuildRun
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
 	b *build.BuildRun,
@@ -276,7 +276,7 @@ func (c *Catalog) StubBuildRun(
 	}
 }
 
-// StubBuildRunAndTaskRun is used to simulate the existance of a BuildRun
+// StubBuildRunAndTaskRun is used to simulate the existence of a BuildRun
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildRunAndTaskRun(
 	b *build.BuildRun,
@@ -295,7 +295,7 @@ func (c *Catalog) StubBuildRunAndTaskRun(
 	}
 }
 
-// StubBuildAndTaskRun is used to simulate the existance of a Build
+// StubBuildAndTaskRun is used to simulate the existence of a Build
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildAndTaskRun(
 	b *build.Build,
@@ -413,7 +413,7 @@ func (c *Catalog) StubBuildRunGetWithSA(
 	}
 }
 
-// StubBuildRunGetWithSAandStrategies simulates the ouput of client GET
+// StubBuildRunGetWithSAandStrategies simulates the output of client GET
 // calls for the BuildRun unit tests
 func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	b *build.Build,
