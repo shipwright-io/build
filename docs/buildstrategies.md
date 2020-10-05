@@ -195,6 +195,7 @@ spec:
             - FOWNER
             - SETGID
             - SETUID
+            - SETFCAP
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
@@ -235,6 +236,7 @@ spec:
             - FOWNER
             - SETGID
             - SETUID
+            - SETFCAP
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
