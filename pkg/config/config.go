@@ -71,8 +71,7 @@ func NewDefaultConfig() *Config {
 
 // SetConfigFromEnv updates the configuration managed by environment variables.
 func (c *Config) SetConfigFromEnv() error {
-	timeout := os.Getenv(contextTimeoutEnvVar)
-	if timeout != "" {
+	if timeout := os.Getenv(contextTimeoutEnvVar); timeout != "" {
 		i, err := strconv.Atoi(timeout)
 		if err != nil {
 			return err
@@ -80,36 +79,20 @@ func (c *Config) SetConfigFromEnv() error {
 		c.CtxTimeOut = time.Duration(i) * time.Second
 	}
 
-	kanikoImage := os.Getenv(kanikoImageEnvVar)
-	if kanikoImage != "" {
+	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {
 		c.KanikoContainerImage = kanikoImage
 	}
 
-	buildRunCompletionDurationBucketsEnvVarValue := os.Getenv(metricBuildRunCompletionDurationBucketsEnvVar)
-	if buildRunCompletionDurationBucketsEnvVarValue != "" {
-		buildRunCompletionDurationBuckets, err := stringToFloat64Array(strings.Split(buildRunCompletionDurationBucketsEnvVarValue, ","))
-		if err != nil {
-			return err
-		}
-		c.Prometheus.BuildRunCompletionDurationBuckets = buildRunCompletionDurationBuckets
+	if err := updateBucketsConfig(&c.Prometheus.BuildRunCompletionDurationBuckets, metricBuildRunCompletionDurationBucketsEnvVar); err != nil {
+		return err
 	}
 
-	buildRunEstablishDurationBucketsEnvVarValue := os.Getenv(metricBuildRunEstablishDurationBucketsEnvVar)
-	if buildRunEstablishDurationBucketsEnvVarValue != "" {
-		buildRunEstablishDurationBuckets, err := stringToFloat64Array(strings.Split(buildRunEstablishDurationBucketsEnvVarValue, ","))
-		if err != nil {
-			return err
-		}
-		c.Prometheus.BuildRunEstablishDurationBuckets = buildRunEstablishDurationBuckets
+	if err := updateBucketsConfig(&c.Prometheus.BuildRunEstablishDurationBuckets, metricBuildRunEstablishDurationBucketsEnvVar); err != nil {
+		return err
 	}
 
-	buildRunRampUpDurationBucketsEnvVarValue := os.Getenv(metricBuildRunRampUpDurationBucketsEnvVar)
-	if buildRunRampUpDurationBucketsEnvVarValue != "" {
-		buildRunRampUpDurationBuckets, err := stringToFloat64Array(strings.Split(buildRunRampUpDurationBucketsEnvVarValue, ","))
-		if err != nil {
-			return err
-		}
-		c.Prometheus.BuildRunRampUpDurationBuckets = buildRunRampUpDurationBuckets
+	if err := updateBucketsConfig(&c.Prometheus.BuildRunRampUpDurationBuckets, metricBuildRunRampUpDurationBucketsEnvVar); err != nil {
+		return err
 	}
 
 	c.Prometheus.HistogramEnabledLabels = strings.Split(os.Getenv(prometheusHistogramEnabledLabelsEnvVar), ",")
@@ -129,4 +112,17 @@ func stringToFloat64Array(strings []string) ([]float64, error) {
 	}
 
 	return floats, nil
+}
+
+func updateBucketsConfig(buckets *[]float64, envVarName string) error {
+	if values, found := os.LookupEnv(envVarName); found {
+		floats, err := stringToFloat64Array(strings.Split(values, ","))
+		if err != nil {
+			return err
+		}
+
+		*buckets = floats
+	}
+
+	return nil
 }
