@@ -46,7 +46,7 @@ Users have the option to define their own `BuildStrategy` or `ClusterBuildStrate
 
 This operator ships four CRDs :
 
-* The `BuildStragegy` CRD and the `ClusterBuildStrategy` CRD is used to register a strategy.
+* The `BuildStrategy` CRD and the `ClusterBuildStrategy` CRD is used to register a strategy.
 * The `Build` CRD is used to define a build configuration.
 * The `BuildRun` CRD is used to start the actually image build using a registered strategy.
 
@@ -116,7 +116,7 @@ spec:
 | Build Strategy                                                                                  | Alpha | Beta | GA |
 | ----------------------------------------------------------------------------------------------- | ----- | ---- | -- |
 | [Source-to-Image](samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml)  | ☑     |      |    |
-| [Buildpacks-v3-heroku](samples/buildstrategy/buildstrategy_buildpacks-v3-heroku_cr.yaml)        | ☑️     |      |    |
+| [Buildpacks-v3-heroku](samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)        | ☑️     |      |    |
 | [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)        | ☑️     |      |    |
 | [Kaniko](samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)                             | ☑️     |      |    |
 | [Buildah](samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)                          | ☑️     |      |    |
