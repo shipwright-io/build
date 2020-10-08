@@ -37,8 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -102,8 +100,13 @@ func main() {
 	}
 	defer r.Unset()
 
-	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{
+	c := buildconfig.NewDefaultConfig()
+	if err := c.SetConfigFromEnv(); err != nil {
+		ctxlog.Error(ctx, err, "")
+		os.Exit(1)
+	}
+
+	mgr, err := controller.NewManager(ctx, c, cfg, manager.Options{
 		LeaderElection:          true,
 		LeaderElectionID:        "build-operator-lock",
 		LeaderElectionNamespace: "default",
@@ -111,31 +114,6 @@ func main() {
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
-		ctxlog.Error(ctx, err, "")
-		os.Exit(1)
-	}
-
-	ctxlog.Info(ctx, "Registering Components.")
-
-	if err := v1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		ctxlog.Error(ctx, err, "")
-		os.Exit(1)
-	}
-
-	// Setup Scheme for all resources
-	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		ctxlog.Error(ctx, err, "")
-		os.Exit(1)
-	}
-
-	c := buildconfig.NewDefaultConfig()
-	if err := c.SetConfigFromEnv(); err != nil {
-		ctxlog.Error(ctx, err, "")
-		os.Exit(1)
-	}
-
-	// Setup all Controllers
-	if err := controller.AddToManager(ctx, c, mgr); err != nil {
 		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}

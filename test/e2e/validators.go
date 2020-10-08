@@ -175,62 +175,13 @@ func validateBuildRunToSucceed(
 ) {
 	f := framework.Global
 
-	pendingStatus := "Pending"
-	runningStatus := "Running"
 	trueCondition := corev1.ConditionTrue
-	pendingAndRunningStatues := []string{pendingStatus, runningStatus}
 
 	// Ensure the BuildRun has been created
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
 
-	// Ensure that a TaskRun has been created and is in pending or running state
-	// for more info refer to https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md#monitoring-execution-status
-	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
-		Eventually(func() string {
-			taskRun, err := getTaskRun(f, testBuildRun)
-			if err != nil {
-				Logf("Retrieving TaskRun error: '%s'", err)
-				return ""
-			}
-			if taskRun == nil {
-				Logf("TaskRun is not yet generated!")
-				return ""
-			}
-			if len(taskRun.Status.Conditions) == 0 {
-				Logf("TaskRun has not yet conditions.")
-				return ""
-			}
-			return taskRun.Status.Conditions[0].Reason
-		}, time.Duration(300*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(BeElementOf(pendingAndRunningStatues), "TaskRun REASON is not pending or running")
-	} else {
-		Logf("TaskRun verification skipped.")
-	}
-
-	// Ensure BuildRun is in pending or running state
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
-	Eventually(func() string {
-		err = clientGet(buildRunNsName, testBuildRun)
-		if err != nil {
-			Logf("Retrieving BuildRun error: '%s'", err)
-			return ""
-		}
-		return testBuildRun.Status.Reason
-	}, time.Duration(30*getTimeoutMultiplier())*time.Second, 2*time.Second).Should(BeElementOf(pendingAndRunningStatues), "BuildRun is not pending or running")
-
-	// Verify that the BuildSpec is available in the status
-	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
-
-	// Ensure a BuildRun moves to a running Reason
-	Eventually(func() string {
-		err = clientGet(buildRunNsName, testBuildRun)
-		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
-
-		return testBuildRun.Status.Reason
-	}, time.Duration(180*getTimeoutMultiplier())*time.Second, 3*time.Second).Should(Equal(runningStatus), "BuildRun REASON is not running")
-
-	// Verify that the BuildSpec is still available in the status
-	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
 	Eventually(func() corev1.ConditionStatus {
@@ -238,7 +189,7 @@ func validateBuildRunToSucceed(
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		return testBuildRun.Status.Succeeded
-	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
+	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())

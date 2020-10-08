@@ -55,10 +55,10 @@ var _ = Describe("GenerateTaskrun", func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuild))
 				Expect(err).To(BeNil())
 
-				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.MinimalBuildahBuildRun))
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
 				Expect(err).To(BeNil())
 
-				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.MinimalBuildahBuildStrategy))
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
 				Expect(err).To(BeNil())
 
 				expectedCommandOrArg = []string{
@@ -133,10 +133,10 @@ var _ = Describe("GenerateTaskrun", func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
 				Expect(err).To(BeNil())
 
-				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildahBuildRunWithSA))
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithSA))
 				Expect(err).To(BeNil())
 
-				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildahBuildStrategySingleStep))
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildahBuildStrategySingleStep))
 				Expect(err).To(BeNil())
 
 			})
@@ -205,10 +205,10 @@ var _ = Describe("GenerateTaskrun", func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildpacksBuildWithBuilderAndTimeOut))
 				Expect(err).To(BeNil())
 
-				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildpacksBuildRunWithSA))
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildpacksBuildRunWithSA))
 				Expect(err).To(BeNil())
 
-				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildpacksBuildStrategySingleStep))
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildpacksBuildStrategySingleStep))
 				Expect(err).To(BeNil())
 			})
 
@@ -264,10 +264,10 @@ var _ = Describe("GenerateTaskrun", func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithTimeOut))
 				Expect(err).To(BeNil())
 
-				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildahBuildRunWithTimeOutAndSA))
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithTimeOutAndSA))
 				Expect(err).To(BeNil())
 
-				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildahBuildStrategySingleStep))
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildahBuildStrategySingleStep))
 				Expect(err).To(BeNil())
 			})
 
@@ -287,10 +287,10 @@ var _ = Describe("GenerateTaskrun", func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
 				Expect(err).To(BeNil())
 
-				buildRun, err = ctl.LoadBuildRunYAML([]byte(test.BuildahBuildRunWithSAAndOutput))
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithSAAndOutput))
 				Expect(err).To(BeNil())
 
-				buildStrategy, err = ctl.LoadBuildStrategyYAML([]byte(test.BuildahBuildStrategySingleStep))
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildahBuildStrategySingleStep))
 				Expect(err).To(BeNil())
 			})
 

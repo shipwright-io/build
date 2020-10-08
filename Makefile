@@ -141,8 +141,21 @@ test-unit-coverage: test-unit
 	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
 	gocov report build/coverage/coverprofile.json
 
+# Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
+.PHONY: test-integration
+test-integration: crds
+	GO111MODULE=on ginkgo \
+		-randomizeAllSpecs \
+		-randomizeSuites \
+		-failOnPending \
+		-flakeAttempts=2 \
+		-slowSpecThreshold=240 \
+		-trace \
+		test/integration/...
+
+
 .PHONY: test-e2e
-test-e2e: crds test-e2e-plain
+test-e2e: crds-and-resources test-e2e-plain
 
 .PHONY: test-e2e-plain
 test-e2e-plain:
@@ -156,11 +169,15 @@ test-e2e-plain:
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
 	ginkgo ${TEST_E2E_FLAGS} test/e2e
 
-crds:
-	-hack/crd.sh uninstall
-	@hack/crd.sh install
+crds-and-resources:
+	-hack/crds-and-resources.sh uninstall
+	@hack/crds-and-resources.sh install
 
-local: crds build
+crds:
+	-hack/crds.sh uninstall
+	@hack/crds.sh install
+
+local: crds-and-resources build
 	OPERATOR_NAME=build-operator \
 	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
@@ -177,9 +194,12 @@ gen-fakes:
 kubectl:
 	./hack/install-kubectl.sh
 
-kind:
+kind-registry:
 	./hack/install-registry.sh
+
+kind:
 	./hack/install-kind.sh
+	./hack/install-registry.sh
 
 travis: install-ginkgo install-gocov kubectl kind
 	./hack/install-tekton.sh
