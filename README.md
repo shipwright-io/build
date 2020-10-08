@@ -70,43 +70,71 @@ Examples of `Build` resource using the example strategies shipped with this oper
 ## Try it!
 
 * Get a [Kubernetes](https://kubernetes.io/) cluster and [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) set up to connect to your cluster.
-* Install [Tekton](https://cloud.google.com/tekton) by running [install-tekton.sh](hack/install-tekton.sh), it installs v0.14.2.
-* Install [operator-sdk][operatorsdk] by running [install-operator-sdk.sh](hack/install-operator-sdk.sh), it installs v0.17.0.
-* Create a namespace called **build-examples** by running `kubectl create namespace build-examples`.
-* Execute `make local` to register [well-known build strategies](samples/buildstrategy) including **Kaniko** and start the operator locally.
-* Create a [Kaniko](samples/build/build_kaniko_cr.yaml) build.
+* Clone this repository from GitHub:
+
+```bash
+$ git clone https://github.com/shipwright-io/build.git
+...
+$ cd build/
+```
+
+* Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.14.2.
+
+```bash
+$ hack/install-tekton.sh
+```
+
+* Install the operator and sample strategies via `make`:
+
+```bash
+$ make install
+```
+
+* Add a push secret to your container image repository, such as one on Docker Hub or quay.io:
 
 ```yaml
+$ kubectl create secret generic push-secret \
+--from-file=.dockerconfigjson=$HOME/.docker/config.json \
+--type=kubernetes.io/dockerconfigjson
+```
+
+* Create a [Cloud Native Buildpacks](samples/build/build_buildpacks_v3_cr.yaml) build, replacing
+  `<MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>` with the registry hostname, username, and repository your
+  cluster has access to and that you have permission to push images to.
+
+```bash
+$ kubectl apply -f - <<EOF
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: kaniko-golang-build
-  namespace: build-examples
+  name: buildpack-nodejs-build
 spec:
   source:
-    url: https://github.com/sbose78/taxi
-    contextDir: .
+    url: https://github.com/adambkaplan/shipwright-example-nodejs.git
   strategy:
-    name: kaniko
+    name: buildpacks-v3
     kind: ClusterBuildStrategy
-  dockerfile: Dockerfile
   output:
-    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+    image: <MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>:latest
+    credentials:
+      name: push-secret
+EOF
 ```
 
-* Start a [Kaniko](samples/buildrun/buildrun_kaniko_cr.yaml) buildrun
+* Run your build:
 
-```yaml
+```bash
+$ kubectl apply -f - <<EOF
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
 metadata:
-  name: kaniko-golang-buildrun
-  namespace: build-examples
+  name: buildpack-nodejs-build-1
 spec:
   buildRef:
-    name: kaniko-golang-build
+    name: buildpack-nodejs-build
   serviceAccount:
-    generate: true
+    name: default
+EOF
 ```
 
 ## Roadmap

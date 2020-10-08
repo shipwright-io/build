@@ -143,7 +143,7 @@ test-unit-coverage: test-unit
 
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
 .PHONY: test-integration
-test-integration: crds
+test-integration: install-apis
 	GO111MODULE=on ginkgo \
 		-randomizeAllSpecs \
 		-randomizeSuites \
@@ -155,7 +155,7 @@ test-integration: crds
 
 
 .PHONY: test-e2e
-test-e2e: crds-and-resources test-e2e-plain
+test-e2e: install-strategies test-e2e-plain
 
 .PHONY: test-e2e-plain
 test-e2e-plain:
@@ -169,15 +169,21 @@ test-e2e-plain:
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
 	ginkgo ${TEST_E2E_FLAGS} test/e2e
 
-crds-and-resources:
-	-hack/crds-and-resources.sh uninstall
-	@hack/crds-and-resources.sh install
+.PHONY: install install-apis install-operator install-strategies
 
-crds:
-	-hack/crds.sh uninstall
-	@hack/crds.sh install
+install:
+	@hack/shipwright-build.sh install
 
-local: crds-and-resources build
+install-apis:
+	@hack/shipwright-build.sh install apis
+
+install-operator: install-apis
+	@hack/shipwright-build.sh install controllers
+
+install-strategies: install-apis
+	@hack/shipwright-build.sh install strategies
+
+local: install-strategies build
 	OPERATOR_NAME=build-operator \
 	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
 
