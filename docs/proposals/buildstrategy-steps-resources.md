@@ -159,7 +159,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-prepare
-      image: docker.io/paketobuildpacks/builder:latest
+      image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 0
         capabilities:
@@ -179,7 +179,7 @@ spec:
           cpu: "10m"
           memory: "128Mi"
     - name: step-detect
-      image: docker.io/paketobuildpacks/builder:latest
+      image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
       command:
@@ -199,7 +199,7 @@ spec:
           cpu: "250m"
           memory: "50Mi"
     - name: step-restore
-      image: docker.io/paketobuildpacks/builder:latest
+      image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
       command:
@@ -214,7 +214,7 @@ spec:
         - name: layers-dir
           mountPath: /layers
     - name: step-build
-      image: docker.io/paketobuildpacks/builder:latest
+      image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
       command:
@@ -235,7 +235,7 @@ spec:
           cpu: "500m"
           memory: "1Gi"
     - name: step-export
-      image: docker.io/paketobuildpacks/builder:latest
+      image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
       command:

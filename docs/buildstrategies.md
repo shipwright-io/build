@@ -69,7 +69,8 @@ The [buildpacks-v3][buildpacks] BuildStrategy/ClusterBuildStrategy uses a Cloud 
 
 - [`heroku/buildpacks:18`][hubheroku]
 - [`cloudfoundry/cnb:bionic`][hubcloudfoundry]
-- [`docker.io/paketobuildpacks/builder:latest`](https://hub.docker.com/r/paketobuildpacks/builder/tags)
+- [`docker.io/paketobuildpacks/builder:full`](https://hub.docker.com/r/paketobuildpacks/builder/tags)
+
 
 ### Installing Buildpacks v3 Strategy
 
