@@ -216,6 +216,7 @@ func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta
 			fmt.Sprintf("--context=%x", path.Join(workspaceDir, contextDir)),
 			fmt.Sprintf("--destination=%s", b.Spec.Output.ImageURL),
 			"--snapshotMode=redo",
+			"--oci-layout-path=/workspace/output/image",
 		},
 	}
 	return &v1beta1.Step{Container: container}
