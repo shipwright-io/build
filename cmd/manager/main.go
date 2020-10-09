@@ -100,19 +100,19 @@ func main() {
 	}
 	defer r.Unset()
 
-	c := buildconfig.NewDefaultConfig()
-	if err := c.SetConfigFromEnv(); err != nil {
+	buildCfg := buildconfig.NewDefaultConfig()
+	if err := buildCfg.SetConfigFromEnv(); err != nil {
 		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
 
-	mgr, err := controller.NewManager(ctx, c, cfg, manager.Options{
+	mgr, err := controller.NewManager(ctx, buildCfg, cfg, manager.Options{
 		LeaderElection:          true,
 		LeaderElectionID:        "build-operator-lock",
-		LeaderElectionNamespace: c.ManagerOptions.LeaderElectionNamespace,
-		LeaseDuration:           c.ManagerOptions.LeaseDuration,
-		RenewDeadline:           c.ManagerOptions.RenewDeadline,
-		RetryPeriod:             c.ManagerOptions.RetryPeriod,
+		LeaderElectionNamespace: buildCfg.ManagerOptions.LeaderElectionNamespace,
+		LeaseDuration:           buildCfg.ManagerOptions.LeaseDuration,
+		RenewDeadline:           buildCfg.ManagerOptions.RenewDeadline,
+		RetryPeriod:             buildCfg.ManagerOptions.RetryPeriod,
 		Namespace:               "",
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
@@ -123,7 +123,7 @@ func main() {
 
 	// Add the Metrics Service
 	addMetrics(ctx, cfg, namespace)
-	buildMetrics.InitPrometheus(c)
+	buildMetrics.InitPrometheus(buildCfg)
 
 	ctxlog.Info(ctx, "Starting the Cmd.")
 
