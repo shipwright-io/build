@@ -31,6 +31,13 @@ const (
 
 	// environment variable to enable histogram labels
 	prometheusHistogramEnabledLabelsEnvVar = "PROMETHEUS_HISTOGRAM_ENABLED_LABELS"
+
+	leaderElectionNamespaceDefault = "default"
+	leaderElectionNamespaceEnvVar  = "BUILD_OPERATOR_LEADER_ELECTION_NAMESPACE"
+
+	leaseDurationEnvVar = "BUILD_OPERATOR_LEASE_DURATION"
+	renewDeadlineEnvVar = "BUILD_OPERATOR_RENEW_DEADLINE"
+	retryPeriodEnvVar   = "BUILD_OPERATOR_RETRY_PERIOD"
 )
 
 var (
@@ -46,6 +53,7 @@ type Config struct {
 	CtxTimeOut           time.Duration
 	KanikoContainerImage string
 	Prometheus           PrometheusConfig
+	ManagerOptions       ManagerOptions
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -54,6 +62,14 @@ type PrometheusConfig struct {
 	BuildRunEstablishDurationBuckets  []float64
 	BuildRunRampUpDurationBuckets     []float64
 	HistogramEnabledLabels            []string
+}
+
+// ManagerOptions contains configurable options for the build operator manager
+type ManagerOptions struct {
+	LeaderElectionNamespace string
+	LeaseDuration           *time.Duration
+	RenewDeadline           *time.Duration
+	RetryPeriod             *time.Duration
 }
 
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
@@ -65,6 +81,9 @@ func NewDefaultConfig() *Config {
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
 			BuildRunRampUpDurationBuckets:     metricBuildRunRampUpDurationBuckets,
+		},
+		ManagerOptions: ManagerOptions{
+			LeaderElectionNamespace: leaderElectionNamespaceDefault,
 		},
 	}
 }
@@ -97,6 +116,22 @@ func (c *Config) SetConfigFromEnv() error {
 
 	c.Prometheus.HistogramEnabledLabels = strings.Split(os.Getenv(prometheusHistogramEnabledLabelsEnvVar), ",")
 
+	if leaderElectionNamespace := os.Getenv(leaderElectionNamespaceEnvVar); leaderElectionNamespace != "" {
+		c.ManagerOptions.LeaderElectionNamespace = leaderElectionNamespace
+	}
+
+	if err := updateBuildOperatorDurationOption(&c.ManagerOptions.LeaseDuration, leaseDurationEnvVar); err != nil {
+		return err
+	}
+
+	if err := updateBuildOperatorDurationOption(&c.ManagerOptions.RenewDeadline, renewDeadlineEnvVar); err != nil {
+		return err
+	}
+
+	if err := updateBuildOperatorDurationOption(&c.ManagerOptions.RetryPeriod, retryPeriodEnvVar); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -122,6 +157,19 @@ func updateBucketsConfig(buckets *[]float64, envVarName string) error {
 		}
 
 		*buckets = floats
+	}
+
+	return nil
+}
+
+func updateBuildOperatorDurationOption(d **time.Duration, envVarName string) error {
+	if value := os.Getenv(envVarName); value != "" {
+		valueDuration, err := time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+
+		*d = &valueDuration
 	}
 
 	return nil

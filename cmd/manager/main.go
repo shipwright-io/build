@@ -109,7 +109,10 @@ func main() {
 	mgr, err := controller.NewManager(ctx, c, cfg, manager.Options{
 		LeaderElection:          true,
 		LeaderElectionID:        "build-operator-lock",
-		LeaderElectionNamespace: "default",
+		LeaderElectionNamespace: c.ManagerOptions.LeaderElectionNamespace,
+		LeaseDuration:           c.ManagerOptions.LeaseDuration,
+		RenewDeadline:           c.ManagerOptions.RenewDeadline,
+		RetryPeriod:             c.ManagerOptions.RetryPeriod,
 		Namespace:               "",
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
