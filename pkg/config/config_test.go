@@ -55,6 +55,27 @@ var _ = Describe("Config", func() {
 				Expect(config.Prometheus.HistogramEnabledLabels).To(Equal([]string{"namespace", "strategy"}))
 			})
 		})
+
+		It("should allow for an override of the operator leader election namespace using an environment variable", func() {
+			var overrides = map[string]string{"BUILD_OPERATOR_LEADER_ELECTION_NAMESPACE": "build-operator"}
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.ManagerOptions.LeaderElectionNamespace).To(Equal("build-operator"))
+			})
+		})
+
+		It("should allow for an override of the operator leader election times using environment variables", func() {
+			var overrides = map[string]string{
+				"BUILD_OPERATOR_LEASE_DURATION": "42s",
+				"BUILD_OPERATOR_RENEW_DEADLINE": "32s",
+				"BUILD_OPERATOR_RETRY_PERIOD":   "10s",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(*config.ManagerOptions.LeaseDuration).To(Equal(time.Duration(42 * time.Second)))
+				Expect(*config.ManagerOptions.RenewDeadline).To(Equal(time.Duration(32 * time.Second)))
+				Expect(*config.ManagerOptions.RetryPeriod).To(Equal(time.Duration(10 * time.Second)))
+			})
+		})
 	})
 })
 
