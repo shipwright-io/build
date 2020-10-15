@@ -46,11 +46,11 @@ const (
 )
 
 // cleanupOptions return a CleanupOptions instance.
-func cleanupOptions(ctx *framework.Context) *framework.CleanupOptions {
+func cleanupOptions(ctx *framework.Context, timeout time.Duration, retry time.Duration) *framework.CleanupOptions {
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
-		Timeout:       cleanupTimeout,
-		RetryInterval: cleanupRetryInterval,
+		Timeout:       timeout,
+		RetryInterval: retry,
 	}
 }
 
@@ -91,7 +91,7 @@ func isRetryableError(err error) bool {
 
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
 // Otherwise it will create the service account. No error occurs if the service account already exists.
-func createPipelineServiceAccount(ctx *framework.Context, f *framework.Framework, namespace string) {
+func createPipelineServiceAccount(ctx *framework.Context, f *framework.Framework, namespace string, timeout time.Duration, retry time.Duration) {
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 
 	if serviceAccountName == "generated" {
@@ -104,7 +104,7 @@ func createPipelineServiceAccount(ctx *framework.Context, f *framework.Framework
 			},
 		}
 		Logf("Creating '%s' service-account", serviceAccountName)
-		err := f.Client.Create(goctx.TODO(), serviceAccount, cleanupOptions(ctx))
+		err := f.Client.Create(goctx.TODO(), serviceAccount, cleanupOptions(ctx, timeout, retry))
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			Expect(err).ToNot(HaveOccurred(), "Error creating service account")
 		}
@@ -113,7 +113,7 @@ func createPipelineServiceAccount(ctx *framework.Context, f *framework.Framework
 
 // createContainerRegistrySecret use environment variables to check for container registry
 // credentials secret, when not found a new secret is created.
-func createContainerRegistrySecret(ctx *framework.Context, f *framework.Framework, namespace string) {
+func createContainerRegistrySecret(ctx *framework.Context, f *framework.Framework, namespace string, timeout time.Duration, retry time.Duration) {
 	secretName := os.Getenv(EnvVarImageRepoSecret)
 	secretPayload := os.Getenv(EnvVarSourceRepoSecretJSON)
 	if secretName == "" || secretPayload == "" {
@@ -140,7 +140,7 @@ func createContainerRegistrySecret(ctx *framework.Context, f *framework.Framewor
 		},
 	}
 	Logf("Creating container-registry secret '%s/%s' (%d bytes)", namespace, secretName, len(payload))
-	err := f.Client.Create(goctx.TODO(), secret, cleanupOptions(ctx))
+	err := f.Client.Create(goctx.TODO(), secret, cleanupOptions(ctx, timeout, retry))
 	Expect(err).ToNot(HaveOccurred(), "on creating container registry secret")
 }
 
@@ -149,8 +149,10 @@ func createNamespacedBuildStrategy(
 	ctx *framework.Context,
 	f *framework.Framework,
 	testBuildStrategy *operator.BuildStrategy,
+	timeout time.Duration,
+	retry time.Duration,
 ) {
-	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx))
+	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx, timeout, retry))
 	if err != nil {
 		Expect(err).NotTo(HaveOccurred())
 	}
@@ -161,8 +163,10 @@ func createClusterBuildStrategy(
 	ctx *framework.Context,
 	f *framework.Framework,
 	testBuildStrategy *operator.ClusterBuildStrategy,
+	timeout time.Duration,
+	retry time.Duration,
 ) {
-	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx))
+	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx, timeout, retry))
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		Expect(err).NotTo(HaveOccurred())
 	}
@@ -170,15 +174,18 @@ func createClusterBuildStrategy(
 
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
 func validateBuildRunToSucceed(
+	ctx *framework.Context,
 	namespace string,
 	testBuildRun *operator.BuildRun,
+	timeout time.Duration,
+	retry time.Duration,
 ) {
 	f := framework.Global
 
 	trueCondition := corev1.ConditionTrue
 
 	// Ensure the BuildRun has been created
-	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
+	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx, timeout, retry))
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
 
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
@@ -200,15 +207,18 @@ func validateBuildRunToSucceed(
 // validateBuildRunToFail creates the build run and watches its flow until it fails
 // and verifies the reason using a regular expression.
 func validateBuildRunToFail(
+	ctx *framework.Context,
 	namespace string,
 	testBuildRun *operator.BuildRun,
 	expectedReasonRegexp string,
+	timeout time.Duration,
+	retry time.Duration,
 ) {
 	f := framework.Global
 	falseCondition := corev1.ConditionFalse
 
 	// Create the BuildRun
-	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx))
+	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx, timeout, retry))
 	Expect(err).ToNot(HaveOccurred(), "Failed to create build run.")
 
 	// Ensure that eventually the BuildRun moves to Failed.
