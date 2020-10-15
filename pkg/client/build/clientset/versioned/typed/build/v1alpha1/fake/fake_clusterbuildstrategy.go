@@ -7,6 +7,8 @@
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -26,7 +28,7 @@ var clusterbuildstrategiesResource = schema.GroupVersionResource{Group: "build.d
 var clusterbuildstrategiesKind = schema.GroupVersionKind{Group: "build.dev", Version: "v1alpha1", Kind: "ClusterBuildStrategy"}
 
 // Get takes name of the clusterBuildStrategy, and returns the corresponding clusterBuildStrategy object, and an error if there is any.
-func (c *FakeClusterBuildStrategies) Get(name string, options v1.GetOptions) (result *v1alpha1.ClusterBuildStrategy, err error) {
+func (c *FakeClusterBuildStrategies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ClusterBuildStrategy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(clusterbuildstrategiesResource, name), &v1alpha1.ClusterBuildStrategy{})
 	if obj == nil {
@@ -36,7 +38,7 @@ func (c *FakeClusterBuildStrategies) Get(name string, options v1.GetOptions) (re
 }
 
 // List takes label and field selectors, and returns the list of ClusterBuildStrategies that match those selectors.
-func (c *FakeClusterBuildStrategies) List(opts v1.ListOptions) (result *v1alpha1.ClusterBuildStrategyList, err error) {
+func (c *FakeClusterBuildStrategies) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ClusterBuildStrategyList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(clusterbuildstrategiesResource, clusterbuildstrategiesKind, opts), &v1alpha1.ClusterBuildStrategyList{})
 	if obj == nil {
@@ -57,13 +59,13 @@ func (c *FakeClusterBuildStrategies) List(opts v1.ListOptions) (result *v1alpha1
 }
 
 // Watch returns a watch.Interface that watches the requested clusterBuildStrategies.
-func (c *FakeClusterBuildStrategies) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeClusterBuildStrategies) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(clusterbuildstrategiesResource, opts))
 }
 
 // Create takes the representation of a clusterBuildStrategy and creates it.  Returns the server's representation of the clusterBuildStrategy, and an error, if there is any.
-func (c *FakeClusterBuildStrategies) Create(clusterBuildStrategy *v1alpha1.ClusterBuildStrategy) (result *v1alpha1.ClusterBuildStrategy, err error) {
+func (c *FakeClusterBuildStrategies) Create(ctx context.Context, clusterBuildStrategy *v1alpha1.ClusterBuildStrategy, opts v1.CreateOptions) (result *v1alpha1.ClusterBuildStrategy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(clusterbuildstrategiesResource, clusterBuildStrategy), &v1alpha1.ClusterBuildStrategy{})
 	if obj == nil {
@@ -73,7 +75,7 @@ func (c *FakeClusterBuildStrategies) Create(clusterBuildStrategy *v1alpha1.Clust
 }
 
 // Update takes the representation of a clusterBuildStrategy and updates it. Returns the server's representation of the clusterBuildStrategy, and an error, if there is any.
-func (c *FakeClusterBuildStrategies) Update(clusterBuildStrategy *v1alpha1.ClusterBuildStrategy) (result *v1alpha1.ClusterBuildStrategy, err error) {
+func (c *FakeClusterBuildStrategies) Update(ctx context.Context, clusterBuildStrategy *v1alpha1.ClusterBuildStrategy, opts v1.UpdateOptions) (result *v1alpha1.ClusterBuildStrategy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(clusterbuildstrategiesResource, clusterBuildStrategy), &v1alpha1.ClusterBuildStrategy{})
 	if obj == nil {
@@ -84,7 +86,7 @@ func (c *FakeClusterBuildStrategies) Update(clusterBuildStrategy *v1alpha1.Clust
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeClusterBuildStrategies) UpdateStatus(clusterBuildStrategy *v1alpha1.ClusterBuildStrategy) (*v1alpha1.ClusterBuildStrategy, error) {
+func (c *FakeClusterBuildStrategies) UpdateStatus(ctx context.Context, clusterBuildStrategy *v1alpha1.ClusterBuildStrategy, opts v1.UpdateOptions) (*v1alpha1.ClusterBuildStrategy, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateSubresourceAction(clusterbuildstrategiesResource, "status", clusterBuildStrategy), &v1alpha1.ClusterBuildStrategy{})
 	if obj == nil {
@@ -94,22 +96,22 @@ func (c *FakeClusterBuildStrategies) UpdateStatus(clusterBuildStrategy *v1alpha1
 }
 
 // Delete takes name of the clusterBuildStrategy and deletes it. Returns an error if one occurs.
-func (c *FakeClusterBuildStrategies) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeClusterBuildStrategies) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(clusterbuildstrategiesResource, name), &v1alpha1.ClusterBuildStrategy{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeClusterBuildStrategies) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(clusterbuildstrategiesResource, listOptions)
+func (c *FakeClusterBuildStrategies) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(clusterbuildstrategiesResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.ClusterBuildStrategyList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched clusterBuildStrategy.
-func (c *FakeClusterBuildStrategies) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.ClusterBuildStrategy, err error) {
+func (c *FakeClusterBuildStrategies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ClusterBuildStrategy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(clusterbuildstrategiesResource, name, pt, data, subresources...), &v1alpha1.ClusterBuildStrategy{})
 	if obj == nil {
