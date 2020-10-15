@@ -5,15 +5,18 @@
 package utils
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // This class is intended to host all CRUD calls for testing secrets primitive resources
 
 // CreateSecret generates a Secret on the current test namespace
-func (t *TestBuild) CreateSecret(ns string, secret *corev1.Secret) error {
+func (t *TestBuild) CreateSecret(ctx context.Context, ns string, secret *corev1.Secret) error {
 	client := t.Clientset.CoreV1().Secrets(ns)
-	_, err := client.Create(secret)
+	_, err := client.Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

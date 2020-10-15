@@ -5,6 +5,7 @@
 package integration_test
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -21,26 +22,28 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 		buildRunObject *v1alpha1.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
+		ctx            context.Context
 	)
 
 	// Load the ClusterBuildStrategies before each test case
 	BeforeEach(func() {
+		ctx = context.Background()
 		cbsObject, err = tb.Catalog.LoadCBSWithName(STRATEGY+tb.Namespace, []byte(test.ClusterBuildStrategySingleStep))
 		Expect(err).To(BeNil())
 
-		err = tb.CreateClusterBuildStrategy(cbsObject)
+		err = tb.CreateClusterBuildStrategy(ctx, cbsObject)
 		Expect(err).To(BeNil())
 	})
 
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
 
-		_, err = tb.GetBuild(buildObject.Name)
+		_, err = tb.GetBuild(ctx, buildObject.Name)
 		if err == nil {
-			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+			Expect(tb.DeleteBuild(ctx, buildObject.Name)).To(BeNil())
 		}
 
-		err := tb.DeleteClusterBuildStrategy(cbsObject.Name)
+		err := tb.DeleteClusterBuildStrategy(ctx, cbsObject.Name)
 		Expect(err).To(BeNil())
 	})
 
@@ -67,20 +70,20 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 		It("creates a new service-account and deletes it after the build is terminated", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			_, err = tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			_, err = tb.GetSA(ctx, fmt.Sprintf("%s-sa", buildRunObject.Name))
 			Expect(err).To(BeNil())
 
-			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
+			_, err = tb.GetBRTillCompletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			_, err = tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			_, err = tb.GetSA(ctx, fmt.Sprintf("%s-sa", buildRunObject.Name))
 			Expect(err).ToNot(BeNil())
 
 		})
@@ -93,13 +96,13 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 		})
 
 		It("uses the pipeline serviceaccount if exists", func() {
-			Expect(tb.CreateSAFromName("pipeline")).To(BeNil())
+			Expect(tb.CreateSAFromName(ctx, "pipeline")).To(BeNil())
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
@@ -109,11 +112,11 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 		It("defaults to default serviceaccount if pipeline serviceaccount is not specified", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)

@@ -5,6 +5,7 @@
 package integration_test
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -27,26 +28,28 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		buildRunObject *v1alpha1.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
+		ctx            context.Context
 	)
 
 	// Load the ClusterBuildStrategies before each test case
 	BeforeEach(func() {
+		ctx = context.Background()
 		cbsObject, err = tb.Catalog.LoadCBSWithName(STRATEGY+tb.Namespace, []byte(test.ClusterBuildStrategySingleStep))
 		Expect(err).To(BeNil())
 
-		err = tb.CreateClusterBuildStrategy(cbsObject)
+		err = tb.CreateClusterBuildStrategy(ctx, cbsObject)
 		Expect(err).To(BeNil())
 
 	})
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
 
-		_, err = tb.GetBuild(buildObject.Name)
+		_, err = tb.GetBuild(ctx, buildObject.Name)
 		if err == nil {
-			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+			Expect(tb.DeleteBuild(ctx, buildObject.Name)).To(BeNil())
 		}
 
-		err := tb.DeleteClusterBuildStrategy(cbsObject.Name)
+		err := tb.DeleteClusterBuildStrategy(ctx, cbsObject.Name)
 		Expect(err).To(BeNil())
 	})
 
@@ -73,11 +76,11 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		It("should fail the builRun with a Reason", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+			br, err := tb.GetBRTillCompletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.Reason).To(ContainSubstring("failed to finish within"))
 
@@ -93,18 +96,18 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		It("should be able to override the build timeout", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+			br, err := tb.GetBRTillCompletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.Reason).To(ContainSubstring("failed to finish within \"1s\""))
 		})
 
 		It("should be able to override the build output", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
 			buildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
@@ -113,9 +116,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			)
 			Expect(err).To(BeNil())
 
-			Expect(tb.CreateBR(buildRun)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRun)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRun.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRun.Name)
 			Expect(err).To(BeNil())
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRun.Name)
@@ -135,19 +138,19 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		It("should delete the builRun automatically if builds uses the deletion annotation", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
 			// Wait for BR to get an Starttime
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			//Delete Build
-			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+			Expect(tb.DeleteBuild(ctx, buildObject.Name)).To(BeNil())
 
 			// Wait for deletion of BuildRun
-			brDel, err := tb.GetBRTillDeletion(buildRunObject.Name)
+			brDel, err := tb.GetBRTillDeletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(brDel).To(Equal(true))
 
@@ -162,16 +165,16 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			)
 			Expect(err).To(BeNil())
 
-			Expect(tb.CreateBuild(build)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, build)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			br, err := tb.GetBRTillStartTime(buildRunObject.Name)
+			br, err := tb.GetBRTillStartTime(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(tb.DeleteBuild(BUILD + tb.Namespace)).To(BeNil())
+			Expect(tb.DeleteBuild(ctx, BUILD+tb.Namespace)).To(BeNil())
 
-			br, err = tb.GetBR(buildRunObject.Name)
+			br, err = tb.GetBR(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).To(BeNil())
 
@@ -187,17 +190,17 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		It("fails the buildrun with a reason and no startime", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			err = tb.DeleteBuild(BUILD + tb.Namespace)
+			err = tb.DeleteBuild(ctx, BUILD+tb.Namespace)
 			Expect(err).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+			br, err := tb.GetBRTillCompletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			br, err = tb.GetBR(buildRunObject.Name)
+			br, err = tb.GetBR(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.build.dev \"%s\" not found", BUILD+tb.Namespace)))
 			Expect(br.Status.StartTime).To(BeNil())
@@ -214,11 +217,11 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		It("fails the buildrun with a proper error in Reason", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+			br, err := tb.GetBRTillCompletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("The Build is not registered correctly, build: %s, registered status: False, reason: secret fake-secret does not exist", BUILD+tb.Namespace)))
@@ -233,7 +236,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		It("fails the buildrun with a not found Reason", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
 			buildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
@@ -242,9 +245,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			)
 			Expect(err).To(BeNil())
 
-			Expect(tb.CreateBR(buildRun)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRun)).To(BeNil())
 
-			br, err := tb.GetBRTillCompletion(buildRun.Name)
+			br, err := tb.GetBRTillCompletion(ctx, buildRun.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).ToNot(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
@@ -259,7 +262,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		It("creates one tr per buildrun with the original build data", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
 			buildRun01, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace+"01",
@@ -268,7 +271,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			)
 			Expect(err).To(BeNil())
 
-			Expect(tb.CreateBR(buildRun01)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRun01)).To(BeNil())
 
 			buildRun02, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace+"02",
@@ -277,12 +280,12 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			)
 			Expect(err).To(BeNil())
 
-			Expect(tb.CreateBR(buildRun02)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRun02)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRun01.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRun01.Name)
 			Expect(err).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRun02.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRun02.Name)
 			Expect(err).To(BeNil())
 
 			tr01, err := tb.GetTaskRunFromBuildRun(buildRun01.Name)

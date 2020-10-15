@@ -5,6 +5,7 @@
 package integration_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -24,7 +25,12 @@ var (
 	deleteNSList []string
 	tb           *utils.TestBuild
 	err          error
+	ctx          context.Context
 )
+
+var _ = BeforeSuite(func() {
+	ctx = context.Background()
+})
 
 var _ = BeforeEach(func() {
 	tb, err = utils.NewTestBuild()
@@ -32,7 +38,7 @@ var _ = BeforeEach(func() {
 		fmt.Printf("fail to get an instance of TestBuild, error is: %v", err)
 	}
 
-	err := tb.CreateNamespace()
+	err := tb.CreateNamespace(ctx)
 	if err != nil {
 		fmt.Printf("fail to create namespace: %v, with error: %v", tb.Namespace, err)
 	}
@@ -58,5 +64,5 @@ var _ = AfterEach(func() {
 
 var _ = AfterSuite(func() {
 	// Ensure a proper cleanup of test environments
-	Expect(tb.DeleteNamespaces(deleteNSList)).To(BeNil())
+	Expect(tb.DeleteNamespaces(ctx, deleteNSList)).To(BeNil())
 })

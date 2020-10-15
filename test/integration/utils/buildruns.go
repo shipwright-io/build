@@ -5,6 +5,8 @@
 package utils
 
 import (
+	"context"
+
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,10 +16,10 @@ import (
 // This class is intended to host all CRUD calls for testing BuildRun CRDs resources
 
 // CreateBR generates a BuildRun on the current test namespace
-func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
+func (t *TestBuild) CreateBR(ctx context.Context, buildRun *v1alpha1.BuildRun) error {
 	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-	_, err := brInterface.Create(buildRun)
+	_, err := brInterface.Create(ctx, buildRun, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -25,10 +27,10 @@ func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 }
 
 // GetBR retrieves a BuildRun from a desired namespace
-func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBR(ctx context.Context, name string) (*v1alpha1.BuildRun, error) {
 	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-	br, err := brInterface.Get(name, metav1.GetOptions{})
+	br, err := brInterface.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -36,10 +38,10 @@ func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
 }
 
 // DeleteBR deletes a BuildRun from a desired namespace
-func (t *TestBuild) DeleteBR(name string) error {
+func (t *TestBuild) DeleteBR(ctx context.Context, name string) error {
 	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-	if err := brInterface.Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := brInterface.Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
 		return err
 	}
 
@@ -47,8 +49,8 @@ func (t *TestBuild) DeleteBR(name string) error {
 }
 
 // GetBRReason ...
-func (t *TestBuild) GetBRReason(name string) (string, error) {
-	br, err := t.GetBR(name)
+func (t *TestBuild) GetBRReason(ctx context.Context, name string) (string, error) {
+	br, err := t.GetBR(ctx, name)
 	if err != nil {
 		return "", err
 	}
@@ -58,14 +60,14 @@ func (t *TestBuild) GetBRReason(name string) (string, error) {
 // GetBRTillCompletion returns a BuildRun that have a CompletionTime set.
 // If the timeout is reached or it fails when retrieving the BuildRun it will
 // stop polling and return
-func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBRTillCompletion(ctx context.Context, name string) (*v1alpha1.BuildRun, error) {
 
 	var (
 		pollBRTillCompletion = func() (bool, error) {
 
 			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-			buildRun, err := bInterface.Get(name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -84,20 +86,20 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 		return nil, err
 	}
 
-	return brInterface.Get(name, metav1.GetOptions{})
+	return brInterface.Get(ctx, name, metav1.GetOptions{})
 }
 
 // GetBRTillStartTime returns a BuildRun that have a StartTime set.
 // If the timeout is reached or it fails when retrieving the BuildRun it will
 // stop polling and return
-func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBRTillStartTime(ctx context.Context, name string) (*v1alpha1.BuildRun, error) {
 
 	var (
 		pollBRTillCompletion = func() (bool, error) {
 
 			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-			buildRun, err := bInterface.Get(name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -116,17 +118,17 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) 
 		return nil, err
 	}
 
-	return brInterface.Get(name, metav1.GetOptions{})
+	return brInterface.Get(ctx, name, metav1.GetOptions{})
 }
 
 // GetBRTillDesiredReason polls until a BuildRun gets a particular Reason
 // it exit if an error happens or the timeout is reach
-func (t *TestBuild) GetBRTillDesiredReason(buildRunname string, reason string) error {
+func (t *TestBuild) GetBRTillDesiredReason(ctx context.Context, buildRunname string, reason string) error {
 
 	var (
 		pollBRTillCompletion = func() (bool, error) {
 
-			currentReason, err := t.GetBRReason(buildRunname)
+			currentReason, err := t.GetBRReason(ctx, buildRunname)
 			if err != nil {
 				return false, err
 			}
@@ -148,14 +150,14 @@ func (t *TestBuild) GetBRTillDesiredReason(buildRunname string, reason string) e
 
 // GetBRTillDeletion polls until a BuildRun is not found, it returns
 // if a timeout is reached
-func (t *TestBuild) GetBRTillDeletion(name string) (bool, error) {
+func (t *TestBuild) GetBRTillDeletion(ctx context.Context, name string) (bool, error) {
 
 	var (
 		pollBRTillCompletion = func() (bool, error) {
 
 			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-			_, err := bInterface.Get(name, metav1.GetOptions{})
+			_, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}

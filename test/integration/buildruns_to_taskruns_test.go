@@ -5,6 +5,7 @@
 package integration_test
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -21,26 +22,28 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		buildRunObject *v1alpha1.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
+		ctx            context.Context
 	)
 
 	// Load the ClusterBuildStrategies before each test case
 	BeforeEach(func() {
+		ctx = context.Background()
 		cbsObject, err = tb.Catalog.LoadCBSWithName(STRATEGY+tb.Namespace, []byte(test.ClusterBuildStrategySingleStep))
 		Expect(err).To(BeNil())
 
-		err = tb.CreateClusterBuildStrategy(cbsObject)
+		err = tb.CreateClusterBuildStrategy(ctx, cbsObject)
 		Expect(err).To(BeNil())
 	})
 
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
 
-		_, err = tb.GetBuild(buildObject.Name)
+		_, err = tb.GetBuild(ctx, buildObject.Name)
 		if err == nil {
-			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+			Expect(tb.DeleteBuild(ctx, buildObject.Name)).To(BeNil())
 		}
 
-		err := tb.DeleteClusterBuildStrategy(cbsObject.Name)
+		err := tb.DeleteClusterBuildStrategy(ctx, cbsObject.Name)
 		Expect(err).To(BeNil())
 	})
 
@@ -67,23 +70,23 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 		It("should reflect a Pending and Running reason", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			err = tb.GetTRTillDesiredReason(buildRunObject.Name, "Pending")
 			Expect(err).To(BeNil())
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, "Pending")
+			err = tb.GetBRTillDesiredReason(ctx, buildRunObject.Name, "Pending")
 			Expect(err).To(BeNil())
 
 			err = tb.GetTRTillDesiredReason(buildRunObject.Name, "Running")
 			Expect(err).To(BeNil())
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, "Running")
+			err = tb.GetBRTillDesiredReason(ctx, buildRunObject.Name, "Running")
 			Expect(err).To(BeNil())
 
 		})
@@ -98,11 +101,11 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 		It("should reflect a TaskRunTimeout reason and Completion time on timeout", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
+			_, err = tb.GetBRTillCompletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			err = tb.GetTRTillDesiredReason(buildRunObject.Name, "TaskRunTimeout")
@@ -111,7 +114,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, fmt.Sprintf("TaskRun \"%s\" failed to finish within \"5s\"", tr.Name))
+			err = tb.GetBRTillDesiredReason(ctx, buildRunObject.Name, fmt.Sprintf("TaskRun \"%s\" failed to finish within \"5s\"", tr.Name))
 			Expect(err).To(BeNil())
 
 			tr, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
@@ -130,11 +133,11 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 		It("should reflect a Failed reason and Completion on failure", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
+			_, err = tb.GetBRTillCompletion(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			err = tb.GetTRTillDesiredReason(buildRunObject.Name, "Failed")
@@ -143,7 +146,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, tr.Status.GetCondition(apis.ConditionSucceeded).Message)
+			err = tb.GetBRTillDesiredReason(ctx, buildRunObject.Name, tr.Status.GetCondition(apis.ConditionSucceeded).Message)
 			Expect(err).To(BeNil())
 
 			tr, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
@@ -162,11 +165,11 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 		It("should reflect a TaskRunCancelled reason and no completionTime", func() {
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			Expect(tb.CreateBuild(ctx, buildObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(ctx, buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			_, err = tb.GetBRTillStartTime(ctx, buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
@@ -177,7 +180,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			tr, err = tb.UpdateTaskRun(tr)
 			Expect(err).To(BeNil())
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, fmt.Sprintf("TaskRun \"%s\" was cancelled", tr.Name))
+			err = tb.GetBRTillDesiredReason(ctx, buildRunObject.Name, fmt.Sprintf("TaskRun \"%s\" was cancelled", tr.Name))
 
 			err = tb.GetTRTillDesiredReason(buildRunObject.Name, "TaskRunCancelled")
 			Expect(err).To(BeNil())

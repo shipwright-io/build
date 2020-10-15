@@ -5,6 +5,8 @@
 package utils
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -12,14 +14,14 @@ import (
 // This class is intended to host all CRUD calls for Namespace primitive resources
 
 // CreateNamespace generates a Namespace with the current test name
-func (t *TestBuild) CreateNamespace() error {
+func (t *TestBuild) CreateNamespace(ctx context.Context) error {
 	client := t.Clientset.CoreV1().Namespaces()
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: t.Namespace,
 		},
 	}
-	_, err := client.Create(ns)
+	_, err := client.Create(ctx, ns, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -27,11 +29,11 @@ func (t *TestBuild) CreateNamespace() error {
 }
 
 // DeleteNamespaces remove existing namespaces that match the provided list name items
-func (t *TestBuild) DeleteNamespaces(nsList []string) error {
+func (t *TestBuild) DeleteNamespaces(ctx context.Context, nsList []string) error {
 	client := t.Clientset.CoreV1().Namespaces()
 
 	for _, ns := range nsList {
-		err := client.Delete(ns, &metav1.DeleteOptions{})
+		err := client.Delete(ctx, ns, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
