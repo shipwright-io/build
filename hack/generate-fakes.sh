@@ -9,6 +9,9 @@ set -euo pipefail
 
 [ ! -d "vendor" ] && echo "$0 requires vendor/ folder, run 'go mod vendor'"
 
-counterfeiter -o pkg/controller/fakes/manager.go vendor/sigs.k8s.io/controller-runtime/pkg/manager Manager
-counterfeiter -o pkg/controller/fakes/client.go vendor/sigs.k8s.io/controller-runtime/pkg/client Client
-counterfeiter -o pkg/controller/fakes/status_writer.go vendor/sigs.k8s.io/controller-runtime/pkg/client StatusWriter
+SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
+BIN=$(go env GOPATH)/bin
+
+"${BIN}/counterfeiter" -header "${SCRIPT_ROOT}/hack/boilerplate.go.txt" -o pkg/controller/fakes/manager.go vendor/sigs.k8s.io/controller-runtime/pkg/manager Manager
+"${BIN}/counterfeiter" -header "${SCRIPT_ROOT}/hack/boilerplate.go.txt" -o pkg/controller/fakes/client.go vendor/sigs.k8s.io/controller-runtime/pkg/client Client
+"${BIN}/counterfeiter" -header "${SCRIPT_ROOT}/hack/boilerplate.go.txt" -o pkg/controller/fakes/status_writer.go vendor/sigs.k8s.io/controller-runtime/pkg/client StatusWriter

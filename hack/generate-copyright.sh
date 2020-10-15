@@ -6,8 +6,7 @@
 
 set -e
 
-copyrightTxt="Copyright The Shipwright Contributors"
-spdxTxt="SPDX-License-Identifier: Apache-2.0"
+SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
 
 function listPkgDirs() {
 	go list -f '{{.Dir}}' ./cmd/... ./pkg/... ./test/... ./version/...
@@ -18,7 +17,7 @@ function listGoFiles() {
 	# pipeline is much faster than for loop
 	listPkgDirs | xargs -I {} find {} \( -name '*.go' -a ! -name "zz_generated*.go" \)
   local goFiles=$?
-  echo $PWD/tools.go
+  echo "${SCRIPT_ROOT}/tools.go"
   goFiles="$goFiles $?"
 }
 
@@ -43,10 +42,7 @@ function generateGoCopyright() {
   for file in $allFiles ; do
     if ! head -n3 "${file}" | grep -Eq "(Copyright|SPDX-License-Identifier)" ; then
       cp "${file}" "${file}.bak"
-      echo "// ${copyrightTxt}" > "${file}"
-      echo "//" >> "${file}"
-      echo "// ${spdxTxt}" >> "${file}"
-      echo "" >> "${file}"
+      cat "${SCRIPT_ROOT}/hack/boilerplate.go.txt" > "${file}"
       cat "${file}.bak" >> "${file}"
       rm "${file}.bak"
     fi
@@ -58,10 +54,7 @@ function generateDockerfileCopyright() {
   for file in $dockerfiles ; do
     if ! head -n3 "${file}" | grep -Eq "(Copyright|SPDX-License-Identifier)" ; then
       cp "${file}" "${file}.bak"
-      echo "# ${copyrightTxt}" > "${file}"
-      echo "# " >> "${file}"
-      echo "# ${spdxTxt}" >> "${file}"
-      echo "" >> "${file}"
+      cat "${SCRIPT_ROOT}/hack/boilerplate.sh.txt" > "${file}"
       cat "${file}.bak" >> "${file}"
       rm "${file}.bak"
     fi
@@ -75,12 +68,10 @@ function generateBashCopyright() {
       cp "${file}" "${file}.bak"
       # Copy the shebang first - this is assumed to be the first line
       head -n1 "${file}.bak" > "${file}"
-      echo "" >> "${file}"
-      echo "# ${copyrightTxt}" >> "${file}"
-      echo "#" >> "${file}"
-      echo "# ${spdxTxt}" >> "${file}"
-      echo "" >> "${file}"
-      tail -n +2 "${file}.bak" >> "${file}"
+      {
+        cat "${SCRIPT_ROOT}/hack/boilerplate.sh.txt"
+        tail -n +2 "${file}.bak"
+      } >> "${file}"
       rm "${file}.bak"
     fi
   done
@@ -91,12 +82,7 @@ function generateMarkdownCopyright() {
   for file in $mdFiles ; do
     if ! head -n4 "${file}" | grep -Eq "(Copyright|SPDX-License-Identifier)" ; then
       cp "${file}" "${file}.bak"
-      echo "<!--" > "${file}"
-      echo "${copyrightTxt}" >> "${file}"
-      echo "" >> "${file}"
-      echo "${spdxTxt}" >> "${file}"
-      echo "-->" >> "${file}"
-      echo "" >> "${file}"
+      cat "${SCRIPT_ROOT}/hack/boilerplate.html.txt" > "${file}"
       cat "${file}.bak" >> "${file}"
       rm "${file}.bak"
     fi

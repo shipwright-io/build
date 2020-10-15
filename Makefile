@@ -96,12 +96,14 @@ push-image:
 release:
 	hack/release.sh
 
-.PHONY: gen-copyright
-gen-copyright:
+.PHONY: generate
+generate:
+	hack/generate-client.sh
+	hack/generate-fakes.sh
 	hack/generate-copyright.sh
 
-.PHONY: verify-copyright
-verify-copyright: gen-copyright
+.PHONY: verify-codegen
+verify-codegen: generate
 	# TODO: Fix travis issue with ginkgo install updating go.mod and go.sum
 	# TODO: Verify vendor tree is accurate
 	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
@@ -113,6 +115,9 @@ install-ginkgo:
 
 install-gocov:
 	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
+
+install-counterfeiter:
+	hack/install-counterfeiter.sh
 
 # https://github.com/shipwright-io/build/issues/123
 test: test-unit
@@ -207,6 +212,6 @@ kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
 
-travis: install-ginkgo install-gocov kubectl kind
+travis: install-counterfeiter install-ginkgo install-gocov kubectl kind
 	./hack/install-tekton.sh
 	./hack/install-operator-sdk.sh
