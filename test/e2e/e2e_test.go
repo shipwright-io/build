@@ -5,6 +5,7 @@
 package e2e
 
 import (
+	"context"
 	"os"
 
 	operator "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -20,9 +21,11 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		err       error
 		namespace string
 		testID    string
+		goctx     context.Context
 	)
 
 	BeforeEach(func() {
+		goctx = context.Background()
 		br = nil
 
 		namespace, err = ctx.GetWatchNamespace()
@@ -31,7 +34,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 	AfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {
-			printTestFailureDebugInfo(namespace, testID)
+			printTestFailureDebugInfo(goctx, namespace, testID)
 		} else if br != nil {
 			validateServiceAccountDeletion(br, namespace)
 		}

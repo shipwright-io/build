@@ -120,7 +120,7 @@ func retrieveBuildAndBuildRun(namespace string, buildRunName string) (*operator.
 }
 
 // printTestFailureDebugInfo will output the status of Build, BuildRun, TaskRun and Pod, also print logs of Pod
-func printTestFailureDebugInfo(namespace string, buildRunName string) {
+func printTestFailureDebugInfo(ctx context.Context, namespace string, buildRunName string) {
 	Logf("Print failed BuildRun's log")
 
 	f := framework.Global
@@ -193,7 +193,7 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 					Follow:    false,
 				})
 
-				podLogs, err := req.Stream()
+				podLogs, err := req.Stream(ctx)
 				if err != nil {
 					Logf("Failed to retrieve the logs of container %s: %v", container.Name, err)
 					continue
