@@ -86,7 +86,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// initialize cluster resources
 	Logf("Initializing cluster resources")
-	err = globalCtx.InitializeClusterResources(cleanupOptions(globalCtx))
+	err = globalCtx.InitializeClusterResources(cleanupOptions(globalCtx, cleanupTimeout, cleanupRetryInterval))
 	Expect(err).ToNot(HaveOccurred(), "unable to initialize cluster resources")
 
 	// get the namespace
@@ -116,11 +116,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	// create the pipeline service account
 	Logf("Creating the pipeline service account")
-	createPipelineServiceAccount(globalCtx, f, namespace)
+	createPipelineServiceAccount(globalCtx, f, namespace, cleanupTimeout, cleanupRetryInterval)
 
 	// create the container registry secret
 	Logf("Creating the container registry secret")
-	createContainerRegistrySecret(globalCtx, f, namespace)
+	createContainerRegistrySecret(globalCtx, f, namespace, cleanupTimeout, cleanupRetryInterval)
 
 	if os.Getenv(EnvVarCreateGlobalObjects) == "true" {
 		// create cluster build strategies
@@ -131,7 +131,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			Expect(err).ToNot(HaveOccurred())
 			cbs.SetNamespace(namespace)
 
-			createClusterBuildStrategy(globalCtx, f, cbs)
+			createClusterBuildStrategy(globalCtx, f, cbs, cleanupTimeout, cleanupRetryInterval)
 		}
 
 		// create namespace build strategies
@@ -141,7 +141,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			nbs, err := buildStrategyTestData(namespace, namespaceBuildStrategy)
 			Expect(err).ToNot(HaveOccurred())
 
-			createNamespacedBuildStrategy(globalCtx, f, nbs)
+			createNamespacedBuildStrategy(globalCtx, f, nbs, cleanupTimeout, cleanupRetryInterval)
 		}
 	} else {
 		Logf("Build strategy creation skipped.")
