@@ -193,7 +193,7 @@ type PrometheusSpec struct {
 	// VolumeMounts specified will be appended to other VolumeMounts in the prometheus container,
 	// that are generated as a result of StorageSpec objects.
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
-	// A selector to select which PrometheusRules to mount for loading alerting
+	// A selector to select which PrometheusRules to mount for loading alerting/recording
 	// rules from. Until (excluding) Prometheus Operator v0.24.0 Prometheus
 	// Operator will migrate any legacy rule ConfigMaps to PrometheusRule custom
 	// resources selected by RuleSelector. Make sure it does not match any config
@@ -321,6 +321,13 @@ type PrometheusSpec struct {
 	// and metric that is user created. The label value will always be the namespace of the object that is
 	// being created.
 	EnforcedNamespaceLabel string `json:"enforcedNamespaceLabel,omitempty"`
+	// QueryLogFile specifies the file to which PromQL queries are logged.
+	// Note that this location must be writable, and can be persisted using an attached volume.
+	// Alternatively, the location can be set to a stdout location such as `/dev/stdout` to log
+	// querie information to the default Prometheus log stream.
+	// This is only available in versions of Prometheus >= 2.16.0.
+	// For more details, see the Prometheus docs (https://prometheus.io/docs/guides/query-log/)
+	QueryLogFile string `json:"queryLogFile,omitempty"`
 }
 
 // ArbitraryFSAccessThroughSMsConfig enables users to configure, whether
@@ -368,6 +375,9 @@ type AlertingSpec struct {
 // If neither `emptyDir` nor `volumeClaimTemplate` is specified, then by default an [EmptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) will be used.
 // +k8s:openapi-gen=true
 type StorageSpec struct {
+	// Deprecated: subPath usage will be disabled by default in a future release, this option will become unnecessary.
+	// DisableMountSubPath allows to remove any subPath usage in volume mounts.
+	DisableMountSubPath bool `json:"disableMountSubPath,omitempty"`
 	// EmptyDirVolumeSource to be used by the Prometheus StatefulSets. If specified, used in place of any volumeClaimTemplate. More
 	// info: https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
 	EmptyDir *v1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
@@ -422,16 +432,24 @@ type ThanosSpec struct {
 	// Note: Currently only the CAFile, CertFile, and KeyFile fields are supported.
 	// Maps to the '--grpc-server-tls-*' CLI args.
 	GRPCServerTLSConfig *TLSConfig `json:"grpcServerTlsConfig,omitempty"`
+	// LogLevel for Thanos sidecar to be configured with.
+	LogLevel string `json:"logLevel,omitempty"`
+	// LogFormat for Thanos sidecar to be configured with.
+	LogFormat string `json:"logFormat,omitempty"`
 }
 
 // RemoteWriteSpec defines the remote_write configuration for prometheus.
 // +k8s:openapi-gen=true
 type RemoteWriteSpec struct {
-	//The URL of the endpoint to send samples to.
+	// The URL of the endpoint to send samples to.
 	URL string `json:"url"`
-	//Timeout for requests to the remote write endpoint.
+	// The name of the remote write queue, must be unique if specified. The
+	// name is used in metrics and logging in order to differentiate queues.
+	// Only valid in Prometheus versions 2.15.0 and newer.
+	Name string `json:"name,omitempty"`
+	// Timeout for requests to the remote write endpoint.
 	RemoteTimeout string `json:"remoteTimeout,omitempty"`
-	//The list of remote write relabel configurations.
+	// The list of remote write relabel configurations.
 	WriteRelabelConfigs []RelabelConfig `json:"writeRelabelConfigs,omitempty"`
 	//BasicAuth for the URL.
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
@@ -441,7 +459,7 @@ type RemoteWriteSpec struct {
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
 	// TLS Config to use for remote write.
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
-	//Optional ProxyURL
+	// Optional ProxyURL
 	ProxyURL string `json:"proxyUrl,omitempty"`
 	// QueueConfig allows tuning of the remote write queue parameters.
 	QueueConfig *QueueConfig `json:"queueConfig,omitempty"`
@@ -472,17 +490,21 @@ type QueueConfig struct {
 // RemoteReadSpec defines the remote_read configuration for prometheus.
 // +k8s:openapi-gen=true
 type RemoteReadSpec struct {
-	//The URL of the endpoint to send samples to.
+	// The URL of the endpoint to send samples to.
 	URL string `json:"url"`
-	//An optional list of equality matchers which have to be present
+	// The name of the remote read queue, must be unique if specified. The name
+	// is used in metrics and logging in order to differentiate read
+	// configurations.  Only valid in Prometheus versions 2.15.0 and newer.
+	Name string `json:"name,omitempty"`
+	// An optional list of equality matchers which have to be present
 	// in a selector to query the remote read endpoint.
 	RequiredMatchers map[string]string `json:"requiredMatchers,omitempty"`
-	//Timeout for requests to the remote read endpoint.
+	// Timeout for requests to the remote read endpoint.
 	RemoteTimeout string `json:"remoteTimeout,omitempty"`
-	//Whether reads should be made for queries for time ranges that
+	// Whether reads should be made for queries for time ranges that
 	// the local storage should have complete data for.
 	ReadRecent bool `json:"readRecent,omitempty"`
-	//BasicAuth for the URL.
+	// BasicAuth for the URL.
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
 	// bearer token for remote read.
 	BearerToken string `json:"bearerToken,omitempty"`
@@ -490,7 +512,7 @@ type RemoteReadSpec struct {
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
 	// TLS Config to use for remote read.
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
-	//Optional ProxyURL
+	// Optional ProxyURL
 	ProxyURL string `json:"proxyUrl,omitempty"`
 }
 

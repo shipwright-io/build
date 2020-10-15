@@ -26,6 +26,8 @@ import (
 	"github.com/rogpeppe/go-internal/modfile"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	kbutil "github.com/operator-framework/operator-sdk/internal/util/kubebuilder"
 )
 
 const (
@@ -34,15 +36,16 @@ const (
 	GoModEnv   = "GO111MODULE"
 	SrcDir     = "src"
 
-	fsep             = string(filepath.Separator)
-	mainFile         = "main.go"
-	managerMainFile  = "cmd" + fsep + "manager" + fsep + mainFile
-	buildDockerfile  = "build" + fsep + "Dockerfile"
-	rolesDir         = "roles"
-	requirementsFile = "requirements.yml"
-	moleculeDir      = "molecule"
-	helmChartsDir    = "helm-charts"
-	goModFile        = "go.mod"
+	fsep              = string(filepath.Separator)
+	mainFile          = "main.go"
+	managerMainFile   = "cmd" + fsep + "manager" + fsep + mainFile
+	buildDockerfile   = "build" + fsep + "Dockerfile"
+	rolesDir          = "roles"
+	requirementsFile  = "requirements.yml"
+	moleculeDir       = "molecule"
+	helmChartsDir     = "helm-charts"
+	goModFile         = "go.mod"
+	defaultPermission = 0644
 
 	noticeColor = "\033[1;36m%s\033[0m"
 )
@@ -82,9 +85,14 @@ func MustInProjectRoot() {
 
 // CheckProjectRoot checks if the current dir is the project root, and returns
 // an error if not.
-// TODO(hasbro17): Change this to check for go.mod
 // "build/Dockerfile" may not be present in all projects
+// todo: scaffold Project file for Ansible and Helm with the type information
 func CheckProjectRoot() error {
+	if kbutil.HasProjectFile() {
+		return nil
+	}
+
+	// todo(camilamacedo86): remove the following check when we no longer support the legacy scaffold layout
 	// If the current directory has a "build/Dockerfile", then it is safe to say
 	// we are at the project root.
 	if _, err := os.Stat(buildDockerfile); err != nil {
@@ -199,6 +207,14 @@ func GetOperatorType() OperatorType {
 }
 
 func IsOperatorGo() bool {
+	// todo: in the future we should check the plugin prefix to ensure the operator type
+	// for now, we can assume that any project with the kubebuilder layout is Go Type
+	if kbutil.HasProjectFile() {
+		return true
+	}
+
+	// todo: remove the following code when the legacy layout is no longer supported
+	// we can check it using the Project File
 	_, err := os.Stat(managerMainFile)
 	if err == nil || os.IsExist(err) {
 		return true
@@ -298,7 +314,7 @@ func CheckGoModules() error {
 	}
 	if !goModOn {
 		return fmt.Errorf(`using go modules requires GO111MODULE="on", "auto", or unset.` +
-			` More info: https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md#go-modules`)
+			` More info: https://sdk.operatorframework.io/docs/golang/quickstart/#a-note-on-dependency-management`)
 	}
 	return nil
 }
@@ -306,5 +322,48 @@ func CheckGoModules() error {
 // PrintDeprecationWarning prints a colored warning wrapping msg to the terminal.
 func PrintDeprecationWarning(msg string) {
 	fmt.Printf(noticeColor, "[Deprecation Notice] "+msg+". Refer to the version upgrade guide "+
-		"for more information: https://operator-sdk.netlify.com/docs/migration/version-upgrade-guide\n\n")
+		"for more information: https://sdk.operatorframework.io/docs/migration/version-upgrade-guide/\n\n")
+}
+
+// RewriteFileContents adds the provided content before the last occurrence of the word label
+// and rewrites the file with the new content.
+func RewriteFileContents(filename, instruction, content string) error {
+	text, err := ioutil.ReadFile(filename)
+
+	if err != nil {
+		return fmt.Errorf("error in getting contents from the file, %v", err)
+	}
+
+	existingContent := string(text)
+
+	modifiedContent, err := appendContent(existingContent, instruction, content)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filename, []byte(modifiedContent), defaultPermission)
+	if err != nil {
+		return fmt.Errorf("error writing modified contents to file, %v", err)
+	}
+	return nil
+}
+
+func appendContent(fileContents, instruction, content string) (string, error) {
+	labelIndex := strings.LastIndex(fileContents, instruction)
+
+	if labelIndex == -1 {
+		return "", fmt.Errorf("instruction not present previously in dockerfile")
+	}
+
+	separationIndex := strings.Index(fileContents[labelIndex:], "\n")
+	if separationIndex == -1 {
+		return "", fmt.Errorf("no new line at the end of dockerfile command %s", fileContents[labelIndex:])
+	}
+
+	index := labelIndex + separationIndex + 1
+
+	newContent := fileContents[:index] + content + fileContents[index:]
+
+	return newContent, nil
+
 }

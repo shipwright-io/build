@@ -24,8 +24,8 @@ import (
 	"github.com/operator-framework/operator-sdk/internal/scaffold"
 	"github.com/operator-framework/operator-sdk/internal/util/fileutil"
 
-	"github.com/ghodss/yaml"
 	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 )
 
 var yamlSep = []byte("\n\n---\n\n")
@@ -110,15 +110,22 @@ func GenerateCombinedGlobalManifest(crdsDir string) (*os.File, error) {
 		}
 	}()
 
-	crds, err := GetCustomResourceDefinitions(crdsDir)
+	v1crds, v1beta1crds, err := GetCustomResourceDefinitions(crdsDir)
 	if err != nil {
 		return nil, fmt.Errorf("error getting CRD's from %s: %v", crdsDir, err)
 	}
 	combined := []byte{}
-	for _, crd := range crds {
+	for _, crd := range v1crds {
 		b, err := yaml.Marshal(crd)
 		if err != nil {
-			return nil, fmt.Errorf("error marshalling CRD %s bytes: %v", crd.GetName(), err)
+			return nil, fmt.Errorf("error marshaling %s: %v", crd.GetObjectKind().GroupVersionKind(), err)
+		}
+		combined = CombineManifests(combined, b)
+	}
+	for _, crd := range v1beta1crds {
+		b, err := yaml.Marshal(crd)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling %s: %v", crd.GetObjectKind().GroupVersionKind(), err)
 		}
 		combined = CombineManifests(combined, b)
 	}
