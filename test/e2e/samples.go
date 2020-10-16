@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"knative.dev/pkg/apis"
 
@@ -82,7 +83,7 @@ func amendBuild(identifier string, b *operator.Build) {
 
 // CreateBuild loads the builds definition from the file path, unifies the output image based on
 // the identifier and creates it in a namespace
-func createBuild(namespace string, identifier string, filePath string) {
+func createBuild(ctx *framework.Context, namespace string, identifier string, filePath string, timeout time.Duration, retry time.Duration) {
 	Logf("Creating build %s", identifier)
 
 	rootDir, err := getRootDir()
@@ -94,7 +95,7 @@ func createBuild(namespace string, identifier string, filePath string) {
 	amendBuild(identifier, b)
 
 	f := framework.Global
-	err = f.Client.Create(context.TODO(), b, cleanupOptions(ctx))
+	err = f.Client.Create(context.TODO(), b, cleanupOptions(ctx, timeout, retry))
 	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
 
 	Logf("Build %s created", identifier)
