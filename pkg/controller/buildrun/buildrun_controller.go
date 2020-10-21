@@ -93,11 +93,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 
 			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have a TaskRun referenced already,
 			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun.
-			if o.Status.LatestTaskRunRef != nil {
-				return false
-			}
-
-			return true
+			return o.Status.LatestTaskRunRef == nil
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
@@ -244,6 +240,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	var buildRun *buildv1alpha1.BuildRun
 	var build *buildv1alpha1.Build
 
+	updateBuildRunRequired := false
+
 	// Set the ctx to be Background, as the top-level context for incoming requests.
 	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
 	defer cancel()
@@ -282,14 +280,31 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildRun.Labels = make(map[string]string)
 			}
 
+			// Set OwnerReference for Build and BuildRun only when build.build.dev/build-run-deletion is set "true"
+			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true" && !isOwnedByBuild(build, buildRun.OwnerReferences) {
+				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
+					build.Status.Reason = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
+					if err := r.client.Status().Update(ctx, build); err != nil {
+						return reconcile.Result{}, err
+					}
+				}
+				ctxlog.Info(ctx, fmt.Sprintf("updating BuildRun %s OwnerReferences, owner is Build %s", buildRun.Name, build.Name), namespace, request.Namespace, name, request.Name)
+				updateBuildRunRequired = true
+			}
+
 			buildGeneration := strconv.FormatInt(build.Generation, 10)
 			if buildRun.GetLabels()[buildv1alpha1.LabelBuild] != build.Name || buildRun.GetLabels()[buildv1alpha1.LabelBuildGeneration] != buildGeneration {
 				buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
 				buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = buildGeneration
 				ctxlog.Info(ctx, "updating BuildRun labels", namespace, request.Namespace, name, request.Name)
+				updateBuildRunRequired = true
+			}
+
+			if updateBuildRunRequired {
 				if err = r.client.Update(ctx, buildRun); err != nil {
 					return reconcile.Result{}, err
 				}
+				ctxlog.Info(ctx, fmt.Sprintf("succesfully updated BuildRun %s", buildRun.Name), namespace, request.Namespace, name, request.Name)
 			}
 
 			// Set the Build spec in the BuildRun status
@@ -584,4 +599,15 @@ func getGeneratedServiceAccountName(buildRun *buildv1alpha1.BuildRun) string {
 // isGeneratedServiceAccountUsed checks if a build run uses a generated service account
 func isGeneratedServiceAccountUsed(buildRun *buildv1alpha1.BuildRun) bool {
 	return buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate
+}
+
+/// isOwnedByBuild cheks if the controllerReferences contains a well known owner Kind
+func isOwnedByBuild(build *buildv1alpha1.Build, controlledReferences []metav1.OwnerReference) bool {
+	for _, ref := range controlledReferences {
+		if ref.Kind == build.Kind && ref.Name == build.Name {
+			return true
+		}
+	}
+
+	return false
 }

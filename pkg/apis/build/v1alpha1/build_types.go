@@ -18,7 +18,6 @@ var (
 
 	// AnnotationBuildRunDeletion is a label key for enabling/disabling the BuildRun deletion
 	AnnotationBuildRunDeletion = "build.build.dev/build-run-deletion"
-	BuildFinalizer             = "finalizer.build.build.dev"
 )
 
 // BuildSpec defines the desired state of Build

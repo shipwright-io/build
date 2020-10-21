@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/pointer"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -437,7 +438,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("\"default\" not found, msg: Failed to choose a service account to use")))
+				Expect(err.Error()).To(ContainSubstring(`"default" not found, msg: Failed to choose a service account to use`))
 			})
 
 			It("fails on a TaskRun creation due to missing namespaced buildstrategy", func() {
@@ -488,7 +489,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" Unsupported BuildStrategy Kind")))
+				Expect(err.Error()).To(ContainSubstring(" Unsupported BuildStrategy Kind"))
 			})
 
 			It("only generates the service account once if the taskRun cannot be created", func() {
@@ -683,6 +684,96 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(client.CreateCallCount()).To(Equal(1))
+			})
+
+			It("updates Build with error when BuildRun is already owned", func() {
+
+				fakeOwnerName := "fakeOwner"
+
+				// Set the build spec
+				buildRunSample = ctl.BuildRunWithExistingOwnerReferences(buildRunName, buildName, fakeOwnerName)
+				buildRunSample.Status.BuildSpec = &buildSample.Spec
+
+				// override the Build to use a namespaced BuildStrategy
+				buildSample = ctl.BuildWithBuildRunDeletions(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy()),
+				)
+
+				statusCall := ctl.StubBuildStatusReason(
+					fmt.Sprintf("unexpected error when trying to set the ownerreference: Object /%s is already owned by another %s controller ", buildRunName, fakeOwnerName),
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(client.CreateCallCount()).To(Equal(1))
+			})
+
+			It("updates Build with error when BuildRun and Build are not in the same ns when setting ownerreferences", func() {
+				// Set the build spec
+				buildRunSample = ctl.BuildRunWithFakeNamespace(buildRunName, buildName)
+				buildRunSample.Status.BuildSpec = &buildSample.Spec
+
+				// override the Build to use a namespaced BuildStrategy
+				buildSample = ctl.BuildWithBuildRunDeletionsAndFakeNS(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy()),
+				)
+
+				statusCall := ctl.StubBuildStatusReason(
+					fmt.Sprintf("unexpected error when trying to set the ownerreference: cross-namespace owner references are disallowed, owner's namespace %s, obj's namespace %s", buildSample.Namespace, buildRunSample.Namespace),
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(client.CreateCallCount()).To(Equal(1))
+			})
+
+			It("ensure the Build can own a BuildRun when using the proper annotation", func() {
+
+				buildRunSample = ctl.BuildRunWithoutSA(buildRunName, buildName)
+				buildSample = ctl.BuildWithBuildRunDeletions(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// and BuildStrategies
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy()),
+				)
+
+				// Ensure the BuildRun gets an ownershipReference when
+				// the buildv1alpha1.AnnotationBuildRunDeletion is set to true
+				// in the build
+				clientUpdateCalls := ctl.StubBuildUpdateOwnerReferences("Build",
+					buildName,
+					pointer.BoolPtr(true),
+					pointer.BoolPtr(true),
+				)
+				client.UpdateCalls(clientUpdateCalls)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 	})
