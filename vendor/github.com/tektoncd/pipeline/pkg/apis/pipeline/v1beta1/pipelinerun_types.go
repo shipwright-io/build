@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/tektoncd/pipeline/pkg/apis/config"
@@ -25,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -38,7 +38,7 @@ var (
 )
 
 // +genclient
-// +genreconciler
+// +genreconciler:krshapedlogic=false
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PipelineRun represents a single execution of a Pipeline. PipelineRuns are how
@@ -98,10 +98,9 @@ func (pr *PipelineRun) IsCancelled() bool {
 	return pr.Spec.Status == PipelineRunSpecStatusCancelled
 }
 
-// GetRunKey return the pipelinerun key for timeout handler map
-func (pr *PipelineRun) GetRunKey() string {
-	// The address of the pointer is a threadsafe unique identifier for the pipelinerun
-	return fmt.Sprintf("%s/%p", pipeline.PipelineRunControllerName, pr)
+// GetNamespacedName returns a k8s namespaced name that identifies this PipelineRun
+func (pr *PipelineRun) GetNamespacedName() types.NamespacedName {
+	return types.NamespacedName{Namespace: pr.Namespace, Name: pr.Name}
 }
 
 // IsTimedOut returns true if a pipelinerun has exceeded its spec.Timeout based on its status.Timeout
@@ -164,6 +163,8 @@ type PipelineRunSpec struct {
 	Params []Param `json:"params,omitempty"`
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Deprecated: use taskRunSpecs.ServiceAccountName instead
 	// +optional
 	ServiceAccountNames []PipelineRunSpecServiceAccountName `json:"serviceAccountNames,omitempty"`
 	// Used for cancelling a pipelinerun (and maybe more later on)
@@ -231,7 +232,7 @@ const (
 	PipelineRunReasonCancelled PipelineRunReason = "Cancelled"
 	// PipelineRunReasonTimedOut is the reason set when the PipelineRun has timed out
 	PipelineRunReasonTimedOut PipelineRunReason = "PipelineRunTimeout"
-	// ReasonStopping indicates that no new Tasks will be scheduled by the controller, and the
+	// PipelineRunReasonStopping indicates that no new Tasks will be scheduled by the controller, and the
 	// pipeline will stop once all running tasks complete their work
 	PipelineRunReasonStopping PipelineRunReason = "PipelineRunStopping"
 )
@@ -329,6 +330,18 @@ type PipelineRunStatusFields struct {
 
 	// PipelineRunSpec contains the exact spec used to instantiate the run
 	PipelineSpec *PipelineSpec `json:"pipelineSpec,omitempty"`
+
+	// list of tasks that were skipped due to when expressions evaluating to false
+	// +optional
+	SkippedTasks []SkippedTask `json:"skippedTasks,omitempty"`
+}
+
+// SkippedTask is used to describe the Tasks that were skipped due to their When Expressions
+// evaluating to False. This is a struct because we are looking into including more details
+// about the When Expressions that caused this Task to be skipped.
+type SkippedTask struct {
+	// Name is the Pipeline Task name
+	Name string `json:"name"`
 }
 
 // PipelineRunResult used to describe the results of a pipeline
