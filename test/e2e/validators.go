@@ -183,6 +183,7 @@ func validateBuildRunToSucceed(
 	f := framework.Global
 
 	trueCondition := corev1.ConditionTrue
+	falseCondition := corev1.ConditionFalse
 
 	// Ensure the BuildRun has been created
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx, timeout, retry))
@@ -194,6 +195,8 @@ func validateBuildRunToSucceed(
 	Eventually(func() corev1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
+
+		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(falseCondition))
 
 		return testBuildRun.Status.Succeeded
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
@@ -215,6 +218,8 @@ func validateBuildRunToFail(
 	retry time.Duration,
 ) {
 	f := framework.Global
+
+	trueCondition := corev1.ConditionTrue
 	falseCondition := corev1.ConditionFalse
 
 	// Create the BuildRun
@@ -226,6 +231,8 @@ func validateBuildRunToFail(
 	Eventually(func() corev1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
+
+		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(trueCondition))
 
 		return testBuildRun.Status.Succeeded
 	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
