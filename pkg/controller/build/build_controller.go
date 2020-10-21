@@ -70,7 +70,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 				if oldAnnot[build.AnnotationBuildRunDeletion] != newAnnot[build.AnnotationBuildRunDeletion] {
 					ctxlog.Debug(
 						ctx,
-						"Updating predicated passed, the annotation was modified.",
+						"updating predicated passed, the annotation was modified.",
 						namespace,
 						e.MetaNew.GetNamespace(),
 						name,
@@ -172,7 +172,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
-		ctxlog.Info(ctx, "build strategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
+		ctxlog.Info(ctx, "buildStrategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
 	}
 
 	// validate if "spec.runtime" attributes are valid
@@ -220,7 +220,7 @@ func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.Strat
 			return fmt.Errorf("unknown strategy %v", *s.Kind)
 		}
 	} else {
-		ctxlog.Info(ctx, "BuildStrategy kind is nil, use default NamespacedBuildStrategyKind")
+		ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind")
 		if err := r.validateBuildStrategy(ctx, s.Name, ns); err != nil {
 			return err
 		}
@@ -245,7 +245,7 @@ func (r *ReconcileBuild) validateBuildStrategy(ctx context.Context, n string, ns
 				return nil
 			}
 		}
-		return fmt.Errorf("BuildStrategy %s does not exist in namespace %s", n, ns)
+		return fmt.Errorf("buildStrategy %s does not exist in namespace %s", n, ns)
 	}
 	return nil
 }

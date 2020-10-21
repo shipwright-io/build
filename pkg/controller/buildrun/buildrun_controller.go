@@ -187,11 +187,11 @@ func handleError(message string, listOfErrors ...error) error {
 // ValidateBuildRegistration verifies that a referenced Build is properly registered
 func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) error {
 	if build.Status.Registered == "" {
-		err := fmt.Errorf("The Build is not yet validated, build: %s", build.Name)
+		err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
 		return err
 	}
 	if build.Status.Registered != corev1.ConditionTrue {
-		err := fmt.Errorf("The Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
+		err := fmt.Errorf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 		return handleError("Build is not ready", err, updateErr)
 	}
@@ -324,7 +324,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, err
 		}
 	} else {
-		ctxlog.Info(ctx, "TaskRun already exists", namespace, request.Namespace, name, request.Name)
+		ctxlog.Info(ctx, "taskRun already exists", namespace, request.Namespace, name, request.Name)
 
 		err = r.GetBuildRunObject(ctx, lastTaskRun.Labels[buildv1alpha1.LabelBuildRun], request.Namespace, buildRun)
 		if err != nil && !apierrors.IsNotFound(err) {
@@ -338,7 +338,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		// finishes which would be missed otherwise. But, if the TaskRun was already completed and the status
 		// synchronized into the BuildRun, then yet another reconciliation is not necessary.
 		if buildRun.Status.CompletionTime != nil {
-			ctxlog.Info(ctx, "BuildRun already marked completed", namespace, request.Namespace, name, request.Name)
+			ctxlog.Info(ctx, "buildRun already marked completed", namespace, request.Namespace, name, request.Name)
 			return reconcile.Result{}, nil
 		}
 
@@ -461,7 +461,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 		if err != nil {
 			return nil, err
 		}
-		ctxlog.Debug(ctx, "Automatic generation of service account", namespace, serviceAccount.Namespace, name, serviceAccount.Name, "Operation", op)
+		ctxlog.Debug(ctx, "automatic generation of service account", namespace, serviceAccount.Namespace, name, serviceAccount.Name, "Operation", op)
 	} else {
 		// If ServiceAccount or the name of ServiceAccount in buildRun is nil, use pipeline serviceaccount
 		if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Name == nil {
@@ -560,7 +560,7 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alp
 	// Set OwnerReference for BuildRun and TaskRun
 	if err := r.setOwnerReferenceFunc(buildRun, generatedTaskRun, r.scheme); err != nil {
 		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, handleError("Failed to set OwnerReference for BuildRun and TaskRun", err, updateErr)
+		return nil, handleError("failed to set OwnerReference for BuildRun and TaskRun", err, updateErr)
 	}
 
 	return generatedTaskRun, nil

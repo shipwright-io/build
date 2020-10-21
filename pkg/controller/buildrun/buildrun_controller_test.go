@@ -648,7 +648,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal(fmt.Sprintf("The Build is not yet validated, build: %s", buildName)))
+				Expect(err.Error()).To(Equal(fmt.Sprintf("the Build is not yet validated, build: %s", buildName)))
 				Expect(client.StatusCallCount()).To(Equal(0))
 			})
 

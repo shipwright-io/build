@@ -404,13 +404,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
 			})
 			It("succeed when the strategy exists", func() {
 
@@ -483,13 +483,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
 
 			})
 			It("default to BuildStrategy and succeed if the strategy exists", func() {
