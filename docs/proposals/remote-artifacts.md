@@ -7,13 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 ---
 title: remote-artifacts
 authors:
-  - "@otaviof"
+  - @otaviof
 reviewers:
-  - TBD
+  - @SaschaSchwarze0
+  - @qu1queee
+  - @adambkaplan
 approvers:
   - TBD
 creation-date: 2020-10-02
-last-updated:  2020-10-02
+last-updated:  2020-10-23
 status: provisional
 ---
 
@@ -22,9 +24,10 @@ Shipwright Remote Artifacts
 
 # Summary
 
-Remote artifacts are often dependencies of the software building process, and hence are also
-required when dealing with container images. This enhancement proposal focuses on adding a build
-artifacts abstraction to Shipwright's Operator.
+Remote artifacts are dependencies of the software building process, they represent binaries or
+other data stored outside of the version control system (Git). Hence, they are required when
+dealing with container images as well, and this enhancement proposal focuses on adding a remote
+artifacts support to Shipwright's Build API.
 
 # Motivation
 
@@ -32,9 +35,9 @@ Give Shipwright's operator broader build use-case support by enhancing its capab
 the concept of Artifacts. In other words, remote entities that will be available for the image
 build process.
 
-End users will be allowed to declare artifacts that represent remote dependencies alongside
-Builds, and easily link them together. For example, a Java application which downloads certain
-jars into the classpath, a Node.js application adding external images, and so forth.
+End users will be able to include remote artifacts as a build runtime dependency, artifacts
+controlled by remote systems will be downloaded before the build process starts. Those artifacts may
+be a pre-compile binary, `jar` files, `war` files, etc.
 
 ## Goals
 
@@ -63,70 +66,85 @@ following example:
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: nexus-jar
+  name: license-file
 spec:
-  artifacts:
-    - name: main-jar
-      url: https://nexus.company.com/app/main.jar
-      path: $(workspace)/classpath/main.jar
+  sources:
+    - name: license-file
+      type: http
+      url: https://licenses.company.com/customer-id/license.tar
+      http:
+        path: $(workspace)/licenses/license.tar
 ```
 
-A new attribute, .spec.artifacts will be added, containing a slice of types with:
+The `source` section will be renamed to `sources` in order to accommodate more `type`s of inputs.
+Each entry will be composed of the following attributes:
 
-*   **Name**: The actual name of the artifact, optional;
-*   **URL**: Universal location of the artifact;
-*   **Path**: Represents the final artifact location with placeholder (`$(workspace)`) support;
+- `name`: source name (required);
+- `type`: input source type, `git` or `http` (required);
+- `sourceRef`: use a external resource, the name in this field is the resource name (optional);
+- `url`: the URL of the repository or remote artifact (optional);
+- `credentials`: the credentials to interact with the artifact (optional);
+- `http`: settings for `http`, namely `path` (optional);
+- `git`: settings for `git`, namely `revision` (optional);
 
 The resource `UID`/`GID` will be defined by the same user running the Tekton task, later on, we
 can extend the API to support arbitrary configuration.
 
 ### Standalone CRD
 
-Alternatively, we may define the artifacts as a standalone CRD, that is a `BuildArtifact`
+Alternatively, we may define the artifacts as a standalone CRD, that is a `BuildSource`
 resource. The advantage of this design is being able to exchange, and reuse, artifacts on several
 builds. For instance, if two projects are sharing a common logo image, both `Builds` will refer to
-the same `BuildArtifact`.
+the same `BuildSource`.
 
-The following snippet shows how an Artifact (`BuildArtifact`) will be represented. In this
-example, consider a Java based application with Jar hosted in Nexus, that needs to be added to
-application's `classpath` directory.
+The following snippet shows how an Artifact (`BuildSource`) will be represented.
 
 
 ```yml
 ---
 apiVersion: build.dev/v1alpha1
-kind: BuildArtifact
+kind: BuildSource
 metadata:
-  name: nexus-jars
+  name: license-file
 spec:
-  artifacts:
-    - name: main-jar
-      url: https://nexus.company.com/app/main.jar
-      path: $(workspace)/classpath/main.jar
+  sources:
+    - type: http
+      url: https://licenses.company.com/customer-id/license.tar
+      http:
+        path: $(workspace)/licenses/license.tar
 ```
 
-## Using Artifacts
+## Usage
 
-Giving the artifacts declared, a developer will be able to include those artifacts in Build
-resources as per the following example:
-
+The usage of this feature is based on declaring a slice of `.spec.sources` and later on overwriting
+entries using `BuildRun` resource. For instance:
 
 ```yml
 ---
 apiVersion: build.dev/v1alpha1
 kind: Build
 metadata:
-  name: java-application
+  name: example
 spec:
-  artifacts:
-    - nexus-jars
+  sources:
+    - name: license-file
 ```
 
-By adding spec.artifacts, the operator will generate build steps to download external data, and
-place it in the expected location before the build strategy.Furthermore, developers will be able
-to overwrite artifacts on `BuildRun` level, allowing for more use-cases on which different sets of
-artifacts is required.
+Could have its `license-file` overwritten in a `BuildRun` with:
 
+```yml
+---
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: license-file
+spec:
+  buildRef:
+    name: example
+  sources:
+    - name: license-file
+      sourceRef: alternative-file
+```
 
 ## Steps and Helper
 
@@ -176,14 +194,16 @@ can describe those resources as:
 ```yml
 ---
 apiVersion: build.dev/v1alpha1
-kind: BuildArtifact
+kind: BuildSource
 metadata:
   name: ship-logo
 spec:
-  artifacts:
-    - name: ship-logo
-      Url: https://user-images.githubusercontent.com/2587818/92114986-69bfb600-edfa-11ea-820e-96cdb1014f58.png
-      path: $(workspace)/assets/images/shipwright-logo.png
+  sources:
+    - name: project-logo
+      type: http
+      url: https://user-images.githubusercontent.com/2587818/92114986-69bfb600-edfa-11ea-820e-96cdb1014f58.png
+      http:
+        path: $(workspace)/assets/images/shipwright-logo.png
 ```
 
 And, the alternative logo:
@@ -191,14 +211,16 @@ And, the alternative logo:
 ```yml
 ---
 apiVersion: build.dev/v1alpha1
-kind: BuildArtifact
+kind: BuildSource
 metadata:
   name: axes-logo
 spec:
-  artifacts:
-    - name: axes-logo
+  sources:
+    - name: project-logo
+      type: http
       url: https://user-images.githubusercontent.com/2587818/92100668-c1ebbd80-ede4-11ea-9e8a-7379c3875ea0.png
-      path: $(workspace)/assets/images/shipwright-logo.png
+      http:
+        path: $(workspace)/assets/images/shipwright-logo.png
 ```
 
 Then, we can create the `Build` resource, as per:
@@ -213,18 +235,20 @@ spec:
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
-  source:
-    url: https://github.com/otaviof/typescript-ex.git
-  artifacts:
-    - ship-logo
+  sources:
+    - name: source
+      type: git
+      url: https://github.com/otaviof/typescript-ex.git
+    - name: project-logo
+      sourceRef: ship-logo
   output:
     image: quay.io/otaviof/typescript-ex:latest
 ```
 
-Now, we can create two `BuildRun` resources, overwriting `.spec.artifacts` to compose the alternative build. For instance:
+Now, we can create two `BuildRun` resources. The first only runs the build with original settings:
 
 
-```
+```yml
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
@@ -235,9 +259,10 @@ spec:
     name: typescript-ex
 ```
 
-Also:
+And later, we can create yet another `BuildRun`, but this time use the alternative logo. Here we are
+overwriting the `project-logo` source name, with an alternative resource, i.e.:
 
-```
+```yml
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
@@ -248,20 +273,21 @@ spec:
     name: typescript-ex
   output:
     image: quay.io/otaviof/typescript-ex:alternative
-  artifacts:
-    - axes-logo
+  sources:
+    - name: project-logo
+      sourceRef: axes-logo
 ```
 
 When the build processes are done, the following images will be available:
 *   `quay.io/otaviof/typescript-ex:latest`
 *   `quay.io/otaviof/typescript-ex:alternative`
 
-A number of real world use-cases can be derived from this example, the `BuildArtifacts` is the
+A number of real world use-cases can be derived from this example, the `BuildSource` is the
 foundation.
 
 ## Test Plan
 
 1. Deploy the Shipwright Build operator in a cluster;
-2. Create a `BuildArtifact` resource instance, point to a remote binary;
-3. Create `Build` and `BuildRun` resources, using `BuildArtifact`;
+2. Create a `BuildSource` resource instance, point to a remote binary;
+3. Create `Build` and `BuildRun` resources, using `BuildSource`;
 4. Make sure the build process happens successfully, being able to use remote artifact;
