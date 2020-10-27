@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -72,7 +73,7 @@ var _ = Describe("Reconcile Build", func() {
 		buildSample = ctl.BuildWithClusterBuildStrategy(buildName, namespace, buildStrategyName, registrySecret)
 		// Reconcile
 		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildController.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
+		reconciler = buildController.NewReconciler(testCtx, config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
 	})
 
 	Describe("Reconcile", func() {
@@ -371,13 +372,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("none ClusterBuildStrategies found"))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, "no ClusterBuildStrategies found")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("none ClusterBuildStrategies found")))
+				Expect(err.Error()).To(ContainSubstring("no ClusterBuildStrategies found"))
 			})
 		})
 		Context("when spec strategy BuildStrategy is specified", func() {
@@ -404,13 +405,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
 			})
 			It("succeed when the strategy exists", func() {
 
@@ -483,13 +484,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("BuildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
 
 			})
 			It("default to BuildStrategy and succeed if the strategy exists", func() {
@@ -513,78 +514,6 @@ var _ = Describe("Reconcile Build", func() {
 				result, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(reconcile.Result{}).To(Equal(result))
-			})
-		})
-		Context("when the annotation build-run-deletion is defined", func() {
-			var annotationFinalizer map[string]string
-
-			JustBeforeEach(func() {
-				annotationFinalizer = map[string]string{}
-			})
-
-			It("sets a finalizer if annotation equals true", func() {
-				// Fake some client LIST calls and ensure we populate all
-				// different resources we could get during reconciliation
-				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *corev1.SecretList:
-						list := ctl.SecretList(registrySecret)
-						list.DeepCopyInto(object)
-					case *build.ClusterBuildStrategyList:
-						list := ctl.ClusterBuildStrategyList(buildStrategyName)
-						list.DeepCopyInto(object)
-					}
-					return nil
-				})
-
-				// override Build definition with one annotation
-				annotationFinalizer[build.AnnotationBuildRunDeletion] = "true"
-				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
-					buildName,
-					namespace,
-					buildStrategyName,
-					annotationFinalizer,
-					[]string{},
-				)
-
-				clientUpdateCalls := ctl.StubBuildUpdateWithFinalizers(build.BuildFinalizer)
-				client.UpdateCalls(clientUpdateCalls)
-
-				result, err := reconciler.Reconcile(request)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(reconcile.Result{}).To(Equal(result))
-			})
-
-			It("removes a finalizer if annotation equals false and finalizer exists", func() {
-				// Fake some client LIST calls and ensure we populate all
-				// different resources we could get during reconciliation
-				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
-					switch object := object.(type) {
-					case *corev1.SecretList:
-						list := ctl.SecretList(registrySecret)
-						list.DeepCopyInto(object)
-					case *build.ClusterBuildStrategyList:
-						list := ctl.ClusterBuildStrategyList(buildStrategyName)
-						list.DeepCopyInto(object)
-					}
-					return nil
-				})
-
-				// override Build definition with one annotation
-				annotationFinalizer[build.AnnotationBuildRunDeletion] = "false"
-				buildSample = ctl.BuildWithCustomAnnotationAndFinalizer(
-					buildName,
-					namespace,
-					buildStrategyName,
-					annotationFinalizer,
-					[]string{build.BuildFinalizer},
-				)
-				clientUpdateCalls := ctl.StubBuildUpdateWithoutFinalizers()
-				client.UpdateCalls(clientUpdateCalls)
-
-				result, err := reconciler.Reconcile(request)
-				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})

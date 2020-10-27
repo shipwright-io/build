@@ -18,10 +18,12 @@ import (
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -35,20 +37,23 @@ const succeedStatus string = "Succeeded"
 const namespace string = "namespace"
 const name string = "name"
 
+type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
+
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "build-controller")
-	return add(ctx, mgr, NewReconciler(ctx, c, mgr))
+	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference))
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager) reconcile.Reconciler {
+func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
 	return &ReconcileBuild{
-		ctx:    ctx,
-		config: c,
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
+		ctx:                   ctx,
+		config:                c,
+		client:                mgr.GetClient(),
+		scheme:                mgr.GetScheme(),
+		setOwnerReferenceFunc: ownerRef,
 	}
 }
 
@@ -62,7 +67,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			buildRunFinalizer := false
+			buildRunDeletionAnnotation := false
 			// Check if the AnnotationBuildRunDeletion annotation is updated
 			oldAnnot := e.MetaOld.GetAnnotations()
 			newAnnot := e.MetaNew.GetAnnotations()
@@ -70,19 +75,19 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 				if oldAnnot[build.AnnotationBuildRunDeletion] != newAnnot[build.AnnotationBuildRunDeletion] {
 					ctxlog.Debug(
 						ctx,
-						"Updating predicated passed, the annotation was modified.",
+						"updating predicated passed, the annotation was modified.",
 						namespace,
 						e.MetaNew.GetNamespace(),
 						name,
 						e.MetaNew.GetName(),
 					)
-					buildRunFinalizer = true
+					buildRunDeletionAnnotation = true
 				}
 			}
 
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			// or BuildRunDeletion annotation does not change
-			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration() || buildRunFinalizer
+			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration() || buildRunDeletionAnnotation
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Evaluates to false if the object has been confirmed deleted.
@@ -106,10 +111,11 @@ var _ reconcile.Reconciler = &ReconcileBuild{}
 type ReconcileBuild struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	ctx    context.Context
-	config *config.Config
-	client client.Client
-	scheme *runtime.Scheme
+	ctx                   context.Context
+	config                *config.Config
+	client                client.Client
+	scheme                *runtime.Scheme
+	setOwnerReferenceFunc setOwnerReferenceFunc
 }
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
@@ -130,15 +136,11 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, nil
 	}
 
-	// Add finalizer for build
-	if err := r.configFinalizer(ctx, b); err != nil {
-		return reconcile.Result{}, err
-	}
-	// Check if the build is marked to be deleted, which is
-	// indicated by the deletion timestamp being set.
-	if !b.DeletionTimestamp.IsZero() {
-		ctxlog.Info(ctx, "build is marked for deletion", namespace, b.Namespace, name, b.Name)
-		return reconcile.Result{}, r.finalizeBuildRun(ctx, b)
+	if err := r.validateBuildRunOwnerReferences(ctx, b); err != nil {
+		// we do not want to bail out here if the owerreference validation fails, we ignore this error on purpose
+		// In case we just created the Build, we want the Build reconcile logic to continue, in order to
+		// validate the Build references ( e.g secrets, strategies )
+		ctxlog.Info(ctx, "unexpected error during ownership reference validation", namespace, request.Namespace, name, request.Name, "error", err)
 	}
 
 	// Populate the status struct with default values
@@ -172,7 +174,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
-		ctxlog.Info(ctx, "build strategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
+		ctxlog.Info(ctx, "buildStrategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
 	}
 
 	// validate if "spec.runtime" attributes are valid
@@ -220,7 +222,7 @@ func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.Strat
 			return fmt.Errorf("unknown strategy %v", *s.Kind)
 		}
 	} else {
-		ctxlog.Info(ctx, "BuildStrategy kind is nil, use default NamespacedBuildStrategyKind")
+		ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind")
 		if err := r.validateBuildStrategy(ctx, s.Name, ns); err != nil {
 			return err
 		}
@@ -245,7 +247,7 @@ func (r *ReconcileBuild) validateBuildStrategy(ctx context.Context, n string, ns
 				return nil
 			}
 		}
-		return fmt.Errorf("BuildStrategy %s does not exist in namespace %s", n, ns)
+		return fmt.Errorf("buildStrategy %s does not exist in namespace %s", n, ns)
 	}
 	return nil
 }
@@ -258,7 +260,7 @@ func (r *ReconcileBuild) validateClusterBuildStrategy(ctx context.Context, n str
 	}
 
 	if len(list.Items) == 0 {
-		return errors.Errorf("none ClusterBuildStrategies found")
+		return errors.Errorf("no ClusterBuildStrategies found")
 	}
 
 	if len(list.Items) > 0 {
@@ -312,48 +314,64 @@ func (r *ReconcileBuild) validateSecrets(ctx context.Context, secretNames []stri
 	return nil
 }
 
-func (r *ReconcileBuild) configFinalizer(ctx context.Context, b *build.Build) error {
-	if b.GetAnnotations()[build.AnnotationBuildRunDeletion] == "true" {
-		if !contains(b.GetFinalizers(), build.BuildFinalizer) {
-			ctxlog.Info(ctx, "add finalizer to build", namespace, b.Namespace, name, b.Name)
-			b.SetFinalizers(append(b.GetFinalizers(), build.BuildFinalizer))
-			if err := r.client.Update(ctx, b); err != nil {
-				return err
-			}
-		}
-	} else {
-		if contains(b.GetFinalizers(), build.BuildFinalizer) {
-			ctxlog.Info(ctx, "remove finalizer from build", namespace, b.Namespace, name, b.Name)
-			b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-			if err := r.client.Update(ctx, b); err != nil {
-				return err
-			}
-		}
+// validateBuildRunOwnerReferences defines or removes the ownerReference for the BuildRun based on
+// an annotation value
+func (r *ReconcileBuild) validateBuildRunOwnerReferences(ctx context.Context, b *build.Build) error {
+
+	buildRunList, err := r.retrieveBuildRunsfromBuild(ctx, b)
+	if err != nil {
+		return err
 	}
+
+	switch b.GetAnnotations()[build.AnnotationBuildRunDeletion] {
+	case "true":
+		// if the buildRun does not have an ownerreference to the Build, lets add it.
+		for _, buildRun := range buildRunList.Items {
+			if index := r.validateBuildOwnerReference(buildRun.OwnerReferences, b); index == -1 {
+				if err := r.setOwnerReferenceFunc(b, &buildRun, r.scheme); err != nil {
+					b.Status.Reason = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
+					if err := r.client.Status().Update(ctx, b); err != nil {
+						return err
+					}
+				}
+				if err = r.client.Update(ctx, &buildRun); err != nil {
+					return err
+				}
+				ctxlog.Info(ctx, fmt.Sprintf("succesfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
+			}
+		}
+	case "false":
+		// if the buildRun have an ownerreference to the Build, lets remove it
+		for _, buildRun := range buildRunList.Items {
+			if index := r.validateBuildOwnerReference(buildRun.OwnerReferences, b); index != -1 {
+				buildRun.OwnerReferences = removeOwnerReferenceByIndex(buildRun.OwnerReferences, index)
+				if err := r.client.Update(ctx, &buildRun); err != nil {
+					return err
+				}
+				ctxlog.Info(ctx, fmt.Sprintf("succesfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
+			}
+		}
+
+	default:
+		ctxlog.Info(ctx, fmt.Sprintf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion), namespace, b.Namespace, name, b.Name)
+		return fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion)
+	}
+
 	return nil
 }
 
-func (r *ReconcileBuild) finalizeBuildRun(ctx context.Context, b *build.Build) error {
-	if contains(b.GetFinalizers(), build.BuildFinalizer) {
-		// Run finalization logic for buildFinalizer. If the
-		// finalization logic fails, don't remove the finalizer so
-		// that we can retry during the next reconciliation.
-		if err := r.cleanBuildRun(ctx, b); err != nil {
-			return err
-		}
-
-		// Remove buildFinalizer. Once all finalizers have been
-		// removed, the object will be deleted.
-		b.SetFinalizers(remove(b.GetFinalizers(), build.BuildFinalizer))
-		err := r.client.Update(ctx, b)
-		if err != nil {
-			return err
+// validateOwnerReferences returns an index value if a Build is owning a reference or -1 if this is not the case
+func (r *ReconcileBuild) validateBuildOwnerReference(references []metav1.OwnerReference, build *build.Build) int {
+	for i, ownerRef := range references {
+		if ownerRef.Kind == build.Kind && ownerRef.Name == build.Name {
+			return i
 		}
 	}
-	return nil
+	return -1
 }
 
-func (r *ReconcileBuild) cleanBuildRun(ctx context.Context, b *build.Build) error {
+// retrieveBuildRunsfromBuild returns a list of BuildRuns that are owned by a Build in the same namespace
+func (r *ReconcileBuild) retrieveBuildRunsfromBuild(ctx context.Context, b *build.Build) (*build.BuildRunList, error) {
 	buildRunList := &build.BuildRunList{}
 
 	lbls := map[string]string{
@@ -363,33 +381,13 @@ func (r *ReconcileBuild) cleanBuildRun(ctx context.Context, b *build.Build) erro
 		Namespace:     b.Namespace,
 		LabelSelector: labels.SelectorFromSet(lbls),
 	}
-	if err := r.client.List(ctx, buildRunList, &opts); err != nil {
-		return err
-	}
 
-	for _, buildRun := range buildRunList.Items {
-		ctxlog.Info(ctx, "deleting buildrun", namespace, b.Namespace, name, b.Name, "buildrunname", buildRun.Name)
-		if err := r.client.Delete(ctx, &buildRun); err != nil {
-			return err
-		}
-	}
-	return nil
+	err := r.client.List(ctx, buildRunList, &opts)
+	return buildRunList, err
 }
 
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
-func remove(list []string, s string) []string {
-	for i, v := range list {
-		if v == s {
-			list = append(list[:i], list[i+1:]...)
-		}
-	}
-	return list
+// removeOwnerReferenceByIndex removes the entry by index, this will not keep the same
+// order in the slice
+func removeOwnerReferenceByIndex(references []metav1.OwnerReference, i int) []metav1.OwnerReference {
+	return append(references[:i], references[i+1:]...)
 }

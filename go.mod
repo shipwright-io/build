@@ -21,6 +21,7 @@ require (
 	k8s.io/kubectl v0.17.4
 	knative.dev/pkg v0.0.0-20200831162708-14fb2347fb77
 	sigs.k8s.io/controller-runtime v0.6.1
+	k8s.io/utils v0.0.0-20200124190032-861946025e34
 	sigs.k8s.io/yaml v1.2.0
 )
 

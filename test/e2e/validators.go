@@ -183,6 +183,7 @@ func validateBuildRunToSucceed(
 	f := framework.Global
 
 	trueCondition := corev1.ConditionTrue
+	falseCondition := corev1.ConditionFalse
 
 	// Ensure the BuildRun has been created
 	err := f.Client.Create(goctx.TODO(), testBuildRun, cleanupOptions(ctx, timeout, retry))
@@ -194,6 +195,8 @@ func validateBuildRunToSucceed(
 	Eventually(func() corev1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
+
+		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(falseCondition))
 
 		return testBuildRun.Status.Succeeded
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
@@ -215,6 +218,8 @@ func validateBuildRunToFail(
 	retry time.Duration,
 ) {
 	f := framework.Global
+
+	trueCondition := corev1.ConditionTrue
 	falseCondition := corev1.ConditionFalse
 
 	// Create the BuildRun
@@ -227,6 +232,8 @@ func validateBuildRunToFail(
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
+		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(trueCondition))
+
 		return testBuildRun.Status.Succeeded
 	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
 
@@ -235,38 +242,6 @@ func validateBuildRunToFail(
 
 	// Verify the build run failure
 	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
-}
-
-// validateBuildDeletion verifies if the BuildRun is deleted after Build is deleted.
-func validateBuildDeletion(
-	namespace string,
-	testBuildName string,
-	testBuildRun *operator.BuildRun,
-	expectedDeletion bool,
-) {
-	f := framework.Global
-
-	// Delete the Build
-	buildNsName := types.NamespacedName{Name: testBuildName, Namespace: namespace}
-	testBuild := &operator.Build{}
-	err := clientGet(buildNsName, testBuild)
-	Expect(err).ToNot(HaveOccurred(), "Build doesn't exist")
-	err = f.Client.Delete(goctx.TODO(), testBuild)
-	Expect(err).ToNot(HaveOccurred(), "Failed to delete build")
-	Logf("Build is deleted!")
-
-	Eventually(func() error {
-		err = clientGet(buildNsName, testBuild)
-		return err
-	}, time.Duration(30*getTimeoutMultiplier())*time.Second, 3*time.Second).ShouldNot(BeNil(), "Build is not deleted yet")
-
-	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
-	err = clientGet(buildRunNsName, testBuildRun)
-	if expectedDeletion {
-		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "BuildRun was not deleted together with the Build")
-	} else {
-		Expect(err).ToNot(HaveOccurred(), "BuildRun was deleted together with the Build")
-	}
 }
 
 // validateServiceAccountDeletion validates that a service account is correctly deleted after the end of

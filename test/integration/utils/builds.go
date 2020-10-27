@@ -7,6 +7,7 @@ package utils
 import (
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // This class is intended to host all CRUD calls for testing Build CRDs resources
@@ -30,11 +31,18 @@ func (t *TestBuild) DeleteBuild(name string) error {
 
 // GetBuild returns a Build based on name
 func (t *TestBuild) GetBuild(name string) (*v1alpha1.Build, error) {
-	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+	return t.BuildClientSet.
+		BuildV1alpha1().
+		Builds(t.Namespace).
+		Get(name, metav1.GetOptions{})
+}
 
-	build, err := bInterface.Get(name, metav1.GetOptions{})
+// PatchBuild patches an existing Build
+func (t *TestBuild) PatchBuild(buildName string, data []byte) (*v1alpha1.Build, error) {
+	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+	b, err := bInterface.Patch(buildName, types.MergePatchType, data)
 	if err != nil {
-		return build, err
+		return nil, err
 	}
-	return nil, nil
+	return b, nil
 }

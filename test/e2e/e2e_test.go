@@ -80,7 +80,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
-			validateBuildDeletion(namespace, testID, br, false)
 		})
 	})
 
@@ -150,7 +149,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
-			validateBuildDeletion(namespace, testID, br, false)
 		})
 	})
 
@@ -282,7 +280,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
-			validateBuildDeletion(namespace, testID, br, true)
 		})
 	})
 
