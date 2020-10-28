@@ -29,6 +29,7 @@ spec:
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
+        runAsGroup: 1000
       command:
         - /cnb/lifecycle/detector
       args:
@@ -49,6 +50,7 @@ spec:
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
+        runAsGroup: 1000
       command:
         - /cnb/lifecycle/restorer
       args:
@@ -71,6 +73,7 @@ spec:
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
+        runAsGroup: 1000
       command:
         - /cnb/lifecycle/builder
       args:
@@ -92,6 +95,7 @@ spec:
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
+        runAsGroup: 1000
       command:
         - /cnb/lifecycle/exporter
       args:

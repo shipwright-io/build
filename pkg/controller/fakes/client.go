@@ -128,15 +128,16 @@ func (fake *FakeClient) Create(arg1 context.Context, arg2 runtime.Object, arg3 .
 		arg2 runtime.Object
 		arg3 []client.CreateOption
 	}{arg1, arg2, arg3})
+	stub := fake.CreateStub
+	fakeReturns := fake.createReturns
 	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3})
 	fake.createMutex.Unlock()
-	if fake.CreateStub != nil {
-		return fake.CreateStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.createReturns
 	return fakeReturns.result1
 }
 
@@ -190,15 +191,16 @@ func (fake *FakeClient) Delete(arg1 context.Context, arg2 runtime.Object, arg3 .
 		arg2 runtime.Object
 		arg3 []client.DeleteOption
 	}{arg1, arg2, arg3})
+	stub := fake.DeleteStub
+	fakeReturns := fake.deleteReturns
 	fake.recordInvocation("Delete", []interface{}{arg1, arg2, arg3})
 	fake.deleteMutex.Unlock()
-	if fake.DeleteStub != nil {
-		return fake.DeleteStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.deleteReturns
 	return fakeReturns.result1
 }
 
@@ -252,15 +254,16 @@ func (fake *FakeClient) DeleteAllOf(arg1 context.Context, arg2 runtime.Object, a
 		arg2 runtime.Object
 		arg3 []client.DeleteAllOfOption
 	}{arg1, arg2, arg3})
+	stub := fake.DeleteAllOfStub
+	fakeReturns := fake.deleteAllOfReturns
 	fake.recordInvocation("DeleteAllOf", []interface{}{arg1, arg2, arg3})
 	fake.deleteAllOfMutex.Unlock()
-	if fake.DeleteAllOfStub != nil {
-		return fake.DeleteAllOfStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.deleteAllOfReturns
 	return fakeReturns.result1
 }
 
@@ -314,15 +317,16 @@ func (fake *FakeClient) Get(arg1 context.Context, arg2 types.NamespacedName, arg
 		arg2 types.NamespacedName
 		arg3 runtime.Object
 	}{arg1, arg2, arg3})
+	stub := fake.GetStub
+	fakeReturns := fake.getReturns
 	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3})
 	fake.getMutex.Unlock()
-	if fake.GetStub != nil {
-		return fake.GetStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getReturns
 	return fakeReturns.result1
 }
 
@@ -376,15 +380,16 @@ func (fake *FakeClient) List(arg1 context.Context, arg2 runtime.Object, arg3 ...
 		arg2 runtime.Object
 		arg3 []client.ListOption
 	}{arg1, arg2, arg3})
+	stub := fake.ListStub
+	fakeReturns := fake.listReturns
 	fake.recordInvocation("List", []interface{}{arg1, arg2, arg3})
 	fake.listMutex.Unlock()
-	if fake.ListStub != nil {
-		return fake.ListStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.listReturns
 	return fakeReturns.result1
 }
 
@@ -439,15 +444,16 @@ func (fake *FakeClient) Patch(arg1 context.Context, arg2 runtime.Object, arg3 cl
 		arg3 client.Patch
 		arg4 []client.PatchOption
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.PatchStub
+	fakeReturns := fake.patchReturns
 	fake.recordInvocation("Patch", []interface{}{arg1, arg2, arg3, arg4})
 	fake.patchMutex.Unlock()
-	if fake.PatchStub != nil {
-		return fake.PatchStub(arg1, arg2, arg3, arg4...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.patchReturns
 	return fakeReturns.result1
 }
 
@@ -498,15 +504,16 @@ func (fake *FakeClient) Status() client.StatusWriter {
 	ret, specificReturn := fake.statusReturnsOnCall[len(fake.statusArgsForCall)]
 	fake.statusArgsForCall = append(fake.statusArgsForCall, struct {
 	}{})
+	stub := fake.StatusStub
+	fakeReturns := fake.statusReturns
 	fake.recordInvocation("Status", []interface{}{})
 	fake.statusMutex.Unlock()
-	if fake.StatusStub != nil {
-		return fake.StatusStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.statusReturns
 	return fakeReturns.result1
 }
 
@@ -553,15 +560,16 @@ func (fake *FakeClient) Update(arg1 context.Context, arg2 runtime.Object, arg3 .
 		arg2 runtime.Object
 		arg3 []client.UpdateOption
 	}{arg1, arg2, arg3})
+	stub := fake.UpdateStub
+	fakeReturns := fake.updateReturns
 	fake.recordInvocation("Update", []interface{}{arg1, arg2, arg3})
 	fake.updateMutex.Unlock()
-	if fake.UpdateStub != nil {
-		return fake.UpdateStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.updateReturns
 	return fakeReturns.result1
 }
 
