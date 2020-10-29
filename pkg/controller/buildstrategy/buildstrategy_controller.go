@@ -7,9 +7,6 @@ package buildstrategy
 import (
 	"context"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -17,6 +14,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // Add creates a new BuildStrategy Controller and adds it to the Manager. The Manager will set fields on the Controller

@@ -9,9 +9,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+
 	corev1 "k8s.io/api/core/v1"
 
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	buildRunController "github.com/shipwright-io/build/pkg/controller/buildrun"
 )
 

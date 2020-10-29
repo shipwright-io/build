@@ -12,14 +12,16 @@ import (
 	"time"
 
 	gomegaConfig "github.com/onsi/ginkgo/config"
-	buildClient "github.com/shipwright-io/build/pkg/client/build/clientset/versioned"
 	tektonClient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 
-	"github.com/shipwright-io/build/test"
 	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc" // from https://github.com/kubernetes/client-go/issues/345
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	buildClient "github.com/shipwright-io/build/pkg/client/build/clientset/versioned"
+	"github.com/shipwright-io/build/test"
+	// from https://github.com/kubernetes/client-go/issues/345
 )
 
 var (

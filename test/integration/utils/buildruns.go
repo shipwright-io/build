@@ -5,10 +5,11 @@
 package utils
 
 import (
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // This class is intended to host all CRUD calls for testing BuildRun CRDs resources

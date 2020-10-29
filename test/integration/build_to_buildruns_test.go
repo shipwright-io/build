@@ -9,9 +9,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (

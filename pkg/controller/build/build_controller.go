@@ -11,11 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/controller/utils"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +26,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/controller/utils"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 )
 
 // succeedStatus default status for the Build CRD

@@ -11,14 +11,16 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	buildrunCtl "github.com/shipwright-io/build/pkg/controller/buildrun"
 	"github.com/shipwright-io/build/test"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("GenerateTaskrun", func() {

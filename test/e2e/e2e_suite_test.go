@@ -10,11 +10,10 @@ import (
 	"testing"
 	"time"
 
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	framework "github.com/operator-framework/operator-sdk/pkg/test"
+	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 )
 
 var (

@@ -5,8 +5,9 @@
 package utils
 
 import (
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // This class is intended to host all CRUD calls for testing ClusterBuildStrategy CRDs resources

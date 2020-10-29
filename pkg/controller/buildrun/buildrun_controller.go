@@ -11,17 +11,14 @@ import (
 	"strconv"
 	"strings"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"knative.dev/pkg/apis"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -31,6 +28,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 )
 
 const (
