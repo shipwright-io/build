@@ -53,15 +53,16 @@ func (fake *FakeStatusWriter) Patch(arg1 context.Context, arg2 runtime.Object, a
 		arg3 client.Patch
 		arg4 []client.PatchOption
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.PatchStub
+	fakeReturns := fake.patchReturns
 	fake.recordInvocation("Patch", []interface{}{arg1, arg2, arg3, arg4})
 	fake.patchMutex.Unlock()
-	if fake.PatchStub != nil {
-		return fake.PatchStub(arg1, arg2, arg3, arg4...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.patchReturns
 	return fakeReturns.result1
 }
 
@@ -115,15 +116,16 @@ func (fake *FakeStatusWriter) Update(arg1 context.Context, arg2 runtime.Object, 
 		arg2 runtime.Object
 		arg3 []client.UpdateOption
 	}{arg1, arg2, arg3})
+	stub := fake.UpdateStub
+	fakeReturns := fake.updateReturns
 	fake.recordInvocation("Update", []interface{}{arg1, arg2, arg3})
 	fake.updateMutex.Unlock()
-	if fake.UpdateStub != nil {
-		return fake.UpdateStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.updateReturns
 	return fakeReturns.result1
 }
 
