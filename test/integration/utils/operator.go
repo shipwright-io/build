@@ -7,9 +7,10 @@ package utils
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	buildconfig "github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // StartBuildOperator initialize an operator as if being call from main,

@@ -9,9 +9,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"knative.dev/pkg/apis"
+
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
-	"knative.dev/pkg/apis"
 )
 
 var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {

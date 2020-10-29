@@ -16,12 +16,12 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/onsi/ginkgo"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	"github.com/shipwright-io/build/pkg/apis"
-	operator "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
-	. "github.com/onsi/ginkgo"
+	"github.com/shipwright-io/build/pkg/apis"
+	operator "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // Logf logs data

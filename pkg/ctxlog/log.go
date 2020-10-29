@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
+
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 

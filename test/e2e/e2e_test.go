@@ -7,10 +7,10 @@ package e2e
 import (
 	"os"
 
-	operator "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	operator "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {

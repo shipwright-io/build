@@ -12,31 +12,30 @@ import (
 	"os"
 	"runtime"
 
-	buildconfig "github.com/shipwright-io/build/pkg/config"
-
-	"github.com/shipwright-io/build/pkg/ctxlog"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
-
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
+
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
-	"github.com/shipwright-io/build/pkg/apis"
-	"github.com/shipwright-io/build/pkg/controller"
-	buildMetrics "github.com/shipwright-io/build/pkg/metrics"
-	"github.com/shipwright-io/build/version"
 	"github.com/spf13/pflag"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	"github.com/shipwright-io/build/pkg/apis"
+	buildconfig "github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/controller"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	buildMetrics "github.com/shipwright-io/build/pkg/metrics"
+	"github.com/shipwright-io/build/version"
 )
 
 // Change below variables to serve metrics on different host or port.

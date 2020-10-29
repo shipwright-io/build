@@ -20,7 +20,7 @@ const (
 	contextTimeoutEnvVar = "CTX_TIMEOUT"
 
 	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.2.0"
-	kanikoImageEnvVar = "KANIKO_CONTAINER_IMAGE"
+	kanikoImageEnvVar  = "KANIKO_CONTAINER_IMAGE"
 
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"

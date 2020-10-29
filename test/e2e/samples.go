@@ -14,19 +14,18 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/onsi/gomega"
+	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"knative.dev/pkg/apis"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	operator "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	v1 "k8s.io/api/core/v1"
-
-	. "github.com/onsi/gomega"
 )
 
 // amendOutputImageURL amend container image URL based on informed image repository.

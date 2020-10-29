@@ -9,12 +9,12 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	. "github.com/shipwright-io/build/pkg/metrics"
-
 	io_prometheus_client "github.com/prometheus/client_model/go"
-	"github.com/shipwright-io/build/pkg/config"
+
 	crmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	"github.com/shipwright-io/build/pkg/config"
+	. "github.com/shipwright-io/build/pkg/metrics"
 )
 
 var _ = Describe("Custom Metrics", func() {

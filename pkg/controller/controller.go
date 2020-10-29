@@ -7,13 +7,14 @@ package controller
 import (
 	"context"
 
+	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"github.com/shipwright-io/build/pkg/apis"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
-	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"k8s.io/client-go/rest"
-
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (

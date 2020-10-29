@@ -9,9 +9,10 @@ import (
 	"fmt"
 
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"knative.dev/pkg/apis"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"knative.dev/pkg/apis"
 )
 
 // This class is intended to host all CRUD calls for testing TaskRuns CRDs resources
