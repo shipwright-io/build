@@ -11,11 +11,11 @@
 set -eu
 
 # kind version
-KIND_VERSION="${KIND_VERSION:-v0.7.0}"
+KIND_VERSION="${KIND_VERSION:-v0.9.0}"
 
 if [ ! -f "${GOPATH}/bin/kind" ] ; then
     echo "# Installing KinD..."
-    go get sigs.k8s.io/kind@${KIND_VERSION}
+    GO111MODULE="on" go get "sigs.k8s.io/kind@${KIND_VERSION}"
 fi
 
 # print kind version
@@ -31,7 +31,7 @@ echo "# Creating a new Kubernetes cluster..."
 kind create cluster --quiet --name="${KIND_CLUSTER_NAME}" --image="kindest/node:${KIND_CLUSTER_VERSION}" --wait=120s
 
 echo "# Using KinD context..."
-kubectl config use-context "kind-kind"
+kubectl config use-context "kind-${KIND_CLUSTER_NAME}"
 
 echo "# KinD nodes:"
 kubectl get nodes
