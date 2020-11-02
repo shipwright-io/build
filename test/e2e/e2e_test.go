@@ -198,6 +198,29 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Buildpacks v3 build is defined for a ruby runtime", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildpacks-v3-ruby")
+
+			// create the build definition
+			createBuild(ctx,
+				namespace,
+				testID,
+				"test/data/build_buildpacks-v3_ruby_cr.yaml",
+				cleanupTimeout,
+				cleanupRetryInterval,
+			)
+		})
+
+		It("successfully runs a build", func() {
+			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_ruby_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
+		})
+	})
+
 	Context("when a Buildpacks v3 build is defined for a golang runtime", func() {
 
 		BeforeEach(func() {

@@ -1,0 +1,14 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-ruby-build
+spec:
+  source:
+    url: https://github.com/cloudfoundry/cf-acceptance-tests
+    contextDir: assets/dora
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
