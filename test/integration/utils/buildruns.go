@@ -5,6 +5,8 @@
 package utils
 
 import (
+	"context"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -18,7 +20,7 @@ import (
 func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-	_, err := brInterface.Create(buildRun)
+	_, err := brInterface.Create(context.TODO(), buildRun, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -29,7 +31,7 @@ func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
 	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-	br, err := brInterface.Get(name, metav1.GetOptions{})
+	br, err := brInterface.Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +42,7 @@ func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
 func (t *TestBuild) DeleteBR(name string) error {
 	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-	if err := brInterface.Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := brInterface.Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
 		return err
 	}
 
@@ -66,7 +68,7 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 
 			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-			buildRun, err := bInterface.Get(name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -85,7 +87,7 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 		return nil, err
 	}
 
-	return brInterface.Get(name, metav1.GetOptions{})
+	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 // GetBRTillStartTime returns a BuildRun that have a StartTime set.
@@ -98,7 +100,7 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) 
 
 			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-			buildRun, err := bInterface.Get(name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -117,7 +119,7 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) 
 		return nil, err
 	}
 
-	return brInterface.Get(name, metav1.GetOptions{})
+	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 // GetBRTillDesiredReason polls until a BuildRun gets a particular Reason
@@ -156,7 +158,7 @@ func (t *TestBuild) GetBRTillDeletion(name string) (bool, error) {
 
 			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 
-			_, err := bInterface.Get(name, metav1.GetOptions{})
+			_, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
