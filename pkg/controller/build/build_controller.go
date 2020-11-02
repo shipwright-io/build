@@ -339,10 +339,10 @@ func (r *ReconcileBuild) validateBuildRunOwnerReferences(ctx context.Context, b 
 				if err = r.client.Update(ctx, &buildRun); err != nil {
 					return err
 				}
-				ctxlog.Info(ctx, fmt.Sprintf("succesfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
+				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
 		}
-	case "false":
+	case "", "false":
 		// if the buildRun have an ownerreference to the Build, lets remove it
 		for _, buildRun := range buildRunList.Items {
 			if index := r.validateBuildOwnerReference(buildRun.OwnerReferences, b); index != -1 {
@@ -350,7 +350,7 @@ func (r *ReconcileBuild) validateBuildRunOwnerReferences(ctx context.Context, b 
 				if err := r.client.Update(ctx, &buildRun); err != nil {
 					return err
 				}
-				ctxlog.Info(ctx, fmt.Sprintf("succesfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
+				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
 		}
 
