@@ -41,6 +41,31 @@ type BuildStrategyList struct {
 	Items           []BuildStrategy `json:"items"`
 }
 
+// GetName returns the name of the build strategy
+func (s BuildStrategy) GetName() string {
+	return s.Name
+}
+
+// GetGeneration returns the current generation sequence number of the build
+// strategy resource
+func (s BuildStrategy) GetGeneration() int64 {
+	return s.Generation
+}
+
+// GetResourceLabels returns labels that define the build strategy name and
+// generation to be used in labels map of a resource
+func (s BuildStrategy) GetResourceLabels() map[string]string {
+	return map[string]string{
+		LabelBuildStrategyName:       s.Name,
+		LabelBuildStrategyGeneration: strconv.FormatInt(s.Generation, 10),
+	}
+}
+
+// GetBuildSteps returns the spec build steps of the build strategy
+func (s BuildStrategy) GetBuildSteps() []BuildStep {
+	return s.Spec.BuildSteps
+}
+
 func init() {
 	SchemeBuilder.Register(&BuildStrategy{}, &BuildStrategyList{})
 }

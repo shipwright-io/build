@@ -47,3 +47,11 @@ type StrategyRef struct {
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`
 }
+
+// BuilderStrategy defines the common elements of build strategies
+type BuilderStrategy interface {
+	GetName() string
+	GetGeneration() int64
+	GetResourceLabels() map[string]string
+	GetBuildSteps() []BuildStep
+}

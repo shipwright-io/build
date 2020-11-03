@@ -178,7 +178,7 @@ func GenerateTaskRun(
 	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
 	serviceAccountName string,
-	buildSteps []buildv1alpha1.BuildStep,
+	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
 
 	revision := "master"
