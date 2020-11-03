@@ -6,11 +6,13 @@ package integration_test
 
 import (
 	"fmt"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
@@ -360,6 +362,35 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			// we modify the annotation so automatic delete does not take place
 			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"false"}}}`, v1alpha1.AnnotationBuildRunDeletion))
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
+			Expect(err).To(BeNil())
+
+			err = tb.DeleteBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
+
+			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			Expect(err).To(BeNil())
+			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
+
+		})
+		It("does not deletes the buildrun if the annotation is removed", func() {
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
+				BUILDRUN+tb.Namespace,
+				BUILD+tb.Namespace,
+				[]byte(test.MinimalBuildRun),
+			)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
+
+			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
+			Expect(err).To(BeNil())
+
+			// we remove the annotation so automatic delete does not take place, "/" is escaped by "~1" in a JSON pointer
+			data := []byte(fmt.Sprintf(`[{"op":"remove","path":"/metadata/annotations/%s"}]`, strings.ReplaceAll(v1alpha1.AnnotationBuildRunDeletion, "/", "~1")))
+			_, err = tb.PatchBuildWithPatchType(BUILD+tb.Namespace, data, types.JSONPatchType)
 			Expect(err).To(BeNil())
 
 			err = tb.DeleteBuild(BUILD + tb.Namespace)
