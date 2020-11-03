@@ -254,6 +254,10 @@ func GenerateTaskRun(
 		},
 	}
 
+	for label, value := range strategy.GetResourceLabels() {
+		expectedTaskRun.Labels[label] = value
+	}
+
 	// assign the timeout
 	if buildRun.Spec.Timeout != nil {
 		expectedTaskRun.Spec.Timeout = buildRun.Spec.Timeout
