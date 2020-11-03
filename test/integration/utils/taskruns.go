@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -23,7 +24,7 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRu
 
 	trInterface := t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace)
 
-	trList, err := trInterface.List(metav1.ListOptions{
+	trList, err := trInterface.List(context.TODO(), metav1.ListOptions{
 		LabelSelector: taskRunLabelSelector,
 	})
 	if err != nil {
@@ -41,7 +42,7 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRu
 func (t *TestBuild) UpdateTaskRun(tr *v1beta1.TaskRun) (*v1beta1.TaskRun, error) {
 	trInterface := t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace)
 
-	return trInterface.Update(tr)
+	return trInterface.Update(context.TODO(), tr, metav1.UpdateOptions{})
 }
 
 // GetTRReason returns the Reason of the Succeeded condition
