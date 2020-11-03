@@ -9,12 +9,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	io_prometheus_client "github.com/prometheus/client_model/go"
-
-	crmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-
-	"github.com/shipwright-io/build/pkg/config"
 	. "github.com/shipwright-io/build/pkg/metrics"
+
+	io_prometheus_client "github.com/prometheus/client_model/go"
+	"github.com/shipwright-io/build/pkg/config"
+	crmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 var _ = Describe("Custom Metrics", func() {
@@ -55,7 +54,7 @@ var _ = Describe("Custom Metrics", func() {
 				"build_builds_registered_total",
 			}
 
-			knownHistrogramMetrics = []string{
+			knownHistogramMetrics = []string{
 				"build_buildrun_establish_duration_seconds",
 				"build_buildrun_completion_duration_seconds",
 				"build_buildrun_rampup_duration_seconds",
@@ -64,17 +63,17 @@ var _ = Describe("Custom Metrics", func() {
 			}
 		)
 
-		// initialise the counter metrics result map with empty maps
+		// initialize the counter metrics result map with empty maps
 		for _, name := range knownCounterMetrics {
 			counterMetrics[name] = map[string]float64{}
 		}
 
-		// initialise the histrogram metrics result map with empty maps
-		for _, name := range knownHistrogramMetrics {
+		// initialize the histogram metrics result map with empty maps
+		for _, name := range knownHistogramMetrics {
 			histogramMetrics[name] = map[buildRunLabels]float64{}
 		}
 
-		// initialise prometheus (second init should be no-op)
+		// initialize prometheus (second init should be no-op)
 		config := config.NewDefaultConfig()
 		config.Prometheus.HistogramEnabledLabels = []string{"buildstrategy", "namespace"}
 		InitPrometheus(config)

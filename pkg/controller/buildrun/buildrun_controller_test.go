@@ -211,7 +211,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 			It("deletes a generated service account when the task run ends", func() {
 
 				// setup a buildrun to use a generated service account
+				buildSample = ctl.DefaultBuild(buildName, "foobar-strategy", build.ClusterBuildStrategyKind)
 				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunSample.Name, buildName)
+				buildRunSample.Status.BuildSpec = &buildSample.Spec
 				buildRunSample.Labels = make(map[string]string)
 				buildRunSample.Labels[build.LabelBuild] = buildName
 

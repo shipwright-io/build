@@ -480,6 +480,11 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, n
 					},
 				},
 			},
+			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+				StartTime: &metav1.Time{
+					Time: time.Now(),
+				},
+			},
 		},
 	}
 }
@@ -536,6 +541,11 @@ func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName stri
 						Status:  corev1.ConditionFalse,
 						Message: "some message",
 					},
+				},
+			},
+			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+				StartTime: &metav1.Time{
+					Time: time.Now(),
 				},
 			},
 		},
@@ -622,6 +632,7 @@ func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName
 
 // DefaultBuildRun returns a minimal BuildRun object
 func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.BuildRun {
+	var defaultBuild = c.DefaultBuild(buildName, "foobar-strategy", build.ClusterBuildStrategyKind)
 	return &build.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
@@ -630,6 +641,9 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
+		},
+		Status: build.BuildRunStatus{
+			BuildSpec: &defaultBuild.Spec,
 		},
 	}
 }
@@ -704,7 +718,6 @@ func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, build
 // BuildRunWithFakeNamespace returns a BuildRun object with
 // a namespace that does not exist
 func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName string) *build.BuildRun {
-
 	return &build.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      buildRunName,
