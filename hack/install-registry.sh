@@ -22,7 +22,7 @@ if [[ ! -z "${ACTION}" ]] && [[ "${ACTION}" != "show" ]] ; then
 fi
 
 # contrainer registry name
-REGISTRY_NAME="${REGISTRY_NAME:-registry}"
+REGISTRY_NAME="${REGISTRY_NAME:-kind-registry}"
 # container registry port
 REGISTRY_PORT="${REGISTRY_PORT:-5000}"
 
@@ -41,6 +41,7 @@ function start_registry () {
         --publish="${REGISTRY_PORT}:5000" \
         --restart="always" \
         --detach \
+        --net=kind \
         registry:2
 
     cat << EOS
@@ -51,7 +52,7 @@ EOS
 }
 
 function show_ipaddr () {
-    docker inspect --format='{{ .NetworkSettings.IPAddress }}' "${REGISTRY_NAME}"
+    docker inspect --format='{{ .NetworkSettings.Networks.kind.IPAddress }}' "${REGISTRY_NAME}"
 }
 
 if [ "${ACTION}" == "" ] ; then

@@ -11,7 +11,7 @@
 set -eu
 
 # kind version
-KIND_VERSION="${KIND_VERSION:-v0.7.0}"
+KIND_VERSION="${KIND_VERSION:-v0.8.0}"
 
 if [ ! -f "${GOPATH}/bin/kind" ] ; then
     echo "# Installing KinD..."
@@ -25,7 +25,7 @@ kind --version
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
 
 # kind cluster version
-KIND_CLUSTER_VERSION="${KIND_CLUSTER_VERSION:-v1.17.0}"
+KIND_CLUSTER_VERSION="${KIND_CLUSTER_VERSION:-v1.18.2}"
 
 echo "# Creating a new Kubernetes cluster..."
 kind create cluster --quiet --name="${KIND_CLUSTER_NAME}" --image="kindest/node:${KIND_CLUSTER_VERSION}" --wait=120s
