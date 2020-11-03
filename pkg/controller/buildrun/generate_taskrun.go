@@ -194,7 +194,7 @@ func GenerateTaskRun(
 		ImageURL = build.Spec.Output.ImageURL
 	}
 
-	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, buildSteps)
+	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, strategy.GetBuildSteps())
 	if err != nil {
 		return nil, err
 	}
