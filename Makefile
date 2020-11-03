@@ -190,11 +190,11 @@ install-strategies: install-apis
 
 local: install-strategies build
 	OPERATOR_NAME=build-operator \
-	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
+	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
 local-plain: build-plain
 	OPERATOR_NAME=build-operator \
-	operator-sdk run --local --operator-flags="$(ZAP_FLAGS)"
+	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
 clean:
 	rm -rf $(OUTPUT_DIR)

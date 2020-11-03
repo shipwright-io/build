@@ -10,7 +10,7 @@
 
 set -eu
 
-SDK_VERSION="${SDK_VERSION:-v0.17.0}"
+SDK_VERSION="${SDK_VERSION:-v0.18.2}"
 
 SDK_HOST="github.com"
 SDK_HOST_PATH="operator-framework/operator-sdk/releases/download"
