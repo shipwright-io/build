@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	"github.com/shipwright-io/build/pkg/conditions"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -42,6 +43,9 @@ type BuildRunSpec struct {
 
 // BuildRunStatus defines the observed state of BuildRun
 type BuildRunStatus struct {
+
+	// Conditions
+	Conditions conditions.Conditions `json:"conditions,omitempty"`
 
 	// The Succeeded status of the TaskRun
 	// +optional
@@ -116,4 +120,26 @@ type BuildRunList struct {
 
 func init() {
 	SchemeBuilder.Register(&BuildRun{}, &BuildRunList{})
+}
+
+// SetConditions implements the conditions.StatusConditions interface,
+// this is require to get access to the Conditions Manager
+func (brs *BuildRunStatus) SetConditions(c conditions.Conditions) {
+	brs.Conditions = c
+}
+
+// GetConditions implements the conditions.StatusConditions interface,
+// this is require to get access to the Conditions Manager
+func (brs *BuildRunStatus) GetConditions() *conditions.Conditions {
+	return &brs.Conditions
+}
+
+// GetCondition returns a condition based on a type from a list of Conditions
+func (brs *BuildRunStatus) GetCondition(t conditions.Type) *conditions.Condition {
+	return conditions.Manage(brs).GetCondition(t)
+}
+
+// SetCondition updates a list of conditions with the provided condition
+func (brs *BuildRunStatus) SetCondition(c *conditions.Condition) {
+	conditions.Manage(brs).SetCondition(c)
 }
