@@ -345,6 +345,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			buildmetrics.BuildRunRampUpDurationObserve(
 				buildRun.Status.BuildSpec.StrategyRef.Name,
 				buildRun.Namespace,
+				buildRun.Name,
 				generatedTaskRun.CreationTimestamp.Time.Sub(buildRun.CreationTimestamp.Time),
 			)
 		} else {
@@ -401,6 +402,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildmetrics.BuildRunEstablishObserve(
 					buildRun.Status.BuildSpec.StrategyRef.Name,
 					buildRun.Namespace,
+					buildRun.Name,
 					buildRun.Status.StartTime.Time.Sub(buildRun.CreationTimestamp.Time),
 				)
 			}
@@ -413,6 +415,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 					buildmetrics.BuildRunCompletionObserve(
 						buildRun.Status.BuildSpec.StrategyRef.Name,
 						buildRun.Namespace,
+						buildRun.Name,
 						buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time),
 					)
 
@@ -429,6 +432,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 								buildmetrics.TaskRunPodRampUpDurationObserve(
 									buildRun.Status.BuildSpec.StrategyRef.Name,
 									buildRun.Namespace,
+									buildRun.Name,
 									lastInitPod.State.Terminated.FinishedAt.Sub(pod.CreationTimestamp.Time),
 								)
 							}
@@ -438,6 +442,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 						buildmetrics.TaskRunRampUpDurationObserve(
 							buildRun.Status.BuildSpec.StrategyRef.Name,
 							buildRun.Namespace,
+							buildRun.Name,
 							pod.CreationTimestamp.Time.Sub(lastTaskRun.CreationTimestamp.Time),
 						)
 
