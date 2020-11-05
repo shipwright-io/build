@@ -178,7 +178,7 @@ func GenerateTaskRun(
 	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
 	serviceAccountName string,
-	buildSteps []buildv1alpha1.BuildStep,
+	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
 
 	revision := "master"
@@ -194,7 +194,7 @@ func GenerateTaskRun(
 		ImageURL = build.Spec.Output.ImageURL
 	}
 
-	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, buildSteps)
+	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, strategy.GetBuildSteps())
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +252,10 @@ func GenerateTaskRun(
 				},
 			},
 		},
+	}
+
+	for label, value := range strategy.GetResourceLabels() {
+		expectedTaskRun.Labels[label] = value
 	}
 
 	// assign the timeout

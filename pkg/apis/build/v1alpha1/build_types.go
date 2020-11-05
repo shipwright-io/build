@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
+const (
 	// LabelBuild is a label key for defining the build name
 	LabelBuild = "build.build.dev/name"
 
