@@ -311,6 +311,35 @@ spec:
                 description: CompletionTime is the time the build completed.
                 format: date-time
                 type: string
+              conditions:
+                description: Conditions
+                items:
+                  description: Condition defines the required fields for populating
+                    Build controllers Conditions
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime last time the condition transit
+                        from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
               latestTaskRunRef:
                 description: PodName is the name of the pod responsible for executing
                   this task's steps.
