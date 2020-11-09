@@ -8,14 +8,17 @@ SPDX-License-Identifier: Apache-2.0
 title: remote-artifacts
 authors:
   - @otaviof
+
 reviewers:
   - @SaschaSchwarze0
   - @qu1queee
   - @adambkaplan
+  - @zhangtbj
+
 approvers:
   - TBD
 creation-date: 2020-10-02
-last-updated:  2020-10-23
+last-updated:  2020-11-09
 status: provisional
 ---
 
@@ -76,8 +79,10 @@ spec:
         path: $(workspace)/licenses/license.tar
 ```
 
-The `source` section will be renamed to `sources` in order to accommodate more `type`s of inputs.
-Each entry will be composed of the following attributes:
+We will add `sources` section, side by side with current `source`. The idea is to accommodate both
+constructions in `v1alpha1`, and save API breaking changes for upcoming `v1beta1`.
+
+The new `sources` will contain the following attributes:
 
 - `name`: source name (required);
 - `type`: input source type, `git` or `http` (required);
@@ -89,6 +94,15 @@ Each entry will be composed of the following attributes:
 
 The resource `UID`/`GID` will be defined by the same user running the Tekton task, later on, we
 can extend the API to support arbitrary configuration.
+
+### Single vs. Multiple Git Repositories
+
+In `v1alpha1` it's expected to inform the Git repository on `.spec.source`, and external artifacts
+informed on `.spec.sources`, therefore, we can address adding this new feature and managing multiple
+Git repositories support in different tracks.
+
+For upcoming work, supporting multiple Git repositories will involve re-defining `/workspace/source`
+location and `$workspace` placeholder.
 
 ### Standalone CRD
 
@@ -108,7 +122,8 @@ metadata:
   name: license-file
 spec:
   sources:
-    - type: http
+    - name: license.tar
+      type: http
       url: https://licenses.company.com/customer-id/license.tar
       http:
         path: $(workspace)/licenses/license.tar
