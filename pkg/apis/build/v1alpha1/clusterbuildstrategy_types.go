@@ -5,7 +5,17 @@
 package v1alpha1
 
 import (
+	"strconv"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// LabelClusterBuildStrategyName is a label key for defining the cluster build strategy name
+	LabelClusterBuildStrategyName = "clusterbuildstrategy.build.dev/name"
+
+	// LabelClusterBuildStrategyGeneration is a label key for defining the cluster build strategy generation
+	LabelClusterBuildStrategyGeneration = "clusterbuildstrategy.build.dev/generation"
 )
 
 // +genclient
@@ -30,6 +40,31 @@ type ClusterBuildStrategyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ClusterBuildStrategy `json:"items"`
+}
+
+// GetName returns the name of the build strategy
+func (s ClusterBuildStrategy) GetName() string {
+	return s.Name
+}
+
+// GetGeneration returns the current generation sequence number of the build
+// strategy resource
+func (s ClusterBuildStrategy) GetGeneration() int64 {
+	return s.Generation
+}
+
+// GetResourceLabels returns labels that define the build strategy name and
+// generation to be used in labels map of a resource
+func (s ClusterBuildStrategy) GetResourceLabels() map[string]string {
+	return map[string]string{
+		LabelClusterBuildStrategyName:       s.Name,
+		LabelClusterBuildStrategyGeneration: strconv.FormatInt(s.Generation, 10),
+	}
+}
+
+// GetBuildSteps returns the spec build steps of the build strategy
+func (s ClusterBuildStrategy) GetBuildSteps() []BuildStep {
+	return s.Spec.BuildSteps
 }
 
 func init() {

@@ -7,23 +7,28 @@ package utils
 import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // This class is intended to host all CRUD calls for testing secrets primitive resources
 
-// CreateSAFromName generate a vanilla service-account
-// with the provided name
+// CreateSAFromName creates a simple ServiceAccount with the provided name if it does not exist.
 func (t *TestBuild) CreateSAFromName(saName string) error {
 	client := t.Clientset.CoreV1().ServiceAccounts(t.Namespace)
-	_, err := client.Create(&corev1.ServiceAccount{
+	_, err := client.Get(saName, metav1.GetOptions{})
+	// If the service account already exists, no error is returned
+	if err == nil {
+		return nil
+	}
+	if !apierrors.IsNotFound(err) {
+		return err
+	}
+	_, err = client.Create(&corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: saName,
 		}})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // GetSA retrieves an existing service-account by name

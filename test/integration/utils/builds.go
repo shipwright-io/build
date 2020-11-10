@@ -38,10 +38,15 @@ func (t *TestBuild) GetBuild(name string) (*v1alpha1.Build, error) {
 		Get(name, metav1.GetOptions{})
 }
 
-// PatchBuild patches an existing Build
+// PatchBuild patches an existing Build using the merge patch type
 func (t *TestBuild) PatchBuild(buildName string, data []byte) (*v1alpha1.Build, error) {
+	return t.PatchBuildWithPatchType(buildName, data, types.MergePatchType)
+}
+
+// PatchBuildWithPatchType patches an existing Build and allows specifying the patch type
+func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt types.PatchType) (*v1alpha1.Build, error) {
 	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
-	b, err := bInterface.Patch(buildName, types.MergePatchType, data)
+	b, err := bInterface.Patch(buildName, pt, data)
 	if err != nil {
 		return nil, err
 	}

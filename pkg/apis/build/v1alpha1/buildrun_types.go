@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
+const (
 	// LabelBuildRun is a label key for BuildRuns to define the name of the BuildRun
 	LabelBuildRun = "buildrun.build.dev/name"
 

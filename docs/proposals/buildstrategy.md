@@ -77,7 +77,7 @@ The BuildStrategy author could convey the same to the controller by annotating t
 
 ### Parameterization
 
-Attributes from the `Build` CR could be used as parameters while definding a `BuildStrategy`.
+Attributes from the `Build` CR could be used as parameters while defining a `BuildStrategy`.
 
 Examples:
 

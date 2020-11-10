@@ -144,7 +144,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 
@@ -154,6 +154,8 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
 				Expect(got.Labels[buildv1alpha1.LabelBuild]).To(Equal(build.Name))
 				Expect(got.Labels[buildv1alpha1.LabelBuildRun]).To(Equal(buildRun.Name))
+				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyName]).To(Equal(build.Spec.StrategyRef.Name))
+				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyGeneration]).To(Equal("0"))
 			})
 
 			It("should ensure generated TaskRun's input and output resources are correct", func() {
@@ -215,7 +217,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 
@@ -274,7 +276,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 
@@ -297,7 +299,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy.Spec.BuildSteps)
+				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 
