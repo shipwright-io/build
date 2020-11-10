@@ -97,12 +97,10 @@ can extend the API to support arbitrary configuration.
 
 ### Single vs. Multiple Git Repositories
 
-In `v1alpha1` it's expected to inform the Git repository on `.spec.source`, and external artifacts
-informed on `.spec.sources`, therefore, we can address adding this new feature and managing multiple
-Git repositories support in different tracks.
+For the initial implementation, we will only support one git repository that is specified in `.spec.source`.
+Remote artifacts will be specified n `.spec.sources` only.
 
-For upcoming work, supporting multiple Git repositories will involve re-defining `/workspace/source`
-location and `$workspace` placeholder.
+We will address supporting multipe Git repositories in a future enhancement proposal. This will involve re-defining `/workspace/source` location and the `$workspace` placeholder.
 
 ### Standalone CRD
 
