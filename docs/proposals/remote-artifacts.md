@@ -14,6 +14,7 @@ reviewers:
   - @qu1queee
   - @adambkaplan
   - @zhangtbj
+  - @coreydaley
 
 approvers:
   - TBD
@@ -71,6 +72,8 @@ kind: Build
 metadata:
   name: license-file
 spec:
+  source:
+    # ...
   sources:
     - name: license-file
       type: http
@@ -139,6 +142,8 @@ kind: Build
 metadata:
   name: example
 spec:
+  source:
+    # ...
   sources:
     - name: license-file
 ```
@@ -248,6 +253,8 @@ spec:
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
+  source:
+    url: https://github.com/example/project.git
   sources:
     - name: source
       type: git
