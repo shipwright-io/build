@@ -14,11 +14,11 @@ Following build metrics are exposed at service `build-operator-metrics` on port 
 | ---- | ---- | ----------- | ------ | ------ |
 | `build_builds_registered_total` | Counter | Number of total registered Builds. | buildstrategy=<build_buildstrategy_name> | experimental |
 | `build_buildruns_completed_total` | Counter | Number of total completed BuildRuns. | buildstrategy=<build_buildstrategy_name> | experimental |
-| `build_buildrun_establish_duration_seconds` | Histogram | BuildRun establish duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrunname=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_completion_duration_seconds` | Histogram | BuildRun completion duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrunname=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_rampup_duration_seconds` | Histogram | BuildRun ramp-up duration in seconds | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrunname=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_taskrun_rampup_duration_seconds` | Histogram | BuildRun taskrun ramp-up duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrunname=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_taskrun_pod_rampup_duration_seconds` | Histogram | BuildRun taskrun pod ramp-up duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrunname=<buildrun_name> <sup>1</sup> | experimental |
+| `build_buildrun_establish_duration_seconds` | Histogram | BuildRun establish duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
+| `build_buildrun_completion_duration_seconds` | Histogram | BuildRun completion duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
+| `build_buildrun_rampup_duration_seconds` | Histogram | BuildRun ramp-up duration in seconds | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
+| `build_buildrun_taskrun_rampup_duration_seconds` | Histogram | BuildRun taskrun ramp-up duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
+| `build_buildrun_taskrun_pod_rampup_duration_seconds` | Histogram | BuildRun taskrun pod ramp-up duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
 
 <sup>1</sup> Labels for histograms are disabled by default. See [Configuration of histogram labels](#configuration-of-histogram-labels) to enable them.
 
@@ -57,7 +57,7 @@ As the amount of buckets and labels has a direct impact on the number of Prometh
 
 * buildstrategy
 * namespace
-* buildrunname
+* buildrun
 
 Use a comma-separated value to enable multiple labels. For example:
 
@@ -69,7 +69,7 @@ make local
 or
 
 ```bash
-export PROMETHEUS_HISTOGRAM_ENABLED_LABELS=buildstrategy,namespace,buildrunname
+export PROMETHEUS_HISTOGRAM_ENABLED_LABELS=buildstrategy,namespace,buildrun
 make local
 ```
 
