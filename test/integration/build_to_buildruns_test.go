@@ -435,12 +435,12 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(patchedBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]).To(Equal("true"))
 
-			err = tb.DeleteBuild(BUILD + tb.Namespace)
-			Expect(err).To(BeNil())
-
 			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
 			Expect(err).To(BeNil())
 			Expect(ownerReferenceNames(br.OwnerReferences)).Should(ContainElement(buildObject.Name))
+
+			err = tb.DeleteBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
 
 			buildIsDeleted, err := tb.GetBRTillDeletion(BUILDRUN + tb.Namespace)
 			Expect(err).To(BeNil())
