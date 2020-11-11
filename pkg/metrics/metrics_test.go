@@ -20,7 +20,7 @@ var _ = Describe("Custom Metrics", func() {
 	type buildRunLabels struct {
 		buildStrategy string
 		namespace     string
-		buildRunName  string
+		buildRun      string
 	}
 
 	var (
@@ -35,8 +35,8 @@ var _ = Describe("Custom Metrics", func() {
 					result.buildStrategy = *label.Value
 				case NamespaceLabel:
 					result.namespace = *label.Value
-				case BuildRunNameLabel:
-					result.buildRunName = *label.Value
+				case BuildRunLabel:
+					result.buildRun = *label.Value
 				}
 			}
 
@@ -47,8 +47,8 @@ var _ = Describe("Custom Metrics", func() {
 	BeforeSuite(func() {
 		var (
 			testLabels = []buildRunLabels{
-				{buildStrategy: "kaniko", namespace: "default", buildRunName: "kaniko-buildrun"},
-				{buildStrategy: "buildpacks", namespace: "default", buildRunName: "buildpacks-buildrun"},
+				{buildStrategy: "kaniko", namespace: "default", buildRun: "kaniko-buildrun"},
+				{buildStrategy: "buildpacks", namespace: "default", buildRun: "buildpacks-buildrun"},
 			}
 
 			knownCounterMetrics = []string{
@@ -77,22 +77,22 @@ var _ = Describe("Custom Metrics", func() {
 
 		// initialize prometheus (second init should be no-op)
 		config := config.NewDefaultConfig()
-		config.Prometheus.HistogramEnabledLabels = []string{BuildStrategyLabel, NamespaceLabel, BuildRunNameLabel}
+		config.Prometheus.HistogramEnabledLabels = []string{BuildStrategyLabel, NamespaceLabel, BuildRunLabel}
 		InitPrometheus(config)
 		InitPrometheus(config)
 
 		// and fire some examples
 		for _, entry := range testLabels {
-			buildStrategy, namespace, buildRunName := entry.buildStrategy, entry.namespace, entry.buildRunName
+			buildStrategy, namespace, buildRun := entry.buildStrategy, entry.namespace, entry.buildRun
 
 			// tell prometheus some things have happened
 			BuildCountInc(buildStrategy)
 			BuildRunCountInc(buildStrategy)
-			BuildRunEstablishObserve(buildStrategy, namespace, buildRunName, time.Duration(1)*time.Second)
-			BuildRunCompletionObserve(buildStrategy, namespace, buildRunName, time.Duration(200)*time.Second)
-			BuildRunRampUpDurationObserve(buildStrategy, namespace, buildRunName, time.Duration(1)*time.Second)
-			TaskRunRampUpDurationObserve(buildStrategy, namespace, buildRunName, time.Duration(2)*time.Second)
-			TaskRunPodRampUpDurationObserve(buildStrategy, namespace, buildRunName, time.Duration(3)*time.Second)
+			BuildRunEstablishObserve(buildStrategy, namespace, buildRun, time.Duration(1)*time.Second)
+			BuildRunCompletionObserve(buildStrategy, namespace, buildRun, time.Duration(200)*time.Second)
+			BuildRunRampUpDurationObserve(buildStrategy, namespace, buildRun, time.Duration(1)*time.Second)
+			TaskRunRampUpDurationObserve(buildStrategy, namespace, buildRun, time.Duration(2)*time.Second)
+			TaskRunPodRampUpDurationObserve(buildStrategy, namespace, buildRun, time.Duration(3)*time.Second)
 		}
 
 		// gather metrics from prometheus and fill the result maps
