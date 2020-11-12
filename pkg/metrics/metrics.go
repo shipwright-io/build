@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	buildStrategyLabel string = "buildstrategy"
-	namespaceLabel     string = "namespace"
+	BuildStrategyLabel string = "buildstrategy"
+	NamespaceLabel     string = "namespace"
+	BuildRunLabel      string = "buildrun"
 )
 
 var (
@@ -25,14 +26,14 @@ var (
 			Name: "build_builds_registered_total",
 			Help: "Number of total registered Builds.",
 		},
-		[]string{buildStrategyLabel})
+		[]string{BuildStrategyLabel})
 
 	buildRunCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "build_buildruns_completed_total",
 			Help: "Number of total completed BuildRuns.",
 		},
-		[]string{buildStrategyLabel})
+		[]string{BuildStrategyLabel})
 
 	buildRunEstablishDuration  *prometheus.HistogramVec
 	buildRunCompletionDuration *prometheus.HistogramVec
@@ -43,6 +44,7 @@ var (
 
 	histogramBuildStrategyLabelEnabled = false
 	histogramNamespaceLabelEnabled     = false
+	histogramBuildRunLabelEnabled      = false
 
 	initialized = false
 )
@@ -56,13 +58,17 @@ func InitPrometheus(config *config.Config) {
 	initialized = true
 
 	var histogramLabels []string
-	if contains(config.Prometheus.HistogramEnabledLabels, buildStrategyLabel) {
-		histogramLabels = append(histogramLabels, buildStrategyLabel)
+	if contains(config.Prometheus.HistogramEnabledLabels, BuildStrategyLabel) {
+		histogramLabels = append(histogramLabels, BuildStrategyLabel)
 		histogramBuildStrategyLabelEnabled = true
 	}
-	if contains(config.Prometheus.HistogramEnabledLabels, namespaceLabel) {
-		histogramLabels = append(histogramLabels, namespaceLabel)
+	if contains(config.Prometheus.HistogramEnabledLabels, NamespaceLabel) {
+		histogramLabels = append(histogramLabels, NamespaceLabel)
 		histogramNamespaceLabelEnabled = true
+	}
+	if contains(config.Prometheus.HistogramEnabledLabels, BuildRunLabel) {
+		histogramLabels = append(histogramLabels, BuildRunLabel)
+		histogramBuildRunLabelEnabled = true
 	}
 
 	buildRunEstablishDuration = prometheus.NewHistogramVec(
@@ -126,14 +132,17 @@ func contains(slice []string, element string) bool {
 	return false
 }
 
-func createHistogramLabels(buildStrategy string, namespace string) prometheus.Labels {
+func createHistogramLabels(buildStrategy string, namespace string, buildRun string) prometheus.Labels {
 	labels := prometheus.Labels{}
 
 	if histogramBuildStrategyLabelEnabled {
-		labels[buildStrategyLabel] = buildStrategy
+		labels[BuildStrategyLabel] = buildStrategy
 	}
 	if histogramNamespaceLabelEnabled {
-		labels[namespaceLabel] = namespace
+		labels[NamespaceLabel] = namespace
+	}
+	if histogramBuildRunLabelEnabled {
+		labels[BuildRunLabel] = buildRun
 	}
 
 	return labels
@@ -152,36 +161,36 @@ func BuildRunCountInc(buildStrategy string) {
 }
 
 // BuildRunEstablishObserve sets the build run establish time
-func BuildRunEstablishObserve(buildStrategy string, namespace string, duration time.Duration) {
+func BuildRunEstablishObserve(buildStrategy string, namespace string, buildRun string, duration time.Duration) {
 	if buildRunEstablishDuration != nil {
-		buildRunEstablishDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+		buildRunEstablishDuration.With(createHistogramLabels(buildStrategy, namespace, buildRun)).Observe(duration.Seconds())
 	}
 }
 
 // BuildRunCompletionObserve sets the build run completion time
-func BuildRunCompletionObserve(buildStrategy string, namespace string, duration time.Duration) {
+func BuildRunCompletionObserve(buildStrategy string, namespace string, buildRun string, duration time.Duration) {
 	if buildRunCompletionDuration != nil {
-		buildRunCompletionDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+		buildRunCompletionDuration.With(createHistogramLabels(buildStrategy, namespace, buildRun)).Observe(duration.Seconds())
 	}
 }
 
 // BuildRunRampUpDurationObserve processes the observation of a new buildrun ramp-up duration
-func BuildRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
+func BuildRunRampUpDurationObserve(buildStrategy string, namespace string, buildRun string, duration time.Duration) {
 	if buildRunRampUpDuration != nil {
-		buildRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+		buildRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace, buildRun)).Observe(duration.Seconds())
 	}
 }
 
 // TaskRunRampUpDurationObserve processes the observation of a new taskrun ramp-up duration
-func TaskRunRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
+func TaskRunRampUpDurationObserve(buildStrategy string, namespace string, buildRun string, duration time.Duration) {
 	if taskRunRampUpDuration != nil {
-		taskRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+		taskRunRampUpDuration.With(createHistogramLabels(buildStrategy, namespace, buildRun)).Observe(duration.Seconds())
 	}
 }
 
 // TaskRunPodRampUpDurationObserve processes the observation of a new taskrun pod ramp-up duration
-func TaskRunPodRampUpDurationObserve(buildStrategy string, namespace string, duration time.Duration) {
+func TaskRunPodRampUpDurationObserve(buildStrategy string, namespace string, buildRun string, duration time.Duration) {
 	if taskRunPodRampUpDuration != nil {
-		taskRunPodRampUpDuration.With(createHistogramLabels(buildStrategy, namespace)).Observe(duration.Seconds())
+		taskRunPodRampUpDuration.With(createHistogramLabels(buildStrategy, namespace, buildRun)).Observe(duration.Seconds())
 	}
 }
