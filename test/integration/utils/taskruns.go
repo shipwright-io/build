@@ -5,12 +5,12 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -29,9 +29,13 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRu
 	if err != nil {
 		return nil, err
 	}
+	if len(trList.Items) == 0 {
+		// Return a "NotFound" error so that we can use kerrors.IsNotFound on the returned error
+		return nil, kerrors.NewNotFound(v1beta1.Resource("taskruns"), buildRunName)
+	}
 
-	if len(trList.Items) != 1 {
-		return nil, fmt.Errorf("failed to find an owned TaskRun based on a Buildrun %s name", buildRunName)
+	if len(trList.Items) > 1 {
+		return nil, fmt.Errorf("found %d TaskRuns for Buildrun %s", len(trList.Items), buildRunName)
 	}
 
 	return &trList.Items[0], nil
@@ -57,7 +61,7 @@ func (t *TestBuild) GetTRReason(buildRunName string) (string, error) {
 		return trCondition.Reason, nil
 	}
 
-	return "", errors.New("foo")
+	return "", fmt.Errorf("no Succeeded condition found for BuildRun %s", buildRunName)
 }
 
 // GetTRTillDesiredReason polls until a TaskRun matches a desired Reason
@@ -68,6 +72,11 @@ func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) e
 		pollTRTillCompletion = func() (bool, error) {
 
 			trReason, err := t.GetTRReason(buildRunName)
+			// Not found means that we may not have a TaskRun for this BuildRun yet
+			if kerrors.IsNotFound(err) {
+				fmt.Printf("could not find TaskRun for BuildRun %s", buildRunName)
+				return false, nil
+			}
 			if err != nil {
 				return false, err
 			}
@@ -75,7 +84,7 @@ func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) e
 			if trReason == reason {
 				return true, nil
 			}
-
+			fmt.Printf("expecting TaskRun reason %s for BuildRun %s, got %s", reason, buildRunName, reason)
 			return false, nil
 		}
 	)
