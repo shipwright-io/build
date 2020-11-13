@@ -6,8 +6,10 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
+	errorNew "errors"
 
 	. "github.com/onsi/gomega"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
@@ -25,11 +27,14 @@ import (
 	"sigs.k8s.io/yaml"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+
+	buildController "github.com/shipwright-io/build/pkg/controller/build"
 	"github.com/shipwright-io/build/pkg/conditions"
 )
 
 // Catalog allows you to access helper functions
 type Catalog struct{}
+type ErrorCodes int
 
 // BuildWithClusterBuildStrategy gives you an specific Build CRD
 func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategyName string, secretName string) *build.Build {
@@ -923,4 +928,48 @@ func (c *Catalog) LoadCBSWithName(name string, d []byte) (*build.ClusterBuildStr
 	}
 	b.Name = name
 	return b, nil
+}
+
+// validateErrorCode will validate if the errorCode const names are changed
+func (c *Catalog) ValidateErrorCode(e ErrorCodes) (string, error) {
+	switch e {
+	case buildController.ListSecretInNamespaceFailed:
+		return "ListSecretInNamespaceFailed", nil
+	case buildController.NoSecretsInNamespace:
+		return "NoSecretsInNamespace", nil
+	case buildController.SecretsDoNotExist:
+		return "SecretsDoNotExist", nil
+	case buildController.SecretDoesNotExist:
+		return "SecretDoesNotExist", nil
+	case buildController.UnknownStrategy:
+		return "UnknownStrategy", nil
+	case buildController.ListBuildStrategyInNamespaceFailed:
+		return "ListBuildStrategyInNamespaceFailed", nil
+	case buildController.NoneBuildStrategyFoundInNamespace:
+		return "NoneBuildStrategyFoundInNamespace", nil
+	case buildController.BuildStrategyDoesNotExistInNamespace:
+		return "BuildStrategyDoesNotExistInNamespace", nil
+	case buildController.ListClusterBuildStrategyFailed:
+		return "ListClusterBuildStrategyFailed", nil
+	case buildController.NoClusterBuildStrategyFound:
+		return "NoClusterBuildStrategyFound", nil
+	case buildController.ClusterBuildStrategyDoesNotExist:
+		return "ClusterBuildStrategyDoesNotExist", nil
+	case buildController.RuntimePathsCanNotBeEmpty:
+		return "RuntimePathsCanNotBeEmpty", nil
+	case buildController.SetOwnerReferenceFailed:
+		return "SetOwnerReferenceFailed", nil
+	default:
+		return "", errorNew.New("UNKNOWN ERROR CODE")
+	}
+}
+
+// validateError will validate if the error code's error message is correct
+func (c *Catalog) ValidateError(code ErrorCodes) (string, error) {
+	errorCodeName, err := c.ValidateErrorCode(code)
+	if err != nil {
+		fmt.Print("%v", err)
+		return "", err
+	}
+	return errorCodeName, nil
 }

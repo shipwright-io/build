@@ -39,6 +39,24 @@ const succeedStatus string = "Succeeded"
 const namespace string = "namespace"
 const name string = "name"
 
+// error message
+const (
+	InitialBuildErrorCodes = 1000*1 + iota
+	ListSecretInNamespaceFailed // validate secrets
+	NoSecretsInNamespace
+	SecretsDoNotExist
+	SecretDoesNotExist
+	UnknownStrategy // validate strategy
+	ListBuildStrategyInNamespaceFailed
+	NoneBuildStrategyFoundInNamespace
+	BuildStrategyDoesNotExistInNamespace
+	ListClusterBuildStrategyFailed
+	NoClusterBuildStrategyFound
+	ClusterBuildStrategyDoesNotExist
+	RuntimePathsCanNotBeEmpty // validate runtime
+	SetOwnerReferenceFailed // validate BuildRun OwnerReferences
+)
+
 type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -204,7 +222,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 
 func (r *ReconcileBuild) validateRuntime(runtime *build.Runtime) error {
 	if len(runtime.Paths) == 0 {
-		return fmt.Errorf("the property 'spec.runtime.paths' must not be empty")
+		return fmt.Errorf("%v: the property 'spec.runtime.paths' must not be empty", RuntimePathsCanNotBeEmpty)
 	}
 	return nil
 }
@@ -221,7 +239,7 @@ func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.Strat
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown strategy %v", *s.Kind)
+			return fmt.Errorf("%v: unknown strategy %v", UnknownStrategy, *s.Kind)
 		}
 	} else {
 		ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind")
@@ -236,11 +254,11 @@ func (r *ReconcileBuild) validateBuildStrategy(ctx context.Context, n string, ns
 	list := &build.BuildStrategyList{}
 
 	if err := r.client.List(ctx, list, &client.ListOptions{Namespace: ns}); err != nil {
-		return errors.Wrapf(err, "listing BuildStrategies in ns %s failed", ns)
+		return errors.Wrapf(err, "%v: listing BuildStrategies in ns %s failed", ListBuildStrategyInNamespaceFailed, ns)
 	}
 
 	if len(list.Items) == 0 {
-		return errors.Errorf("none BuildStrategies found in namespace %s", ns)
+		return errors.Errorf("%v: none BuildStrategies found in namespace %s", NoneBuildStrategyFoundInNamespace, ns)
 	}
 
 	if len(list.Items) > 0 {
@@ -249,7 +267,7 @@ func (r *ReconcileBuild) validateBuildStrategy(ctx context.Context, n string, ns
 				return nil
 			}
 		}
-		return fmt.Errorf("buildStrategy %s does not exist in namespace %s", n, ns)
+		return fmt.Errorf("%v: buildStrategy %s does not exist in namespace %s", BuildStrategyDoesNotExistInNamespace, n, ns)
 	}
 	return nil
 }
@@ -258,11 +276,11 @@ func (r *ReconcileBuild) validateClusterBuildStrategy(ctx context.Context, n str
 	list := &build.ClusterBuildStrategyList{}
 
 	if err := r.client.List(ctx, list); err != nil {
-		return errors.Wrapf(err, "listing ClusterBuildStrategies failed")
+		return errors.Wrapf(err, "%v: listing ClusterBuildStrategies failed", ListClusterBuildStrategyFailed)
 	}
 
 	if len(list.Items) == 0 {
-		return errors.Errorf("no ClusterBuildStrategies found")
+		return errors.Errorf("%v: no ClusterBuildStrategies found", NoClusterBuildStrategyFound)
 	}
 
 	if len(list.Items) > 0 {
@@ -271,7 +289,7 @@ func (r *ReconcileBuild) validateClusterBuildStrategy(ctx context.Context, n str
 				return nil
 			}
 		}
-		return fmt.Errorf("clusterBuildStrategy %s does not exist", n)
+		return fmt.Errorf("%v: clusterBuildStrategy %s does not exist", ClusterBuildStrategyDoesNotExist, n)
 	}
 	return nil
 }
@@ -286,11 +304,11 @@ func (r *ReconcileBuild) validateSecrets(ctx context.Context, secretNames []stri
 			Namespace: ns,
 		},
 	); err != nil {
-		return errors.Wrapf(err, "listing secrets in namespace %s failed", ns)
+		return errors.Wrapf(err, "%v: listing secrets in namespace %s failed", ListSecretInNamespaceFailed, ns)
 	}
 
 	if len(list.Items) == 0 {
-		return errors.Errorf("there are no secrets in namespace %s", ns)
+		return errors.Errorf("%v: there are no secrets in namespace %s", NoSecretsInNamespace, ns)
 	}
 
 	var lookUp = map[string]bool{}
@@ -308,9 +326,9 @@ func (r *ReconcileBuild) validateSecrets(ctx context.Context, secretNames []stri
 	}
 
 	if len(missingSecrets) > 1 {
-		return fmt.Errorf("secrets %s do not exist", strings.Join(missingSecrets, ", "))
+		return fmt.Errorf("%v: secrets %s do not exist", SecretsDoNotExist, strings.Join(missingSecrets, ", "))
 	} else if len(missingSecrets) > 0 {
-		return fmt.Errorf("secret %s does not exist", missingSecrets[0])
+		return fmt.Errorf("%v: secret %s does not exist", SecretDoesNotExist, missingSecrets[0])
 	}
 
 	return nil
@@ -331,7 +349,7 @@ func (r *ReconcileBuild) validateBuildRunOwnerReferences(ctx context.Context, b 
 		for _, buildRun := range buildRunList.Items {
 			if index := r.validateBuildOwnerReference(buildRun.OwnerReferences, b); index == -1 {
 				if err := r.setOwnerReferenceFunc(b, &buildRun, r.scheme); err != nil {
-					b.Status.Reason = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
+					b.Status.Reason = fmt.Sprintf("%v: unexpected error when trying to set the ownerreference: %v", SetOwnerReferenceFailed, err)
 					if err := r.client.Status().Update(ctx, b); err != nil {
 						return err
 					}

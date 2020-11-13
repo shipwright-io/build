@@ -15,6 +15,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining the Output](#defining-the-output)
   - [Runtime-Image](#Runtime-Image)
 - [BuildRun deletion](#BuildRun-deletion)
+- [Build error code](#Build-error-code)
 
 ## Overview
 
@@ -278,3 +279,22 @@ metadata:
   annotations:
     build.build.dev/build-run-deletion: "true"
 ```
+
+## Build error code
+
+---
+|Unique error code|Error name|Error message|
+|---|---|---|
+|`1001`|`ListSecretInNamespaceFailed`|`listing secrets in namespace %s failed`|
+|`1002`|`NoSecretsInNamespace`|`there are no secrets in namespace %s`|
+|`1003`|`SecretsDoNotExist`|`secrets %s do not exist`|
+|`1004`|`SecretDoesNotExist`|`secret %s does not exist`|
+|`1005`|`UnknownStrategy`|`unknown strategy %v`|
+|`1006`|`ListBuildStrategyInNamespaceFailed`|`listing BuildStrategies in ns %s failed`|
+|`1007`|`NoneBuildStrategyFoundInNamespace`|`none BuildStrategies found in namespace %s`|
+|`1008`|`BuildStrategyDoesNotExistInNamespace`|`buildStrategy %s does not exist in namespace %s`|
+|`1009`|`ListClusterBuildStrategyFailed`|`listing ClusterBuildStrategies failed`|
+|`1010`|`NoClusterBuildStrategyFound`|`no ClusterBuildStrategies found`|
+|`1011`|`ClusterBuildStrategyDoesNotExist`|`clusterBuildStrategy %s does not exist`|
+|`1012`|`RuntimePathsCanNotBeEmpty`|`the property 'spec.runtime.paths' must not be empty`|
+|`1013`|`SetOwnerReferenceFailed`|`unexpected error when trying to set the ownerreference: %v`|

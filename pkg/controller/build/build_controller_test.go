@@ -99,13 +99,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, "secret non-existing does not exist")
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: secret non-existing does not exist", buildController.SecretDoesNotExist))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring("secret non-existing does not exist"))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: secret non-existing does not exist", buildController.SecretDoesNotExist)))
 			})
 
 			It("succeeds when the secret exists", func() {
@@ -162,13 +162,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, "secret non-existing does not exist")
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: secret non-existing does not exist", buildController.SecretDoesNotExist))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring("secret non-existing does not exist"))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: secret non-existing does not exist", buildController.SecretDoesNotExist)))
 			})
 
 			It("succeeds when the secret exists", func() {
@@ -221,13 +221,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("secret %s does not exist", registrySecret))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: secret %s does not exist", buildController.SecretDoesNotExist, registrySecret))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("secret %s does not exist", registrySecret)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: secret %s does not exist", buildController.SecretDoesNotExist, registrySecret)))
 			})
 			It("succeed when the secret exists", func() {
 
@@ -266,13 +266,13 @@ var _ = Describe("Reconcile Build", func() {
 					}
 					return nil
 				})
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("there are no secrets in namespace %s", namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: there are no secrets in namespace %s", buildController.NoSecretsInNamespace, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("there are no secrets in namespace %s", namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: there are no secrets in namespace %s", buildController.NoSecretsInNamespace, namespace)))
 			})
 		})
 
@@ -325,13 +325,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("clusterBuildStrategy %s does not exist", buildStrategyName))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: clusterBuildStrategy %s does not exist", buildController.ClusterBuildStrategyDoesNotExist, buildStrategyName))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("clusterBuildStrategy %s does not exist", buildStrategyName)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: clusterBuildStrategy %s does not exist", buildController.ClusterBuildStrategyDoesNotExist, buildStrategyName)))
 			})
 			It("succeed when the strategy exists", func() {
 
@@ -373,13 +373,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, "no ClusterBuildStrategies found")
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: no ClusterBuildStrategies found", buildController.NoClusterBuildStrategyFound))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring("no ClusterBuildStrategies found"))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: no ClusterBuildStrategies found", buildController.NoClusterBuildStrategyFound)))
 			})
 		})
 		Context("when spec strategy BuildStrategy is specified", func() {
@@ -406,13 +406,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: buildStrategy %s does not exist in namespace %s", buildController.BuildStrategyDoesNotExistInNamespace, buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: buildStrategy %s does not exist in namespace %s", buildController.BuildStrategyDoesNotExistInNamespace, buildStrategyName, namespace)))
 			})
 			It("succeed when the strategy exists", func() {
 
@@ -454,13 +454,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("none BuildStrategies found in namespace %s", namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: none BuildStrategies found in namespace %s", buildController.NoneBuildStrategyFoundInNamespace, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("none BuildStrategies found in namespace %s", namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: none BuildStrategies found in namespace %s", buildController.NoneBuildStrategyFoundInNamespace, namespace)))
 			})
 		})
 		Context("when spec strategy kind is not specified", func() {
@@ -485,13 +485,13 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("%v: buildStrategy %s does not exist in namespace %s", buildController.BuildStrategyDoesNotExistInNamespace, buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace)))
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("%v: buildStrategy %s does not exist in namespace %s", buildController.BuildStrategyDoesNotExistInNamespace, buildStrategyName, namespace)))
 
 			})
 			It("default to BuildStrategy and succeed if the strategy exists", func() {
@@ -518,5 +518,74 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})
+
+		Context("Validate all build error code is correct", func() {
+			It("1001 error code should represent listing secrets in namespace failed", func() {
+				errorName, err := ctl.ValidateError(1001)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("ListSecretInNamespaceFailed"))
+			})
+			It("1002 error code should represent there are no secrets in namespace", func() {
+				errorName, err := ctl.ValidateError(1002)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("NoSecretsInNamespace"))
+			})
+			It("1003 error code should represent secrets do not exist", func() {
+				errorName, err := ctl.ValidateError(1003)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("SecretsDoNotExist"))
+			})
+			It("1004 error code should represent secret does not exist", func() {
+				errorName, err := ctl.ValidateError(1004)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("SecretDoesNotExist"))
+			})
+			It("1005 error code should represent unknown strategy", func() {
+				errorName, err := ctl.ValidateError(1005)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("UnknownStrategy"))
+			})
+			It("1006 error code should represent listing BuildStrategies in ns failed", func() {
+				errorName, err := ctl.ValidateError(1006)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("ListBuildStrategyInNamespaceFailed"))
+			})
+			It("1007 error code should represent none BuildStrategies found in namespace", func() {
+				errorName, err := ctl.ValidateError(1007)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("NoneBuildStrategyFoundInNamespace"))
+			})
+			It("1008 error code should represent buildStrategy does not exist in namespace", func() {
+				errorName, err := ctl.ValidateError(1008)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("BuildStrategyDoesNotExistInNamespace"))
+			})
+			It("1009 error code should represent listing ClusterBuildStrategies failed", func() {
+				errorName, err := ctl.ValidateError(1009)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("ListClusterBuildStrategyFailed"))
+			})
+			It("1010 error code should represent no ClusterBuildStrategies found", func() {
+				errorName, err := ctl.ValidateError(1010)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("NoClusterBuildStrategyFound"))
+			})
+			It("1011 error code should represent clusterBuildStrategy does not exist", func() {
+				errorName, err := ctl.ValidateError(1011)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("ClusterBuildStrategyDoesNotExist"))
+			})
+			It("1012 error code should represent the property 'spec.runtime.paths' must not be empty", func() {
+				errorName, err := ctl.ValidateError(1012)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("RuntimePathsCanNotBeEmpty"))
+			})
+			It("1013 error code should represent unexpected error when trying to set the ownerreference", func() {
+				errorName, err := ctl.ValidateError(1013)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errorName).To(Equal("SetOwnerReferenceFailed"))
+			})
+		})
+
 	})
 })
