@@ -26,7 +26,7 @@ TEKTON_VERSION ?= v0.17.1
 SDK_VERSION ?= v0.17.0
 
 # E2E test flags
-TEST_E2E_FLAGS ?= -failFast -flakeAttempts=2 -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=20m -trace -v
+TEST_E2E_FLAGS ?= -failFast -flakeAttempts=2 -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=30m -progress -stream -trace -v
 
 # E2E test operator behavior, can be start_local or managed_outside
 TEST_E2E_OPERATOR ?= start_local

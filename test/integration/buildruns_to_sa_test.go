@@ -109,7 +109,10 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 		})
 
 		It("defaults to default serviceaccount if pipeline serviceaccount is not specified", func() {
-
+			expectedServiceAccount := "default"
+			if _, err := tb.GetSA("pipeline"); err == nil {
+				expectedServiceAccount = "pipeline"
+			}
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
@@ -119,7 +122,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(tr.Spec.ServiceAccountName).To(Equal("default"))
+			Expect(tr.Spec.ServiceAccountName).To(Equal(expectedServiceAccount))
 		})
 	})
 })

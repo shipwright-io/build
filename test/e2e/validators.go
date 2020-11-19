@@ -192,11 +192,18 @@ func validateBuildRunToSucceed(
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
 
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
+	nextStatusLog := time.Now().Add(60 * time.Second)
 	Eventually(func() corev1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(falseCondition))
+
+		now := time.Now()
+		if now.After(nextStatusLog) {
+			Logf("Still waiting for build run '%s' to succeed.", testBuildRun.Name)
+			nextStatusLog = time.Now().Add(60 * time.Second)
+		}
 
 		return testBuildRun.Status.Succeeded
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
@@ -228,11 +235,18 @@ func validateBuildRunToFail(
 
 	// Ensure that eventually the BuildRun moves to Failed.
 	buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: namespace}
+	nextStatusLog := time.Now().Add(60 * time.Second)
 	Eventually(func() corev1.ConditionStatus {
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
 		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(trueCondition))
+
+		now := time.Now()
+		if now.After(nextStatusLog) {
+			Logf("Still waiting for build run '%s' to fail.", testBuildRun.Name)
+			nextStatusLog = time.Now().Add(60 * time.Second)
+		}
 
 		return testBuildRun.Status.Succeeded
 	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
