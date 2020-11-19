@@ -18,6 +18,10 @@ const (
 
 	// AnnotationBuildRunDeletion is a label key for enabling/disabling the BuildRun deletion
 	AnnotationBuildRunDeletion = "build.build.dev/build-run-deletion"
+
+	// AnnotationBuildRefSecret is an annotation that tells the Build Controller to reconcile on
+	// events of the secret only if is referenced by a Build in the same namespace
+	AnnotationBuildRefSecret = "build.build.dev/referenced.secret"
 )
 
 // BuildSpec defines the desired state of Build
