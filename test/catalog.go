@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/conditions"
 )
 
 // Catalog allows you to access helper functions
@@ -766,6 +767,26 @@ func (c *Catalog) DefaultNamespacedBuildStrategy() *build.BuildStrategy {
 	return &build.BuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
+		},
+	}
+}
+
+// BuildRunWithSucceededCondition returns a BuildRun with a single condition
+// of the type Succeeded
+func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foobar",
+		},
+		Status: build.BuildRunStatus{
+			Conditions: conditions.Conditions{
+				conditions.Condition{
+					Type:    conditions.Succeeded,
+					Reason:  "foobar",
+					Message: "foo is not bar",
+					Status:  corev1.ConditionUnknown,
+				},
+			},
 		},
 	}
 }
