@@ -62,12 +62,14 @@ func (t *TestBuild) GetTRReason(buildRunName string) (string, error) {
 
 // GetTRTillDesiredReason polls until a TaskRun matches a desired Reason
 // or it exits if an error happen or a timeout is reach.
-func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) error {
+func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) (string, error) {
+	var trReason string
+	var err error
 
 	var (
 		pollTRTillCompletion = func() (bool, error) {
 
-			trReason, err := t.GetTRReason(buildRunName)
+			trReason, err = t.GetTRReason(buildRunName)
 			if err != nil {
 				return false, err
 			}
@@ -80,10 +82,10 @@ func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) e
 		}
 	)
 
-	err := wait.PollImmediate(t.Interval, t.TimeOut, pollTRTillCompletion)
-	if err != nil {
-		return err
+	pollError := wait.PollImmediate(t.Interval, t.TimeOut, pollTRTillCompletion)
+	if pollError != nil {
+		return trReason, pollError
 	}
 
-	return nil
+	return trReason, nil
 }
