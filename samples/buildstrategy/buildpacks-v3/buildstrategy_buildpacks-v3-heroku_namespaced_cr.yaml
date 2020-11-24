@@ -10,51 +10,17 @@ spec:
       securityContext:
         runAsUser: 0
         capabilities:
-          add: ["CHOWN"]
+          add: 
+            - CHOWN
       command:
         - /bin/bash
       args:
         - -c
         - >
-          chown -R "1000:1000" "/workspace/source" &&
-          chown -R "1000:1000" "/tekton/home"
-      resources:
-        limits:
-          cpu: 500m
-          memory: 1Gi
-        requests:
-          cpu: 250m
-          memory: 65Mi
-    - name: step-detect
-      image: heroku/buildpacks:18
-      securityContext:
-        runAsUser: 1000
-      command:
-        - /cnb/lifecycle/detector
-      args:
-        - -app=/workspace/source/$(build.source.contextDir)
-        - -group=/layers/group.toml
-        - -plan=/layers/plan.toml
-      resources:
-        limits:
-          cpu: 500m
-          memory: 1Gi
-        requests:
-          cpu: 250m
-          memory: 65Mi
-      volumeMounts:
-        - name: layers-dir
-          mountPath: /layers
-    - name: step-restore
-      image: heroku/buildpacks:18
-      securityContext:
-        runAsUser: 1000
-      command:
-        - /cnb/lifecycle/restorer
-      args:
-        - -layers=/layers
-        - -cache-dir=/cache
-        - -group=/layers/group.toml
+          chown -R "1000:1000" /workspace/source &&
+          chown -R "1000:1000" /tekton/home &&
+          chown -R "1000:1000" /cache &&
+          chown -R "1000:1000" /layers
       resources:
         limits:
           cpu: 500m
@@ -67,38 +33,17 @@ spec:
           mountPath: /cache
         - name: layers-dir
           mountPath: /layers
-    - name: step-build
+    - name: step-create
       image: heroku/buildpacks:18
       securityContext:
         runAsUser: 1000
+        runAsGroup: 1000
       command:
-        - /cnb/lifecycle/builder
+        - /cnb/lifecycle/creator
       args:
         - -app=/workspace/source/$(build.source.contextDir)
-        - -layers=/layers
-        - -group=/layers/group.toml
-        - -plan=/layers/plan.toml
-      resources:
-        limits:
-          cpu: 500m
-          memory: 1Gi
-        requests:
-          cpu: 250m
-          memory: 65Mi
-      volumeMounts:
-        - name: layers-dir
-          mountPath: /layers
-    - name: step-export
-      image: heroku/buildpacks:18
-      securityContext:
-        runAsUser: 0
-      command:
-        - /cnb/lifecycle/exporter
-      args:
-        - -app=/workspace/source/$(build.source.contextDir)
-        - -layers=/layers
         - -cache-dir=/cache
-        - -group=/layers/group.toml
+        - -layers=/layers
         - $(build.output.image)
       resources:
         limits:
