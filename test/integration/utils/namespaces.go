@@ -5,6 +5,8 @@
 package utils
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,7 +21,7 @@ func (t *TestBuild) CreateNamespace() error {
 			Name: t.Namespace,
 		},
 	}
-	_, err := client.Create(ns)
+	_, err := client.Create(context.TODO(), ns, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -31,7 +33,7 @@ func (t *TestBuild) DeleteNamespaces(nsList []string) error {
 	client := t.Clientset.CoreV1().Namespaces()
 
 	for _, ns := range nsList {
-		err := client.Delete(ns, &metav1.DeleteOptions{})
+		err := client.Delete(context.TODO(), ns, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}

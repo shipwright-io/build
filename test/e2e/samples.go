@@ -192,7 +192,7 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 					Follow:    false,
 				})
 
-				podLogs, err := req.Stream()
+				podLogs, err := req.Stream(context.TODO())
 				if err != nil {
 					Logf("Failed to retrieve the logs of container %s: %v", container.Name, err)
 					continue

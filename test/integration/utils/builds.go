@@ -5,6 +5,8 @@
 package utils
 
 import (
+	"context"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -17,7 +19,7 @@ import (
 func (t *TestBuild) CreateBuild(build *v1alpha1.Build) error {
 	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
 
-	_, err := bInterface.Create(build)
+	_, err := bInterface.Create(context.TODO(), build, metav1.CreateOptions{})
 	return err
 }
 
@@ -25,7 +27,7 @@ func (t *TestBuild) CreateBuild(build *v1alpha1.Build) error {
 func (t *TestBuild) DeleteBuild(name string) error {
 	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
 
-	err := bInterface.Delete(name, &metav1.DeleteOptions{})
+	err := bInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
 
 	return err
 }
@@ -35,7 +37,7 @@ func (t *TestBuild) GetBuild(name string) (*v1alpha1.Build, error) {
 	return t.BuildClientSet.
 		BuildV1alpha1().
 		Builds(t.Namespace).
-		Get(name, metav1.GetOptions{})
+		Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 // PatchBuild patches an existing Build using the merge patch type
@@ -46,7 +48,7 @@ func (t *TestBuild) PatchBuild(buildName string, data []byte) (*v1alpha1.Build, 
 // PatchBuildWithPatchType patches an existing Build and allows specifying the patch type
 func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt types.PatchType) (*v1alpha1.Build, error) {
 	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
-	b, err := bInterface.Patch(buildName, pt, data)
+	b, err := bInterface.Patch(context.TODO(), buildName, pt, data, metav1.PatchOptions{})
 	if err != nil {
 		return nil, err
 	}
