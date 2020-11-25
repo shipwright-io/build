@@ -103,9 +103,8 @@ var _ = Describe("Reconcile Build", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring("secret non-existing does not exist"))
 			})
 
 			It("succeeds when the secret exists", func() {
@@ -166,9 +165,8 @@ var _ = Describe("Reconcile Build", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring("secret non-existing does not exist"))
 			})
 
 			It("succeeds when the secret exists", func() {
@@ -225,9 +223,8 @@ var _ = Describe("Reconcile Build", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("secret %s does not exist", registrySecret)))
 			})
 			It("succeed when the secret exists", func() {
 
@@ -270,9 +267,8 @@ var _ = Describe("Reconcile Build", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("there are no secrets in namespace %s", namespace)))
 			})
 		})
 
@@ -300,11 +296,8 @@ var _ = Describe("Reconcile Build", func() {
 				})
 
 				_, err := reconciler.Reconcile(request)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring("do not exist"))
-				Expect(err.Error()).To(ContainSubstring("non-existing-source"))
-				Expect(err.Error()).To(ContainSubstring("non-existing-output"))
 			})
 		})
 

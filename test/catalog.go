@@ -30,6 +30,27 @@ import (
 // Catalog allows you to access helper functions
 type Catalog struct{}
 
+// SecretWithAnnotation gives you a secret with build annotation
+func (c *Catalog) SecretWithAnnotation(name string, ns string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   ns,
+			Annotations: map[string]string{build.AnnotationBuildRefSecret: "true"},
+		},
+	}
+}
+
+// SecretWithoutAnnotation gives you a secret without build annotation
+func (c *Catalog) SecretWithoutAnnotation(name string, ns string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+	}
+}
+
 // BuildWithClusterBuildStrategy gives you an specific Build CRD
 func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategyName string, secretName string) *build.Build {
 	buildStrategy := build.ClusterBuildStrategyKind
@@ -176,7 +197,7 @@ func (c *Catalog) FakeSecretList() corev1.SecretList {
 	}
 }
 
-// FakeSecretListInNamespace to support test
+// FakeNoSecretListInNamespace returns an empty secret list
 func (c *Catalog) FakeNoSecretListInNamespace() corev1.SecretList {
 	return corev1.SecretList{
 		Items: []corev1.Secret{},
