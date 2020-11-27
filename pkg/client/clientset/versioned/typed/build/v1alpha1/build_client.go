@@ -8,7 +8,7 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/client/build/clientset/versioned/scheme"
+	"github.com/shipwright-io/build/pkg/client/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

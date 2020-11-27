@@ -21,8 +21,9 @@ echo "The code-generator package is imported via the pkg/kubecodegen dir"
 echo "To modify the current version, please modify this in the go.mod"
 echo ""
 
-GOFLAGS="" GOPATH=${GOPATH} /bin/bash ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client" \
-  github.com/shipwright-io/build/pkg/client/build \
+GOFLAGS="" GOPATH=${GOPATH} /bin/bash ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
+  github.com/shipwright-io/build/pkg/client \
   github.com/shipwright-io/build/pkg/apis \
   build:v1alpha1 \
   --go-header-file "${SCRIPT_ROOT}/hack/boilerplate.go.txt"
+

@@ -101,7 +101,7 @@ release:
 
 .PHONY: generate
 generate:
-	hack/generate-client.sh
+	hack/update-codegen.sh
 	hack/generate-fakes.sh
 	hack/generate-copyright.sh
 

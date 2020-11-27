@@ -11,7 +11,7 @@ import (
 	"time"
 
 	v1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	scheme "github.com/shipwright-io/build/pkg/client/build/clientset/versioned/scheme"
+	scheme "github.com/shipwright-io/build/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

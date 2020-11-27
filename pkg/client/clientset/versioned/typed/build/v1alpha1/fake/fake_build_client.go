@@ -7,7 +7,7 @@
 package fake
 
 import (
-	v1alpha1 "github.com/shipwright-io/build/pkg/client/build/clientset/versioned/typed/build/v1alpha1"
+	v1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
