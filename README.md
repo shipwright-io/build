@@ -26,10 +26,10 @@ as [Kaniko](https://github.com/GoogleContainerTools/kaniko),
 
 ## Dependencies
 
-| Dependency                                | Supported versions           |
-| ----------------------------------------- | ---------------------------- |
-| [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\* |
-| [Tekton](https://cloud.google.com/tekton) | v0.17.1                      |
+| Dependency                                | Supported versions                     |
+| ----------------------------------------- | -------------------------------------- |
+| [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\*, v1.18.\* |
+| [Tekton](https://cloud.google.com/tekton) | v0.17.1                                |
 
 ## Build Strategies
 
@@ -55,6 +55,7 @@ This operator ships four CRDs :
 | Version | Docs                           | Examples                    |
 | ------- | ------------------------------ | --------------------------- |
 | HEAD    | [Docs @ HEAD](/docs/README.md) | [Examples @ HEAD](/samples) |
+| [v0.2.0](https://github.com/shipwright-io/build/releases/tag/v0.2.0)    | [Docs @ v0.2.0](https://github.com/shipwright-io/build/tree/v0.2.0/docs) | [Examples @ v0.2.0](https://github.com/shipwright-io/build/tree/v0.2.0/samples) |
 | [v0.1.1](https://github.com/shipwright-io/build/releases/tag/v0.1.1)    | [Docs @ v0.1.1](https://github.com/shipwright-io/build/tree/v0.1.1/docs) | [Examples @ v0.1.1](https://github.com/shipwright-io/build/tree/v0.1.1/samples) |
 | [v0.1.0](https://github.com/shipwright-io/build/releases/tag/v0.1.0)    | [Docs @ v0.1.0](https://github.com/shipwright-io/build/tree/v0.1.0/docs) | [Examples @ v0.1.0](https://github.com/shipwright-io/build/tree/v0.1.0/samples) |
 
