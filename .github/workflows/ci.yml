@@ -1,0 +1,28 @@
+on: [pull_request]
+name: Test
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: [1.15.x]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Install Dependencies
+      run: make travis
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Build
+      run: make build
+    - name: Verify Codegen
+      run: make verify-codegen
+    - name: Unit Test w/Coverage
+      run: make test-unit-coverage
+    - name: Integration Test
+      run: make test-integration
+    - name: End-to-End Test
+      run: make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/shipwright-io/build-e2e"
