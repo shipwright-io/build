@@ -184,7 +184,7 @@ metadata:
   name: kaniko-small
 spec:
   buildSteps:
-    - name: step-build-and-push
+    - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.3.0
       workingDir: /workspace/source
       securityContext:
@@ -225,7 +225,7 @@ metadata:
   name: kaniko-medium
 spec:
   buildSteps:
-    - name: step-build-and-push
+    - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.3.0
       workingDir: /workspace/source
       securityContext:
@@ -373,7 +373,7 @@ If we will apply the following resources:
 - We will use a modified buildah strategy, with the following steps resources:
 
   ```yaml
-    - name: step-buildah-bud
+    - name: buildah-bud
       image: quay.io/buildah/stable:latest
       workingDir: /workspace/source
       securityContext:
@@ -395,7 +395,7 @@ If we will apply the following resources:
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
-    - name: step-buildah-push
+    - name: buildah-push
       image: quay.io/buildah/stable:latest
       securityContext:
         privileged: true

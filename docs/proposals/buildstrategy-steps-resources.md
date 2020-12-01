@@ -158,7 +158,7 @@ metadata:
   name: buildpacks-v3-default
 spec:
   buildSteps:
-    - name: step-prepare
+    - name: prepare
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 0
@@ -178,7 +178,7 @@ spec:
         request:
           cpu: "10m"
           memory: "128Mi"
-    - name: step-detect
+    - name: detect
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
@@ -198,7 +198,7 @@ spec:
         request:
           cpu: "250m"
           memory: "50Mi"
-    - name: step-restore
+    - name: restore
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
@@ -213,7 +213,7 @@ spec:
           mountPath: /cache
         - name: layers-dir
           mountPath: /layers
-    - name: step-build
+    - name: build
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
@@ -234,7 +234,7 @@ spec:
         request:
           cpu: "500m"
           memory: "1Gi"
-    - name: step-export
+    - name: export
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000

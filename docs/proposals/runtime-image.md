@@ -121,7 +121,7 @@ metadata:
 spec:
   taskSpec:
     steps:
-      - name: step-runtime-dockerfile
+      - name: runtime-dockerfile
         image: $(build.builder.image)
         securityContext:
           runAsUser: 0

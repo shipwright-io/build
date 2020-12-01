@@ -5,7 +5,7 @@ metadata:
   name: buildpacks-v3
 spec:
   buildSteps:
-    - name: step-prepare
+    - name: prepare
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 0
@@ -33,7 +33,7 @@ spec:
           mountPath: /cache
         - name: layers-dir
           mountPath: /layers
-    - name: step-create
+    - name: build-and-push
       image: docker.io/paketobuildpacks/builder:full
       securityContext:
         runAsUser: 1000
