@@ -1,6 +1,8 @@
 on: 
   pull_request:
-    branches: [ master ]
+    branches: [ $default-branch ]
+  push:
+    branches: [ $default-branch ]
 name: Test
 jobs:
   test:
@@ -9,24 +11,17 @@ jobs:
         go-version: [1.15.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      GOPATH: ${{ github.workspace }}/go
-      GOBIN: ${{ github.workspace }}/go/bin
-    defaults:
-      run:
-        working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
     - name: Set env vars
       run: |
         ls
         echo $PATH
         echo $GITHUB_PATH
-        echo "test" >> $GITHUB_PATH
+        echo "${HOME}/go/bin" >> $GITHUB_PATH
     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
-    
     - name: Checkout code
       uses: actions/checkout@v2
       with:
@@ -38,5 +33,4 @@ jobs:
         make install-ginkgo
     - name: Unit Test w/Coverage
       run: |
-        echo "${HOME}/go/bin" >> $GITHUB_PATH
         make test
