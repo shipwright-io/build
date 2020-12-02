@@ -18,6 +18,7 @@ jobs:
     steps:
     - name: Set env vars
       run: |
+        ls
         echo $PATH
         echo $GITHUB_PATH
         echo "test" >> $GITHUB_PATH
