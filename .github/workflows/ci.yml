@@ -17,13 +17,13 @@ jobs:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
-    - name: Update path
-      run: |
-        echo "${GOBIN}" >> $GITHUB_PATH
     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
+    - name: Update path
+      run: |
+        echo "${GOBIN}" >> $GITHUB_PATH
     - name: Checkout code
       uses: actions/checkout@v2
       with:
