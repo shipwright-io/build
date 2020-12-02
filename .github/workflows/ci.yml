@@ -18,6 +18,9 @@ jobs:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
+    - name: Show envs
+      run: |
+        echo ${PATH}
     - name: Install Go
       uses: actions/setup-go@v2
       with:
