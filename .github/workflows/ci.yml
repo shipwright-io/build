@@ -12,14 +12,15 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}/go
       GOBIN: ${{ github.workspace }}/go/bin
-      GO111MODULE: off
     defaults:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
     - name: Set env vars
       run: |
-        echo "${GOBIN}" >> $GITHUB_PATH
+      echo $PATH
+      echo $GITHUB_PATH
+        echo "test" >> $GITHUB_PATH
     - name: Install Go
       uses: actions/setup-go@v2
       with:
