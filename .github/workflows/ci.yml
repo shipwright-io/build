@@ -31,7 +31,7 @@ jobs:
       run: |
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
         make install-ginkgo
-     - name: Unit Test w/Coverage
+    - name: Unit Test w/Coverage
       run: |
         echo "${HOME}/go/bin" >> $GITHUB_PATH
         make test
