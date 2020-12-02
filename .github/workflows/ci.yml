@@ -18,7 +18,7 @@ jobs:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
-     - name: Install Go
+    - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
