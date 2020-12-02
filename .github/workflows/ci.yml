@@ -21,6 +21,7 @@ jobs:
         path: go/src/github.com/shipwright-io/build
     - name: Install Dependencies
       run: |
+        pwd
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
         ls ${HOME}
         ls ${GOBIN}
