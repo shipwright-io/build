@@ -12,7 +12,6 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}/go
       GOBIN: ${{ github.workspace }}/bin
-      PATH: ${GOBIN}:${PATH}
       GO111MODULE: off
     defaults:
       run:
