@@ -22,6 +22,7 @@ jobs:
     - name: Install Dependencies
       run: |
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
+        ls ${HOME}
         ls ${GOBIN}
         make install-ginkgo
       env:
