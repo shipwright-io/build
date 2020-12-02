@@ -18,8 +18,8 @@ jobs:
     steps:
     - name: Set env vars
       run: |
-      echo $PATH
-      echo $GITHUB_PATH
+        echo $PATH
+        echo $GITHUB_PATH
         echo "test" >> $GITHUB_PATH
     - name: Install Go
       uses: actions/setup-go@v2
