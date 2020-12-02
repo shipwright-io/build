@@ -9,8 +9,16 @@ jobs:
         go-version: [1.15.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      GOPATH: ${{ github.workspace }}
+      GOBIN: ${{ github.workspace }}/bin
+      PATH: ${{ GOBIN }}:${{ PATH }}
+      GO111MODULE: off
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
-    - name: Install Go
+     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
@@ -18,19 +26,12 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 1
-        path: go/src/github.com/shipwright-io/build
+        path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     - name: Install Dependencies
       run: |
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
-        echo "${HOME}/go/bin" >> $GITHUB_PATH
         make install-ginkgo
-      env:
-        GOPATH: /home/runner/work/build/build/go
-        GOBIN: /home/runner/work/build/build/go/bin
-    - name: Unit Test w/Coverage
+     - name: Unit Test w/Coverage
       run: |
         echo "${HOME}/go/bin" >> $GITHUB_PATH
         make test
-      env:
-        GOPATH: /home/runner/work/build/build/go
-        GOBIN: /home/runner/work/build/build/go/bin
