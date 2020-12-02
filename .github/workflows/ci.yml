@@ -21,18 +21,15 @@ jobs:
         path: go/src/github.com/shipwright-io/build
     - name: Install Dependencies
       run: |
-        pwd
-        ls ${GOPATH}
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
-        ls
-
         make install-ginkgo
-
       env:
         GOPATH: /home/runner/work/build/build/go
         GOBIN: /home/runner/work/build/build/go/bin
     - name: Unit Test w/Coverage
-      run: make test
+      run: |
+        echo "${HOME}/go/bin" >> $GITHUB_PATH
+        make test
       env:
         GOPATH: /home/runner/work/build/build/go
         GOBIN: /home/runner/work/build/build/go/bin
