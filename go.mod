@@ -6,20 +6,14 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
 	github.com/go-logr/logr v0.2.0
 	github.com/go-openapi/spec v0.19.6
-	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/nxadm/tail v1.4.5 // indirect
-	github.com/onsi/ginkgo v1.14.2
-	github.com/onsi/gomega v1.10.3
+	github.com/onsi/ginkgo v1.12.1
+	github.com/onsi/gomega v1.10.1
 	github.com/operator-framework/operator-sdk v0.18.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.17.1-0.20201006183654-d5df1c164a48
-	golang.org/x/net v0.0.0-20201201195509-5d6afe98e0b7 // indirect
-	golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3 // indirect
-	golang.org/x/text v0.3.4 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.18.10
 	k8s.io/apimachinery v0.19.0
 	k8s.io/client-go v12.0.0+incompatible

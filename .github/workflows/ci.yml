@@ -16,7 +16,14 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Install test dependencies
-      run: make install-ginkgo
-    - name: Run unit tests
+    - name: Install Dependencies
+      run: |
+        cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
+        make install-ginkgo
+      env:
+        GOPATH: /home/runner/work/build/build/go
+        GOBIN: /home/runner/work/build/build/go/bin
+    - name: Unit Test w/Coverage
       run: make test
+      env:
+        GOBIN: /home/runner/work/build/build/go/bin

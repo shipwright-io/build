@@ -109,8 +109,8 @@ verify-codegen: generate
 	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
 
 install-ginkgo:
-	GO111MODULE=on go get -u github.com/onsi/ginkgo/ginkgo
-	GO111MODULE=on go get -u github.com/onsi/gomega/...
+	go get -u github.com/onsi/ginkgo/ginkgo
+	go get -u github.com/onsi/gomega/...
 	ginkgo version
 
 install-gocov:
