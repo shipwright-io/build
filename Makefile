@@ -109,8 +109,8 @@ verify-codegen: generate
 	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
 
 install-ginkgo:
-	go get -u github.com/onsi/ginkgo/ginkgo
-	go get -u github.com/onsi/gomega/...
+	GO111MODULE=on go get -u github.com/onsi/ginkgo/ginkgo
+	GO111MODULE=on go get -u github.com/onsi/gomega/...
 	ginkgo version
 
 install-gocov:
@@ -124,6 +124,19 @@ test: test-unit
 
 .PHONY: test-unit
 test-unit:
+	GO111MODULE=on ginkgo \
+		-randomizeAllSpecs \
+		-randomizeSuites \
+		-failOnPending \
+		-p \
+		-compilers=2 \
+		-slowSpecThreshold=240 \
+		-race \
+		-trace \
+		internal/... \
+		pkg/...
+
+test-unit-coverage:
 	rm -rf build/coverage
 	mkdir build/coverage
 	GO111MODULE=on ginkgo \
@@ -139,8 +152,6 @@ test-unit:
 		-trace \
 		internal/... \
 		pkg/...
-
-test-unit-coverage: test-unit
 	echo "Combining coverage profiles"
 	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
 	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
