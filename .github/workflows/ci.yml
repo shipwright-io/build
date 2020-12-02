@@ -24,7 +24,7 @@ jobs:
         pwd
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
         ls ${HOME}
-        ls ${GOBIN}
+        ls ${GOPATH}
         make install-ginkgo
       env:
         GOPATH: /home/runner/work/build/build/go
