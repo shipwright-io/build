@@ -14,7 +14,7 @@ metadata:
   name: buildah
 spec:
   buildSteps:
-    - name: step-buildah-bud
+    - name: buildah-bud
       image: quay.io/buildah/stable:latest
       workingDir: /workspace/source
       securityContext:
@@ -36,7 +36,7 @@ spec:
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
-    - name: step-buildah-push
+    - name: buildah-push
       image: quay.io/buildah/stable:latest
       securityContext:
         privileged: true
@@ -68,7 +68,7 @@ metadata:
   name: buildah
 spec:
   buildSteps:
-    - name: step-buildah-bud
+    - name: buildah-bud
       image: quay.io/buildah/stable:latest
       workingDir: /workspace/source
       securityContext:
@@ -90,7 +90,7 @@ spec:
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
-    - name: step-buildah-push
+    - name: buildah-push
       image: quay.io/buildah/stable:latest
       securityContext:
         privileged: true

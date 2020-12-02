@@ -5,7 +5,7 @@ metadata:
   name: kaniko
 spec:
   buildSteps:
-    - name: step-build-and-push
+    - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.3.0
       workingDir: /workspace/source
       securityContext:
