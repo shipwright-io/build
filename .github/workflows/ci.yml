@@ -12,7 +12,7 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}
       GOBIN: ${{ github.workspace }}/bin
-      PATH: ${{ GOBIN }}:${{ PATH }}
+      PATH: ${{ env.GOBIN }}:${{ env.PATH }}
       GO111MODULE: off
     defaults:
       run:
