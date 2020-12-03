@@ -372,7 +372,15 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
 		if trCondition != nil {
+			condition, err := r.generateCondition(ctx, lastTaskRun, trCondition)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			buildRun.Status.SetCondition(condition)
+
 			taskRunStatus := trCondition.Status
+
 			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
 			if isGeneratedServiceAccountUsed(buildRun) && (taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse) {
 				serviceAccount := &corev1.ServiceAccount{}
@@ -460,6 +468,77 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	ctxlog.Debug(ctx, "finishing reconciling request from a BuildRun or TaskRun event", namespace, request.Namespace, name, request.Name)
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuildRun) translateErrorMessage(ctx context.Context, taskRun *v1beta1.TaskRun) (string, error) {
+	var pod corev1.Pod
+	if err := r.client.Get(ctx, types.NamespacedName{Namespace: taskRun.Namespace, Name: taskRun.Status.PodName}, &pod); err != nil {
+		return fmt.Sprintf("buildrun failed and pod reference %s cannot be found", taskRun.Status.PodName), err
+	}
+
+	// Since the container status list is not sorted, as a quick workaround mark all failed containers
+	var failures = make(map[string]struct{})
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.State.Terminated != nil {
+			if containerStatus.State.Terminated.ExitCode != 0 {
+				failures[containerStatus.Name] = struct{}{}
+			}
+		}
+	}
+
+	// Find the first failing container
+	var failedContainer *corev1.Container
+	for i, container := range pod.Spec.Containers {
+		if _, has := failures[container.Name]; has {
+			failedContainer = &pod.Spec.Containers[i]
+			break
+		}
+	}
+
+	if failedContainer != nil {
+		return fmt.Sprintf("buildrun step failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
+			pod.Name,
+			pod.Namespace,
+			pod.Name,
+			failedContainer.Name,
+		), nil
+	}
+
+	return fmt.Sprintf("buildrun failed due to an unexpected error in pod %s: for detailed information: kubectl --namespace %s logs %s",
+		pod.Name,
+		pod.Namespace,
+		pod.Name,
+	), nil
+}
+
+func (r *ReconcileBuildRun) generateCondition(ctx context.Context, taskRun *v1beta1.TaskRun, trCondition *apis.Condition) (*buildv1alpha1.Condition, error) {
+	var reason, message string = trCondition.Reason, trCondition.Message
+	var err error
+
+	switch v1beta1.TaskRunReason(reason) {
+	case v1beta1.TaskRunReasonTimedOut:
+		reason = "BuildRunTimeout"
+		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
+			taskRun.GetLabels()[buildv1alpha1.LabelBuildRun],
+			taskRun.Spec.Timeout.Duration,
+		)
+
+	case v1beta1.TaskRunReasonFailed:
+		if taskRun.Status.CompletionTime != nil {
+			message, err = r.translateErrorMessage(ctx, taskRun)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return &buildv1alpha1.Condition{
+		LastTransitionTime: metav1.Now(),
+		Type:               buildv1alpha1.Succeeded,
+		Status:             trCondition.Status,
+		Reason:             reason,
+		Message:            message,
+	}, nil
 }
 
 func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ServiceAccount, error) {
