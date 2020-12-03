@@ -258,12 +258,7 @@ func GenerateTaskRun(
 		expectedTaskRun.Labels[label] = value
 	}
 
-	// assign the timeout
-	if buildRun.Spec.Timeout != nil {
-		expectedTaskRun.Spec.Timeout = buildRun.Spec.Timeout
-	} else if build.Spec.Timeout != nil {
-		expectedTaskRun.Spec.Timeout = build.Spec.Timeout
-	}
+	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
 
 	var inputParams []v1beta1.Param
 	if build.Spec.BuilderImage != nil {
@@ -296,4 +291,15 @@ func GenerateTaskRun(
 
 	expectedTaskRun.Spec.Params = inputParams
 	return expectedTaskRun, nil
+}
+
+func effectiveTimeout(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) *metav1.Duration {
+	if buildRun.Spec.Timeout != nil {
+		return buildRun.Spec.Timeout
+
+	} else if build.Spec.Timeout != nil {
+		return build.Spec.Timeout
+	}
+
+	return nil
 }
