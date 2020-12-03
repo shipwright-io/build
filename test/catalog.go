@@ -25,7 +25,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/conditions"
 )
 
 // Catalog allows you to access helper functions
@@ -779,9 +778,9 @@ func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {
 			Name: "foobar",
 		},
 		Status: build.BuildRunStatus{
-			Conditions: conditions.Conditions{
-				conditions.Condition{
-					Type:    conditions.Succeeded,
+			Conditions: build.Conditions{
+				build.Condition{
+					Type:    build.Succeeded,
 					Reason:  "foobar",
 					Message: "foo is not bar",
 					Status:  corev1.ConditionUnknown,
