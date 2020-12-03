@@ -1,0 +1,24 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: buildkit
+spec:
+  buildSteps:
+    - name: build-and-push
+      image: docker.io/moby/buildkit:v0.6.2@sha256:db234cf7362aef489e4273a6937794cb19c09ba15c7ee0ec6f85044086ea4f6a
+      workingDir: /workspace/source/
+      securityContext:
+        privileged: true
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+      command: ["buildctl-daemonless.sh", "--debug",
+                    "build",
+                    "--progress=plain",
+                    "--frontend=dockerfile.v0",
+                    "--opt", "filename=$(build.dockerfile)",
+                    "--local", "context=.", "--local", "dockerfile=.",
+                    "--output", "type=image,name=$(build.output.image),push=true",
+                    "--export-cache", "type=inline",
+                    "--import-cache", "type=registry,ref=$(build.output.image)"]

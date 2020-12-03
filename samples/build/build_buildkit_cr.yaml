@@ -1,0 +1,19 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildkit-build
+  annotations:
+    build.build.dev/build-run-deletion: "true"
+spec:
+  dockerfile: "Dockerfile"
+  source:
+    url: https://github.com/sbose78/taxi
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile
+  output:
+    image: us.icr.io/source-to-image-build/buildkit
+    credentials:
+      name: icr-knbuild

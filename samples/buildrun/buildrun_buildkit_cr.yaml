@@ -1,0 +1,10 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildkit-buildrun
+spec:
+  buildRef:
+    name: buildkit-build
+  serviceAccount:
+    generate: true
