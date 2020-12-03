@@ -111,3 +111,138 @@ spec:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
 `
+
+// ClusterBuildStrategySingleStepKaniko is a cluster build strategy based on
+// Kaniko, which is very close to the actual Kaniko build strategy example in
+// the project
+const ClusterBuildStrategySingleStepKaniko = `
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: kaniko
+spec:
+  buildSteps:
+    - name: step-build-and-push
+      image: gcr.io/kaniko-project/executor:v1.3.0
+      workingDir: /workspace/source
+      securityContext:
+        runAsUser: 0
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+            - SETFCAP
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
+      command:
+        - /kaniko/executor
+      args:
+        - --skip-tls-verify=true
+        - --dockerfile=$(build.dockerfile)
+        - --context=/workspace/source/$(build.source.contextDir)
+        - --destination=$(build.output.image)
+        - --oci-layout-path=/workspace/output/image
+        - --snapshotMode=redo
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+`
+
+// ClusterBuildStrategySingleStepKanikoError is a Kaniko based cluster build
+// strategy that has a configuration error (misspelled command flag) so that
+// it will fail in Tekton
+const ClusterBuildStrategySingleStepKanikoError = `
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: kaniko
+spec:
+  buildSteps:
+    - name: step-build-and-push
+      image: gcr.io/kaniko-project/executor:v1.3.0
+      workingDir: /workspace/source
+      securityContext:
+        runAsUser: 0
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+            - SETFCAP
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
+      command:
+        - /kaniko/executor
+      args:
+        - --skips-tlss-verifys=true
+        - --dockerfile=$(build.dockerfile)
+        - --context=/workspace/source/$(build.source.contextDir)
+        - --destination=$(build.output.image)
+        - --oci-layout-path=/workspace/output/image
+        - --snapshotMode=redo
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+`
+
+// ClusterBuildStrategyNoOp is a strategy that does nothing and has no dependencies
+const ClusterBuildStrategyNoOp = `
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: noop
+spec:
+  buildSteps:
+  - name: step-no-and-op
+    image: alpine:latest
+    workingDir: /workspace/source
+    securityContext:
+      runAsUser: 0
+      capabilities:
+        add:
+        - CHOWN
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETGID
+        - SETUID
+        - SETFCAP
+    env:
+    - name: DOCKER_CONFIG
+      value: /tekton/home/.docker
+    - name: AWS_ACCESS_KEY_ID
+      value: NOT_SET
+    - name: AWS_SECRET_KEY
+      value: NOT_SET
+    command:
+    - "true"
+    resources:
+      limits:
+        cpu: 250m
+        memory: 128Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+`
