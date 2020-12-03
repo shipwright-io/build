@@ -358,6 +358,27 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Buildkit build with a contextDir and a path to a Dockerfile is defined", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildkit-custom-context")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/build_buildkit_cr_insecure_registry.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildkit_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(testBuild, buildRun)
+		})
+	})
+
 	Context("when a s2i build is defined", func() {
 
 		BeforeEach(func() {
