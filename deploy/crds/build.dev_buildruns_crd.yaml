@@ -15,12 +15,12 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: The Succeeded status of the TaskRun
-      jsonPath: .status.succeeded
+    - description: The Succeeded status of the BuildRun
+      jsonPath: .status.conditions[?(@.type=="Succeeded")].status
       name: Succeeded
       type: string
-    - description: The Succeeded reason of the TaskRun
-      jsonPath: .status.reason
+    - description: The Succeeded reason of the BuildRun
+      jsonPath: .status.conditions[?(@.type=="Succeeded")].reason
       name: Reason
       type: string
     - description: The start time of this BuildRun
@@ -97,7 +97,7 @@ spec:
                     type: string
                 type: object
               timeout:
-                description: Timeout defines the maximum run time of this build run.
+                description: Timeout defines the maximum run time of this BuildRun.
                 format: duration
                 type: string
             required:
@@ -340,6 +340,14 @@ spec:
                   - type
                   type: object
                 type: array
+              failedAt:
+                description: FailedAt points to the resource where the BuildRun failed
+                properties:
+                  container:
+                    type: string
+                  pod:
+                    type: string
+                type: object
               latestTaskRunRef:
                 description: PodName is the name of the pod responsible for executing
                   this task's steps.

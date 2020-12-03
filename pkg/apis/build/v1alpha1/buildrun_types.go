@@ -29,7 +29,7 @@ type BuildRunSpec struct {
 	// +optional
 	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
 
-	// Timeout defines the maximum run time of this build run.
+	// Timeout defines the maximum run time of this BuildRun.
 	// +optional
 	// +kubebuilder:validation:Format=duration
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
@@ -69,6 +69,16 @@ type BuildRunStatus struct {
 	// BuildSpec is the Build Spec of this BuildRun.
 	// +optional
 	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
+
+	// FailedAt points to the resource where the BuildRun failed
+	// +optional
+	FailedAt *FailedAt `json:"failedAt,omitempty"`
+}
+
+// FailedAt describes the location where the failure happened
+type FailedAt struct {
+	Pod       string `json:"pod,omitempty"`
+	Container string `json:"container,omitempty"`
 }
 
 // BuildRef can be used to refer to a specific instance of a Build.
@@ -96,8 +106,8 @@ type ServiceAccount struct {
 // BuildRun is the Schema representing an instance of build execution
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=buildruns,scope=Namespaced,shortName=br;brs
-// +kubebuilder:printcolumn:name="Succeeded",type="string",JSONPath=".status.succeeded",description="The Succeeded status of the TaskRun"
-// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.reason",description="The Succeeded reason of the TaskRun"
+// +kubebuilder:printcolumn:name="Succeeded",type="string",JSONPath=".status.conditions[?(@.type==\"Succeeded\")].status",description="The Succeeded status of the BuildRun"
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.conditions[?(@.type==\"Succeeded\")].reason",description="The Succeeded reason of the BuildRun"
 // +kubebuilder:printcolumn:name="StartTime",type="date",JSONPath=".status.startTime",description="The start time of this BuildRun"
 // +kubebuilder:printcolumn:name="CompletionTime",type="date",JSONPath=".status.completionTime",description="The completion time of this BuildRun"
 type BuildRun struct {
