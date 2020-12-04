@@ -28,13 +28,17 @@ const (
 	disableHomeEnvOverwriteKey              = "disable-home-env-overwrite"
 	disableWorkingDirOverwriteKey           = "disable-working-directory-overwrite"
 	disableAffinityAssistantKey             = "disable-affinity-assistant"
+	disableCredsInitKey                     = "disable-creds-init"
 	runningInEnvWithInjectedSidecarsKey     = "running-in-environment-with-injected-sidecars"
 	requireGitSSHSecretKnownHostsKey        = "require-git-ssh-secret-known-hosts" // nolint: gosec
+	enableTektonOCIBundles                  = "enable-tekton-oci-bundles"
 	DefaultDisableHomeEnvOverwrite          = false
 	DefaultDisableWorkingDirOverwrite       = false
 	DefaultDisableAffinityAssistant         = false
+	DefaultDisableCredsInit                 = false
 	DefaultRunningInEnvWithInjectedSidecars = true
 	DefaultRequireGitSSHSecretKnownHosts    = false
+	DefaultEnableTektonOciBundles           = false
 )
 
 // FeatureFlags holds the features configurations
@@ -43,8 +47,10 @@ type FeatureFlags struct {
 	DisableHomeEnvOverwrite          bool
 	DisableWorkingDirOverwrite       bool
 	DisableAffinityAssistant         bool
+	DisableCredsInit                 bool
 	RunningInEnvWithInjectedSidecars bool
 	RequireGitSSHSecretKnownHosts    bool
+	EnableTektonOCIBundles           bool
 }
 
 // GetFeatureFlagsConfigName returns the name of the configmap containing all
@@ -81,10 +87,16 @@ func NewFeatureFlagsFromMap(cfgMap map[string]string) (*FeatureFlags, error) {
 	if err := setFeature(disableAffinityAssistantKey, DefaultDisableAffinityAssistant, &tc.DisableAffinityAssistant); err != nil {
 		return nil, err
 	}
+	if err := setFeature(disableCredsInitKey, DefaultDisableCredsInit, &tc.DisableCredsInit); err != nil {
+		return nil, err
+	}
 	if err := setFeature(runningInEnvWithInjectedSidecarsKey, DefaultRunningInEnvWithInjectedSidecars, &tc.RunningInEnvWithInjectedSidecars); err != nil {
 		return nil, err
 	}
 	if err := setFeature(requireGitSSHSecretKnownHostsKey, DefaultRequireGitSSHSecretKnownHosts, &tc.RequireGitSSHSecretKnownHosts); err != nil {
+		return nil, err
+	}
+	if err := setFeature(enableTektonOCIBundles, DefaultEnableTektonOciBundles, &tc.EnableTektonOCIBundles); err != nil {
 		return nil, err
 	}
 	return &tc, nil
