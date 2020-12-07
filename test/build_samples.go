@@ -111,6 +111,80 @@ spec:
       name: fake-secret
 `
 
+// BuildWithOutputRefSecret defines a Build with a
+// referenced secret under spec.output
+const BuildWithOutputRefSecret = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+    credentials:
+      name: output-secret
+  timeout: 5s
+`
+
+// BuildWithSourceRefSecret defines a Build with a
+// referenced secret under spec.source
+const BuildWithSourceRefSecret = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+    credentials:
+      name: source-secret
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  timeout: 5s
+`
+
+// BuildWithBuilderRefSecret defines a Build with a
+// referenced secret under spec.builder
+const BuildWithBuilderRefSecret = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+  builder:
+    image: heroku/buildpacks:18
+    credentials:
+      name: builder-secret
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  timeout: 5s
+`
+
+// BuildWithMultipleRefSecrets defines a Build with
+// multiple referenced secrets under spec
+const BuildWithMultipleRefSecrets = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+    credentials:
+      name: source-secret
+  builder:
+    image: heroku/buildpacks:18
+    credentials:
+      name: builder-secret
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  timeout: 5s
+`
+
 // BuildCBSWithShortTimeOut defines a Build with a
 // ClusterBuildStrategy and a short timeout
 const BuildCBSWithShortTimeOut = `
