@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package conditions_test
+package buildrun_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/shipwright-io/build/pkg/conditions"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,23 +21,13 @@ var _ = Describe("Conditions", func() {
 
 	Context("Operating on Conditions", func() {
 
-		It("should be able to get a manager based on a buildrun status", func() {
-			// BuildRun sample with an embedded condition of the type Succeeded
-			br := ctl.BuildRunWithSucceededCondition()
-			m := conditions.Manage(&br.Status)
-			Expect(m).ToNot(BeNil())
-
-			c := m.GetCondition(conditions.Succeeded)
-			Expect(c).ToNot(BeNil())
-		})
-
 		It("should be able to retrieve an existing condition message", func() {
 			// BuildRun sample with an embedded condition of the type Succeeded
 			br := ctl.BuildRunWithSucceededCondition()
 
 			// BuildRun implements StatusConditions, therefore it can operate on
 			// an existing Condition
-			msg := br.Status.GetCondition(conditions.Succeeded).GetMessage()
+			msg := br.Status.GetCondition(build.Succeeded).GetMessage()
 			Expect(msg).To(Equal("foo is not bar"))
 		})
 
@@ -45,7 +35,7 @@ var _ = Describe("Conditions", func() {
 			// BuildRun sample with an embedded condition of the type Succeeded
 			br := ctl.BuildRunWithSucceededCondition()
 
-			reason := br.Status.GetCondition(conditions.Succeeded).GetReason()
+			reason := br.Status.GetCondition(build.Succeeded).GetReason()
 			Expect(reason).To(Equal("foobar"))
 		})
 
@@ -53,7 +43,7 @@ var _ = Describe("Conditions", func() {
 			// BuildRun sample with an embedded condition of the type Succeeded
 			br := ctl.BuildRunWithSucceededCondition()
 
-			status := br.Status.GetCondition(conditions.Succeeded).GetStatus()
+			status := br.Status.GetCondition(build.Succeeded).GetStatus()
 			Expect(status).To(Equal(corev1.ConditionUnknown))
 		})
 
@@ -62,7 +52,7 @@ var _ = Describe("Conditions", func() {
 
 			// when getting a condition that does not exists on the BuildRun, do not
 			// panic but rather return a nil
-			cond := br.Status.GetCondition(conditions.Succeeded)
+			cond := br.Status.GetCondition(build.Succeeded)
 			Expect(cond).To(BeNil())
 		})
 
@@ -70,8 +60,8 @@ var _ = Describe("Conditions", func() {
 			br := ctl.DefaultBuildRun("foo", "bar")
 
 			// generate a condition of the type Succeeded
-			tmpCond := &conditions.Condition{
-				Type:               conditions.Succeeded,
+			tmpCond := &build.Condition{
+				Type:               build.Succeeded,
 				Status:             corev1.ConditionUnknown,
 				Message:            "foobar",
 				Reason:             "foo is bar",
@@ -81,10 +71,11 @@ var _ = Describe("Conditions", func() {
 			// set the condition on the BuildRun resource
 			br.Status.SetCondition(tmpCond)
 
-			condType := br.Status.GetCondition(conditions.Succeeded).Type
-			Expect(condType).To(Equal(conditions.Succeeded))
+			condition := br.Status.GetCondition(build.Succeeded)
+			Expect(condition).ToNot(BeNil())
+			Expect(condition.Type).To(Equal(build.Succeeded))
 
-			condMsg := br.Status.GetCondition(conditions.Succeeded).GetMessage()
+			condMsg := br.Status.GetCondition(build.Succeeded).GetMessage()
 			Expect(condMsg).To(Equal("foobar"))
 		})
 
@@ -92,12 +83,12 @@ var _ = Describe("Conditions", func() {
 			// BuildRun sample with an embedded condition of the type Succeeded
 			br := ctl.BuildRunWithSucceededCondition()
 
-			reason := br.Status.GetCondition(conditions.Succeeded).GetReason()
+			reason := br.Status.GetCondition(build.Succeeded).GetReason()
 			Expect(reason).To(Equal("foobar"))
 
 			// generate a condition in order to update the existing one
-			tmpCond := &conditions.Condition{
-				Type:               conditions.Succeeded,
+			tmpCond := &build.Condition{
+				Type:               build.Succeeded,
 				Status:             corev1.ConditionUnknown,
 				Message:            "foobar was updated",
 				Reason:             "foo is bar",
@@ -107,7 +98,7 @@ var _ = Describe("Conditions", func() {
 			// update the condition on the BuildRun resource
 			br.Status.SetCondition(tmpCond)
 
-			condMsg := br.Status.GetCondition(conditions.Succeeded).GetMessage()
+			condMsg := br.Status.GetCondition(build.Succeeded).GetMessage()
 			Expect(condMsg).To(Equal("foobar was updated"))
 		})
 	})

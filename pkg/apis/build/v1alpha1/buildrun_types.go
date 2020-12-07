@@ -5,7 +5,6 @@
 package v1alpha1
 
 import (
-	"github.com/shipwright-io/build/pkg/conditions"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,7 +44,7 @@ type BuildRunSpec struct {
 type BuildRunStatus struct {
 
 	// Conditions
-	Conditions conditions.Conditions `json:"conditions,omitempty"`
+	Conditions Conditions `json:"conditions,omitempty"`
 
 	// The Succeeded status of the TaskRun
 	// +optional
@@ -118,28 +117,96 @@ type BuildRunList struct {
 	Items           []BuildRun `json:"items"`
 }
 
+// Conditions defines a list of Condition
+type Conditions []Condition
+
+// Type used for defining the conditiont Type field flavour
+type Type string
+
+const (
+	// Succeeded specifies that the resource has finished.
+	// For resources that run to completion.
+	Succeeded Type = "Succeeded"
+)
+
+// Condition defines the required fields for populating
+// Build controllers Conditions
+type Condition struct {
+	// Type of condition
+	// +required
+	Type Type `json:"type" description:"type of status condition"`
+
+	// Status of the condition, one of True, False, Unknown.
+	// +required
+	Status corev1.ConditionStatus `json:"status" description:"status of the condition, one of True, False, Unknown"`
+
+	// LastTransitionTime last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty" description:"last time the condition transit from one status to another"`
+
+	// The reason for the condition last transition.
+	// +optional
+	Reason string `json:"reason,omitempty" description:"one-word CamelCase reason for the condition's last transition"`
+
+	// A human readable message indicating details about the transition.
+	// +optional
+	Message string `json:"message,omitempty" description:"human-readable message indicating details about last transition"`
+}
+
 func init() {
 	SchemeBuilder.Register(&BuildRun{}, &BuildRunList{})
 }
 
-// SetConditions implements the conditions.StatusConditions interface,
-// this is require to get access to the Conditions Manager
-func (brs *BuildRunStatus) SetConditions(c conditions.Conditions) {
-	brs.Conditions = c
+// GetReason returns the condition Reason, it ensures that by getting the Reason
+// the call will not panic if the Condition is not present
+func (c *Condition) GetReason() string {
+	if c == nil {
+		return ""
+	}
+	return c.Reason
 }
 
-// GetConditions implements the conditions.StatusConditions interface,
-// this is require to get access to the Conditions Manager
-func (brs *BuildRunStatus) GetConditions() *conditions.Conditions {
-	return &brs.Conditions
+// GetMessage returns the condition Message, it ensures that by getting the Message
+// the call will not panic if the Condition is not present
+func (c *Condition) GetMessage() string {
+	if c == nil {
+		return ""
+	}
+	return c.Message
+}
+
+// GetStatus returns the condition Status, it ensures that by getting the Status
+// the call will not panic if the Condition is not present
+func (c *Condition) GetStatus() corev1.ConditionStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
 }
 
 // GetCondition returns a condition based on a type from a list of Conditions
-func (brs *BuildRunStatus) GetCondition(t conditions.Type) *conditions.Condition {
-	return conditions.Manage(brs).GetCondition(t)
+func (brs *BuildRunStatus) GetCondition(t Type) *Condition {
+	for _, c := range brs.Conditions {
+		if c.Type == t {
+			return &c
+		}
+	}
+	return nil
 }
 
 // SetCondition updates a list of conditions with the provided condition
-func (brs *BuildRunStatus) SetCondition(c *conditions.Condition) {
-	conditions.Manage(brs).SetCondition(c)
+func (brs *BuildRunStatus) SetCondition(condition *Condition) {
+	var idx = -1
+	for i, c := range brs.Conditions {
+		if c.Type == condition.Type {
+			idx = i
+			break
+		}
+	}
+
+	if idx != -1 {
+		brs.Conditions[idx] = *condition
+	} else {
+		brs.Conditions = append(brs.Conditions, *condition)
+	}
 }
