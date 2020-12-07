@@ -123,12 +123,14 @@ type Step struct {
 
 	// Script is the contents of an executable file to execute.
 	//
-	// If Script is not empty, the Step cannot have an Command or Args.
+	// If Script is not empty, the Step cannot have an Command and the Args will be passed to the Script.
 	Script string `json:"script,omitempty"`
+	// Timeout is the time after which the step times out. Defaults to never.
+	// Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration
+	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
-// Sidecar embeds the Container type, which allows it to include fields not
-// provided by Container.
+// Sidecar has nearly the same data structure as Step, consisting of a Container and an optional Script, but does not have the ability to timeout.
 type Sidecar struct {
 	corev1.Container `json:",inline"`
 
@@ -157,6 +159,9 @@ type TaskRef struct {
 	// API version of the referent
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`
+	// Bundle url reference to a Tekton Bundle.
+	// +optional
+	Bundle string `json:"bundle,omitempty"`
 }
 
 // Check that Pipeline may be validated and defaulted.
