@@ -511,5 +511,115 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
 		})
+
+		Context("when source URL is specified", func() {
+			// validate file protocol
+			It("fails when source URL is invalid", func() {
+				buildSample.Spec.Source.URL = "foobar"
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeSecretList()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("invalid source url"))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+
+			// validate https protocol
+			It("fails when public source URL is unreachable", func() {
+				buildSample.Spec.Source.URL = "https://github.com/sbose78/taxi-fake"
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeSecretList()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("remote repository unreachable"))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(request)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+
+			// skip validation because of false sourceURL annotation
+			It("succeed when source URL is invalid because source annotation is false", func() {
+				buildSample = ctl.BuildWithClusterBuildStrategyAndFalseSourceAnnotation(buildName, namespace, buildStrategyName)
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.FakeSecretList()
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+
+			// skip validation because build references a sourceURL secret
+			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
+				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
+				buildSample.Spec.Source.URL = "https://github.ibm.com/coligo/build-fake"
+				buildSample.Spec.Source.SecretRef.Name = registrySecret
+
+				// Fake some client LIST calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.ListCalls(func(context context.Context, object runtime.Object, _ ...crc.ListOption) error {
+					switch object := object.(type) {
+					case *corev1.SecretList:
+						list := ctl.SecretList(registrySecret)
+						list.DeepCopyInto(object)
+					case *build.ClusterBuildStrategyList:
+						list := ctl.ClusterBuildStrategyList(buildStrategyName)
+						list.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, "Succeeded")
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
 	})
 })

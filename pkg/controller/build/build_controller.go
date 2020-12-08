@@ -32,6 +32,7 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller/utils"
 	"github.com/shipwright-io/build/pkg/ctxlog"
+	"github.com/shipwright-io/build/pkg/git"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 )
 
@@ -239,6 +240,17 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	// Populate the status struct with default values
 	b.Status.Registered = corev1.ConditionFalse
 	b.Status.Reason = succeedStatus
+
+	// Validate if remote repository exists
+	if b.Spec.Source.SecretRef == nil {
+		if err := r.validateSourceURL(ctx, b, b.Spec.Source.URL); err != nil {
+			b.Status.Reason = err.Error()
+			if updateErr := r.client.Status().Update(ctx, b); updateErr != nil {
+				return reconcile.Result{}, updateErr
+			}
+			return reconcile.Result{}, nil
+		}
+	}
 
 	// Validate if the referenced secrets exist in the namespace
 	var secretNames []string
@@ -457,6 +469,20 @@ func (r *ReconcileBuild) validateBuildRunOwnerReferences(ctx context.Context, b 
 	}
 
 	return nil
+}
+
+// validateSourceURL returns error message if remote repository doesn't exist
+func (r *ReconcileBuild) validateSourceURL(ctx context.Context, b *build.Build, sourceURL string) error {
+	switch b.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
+	case "", "true":
+		return git.ValidateGitURLExists(sourceURL)
+	case "false":
+		ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, b.GetAnnotations()[build.AnnotationBuildVerifyRepository]))
+		return nil
+	default:
+		ctxlog.Error(ctx, fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository), namespace, b.Namespace, name, b.Name)
+		return fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)
+	}
 }
 
 // validateOwnerReferences returns an index value if a Build is owning a reference or -1 if this is not the case

@@ -214,6 +214,33 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
 
+// BuildCBSWithVerifyRepositoryAnnotation defines a Build
+// with the verify repository annotation key
+const BuildCBSWithVerifyRepositoryAnnotation = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  annotations:
+    build.build.dev/verify.repository: ""
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildCBSWithoutVerifyRepositoryAnnotation defines a minimal
+// Build without source url and annotation
+const BuildCBSWithoutVerifyRepositoryAnnotation = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
 // BuildCBSWithBuildRunDeletion defines a Build with a
 // ClusterBuildStrategy and the annotation for automatic BuildRun
 // deletion
