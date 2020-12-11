@@ -9,6 +9,35 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// BuildReason is a type used for populating the
+// Build Status.Reason field
+type BuildReason string
+
+const (
+	// SucceedStatus indicates that all validations Succeeded
+	SucceedStatus BuildReason = "Succeeded"
+	// BuildStrategyNotFound indicates that a namespaced-scope strategy was not found in the namespace
+	BuildStrategyNotFound BuildReason = "BuildStrategyNotFound"
+	// ClusterBuildStrategyNotFound indicates that a cluster-scope strategy was not found
+	ClusterBuildStrategyNotFound BuildReason = "ClusterBuildStrategyNotFound"
+	// SetOwnerReferenceFailed indicates that setting ownerReferences between a Build and a BuildRun failed
+	SetOwnerReferenceFailed BuildReason = "SetOwnerReferenceFailed"
+	// SpecSourceSecretRefNotFound indicates the referenced secret in source is missing
+	SpecSourceSecretRefNotFound BuildReason = "SpecSourceSecretRefNotFound"
+	// SpecOutputSecretRefNotFound indicates the referenced secret in output is missing
+	SpecOutputSecretRefNotFound BuildReason = "SpecOutputSecretRefNotFound"
+	// SpecRuntimeSecretRefNotFound indicates the referenced secret in runtime is missing
+	SpecRuntimeSecretRefNotFound BuildReason = "SpecRuntimeSecretRefNotFound"
+	// MultipleSecretRefNotFound indicates that multiple secrets are missing
+	MultipleSecretRefNotFound BuildReason = "MultipleSecretRefNotFound"
+	// RuntimePathsCanNotBeEmpty indicates that the spec.runtime feature is used but the paths were not specified
+	RuntimePathsCanNotBeEmpty BuildReason = "RuntimePathsCanNotBeEmpty"
+	// RemoteRepositoryUnreachable indicates the referenced repository is unreachable
+	RemoteRepositoryUnreachable BuildReason = "RemoteRepositoryUnreachable"
+	// AllValidationsSucceeded indicates a Build was successfully validated
+	AllValidationsSucceeded = "all validations succeeded"
+)
+
 const (
 	// BuildDomain is the domain used for all labels and annotations for this resource
 	BuildDomain = "build.build.dev"
