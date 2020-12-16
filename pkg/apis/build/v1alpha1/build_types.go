@@ -164,9 +164,13 @@ type BuildStatus struct {
 	// +optional
 	Registered corev1.ConditionStatus `json:"registered,omitempty"`
 
-	// The reason of the registered Build, either an error or succeed message
+	// The reason of the registered Build, it's an one-word camelcase
 	// +optional
-	Reason string `json:"reason,omitempty"`
+	Reason BuildReason `json:"reason,omitempty"`
+
+	// The message of the registered Build, either an error or succeed message
+	// +optional
+	Message string `json:"message,omitempty"`
 }
 
 // +genclient

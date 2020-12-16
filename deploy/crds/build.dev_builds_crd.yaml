@@ -251,9 +251,13 @@ spec:
           status:
             description: BuildStatus defines the observed state of Build
             properties:
+              message:
+                description: The message of the registered Build, either an error
+                  or succeed message
+                type: string
               reason:
-                description: The reason of the registered Build, either an error or
-                  succeed message
+                description: The reason of the registered Build, it's an one-word
+                  camelcase
                 type: string
               registered:
                 description: The Register status of the Build
