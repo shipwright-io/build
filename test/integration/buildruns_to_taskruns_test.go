@@ -317,7 +317,8 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			b, err := tb.GetBuildTillRegistration(buildObject.Name, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(b.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(b.Status.Reason).To(ContainSubstring("no such host"))
+			Expect(b.Status.Reason).To(Equal(v1alpha1.RemoteRepositoryUnreachable))
+			Expect(b.Status.Message).To(ContainSubstring("no such host"))
 
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())

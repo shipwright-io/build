@@ -226,7 +226,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: False, reason: secret fake-secret does not exist", BUILD+tb.Namespace)))
+			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: False, reason: SpecOutputSecretRefNotFound", BUILD+tb.Namespace)))
 		})
 	})
 

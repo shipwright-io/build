@@ -123,13 +123,13 @@ func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.Condi
 	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-// GetBuildTillReasonContainsSubstring polls until a Build reason contains the desired
+// GetBuildTillMessageContainsSubstring polls until a Build message contains the desired
 // substring value and updates it´s registered field. If timeout is reached or an error is found,
 // it will return with an error
-func (t *TestBuild) GetBuildTillReasonContainsSubstring(name string, partOfReason string) (*v1alpha1.Build, error) {
+func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMessage string) (*v1alpha1.Build, error) {
 
 	var (
-		pollBuildTillReasonContainsSubString = func() (bool, error) {
+		pollBuildTillMessageContainsSubString = func() (bool, error) {
 
 			bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
 
@@ -138,7 +138,7 @@ func (t *TestBuild) GetBuildTillReasonContainsSubstring(name string, partOfReaso
 				return false, err
 			}
 
-			if strings.Contains(buildRun.Status.Reason, partOfReason) {
+			if strings.Contains(buildRun.Status.Message, partOfMessage) {
 				return true, nil
 			}
 
@@ -148,7 +148,7 @@ func (t *TestBuild) GetBuildTillReasonContainsSubstring(name string, partOfReaso
 
 	brInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
 
-	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBuildTillReasonContainsSubString); err != nil {
+	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBuildTillMessageContainsSubString); err != nil {
 		return nil, err
 	}
 
