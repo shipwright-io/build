@@ -368,7 +368,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			validateBuildRunToFail(ctx,
 				namespace,
 				br,
-				"kaniko-timeout.*failed to finish within \"15s\"",
+				"BuildRun kaniko-timeout.*failed to finish within 15s",
 				cleanupTimeout,
 				cleanupRetryInterval,
 			)

@@ -372,7 +372,12 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
 		if trCondition != nil {
+			if err := r.updateBuildRunUsingTaskRunCondition(ctx, buildRun, lastTaskRun, trCondition); err != nil {
+				return reconcile.Result{}, err
+			}
+
 			taskRunStatus := trCondition.Status
+
 			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
 			if isGeneratedServiceAccountUsed(buildRun) && (taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse) {
 				serviceAccount := &corev1.ServiceAccount{}
@@ -460,6 +465,82 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	ctxlog.Debug(ctx, "finishing reconciling request from a BuildRun or TaskRun event", namespace, request.Namespace, name, request.Name)
 
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuildRun) updateBuildRunUsingTaskRunCondition(ctx context.Context, buildRun *buildv1alpha1.BuildRun, taskRun *v1beta1.TaskRun, trCondition *apis.Condition) error {
+	var reason, message string = trCondition.Reason, trCondition.Message
+
+	switch v1beta1.TaskRunReason(reason) {
+	case v1beta1.TaskRunReasonTimedOut:
+		reason = "BuildRunTimeout"
+		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
+			taskRun.GetLabels()[buildv1alpha1.LabelBuildRun],
+			taskRun.Spec.Timeout.Duration,
+		)
+
+	case v1beta1.TaskRunReasonFailed:
+		if taskRun.Status.CompletionTime != nil {
+			var pod corev1.Pod
+			if err := r.client.Get(ctx, types.NamespacedName{Namespace: taskRun.Namespace, Name: taskRun.Status.PodName}, &pod); err != nil {
+				// when trying to customize the Condition Message field, ensure the Message cover the case
+				// when a Pod is deleted.
+				// Note: this is an edge case, but not doing this prevent a BuildRun from being marked as Failed
+				// while the TaskRun is already with a Failed Reason in it´s condition.
+				if apierrors.IsNotFound(err) {
+					message = fmt.Sprintf("buildrun failed, pod %s not found", taskRun.Status.PodName)
+					break
+				}
+				return err
+			}
+
+			// Since the container status list is not sorted, as a quick workaround mark all failed containers
+			var failures = make(map[string]struct{})
+			for _, containerStatus := range pod.Status.ContainerStatuses {
+				if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode != 0 {
+					failures[containerStatus.Name] = struct{}{}
+				}
+			}
+
+			// Find the first container that failed
+			var failedContainer *corev1.Container
+			for i, container := range pod.Spec.Containers {
+				if _, has := failures[container.Name]; has {
+					failedContainer = &pod.Spec.Containers[i]
+					break
+				}
+			}
+
+			if failedContainer != nil {
+				message = fmt.Sprintf("buildrun step failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
+					pod.Name,
+					pod.Namespace,
+					pod.Name,
+					failedContainer.Name,
+				)
+			} else {
+				message = fmt.Sprintf("buildrun failed due to an unexpected error in pod %s: for detailed information: kubectl --namespace %s logs %s --all-containers",
+					pod.Name,
+					pod.Namespace,
+					pod.Name,
+				)
+			}
+
+			buildRun.Status.FailedAt = &buildv1alpha1.FailedAt{
+				Pod:       pod.Name,
+				Container: failedContainer.Name,
+			}
+		}
+	}
+
+	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
+		LastTransitionTime: metav1.Now(),
+		Type:               buildv1alpha1.Succeeded,
+		Status:             trCondition.Status,
+		Reason:             reason,
+		Message:            message,
+	})
+
+	return nil
 }
 
 func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ServiceAccount, error) {

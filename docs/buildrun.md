@@ -12,6 +12,8 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining the BuildRef](#defining-the-buildref)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
 - [BuildRun Status](#buildrun-status)
+  - [Understanding the state of a BuildRun](#understanding-the-state-of-a-BuildRun)
+  - [Understanding failed BuildRuns](#understanding-failed-buildruns)
 - [Relationship with Tekton Tasks](#relationship-with-tekton-tasks)
 
 ## Overview
@@ -94,18 +96,48 @@ _**Note**_: When the SA is not defined, the `BuildRun` will default to the `defa
 The `BuildRun` resource is updated as soon as the current image building status changes:
 
 ```sh
-$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
-NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
-buildpack-nodejs-buildrun     Unknown     Running     70s
+$ kubectl get buildrun buildpacks-v3-buildrun
+NAME                    SUCCEEDED   REASON    MESSAGE   STARTTIME   COMPLETIONTIME
+buildpacks-v3-buildrun  Unknown     Pending   Pending   1s
 ```
 
 And finally:
 
 ```sh
-$ kubectl get buildruns.build.dev buildpack-nodejs-buildrun
-NAME                          SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
-buildpack-nodejs-buildrun     True        Succeeded   2m10s       74s
+$ kubectl get buildrun buildpacks-v3-buildrun
+NAME                    SUCCEEDED   REASON      MESSAGE                              STARTTIME   COMPLETIONTIME
+buildpacks-v3-buildrun  True        Succeeded   All Steps have completed executing   4m28s       16s
 ```
+
+The above allows users to get an overview of the building mechanism state.
+
+### Understanding the state of a BuildRun
+
+A `BuildRun` resource stores the relevant information regarding the state of the object under `Status.Conditions`.
+
+[Conditions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties) allow users to easily understand the resource state, without needing to understand resource-specific details.
+
+For the `BuildRun` we use a Condition of the type `Succeeded`, which is a well-known type for resources that run to completion.
+
+The `Status.Conditions` hosts different fields, like `Status`, `Reason` and `Message`. Users can expect this fields to be populated with relevant information.
+
+The following table illustrates the different states a BuildRun can have under its `Status.Conditions`:
+
+| Status | Reason | CompletionTime is set | Description |
+| --- | --- | --- | --- |
+| Unknown | Pending   | No  | The BuildRun is waiting on a Pod in status Pending. |
+| Unknown | Running   | No  | The BuildRun has been validate and started to perform its work. |
+| True    | Succeeded | Yes | The BuildRun Pod is done. |
+| False    | Failed | Yes | The BuildRun failed in one of the steps. |
+| False    | BuildRunTimeout | Yes | The BuildRun timed out. |
+
+_Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
+
+### Understanding failed BuildRuns
+
+To make it easier for users to understand why did a BuildRun failed, users can infer from the `Status.FailedAt` field, the pod and container where the failure took place.
+
+In addition, the `Status.Conditions` will host under the `Message` field a compacted message containing the `kubectl` command to trigger, in order to retrieve the logs.
 
 ### Build Snapshot
 

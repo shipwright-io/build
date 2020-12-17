@@ -197,7 +197,11 @@ func validateBuildRunToSucceed(
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
-		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(falseCondition))
+		if testBuildRun.Status.GetCondition(operator.Succeeded) == nil {
+			return corev1.ConditionUnknown
+		}
+
+		Expect(testBuildRun.Status.GetCondition(operator.Succeeded).Status).ToNot(Equal(falseCondition))
 
 		now := time.Now()
 		if now.After(nextStatusLog) {
@@ -205,7 +209,8 @@ func validateBuildRunToSucceed(
 			nextStatusLog = time.Now().Add(60 * time.Second)
 		}
 
-		return testBuildRun.Status.Succeeded
+		return testBuildRun.Status.GetCondition(operator.Succeeded).Status
+
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
 	// Verify that the BuildSpec is still available in the status
@@ -220,7 +225,7 @@ func validateBuildRunToFail(
 	ctx *framework.Context,
 	namespace string,
 	testBuildRun *operator.BuildRun,
-	expectedReasonRegexp string,
+	expectedMessageRegexp string,
 	timeout time.Duration,
 	retry time.Duration,
 ) {
@@ -240,7 +245,11 @@ func validateBuildRunToFail(
 		err = clientGet(buildRunNsName, testBuildRun)
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving build run")
 
-		Expect(testBuildRun.Status.Succeeded).ToNot(Equal(trueCondition))
+		if testBuildRun.Status.GetCondition(operator.Succeeded) == nil {
+			return corev1.ConditionUnknown
+		}
+
+		Expect(testBuildRun.Status.GetCondition(operator.Succeeded).Status).ToNot(Equal(trueCondition))
 
 		now := time.Now()
 		if now.After(nextStatusLog) {
@@ -248,22 +257,25 @@ func validateBuildRunToFail(
 			nextStatusLog = time.Now().Add(60 * time.Second)
 		}
 
-		return testBuildRun.Status.Succeeded
+		return testBuildRun.Status.GetCondition(operator.Succeeded).Status
 	}, time.Duration(550*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not fail")
 
 	// Verify that the BuildSpec is available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
 
 	// Verify the build run failure
-	Expect(testBuildRun.Status.Reason).To(MatchRegexp(expectedReasonRegexp))
+	Expect(testBuildRun.Status.GetCondition(operator.Succeeded).Message).To(MatchRegexp(expectedMessageRegexp))
 }
 
 // validateServiceAccountDeletion validates that a service account is correctly deleted after the end of
 // a build run and depending on the state of the build run
 func validateServiceAccountDeletion(buildRun *operator.BuildRun, namespace string) {
-	if buildRun.Status.Succeeded == "" || buildRun.Status.Succeeded == corev1.ConditionUnknown {
-		Logf("Skipping validation of service account deletion because build run did not end.")
-		return
+	buildRunCondition := buildRun.Status.GetCondition(operator.Succeeded)
+	if buildRunCondition != nil {
+		if buildRunCondition.Status == "" || buildRunCondition.Status == corev1.ConditionUnknown {
+			Logf("Skipping validation of service account deletion because build run did not end.")
+			return
+		}
 	}
 
 	if buildRun.Spec.ServiceAccount == nil || !buildRun.Spec.ServiceAccount.Generate {

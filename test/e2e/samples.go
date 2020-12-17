@@ -133,7 +133,10 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 	}
 
 	if buildRun != nil {
-		Logf("The status of BuildRun %s: succeeded=%s, reason=%s", buildRun.Name, buildRun.Status.Succeeded, buildRun.Status.Reason)
+		brCondition := buildRun.Status.GetCondition(operator.Succeeded)
+		if brCondition != nil {
+			Logf("The status of BuildRun %s: status=%s, reason=%s", buildRun.Name, brCondition.Status, brCondition.Reason)
+		}
 		if buildRunJSON, err := json.Marshal(buildRun); err == nil {
 			Logf("The full BuildRun: %s", string(buildRunJSON))
 		}
