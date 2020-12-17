@@ -38,6 +38,7 @@ When the controller reconciles it:
 
 - Validates if the referenced `StrategyRef` exists.
 - Validates if the container `registry` output secret exists.
+- Validates if the referenced `spec.source.url` endpoint exists.
 
 ## Configuring a Build
 
@@ -67,6 +68,25 @@ A `Build` resource can specify a Git source, together with other parameters like
 - `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the `ssh` data.
 - `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name.
 - `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently, only supported by `buildah`, `kaniko` and `buildpacks` build strategies.
+
+By default, the Build controller will validate that the Git repository exists. If the validation is not desired, users can define the `build.build.dev/verify.repository` annotation with `false`. For example:
+
+Example of a `Build` with the **build.build.dev/verify.repository** annotation, in order to disbale the `spec.source.url` validation.
+
+```yaml
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: buildah-golang-build
+  annotations:
+    build.build.dev/verify.repository: "false"
+spec:
+  source:
+    url: https://github.com/sbose78/taxi
+    revision: master
+```
+
+_Note_: The Build controller only validates two scenarios. The first one where the endpoint uses an `https` protocol, the second one when a `ssh` protocol (_e.g. `git@`_) is defined and none referenced secret was provided(_e.g. source.credentials.name_).
 
 Example of a `Build` with a source with **credentials** defined by the user.
 
