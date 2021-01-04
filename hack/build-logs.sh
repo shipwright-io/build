@@ -4,7 +4,6 @@
 # 
 # SPDX-License-Identifier: Apache-2.0
 
-
 set -euo pipefail
 
 # Read the build run name
@@ -107,7 +106,7 @@ do
 
     # Check if the container is waiting
 
-    WAITING_REASON=$(echo "${POD}" | jq -r ".status.containerStatuses[${i}].state.waiting.reason")
+    WAITING_REASON=$(echo "${POD}" | jq -r ".status.containerStatuses[] | select(.name == \"${CONTAINER_NAME}\") | .state.waiting.reason")
 
     if [ "${WAITING_REASON}" != "null" ]; then
         # In follow mode, wait for the container not to be waiting anymore, otherwise stop here
@@ -117,7 +116,7 @@ do
                 sleep 1
 
                 POD=$(kubectl get pod "${POD_NAME}" -n "${NAMESPACE}" -o json)
-                WAITING_REASON=$(echo "${POD}" | jq -r ".status.containerStatuses[${i}].state.waiting.reason")
+                WAITING_REASON=$(echo "${POD}" | jq -r ".status.containerStatuses[] | select(.name == \"${CONTAINER_NAME}\") | .state.waiting.reason")
             done
         else
             echo "Container is not yet running. Waiting reason: ${WAITING_REASON}"
@@ -128,7 +127,7 @@ do
 
     # Extract the exit code of the container
 
-    EXIT_CODE=$(echo "${POD}" | jq ".status.containerStatuses[${i}].state.terminated.exitCode")
+    EXIT_CODE=$(echo "${POD}" | jq ".status.containerStatuses[] | select(.name == \"${CONTAINER_NAME}\") | .state.terminated.exitCode")
 
     if [ ${FOLLOW} = 1 ] && [ "${EXIT_CODE}" == "null" ]; then
         # Container is still running and follow logs is requested
@@ -141,7 +140,7 @@ do
         # Refresh the pod to get the exit code of the container, sometimes this takes a moment
         while [ "${EXIT_CODE}" == "null" ]; do
             POD=$(kubectl get pod "${POD_NAME}" -n "${NAMESPACE}" -o json)
-            EXIT_CODE=$(echo "${POD}" | jq ".status.containerStatuses[${i}].state.terminated.exitCode")
+            EXIT_CODE=$(echo "${POD}" | jq ".status.containerStatuses[] | select(.name == \"${CONTAINER_NAME}\") | .state.terminated.exitCode")
         done
     else
         # Just print the logs that we have
@@ -154,7 +153,7 @@ do
         if [ "${EXIT_CODE}" == "null" ]; then
             # Refresh the pod to get the exit code of the container if it terminated in the meantime
             POD=$(kubectl get pod "${POD_NAME}" -n "${NAMESPACE}" -o json)
-            EXIT_CODE=$(echo "${POD}" | jq ".status.containerStatuses[${i}].state.terminated.exitCode")
+            EXIT_CODE=$(echo "${POD}" | jq ".status.containerStatuses[] | select(.name == \"${CONTAINER_NAME}\") | .state.terminated.exitCode")
         fi
     fi
 
