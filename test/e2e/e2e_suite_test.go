@@ -127,7 +127,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		for _, clusterBuildStrategy := range clusterBuildStrategies {
 			Logf("Creating cluster build strategy %s", clusterBuildStrategy)
 			cbs, err := clusterBuildStrategyTestData(clusterBuildStrategy)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving cluster buildstrategy test data")
 			cbs.SetNamespace(namespace)
 
 			createClusterBuildStrategy(globalCtx, f, cbs, cleanupTimeout, cleanupRetryInterval)
@@ -138,7 +138,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		for _, namespaceBuildStrategy := range namespaceBuildStrategies {
 			Logf("Creating namespace build strategy %s", namespaceBuildStrategy)
 			nbs, err := buildStrategyTestData(namespace, namespaceBuildStrategy)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving build strategy test data")
 
 			createNamespacedBuildStrategy(globalCtx, f, nbs, cleanupTimeout, cleanupRetryInterval)
 		}

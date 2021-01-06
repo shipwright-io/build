@@ -86,10 +86,10 @@ func createBuild(ctx *framework.Context, namespace string, identifier string, fi
 	Logf("Creating build %s", identifier)
 
 	rootDir, err := getRootDir()
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).ToNot(HaveOccurred(), "Unable to get root dir")
 
 	b, err := buildTestData(namespace, identifier, rootDir+"/"+filePath)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 	amendBuild(identifier, b)
 

@@ -26,7 +26,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		br = nil
 
 		namespace, err = ctx.GetWatchNamespace()
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving namespace")
 	})
 
 	AfterEach(func() {
@@ -54,7 +54,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -77,7 +77,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildah_cr_custom_context+dockerfile.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -100,7 +100,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -146,7 +146,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -169,7 +169,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -192,7 +192,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_php_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -238,7 +238,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -283,7 +283,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_buildpacks-v3_nodejs_runtime-image_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -323,7 +323,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_kaniko_cr_advanced_dockerfile.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -363,7 +363,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("fails the build run", func() {
 			br, err = buildRunTestData(namespace, testID, "test/data/buildrun_timeout.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToFail(ctx,
 				namespace,
@@ -392,7 +392,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 		It("successfully runs a build", func() {
 			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 		})
@@ -423,7 +423,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			It("successfully runs a build", func() {
 				br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 				validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 			})
@@ -469,7 +469,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			It("successfully runs a build", func() {
 				br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 				validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 			})
@@ -514,7 +514,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			It("successfully runs a build", func() {
 				br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 				validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
 			})

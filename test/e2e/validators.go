@@ -154,7 +154,7 @@ func createNamespacedBuildStrategy(
 ) {
 	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx, timeout, retry))
 	if err != nil {
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred(), "on creating namespace build strategy")
 	}
 }
 
@@ -168,7 +168,7 @@ func createClusterBuildStrategy(
 ) {
 	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx, timeout, retry))
 	if err != nil && !apierrors.IsAlreadyExists(err) {
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred(), "Failed to create cluster build strategy")
 	}
 }
 
@@ -201,7 +201,7 @@ func validateBuildRunToSucceed(
 			return corev1.ConditionUnknown
 		}
 
-		Expect(testBuildRun.Status.GetCondition(operator.Succeeded).Status).ToNot(Equal(falseCondition))
+		Expect(testBuildRun.Status.GetCondition(operator.Succeeded).Status).ToNot(Equal(falseCondition), "BuildRun status doesn't move to Succeeded")
 
 		now := time.Now()
 		if now.After(nextStatusLog) {
@@ -214,7 +214,7 @@ func validateBuildRunToSucceed(
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
 	// Verify that the BuildSpec is still available in the status
-	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil())
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")
 
 	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
 }
@@ -249,7 +249,7 @@ func validateBuildRunToFail(
 			return corev1.ConditionUnknown
 		}
 
-		Expect(testBuildRun.Status.GetCondition(operator.Succeeded).Status).ToNot(Equal(trueCondition))
+		Expect(testBuildRun.Status.GetCondition(operator.Succeeded).Status).ToNot(Equal(trueCondition), "BuildRun status doesn't move to fail status")
 
 		now := time.Now()
 		if now.After(nextStatusLog) {
@@ -414,6 +414,6 @@ func getTimeoutMultiplier() int64 {
 	}
 
 	intValue, err := strconv.ParseInt(value, 10, 64)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).ToNot(HaveOccurred(), "Failed to parse EnvVarTimeoutMultiplier to integer")
 	return intValue
 }
