@@ -7,7 +7,7 @@ spec:
   source:
     url: https://github.com/cloudfoundry/cf-acceptance-tests
     contextDir: assets/dora
-    revision: main
+    revision: develop
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
