@@ -73,7 +73,7 @@ As an example, the source code [nodejs-rest-http-crud](https://github.com/nodesh
 Note:
 In some scenarios, the source code 'revision' may not necessarily be deterministic as well, especially in case of builds triggered from PRs/forks.
 
-### Deciding what should be overriden
+### Deciding what should be overridden
 
 - Could the value of attribute X be reasonably determined at the time of `Build` configuration specification ?
 - Could the modification of attribute X reasonably compromise the integrity of the build ?

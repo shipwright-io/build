@@ -95,7 +95,7 @@ make test-integration
 
 ## E2E Tests
 
-We use e2e tests as the last signal to ensure the controllers behaviour in the cluster matches the developer specifications( _based on [e2e-tests](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/e2e-tests.md)_ ). During e2e tests execution, we don´t want to test any interaction between components but rather we want to simulate a normal user operation and ensure that images are succesfully build. E2E tests should only cover:
+We use e2e tests as the last signal to ensure the controllers behaviour in the cluster matches the developer specifications( _based on [e2e-tests](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/e2e-tests.md)_ ). During e2e tests execution, we don´t want to test any interaction between components but rather we want to simulate a normal user operation and ensure that images are successfully build. E2E tests should only cover:
 
 - As the way to validate if the image was successfully build, only assert for a Succeeded Status on TaskRuns.
 - Testing should be around building images with different supported strategies, and different runtimes inside the strategies.

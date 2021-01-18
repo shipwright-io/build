@@ -103,7 +103,7 @@ can extend the API to support arbitrary configuration.
 For the initial implementation, we will only support one git repository that is specified in
 `.spec.source`. Remote artifacts will be specified n `.spec.sources` only.
 
-We will address supporting multipe Git repositories in a future enhancement proposal. This will
+We will address supporting multiple Git repositories in a future enhancement proposal. This will
 involve re-defining `/workspace/source` location and the `$workspace` placeholder.
 
 ## Steps and Helper

@@ -297,7 +297,7 @@ func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName str
 	}
 }
 
-// StubBuildRun is used to simulate the existance of a BuildRun
+// StubBuildRun is used to simulate the existence of a BuildRun
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
 	b *build.BuildRun,
