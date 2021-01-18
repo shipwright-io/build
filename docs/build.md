@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 
 - [Overview](#overview)
 - [Build Controller](#build-controller)
+- [Build Validations](#build-validations)
 - [Configuring a Build](#configuring-a-build)
   - [Defining the Source](#defining-the-source)
   - [Defining the Strategy](#defining-the-strategy)
@@ -39,6 +40,22 @@ When the controller reconciles it:
 - Validates if the referenced `StrategyRef` exists.
 - Validates if the container `registry` output secret exists.
 - Validates if the referenced `spec.source.url` endpoint exists.
+
+## Build Validations
+
+In order to prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `Status.Reason`, however if any of the validations failed, users can rely on the `Status.Reason` and `Status.Message` fields, in order to understand the root cause.
+
+| Status.Reason | Description |
+| --- | --- |
+| BuildStrategyNotFound   | The referenced namespace-scope strategy doesn´t exist. |
+| ClusterBuildStrategyNotFound   | The referenced cluster-scope strategy doesn´t exist. |
+| SetOwnerReferenceFailed   | Setting ownerreferences between a Build and a BuildRun failed. This is triggered when making use of the `build.build.dev/build-run-deletion` annotation in a Build. |
+| SpecSourceSecretNotFound | The secret used to authenticate to git doesn´t exist. |
+| SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn´t exist. |
+| SpecRuntimeSecretRefNotFound | The secret used to authenticate to the container registry doesn´t exist.|
+| MultipleSecretRefNotFound | More than one secret is missing. At the moment, only three paths on a Build can specify a secret. |
+| RuntimePathsCanNotBeEmpty | The Runtime feature is used, but the runtime path was not defined. This is mandatory. |
+| RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only take place for http/https protocols. |
 
 ## Configuring a Build
 
