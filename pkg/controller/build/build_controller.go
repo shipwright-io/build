@@ -480,8 +480,9 @@ func (r *ReconcileBuild) validateSourceURL(ctx context.Context, b *build.Build, 
 		ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, b.GetAnnotations()[build.AnnotationBuildVerifyRepository]))
 		return nil
 	default:
-		ctxlog.Error(ctx, fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository), namespace, b.Namespace, name, b.Name)
-		return fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)
+		var annoErr = fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)
+		ctxlog.Error(ctx, annoErr, namespace, b.Namespace, name, b.Name)
+		return annoErr
 	}
 }
 

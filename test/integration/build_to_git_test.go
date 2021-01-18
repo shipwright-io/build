@@ -145,7 +145,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = "https://github.ibm.com/coligo/build-fake"
+			buildObject.Spec.Source.URL = "https://github.yourco.com/org/build-fake"
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -170,7 +170,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = "https://github.ibm.com/coligo/build-fake"
+			buildObject.Spec.Source.URL = "https://github.yourco.com/org/build-fake"
 			buildObject.Spec.Source.SecretRef = &corev1.LocalObjectReference{Name: "foobar"}
 
 			sampleSecret := tb.Catalog.SecretWithAnnotation(buildObject.Spec.Source.SecretRef.Name, buildObject.Namespace)

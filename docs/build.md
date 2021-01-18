@@ -86,7 +86,7 @@ spec:
     revision: master
 ```
 
-_Note_: The Build controller only validates two scenarios. The first one where the endpoint uses an `https` protocol, the second one when a `ssh` protocol (_e.g. `git@`_) is defined and none referenced secret was provided(_e.g. source.credentials.name_).
+_Note_: The Build controller only validates two scenarios. The first one where the endpoint uses an `https` protocol, the second one when a `ssh` protocol (_e.g. `git@`_) is defined and no referenced secret was provided (_e.g. source.credentials.name_).
 
 Example of a `Build` with a source with **credentials** defined by the user.
 

@@ -531,7 +531,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("invalid source url"))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, "invalid source url")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
@@ -557,7 +557,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, fmt.Sprintf("remote repository unreachable"))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, "remote repository unreachable")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)
@@ -595,7 +595,7 @@ var _ = Describe("Reconcile Build", func() {
 			// skip validation because build references a sourceURL secret
 			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
 				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
-				buildSample.Spec.Source.URL = "https://github.ibm.com/coligo/build-fake"
+				buildSample.Spec.Source.URL = "https://github.yourco.com/org/build-fake"
 				buildSample.Spec.Source.SecretRef.Name = registrySecret
 
 				// Fake some client LIST calls and ensure we populate all
