@@ -127,6 +127,7 @@ type Status struct {
 	Conditions Conditions `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 }
 
+// GetCondition returns the condition based on the type
 func (s *Status) GetCondition(t ConditionType) *Condition {
 	for _, cond := range s.Conditions {
 		if cond.Type == t {

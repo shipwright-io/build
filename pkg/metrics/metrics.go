@@ -14,6 +14,7 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 )
 
+// Labels used in Prometheus metrics
 const (
 	BuildStrategyLabel string = "buildstrategy"
 	NamespaceLabel     string = "namespace"
