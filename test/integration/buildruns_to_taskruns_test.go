@@ -353,6 +353,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			Expect(err).To(BeNil())
 
 			err = tb.GetBRTillDesiredReason(buildRunObject.Name, fmt.Sprintf("TaskRun \"%s\" was cancelled", tr.Name))
+			Expect(err).To(BeNil())
 
 			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, "TaskRunCancelled")
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "TaskRunCancelled", actualReason))
