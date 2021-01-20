@@ -123,30 +123,21 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) 
 }
 
 // GetBRTillDesiredReason polls until a BuildRun gets a particular Reason
-// it exit if an error happens or the timeout is reach
-func (t *TestBuild) GetBRTillDesiredReason(buildRunname string, reason string) error {
-
-	var (
-		pollBRTillCompletion = func() (bool, error) {
-
-			currentReason, err := t.GetBRReason(buildRunname)
-			if err != nil {
-				return false, err
-			}
-			if currentReason == reason {
-				return true, nil
-			}
-
-			return false, nil
+// it exit if an error happens or the timeout is reached
+func (t *TestBuild) GetBRTillDesiredReason(buildRunname string, reason string) (currentReason string, err error) {
+	err = wait.PollImmediate(t.Interval, t.TimeOut, func() (bool, error) {
+		currentReason, err = t.GetBRReason(buildRunname)
+		if err != nil {
+			return false, err
 		}
-	)
+		if currentReason == reason {
+			return true, nil
+		}
 
-	err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillCompletion)
-	if err != nil {
-		return err
-	}
+		return false, nil
+	})
 
-	return nil
+	return
 }
 
 // GetBRTillDeletion polls until a BuildRun is not found, it returns
