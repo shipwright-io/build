@@ -51,6 +51,30 @@ func (c *Catalog) SecretWithoutAnnotation(name string, ns string) *corev1.Secret
 	}
 }
 
+// BuildWithClusterBuildStrategyAndFalseSourceAnnotation gives you an specific Build CRD
+func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name string, ns string, strategyName string) *build.Build {
+	buildStrategy := build.ClusterBuildStrategyKind
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   ns,
+			Annotations: map[string]string{build.AnnotationBuildVerifyRepository: "false"},
+		},
+		Spec: build.BuildSpec{
+			Source: build.GitSource{
+				URL: "foobar",
+			},
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &buildStrategy,
+			},
+			Output: build.Image{
+				ImageURL: "foobar",
+			},
+		},
+	}
+}
+
 // BuildWithClusterBuildStrategy gives you an specific Build CRD
 func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategyName string, secretName string) *build.Build {
 	buildStrategy := build.ClusterBuildStrategyKind
@@ -61,7 +85,7 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "foobar",
+				URL: "https://github.com/sbose78/taxi",
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
@@ -77,6 +101,32 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 	}
 }
 
+// BuildWithClusterBuildStrategyAndSourceSecret gives you an specific Build CRD
+func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns string, strategyName string) *build.Build {
+	buildStrategy := build.ClusterBuildStrategyKind
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: build.BuildSpec{
+			Source: build.GitSource{
+				URL: "https://github.com/sbose78/taxi",
+				SecretRef: &corev1.LocalObjectReference {
+					Name: "foobar",
+				},
+			},
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+				Kind: &buildStrategy,
+			},
+			Output: build.Image{
+				ImageURL: "foobar",
+			},
+		},
+	}
+}
+
 // BuildWithBuildStrategy gives you an specific Build CRD
 func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName string) *build.Build {
 	buildStrategy := build.NamespacedBuildStrategyKind
@@ -87,7 +137,7 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "foobar",
+				URL: "https://github.com/sbose78/taxi",
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
@@ -106,7 +156,7 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "foobar",
+				URL: "https://github.com/sbose78/taxi",
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,

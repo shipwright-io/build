@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"knative.dev/pkg/apis"
 )
 
 var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
@@ -311,21 +310,20 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
+			b, err := tb.GetBuildTillRegistration(buildObject.Name, corev1.ConditionFalse)
+			Expect(err).To(BeNil())
+			Expect(b.Status.Registered).To(Equal(corev1.ConditionFalse))
+			Expect(b.Status.Reason).To(ContainSubstring("no such host"))
+
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, "Failed")
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "Failed", actualReason))
-
-			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			reason, err := tb.GetBRReason(buildRunObject.Name)
 			Expect(err).To(BeNil())
+			Expect(reason).To(ContainSubstring("the Build is not registered correctly"))
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, tr.Status.GetCondition(apis.ConditionSucceeded).Message)
-			Expect(err).To(BeNil())
-
-			tr, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
-			Expect(err).To(BeNil())
-			Expect(tr.Status.CompletionTime).ToNot(BeNil())
+			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			Expect(err).ToNot(BeNil())
 
 		})
 	})

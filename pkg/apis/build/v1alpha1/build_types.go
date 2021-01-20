@@ -22,6 +22,11 @@ const (
 	// AnnotationBuildRefSecret is an annotation that tells the Build Controller to reconcile on
 	// events of the secret only if is referenced by a Build in the same namespace
 	AnnotationBuildRefSecret = "build.build.dev/referenced.secret"
+
+	// AnnotationBuildVerifyRepository tells the Build Controller to check a remote repository. If the annotation is not set
+	// or has a value of 'true', the controller triggers the validation. A value of 'false' means the controller
+	// will bypass checking the remote repository.
+	AnnotationBuildVerifyRepository = "build.build.dev/verify.repository"
 )
 
 // BuildSpec defines the desired state of Build
