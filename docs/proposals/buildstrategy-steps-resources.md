@@ -54,8 +54,8 @@ there could be situations where containers under the same strategy required diff
 
 ## Motivation
 
-For strategies with multiple steps like Buildpacks, not all the steps(_containers_) will require the same set of resources(_e.g. memory, cpu, etc_) values. 
-In order to be able to manage situations where setting particular steps resources is required, we need a more flexible way to deal with N number of steps under the same strategy (_Build/ClusterBuildStrategy_). Also, we still need to help users to know that independently of the abstraction of the strategies, there are options for speeding up the builds. This options could be presented in the form of different `flavours` of the same strategy(_cluster or namespaced scope_), that differ between each other in terms of container resources values.
+For strategies with multiple steps like Buildpacks, not all the steps (_containers_) will require the same set of resources (_e.g. memory, cpu, etc_) values.
+In order to be able to manage situations where setting particular steps resources is required, we need a more flexible way to deal with N number of steps under the same strategy (_Build/ClusterBuildStrategy_). Also, we still need to help users to know that independently of the abstraction of the strategies, there are options for speeding up the builds. This options could be presented in the form of different `flavours` of the same strategy (_cluster or namespaced scope_), that differ between each other in terms of container resources values.
 
 ### Goals
 
