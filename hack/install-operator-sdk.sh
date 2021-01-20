@@ -19,6 +19,9 @@ SDK_BIN="operator-sdk"
 
 # binary location in VM
 SDK_LOCAL_BIN="${HOME}/bin/${SDK_BIN}"
+
+mkdir -p "${HOME}/bin"
+
 # final binary and signature download URL
 SDK_URL="https://${SDK_HOST}/${SDK_HOST_PATH}/${SDK_VERSION}/${SDK_HOST_BIN}"
 
@@ -53,5 +56,5 @@ gpg --verify "${SDK_BIN}.asc" "${SDK_BIN}"
 rm -f "${SDK_BIN}.asc"
 
 echo "# Installing '${SDK_BIN}' -sdk at '${SDK_LOCAL_BIN}'"
-mv -v ${SDK_BIN} ${SDK_LOCAL_BIN}
-chmod +x ${SDK_LOCAL_BIN}
+mv -v ${SDK_BIN} "${SDK_LOCAL_BIN}"
+chmod +x "${SDK_LOCAL_BIN}"

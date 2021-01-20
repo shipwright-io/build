@@ -12,6 +12,13 @@ GOARCH ?= amd64
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor
 
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
 # configure zap based logr
 ZAP_FLAGS ?= --zap-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
@@ -108,25 +115,51 @@ verify-codegen: generate
 	# TODO: Verify vendor tree is accurate
 	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
 
-install-ginkgo:
-	go get -u github.com/onsi/ginkgo/ginkgo
-	go get -u github.com/onsi/gomega/...
-	ginkgo version
+ginkgo:
+ifeq (, $(shell which ginkgo))
+	@{ \
+	set -e ;\
+	GINKGO_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$GINKGO_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get -u github.com/onsi/ginkgo/ginkgo ;\
+	go get -u github.com/onsi/gomega/... ;\
+	rm -rf $$GINKGO_GEN_TMP_DIR ;\
+	}
+GINKGO=$(GOBIN)/ginkgo
+else
+GINKGO=$(shell which ginkgo)
+endif
 
-install-gocov:
-	cd && GO111MODULE=on go get github.com/axw/gocov/gocov@v1.0.0
+gocov:
+ifeq (, $(shell which gocov))
+	@{ \
+	set -e ;\
+	GOCOV_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$GOCOV_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get github.com/axw/gocov/gocov@v1.0.0 ;\
+	rm -rf $$GOCOV_GEN_TMP_DIR ;\
+	}
+GOCOV=$(GOBIN)/gocov
+else
+GOCOV=$(shell which gocov)
+endif
 
 install-counterfeiter:
 	hack/install-counterfeiter.sh
+
+install-operator-sdk:
+	hack/install-operator-sdk.sh
 
 # https://github.com/shipwright-io/build/issues/123
 test: test-unit
 
 .PHONY: test-unit
-test-unit:
+test-unit: ginkgo
 	rm -rf build/coverage
 	mkdir build/coverage
-	GO111MODULE=on ginkgo \
+	GO111MODULE=on $(GINKGO) \
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
@@ -140,16 +173,16 @@ test-unit:
 		internal/... \
 		pkg/...
 
-test-unit-coverage: test-unit
+test-unit-coverage: test-unit gocov
 	echo "Combining coverage profiles"
 	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
-	gocov convert build/coverage/coverprofile > build/coverage/coverprofile.json
-	gocov report build/coverage/coverprofile.json
+	$(GOCOV) convert build/coverage/coverprofile > build/coverage/coverprofile.json
+	$(GOCOV) report build/coverage/coverprofile.json
 
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
 .PHONY: test-integration
-test-integration: install-apis
-	GO111MODULE=on ginkgo \
+test-integration: install-apis ginkgo
+	GO111MODULE=on $(GINKGO) \
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
@@ -163,7 +196,7 @@ test-integration: install-apis
 test-e2e: install-strategies test-e2e-plain
 
 .PHONY: test-e2e-plain
-test-e2e-plain:
+test-e2e-plain: ginkgo
 	GO111MODULE=on \
 	TEST_OPERATOR_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
@@ -172,7 +205,7 @@ test-e2e-plain:
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
 	TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
-	ginkgo ${TEST_E2E_FLAGS} test/e2e
+	$(GINKGO) ${TEST_E2E_FLAGS} test/e2e
 
 .PHONY: install install-apis install-operator install-strategies
 
@@ -208,10 +241,13 @@ kubectl:
 kind-registry:
 	./hack/install-registry.sh
 
+kind-tekton:
+	./hack/install-tekton.sh
+
 kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
 
-travis: install-counterfeiter install-ginkgo install-gocov kubectl kind
+travis: install-counterfeiter ginkgo gocov kubectl kind
 	./hack/install-tekton.sh
 	./hack/install-operator-sdk.sh
