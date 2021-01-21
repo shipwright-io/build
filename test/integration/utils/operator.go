@@ -5,8 +5,6 @@
 package utils
 
 import (
-	"context"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	buildconfig "github.com/shipwright-io/build/pkg/config"
@@ -19,7 +17,7 @@ import (
 func (t *TestBuild) StartBuildOperator() (chan struct{}, error) {
 	c := buildconfig.NewDefaultConfig()
 
-	mgr, err := controller.NewManager(context.Background(), c, t.KubeConfig, manager.Options{
+	mgr, err := controller.NewManager(t.Context, c, t.KubeConfig, manager.Options{
 		Namespace:          t.Namespace,
 		LeaderElection:     false,
 		MetricsBindAddress: "0",

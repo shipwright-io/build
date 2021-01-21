@@ -6,6 +6,7 @@ package ctxlog
 
 import (
 	"context"
+	"io"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
@@ -18,6 +19,18 @@ import (
 // implementation
 func NewLogger(name string) logr.Logger {
 	l := zap.Logger()
+
+	logf.SetLogger(l)
+
+	l = l.WithName(name)
+
+	return l
+}
+
+// NewLoggerTo returns a new Logger which logs
+// to a given destination.
+func NewLoggerTo(destWriter io.Writer, name string) logr.Logger {
+	l := zap.LoggerTo(destWriter)
 
 	logf.SetLogger(l)
 

@@ -55,6 +55,12 @@ var _ = AfterEach(func() {
 	if tb.StopBuildOperator != nil {
 		close(tb.StopBuildOperator)
 	}
+
+	if CurrentGinkgoTestDescription().Failed && tb.BuildOperatorLogBuffer != nil {
+		// print operator logs
+		fmt.Println("\nLogs of the operator:")
+		fmt.Printf("%v\n", tb.BuildOperatorLogBuffer)
+	}
 })
 
 var _ = AfterSuite(func() {

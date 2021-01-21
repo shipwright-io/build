@@ -5,6 +5,8 @@
 package utils
 
 import (
+	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -20,6 +22,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	buildClient "github.com/shipwright-io/build/pkg/client/build/clientset/versioned"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/test"
 	// from https://github.com/kubernetes/client-go/issues/345
 )
@@ -35,21 +38,28 @@ type TestBuild struct {
 	// TODO: Adding specific field for polling here, interval and timeout
 	// but I think we need a small refactoring to make them global for all
 	// tests under /test dir
-	Interval          time.Duration
-	TimeOut           time.Duration
-	KubeConfig        *rest.Config
-	Clientset         *kubernetes.Clientset
-	Namespace         string
-	StopBuildOperator chan struct{}
-	BuildClientSet    *buildClient.Clientset
-	PipelineClientSet *tektonClient.Clientset
-	Catalog           test.Catalog
+	Interval               time.Duration
+	TimeOut                time.Duration
+	KubeConfig             *rest.Config
+	Clientset              *kubernetes.Clientset
+	Namespace              string
+	StopBuildOperator      chan struct{}
+	BuildClientSet         *buildClient.Clientset
+	PipelineClientSet      *tektonClient.Clientset
+	Catalog                test.Catalog
+	Context                context.Context
+	BuildOperatorLogBuffer *bytes.Buffer
 }
 
 // NewTestBuild returns an initialized instance of TestBuild
 func NewTestBuild() (*TestBuild, error) {
 	namespaceID := gomegaConfig.GinkgoConfig.ParallelNode*200 + int(atomic.AddInt32(&namespaceCounter, 1))
 	testNamespace := "test-build-" + strconv.Itoa(int(namespaceID))
+
+	logBuffer := &bytes.Buffer{}
+	l := ctxlog.NewLoggerTo(logBuffer, testNamespace)
+
+	ctx := ctxlog.NewParentContext(l)
 
 	kubeConfig, restConfig, err := KubeConfig()
 	if err != nil {
@@ -70,13 +80,15 @@ func NewTestBuild() (*TestBuild, error) {
 
 	return &TestBuild{
 		// TODO: interval and timeout can be configured via ENV vars
-		Interval:          time.Second * 3,
-		TimeOut:           time.Second * 180,
-		KubeConfig:        restConfig,
-		Clientset:         kubeConfig,
-		Namespace:         testNamespace,
-		BuildClientSet:    buildClientSet,
-		PipelineClientSet: pipelineClientSet,
+		Interval:               time.Second * 3,
+		TimeOut:                time.Second * 180,
+		KubeConfig:             restConfig,
+		Clientset:              kubeConfig,
+		Namespace:              testNamespace,
+		BuildClientSet:         buildClientSet,
+		PipelineClientSet:      pipelineClientSet,
+		Context:                ctx,
+		BuildOperatorLogBuffer: logBuffer,
 	}, nil
 }
 
