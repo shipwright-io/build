@@ -101,9 +101,11 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 
 	// Watch for changes to primary resource Build
 	err = c.Watch(&source.Kind{Type: &build.Build{}}, &handler.EnqueueRequestForObject{}, pred)
+	if err != nil {
+		return err
+	}
 
 	preSecret := predicate.Funcs{
-
 		// Only filter events where the secret have the Build specific annotation
 		CreateFunc: func(e event.CreateEvent) bool {
 			objectAnnotations := e.Meta.GetAnnotations()
@@ -137,7 +139,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 		},
 	}
 
-	err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestsFromMapFunc{
+	return c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestsFromMapFunc{
 		ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
 
 			secret := o.Object.(*corev1.Secret)
@@ -190,12 +192,6 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			return reconcileList
 		}),
 	}, preSecret)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // blank assignment to verify that ReconcileBuild implements reconcile.Reconciler

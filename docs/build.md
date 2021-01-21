@@ -71,7 +71,7 @@ A `Build` resource can specify a Git source, together with other parameters like
 
 By default, the Build controller will validate that the Git repository exists. If the validation is not desired, users can define the `build.build.dev/verify.repository` annotation with `false`. For example:
 
-Example of a `Build` with the **build.build.dev/verify.repository** annotation, in order to disbale the `spec.source.url` validation.
+Example of a `Build` with the **build.build.dev/verify.repository** annotation, in order to disable the `spec.source.url` validation.
 
 ```yaml
 apiVersion: build.dev/v1alpha1

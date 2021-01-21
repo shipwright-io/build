@@ -250,18 +250,21 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, "Pending")
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "Pending", actualReason))
+			expectedReason := "Pending"
+			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, "Pending")
-			Expect(err).To(BeNil())
+			expectedReason = "Pending"
+			actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			actualReason, err = tb.GetTRTillDesiredReason(buildRunObject.Name, "Running")
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "Running", actualReason))
+			expectedReason = "Running"
+			actualReason, err = tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, "Running")
-			Expect(err).To(BeNil())
-
+			expectedReason = "Running"
+			actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 		})
 	})
 
@@ -281,19 +284,20 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, "TaskRunTimeout")
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "TaskRunTimeout", actualReason))
+			expectedReason := "TaskRunTimeout"
+			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, fmt.Sprintf("TaskRun \"%s\" failed to finish within \"5s\"", tr.Name))
-			Expect(err).To(BeNil())
+			expectedReason = fmt.Sprintf("TaskRun \"%s\" failed to finish within \"5s\"", tr.Name)
+			actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
 			tr, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(tr.Status.CompletionTime).ToNot(BeNil())
-
 		})
 	})
 
@@ -352,11 +356,13 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			tr, err = tb.UpdateTaskRun(tr)
 			Expect(err).To(BeNil())
 
-			err = tb.GetBRTillDesiredReason(buildRunObject.Name, fmt.Sprintf("TaskRun \"%s\" was cancelled", tr.Name))
+			expectedReason := fmt.Sprintf("TaskRun \"%s\" was cancelled", tr.Name)
+			actualReason, err := tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, "TaskRunCancelled")
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "TaskRunCancelled", actualReason))
-
+			expectedReason = "TaskRunCancelled"
+			actualReason, err = tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 		})
 	})
 })

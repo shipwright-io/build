@@ -45,6 +45,16 @@ This allow us to use test doubles in the unit tests, from where we can instantia
 
 Counterfeiter is required by the code generator scripts. Run `make install-counterfeiter` to add counterfeiter to your `GOPATH`.
 
+### Static code analysis and linting
+
+Run `make sanity-check` to run a collection of static code analyser and linters to check the code for issues, for example ineffective assignments, unused variables, missing comments, misspellings and so on. Each check also has an individual Make target to check:
+
+- `make govet` examines Go source code and reports suspicious constructs
+- `make ineffassign` checks Go source for variable assignments that are not used (i.e. overridden)
+- `make golint` runs a linter against the Go source
+- `make misspell` checks for TYPOs
+- `make staticcheck` performs more complex static code analysis to find unused code and other issues
+
 ## Unit Tests
 
 We use unit tests to provide coverage and ensure that our functions are behaving as expected, but also to assert the behaviour of the controllers during Reconciliations.
@@ -95,7 +105,7 @@ make test-integration
 
 ## E2E Tests
 
-We use e2e tests as the last signal to ensure the controllers behaviour in the cluster matches the developer specifications( _based on [e2e-tests](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/e2e-tests.md)_ ). During e2e tests execution, we don´t want to test any interaction between components but rather we want to simulate a normal user operation and ensure that images are succesfully build. E2E tests should only cover:
+We use e2e tests as the last signal to ensure the controllers behaviour in the cluster matches the developer specifications( _based on [e2e-tests](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/e2e-tests.md)_ ). During e2e tests execution, we don´t want to test any interaction between components but rather we want to simulate a normal user operation and ensure that images are successfully build. E2E tests should only cover:
 
 - As the way to validate if the image was successfully build, only assert for a Succeeded Status on TaskRuns.
 - Testing should be around building images with different supported strategies, and different runtimes inside the strategies.
@@ -208,4 +218,3 @@ make test-e2e \
   TEST_PRIVATE_GITLAB="git@gitlab.com:<youruser>/<your-repo>.git" \
   TEST_SOURCE_SECRET="<secret-name>"
 ```
-

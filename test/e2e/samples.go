@@ -125,6 +125,10 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 	f := framework.Global
 
 	buildRun, build, err := retrieveBuildAndBuildRun(namespace, buildRunName)
+	if err != nil {
+		Logf("Failed to retrieve build and buildrun logs: %w", err)
+	}
+
 	if build != nil {
 		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, build.Status.Registered, build.Status.Reason)
 		if buildJSON, err := json.Marshal(build); err == nil {

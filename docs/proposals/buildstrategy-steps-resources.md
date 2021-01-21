@@ -54,8 +54,8 @@ there could be situations where containers under the same strategy required diff
 
 ## Motivation
 
-For strategies with multiple steps like Buildpacks, not all the steps(_containers_) will require the same set of resources(_e.g. memory, cpu, etc_) values. 
-In order to be able to manage situations where setting particular steps resources is required, we need a more flexible way to deal with N number of steps under the same strategy (_Build/ClusterBuildStrategy_). Also, we still need to help users to know that independently of the abstraction of the strategies, there are options for speeding up the builds. This options could be presented in the form of different `flavours` of the same strategy(_cluster or namespaced scope_), that differ between each other in terms of container resources values.
+For strategies with multiple steps like Buildpacks, not all the steps (_containers_) will require the same set of resources (_e.g. memory, cpu, etc_) values.
+In order to be able to manage situations where setting particular steps resources is required, we need a more flexible way to deal with N number of steps under the same strategy (_Build/ClusterBuildStrategy_). Also, we still need to help users to know that independently of the abstraction of the strategies, there are options for speeding up the builds. This options could be presented in the form of different `flavours` of the same strategy (_cluster or namespaced scope_), that differ between each other in terms of container resources values.
 
 ### Goals
 
@@ -256,7 +256,7 @@ spec:
 ### Risks and Mitigations
 
 Proper documentation needs to be made to communicate the existence of `flavours` for strategies of the same type to users. When it comes to UI, is the decision of the UI team to decide
-how they will expose(_interface_) this flavours to their end-users. Strategy admins have full responsability on the flavours they decide to define, but recommendations of flavours should be
+how they will expose(_interface_) this flavours to their end-users. Strategy admins have full responsibility on the flavours they decide to define, but recommendations of flavours should be
 made for this repository.
 
 ## Design Details

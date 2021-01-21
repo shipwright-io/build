@@ -152,6 +152,39 @@ install-counterfeiter:
 install-operator-sdk:
 	hack/install-operator-sdk.sh
 
+.PHONY: govet
+govet:
+	@echo "Checking go vet"
+	@go vet ./...
+
+# Install it via: go get -u github.com/gordonklaus/ineffassign
+.PHONY: ineffassign
+ineffassign:
+	@echo "Checking ineffassign"
+	@ineffassign ./...
+
+# Install it via: go get -u golang.org/x/lint/golint
+# See https://github.com/golang/lint/issues/320 for details regarding the grep
+.PHONY: golint
+golint:
+	@echo "Checking golint"
+	@go list ./... | grep -v -e /vendor -e /test | xargs -L1 golint -set_exit_status
+
+# Install it via: go get -u github.com/client9/misspell/cmd/misspell
+.PHONY: misspell
+misspell:
+	@echo "Checking misspell"
+	@find . -type f | grep -v /vendor | xargs misspell -source=text -error
+
+# Install it via: go get -u honnef.co/go/tools/cmd/staticcheck
+.PHONY: staticcheck
+staticcheck:
+	@echo "Checking staticcheck"
+	@go list ./... | grep -v /test | xargs staticcheck
+
+.PHONY: sanity-check
+sanity-check: ineffassign golint govet misspell staticcheck
+
 # https://github.com/shipwright-io/build/issues/123
 test: test-unit
 

@@ -17,12 +17,6 @@ import (
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
-var (
-	metricsHost               = "0.0.0.0"
-	metricsPort         int32 = 8383
-	operatorMetricsPort int32 = 8686
-)
-
 // AddToManagerFuncs is a list of functions to add all Controllers to the Manager
 var AddToManagerFuncs []func(context.Context, *config.Config, manager.Manager) error
 

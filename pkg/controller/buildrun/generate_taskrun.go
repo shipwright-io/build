@@ -51,6 +51,7 @@ func getStringTransformations(fullText string) string {
 	return fullText
 }
 
+// GenerateTaskSpec creates Tekton TaskRun spec to be used for a build run
 func GenerateTaskSpec(
 	cfg *config.Config,
 	build *buildv1alpha1.Build,
@@ -173,6 +174,7 @@ func GenerateTaskSpec(
 	return &generatedTaskSpec, nil
 }
 
+// GenerateTaskRun creates a Tekton TaskRun to be used for a build run
 func GenerateTaskRun(
 	cfg *config.Config,
 	build *buildv1alpha1.Build,

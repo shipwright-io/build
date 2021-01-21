@@ -306,7 +306,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				if err = r.client.Update(ctx, buildRun); err != nil {
 					return reconcile.Result{}, err
 				}
-				ctxlog.Info(ctx, fmt.Sprintf("succesfully updated BuildRun %s", buildRun.Name), namespace, request.Namespace, name, request.Name)
+				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, request.Namespace, name, request.Name)
 			}
 
 			// Set the Build spec in the BuildRun status

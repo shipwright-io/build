@@ -34,7 +34,7 @@ spec:
     name: kaniko-golang-build
 ```
 
-The `BuildRun` API also provides a way to override/specify  execution time information. 
+The `BuildRun` API also provides a way to override/specify execution time information.
 
 As an example, a `Build` configuration should not have to accurately specify the resource requirements - the information on resource requirements is valuable at build execution time which varies from environment to environment.
 
@@ -73,7 +73,7 @@ As an example, the source code [nodejs-rest-http-crud](https://github.com/nodesh
 Note:
 In some scenarios, the source code 'revision' may not necessarily be deterministic as well, especially in case of builds triggered from PRs/forks.
 
-### Deciding what should be overriden
+### Deciding what should be overridden
 
 - Could the value of attribute X be reasonably determined at the time of `Build` configuration specification ?
 - Could the modification of attribute X reasonably compromise the integrity of the build ?
@@ -83,7 +83,7 @@ The above is a non-exhaustive list of questions that should help us modify the B
 
 ### Next steps / Consequences
 
-Here's what it means to adopt this proposal: 
+Here's what it means to adopt this proposal:
 
 1. Make `spec.output` optional in `Build` API's `spec` .
 2. Introduce `spec.output` in the `BuildRun` API's `spec`.
