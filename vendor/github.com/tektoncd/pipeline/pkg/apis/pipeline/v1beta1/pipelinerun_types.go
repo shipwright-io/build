@@ -22,6 +22,7 @@ import (
 
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
+	runv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/run/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,13 +31,11 @@ import (
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
-var (
-	groupVersionKind = schema.GroupVersionKind{
-		Group:   SchemeGroupVersion.Group,
-		Version: SchemeGroupVersion.Version,
-		Kind:    pipeline.PipelineRunControllerName,
-	}
-)
+var groupVersionKind = schema.GroupVersionKind{
+	Group:   SchemeGroupVersion.Group,
+	Version: SchemeGroupVersion.Version,
+	Kind:    pipeline.PipelineRunControllerName,
+}
 
 // +genclient
 // +genreconciler:krshapedlogic=false
@@ -62,16 +61,6 @@ type PipelineRun struct {
 
 func (pr *PipelineRun) GetName() string {
 	return pr.ObjectMeta.GetName()
-}
-
-// GetTaskRunRef for pipelinerun
-func (pr *PipelineRun) GetTaskRunRef() corev1.ObjectReference {
-	return corev1.ObjectReference{
-		APIVersion: SchemeGroupVersion.String(),
-		Kind:       "TaskRun",
-		Namespace:  pr.Namespace,
-		Name:       pr.Name,
-	}
 }
 
 // GetStatusCondition returns the task run status as a ConditionAccessor
@@ -268,6 +257,9 @@ func (pr *PipelineRunStatus) InitializeConditions() {
 	if pr.TaskRuns == nil {
 		pr.TaskRuns = make(map[string]*PipelineRunTaskRunStatus)
 	}
+	if pr.Runs == nil {
+		pr.Runs = make(map[string]*PipelineRunRunStatus)
+	}
 	if pr.StartTime.IsZero() {
 		pr.StartTime = &metav1.Time{Time: time.Now()}
 		started = true
@@ -337,6 +329,10 @@ type PipelineRunStatusFields struct {
 	// +optional
 	TaskRuns map[string]*PipelineRunTaskRunStatus `json:"taskRuns,omitempty"`
 
+	// map of PipelineRunRunStatus with the run name as the key
+	// +optional
+	Runs map[string]*PipelineRunRunStatus `json:"runs,omitempty"`
+
 	// PipelineResults are the list of results written out by the pipeline task's containers
 	// +optional
 	PipelineResults []PipelineRunResult `json:"pipelineResults,omitempty"`
@@ -384,6 +380,18 @@ type PipelineRunTaskRunStatus struct {
 	WhenExpressions []WhenExpression `json:"whenExpressions,omitempty"`
 }
 
+// PipelineRunRunStatus contains the name of the PipelineTask for this Run and the Run's Status
+type PipelineRunRunStatus struct {
+	// PipelineTaskName is the name of the PipelineTask.
+	PipelineTaskName string `json:"pipelineTaskName,omitempty"`
+	// Status is the RunStatus for the corresponding Run
+	// +optional
+	Status *runv1alpha1.RunStatus `json:"status,omitempty"`
+	// WhenExpressions is the list of checks guarding the execution of the PipelineTask
+	// +optional
+	WhenExpressions []WhenExpression `json:"whenExpressions,omitempty"`
+}
+
 // PipelineRunConditionCheckStatus returns the condition check status
 type PipelineRunConditionCheckStatus struct {
 	// ConditionName is the name of the Condition
@@ -425,20 +433,23 @@ type PipelineTaskRunSpec struct {
 	TaskPodTemplate        *PodTemplate `json:"taskPodTemplate,omitempty"`
 }
 
-// GetTaskRunSpecs returns the task specific spec for a given
+// GetTaskRunSpec returns the task specific spec for a given
 // PipelineTask if configured, otherwise it returns the PipelineRun's default.
-func (pr *PipelineRun) GetTaskRunSpecs(pipelineTaskName string) (string, *PodTemplate) {
-	serviceAccountName := pr.GetServiceAccountName(pipelineTaskName)
-	taskPodTemplate := pr.Spec.PodTemplate
+func (pr *PipelineRun) GetTaskRunSpec(pipelineTaskName string) PipelineTaskRunSpec {
+	s := PipelineTaskRunSpec{
+		PipelineTaskName:       pipelineTaskName,
+		TaskServiceAccountName: pr.GetServiceAccountName(pipelineTaskName),
+		TaskPodTemplate:        pr.Spec.PodTemplate,
+	}
 	for _, task := range pr.Spec.TaskRunSpecs {
 		if task.PipelineTaskName == pipelineTaskName {
 			if task.TaskPodTemplate != nil {
-				taskPodTemplate = task.TaskPodTemplate
+				s.TaskPodTemplate = task.TaskPodTemplate
 			}
 			if task.TaskServiceAccountName != "" {
-				serviceAccountName = task.TaskServiceAccountName
+				s.TaskServiceAccountName = task.TaskServiceAccountName
 			}
 		}
 	}
-	return serviceAccountName, taskPodTemplate
+	return s
 }
