@@ -158,6 +158,11 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyGeneration]).To(Equal("0"))
 			})
 
+			It("should filter out certain annotations when propagating them to the TaskRun", func() {
+				Expect(len(got.Annotations)).To(Equal(1))
+				Expect(got.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
+			})
+
 			It("should ensure generated TaskRun's input and output resources are correct", func() {
 				inputResources := got.Spec.Resources.Inputs
 				for _, inputResource := range inputResources {

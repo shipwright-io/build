@@ -478,3 +478,20 @@ In the above scenario, we can see how the maximum numbers for resource requests 
 **Scenario 3.**  Namespace **with** a `LimitRange`.
 
 When a `LimitRange` exists on the namespace, `Tekton Pipeline` controller will do the same approach as stated in the above two scenarios. The difference is that for the containers that have lower values, instead of zero, they will get the `minimum values of the LimitRange`.
+
+## Annotations
+
+Annotations can be defined for a BuildStrategy/ClusterBuildStrategy as for any other Kubernetes object. Annotations are propagated to the TaskRun and from there, Tekton propagates them to the Pod. Use cases for this are for example:
+
+- The Kubernetes [Network Traffic Shaping](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/#support-traffic-shaping) feature looks for the `kubernetes.io/ingress-bandwidth` and `kubernetes.io/egress-bandwidth` annotations to limit the network bandwidth the `Pod` is allowed to use.
+- The [AppArmor profile of a container](https://kubernetes.io/docs/tutorials/clusters/apparmor/) is defined using the `container.apparmor.security.beta.kubernetes.io/<container_name>` annotation.
+
+The following annotations are not propagated:
+
+- `kubectl.kubernetes.io/last-applied-configuration`
+- `clusterbuildstrategy.build.dev/*`
+- `buildstrategy.build.dev/*`
+- `build.build.dev/*`
+- `buildrun.build.dev/*`
+
+A Kubernetes administrator can further restrict the usage of annotations by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).

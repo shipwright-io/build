@@ -246,3 +246,53 @@ spec:
         cpu: 250m
         memory: 128Mi
 `
+
+// ClusterBuildStrategyWithAnnotations is a cluster build strategy that contains annotations
+const ClusterBuildStrategyWithAnnotations = `
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  annotations:
+    kubernetes.io/ingress-bandwidth: 1M
+    clusterbuildstrategy.build.dev/dummy: aValue
+    kubectl.kubernetes.io/last-applied-configuration: anotherValue
+  name: kaniko
+spec:
+  buildSteps:
+    - name: step-build-and-push
+      image: gcr.io/kaniko-project/executor:v1.3.0
+      workingDir: /workspace/source
+      securityContext:
+        runAsUser: 0
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+            - SETFCAP
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
+      command:
+        - /kaniko/executor
+      args:
+        - --skip-tls-verify=true
+        - --dockerfile=$(build.dockerfile)
+        - --context=/workspace/source/$(build.source.contextDir)
+        - --destination=$(build.output.image)
+        - --oci-layout-path=/workspace/output/image
+        - --snapshotMode=redo
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+`

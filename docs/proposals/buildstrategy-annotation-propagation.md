@@ -22,9 +22,9 @@ approvers:
 
 creation-date: 2020-12-16
 
-last-updated: 2020-12-16
+last-updated: 2020-01-20
 
-status: implementable
+status: implemented
 
 see-also:
 

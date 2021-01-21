@@ -10,11 +10,14 @@ import (
 )
 
 const (
+	// BuildRunDomain is the domain used for all labels and annotations for this resource
+	BuildRunDomain = "buildrun.build.dev"
+
 	// LabelBuildRun is a label key for BuildRuns to define the name of the BuildRun
-	LabelBuildRun = "buildrun.build.dev/name"
+	LabelBuildRun = BuildRunDomain + "/name"
 
 	// LabelBuildRunGeneration is a label key for BuildRuns to define the generation
-	LabelBuildRunGeneration = "buildrun.build.dev/generation"
+	LabelBuildRunGeneration = BuildRunDomain + "/generation"
 )
 
 // BuildRunSpec defines the desired state of BuildRun

@@ -256,6 +256,18 @@ func GenerateTaskRun(
 		},
 	}
 
+	// assign the annotations from the build strategy, filter out those that should not be propagated
+	for key, value := range strategy.GetAnnotations() {
+		taskRunAnnotations := make(map[string]string)
+		if isPropagatableAnnotation(key) {
+			taskRunAnnotations[key] = value
+		}
+
+		if len(taskRunAnnotations) > 0 {
+			expectedTaskRun.Annotations = taskRunAnnotations
+		}
+	}
+
 	for label, value := range strategy.GetResourceLabels() {
 		expectedTaskRun.Labels[label] = value
 	}
@@ -304,4 +316,12 @@ func effectiveTimeout(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	}
 
 	return nil
+}
+
+func isPropagatableAnnotation(key string) bool {
+	return key != "kubectl.kubernetes.io/last-applied-configuration" &&
+		!strings.HasPrefix(key, buildv1alpha1.ClusterBuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildv1alpha1.BuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildv1alpha1.BuildDomain+"/") &&
+		!strings.HasPrefix(key, buildv1alpha1.BuildRunDomain+"/")
 }

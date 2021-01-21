@@ -11,11 +11,14 @@ import (
 )
 
 const (
+	// BuildStrategyDomain is the domain used for all labels and annotations for this resource
+	BuildStrategyDomain = "buildstrategy.build.dev"
+
 	// LabelBuildStrategyName is a label key for defining the build strategy name
-	LabelBuildStrategyName = "buildstrategy.build.dev/name"
+	LabelBuildStrategyName = BuildStrategyDomain + "/name"
 
 	// LabelBuildStrategyGeneration is a label key for defining the build strategy generation
-	LabelBuildStrategyGeneration = "buildstrategy.build.dev/generation"
+	LabelBuildStrategyGeneration = BuildStrategyDomain + "/generation"
 )
 
 // +genclient
@@ -39,6 +42,11 @@ type BuildStrategyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BuildStrategy `json:"items"`
+}
+
+// GetAnnotations returns the annotations of the build strategy
+func (s BuildStrategy) GetAnnotations() map[string]string {
+	return s.Annotations
 }
 
 // GetName returns the name of the build strategy

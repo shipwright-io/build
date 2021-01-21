@@ -11,11 +11,14 @@ import (
 )
 
 const (
+	// ClusterBuildStrategyDomain is the domain used for all labels and annotations for this resource
+	ClusterBuildStrategyDomain = "clusterbuildstrategy.build.dev"
+
 	// LabelClusterBuildStrategyName is a label key for defining the cluster build strategy name
-	LabelClusterBuildStrategyName = "clusterbuildstrategy.build.dev/name"
+	LabelClusterBuildStrategyName = ClusterBuildStrategyDomain + "/name"
 
 	// LabelClusterBuildStrategyGeneration is a label key for defining the cluster build strategy generation
-	LabelClusterBuildStrategyGeneration = "clusterbuildstrategy.build.dev/generation"
+	LabelClusterBuildStrategyGeneration = ClusterBuildStrategyDomain + "/generation"
 )
 
 // +genclient
@@ -40,6 +43,11 @@ type ClusterBuildStrategyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ClusterBuildStrategy `json:"items"`
+}
+
+// GetAnnotations returns the annotations of the build strategy
+func (s ClusterBuildStrategy) GetAnnotations() map[string]string {
+	return s.Annotations
 }
 
 // GetName returns the name of the build strategy
