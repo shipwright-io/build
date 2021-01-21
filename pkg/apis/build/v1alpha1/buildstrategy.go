@@ -50,6 +50,7 @@ type StrategyRef struct {
 
 // BuilderStrategy defines the common elements of build strategies
 type BuilderStrategy interface {
+	GetAnnotations() map[string]string
 	GetName() string
 	GetGeneration() int64
 	GetResourceLabels() map[string]string

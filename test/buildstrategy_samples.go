@@ -65,6 +65,10 @@ const BuildahBuildStrategySingleStep = `
 apiVersion: build.dev/v1alpha1
 kind: BuildStrategy
 metadata:
+  annotations:
+    kubernetes.io/ingress-bandwidth: 1M
+    clusterbuildstrategy.build.dev/dummy: aValue
+    kubectl.kubernetes.io/last-applied-configuration: anotherValue
   name: buildah
 spec:
   buildSteps:

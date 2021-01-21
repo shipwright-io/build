@@ -81,6 +81,19 @@ spec:
   timeout: 30s
 `
 
+// BuildBSMinimal defines a Build with a BuildStrategy
+const BuildBSMinimal = `
+apiVersion: build.dev/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/sbose78/taxi"
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
 // BuildCBSMinimal defines a Build with a
 // ClusterBuildStrategy
 const BuildCBSMinimal = `

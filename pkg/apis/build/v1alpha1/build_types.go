@@ -10,23 +10,26 @@ import (
 )
 
 const (
+	// BuildDomain is the domain used for all labels and annotations for this resource
+	BuildDomain = "build.build.dev"
+
 	// LabelBuild is a label key for defining the build name
-	LabelBuild = "build.build.dev/name"
+	LabelBuild = BuildDomain + "/name"
 
 	// LabelBuildGeneration is a label key for defining the build generation
-	LabelBuildGeneration = "build.build.dev/generation"
+	LabelBuildGeneration = BuildDomain + "/generation"
 
 	// AnnotationBuildRunDeletion is a label key for enabling/disabling the BuildRun deletion
-	AnnotationBuildRunDeletion = "build.build.dev/build-run-deletion"
+	AnnotationBuildRunDeletion = BuildDomain + "/build-run-deletion"
 
 	// AnnotationBuildRefSecret is an annotation that tells the Build Controller to reconcile on
 	// events of the secret only if is referenced by a Build in the same namespace
-	AnnotationBuildRefSecret = "build.build.dev/referenced.secret"
+	AnnotationBuildRefSecret = BuildDomain + "/referenced.secret"
 
 	// AnnotationBuildVerifyRepository tells the Build Controller to check a remote repository. If the annotation is not set
 	// or has a value of 'true', the controller triggers the validation. A value of 'false' means the controller
 	// will bypass checking the remote repository.
-	AnnotationBuildVerifyRepository = "build.build.dev/verify.repository"
+	AnnotationBuildVerifyRepository = BuildDomain + "/verify.repository"
 )
 
 // BuildSpec defines the desired state of Build

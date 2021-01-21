@@ -24,3 +24,10 @@ func (t *TestBuild) CreateBuildStrategy(bs *v1alpha1.BuildStrategy) error {
 	}
 	return nil
 }
+
+// DeleteBuildStrategy deletes a BuildStrategy on the current test namespace
+func (t *TestBuild) DeleteBuildStrategy(name string) error {
+	bsInterface := t.BuildClientSet.BuildV1alpha1().BuildStrategies(t.Namespace)
+
+	return bsInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
+}
