@@ -30,13 +30,11 @@ type Images struct {
 	NopImage string
 	// GitImage is the container image with Git that we use to implement the Git source step.
 	GitImage string
-	// CredsImage is the container image used to initialize credentials before the build runs.
-	CredsImage string
 	// KubeconfigWriterImage is the container image containing our kubeconfig writer binary.
 	KubeconfigWriterImage string
 	// ShellImage is the container image containing bash shell.
 	ShellImage string
-	// GsutilImage is the container miage containing gsutil.
+	// GsutilImage is the container image containing gsutil.
 	GsutilImage string
 	// BuildGCSFetcherImage is the container image containing our GCS fetcher binary.
 	BuildGCSFetcherImage string
@@ -57,7 +55,6 @@ func (i Images) Validate() error {
 		{i.EntrypointImage, "entrypoint"},
 		{i.NopImage, "nop"},
 		{i.GitImage, "git"},
-		{i.CredsImage, "creds"},
 		{i.KubeconfigWriterImage, "kubeconfig-writer"},
 		{i.ShellImage, "shell"},
 		{i.GsutilImage, "gsutil"},
