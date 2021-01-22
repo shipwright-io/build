@@ -96,4 +96,6 @@ jobs:
         - name: Install kind registry
           run: make kind-registry
         - name: Test
-          run: make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/shipwright-io/build-e2e"
+          run: |
+            echo $PATH
+            make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/shipwright-io/build-e2e"
