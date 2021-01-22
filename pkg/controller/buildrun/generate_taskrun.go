@@ -257,15 +257,14 @@ func GenerateTaskRun(
 	}
 
 	// assign the annotations from the build strategy, filter out those that should not be propagated
+	taskRunAnnotations := make(map[string]string)
 	for key, value := range strategy.GetAnnotations() {
-		taskRunAnnotations := make(map[string]string)
 		if isPropagatableAnnotation(key) {
 			taskRunAnnotations[key] = value
 		}
-
-		if len(taskRunAnnotations) > 0 {
-			expectedTaskRun.Annotations = taskRunAnnotations
-		}
+	}
+	if len(taskRunAnnotations) > 0 {
+		expectedTaskRun.Annotations = taskRunAnnotations
 	}
 
 	for label, value := range strategy.GetResourceLabels() {
@@ -318,6 +317,8 @@ func effectiveTimeout(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	return nil
 }
 
+// isPropagatableAnnotation filters the last-applied-configuration annotation from kubectl because this would break the meaning of this annotation on the target object;
+// also, annotations using our own custom resource domains are filtered out because we have no annotations with a semantic for both TaskRun and Pod
 func isPropagatableAnnotation(key string) bool {
 	return key != "kubectl.kubernetes.io/last-applied-configuration" &&
 		!strings.HasPrefix(key, buildv1alpha1.ClusterBuildStrategyDomain+"/") &&

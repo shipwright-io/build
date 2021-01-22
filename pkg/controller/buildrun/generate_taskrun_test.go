@@ -159,7 +159,8 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should filter out certain annotations when propagating them to the TaskRun", func() {
-				Expect(len(got.Annotations)).To(Equal(1))
+				Expect(len(got.Annotations)).To(Equal(2))
+				Expect(got.Annotations["kubernetes.io/egress-bandwidth"]).To(Equal("1M"))
 				Expect(got.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
 			})
 
