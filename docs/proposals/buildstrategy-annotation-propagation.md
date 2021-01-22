@@ -86,7 +86,7 @@ Based on that naming, the other three prefixes reserved by our controllers are: 
 
 When generating a Tekton `TaskRun`, the idea is to look at the annotations of the `BuildStrategy` or `ClusterBuildStrategy` and copy all annotations over to the `TaskRun`, except those that use one of our own prefixes because we today have no feature anyway where we look for one of our annotations on a `TaskRun` or `Pod`, and except the `kubectl.kubernetes.io/last-applied-configuration` annotation.
 
-Tekton automatically copies all `TaskRun` annotations to the `Pod`, see [pod.go](https://github.com/tektoncd/pipeline/blob/v0.18.1/pkg/pod/pod.go#L256).
+Tekton automatically copies all `TaskRun` annotations to the `Pod`, see [pod.go](https://github.com/tektoncd/pipeline/blob/v0.20.1/pkg/pod/pod.go#L257).
 
 For example, this metadata of a cluster build strategy:
 

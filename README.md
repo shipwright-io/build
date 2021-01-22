@@ -29,7 +29,7 @@ as [Kaniko](https://github.com/GoogleContainerTools/kaniko),
 | Dependency                                | Supported versions                     |
 | ----------------------------------------- | -------------------------------------- |
 | [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\*, v1.18.\* |
-| [Tekton](https://cloud.google.com/tekton) | v0.18.1                                |
+| [Tekton](https://cloud.google.com/tekton) | v0.20.1                                |
 
 ## Build Strategies
 
@@ -80,7 +80,7 @@ $ git clone https://github.com/shipwright-io/build.git
 $ cd build/
 ```
 
-* Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.18.1.
+* Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.20.1.
 
 ```bash
 $ hack/install-tekton.sh
