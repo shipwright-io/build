@@ -73,7 +73,9 @@ jobs:
         - name: Check out code
           uses: actions/checkout@v2
         - name: Install operator-sdk
-          run: make install-operator-sdk
+          uses: shivanshs9/setup-k8s-operator-sdk@v1
+          with:
+            version: "v0.18.2"
         - name: Install kubectl
           uses: azure/setup-kubectl@v1
           with:
