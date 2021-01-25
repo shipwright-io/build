@@ -35,8 +35,6 @@ jobs:
             go-version: ${{ matrix.go-version }}
         - name: Check out code
           uses: actions/checkout@v2
-        - name: Install operator-sdk
-          run: make install-operator-sdk
         - name: Install kubectl
           uses: azure/setup-kubectl@v1
           with:
