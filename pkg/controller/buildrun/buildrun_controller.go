@@ -339,12 +339,13 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			}
 
 			// Increase BuildRun count in metrics
-			buildmetrics.BuildRunCountInc(buildRun.Status.BuildSpec.StrategyRef.Name)
+			buildmetrics.BuildRunCountInc(buildRun.Status.BuildSpec.StrategyRef.Name, buildRun.Namespace, buildRun.Spec.BuildRef.Name, buildRun.Name)
 
 			// Report buildrun ramp-up duration (time between buildrun creation and taskrun creation)
 			buildmetrics.BuildRunRampUpDurationObserve(
 				buildRun.Status.BuildSpec.StrategyRef.Name,
 				buildRun.Namespace,
+				buildRun.Spec.BuildRef.Name,
 				buildRun.Name,
 				generatedTaskRun.CreationTimestamp.Time.Sub(buildRun.CreationTimestamp.Time),
 			)
@@ -407,6 +408,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildmetrics.BuildRunEstablishObserve(
 					buildRun.Status.BuildSpec.StrategyRef.Name,
 					buildRun.Namespace,
+					buildRun.Spec.BuildRef.Name,
 					buildRun.Name,
 					buildRun.Status.StartTime.Time.Sub(buildRun.CreationTimestamp.Time),
 				)
@@ -420,6 +422,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 					buildmetrics.BuildRunCompletionObserve(
 						buildRun.Status.BuildSpec.StrategyRef.Name,
 						buildRun.Namespace,
+						buildRun.Spec.BuildRef.Name,
 						buildRun.Name,
 						buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time),
 					)
@@ -437,6 +440,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 								buildmetrics.TaskRunPodRampUpDurationObserve(
 									buildRun.Status.BuildSpec.StrategyRef.Name,
 									buildRun.Namespace,
+									buildRun.Spec.BuildRef.Name,
 									buildRun.Name,
 									lastInitPod.State.Terminated.FinishedAt.Sub(pod.CreationTimestamp.Time),
 								)
@@ -447,6 +451,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 						buildmetrics.TaskRunRampUpDurationObserve(
 							buildRun.Status.BuildSpec.StrategyRef.Name,
 							buildRun.Namespace,
+							buildRun.Spec.BuildRef.Name,
 							buildRun.Name,
 							pod.CreationTimestamp.Time.Sub(lastTaskRun.CreationTimestamp.Time),
 						)

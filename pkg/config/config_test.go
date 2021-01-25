@@ -50,9 +50,9 @@ var _ = Describe("Config", func() {
 		})
 
 		It("should allow for an override of the Prometheus enabled labels using an environment variable", func() {
-			var overrides = map[string]string{"PROMETHEUS_HISTOGRAM_ENABLED_LABELS": "namespace,strategy"}
+			var overrides = map[string]string{"PROMETHEUS_ENABLED_LABELS": "namespace,strategy"}
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.Prometheus.HistogramEnabledLabels).To(Equal([]string{"namespace", "strategy"}))
+				Expect(config.Prometheus.EnabledLabels).To(Equal([]string{"namespace", "strategy"}))
 			})
 		})
 

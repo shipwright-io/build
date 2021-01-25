@@ -27,8 +27,8 @@ const (
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
 	metricBuildRunRampUpDurationBucketsEnvVar     = "PROMETHEUS_BR_RAMPUP_DUR_BUCKETS"
 
-	// environment variable to enable histogram labels
-	prometheusHistogramEnabledLabelsEnvVar = "PROMETHEUS_HISTOGRAM_ENABLED_LABELS"
+	// environment variable to enable prometheus metric labels
+	prometheusEnabledLabelsEnvVar = "PROMETHEUS_ENABLED_LABELS"
 
 	leaderElectionNamespaceDefault = "default"
 	leaderElectionNamespaceEnvVar  = "BUILD_OPERATOR_LEADER_ELECTION_NAMESPACE"
@@ -59,7 +59,7 @@ type PrometheusConfig struct {
 	BuildRunCompletionDurationBuckets []float64
 	BuildRunEstablishDurationBuckets  []float64
 	BuildRunRampUpDurationBuckets     []float64
-	HistogramEnabledLabels            []string
+	EnabledLabels                     []string
 }
 
 // ManagerOptions contains configurable options for the build operator manager
@@ -112,7 +112,7 @@ func (c *Config) SetConfigFromEnv() error {
 		return err
 	}
 
-	c.Prometheus.HistogramEnabledLabels = strings.Split(os.Getenv(prometheusHistogramEnabledLabelsEnvVar), ",")
+	c.Prometheus.EnabledLabels = strings.Split(os.Getenv(prometheusEnabledLabelsEnvVar), ",")
 
 	if leaderElectionNamespace := os.Getenv(leaderElectionNamespaceEnvVar); leaderElectionNamespace != "" {
 		c.ManagerOptions.LeaderElectionNamespace = leaderElectionNamespace
