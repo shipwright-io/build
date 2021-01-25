@@ -57,3 +57,5 @@ To join, please request an invite in our Slack [channel](https://kubernetes.slac
 ## Contact Information
 
 - [Slack channel](https://kubernetes.slack.com/archives/C019ZRGUEJC)
+- End-user email list: [shipwright-users@lists.shipwright.io](https://lists.shipwright.io/admin/lists/shipwright-users.lists.shipwright.io/)
+- Developer email list: [shipwright-dev@lists.shipwright.io](https://lists.shipwright.io/admin/lists/shipwright-dev.lists.shipwright.io/)
