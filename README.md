@@ -159,11 +159,16 @@ We are so excited to have you!
 - See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
 - See [HACK.md](HACK.md) for how to build, test & run
   (advanced reading material)
-- Contact us in Kubernetes slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright)
 - Look at our
   [good first issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   and our
   [help wanted issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+- Contact us:
+  - Kubernetes Slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright)
+  - Users can discuss help, feature requests, or potential bugs at [shipwright-users@lists.shipwright.io](https://lists.shipwright.io/archives/list/shipwright-users@lists.shipwright.io/).
+  Click [here](<mailto:shipwright-users-join@lists.shipwright.io?subject=Subscribe to shipwright-users>) to join.
+  - Contributors can discuss active development topics at [shipwright-dev@lists.shipwright.io](https://lists.shipwright.io/archives/list/shipwright-dev@lists.shipwright.io/).
+  Click [here](<mailto:shipwright-dev-join@lists.shipwright.io?subject=Subscribe to shipwright-dev>) to join.
 
 [corev1container]: https://github.com/kubernetes/api/blob/v0.17.3/core/v1/types.go#L2106
 [pipelinesoperator]: https://www.openshift.com/learn/topics/pipelines
