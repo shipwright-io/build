@@ -75,6 +75,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			taskRun, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
+			Expect(taskRun.Annotations["kubernetes.io/egress-bandwidth"]).To(Equal("1M"))
 			Expect(taskRun.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
 			_, containsKey := taskRun.Annotations["clusterbuildstrategy.build.dev/dummy"]
 			Expect(containsKey).To(BeFalse())

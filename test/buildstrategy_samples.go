@@ -69,6 +69,7 @@ metadata:
     kubernetes.io/ingress-bandwidth: 1M
     clusterbuildstrategy.build.dev/dummy: aValue
     kubectl.kubernetes.io/last-applied-configuration: anotherValue
+    kubernetes.io/egress-bandwidth: 1M
   name: buildah
 spec:
   buildSteps:
