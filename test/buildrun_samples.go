@@ -90,6 +90,18 @@ spec:
     name: foobar
 `
 
+// MinimalBuildRunWithSpecifiedServiceAccount defines a minimal BuildRun
+// with a reference to a not existing serviceAccount
+const MinimalBuildRunWithSpecifiedServiceAccount = `
+apiVersion: build.dev/v1alpha1
+kind: BuildRun
+spec:
+  buildRef:
+    name: buildah
+  serviceAccount:
+    name: foobar
+`
+
 // MinimalBuildRunWithSAGeneration defines a minimal BuildRun
 // with a reference to a not existing Build
 const MinimalBuildRunWithSAGeneration = `

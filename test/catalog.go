@@ -280,11 +280,13 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			if !tolerateEmptyStatus || object.Status.Succeeded != "" {
+				Expect(object.Status.GetCondition(build.Succeeded).Status).To(Equal(condition.Status))
+				Expect(object.Status.GetCondition(build.Succeeded).Reason).To(Equal(condition.Reason))
 				Expect(object.Status.Succeeded).To(Equal(status))
 				Expect(object.Status.Reason).To(Equal(reason))
 				Expect(object.Status.LatestTaskRunRef).To(Equal(name))

@@ -172,6 +172,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubBuildRunStatus(
 					"Succeeded",
 					&taskRunName,
+					build.Condition{
+						Type:    build.Succeeded,
+						Reason:  "Succeeded",
+						Status:  corev1.ConditionTrue,
+					},
 					corev1.ConditionTrue,
 					buildSample.Spec,
 					false,
@@ -262,6 +267,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubBuildRunStatus(
 					"Pending",
 					&taskRunName,
+					build.Condition{
+						Type:    build.Succeeded,
+						Reason:  "Pending",
+						Status:  corev1.ConditionUnknown,
+					},
 					corev1.ConditionUnknown,
 					buildSample.Spec,
 					false,
@@ -287,6 +297,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubBuildRunStatus(
 					"Running",
 					&taskRunName,
+					build.Condition{
+						Type:    build.Succeeded,
+						Reason:  "Running",
+						Status:  corev1.ConditionUnknown,
+					},
 					corev1.ConditionUnknown,
 					buildSample.Spec,
 					false,
@@ -309,6 +324,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubBuildRunStatus(
 					"Succeeded",
 					&taskRunName,
+					build.Condition{
+						Type:    build.Succeeded,
+						Reason:  "Succeeded",
+						Status:  corev1.ConditionTrue,
+					},
 					corev1.ConditionTrue,
 					buildSample.Spec,
 					false,
@@ -332,6 +352,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubBuildRunStatus(
 					"some message",
 					&taskRunName,
+					build.Condition{
+						Type:    build.Succeeded,
+						Reason:  "something bad happened",
+						Status:  corev1.ConditionFalse,
+					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
 					false,
@@ -408,6 +433,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubBuildRunStatus(
 					fmt.Sprintf(" \"%s\" not found", saName),
 					emptyTaskRunName,
+					build.Condition{
+						Type:    build.Succeeded,
+						Reason:  "Failed",
+						Status:  corev1.ConditionFalse,
+					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
 					true,
