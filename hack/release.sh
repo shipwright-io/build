@@ -7,12 +7,12 @@
 
 set -e
 echo "Logging into container registry $IMAGE_HOST"
-echo "$REGISTRY_PASSWORD" | $CONTAINER_RUNTIME login -u "$REGISTRY_USERNAME" --password-stdin "$IMAGE_HOST"
+echo "$REGISTRY_PASSWORD" | ko login -u "$REGISTRY_USERNAME" --password-stdin "$IMAGE_HOST"
 
-echo "Building container image $IMAGE_HOST/$IMAGE:$TAG"
-make build-image
+echo "Building container image"
 
-echo "Pushing container image to $IMAGE_HOST"
-make push-image
+# Using defaults, this pushes to:
+# quay.io/shipwright/shipwright-operator/github.com/shipwright-io/build/cmd/manager:latest
+KO_DOCKER_REPO="$IMAGE_HOST/$IMAGE" GOFLAGS="${GO_FLAGS}" ko resolve -t "$TAG" -P -R -f deploy/ > release.yaml
 
 set +e
