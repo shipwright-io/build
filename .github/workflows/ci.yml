@@ -38,12 +38,12 @@ jobs:
         - name: Install kubectl
           uses: azure/setup-kubectl@v1
           with:
-            version: v1.18.2
+            version: v1.19.7
         - name: Create kind cluster
           uses: helm/kind-action@v1.1.0
           with:
             version: v0.8.0
-            node_image: kindest/node:v1.18.2
+            node_image: kindest/node:v1.19.7
             cluster_name: kind
             wait: 120s
         - name: Verify kind cluster

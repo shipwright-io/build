@@ -26,10 +26,10 @@ as [Kaniko](https://github.com/GoogleContainerTools/kaniko),
 
 ## Dependencies
 
-| Dependency                                | Supported versions                     |
-| ----------------------------------------- | -------------------------------------- |
-| [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\*, v1.18.\* |
-| [Tekton](https://cloud.google.com/tekton) | v0.20.1                                |
+| Dependency                                | Supported versions                               |
+| ----------------------------------------- | ------------------------------------------------ |
+| [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\*, v1.18.\*, v1.19.\* |
+| [Tekton](https://cloud.google.com/tekton) | v0.20.1                                          |
 
 ## Build Strategies
 
