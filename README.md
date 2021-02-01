@@ -151,13 +151,20 @@ EOF
 | [Kaniko](samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)                             | ☑️     |      |    |
 | [Buildah](samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)                          | ☑️     |      |    |
 
+## Community meetings
+
+We host weekly meetings for contributors, maintainers and anyone interested in the project. The weekly meetings take place on Monday´s at 2pm UTC.
+
+* Meeting [minutes](https://github.com/shipwright-io/build/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting+is%3Aopen)
+* Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
+
 ## Want to contribute
 
 We are so excited to have you!
 
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for an overview of our processes
-- See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
-- See [HACK.md](HACK.md) for how to build, test & run
+* See [CONTRIBUTING.md](CONTRIBUTING.md) for an overview of our processes
+* See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
+* See [HACK.md](HACK.md) for how to build, test & run
   (advanced reading material)
 - Look at our
   [good first issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
