@@ -17,15 +17,39 @@ import (
 )
 
 var _ = Describe("Custom Metrics", func() {
+	type buildLabels struct {
+		buildStrategy string
+		namespace     string
+		build         string
+	}
+
 	type buildRunLabels struct {
 		buildStrategy string
 		namespace     string
+		build         string
 		buildRun      string
 	}
 
 	var (
-		counterMetrics   = map[string]map[string]float64{}
-		histogramMetrics = map[string]map[buildRunLabels]float64{}
+		buildCounterMetrics         = map[string]map[buildLabels]float64{}
+		buildRunCounterMetrics      = map[string]map[buildRunLabels]float64{}
+		buildRunHistogramMetrics    = map[string]map[buildRunLabels]float64{}
+
+		promLabelPairToBuildLabels = func(in []*io_prometheus_client.LabelPair) buildLabels {
+			var result = buildLabels{}
+			for _, label := range in {
+				switch *label.Name {
+				case BuildStrategyLabel:
+					result.buildStrategy = *label.Value
+				case NamespaceLabel:
+					result.namespace = *label.Value
+				case BuildLabel:
+					result.build = *label.Value
+				}
+			}
+
+			return result
+		}
 
 		promLabelPairToBuildRunLabels = func(in []*io_prometheus_client.LabelPair) buildRunLabels {
 			var result = buildRunLabels{}
@@ -35,6 +59,8 @@ var _ = Describe("Custom Metrics", func() {
 					result.buildStrategy = *label.Value
 				case NamespaceLabel:
 					result.namespace = *label.Value
+				case BuildLabel:
+					result.build = *label.Value
 				case BuildRunLabel:
 					result.buildRun = *label.Value
 				}
@@ -47,13 +73,8 @@ var _ = Describe("Custom Metrics", func() {
 	BeforeSuite(func() {
 		var (
 			testLabels = []buildRunLabels{
-				{buildStrategy: "kaniko", namespace: "default", buildRun: "kaniko-buildrun"},
-				{buildStrategy: "buildpacks", namespace: "default", buildRun: "buildpacks-buildrun"},
-			}
-
-			knownCounterMetrics = []string{
-				"build_buildruns_completed_total",
-				"build_builds_registered_total",
+				{buildStrategy: "kaniko", namespace: "default", build: "kaniko-build", buildRun: "kaniko-buildrun"},
+				{buildStrategy: "buildpacks", namespace: "default", build: "buildpacks-build", buildRun: "buildpacks-buildrun"},
 			}
 
 			knownHistogramMetrics = []string{
@@ -66,33 +87,31 @@ var _ = Describe("Custom Metrics", func() {
 		)
 
 		// initialize the counter metrics result map with empty maps
-		for _, name := range knownCounterMetrics {
-			counterMetrics[name] = map[string]float64{}
-		}
+		buildCounterMetrics["build_builds_registered_total"] = map[buildLabels]float64{}
+		buildRunCounterMetrics["build_buildruns_completed_total"] = map[buildRunLabels]float64{}
 
 		// initialize the histogram metrics result map with empty maps
 		for _, name := range knownHistogramMetrics {
-			histogramMetrics[name] = map[buildRunLabels]float64{}
+			buildRunHistogramMetrics[name] = map[buildRunLabels]float64{}
 		}
 
 		// initialize prometheus (second init should be no-op)
 		config := config.NewDefaultConfig()
-		config.Prometheus.HistogramEnabledLabels = []string{BuildStrategyLabel, NamespaceLabel, BuildRunLabel}
-		InitPrometheus(config)
+		config.Prometheus.EnabledLabels = []string{BuildStrategyLabel, NamespaceLabel, BuildLabel, BuildRunLabel}
 		InitPrometheus(config)
 
 		// and fire some examples
 		for _, entry := range testLabels {
-			buildStrategy, namespace, buildRun := entry.buildStrategy, entry.namespace, entry.buildRun
+			buildStrategy, namespace, build, buildRun := entry.buildStrategy, entry.namespace, entry.build, entry.buildRun
 
 			// tell prometheus some things have happened
-			BuildCountInc(buildStrategy)
-			BuildRunCountInc(buildStrategy)
-			BuildRunEstablishObserve(buildStrategy, namespace, buildRun, time.Duration(1)*time.Second)
-			BuildRunCompletionObserve(buildStrategy, namespace, buildRun, time.Duration(200)*time.Second)
-			BuildRunRampUpDurationObserve(buildStrategy, namespace, buildRun, time.Duration(1)*time.Second)
-			TaskRunRampUpDurationObserve(buildStrategy, namespace, buildRun, time.Duration(2)*time.Second)
-			TaskRunPodRampUpDurationObserve(buildStrategy, namespace, buildRun, time.Duration(3)*time.Second)
+			BuildCountInc(buildStrategy, namespace, build)
+			BuildRunCountInc(buildStrategy, namespace, build, buildRun)
+			BuildRunEstablishObserve(buildStrategy, namespace, build, buildRun, time.Duration(1)*time.Second)
+			BuildRunCompletionObserve(buildStrategy, namespace, build, buildRun, time.Duration(200)*time.Second)
+			BuildRunRampUpDurationObserve(buildStrategy, namespace, build, buildRun, time.Duration(1)*time.Second)
+			TaskRunRampUpDurationObserve(buildStrategy, namespace, build, buildRun, time.Duration(2)*time.Second)
+			TaskRunPodRampUpDurationObserve(buildStrategy, namespace, build, buildRun, time.Duration(3)*time.Second)
 		}
 
 		// gather metrics from prometheus and fill the result maps
@@ -102,17 +121,20 @@ var _ = Describe("Custom Metrics", func() {
 		}
 
 		for _, metricFamily := range metrics {
-			switch metricFamily.GetType() {
-			case io_prometheus_client.MetricType_COUNTER:
+			if metricFamily.GetType() == io_prometheus_client.MetricType_HISTOGRAM {
 				for _, metric := range metricFamily.GetMetric() {
-					for _, label := range metric.GetLabel() {
-						counterMetrics[metricFamily.GetName()][*label.Value] = metric.GetCounter().GetValue()
-					}
+					buildRunHistogramMetrics[metricFamily.GetName()][promLabelPairToBuildRunLabels(metric.GetLabel())] = metric.GetHistogram().GetSampleSum()
 				}
-
-			case io_prometheus_client.MetricType_HISTOGRAM:
-				for _, metric := range metricFamily.GetMetric() {
-					histogramMetrics[metricFamily.GetName()][promLabelPairToBuildRunLabels(metric.GetLabel())] = metric.GetHistogram().GetSampleSum()
+			} else {
+				switch metricFamily.GetName() {
+				case "build_builds_registered_total":
+					for _, metric := range metricFamily.GetMetric() {
+						buildCounterMetrics[metricFamily.GetName()][promLabelPairToBuildLabels(metric.GetLabel())] = metric.GetCounter().GetValue()
+					}
+				case "build_buildruns_completed_total":
+					for _, metric := range metricFamily.GetMetric() {
+						buildRunCounterMetrics[metricFamily.GetName()][promLabelPairToBuildRunLabels(metric.GetLabel())] = metric.GetCounter().GetValue()
+					}
 				}
 			}
 		}
@@ -121,66 +143,66 @@ var _ = Describe("Custom Metrics", func() {
 	Context("when create a new kaniko buildrun", func() {
 
 		It("should increase the kaniko build count", func() {
-			Expect(counterMetrics).To(HaveKey("build_builds_registered_total"))
-			Expect(counterMetrics["build_builds_registered_total"]["kaniko"]).To(Equal(1.0))
+			Expect(buildCounterMetrics).To(HaveKey("build_builds_registered_total"))
+			Expect(buildCounterMetrics["build_builds_registered_total"][buildLabels{"kaniko", "default", "kaniko-build"}]).To(Equal(1.0))
 		})
 
 		It("should increase the kaniko buildrun count", func() {
-			Expect(counterMetrics).To(HaveKey("build_buildruns_completed_total"))
-			Expect(counterMetrics["build_buildruns_completed_total"]["kaniko"]).To(Equal(1.0))
+			Expect(buildRunCounterMetrics).To(HaveKey("build_buildruns_completed_total"))
+			Expect(buildRunCounterMetrics["build_buildruns_completed_total"][buildRunLabels{"kaniko", "default", "kaniko-build", "kaniko-buildrun"}]).To(Equal(1.0))
 		})
 
 		It("should record the kaniko buildrun establish time", func() {
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_establish_duration_seconds"))
-			Expect(histogramMetrics["build_buildrun_establish_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-buildrun"}]).To(Equal(1.0))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_establish_duration_seconds"))
+			Expect(buildRunHistogramMetrics["build_buildrun_establish_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-build", "kaniko-buildrun"}]).To(Equal(1.0))
 		})
 
 		It("should record the kaniko buildrun completion time", func() {
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_completion_duration_seconds"))
-			Expect(histogramMetrics["build_buildrun_completion_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-buildrun"}]).To(Equal(200.0))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_completion_duration_seconds"))
+			Expect(buildRunHistogramMetrics["build_buildrun_completion_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-build", "kaniko-buildrun"}]).To(Equal(200.0))
 		})
 
 		It("should record the kaniko ramp-up durations", func() {
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_rampup_duration_seconds"))
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_taskrun_rampup_duration_seconds"))
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_taskrun_pod_rampup_duration_seconds"))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_rampup_duration_seconds"))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_taskrun_rampup_duration_seconds"))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_taskrun_pod_rampup_duration_seconds"))
 
-			Expect(histogramMetrics["build_buildrun_rampup_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-buildrun"}]).To(BeNumerically(">", 0.0))
-			Expect(histogramMetrics["build_buildrun_taskrun_rampup_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-buildrun"}]).To(BeNumerically(">", 0.0))
-			Expect(histogramMetrics["build_buildrun_taskrun_pod_rampup_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-buildrun"}]).To(BeNumerically(">", 0.0))
+			Expect(buildRunHistogramMetrics["build_buildrun_rampup_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-build", "kaniko-buildrun"}]).To(BeNumerically(">", 0.0))
+			Expect(buildRunHistogramMetrics["build_buildrun_taskrun_rampup_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-build", "kaniko-buildrun"}]).To(BeNumerically(">", 0.0))
+			Expect(buildRunHistogramMetrics["build_buildrun_taskrun_pod_rampup_duration_seconds"][buildRunLabels{"kaniko", "default", "kaniko-build", "kaniko-buildrun"}]).To(BeNumerically(">", 0.0))
 		})
 	})
 
 	Context("when create a new buildpacks buildrun", func() {
 
 		It("should increase the buildpacks build count", func() {
-			Expect(counterMetrics).To(HaveKey("build_builds_registered_total"))
-			Expect(counterMetrics["build_builds_registered_total"]["buildpacks"]).To(Equal(1.0))
+			Expect(buildCounterMetrics).To(HaveKey("build_builds_registered_total"))
+			Expect(buildCounterMetrics["build_builds_registered_total"][buildLabels{"buildpacks", "default", "buildpacks-build"}]).To(Equal(1.0))
 		})
 
 		It("should increase the buildpacks buildrun count", func() {
-			Expect(counterMetrics).To(HaveKey("build_buildruns_completed_total"))
-			Expect(counterMetrics["build_buildruns_completed_total"]["buildpacks"]).To(Equal(1.0))
+			Expect(buildRunCounterMetrics).To(HaveKey("build_buildruns_completed_total"))
+			Expect(buildRunCounterMetrics["build_buildruns_completed_total"][buildRunLabels{"buildpacks", "default", "buildpacks-build", "buildpacks-buildrun"}]).To(Equal(1.0))
 		})
 
 		It("should record the buildpacks buildrun establish time", func() {
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_establish_duration_seconds"))
-			Expect(histogramMetrics["build_buildrun_establish_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-buildrun"}]).To(Equal(1.0))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_establish_duration_seconds"))
+			Expect(buildRunHistogramMetrics["build_buildrun_establish_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-build", "buildpacks-buildrun"}]).To(Equal(1.0))
 		})
 
 		It("should record the buildpacks buildrun completion time", func() {
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_completion_duration_seconds"))
-			Expect(histogramMetrics["build_buildrun_completion_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-buildrun"}]).To(Equal(200.0))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_completion_duration_seconds"))
+			Expect(buildRunHistogramMetrics["build_buildrun_completion_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-build", "buildpacks-buildrun"}]).To(Equal(200.0))
 		})
 
 		It("should record the buildpacks ramp-up durations", func() {
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_rampup_duration_seconds"))
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_taskrun_rampup_duration_seconds"))
-			Expect(histogramMetrics).To(HaveKey("build_buildrun_taskrun_pod_rampup_duration_seconds"))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_rampup_duration_seconds"))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_taskrun_rampup_duration_seconds"))
+			Expect(buildRunHistogramMetrics).To(HaveKey("build_buildrun_taskrun_pod_rampup_duration_seconds"))
 
-			Expect(histogramMetrics["build_buildrun_rampup_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-buildrun"}]).To(BeNumerically(">", 0.0))
-			Expect(histogramMetrics["build_buildrun_taskrun_rampup_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-buildrun"}]).To(BeNumerically(">", 0.0))
-			Expect(histogramMetrics["build_buildrun_taskrun_pod_rampup_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-buildrun"}]).To(BeNumerically(">", 0.0))
+			Expect(buildRunHistogramMetrics["build_buildrun_rampup_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-build", "buildpacks-buildrun"}]).To(BeNumerically(">", 0.0))
+			Expect(buildRunHistogramMetrics["build_buildrun_taskrun_rampup_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-build", "buildpacks-buildrun"}]).To(BeNumerically(">", 0.0))
+			Expect(buildRunHistogramMetrics["build_buildrun_taskrun_pod_rampup_duration_seconds"][buildRunLabels{"buildpacks", "default", "buildpacks-build", "buildpacks-buildrun"}]).To(BeNumerically(">", 0.0))
 		})
 	})
 })
