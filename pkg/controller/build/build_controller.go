@@ -6,16 +6,11 @@ package build
 
 import (
 	"context"
-	"fmt"
 	"reflect"
-	"strings"
-
-	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,16 +25,15 @@ import (
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/controller/utils"
 	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/shipwright-io/build/pkg/git"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
+	"github.com/shipwright-io/build/pkg/validate"
 )
 
-// succeedStatus default status for the Build CRD
-const succeedStatus string = "Succeeded"
-const namespace string = "namespace"
-const name string = "name"
+const (
+	namespace string = "namespace"
+	name      string = "name"
+)
 
 type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
 
@@ -226,76 +220,47 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.validateBuildRunOwnerReferences(ctx, b); err != nil {
-		// we do not want to bail out here if the owerreference validation fails, we ignore this error on purpose
-		// In case we just created the Build, we want the Build reconcile logic to continue, in order to
-		// validate the Build references ( e.g secrets, strategies )
-		ctxlog.Info(ctx, "unexpected error during ownership reference validation", namespace, request.Namespace, name, request.Name, "error", err)
-	}
-
 	// Populate the status struct with default values
 	b.Status.Registered = corev1.ConditionFalse
-	b.Status.Reason = succeedStatus
+	b.Status.Reason = build.SucceedStatus
 
-	// Validate if remote repository exists
-	if b.Spec.Source.SecretRef == nil {
-		if err := r.validateSourceURL(ctx, b, b.Spec.Source.URL); err != nil {
-			b.Status.Reason = err.Error()
-			if updateErr := r.client.Status().Update(ctx, b); updateErr != nil {
-				return reconcile.Result{}, updateErr
+	// build a list of current validation types
+	validationTypes := []string{
+		validate.OwnerReferences,
+		validate.SourceURL,
+		validate.Secrets,
+		validate.Strategies,
+		validate.Runtime,
+	}
+
+	// trigger all current validations
+	for _, validationType := range validationTypes {
+		v, err := validate.NewValidation(validationType, b, r.client, r.scheme)
+		if err != nil {
+			// when the validation type is unknown
+			return reconcile.Result{}, err
+		}
+
+		if err := v.ValidatePath(ctx); err != nil {
+			// We enqueue another reconcile here. This is done only for validation
+			// types where the error can be produced from a failed API call.
+			if validationType == validate.Secrets || validationType == validate.Strategies {
+				return reconcile.Result{}, err
 			}
-			return reconcile.Result{}, nil
-		}
-	}
-
-	// Validate if the referenced secrets exist in the namespace
-	var secretNames []string
-	if b.Spec.Output.SecretRef != nil && b.Spec.Output.SecretRef.Name != "" {
-		secretNames = append(secretNames, b.Spec.Output.SecretRef.Name)
-	}
-	if b.Spec.Source.SecretRef != nil && b.Spec.Source.SecretRef.Name != "" {
-		secretNames = append(secretNames, b.Spec.Source.SecretRef.Name)
-	}
-	if b.Spec.BuilderImage != nil && b.Spec.BuilderImage.SecretRef != nil && b.Spec.BuilderImage.SecretRef.Name != "" {
-		secretNames = append(secretNames, b.Spec.BuilderImage.SecretRef.Name)
-	}
-
-	if len(secretNames) > 0 {
-		if err := r.validateSecrets(ctx, secretNames, b.Namespace); err != nil {
-			b.Status.Reason = err.Error()
-			if updateErr := r.client.Status().Update(ctx, b); updateErr != nil {
-				// return an error in case of transient failure, and expect the next
-				// reconciliation to be able to update the Status of the object
-				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+			if validationType == validate.OwnerReferences {
+				// we do not want to bail out here if the owerreference validation fails, we ignore this error on purpose
+				// In case we just created the Build, we want the Build reconcile logic to continue, in order to
+				// validate the Build references ( e.g secrets, strategies )
+				ctxlog.Info(ctx, "unexpected error during ownership reference validation", namespace, request.Namespace, name, request.Name, "error", err)
 			}
-			// The Secret Resource watcher will Reconcile again once the missing
-			// secret is created, therefore no need to return an error and enter on an infinite
-			// reconciliation
-			return reconcile.Result{}, nil
 		}
-	}
-
-	// Validate if the build strategy is defined
-	if b.Spec.StrategyRef != nil {
-		if err := r.validateStrategyRef(ctx, b.Spec.StrategyRef, b.Namespace); err != nil {
-			b.Status.Reason = err.Error()
-			updateErr := r.client.Status().Update(ctx, b)
-			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
-		}
-		ctxlog.Info(ctx, "buildStrategy found", namespace, b.Namespace, name, b.Name, "strategy", b.Spec.StrategyRef.Name)
-	}
-
-	// validate if "spec.runtime" attributes are valid
-	if utils.IsRuntimeDefined(b) {
-		if err := r.validateRuntime(b.Spec.Runtime); err != nil {
-			ctxlog.Error(ctx, err, "failed validating runtime attributes", "Build", b.Name)
-			b.Status.Reason = err.Error()
-			updateErr := r.client.Status().Update(ctx, b)
-			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+		if b.Status.Reason != build.SucceedStatus {
+			return r.UpdateBuildStatusAndRetreat(ctx, b)
 		}
 	}
 
 	b.Status.Registered = corev1.ConditionTrue
+	b.Status.Message = build.AllValidationsSucceeded
 	err = r.client.Status().Update(ctx, b)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -308,210 +273,14 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileBuild) validateRuntime(runtime *build.Runtime) error {
-	if len(runtime.Paths) == 0 {
-		return fmt.Errorf("the property 'spec.runtime.paths' must not be empty")
+// UpdateBuildStatusAndRetreat returns an error if an update fails, this should force
+// a new reconcile until the API call succeeds. If return is nil, no further reconciliations
+// will take place
+func (r *ReconcileBuild) UpdateBuildStatusAndRetreat(ctx context.Context, b *build.Build) (reconcile.Result, error) {
+	if err := r.client.Status().Update(ctx, b); err != nil {
+		return reconcile.Result{}, err
 	}
-	return nil
-}
-
-func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.StrategyRef, ns string) error {
-	if s.Kind != nil {
-		switch *s.Kind {
-		case build.NamespacedBuildStrategyKind:
-			if err := r.validateBuildStrategy(ctx, s.Name, ns); err != nil {
-				return err
-			}
-		case build.ClusterBuildStrategyKind:
-			if err := r.validateClusterBuildStrategy(ctx, s.Name); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unknown strategy %v", *s.Kind)
-		}
-	} else {
-		ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind")
-		if err := r.validateBuildStrategy(ctx, s.Name, ns); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (r *ReconcileBuild) validateBuildStrategy(ctx context.Context, n string, ns string) error {
-	list := &build.BuildStrategyList{}
-
-	if err := r.client.List(ctx, list, &client.ListOptions{Namespace: ns}); err != nil {
-		return errors.Wrapf(err, "listing BuildStrategies in ns %s failed", ns)
-	}
-
-	if len(list.Items) == 0 {
-		return errors.Errorf("none BuildStrategies found in namespace %s", ns)
-	}
-
-	if len(list.Items) > 0 {
-		for _, s := range list.Items {
-			if s.Name == n {
-				return nil
-			}
-		}
-		return fmt.Errorf("buildStrategy %s does not exist in namespace %s", n, ns)
-	}
-	return nil
-}
-
-func (r *ReconcileBuild) validateClusterBuildStrategy(ctx context.Context, n string) error {
-	list := &build.ClusterBuildStrategyList{}
-
-	if err := r.client.List(ctx, list); err != nil {
-		return errors.Wrapf(err, "listing ClusterBuildStrategies failed")
-	}
-
-	if len(list.Items) == 0 {
-		return errors.Errorf("no ClusterBuildStrategies found")
-	}
-
-	if len(list.Items) > 0 {
-		for _, s := range list.Items {
-			if s.Name == n {
-				return nil
-			}
-		}
-		return fmt.Errorf("clusterBuildStrategy %s does not exist", n)
-	}
-	return nil
-}
-func (r *ReconcileBuild) validateSecrets(ctx context.Context, secretNames []string, ns string) error {
-	list := &corev1.SecretList{}
-
-	if err := r.client.List(
-		ctx,
-		list,
-		&client.ListOptions{
-			Namespace: ns,
-		},
-	); err != nil {
-		return errors.Wrapf(err, "listing secrets in namespace %s failed", ns)
-	}
-
-	if len(list.Items) == 0 {
-		return errors.Errorf("there are no secrets in namespace %s", ns)
-	}
-
-	var lookUp = map[string]bool{}
-	for _, secretName := range secretNames {
-		lookUp[secretName] = false
-	}
-	for _, secret := range list.Items {
-		lookUp[secret.Name] = true
-	}
-	var missingSecrets []string
-	for name, found := range lookUp {
-		if !found {
-			missingSecrets = append(missingSecrets, name)
-		}
-	}
-
-	if len(missingSecrets) > 1 {
-		return fmt.Errorf("secrets %s do not exist", strings.Join(missingSecrets, ", "))
-	} else if len(missingSecrets) > 0 {
-		return fmt.Errorf("secret %s does not exist", missingSecrets[0])
-	}
-
-	return nil
-}
-
-// validateBuildRunOwnerReferences defines or removes the ownerReference for the BuildRun based on
-// an annotation value
-func (r *ReconcileBuild) validateBuildRunOwnerReferences(ctx context.Context, b *build.Build) error {
-
-	buildRunList, err := r.retrieveBuildRunsfromBuild(ctx, b)
-	if err != nil {
-		return err
-	}
-
-	switch b.GetAnnotations()[build.AnnotationBuildRunDeletion] {
-	case "true":
-		// if the buildRun does not have an ownerreference to the Build, lets add it.
-		for _, buildRun := range buildRunList.Items {
-			if index := r.validateBuildOwnerReference(buildRun.OwnerReferences, b); index == -1 {
-				if err := r.setOwnerReferenceFunc(b, &buildRun, r.scheme); err != nil {
-					b.Status.Reason = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
-					if err := r.client.Status().Update(ctx, b); err != nil {
-						return err
-					}
-				}
-				if err = r.client.Update(ctx, &buildRun); err != nil {
-					return err
-				}
-				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
-			}
-		}
-	case "", "false":
-		// if the buildRun have an ownerreference to the Build, lets remove it
-		for _, buildRun := range buildRunList.Items {
-			if index := r.validateBuildOwnerReference(buildRun.OwnerReferences, b); index != -1 {
-				buildRun.OwnerReferences = removeOwnerReferenceByIndex(buildRun.OwnerReferences, index)
-				if err := r.client.Update(ctx, &buildRun); err != nil {
-					return err
-				}
-				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
-			}
-		}
-
-	default:
-		ctxlog.Info(ctx, fmt.Sprintf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion), namespace, b.Namespace, name, b.Name)
-		return fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion)
-	}
-
-	return nil
-}
-
-// validateSourceURL returns error message if remote repository doesn't exist
-func (r *ReconcileBuild) validateSourceURL(ctx context.Context, b *build.Build, sourceURL string) error {
-	switch b.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
-	case "", "true":
-		return git.ValidateGitURLExists(sourceURL)
-	case "false":
-		ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, b.GetAnnotations()[build.AnnotationBuildVerifyRepository]))
-		return nil
-	default:
-		var annoErr = fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)
-		ctxlog.Error(ctx, annoErr, namespace, b.Namespace, name, b.Name)
-		return annoErr
-	}
-}
-
-// validateOwnerReferences returns an index value if a Build is owning a reference or -1 if this is not the case
-func (r *ReconcileBuild) validateBuildOwnerReference(references []metav1.OwnerReference, build *build.Build) int {
-	for i, ownerRef := range references {
-		if ownerRef.Kind == build.Kind && ownerRef.Name == build.Name {
-			return i
-		}
-	}
-	return -1
-}
-
-// retrieveBuildRunsfromBuild returns a list of BuildRuns that are owned by a Build in the same namespace
-func (r *ReconcileBuild) retrieveBuildRunsfromBuild(ctx context.Context, b *build.Build) (*build.BuildRunList, error) {
-	buildRunList := &build.BuildRunList{}
-
-	lbls := map[string]string{
-		build.LabelBuild: b.Name,
-	}
-	opts := client.ListOptions{
-		Namespace:     b.Namespace,
-		LabelSelector: labels.SelectorFromSet(lbls),
-	}
-
-	err := r.client.List(ctx, buildRunList, &opts)
-	return buildRunList, err
-}
-
-// removeOwnerReferenceByIndex removes the entry by index, this will not keep the same
-// order in the slice
-func removeOwnerReferenceByIndex(references []metav1.OwnerReference, i int) []metav1.OwnerReference {
-	return append(references[:i], references[i+1:]...)
+	return reconcile.Result{}, nil
 }
 
 func buildSecretRefAnnotationExist(annotation map[string]string) (string, bool) {

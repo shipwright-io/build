@@ -711,7 +711,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
-				statusCall := ctl.StubBuildStatusReason(
+				statusCall := ctl.StubBuildStatusReason(build.SetOwnerReferenceFailed,
 					fmt.Sprintf("unexpected error when trying to set the ownerreference: Object /%s is already owned by another %s controller ", buildRunName, fakeOwnerName),
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -740,7 +740,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
-				statusCall := ctl.StubBuildStatusReason(
+				statusCall := ctl.StubBuildStatusReason(build.SetOwnerReferenceFailed,
 					fmt.Sprintf("unexpected error when trying to set the ownerreference: cross-namespace owner references are disallowed, owner's namespace %s, obj's namespace %s", buildSample.Namespace, buildRunSample.Namespace),
 				)
 				statusWriter.UpdateCalls(statusCall)

@@ -285,7 +285,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			// Set OwnerReference for Build and BuildRun only when build.build.dev/build-run-deletion is set "true"
 			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true" && !isOwnedByBuild(build, buildRun.OwnerReferences) {
 				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
-					build.Status.Reason = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
+					build.Status.Reason = buildv1alpha1.SetOwnerReferenceFailed
+					build.Status.Message = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
 					if err := r.client.Status().Update(ctx, build); err != nil {
 						return reconcile.Result{}, err
 					}

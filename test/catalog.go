@@ -112,7 +112,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
 				URL: "https://github.com/sbose78/taxi",
-				SecretRef: &corev1.LocalObjectReference {
+				SecretRef: &corev1.LocalObjectReference{
 					Name: "foobar",
 				},
 			},
@@ -165,117 +165,30 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 	}
 }
 
-// ClusterBuildStrategyList to support tests
-func (c *Catalog) ClusterBuildStrategyList(name string) *build.ClusterBuildStrategyList {
-	return &build.ClusterBuildStrategyList{
-		Items: []build.ClusterBuildStrategy{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
-					Namespace: "build-examples",
-				},
-			},
+// ClusterBuildStrategy to support tests
+func (c *Catalog) ClusterBuildStrategy(name string) *build.ClusterBuildStrategy {
+	return &build.ClusterBuildStrategy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
 		},
 	}
 }
 
-// FakeClusterBuildStrategyList to support tests
-func (c *Catalog) FakeClusterBuildStrategyList() *build.ClusterBuildStrategyList {
-	return &build.ClusterBuildStrategyList{
-		Items: []build.ClusterBuildStrategy{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "foobar",
-					Namespace: "build-examples",
-				},
-			},
-		},
-	}
-}
-
-// FakeNoClusterBuildStrategyList to support tests
-func (c *Catalog) FakeNoClusterBuildStrategyList() *build.ClusterBuildStrategyList {
-	return &build.ClusterBuildStrategyList{
-		Items: []build.ClusterBuildStrategy{},
-	}
-}
-
-// BuildStrategyList to support tests
-func (c *Catalog) BuildStrategyList(name string, ns string) *build.BuildStrategyList {
-	return &build.BuildStrategyList{
-		Items: []build.BuildStrategy{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
-					Namespace: ns,
-				},
-			},
-		},
-	}
-}
-
-// FakeBuildStrategyList to support tests
-func (c *Catalog) FakeBuildStrategyList() *build.BuildStrategyList {
-	return &build.BuildStrategyList{
-		Items: []build.BuildStrategy{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "foobar",
-				},
-			},
-		},
-	}
-}
-
-// FakeNoBuildStrategyList to support tests
-func (c *Catalog) FakeNoBuildStrategyList() *build.BuildStrategyList {
-	return &build.BuildStrategyList{
-		Items: []build.BuildStrategy{},
-	}
-}
-
-// FakeSecretList to support tests
-func (c *Catalog) FakeSecretList() corev1.SecretList {
-	return corev1.SecretList{
-		Items: []corev1.Secret{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "foobar",
-				},
-			},
-		},
-	}
-}
-
-// FakeNoSecretListInNamespace returns an empty secret list
-func (c *Catalog) FakeNoSecretListInNamespace() corev1.SecretList {
-	return corev1.SecretList{
-		Items: []corev1.Secret{},
-	}
-}
-
-// SecretList to support tests
-func (c *Catalog) SecretList(name string) corev1.SecretList {
-	return corev1.SecretList{
-		Items: []corev1.Secret{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: name,
-				},
-			},
-		},
-	}
+// FakeClusterBuildStrategyNotFound returns a not found error
+func (c *Catalog) FakeClusterBuildStrategyNotFound(name string) error {
+	return errors.NewNotFound(schema.GroupResource{}, name)
 }
 
 // StubFunc is used to simulate the status of the Build
 // after a .Status().Update() call in the controller. This
 // receives a parameter to return an specific status state
-func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(object.Status.Registered).To(Equal(status))
-			Expect(object.Status.Reason).To(ContainSubstring(reason))
+			Expect(object.Status.Reason).To(Equal(reason))
+			Expect(object.Status.Message).To(Equal(message))
 		}
 		return nil
 	}
@@ -351,10 +264,13 @@ func (c *Catalog) StubBuildAndTaskRun(
 }
 
 // StubBuildStatusReason asserts Status fields on a Build resource
-func (c *Catalog) StubBuildStatusReason(reason string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
+			if object.Status.Message != "" {
+				Expect(object.Status.Message).To(Equal(message))
+			}
 			if object.Status.Reason != "" {
 				Expect(object.Status.Reason).To(Equal(reason))
 			}
