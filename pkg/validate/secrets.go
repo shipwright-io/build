@@ -3,6 +3,7 @@ package validate
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -36,6 +37,9 @@ func (s SecretRef) ValidatePath(ctx context.Context) error {
 			missingSecrets = append(missingSecrets, refSecret)
 		}
 	}
+
+	// sorts a list of secret names in increasing order
+	sort.Strings(missingSecrets)
 
 	if len(missingSecrets) > 1 {
 		s.Build.Status.Reason = build.MultipleSecretRefNotFound
