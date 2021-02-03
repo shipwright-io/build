@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*.*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Set previous tag
+      run: echo "PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1))" >> $GITHUB_ENV
+    - name: Build Changelog
+      run: git log --pretty=format:"%h - %s" ${{ env.PREVIOUS_TAG }}..HEAD | grep -v "Merge pull" > Changes.txt
+    - name: Test
+      run: cat Changes.txt
+    # - name: Draft release
+    #   id: draft_release
+    #   uses: actions/create-release@v1
+    #   with:
+    #     release_name: tbd
+    #     tag_name: tbd
+    #     body_path: tbd
+    #     draft: true
+    #     prerelease: true
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
