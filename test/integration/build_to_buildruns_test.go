@@ -6,6 +6,7 @@ package integration_test
 
 import (
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -85,7 +86,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.Reason).To(ContainSubstring("failed to finish within"))
-
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
 	})
 
@@ -105,6 +108,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.Reason).To(ContainSubstring("failed to finish within \"1s\""))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
 
 		It("should be able to override the build output", func() {
@@ -179,7 +185,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err = tb.GetBR(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).To(BeNil())
-
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Type).To(Equal(v1alpha1.Succeeded))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionUnknown))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("Pending"))
 		})
 	})
 
@@ -206,6 +214,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.build.dev \"%s\" not found", BUILD+tb.Namespace)))
 			Expect(br.Status.StartTime).To(BeNil())
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("Failed"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
 
 		})
 	})
@@ -227,6 +238,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: False, reason: SpecOutputSecretRefNotFound", BUILD+tb.Namespace)))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("Failed"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("Build is not registered correctly"))
 		})
 	})
 
@@ -254,6 +268,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(br.Status.CompletionTime).ToNot(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
 			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.build.dev \"%s\" not found", BUILD+tb.Namespace+"foobar")))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("Failed"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
 		})
 	})
 
