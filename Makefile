@@ -30,7 +30,7 @@ TEST_NAMESPACE ?= default
 # CI: tekton pipelines operator version
 TEKTON_VERSION ?= v0.20.1
 # CI: operator-sdk version
-SDK_VERSION ?= v0.17.0
+SDK_VERSION ?= v0.18.2
 
 # E2E test flags
 TEST_E2E_FLAGS ?= -failFast -flakeAttempts=2 -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=30m -progress -stream -trace -v

@@ -41,7 +41,7 @@ In the near future, the above would be setup by the operator.
 make clean && make build
 ```
 
-* This project uses Golang 1.13+ and operator-sdk 1.15.1.
+* This project uses Golang 1.15+ and operator-sdk v0.18.2.
 * The controllers create/watch Tekton objects.
 
 # Testing
