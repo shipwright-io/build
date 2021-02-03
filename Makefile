@@ -10,7 +10,7 @@ GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 # golang target architecture
 GOARCH ?= amd64
 # golang global flags
-GO_FLAGS ?= -v -mod=vendor
+GO_FLAGS ?= -v -mod=vendor -trimpath
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
