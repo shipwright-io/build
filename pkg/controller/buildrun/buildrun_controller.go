@@ -679,11 +679,21 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alp
 	return generatedTaskRun, nil
 }
 
+// updateBuildRunErrorStatus updates buildRun status fields
 func (r *ReconcileBuildRun) updateBuildRunErrorStatus(ctx context.Context, buildRun *buildv1alpha1.BuildRun, errorMessage string) error {
+	// these two fields are deprecated and will be removed soon
 	buildRun.Status.Succeeded = corev1.ConditionFalse
 	buildRun.Status.Reason = errorMessage
+
 	now := metav1.Now()
 	buildRun.Status.CompletionTime = &now
+	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
+		LastTransitionTime: now,
+		Type:               buildv1alpha1.Succeeded,
+		Status:             corev1.ConditionFalse,
+		Reason:             "Failed",
+		Message:            errorMessage,
+	})
 	ctxlog.Debug(ctx, "updating buildRun status", namespace, buildRun.Namespace, name, buildRun.Name)
 	updateErr := r.client.Status().Update(ctx, buildRun)
 	return updateErr
@@ -699,7 +709,7 @@ func isGeneratedServiceAccountUsed(buildRun *buildv1alpha1.BuildRun) bool {
 	return buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate
 }
 
-/// isOwnedByBuild cheks if the controllerReferences contains a well known owner Kind
+/// isOwnedByBuild checks if the controllerReferences contains a well known owner Kind
 func isOwnedByBuild(build *buildv1alpha1.Build, controlledReferences []metav1.OwnerReference) bool {
 	for _, ref := range controlledReferences {
 		if ref.Kind == build.Kind && ref.Name == build.Name {
