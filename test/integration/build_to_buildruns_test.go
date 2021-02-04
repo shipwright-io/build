@@ -6,8 +6,9 @@ package integration_test
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -187,7 +188,11 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(br.Status.CompletionTime).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Type).To(Equal(v1alpha1.Succeeded))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionUnknown))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("Pending"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(
+				// BuildRun reason can be ExceededNodeResources
+				// if the Tekton TaskRun Pod is queued due to
+				// insufficient cluster resources.
+				Or(Equal("Pending"), Equal("ExceededNodeResources")))
 		})
 	})
 
