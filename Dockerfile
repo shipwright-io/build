@@ -2,7 +2,7 @@
 # 
 # SPDX-License-Identifier: Apache-2.0
 
-FROM openshift/origin-release:golang-1.13 AS builder
+FROM openshift/origin-release:golang-1.15 AS builder
 
 ENV LANG=en_US.utf8
 ENV GIT_COMMITTER_NAME devtools
