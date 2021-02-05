@@ -99,6 +99,9 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			It("reflects a change from pending to running reason", func() {
 				buildRunWitcher, _, _ := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun))
 
+				// use a fakeTime to simplify tests
+				fakeTime := time.Date(1989, 05, 15, 00, 01, 01, 651387237, time.UTC)
+
 				var timeout = time.After(tb.TimeOut)
 				go func() {
 					<-timeout
@@ -109,6 +112,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				for event := range buildRunWitcher.ResultChan() {
 					condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
 					if condition != nil {
+						condition.LastTransitionTime = metav1.Time{Time: fakeTime}
 						seq = append(seq, condition)
 					}
 
@@ -117,13 +121,25 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 						buildRunWitcher.Stop()
 					}
 				}
+				// consider a longer sequence, for events where the cluster have
+				// insufficient resources, where the Reason will be ExceededNodeResources.
+				Expect(len(seq) >= 2).To(Equal(true))
 
-				Expect(len(seq)).To(Equal(2))
-				Expect(seq[0].Type).To(Equal(v1alpha1.Succeeded))
-				Expect(seq[0].Status).To(Equal(corev1.ConditionUnknown))
-				Expect(seq[0].Reason).To(Equal("Pending"))
-				Expect(seq[1].Type).To(Equal(v1alpha1.Succeeded))
-				Expect(seq[1].Reason).To(Equal("Running"))
+				// ensure the conditions move eventually from unknown into running
+				Expect(seq).Should(ContainElement(&v1alpha1.Condition{
+					Type:               v1alpha1.Succeeded,
+					Status:             corev1.ConditionUnknown,
+					LastTransitionTime: metav1.Time{Time: fakeTime},
+					Reason:             "Pending",
+					Message:            "Pending",
+				}))
+				Expect(seq).Should(ContainElement(&v1alpha1.Condition{
+					Type:               v1alpha1.Succeeded,
+					Status:             corev1.ConditionUnknown,
+					LastTransitionTime: metav1.Time{Time: fakeTime},
+					Reason:             "Running",
+					Message:            "Not all Steps in the Task have finished executing",
+				}))
 			})
 		})
 
