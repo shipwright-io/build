@@ -4,8 +4,8 @@
 # 
 # SPDX-License-Identifier: Apache-2.0
 
+set -euo pipefail
 
-set -e
 echo "Logging into container registry $IMAGE_HOST"
 echo "$REGISTRY_PASSWORD" | ko login -u "$REGISTRY_USERNAME" --password-stdin "$IMAGE_HOST"
 
@@ -14,5 +14,4 @@ echo "Building container image"
 # Using defaults, this pushes to:
 # quay.io/shipwright/shipwright-operator/github.com/shipwright-io/build/cmd/manager:latest
 KO_DOCKER_REPO="$IMAGE_HOST/$IMAGE" GOFLAGS="${GO_FLAGS}" ko resolve -t "$TAG" -P -R -f deploy/ > release.yaml
-
-set +e
+KO_DOCKER_REPO="$IMAGE_HOST/$IMAGE" GOFLAGS="${GO_FLAGS} -tags=pprof_enabled" ko resolve -t "$TAG-debug" -P -R -f deploy/ > release-debug.yaml

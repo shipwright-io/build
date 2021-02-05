@@ -124,9 +124,17 @@ func main() {
 	addMetrics(ctx, cfg, namespace)
 	buildMetrics.InitPrometheus(buildCfg)
 
-	ctxlog.Info(ctx, "Starting the Cmd.")
+	// Add optionally configured extra handlers to metrics endpoint
+	for path, handler := range buildMetrics.MetricsExtraHandlers() {
+		ctxlog.Info(ctx, "Adding metrics extra handler path", "path", path)
+		if err := mgr.AddMetricsExtraHandler(path, handler); err != nil {
+			ctxlog.Error(ctx, err, "")
+			os.Exit(2)
+		}
+	}
 
 	// Start the Cmd
+	ctxlog.Info(ctx, "Starting the Cmd.")
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		ctxlog.Error(ctx, err, "Manager exited non-zero")
 		os.Exit(1)
