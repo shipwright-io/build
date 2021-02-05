@@ -22,6 +22,7 @@ jobs:
         echo -e "# Insert Title\n" > Changes.md
         git log --pretty=format:"%h -  %s - %an" ${{ github.event.inputs.tags }}..HEAD | grep -v "Merge pull" >> Changes.md
         echo -e "## Features\n\n## Fixes\n\n## Backwards incompatible changes\n\n## Docs\n\n## Misc\n\n## Thanks" >> Changes.md    - name: Draft Release
+    - name: Draft release
       id: draft_release
       uses: actions/create-release@v1
       with:
