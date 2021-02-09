@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	buildCount *prometheus.CounterVec
+	buildCount    *prometheus.CounterVec
 	buildRunCount *prometheus.CounterVec
 
 	buildRunEstablishDuration  *prometheus.HistogramVec
