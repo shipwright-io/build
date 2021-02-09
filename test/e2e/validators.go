@@ -153,7 +153,7 @@ func createNamespacedBuildStrategy(
 	retry time.Duration,
 ) {
 	err := f.Client.Create(goctx.TODO(), testBuildStrategy, cleanupOptions(ctx, timeout, retry))
-	if err != nil {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		Expect(err).NotTo(HaveOccurred(), "on creating namespace build strategy")
 	}
 }

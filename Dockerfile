@@ -2,6 +2,10 @@
 # 
 # SPDX-License-Identifier: Apache-2.0
 
+# !!! Notice !!!
+# Building the image using this Dockerfile is deprecated; use ko instead.
+# This file will be removed in a future change.
+
 FROM openshift/origin-release:golang-1.15 AS builder
 
 ENV LANG=en_US.utf8

@@ -10,7 +10,7 @@ GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 # golang target architecture
 GOARCH ?= amd64
 # golang global flags
-GO_FLAGS ?= -v -mod=vendor -trimpath
+GO_FLAGS ?= -v -mod=vendor
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -70,8 +70,6 @@ TEST_SOURCE_SECRET ?=
 IMAGE_HOST ?= quay.io
 IMAGE ?= shipwright/shipwright-operator
 TAG ?= latest
-CONTAINER_RUNTIME ?= docker
-DOCKERFILE ?= Dockerfile
 
 .EXPORT_ALL_VARIABLES:
 
@@ -85,19 +83,15 @@ vendor: go.mod go.sum
 build: $(OPERATOR)
 
 $(OPERATOR): vendor
-	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
+	go build -trimpath $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
 
 .PHONY: build-plain
 build-plain: 
-	go build $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
+	go build -trimpath $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
 
 .PHONY: build-image
 build-image:
-	$(CONTAINER_RUNTIME) build -t $(IMAGE_HOST)/$(IMAGE):$(TAG) -f $(DOCKERFILE) .
-
-.PHONY: push-image 
-push-image:
-	$(CONTAINER_RUNTIME) push $(IMAGE_HOST)/$(IMAGE):$(TAG)
+	GOFLAGS="$(GO_FLAGS)" ko publish -P ./cmd/manager
 
 .PHONY: release
 release:
@@ -242,16 +236,18 @@ test-e2e-plain: ginkgo
 .PHONY: install install-apis install-operator install-strategies
 
 install:
-	@hack/shipwright-build.sh install
+	GOFLAGS="$(GO_FLAGS)" ko apply -R -f deploy/
 
 install-apis:
-	@hack/shipwright-build.sh install apis
+	kubectl apply -f deploy/crds/
+	# Wait for the CRD type to be established; this can take a second or two.
+	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.build.dev
 
 install-operator: install-apis
-	@hack/shipwright-build.sh install controllers
+	GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
 
 install-strategies: install-apis
-	@hack/shipwright-build.sh install strategies
+	kubectl apply -R -f samples/buildstrategy/
 
 local: install-strategies build
 	OPERATOR_NAME=build-operator \

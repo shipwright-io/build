@@ -81,7 +81,7 @@ You must install these tools:
 1.  [`go`](https://golang.org/doc/install): The language Shipwright Build is
     built in
 1.  [`git`](https://help.github.com/articles/set-up-git/): For source control
-1.  A container runtime to build the operator image, such as [`docker`](https://docs.docker.com/get-docker/) or [podman](https://podman.io/)
+1   [`ko`](https://github.com/google/ko): To build and deploy changes.
 1.  [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/): For
     interacting with your kube cluster
 
@@ -108,68 +108,51 @@ export GOPATH="$HOME/go"
 export PATH="${PATH}:${GOPATH}/bin"
 ```
 
-Make sure to configure
-[authentication](https://docs.docker.com/engine/reference/commandline/login/)
-for your `docker` if required. To be able to push images to the container registry, you need to run this once:
+Make sure to configure [authentication](https://github.com/google/ko#authenticating) if required. To be able to push images to the container registry, you need to run this once:
 
 ```sh
-docker login [OPTIONS] [SERVER]
+ko login [OPTIONS] [SERVER]
 ```
+
+Note: This is roughly equivalent to [`docker login`](https://docs.docker.com/engine/reference/commandline/login/).
 
 ## Install Shipwright Build
 
 The following set of steps highlight how to deploy a Build operator pod into an existing Kubernetes cluster.
 
-1. Build a custom docker image from this repository. This can be done with Docker, for example:
+1. Target your Kubernetes cluster and install the Shipwright Build. Run this from the root of the source repo:
+
+    ```sh
+    ./hack/install-tekton.sh
+    ```
+
+1. Set your `KO_DOCKER_REPO` environment variable. This will be the container
+   image registry you push to, or `kind.local` if you're using
+[KinD](https://kind.sigs.k8s.io).
+
+1. Build and deploy the operator from source, from within the root of the repo:
 
    ```sh
-   pushd $GOPATH/src/github.com/shipwright-io/build
-   docker build -t eeeoo/build-operator:master .
-   docker push eeeoo/build-operator:master
-   popd
+   ko apply -P -R -f deploy/
    ```
 
-   You can also find the official versioned operator image in our [quay.io](https://quay.io/repository/shipwright/shipwright-operator?tab=tags)
-
-2. Reference the generated image name in the [operator.yaml](deploy/operator.yaml). The `spec.template.containers[0].image` value should be modified.
-
-3. Target your Kubernetes cluster and install the Shipwright Build:
-
-    ```sh
-    pushd $GOPATH/src/github.com/shipwright-io/build
-    ./hack/install-tekton.sh
-    popd
-    ```
-
-4. Install the Build operator pod and all related resources.
-
-    ```sh
-    pushd $GOPATH/src/github.com/shipwright-io/build
-    ./hack/shipwright-build.sh install
-    popd
-    ```
-
-The above four steps give you a running Build operator that executes the code from your current branch.
+The above steps give you a running Build operator that executes the code from your current branch.
 
 ### Redeploy operator
 
 As you make changes to the code, you can redeploy your operator with:
 
-```sh
-pushd $GOPATH/src/github.com/shipwright-io/build
-./hack/shipwright-build.sh install
-popd
-```
+   ```sh
+   ko apply -P -R -f deploy/
+   ```
 
 ### Tear it down
 
 You can clean up everything with:
 
-```sh
-pushd $GOPATH/src/github.com/shipwright-io/build
-./hack/shipwright-build.sh uninstall
-popd
-```
+   ```sh
+   kubectl delete -R -f deploy/
+   ```
 
 ### Accessing logs
 

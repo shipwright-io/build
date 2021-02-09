@@ -16,10 +16,7 @@ spec:
       serviceAccountName: build-operator
       containers:
         - name: build-operator
-          image: quay.io/shipwright/shipwright-operator:latest
-          command:
-          - build-operator
-          imagePullPolicy: Always
+          image: ko://github.com/shipwright-io/build/cmd/manager
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
