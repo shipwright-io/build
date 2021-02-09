@@ -243,11 +243,11 @@ install-operator: install-apis
 install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
 
-local: install-strategies build
+local: vendor install-strategies
 	OPERATOR_NAME=build-operator \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
-local-plain: build-plain
+local-plain: vendor
 	OPERATOR_NAME=build-operator \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
