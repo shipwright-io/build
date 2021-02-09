@@ -183,22 +183,16 @@ sanity-check: ineffassign golint govet misspell staticcheck
 test: test-unit
 
 .PHONY: test-unit
-test-unit: ginkgo
+test-unit:
 	rm -rf build/coverage
 	mkdir build/coverage
-	GO111MODULE=on $(GINKGO) \
-		-randomizeAllSpecs \
-		-randomizeSuites \
-		-failOnPending \
-		-p \
-		-compilers=2 \
-		-slowSpecThreshold=240 \
-		-race \
-		-cover \
+	go test \
+		./cmd/... \
+		./pkg/... \
+		-coverprofile=unit.coverprofile \
 		-outputdir=build/coverage \
-		-trace \
-		internal/... \
-		pkg/...
+		-race \
+		-v
 
 test-unit-coverage: test-unit gocov
 	echo "Combining coverage profiles"
