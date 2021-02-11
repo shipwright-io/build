@@ -78,15 +78,13 @@ func clientGet(key types.NamespacedName, obj runtime.Object) error {
 }
 
 func isRetryableError(err error) bool {
-	if apierrors.IsServerTimeout(err) ||
+	return apierrors.IsServerTimeout(err) ||
 		apierrors.IsTimeout(err) ||
 		apierrors.IsTooManyRequests(err) ||
+		apierrors.IsInternalError(err) ||
 		err.Error() == "etcdserver: request timed out" ||
 		err.Error() == "rpc error: code = Unavailable desc = transport is closing" ||
-		strings.Contains(err.Error(), "net/http: request canceled while waiting for connection") {
-		return true
-	}
-	return false
+		strings.Contains(err.Error(), "net/http: request canceled while waiting for connection")
 }
 
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
