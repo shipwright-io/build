@@ -91,7 +91,11 @@ build-plain:
 
 .PHONY: build-image
 build-image:
-	GOFLAGS="$(GO_FLAGS)" ko publish -P ./cmd/manager
+	GOFLAGS="$(GO_FLAGS)" ko publish --preserve-import-paths ./cmd/manager
+
+.PHONY: build-image-with-pprof
+build-image-with-pprof:
+	GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --preserve-import-paths --tags=pprof ./cmd/manager
 
 .PHONY: release
 release:
@@ -232,6 +236,9 @@ test-e2e-plain: ginkgo
 install:
 	GOFLAGS="$(GO_FLAGS)" ko apply -R -f deploy/
 
+install-with-pprof:
+	GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
+
 install-apis:
 	kubectl apply -f deploy/crds/
 	# Wait for the CRD type to be established; this can take a second or two.
@@ -243,11 +250,11 @@ install-operator: install-apis
 install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
 
-local: install-strategies build
+local: vendor install-strategies
 	OPERATOR_NAME=build-operator \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
-local-plain: build-plain
+local-plain: vendor
 	OPERATOR_NAME=build-operator \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 

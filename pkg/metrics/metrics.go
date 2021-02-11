@@ -5,13 +5,12 @@
 package metrics
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
-
 	"github.com/shipwright-io/build/pkg/config"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 // Labels used in Prometheus metrics
@@ -23,7 +22,7 @@ const (
 )
 
 var (
-	buildCount *prometheus.CounterVec
+	buildCount    *prometheus.CounterVec
 	buildRunCount *prometheus.CounterVec
 
 	buildRunEstablishDuration  *prometheus.HistogramVec
@@ -40,6 +39,9 @@ var (
 
 	initialized = false
 )
+
+// Optional additional metrics endpoint handlers to be configured
+var metricsExtraHandlers = map[string]http.HandlerFunc{}
 
 // InitPrometheus initializes the prometheus stuff
 func InitPrometheus(config *config.Config) {
@@ -135,6 +137,10 @@ func InitPrometheus(config *config.Config) {
 		taskRunRampUpDuration,
 		taskRunPodRampUpDuration,
 	)
+}
+
+func MetricsExtraHandlers() map[string]http.HandlerFunc {
+	return metricsExtraHandlers
 }
 
 func contains(slice []string, element string) bool {

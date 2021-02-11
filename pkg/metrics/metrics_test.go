@@ -31,9 +31,9 @@ var _ = Describe("Custom Metrics", func() {
 	}
 
 	var (
-		buildCounterMetrics         = map[string]map[buildLabels]float64{}
-		buildRunCounterMetrics      = map[string]map[buildRunLabels]float64{}
-		buildRunHistogramMetrics    = map[string]map[buildRunLabels]float64{}
+		buildCounterMetrics      = map[string]map[buildLabels]float64{}
+		buildRunCounterMetrics   = map[string]map[buildRunLabels]float64{}
+		buildRunHistogramMetrics = map[string]map[buildRunLabels]float64{}
 
 		promLabelPairToBuildLabels = func(in []*io_prometheus_client.LabelPair) buildLabels {
 			var result = buildLabels{}
