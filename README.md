@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # Shipwright - a framework for building container images on Kubernetes
 
+test PR after enablement of prow release-note plugin, but prior to introduction of pr template 
+
 Shipwright is an extensible framework for building container images on Kubernetes. With Shipwright,
 developers can define and reuse build strategies that build container images for their CI/CD
 pipelines. Any tool that builds images within a container can be supported, such
