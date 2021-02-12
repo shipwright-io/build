@@ -35,3 +35,30 @@ jobs:
         prerelease: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install Go
+      uses: actions/setup-go@v2
+    - name: Install Ko
+      run: |
+        echo '::group:: install ko'
+        curl -L https://github.com/google/ko/releases/download/v0.8.0/ko_0.8.0_Linux_x86_64.tar.gz | tar xzf - ko
+        chmod +x ./ko
+        sudo mv ko /usr/local/bin
+        echo '::endgroup::'
+    - name: Ko resolve release.yaml
+      env:
+        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+        IMAGE_HOST: quay.io
+        IMAGE: shipwright/shipwright-operator
+      run: make release
+    - name: Upload Release Asset
+      id: upload_release_asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.draft_release.outputs.upload_url }} 
+        asset_path: ./release.yaml
+        asset_name: release.yaml
+        asset_content_type: application/x-yaml
