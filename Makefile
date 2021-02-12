@@ -91,11 +91,11 @@ build-plain:
 
 .PHONY: build-image
 build-image:
-	GOFLAGS="$(GO_FLAGS)" ko publish --preserve-import-paths ./cmd/manager
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko publish --bare ./cmd/manager
 
 .PHONY: build-image-with-pprof
 build-image-with-pprof:
-	GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --preserve-import-paths --tags=pprof ./cmd/manager
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --bare --tags=pprof ./cmd/manager
 
 .PHONY: release
 release:
@@ -234,7 +234,7 @@ test-e2e-plain: ginkgo
 .PHONY: install install-apis install-operator install-strategies
 
 install:
-	GOFLAGS="$(GO_FLAGS)" ko apply -R -f deploy/
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
 
 install-with-pprof:
 	GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
@@ -245,7 +245,7 @@ install-apis:
 	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.build.dev
 
 install-operator: install-apis
-	GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
 
 install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
