@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package buildrun
+package resources
 
 import (
 	"bytes"
@@ -18,7 +18,6 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/controller/utils"
 )
 
 const (
@@ -165,7 +164,7 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 
 	// using builder-image when defined, or falling back to a default
 	imageURL := defultShellImage
-	if utils.IsBuilderImageDefined(b) {
+	if isBuilderImageDefined(b) {
 		imageURL = b.Spec.BuilderImage.ImageURL
 	}
 
@@ -240,4 +239,27 @@ func AmendTaskSpecWithRuntimeImage(
 	step = runtimeBuildAndPushStep(b, cfg.KanikoContainerImage)
 	spec.Steps = append(spec.Steps, *step)
 	return nil
+}
+
+// isBuilderImageDefined inspect if build contains `.spec.BuilderImage` defined.
+func isBuilderImageDefined(b *buildv1alpha1.Build) bool {
+	if b.Spec.BuilderImage == nil {
+		return false
+	}
+	if b.Spec.BuilderImage.ImageURL == "" {
+		return false
+	}
+	return true
+}
+
+// IsRuntimeDefined inspect if build has `.spec.runtime` defined, checking intermediary attributes
+// and making sure ImageURL is informed.
+func IsRuntimeDefined(b *buildv1alpha1.Build) bool {
+	if b.Spec.Runtime == nil {
+		return false
+	}
+	if b.Spec.Runtime.Base.ImageURL == "" {
+		return false
+	}
+	return true
 }

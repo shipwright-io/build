@@ -1,7 +1,3 @@
-// Copyright The Shipwright Contributors
-//
-// SPDX-License-Identifier: Apache-2.0
-
 package buildrun
 
 import (
@@ -17,22 +13,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
 const (
@@ -41,199 +29,6 @@ const (
 	pendingReason      string = "Pending"
 	generatedNameRegex        = "-[a-z0-9]{5,5}$"
 )
-
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
-type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
-
-// Add creates a new BuildRun Controller and adds it to the Manager. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
-	ctx = ctxlog.NewContext(ctx, "buildrun-controller")
-	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference))
-}
-
-// blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileBuildRun{}
-
-// ReconcileBuildRun reconciles a BuildRun object
-type ReconcileBuildRun struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	ctx                   context.Context
-	config                *config.Config
-	client                client.Client
-	scheme                *runtime.Scheme
-	setOwnerReferenceFunc setOwnerReferenceFunc
-}
-
-// NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
-	return &ReconcileBuildRun{
-		ctx:                   ctx,
-		config:                c,
-		client:                mgr.GetClient(),
-		scheme:                mgr.GetScheme(),
-		setOwnerReferenceFunc: ownerRef,
-	}
-}
-
-// add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error {
-	// Create a new controller
-	c, err := controller.New("buildrun-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
-	predBuildRun := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			o := e.Object.(*buildv1alpha1.BuildRun)
-
-			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have a TaskRun referenced already,
-			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun.
-			return o.Status.LatestTaskRunRef == nil
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			// Ignore updates to CR status in which case metadata.Generation does not change
-			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
-
-			// Avoid reconciling when for updates on the BuildRun, the build.build.dev/name
-			// label is set, and when a BuildRun already have a referenced TaskRun.
-			if o.GetLabels()[buildv1alpha1.LabelBuild] == "" || o.Status.LatestTaskRunRef != nil {
-				return false
-			}
-
-			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			// Evaluates to false if the object has been confirmed deleted.
-			return !e.DeleteStateUnknown
-		},
-	}
-
-	predTaskRun := predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			o := e.ObjectOld.(*v1beta1.TaskRun)
-			n := e.ObjectNew.(*v1beta1.TaskRun)
-
-			// Process an update event when the old TR resource is not yet started and the new TR resource got a
-			// condition of the type Succeeded
-			if o.Status.StartTime.IsZero() && n.Status.GetCondition(apis.ConditionSucceeded) != nil {
-				return true
-			}
-
-			// Process an update event for every change in the condition.Reason between the old and new TR resource
-			if o.Status.GetCondition(apis.ConditionSucceeded) != nil && n.Status.GetCondition(apis.ConditionSucceeded) != nil {
-				if o.Status.GetCondition(apis.ConditionSucceeded).Reason != n.Status.GetCondition(apis.ConditionSucceeded).Reason {
-					return true
-				}
-			}
-			return false
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			// Evaluates to false if the object has been confirmed deleted.
-			return !e.DeleteStateUnknown
-		},
-	}
-
-	// Watch for changes to primary resource BuildRun
-	err = c.Watch(&source.Kind{Type: &buildv1alpha1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun)
-	if err != nil {
-		return err
-	}
-
-	// enqueue Reconciles requests only for events where a TaskRun already exists and that is related
-	// to a BuildRun
-	return c.Watch(&source.Kind{Type: &v1beta1.TaskRun{}}, &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
-
-			taskRun := o.Object.(*v1beta1.TaskRun)
-
-			// check if TaskRun is related to BuildRun
-			if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1alpha1.LabelBuildRun] == "" {
-				return []reconcile.Request{}
-			}
-
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Name:      taskRun.Name,
-						Namespace: taskRun.Namespace,
-					},
-				},
-			}
-		}),
-	}, predTaskRun)
-}
-
-// This function only returns multiple errors if each error is not nil.
-// And its error message.
-func handleError(message string, listOfErrors ...error) error {
-	var errSlice []string
-	for _, e := range listOfErrors {
-		if e != nil {
-			errSlice = append(errSlice, e.Error())
-		}
-	}
-	return fmt.Errorf("errors: %s, msg: %s", strings.Join(errSlice, ", "), message)
-}
-
-// ValidateBuildRegistration verifies that a referenced Build is properly registered
-func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) error {
-	if build.Status.Registered == "" {
-		err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
-		return err
-	}
-	if build.Status.Registered != corev1.ConditionTrue {
-		err := fmt.Errorf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return handleError("Build is not ready", err, updateErr)
-	}
-	return nil
-}
-
-// GetBuildRunObject retrieves an existing BuildRun based on a name and namespace
-func (r *ReconcileBuildRun) GetBuildRunObject(ctx context.Context, objectName string, objectNS string, buildRun *buildv1alpha1.BuildRun) error {
-	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, buildRun); err != nil {
-		return err
-	}
-	return nil
-}
-
-// GetBuildObject retrieves an existing Build based on a name and namespace
-func (r *ReconcileBuildRun) GetBuildObject(ctx context.Context, objectName string, objectNS string, build *buildv1alpha1.Build) error {
-	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, build); err != nil {
-		return err
-	}
-	return nil
-}
-
-// VerifyRequestName parse a Reconcile request name and looks for an associated BuildRun name
-// If the BuildRun object exists, it will update it with an error.
-func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request reconcile.Request, buildRun *buildv1alpha1.BuildRun) {
-
-	regxBuildRun, _ := regexp.Compile(generatedNameRegex)
-
-	// Check if the name belongs to a TaskRun generated name https://regex101.com/r/Wjs3bV/10
-	// and extract the BuildRun name
-	matched := regxBuildRun.MatchString(request.Name)
-	if matched {
-		if split := regxBuildRun.Split(request.Name, 2); len(split) > 0 {
-			// Update the related BuildRun
-			err := r.GetBuildRunObject(ctx, split[0], request.Namespace, buildRun)
-			if err == nil {
-				// We ignore the errors from the following call, because the parent call of this function will always
-				// return back a reconcile.Result{}, nil. This is done to avoid infinite reconcile loops when a BuildRun
-				// does not longer exists
-				r.updateBuildRunErrorStatus(ctx, buildRun, fmt.Sprintf("taskRun %s doesn´t exist", request.Name))
-			}
-		}
-	}
-}
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
@@ -473,6 +268,71 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 	return reconcile.Result{}, nil
 }
 
+// ValidateBuildRegistration verifies that a referenced Build is properly registered
+func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) error {
+	if build.Status.Registered == "" {
+		err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
+		return err
+	}
+	if build.Status.Registered != corev1.ConditionTrue {
+		err := fmt.Errorf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
+		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+		return handleError("Build is not ready", err, updateErr)
+	}
+	return nil
+}
+
+// GetBuildRunObject retrieves an existing BuildRun based on a name and namespace
+func (r *ReconcileBuildRun) GetBuildRunObject(ctx context.Context, objectName string, objectNS string, buildRun *buildv1alpha1.BuildRun) error {
+	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, buildRun); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetBuildObject retrieves an existing Build based on a name and namespace
+func (r *ReconcileBuildRun) GetBuildObject(ctx context.Context, objectName string, objectNS string, build *buildv1alpha1.Build) error {
+	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, build); err != nil {
+		return err
+	}
+	return nil
+}
+
+// This function only returns multiple errors if each error is not nil.
+// And its error message.
+func handleError(message string, listOfErrors ...error) error {
+	var errSlice []string
+	for _, e := range listOfErrors {
+		if e != nil {
+			errSlice = append(errSlice, e.Error())
+		}
+	}
+	return fmt.Errorf("errors: %s, msg: %s", strings.Join(errSlice, ", "), message)
+}
+
+// VerifyRequestName parse a Reconcile request name and looks for an associated BuildRun name
+// If the BuildRun object exists, it will update it with an error.
+func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request reconcile.Request, buildRun *buildv1alpha1.BuildRun) {
+
+	regxBuildRun, _ := regexp.Compile(generatedNameRegex)
+
+	// Check if the name belongs to a TaskRun generated name https://regex101.com/r/Wjs3bV/10
+	// and extract the BuildRun name
+	matched := regxBuildRun.MatchString(request.Name)
+	if matched {
+		if split := regxBuildRun.Split(request.Name, 2); len(split) > 0 {
+			// Update the related BuildRun
+			err := r.GetBuildRunObject(ctx, split[0], request.Namespace, buildRun)
+			if err == nil {
+				// We ignore the errors from the following call, because the parent call of this function will always
+				// return back a reconcile.Result{}, nil. This is done to avoid infinite reconcile loops when a BuildRun
+				// does not longer exists
+				r.updateBuildRunErrorStatus(ctx, buildRun, fmt.Sprintf("taskRun %s doesn´t exist", request.Name))
+			}
+		}
+	}
+}
+
 func (r *ReconcileBuildRun) updateBuildRunUsingTaskRunCondition(ctx context.Context, buildRun *buildv1alpha1.BuildRun, taskRun *v1beta1.TaskRun, trCondition *apis.Condition) error {
 	var reason, message string = trCondition.Reason, trCondition.Message
 
@@ -547,6 +407,54 @@ func (r *ReconcileBuildRun) updateBuildRunUsingTaskRunCondition(ctx context.Cont
 	return nil
 }
 
+func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*v1beta1.TaskRun, error) {
+	var generatedTaskRun *v1beta1.TaskRun
+	// Choose a service account to use
+	serviceAccount, err := r.retrieveServiceAccount(ctx, build, buildRun)
+	if err != nil {
+		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+		return nil, handleError("Failed to choose a service account to use", err, updateErr)
+	}
+
+	if build.Spec.StrategyRef.Kind == nil || *build.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
+		buildStrategy, err := r.retrieveBuildStrategy(ctx, build)
+		if err != nil {
+			return nil, err
+		}
+		if buildStrategy != nil {
+			generatedTaskRun, err = resources.GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, buildStrategy)
+			if err != nil {
+				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+				return nil, handleError("Failed to generate the taskrun with buildStrategy", err, updateErr)
+			}
+		}
+	} else if *build.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
+		clusterBuildStrategy, err := r.retrieveClusterBuildStrategy(ctx, build)
+		if err != nil {
+			return nil, err
+		}
+		if clusterBuildStrategy != nil {
+			generatedTaskRun, err = resources.GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, clusterBuildStrategy)
+			if err != nil {
+				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+				return nil, handleError("Failed to generate the taskrun with clusterBuildStrategy", err, updateErr)
+			}
+		}
+	} else {
+		err := fmt.Errorf("unknown strategy %s", string(*build.Spec.StrategyRef.Kind))
+		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+		return nil, handleError(fmt.Sprintf("Unsupported BuildStrategy Kind: %v", build.Spec.StrategyRef.Kind), err, updateErr)
+	}
+
+	// Set OwnerReference for BuildRun and TaskRun
+	if err := r.setOwnerReferenceFunc(buildRun, generatedTaskRun, r.scheme); err != nil {
+		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+		return nil, handleError("failed to set OwnerReference for BuildRun and TaskRun", err, updateErr)
+	}
+
+	return generatedTaskRun, nil
+}
+
 func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ServiceAccount, error) {
 	serviceAccount := &corev1.ServiceAccount{}
 
@@ -565,7 +473,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 			ownerReference := metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun"))
 			serviceAccount.SetOwnerReferences([]metav1.OwnerReference{*ownerReference})
 
-			ApplyCredentials(ctx, build, serviceAccount)
+			resources.ApplyCredentials(ctx, build, serviceAccount)
 
 			return nil
 		})
@@ -576,12 +484,12 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 	} else {
 		// If ServiceAccount or the name of ServiceAccount in buildRun is nil, use pipeline serviceaccount
 		if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Name == nil {
-			serviceAccountName := pipelineServiceAccountName
+			serviceAccountName := resources.PipelineServiceAccountName
 			err := r.client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 			if err != nil && !apierrors.IsNotFound(err) {
 				return nil, err
 			} else if apierrors.IsNotFound(err) {
-				serviceAccountName = defaultServiceAccountName
+				serviceAccountName = resources.DefaultServiceAccountName
 				ctxlog.Info(ctx, "falling back to default serviceAccount", namespace, buildRun.Namespace)
 				err = r.client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: buildRun.Namespace}, serviceAccount)
 				if err != nil {
@@ -597,7 +505,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 		}
 
 		// Add credentials and update the service account
-		if modified := ApplyCredentials(ctx, build, serviceAccount); modified {
+		if modified := resources.ApplyCredentials(ctx, build, serviceAccount); modified {
 			ctxlog.Info(ctx, "updating ServiceAccount with secrets from build", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
 			if err := r.client.Update(ctx, serviceAccount); err != nil {
 				return nil, err
@@ -627,54 +535,6 @@ func (r *ReconcileBuildRun) retrieveClusterBuildStrategy(ctx context.Context, bu
 		return nil, err
 	}
 	return clusterBuildStrategyInstance, nil
-}
-
-func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*v1beta1.TaskRun, error) {
-	var generatedTaskRun *v1beta1.TaskRun
-	// Choose a service account to use
-	serviceAccount, err := r.retrieveServiceAccount(ctx, build, buildRun)
-	if err != nil {
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, handleError("Failed to choose a service account to use", err, updateErr)
-	}
-
-	if build.Spec.StrategyRef.Kind == nil || *build.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
-		buildStrategy, err := r.retrieveBuildStrategy(ctx, build)
-		if err != nil {
-			return nil, err
-		}
-		if buildStrategy != nil {
-			generatedTaskRun, err = GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, buildStrategy)
-			if err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return nil, handleError("Failed to generate the taskrun with buildStrategy", err, updateErr)
-			}
-		}
-	} else if *build.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
-		clusterBuildStrategy, err := r.retrieveClusterBuildStrategy(ctx, build)
-		if err != nil {
-			return nil, err
-		}
-		if clusterBuildStrategy != nil {
-			generatedTaskRun, err = GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, clusterBuildStrategy)
-			if err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return nil, handleError("Failed to generate the taskrun with clusterBuildStrategy", err, updateErr)
-			}
-		}
-	} else {
-		err := fmt.Errorf("unknown strategy %s", string(*build.Spec.StrategyRef.Kind))
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, handleError(fmt.Sprintf("Unsupported BuildStrategy Kind: %v", build.Spec.StrategyRef.Kind), err, updateErr)
-	}
-
-	// Set OwnerReference for BuildRun and TaskRun
-	if err := r.setOwnerReferenceFunc(buildRun, generatedTaskRun, r.scheme); err != nil {
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, handleError("failed to set OwnerReference for BuildRun and TaskRun", err, updateErr)
-	}
-
-	return generatedTaskRun, nil
 }
 
 // updateBuildRunErrorStatus updates buildRun status fields

@@ -21,9 +21,9 @@ import (
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	buildController "github.com/shipwright-io/build/pkg/controller/build"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/ctxlog"
+	buildController "github.com/shipwright-io/build/pkg/reconciler/build"
 	"github.com/shipwright-io/build/test"
 )
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package buildrun_test
+package resources_test
 
 import (
 	. "github.com/onsi/ginkgo"

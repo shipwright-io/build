@@ -31,9 +31,9 @@ import (
 	"github.com/shipwright-io/build/pkg/apis"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	buildrunctl "github.com/shipwright-io/build/pkg/controller/buildrun"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/ctxlog"
+	buildrunctl "github.com/shipwright-io/build/pkg/reconciler/buildrun"
 	"github.com/shipwright-io/build/test"
 )
 

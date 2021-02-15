@@ -15,6 +15,10 @@ import (
 	"github.com/shipwright-io/build/pkg/apis"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
+	"github.com/shipwright-io/build/pkg/reconciler/build"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun"
+	"github.com/shipwright-io/build/pkg/reconciler/buildstrategy"
+	"github.com/shipwright-io/build/pkg/reconciler/clusterbuildstrategy"
 )
 
 // AddToManagerFuncs is a list of functions to add all Controllers to the Manager
@@ -45,6 +49,22 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+		return nil, err
+	}
+
+	if err := build.Add(ctx, config, mgr); err != nil {
+		return nil, err
+	}
+
+	if err := buildrun.Add(ctx, config, mgr); err != nil {
+		return nil, err
+	}
+
+	if err := buildstrategy.Add(ctx, config, mgr); err != nil {
+		return nil, err
+	}
+
+	if err := clusterbuildstrategy.Add(ctx, config, mgr); err != nil {
 		return nil, err
 	}
 

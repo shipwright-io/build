@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/controller/utils"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,7 +19,7 @@ type RuntimeRef struct {
 // ValidatePath implements BuildPath interface and validates
 // that the Build spec runtime definition is properly populated
 func (r RuntimeRef) ValidatePath(ctx context.Context) error {
-	if utils.IsRuntimeDefined(r.Build) {
+	if resources.IsRuntimeDefined(r.Build) {
 		if len(r.Build.Spec.Runtime.Paths) == 0 {
 			r.Build.Status.Reason = build.RuntimePathsCanNotBeEmpty
 			r.Build.Status.Message = "the property 'spec.runtime.paths' must not be empty"
