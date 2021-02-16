@@ -110,7 +110,7 @@ As for `.spec.runtime.user.group`, it will take part of `USER` and `COPY --chown
 
 ### Tekton Tasks
 
-During the generation of [Tekton's `TaskRun`](https://github.com/shipwright-io/build/blob/17fa2792cc14288adea0bafa624e85b6db7232e0/pkg/controller/buildrun/generate_taskrun.go#L47), we have the opportunity to add extra steps. The first one to be added is the rendering of the `Dockerfile.runtime`, for instance:
+During the generation of [Tekton's `TaskRun`](https://github.com/shipwright-io/build/blob/6cad175fca9a0443c669ecf84ce526764e0260c1/pkg/reconciler/buildrun/resources/taskrun.go#L58), we have the opportunity to add extra steps. The first one to be added is the rendering of the `Dockerfile.runtime`, for instance:
 
 ```yml
 ---

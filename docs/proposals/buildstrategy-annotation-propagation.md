@@ -113,7 +113,7 @@ metadata:
 
 The implementation requires the [BuilderStrategy interface](../../pkg/apis/build/v1alpha1/buildstrategy.go) to be extended with a `GetAnnotations` functions that is implemented in the [BuildStrategy](../../pkg/apis/build/v1alpha1/buildstrategy_types.go) and [ClusterBuildStrategy](../../pkg/apis/build/v1alpha1/clusterbuildstrategy_types.go) types by returning the object's annotations.
 
-The assignment of the `TaskRun` annotations needs to be done in the [generate_taskrun.go](../../pkg/controller/buildrun/generate_taskrun.go) file in the `GenerateTaskRun` function. The annotations from the build strategy need to be copied to the `TaskRun` except those using one of the four Shipwright Build owned prefixes mentioned under [Proposal](#proposal), and except the `kubectl.kubernetes.io/last-applied-configuration` annotation.
+The assignment of the `TaskRun` annotations needs to be done in the [generate_taskrun.go](../../pkg/reconciler/buildrun/resources/taskrun.go) file in the `GenerateTaskRun` function. The annotations from the build strategy need to be copied to the `TaskRun` except those using one of the four Shipwright Build owned prefixes mentioned under [Proposal](#proposal), and except the `kubectl.kubernetes.io/last-applied-configuration` annotation.
 
 ### Risks and Mitigations
 
