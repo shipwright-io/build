@@ -499,6 +499,8 @@ func (r *ReconcileBuildRun) updateBuildRunUsingTaskRunCondition(ctx context.Cont
 				return err
 			}
 
+			buildRun.Status.FailedAt = &buildv1alpha1.FailedAt{Pod: pod.Name}
+
 			// Since the container status list is not sorted, as a quick workaround mark all failed containers
 			var failures = make(map[string]struct{})
 			for _, containerStatus := range pod.Status.ContainerStatuses {
@@ -517,6 +519,7 @@ func (r *ReconcileBuildRun) updateBuildRunUsingTaskRunCondition(ctx context.Cont
 			}
 
 			if failedContainer != nil {
+				buildRun.Status.FailedAt.Container = failedContainer.Name
 				message = fmt.Sprintf("buildrun step failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
 					pod.Name,
 					pod.Namespace,
@@ -529,11 +532,6 @@ func (r *ReconcileBuildRun) updateBuildRunUsingTaskRunCondition(ctx context.Cont
 					pod.Namespace,
 					pod.Name,
 				)
-			}
-
-			buildRun.Status.FailedAt = &buildv1alpha1.FailedAt{
-				Pod:       pod.Name,
-				Container: failedContainer.Name,
 			}
 		}
 	}

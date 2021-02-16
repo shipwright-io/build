@@ -13,6 +13,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	knativeapi "knative.dev/pkg/apis"
+	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -173,9 +175,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 					"Succeeded",
 					&taskRunName,
 					build.Condition{
-						Type:    build.Succeeded,
-						Reason:  "Succeeded",
-						Status:  corev1.ConditionTrue,
+						Type:   build.Succeeded,
+						Reason: "Succeeded",
+						Status: corev1.ConditionTrue,
 					},
 					corev1.ConditionTrue,
 					buildSample.Spec,
@@ -268,9 +270,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 					"Pending",
 					&taskRunName,
 					build.Condition{
-						Type:    build.Succeeded,
-						Reason:  "Pending",
-						Status:  corev1.ConditionUnknown,
+						Type:   build.Succeeded,
+						Reason: "Pending",
+						Status: corev1.ConditionUnknown,
 					},
 					corev1.ConditionUnknown,
 					buildSample.Spec,
@@ -298,9 +300,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 					"Running",
 					&taskRunName,
 					build.Condition{
-						Type:    build.Succeeded,
-						Reason:  "Running",
-						Status:  corev1.ConditionUnknown,
+						Type:   build.Succeeded,
+						Reason: "Running",
+						Status: corev1.ConditionUnknown,
 					},
 					corev1.ConditionUnknown,
 					buildSample.Spec,
@@ -325,9 +327,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 					"Succeeded",
 					&taskRunName,
 					build.Condition{
-						Type:    build.Succeeded,
-						Reason:  "Succeeded",
-						Status:  corev1.ConditionTrue,
+						Type:   build.Succeeded,
+						Reason: "Succeeded",
+						Status: corev1.ConditionTrue,
 					},
 					corev1.ConditionTrue,
 					buildSample.Spec,
@@ -353,9 +355,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 					"some message",
 					&taskRunName,
 					build.Condition{
-						Type:    build.Succeeded,
-						Reason:  "something bad happened",
-						Status:  corev1.ConditionFalse,
+						Type:   build.Succeeded,
+						Reason: "something bad happened",
+						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
@@ -393,7 +395,64 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// trigger a call to get the related TaskRun pod.
 				Expect(client.GetCallCount()).To(Equal(3))
 			})
+
+			It("does not break the reconcile when a failed taskrun has a pod with no failed container", func() {
+				buildRunSample = ctl.BuildRunWithBuildSnapshot(buildRunName, buildName)
+				taskRunSample = &v1beta1.TaskRun{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      taskRunName,
+						Namespace: ns,
+						Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
+					},
+					Spec: v1beta1.TaskRunSpec{},
+					Status: v1beta1.TaskRunStatus{
+						TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+							PodName: "foobar",
+							CompletionTime: &metav1.Time{
+								Time: time.Now(),
+							},
+							StartTime: &metav1.Time{
+								Time: time.Now(),
+							},
+						},
+						Status: knativev1beta1.Status{
+							Conditions: knativev1beta1.Conditions{
+								{
+									Type:    knativeapi.ConditionSucceeded,
+									Reason:  string(v1beta1.TaskRunReasonFailed),
+									Status:  corev1.ConditionFalse,
+									Message: "some message",
+								},
+							},
+						},
+					},
+				}
+
+				client.GetCalls(ctl.StubBuildCRDsPodAndTaskRun(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount("foobar"),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy(),
+					taskRunSample,
+					&corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "foobar",
+						},
+						Status: corev1.PodStatus{},
+					},
+				))
+
+				// Verify issue #591 by checking that Reconcile does not
+				// fail with a panic due to a nil pointer dereference:
+				// The pod has no container details and therefore the
+				// look-up logic will find no container (result is nil).
+				result, err := reconciler.Reconcile(taskRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+			})
 		})
+
 		Context("from an existing BuildRun resource", func() {
 			var (
 				saName           string
@@ -434,9 +493,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 					fmt.Sprintf(" \"%s\" not found", saName),
 					emptyTaskRunName,
 					build.Condition{
-						Type:    build.Succeeded,
-						Reason:  "Failed",
-						Status:  corev1.ConditionFalse,
+						Type:   build.Succeeded,
+						Reason: "Failed",
+						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
