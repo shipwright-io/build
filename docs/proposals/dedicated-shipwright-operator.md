@@ -139,7 +139,7 @@ Deleting the `ShipwrightBuild` instance should remove the associated deployment 
 However, the Build API CRDs will remain on the cluster, as these will be managed by OLM.
 
 At present, OLM does not delete CRDs and CRD instances if the associated operator is removed.
-This is by design to ensure user data is not accidently deleted - see [operator-framework/operator-lifecycle-manager#1326](https://github.com/operator-framework/operator-lifecycle-manager/issues/1326).
+This is by design to ensure user data is not accidentally deleted - see [operator-framework/operator-lifecycle-manager#1326](https://github.com/operator-framework/operator-lifecycle-manager/issues/1326).
 
 #### Installed Custom Resource Definitions
 
@@ -161,7 +161,7 @@ This would be useful if Project Shipwright produces additional components and cl
 **Risk**: Manifests uses to deploy Shipwright Builds in the `shipwright-io/operator` are not synchronized with content in `shipwright-io/build`.
 
 *Mitigation*: The operator's CI should include a test suite that runs the e2e tests in `shipwright-io/build`.
-Project maintainers should also ensure that deployment changes to `shipwright-io/build` carry accross to the operator.
+Project maintainers should also ensure that deployment changes to `shipwright-io/build` carry across to the operator.
 
 **Risk**: Operator will require permissions cluster admins will reject (ex - modify CRDs)
 

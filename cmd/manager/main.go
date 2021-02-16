@@ -125,7 +125,7 @@ func main() {
 	buildMetrics.InitPrometheus(buildCfg)
 
 	// Add optionally configured extra handlers to metrics endpoint
-	for path, handler := range buildMetrics.MetricsExtraHandlers() {
+	for path, handler := range buildMetrics.ExtraHandlers() {
 		ctxlog.Info(ctx, "Adding metrics extra handler path", "path", path)
 		if err := mgr.AddMetricsExtraHandler(path, handler); err != nil {
 			ctxlog.Error(ctx, err, "")
