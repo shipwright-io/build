@@ -13,7 +13,7 @@ metadata:
   name: buildah
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     name: buildah
     kind: ClusterBuildStrategy
@@ -30,7 +30,7 @@ metadata:
   namespace: build-test
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     name: buildah
   output:
@@ -48,7 +48,7 @@ metadata:
   namespace: build-test
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
     revision: master
     contextDir: src
   strategy:
@@ -73,7 +73,7 @@ metadata:
   namespace: build-test
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     name: buildah
   output:
@@ -87,7 +87,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     kind: BuildStrategy
   output:
@@ -101,7 +101,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -115,7 +115,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -131,7 +131,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -148,7 +148,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
     credentials:
       name: source-secret
   strategy:
@@ -165,7 +165,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   builder:
     image: heroku/buildpacks:18
     credentials:
@@ -184,7 +184,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
     credentials:
       name: source-secret
   builder:
@@ -205,7 +205,7 @@ apiVersion: build.dev/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -265,7 +265,7 @@ metadata:
     build.build.dev/build-run-deletion: "true"
 spec:
   source:
-    url: "https://github.com/sbose78/taxi"
+    url: "https://github.com/qu1queee/taxi"
   strategy:
     kind: ClusterBuildStrategy
   output:

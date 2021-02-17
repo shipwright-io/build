@@ -99,7 +99,7 @@ metadata:
     build.build.dev/verify.repository: "false"
 spec:
   source:
-    url: https://github.com/sbose78/taxi
+    url: https://github.com/qu1queee/taxi
     revision: master
 ```
 
@@ -141,7 +141,7 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: https://github.com/sbose78/taxi
+    url: https://github.com/qu1queee/taxi
     revision: master
 ```
 
@@ -178,7 +178,7 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: https://github.com/sbose78/taxi
+    url: https://github.com/qu1queee/taxi
     revision: master
   strategy:
     name: buildah

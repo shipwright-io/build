@@ -36,7 +36,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 	BeforeEach(func() {
 		buildpacks = "buildpacks-v3"
-		url = "https://github.com/sbose78/taxi"
+		url = "https://github.com/qu1queee/taxi"
 		dockerfile = "Dockerfile"
 	})
 
