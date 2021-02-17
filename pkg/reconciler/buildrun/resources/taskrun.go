@@ -20,20 +20,14 @@ import (
 )
 
 const (
-	// DefaultServiceAccountName defines the default sa name
-	// in vanilla Kubernetes clusters
-	DefaultServiceAccountName = "default"
-	// PipelineServiceAccountName defines the default sa name
-	// in vanilla OpenShift clusters
-	PipelineServiceAccountName = "pipeline"
-	inputSourceResourceName    = "source"
-	inputGitSourceURL          = "url"
-	inputGitSourceRevision     = "revision"
-	inputParamBuilderImage     = "BUILDER_IMAGE"
-	inputParamDockerfile       = "DOCKERFILE"
-	inputParamContextDir       = "CONTEXT_DIR"
-	outputImageResourceName    = "image"
-	outputImageResourceURL     = "url"
+	inputSourceResourceName = "source"
+	inputGitSourceURL       = "url"
+	inputGitSourceRevision  = "revision"
+	inputParamBuilderImage  = "BUILDER_IMAGE"
+	inputParamDockerfile    = "DOCKERFILE"
+	inputParamContextDir    = "CONTEXT_DIR"
+	outputImageResourceName = "image"
+	outputImageResourceURL  = "url"
 )
 
 // getStringTransformations gets us MANDATORY replacements using
