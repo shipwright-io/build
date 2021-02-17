@@ -172,7 +172,7 @@ golint:
 .PHONY: misspell
 misspell:
 	@echo "Checking misspell"
-	@find . -type f | grep -v /vendor | xargs misspell -source=text -error
+	@find . -type f -not -path './vendor/*' -not -path './.git/*' -not -path './build/*' -print0 | xargs -0 misspell -source=text -error
 
 # Install it via: go get -u honnef.co/go/tools/cmd/staticcheck
 .PHONY: staticcheck
