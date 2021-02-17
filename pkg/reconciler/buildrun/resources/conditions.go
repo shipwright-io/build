@@ -28,7 +28,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 	case v1beta1.TaskRunReasonTimedOut:
 		reason = "BuildRunTimeout"
 		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
-			taskRun.GetLabels()[buildv1alpha1.LabelBuildRun],
+			buildRun.Name,
 			taskRun.Spec.Timeout.Duration,
 		)
 

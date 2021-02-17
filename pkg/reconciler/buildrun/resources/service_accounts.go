@@ -38,7 +38,9 @@ func IsGeneratedServiceAccountUsed(buildRun *buildv1alpha1.BuildRun) bool {
 	return buildRun.Spec.ServiceAccount != nil && buildRun.Spec.ServiceAccount.Generate
 }
 
-// RetrieveServiceAccount ...
+// RetrieveServiceAccount provides either a default sa with a referenced secret or it will generate a new sa on the fly.
+// When not using the generate feature, it will modify and return the default sa from a k8s namespace, which is "default"
+// or the default sa inside an openshift namespace, which is "pipeline".
 func RetrieveServiceAccount(ctx context.Context, client client.Client, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*corev1.ServiceAccount, error) {
 	serviceAccount := &corev1.ServiceAccount{}
 

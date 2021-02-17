@@ -27,11 +27,6 @@ import (
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
 
 // Add creates a new BuildRun Controller and adds it to the Manager. The Manager will set fields on the Controller

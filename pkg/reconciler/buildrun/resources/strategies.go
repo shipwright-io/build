@@ -19,8 +19,7 @@ func RetrieveBuildStrategy(ctx context.Context, client client.Client, build *bui
 	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
 
 	ctxlog.Debug(ctx, "retrieving BuildStrategy", namespace, build.Namespace, name, build.Name)
-	err := client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name, Namespace: build.Namespace}, buildStrategyInstance)
-	if err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name, Namespace: build.Namespace}, buildStrategyInstance); err != nil {
 		return nil, err
 	}
 	return buildStrategyInstance, nil
@@ -31,8 +30,7 @@ func RetrieveClusterBuildStrategy(ctx context.Context, client client.Client, bui
 	clusterBuildStrategyInstance := &buildv1alpha1.ClusterBuildStrategy{}
 
 	ctxlog.Debug(ctx, "retrieving ClusterBuildStrategy", namespace, build.Namespace, name, build.Name)
-	err := client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
-	if err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name}, clusterBuildStrategyInstance); err != nil {
 		return nil, err
 	}
 	return clusterBuildStrategyInstance, nil

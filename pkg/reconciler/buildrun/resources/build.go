@@ -15,10 +15,7 @@ import (
 
 // GetBuildObject retrieves an existing Build based on a name and namespace
 func GetBuildObject(ctx context.Context, client client.Client, objectName string, objectNS string, build *buildv1alpha1.Build) error {
-	if err := client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, build); err != nil {
-		return err
-	}
-	return nil
+	return client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, build)
 }
 
 // IsOwnedByBuild checks if the controllerReferences contains a well known owner Kind
