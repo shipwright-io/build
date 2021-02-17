@@ -9,13 +9,39 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/shipwright-io/build/pkg/validate"
 )
+
+// ReconcileBuild reconciles a Build object
+type ReconcileBuild struct {
+	// This client, initialized using mgr.Client() above, is a split client
+	// that reads objects from the cache and writes to the apiserver
+	ctx                   context.Context
+	config                *config.Config
+	client                client.Client
+	scheme                *runtime.Scheme
+	setOwnerReferenceFunc setOwnerReferenceFunc
+}
+
+// NewReconciler returns a new reconcile.Reconciler
+func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
+	return &ReconcileBuild{
+		ctx:                   ctx,
+		config:                c,
+		client:                mgr.GetClient(),
+		scheme:                mgr.GetScheme(),
+		setOwnerReferenceFunc: ownerRef,
+	}
+}
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec

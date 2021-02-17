@@ -17,11 +17,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
@@ -33,6 +37,31 @@ const (
 	pendingReason      string = "Pending"
 	generatedNameRegex        = "-[a-z0-9]{5,5}$"
 )
+
+// blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileBuildRun{}
+
+// ReconcileBuildRun reconciles a BuildRun object
+type ReconcileBuildRun struct {
+	// This client, initialized using mgr.Client() above, is a split client
+	// that reads objects from the cache and writes to the apiserver
+	ctx                   context.Context
+	config                *config.Config
+	client                client.Client
+	scheme                *runtime.Scheme
+	setOwnerReferenceFunc setOwnerReferenceFunc
+}
+
+// NewReconciler returns a new reconcile.Reconciler
+func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
+	return &ReconcileBuildRun{
+		ctx:                   ctx,
+		config:                c,
+		client:                mgr.GetClient(),
+		scheme:                mgr.GetScheme(),
+		setOwnerReferenceFunc: ownerRef,
+	}
+}
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec

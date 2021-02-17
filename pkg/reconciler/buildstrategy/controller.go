@@ -7,8 +7,6 @@ package buildstrategy
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -27,16 +25,6 @@ func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	return add(ctx, mgr, NewReconciler(ctx, c, mgr))
 }
 
-// NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileBuildStrategy{
-		ctx:    ctx,
-		config: c,
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-	}
-}
-
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
@@ -52,17 +40,4 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 	}
 
 	return nil
-}
-
-// blank assignment to verify that ReconcileBuildStrategy implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileBuildStrategy{}
-
-// ReconcileBuildStrategy reconciles a BuildStrategy object
-type ReconcileBuildStrategy struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	ctx    context.Context
-	config *config.Config
-	client client.Client
-	scheme *runtime.Scheme
 }
