@@ -271,7 +271,7 @@ metadata:
   name: kaniko-medium
 spec:
   source:
-    url: https://github.com/sbose78/taxi
+    url: https://github.com/qu1queee/taxi
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy

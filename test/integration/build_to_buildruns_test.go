@@ -314,11 +314,11 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			tr01, err := tb.GetTaskRunFromBuildRun(buildRun01.Name)
 			Expect(err).To(BeNil())
-			Expect(tr01.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/sbose78/taxi"))
+			Expect(tr01.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/qu1queee/taxi"))
 
 			tr02, err := tb.GetTaskRunFromBuildRun(buildRun02.Name)
 			Expect(err).To(BeNil())
-			Expect(tr02.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/sbose78/taxi"))
+			Expect(tr02.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/qu1queee/taxi"))
 
 		})
 	})
