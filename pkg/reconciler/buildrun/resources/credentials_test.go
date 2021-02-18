@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package buildrun_test
+package resources_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	buildRunController "github.com/shipwright-io/build/pkg/controller/buildrun"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
 var _ = Describe("Credentials", func() {
@@ -67,7 +67,7 @@ var _ = Describe("Credentials", func() {
 
 		It("adds the credentials to the service account", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := buildRunController.ApplyCredentials(context.TODO(), build, afterServiceAccount)
+			modified := resources.ApplyCredentials(context.TODO(), build, afterServiceAccount)
 
 			Expect(modified).To(BeTrue())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
@@ -93,7 +93,7 @@ var _ = Describe("Credentials", func() {
 
 		It("keeps the service account unchanged", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := buildRunController.ApplyCredentials(context.TODO(), build, afterServiceAccount)
+			modified := resources.ApplyCredentials(context.TODO(), build, afterServiceAccount)
 
 			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
@@ -117,7 +117,7 @@ var _ = Describe("Credentials", func() {
 
 		It("keeps the service account unchanged", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := buildRunController.ApplyCredentials(context.TODO(), build, afterServiceAccount)
+			modified := resources.ApplyCredentials(context.TODO(), build, afterServiceAccount)
 
 			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))

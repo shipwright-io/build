@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package buildrun
+package resources
 
 import (
 	"fmt"
@@ -17,12 +17,15 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/controller/utils"
 )
 
 const (
-	defaultServiceAccountName  = "default"
-	pipelineServiceAccountName = "pipeline"
+	// DefaultServiceAccountName defines the default sa name
+	// in vanilla Kubernetes clusters
+	DefaultServiceAccountName = "default"
+	// PipelineServiceAccountName defines the default sa name
+	// in vanilla OpenShift clusters
+	PipelineServiceAccountName = "pipeline"
 	inputSourceResourceName    = "source"
 	inputGitSourceURL          = "url"
 	inputGitSourceRevision     = "revision"
@@ -165,7 +168,7 @@ func GenerateTaskSpec(
 	generatedTaskSpec.Volumes = vols
 
 	// checking for runtime-image settings, and appending more steps to the strategy
-	if utils.IsRuntimeDefined(build) {
+	if IsRuntimeDefined(build) {
 		if err := AmendTaskSpecWithRuntimeImage(cfg, &generatedTaskSpec, build); err != nil {
 			return nil, err
 		}

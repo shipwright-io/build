@@ -33,7 +33,7 @@ function listBashFiles() {
 }
 
 function listMarkdownFiles() {
-  find . -name '*.md' -not -path './vendor/*'
+  find . -name '*.md' -not -path './vendor/*' -not -path './.github/*'
 }
 
 function generateGoCopyright() {

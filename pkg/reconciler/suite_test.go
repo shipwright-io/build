@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package controller_test
+package reconciler_test
 
 import (
 	"testing"

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package buildstrategy_test
+package clusterbuildstrategy_test
 
 import (
 	"context"
@@ -14,36 +14,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/shipwright-io/build/pkg/config"
-	buildstrategyController "github.com/shipwright-io/build/pkg/controller/buildstrategy"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/ctxlog"
+	"github.com/shipwright-io/build/pkg/reconciler/clusterbuildstrategy"
 )
 
-var _ = Describe("Reconcile BuildStrategy", func() {
+var _ = Describe("Reconcile ClusterBuildStrategy", func() {
 	var (
-		manager                      *fakes.FakeManager
-		reconciler                   reconcile.Reconciler
-		request                      reconcile.Request
-		namespace, buildStrategyName string
+		manager           *fakes.FakeManager
+		reconciler        reconcile.Reconciler
+		request           reconcile.Request
+		buildStrategyName string
 	)
 
 	BeforeEach(func() {
-		buildStrategyName = "buildah"
-		namespace = "build-examples"
+		buildStrategyName = "kaniko"
 
 		// Fake the manager and get a reconcile Request
 		manager = &fakes.FakeManager{}
-		request = reconcile.Request{NamespacedName: types.NamespacedName{Name: buildStrategyName, Namespace: namespace}}
+		request = reconcile.Request{NamespacedName: types.NamespacedName{Name: buildStrategyName}}
 	})
 
 	JustBeforeEach(func() {
 		// Reconcile
 		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildstrategyController.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
+		reconciler = clusterbuildstrategy.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
 	})
 
 	Describe("Reconcile", func() {
-		Context("when request a new BuildStrategy", func() {
+		Context("when request a new ClusterBuildStrategy", func() {
 			It("succeed without any error", func() {
 				result, err := reconciler.Reconcile(request)
 				Expect(err).ToNot(HaveOccurred())

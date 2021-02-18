@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package buildrun_test
+package resources_test
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	buildrunCtl "github.com/shipwright-io/build/pkg/controller/buildrun"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/shipwright-io/build/test"
 )
 
@@ -69,7 +69,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps)
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps)
 				Expect(err).To(BeNil())
 			})
 
@@ -144,7 +144,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 
@@ -223,7 +223,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 
@@ -282,7 +282,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 
@@ -305,7 +305,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = buildrunCtl.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
 			})
 

@@ -1,3 +1,8 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
 # Shipwright Security and Disclosure Information
 
 Shipwright encourages all users and contributors to report potential security vulnerabilities to the project maintainers.

@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestBuildRun(t *testing.T) {
+func TestBuildrun(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "BuildRun Suite")
+	RunSpecs(t, "Buildrun Suite")
 }
