@@ -139,7 +139,8 @@ func InitPrometheus(config *config.Config) {
 	)
 }
 
-// ExtraHandlers returns a map of additional endpoint handlers
+// ExtraHandlers returns a mapping of paths and their respective
+// additional HTTP handlers to be configured at the metrics listener
 func ExtraHandlers() map[string]http.HandlerFunc {
 	return metricsExtraHandlers
 }
