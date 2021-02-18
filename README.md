@@ -73,72 +73,74 @@ Examples of `Build` resource using the example strategies shipped with this oper
 ## Try it!
 
 * Get a [Kubernetes](https://kubernetes.io/) cluster and [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) set up to connect to your cluster.
-* Clone this repository from GitHub:
+* Clone this repository from GitHub at the v0.3.0 tag:
 
-```bash
-$ git clone https://github.com/shipwright-io/build.git
-...
-$ cd build/
-```
+  ```bash
+  $ git clone --branch v0.3.0 https://github.com/shipwright-io/build.git
+  ...
+  $ cd build/
+  ```
+
+  _Coming soon - install Shipwright Build via kubectl!_
 
 * Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.20.1.
 
-```bash
-$ hack/install-tekton.sh
-```
+  ```bash
+  $ hack/install-tekton.sh
+  ```
 
 * Install the operator and sample strategies via `make`:
 
-```bash
-$ make install
-```
+  ```bash
+  $ make install
+  ```
 
 * Add a push secret to your container image repository, such as one on Docker Hub or quay.io:
 
-```yaml
-$ kubectl create secret generic push-secret \
---from-file=.dockerconfigjson=$HOME/.docker/config.json \
---type=kubernetes.io/dockerconfigjson
-```
+  ```yaml
+  $ kubectl create secret generic push-secret \
+  --from-file=.dockerconfigjson=$HOME/.docker/config.json \
+  --type=kubernetes.io/dockerconfigjson
+  ```
 
 * Create a [Cloud Native Buildpacks](samples/build/build_buildpacks_v3_cr.yaml) build, replacing
   `<MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>` with the registry hostname, username, and repository your
   cluster has access to and that you have permission to push images to.
 
-```bash
-$ kubectl apply -f - <<EOF
-apiVersion: build.dev/v1alpha1
-kind: Build
-metadata:
-  name: buildpack-nodejs-build
-spec:
-  source:
-    url: https://github.com/adambkaplan/shipwright-example-nodejs.git
-  strategy:
-    name: buildpacks-v3
-    kind: ClusterBuildStrategy
-  output:
-    image: <MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>:latest
-    credentials:
-      name: push-secret
-EOF
-```
+  ```bash
+  $ kubectl apply -f - <<EOF
+  apiVersion: build.dev/v1alpha1
+  kind: Build
+  metadata:
+    name: buildpack-nodejs-build
+  spec:
+    source:
+      url: https://github.com/adambkaplan/shipwright-example-nodejs.git
+    strategy:
+      name: buildpacks-v3
+      kind: ClusterBuildStrategy
+    output:
+      image: <MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>:latest
+      credentials:
+        name: push-secret
+  EOF
+  ```
 
 * Run your build:
 
-```bash
-$ kubectl apply -f - <<EOF
-apiVersion: build.dev/v1alpha1
-kind: BuildRun
-metadata:
-  name: buildpack-nodejs-build-1
-spec:
-  buildRef:
-    name: buildpack-nodejs-build
-  serviceAccount:
-    name: default
-EOF
-```
+  ```bash
+  $ kubectl apply -f - <<EOF
+  apiVersion: build.dev/v1alpha1
+  kind: BuildRun
+  metadata:
+    name: buildpack-nodejs-build-1
+  spec:
+    buildRef:
+      name: buildpack-nodejs-build
+    serviceAccount:
+      name: default
+  EOF
+  ```
 
 ## Roadmap
 
