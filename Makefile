@@ -235,6 +235,7 @@ test-e2e-plain: ginkgo
 
 install:
 	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
+	install-strategies
 
 install-with-pprof:
 	GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
