@@ -22,6 +22,9 @@ const (
 	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.5.2"
 	kanikoImageEnvVar  = "KANIKO_CONTAINER_IMAGE"
 
+	remoteArtifactsDefaultImage = "quay.io/quay/busybox:latest"
+	remoteArtifactsEnvVar       = "REMOTE_ARTIFACTS_CONTAINER_IMAGE"
+
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
@@ -58,12 +61,13 @@ var (
 // Config hosts different parameters that
 // can be set to use on the Build controllers
 type Config struct {
-	CtxTimeOut           time.Duration
-	KanikoContainerImage string
-	Prometheus           PrometheusConfig
-	ManagerOptions       ManagerOptions
-	Controllers          Controllers
-	KubeAPIOptions       KubeAPIOptions
+	CtxTimeOut                    time.Duration
+	KanikoContainerImage          string
+	RemoteArtifactsContainerImage string
+	Prometheus                    PrometheusConfig
+	ManagerOptions                ManagerOptions
+	Controllers                   Controllers
+	KubeAPIOptions                KubeAPIOptions
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -104,8 +108,9 @@ type KubeAPIOptions struct {
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
 func NewDefaultConfig() *Config {
 	return &Config{
-		CtxTimeOut:           contextTimeout,
-		KanikoContainerImage: kanikoDefaultImage,
+		CtxTimeOut:                    contextTimeout,
+		KanikoContainerImage:          kanikoDefaultImage,
+		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
 		Prometheus: PrometheusConfig{
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
@@ -147,6 +152,10 @@ func (c *Config) SetConfigFromEnv() error {
 
 	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {
 		c.KanikoContainerImage = kanikoImage
+	}
+
+	if remoteArtifactsImage := os.Getenv(remoteArtifactsEnvVar); remoteArtifactsImage != "" {
+		c.RemoteArtifactsContainerImage = remoteArtifactsImage
 	}
 
 	if err := updateBucketsConfig(&c.Prometheus.BuildRunCompletionDurationBuckets, metricBuildRunCompletionDurationBucketsEnvVar); err != nil {

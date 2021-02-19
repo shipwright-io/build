@@ -168,6 +168,12 @@ func GenerateTaskSpec(
 		}
 	}
 
+	// when sources is defined on `spec.build` it will prepend the step to handle remote artifacts,
+	// before all other steps
+	if IsSourcesDefined(build) {
+		AmendTaskSpecWithRemoteArtifacts(cfg, &generatedTaskSpec, build)
+	}
+
 	return &generatedTaskSpec, nil
 }
 

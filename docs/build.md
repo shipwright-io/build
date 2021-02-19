@@ -22,6 +22,7 @@ SPDX-License-Identifier: Apache-2.0
 A `Build` resource allows the user to define:
 
 - source
+- sources
 - strategy
 - builder
 - dockerfile
@@ -74,6 +75,7 @@ The `Build` definition supports the following fields:
 - Optional:
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
+  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into project context, before the actual build process starts.
   - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build.
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
@@ -247,6 +249,32 @@ spec:
     credentials:
       name: icr-knbuild
 ```
+
+### Sources
+
+Represents remote artifacts, as in external entities that will be added to the build context before the actual build starts. Therefore, you may employ `.spec.sources` to download artifacts from external repositories.
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: nodejs-ex
+spec:
+  sources:
+    - name: project-logo
+      url: https://gist.github.com/project/image.png
+```
+
+Under `.spec.sources` we have the following attributes:
+
+- `.name`: represents the name of resource, required attribute.
+- `.url`: universal resource location (URL), required attribute.
+
+When downloading artifacts the process is executed in the same directory where the application source-code is located, by default `/workspace/source`.
+
+Additionally, we have plan to keep evolving `.spec.sources` by adding more types of remote data declaration, this API field works as an extension point to support external and internal resource locations.
+
+At this initial stage, authentication is not supported therefore you can only download from sources without this mechanism in place.
 
 ### Runtime-Image
 
