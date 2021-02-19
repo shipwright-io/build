@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: build-operator
-  namespace: build-operator
+  name: shipwright-build-controller
+  namespace: shipwright-build
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: build-operator
+      name: shipwright-build
   template:
     metadata:
       labels:
-        name: build-operator
+        name: shipwright-build
     spec:
-      serviceAccountName: build-operator
+      serviceAccountName: shipwright-build-controller
       containers:
-        - name: build-operator
+        - name: shipwright-build
           image: ko://github.com/shipwright-io/build/cmd/manager
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: BUILD_OPERATOR_LEADER_ELECTION_NAMESPACE
+            - name: BUILD_CONTROLLER_LEADER_ELECTION_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
@@ -30,8 +30,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: OPERATOR_NAME
-              value: "build-operator"
+            - name: CONTROLLER_NAME
+              value: "shipwright-build"
           livenessProbe:
             exec:
               command:

@@ -116,21 +116,21 @@ jobs:
           run: curl -fsL https://github.com/google/ko/releases/download/v0.8.1/ko_0.8.1_Linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin ko
         - name: Install Shipwright Build
           run: |
-            make install-operator-kind
-            kubectl -n build-operator rollout status deployment build-operator --timeout=1m || true
+            make install-controller-kind
+            kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
         - name: Test
-          run: TEST_E2E_OPERATOR=managed_outside TEST_NAMESPACE=build-operator TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e make test-e2e
-        - name: Build operator logs
+          run: TEST_E2E_OPERATOR=managed_outside TEST_NAMESPACE=shipwright-build TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e make test-e2e
+        - name: Build controller logs
           if: ${{ failure() }}
           run: |
             echo "# Pods:"
-            kubectl -n build-operator get pod
+            kubectl -n shipwright-build get pod
             PODS=$(kubectl -n build-operator get pod -o json)
-            POD_NAME=$(echo "${PODS}" | jq -r '.items[] | select(.metadata.name | startswith("build-operator-")) | .metadata.name')
+            POD_NAME=$(echo "${PODS}" | jq -r '.items[] | select(.metadata.name | startswith("shipwright-build-controller-")) | .metadata.name')
             RESTART_COUNT=$(echo "${PODS}" | jq -r ".items[] | select(.metadata.name == \"${POD_NAME}\") | .status.containerStatuses[0].restartCount")
             if [ "${RESTART_COUNT}" != "0" ]; then
               echo "# Previous logs:"
               kubectl -n build-operator logs "${POD_NAME}" --previous || true
             fi
             echo "# Logs:"
-            kubectl -n build-operator logs "${POD_NAME}"
+            kubectl -n shipwright-build logs "${POD_NAME}"

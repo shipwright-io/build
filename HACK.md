@@ -4,7 +4,7 @@ Copyright The Shipwright Contributors
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Running the Operator
+# Running the Controller
 
 Assuming you are logged in to an OpenShift/Kubernetes cluster, run
 
@@ -33,7 +33,7 @@ Or
 oc policy add-role-to-user  system:image-builder  pipeline
 ```
 
-In the near future, the above would be setup by the operator.
+In the near future, the above would be setup by the controller.
 
 ## Building it locally
 

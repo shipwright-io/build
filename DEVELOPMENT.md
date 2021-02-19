@@ -94,7 +94,7 @@ You must install these tools:
 
 ## Environment Setup
 
-To run your operator, you'll need to set these environment variables (we recommend adding them to your `.bashrc`):
+To run your controller, you'll need to set these environment variables (we recommend adding them to your `.bashrc`):
 
 1.  `GOPATH`: If you don't have one, simply pick a directory and add `export
     GOPATH=...`
@@ -118,7 +118,7 @@ Note: This is roughly equivalent to [`docker login`](https://docs.docker.com/eng
 
 ## Install Shipwright Build
 
-The following set of steps highlight how to deploy a Build operator pod into an existing Kubernetes cluster.
+The following set of steps highlight how to deploy a Build controller pod into an existing Kubernetes cluster.
 
 1. Target your Kubernetes cluster and install the Shipwright Build. Run this from the root of the source repo:
 
@@ -130,17 +130,17 @@ The following set of steps highlight how to deploy a Build operator pod into an 
    image registry you push to, or `kind.local` if you're using
 [KinD](https://kind.sigs.k8s.io).
 
-1. Build and deploy the operator from source, from within the root of the repo:
+1. Build and deploy the controller from source, from within the root of the repo:
 
    ```sh
    ko apply -P -R -f deploy/
    ```
 
-The above steps give you a running Build operator that executes the code from your current branch.
+The above steps give you a running Build controller that executes the code from your current branch.
 
-### Redeploy operator
+### Redeploy controller
 
-As you make changes to the code, you can redeploy your operator with:
+As you make changes to the code, you can redeploy your controller with:
 
    ```sh
    ko apply -P -R -f deploy/
@@ -156,9 +156,9 @@ You can clean up everything with:
 
 ### Accessing logs
 
-To look at the operator logs, run:
+To look at the controller logs, run:
 
 ```sh
-kubectl -n build-operator logs $(kubectl -n build-operator get pods -l name=build-operator -o name)
+kubectl -n shipwright-build logs $(kubectl -n shipwright-build get pods -l name=shipwright-build-controller -o name)
 ```
 

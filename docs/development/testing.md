@@ -87,7 +87,7 @@ Integration tests are designed based on the following:
 
 - All significant features should have an integration test.
 - They require to have access to a Kubernetes cluster.
-- Each test generates its own instance of the build operator, namespace and resources.
+- Each test generates its own instance of the build controller, namespace and resources.
 - After test are executed, all generated resources for the particular test are removed.
 - They test all the interactions between components that have a relationship.
 - They do not test an e2e flow.

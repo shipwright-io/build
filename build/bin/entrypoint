@@ -10,7 +10,7 @@
 
 if ! whoami &>/dev/null; then
   if [ -w /etc/passwd ]; then
-    echo "${USER_NAME:-build-operator}:x:$(id -u):$(id -g):${USER_NAME:-build-operator} user:${HOME}:/sbin/nologin" >> /etc/passwd
+    echo "${USER_NAME:-shipwright-build-controller}:x:$(id -u):$(id -g):${USER_NAME:-shipwright-build-controller} user:${HOME}:/sbin/nologin" >> /etc/passwd
   fi
 fi
 

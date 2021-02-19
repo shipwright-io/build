@@ -105,7 +105,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			// TODO we currently have no codepath where this is relevant, but this namespace is the wrong one
 			// it is the watch namespace, but needs to be the operator namespace
 			namespace,
-			"build-operator",
+			"shipwright-build-controller",
 			1,
 			operatorDeploymentRetryInterval,
 			operatorDeploymentTimeout,

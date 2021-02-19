@@ -31,11 +31,11 @@ const (
 	prometheusEnabledLabelsEnvVar = "PROMETHEUS_ENABLED_LABELS"
 
 	leaderElectionNamespaceDefault = "default"
-	leaderElectionNamespaceEnvVar  = "BUILD_OPERATOR_LEADER_ELECTION_NAMESPACE"
+	leaderElectionNamespaceEnvVar  = "BUILD_CONTROLLER_LEADER_ELECTION_NAMESPACE"
 
-	leaseDurationEnvVar = "BUILD_OPERATOR_LEASE_DURATION"
-	renewDeadlineEnvVar = "BUILD_OPERATOR_RENEW_DEADLINE"
-	retryPeriodEnvVar   = "BUILD_OPERATOR_RETRY_PERIOD"
+	leaseDurationEnvVar = "BUILD_CONTROLLER_LEASE_DURATION"
+	renewDeadlineEnvVar = "BUILD_CONTROLLER_RENEW_DEADLINE"
+	retryPeriodEnvVar   = "BUILD_CONTROLLER_RETRY_PERIOD"
 )
 
 var (

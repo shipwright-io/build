@@ -5,8 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #
-# Installs Tekton Pipelines operator.
-#
+# Installs Tekton Pipelines.
 
 set -eu
 
