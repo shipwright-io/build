@@ -33,7 +33,7 @@ as [Kaniko](https://github.com/GoogleContainerTools/kaniko),
 
 ## Build Strategies
 
-The following are the build strategies supported by this operator, out-of-the-box:
+The following [Build Strategies](docs/buildstrategies.md) are installed by default:
 
 * [Source-to-Image](docs/buildstrategies.md#source-to-image)
 * [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
@@ -42,9 +42,9 @@ The following are the build strategies supported by this operator, out-of-the-bo
 
 Users have the option to define their own `BuildStrategy` or `ClusterBuildStrategy` resources and make them available for consumption via the `Build` resource.
 
-## Operator Resources
+## Custom Resources
 
-This operator ships four CRDs :
+Shipwright defines four CRDs:
 
 * The `BuildStrategy` CRD and the `ClusterBuildStrategy` CRD is used to register a strategy.
 * The `Build` CRD is used to define a build configuration.
@@ -62,7 +62,7 @@ This operator ships four CRDs :
 
 ## Examples
 
-Examples of `Build` resource using the example strategies shipped with this operator.
+Examples of `Build` resource using the example strategies installed by default.
 
 * [`buildah`](samples/build/build_buildah_cr.yaml)
 * [`buildpacks-v3-heroku`](samples/build/build_buildpacks-v3-heroku_cr.yaml)
@@ -89,7 +89,7 @@ Examples of `Build` resource using the example strategies shipped with this oper
   $ hack/install-tekton.sh
   ```
 
-* Install the operator and sample strategies via `make`:
+* Install Shipwright and sample strategies via `make`:
 
   ```bash
   $ make install
@@ -179,7 +179,3 @@ We are so excited to have you!
   Click [here](https://lists.shipwright.io/admin/lists/shipwright-users.lists.shipwright.io/) to join.
   - Contributors can discuss active development topics at [shipwright-dev@lists.shipwright.io](https://lists.shipwright.io/archives/list/shipwright-dev@lists.shipwright.io/).
   Click [here](https://lists.shipwright.io/admin/lists/shipwright-dev.lists.shipwright.io/) to join.
-
-[corev1container]: https://github.com/kubernetes/api/blob/v0.17.3/core/v1/types.go#L2106
-[pipelinesoperator]: https://www.openshift.com/learn/topics/pipelines
-[operatorsdk]: https://github.com/operator-framework/operator-sdk
