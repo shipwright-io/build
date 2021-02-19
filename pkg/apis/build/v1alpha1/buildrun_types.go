@@ -61,6 +61,10 @@ type BuildRunStatus struct {
 	// +optional
 	LatestTaskRunRef *string `json:"latestTaskRunRef,omitempty"`
 
+	// ServiceAccountName is the name of the serviceAccount used to run the build.
+	// +optional
+	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
+
 	// StartTime is the time the build is actually started.
 	// +optional
 	StartTime *metav1.Time `json:"startTime,omitempty"`

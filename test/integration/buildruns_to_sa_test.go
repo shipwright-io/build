@@ -76,13 +76,16 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			_, err = tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			saName := fmt.Sprintf("%s-sa", buildRunObject.Name)
+			sa, err := tb.GetSA(saName)
 			Expect(err).To(BeNil())
+			Expect(sa).ToNot(BeNil())
+			Expect(buildRunObject.Status.ServiceAccountName).To(Equal(saName))
 
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			_, err = tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			_, err = tb.GetSA(saName)
 			Expect(err).ToNot(BeNil())
 
 		})
@@ -95,7 +98,14 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 		})
 
 		It("uses the pipeline serviceaccount if exists", func() {
-			Expect(tb.CreateSAFromName("pipeline")).To(BeNil())
+			saName := "pipeline"
+			err := tb.CreateSAFromName(saName)
+			Expect(err).To(BeNil())
+
+
+			sa, err := tb.GetSA(saName)
+			Expect(err).To(BeNil())
+			Expect(sa).ToNot(BeNil())
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -103,10 +113,13 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
+			Expect(sa).ToNot(BeNil())
+			Expect(buildRunObject.Status.ServiceAccountName).To(Equal(saName))
+
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(tr.Spec.ServiceAccountName).To(Equal("pipeline"))
+			Expect(tr.Spec.ServiceAccountName).To(Equal(buildRunObject.Status.ServiceAccountName))
 		})
 
 		It("defaults to default serviceaccount if pipeline serviceaccount is not specified", func() {
@@ -120,7 +133,6 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
-
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(tr.Spec.ServiceAccountName).To(Equal(expectedServiceAccount))
@@ -141,6 +153,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
+
 			buildRunCondition := br.Status.GetCondition(v1alpha1.Succeeded)
 			Expect(buildRunCondition).ToNot(BeNil())
 			Expect(buildRunCondition.Status).To(Equal(corev1.ConditionFalse))

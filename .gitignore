@@ -78,3 +78,5 @@ tags
 # JetBrains IDE config
 .idea
 **/*coverprofile*
+.DS_Store
+

@@ -127,7 +127,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// initialize a TaskRun, we need this to fake the existence of a Tekton TaskRun
 				taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded")
-
 				// initialize a BuildRun, we need this to fake the existence of a BuildRun
 				buildRunSample = ctl.DefaultBuildRun(buildRunName, buildName)
 			})

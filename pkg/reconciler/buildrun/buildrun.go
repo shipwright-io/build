@@ -147,16 +147,17 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-
 			ctxlog.Info(ctx, "creating TaskRun from BuildRun", namespace, request.Namespace, name, generatedTaskRun.GenerateName, "BuildRun", buildRun.Name)
 			if err = r.client.Create(ctx, generatedTaskRun); err != nil {
 				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
 				return reconcile.Result{}, resources.HandleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
 			}
 
-			// Set the LastTaskRunRef in the BuildRun status
+			// Set the LastTaskRunRef and the serviceAccountName in the BuildRun status
 			buildRun.Status.LatestTaskRunRef = &generatedTaskRun.Name
-			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name)
+			serviceAccountName := &generatedTaskRun.Spec.ServiceAccountName
+			buildRun.Status.ServiceAccountName = serviceAccountName
+			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name and serviceAccountName", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name, "ServiceAccountName", serviceAccountName)
 			if err = r.client.Status().Update(ctx, buildRun); err != nil {
 				// we ignore the error here to prevent another reconciliation that would create another TaskRun,
 				// the LatestTaskRunRef field will also be set in the reconciliation from a TaskRun

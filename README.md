@@ -103,12 +103,17 @@ Examples of `Build` resource using the example strategies installed by default.
   --type=kubernetes.io/dockerconfigjson
   ```
 
-* Create a [Cloud Native Buildpacks](samples/build/build_buildpacks_v3_cr.yaml) build, replacing
-  `<MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>` with the registry hostname, username, and repository your
-  cluster has access to and that you have permission to push images to.
+* Set the following environment variables to match your destination image:
+  ```
+  export MY_REGISTRY=my-registry.io
+  export MY_USERNAME=my-username
+  export MY_REPO=my-image-repo
+  ```
+
+* Create a [Cloud Native Buildpacks](samples/build/build_buildpacks_v3_cr.yaml) build:
 
   ```bash
-  $ kubectl apply -f - <<EOF
+  $ envsubst <<EOF | kubectl apply -f -
   apiVersion: build.dev/v1alpha1
   kind: Build
   metadata:
@@ -120,7 +125,7 @@ Examples of `Build` resource using the example strategies installed by default.
       name: buildpacks-v3
       kind: ClusterBuildStrategy
     output:
-      image: <MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>:latest
+      image: ${MY_REGISTRY}/${MY_USERNAME}/${MY_REPO}:latest
       credentials:
         name: push-secret
   EOF
