@@ -12,8 +12,6 @@ import (
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-
-	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 
@@ -24,6 +22,7 @@ import (
 
 	buildconfig "github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller"
+	"github.com/shipwright-io/build/pkg/controller/ready"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildMetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/shipwright-io/build/version"
@@ -75,10 +74,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	r := ready.NewFileReady()
+	r := ready.NewFileReady("/tmp/shipwright-build-ready")
 	err = r.Set()
 	if err != nil {
-		ctxlog.Error(ctx, err, "Checking for /tmp/operator-sdk-ready failed")
+		ctxlog.Error(ctx, err, "Checking for /tmp/shipwright-build-ready failed")
 		os.Exit(1)
 	}
 	defer r.Unset()
