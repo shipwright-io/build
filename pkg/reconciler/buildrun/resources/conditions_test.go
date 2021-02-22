@@ -5,12 +5,22 @@
 package resources_test
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/controller/fakes"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/shipwright-io/build/test"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"knative.dev/pkg/apis"
 )
 
 var _ = Describe("Conditions", func() {
@@ -100,6 +110,158 @@ var _ = Describe("Conditions", func() {
 
 			condMsg := br.Status.GetCondition(build.Succeeded).GetMessage()
 			Expect(condMsg).To(Equal("foobar was updated"))
+		})
+
+	})
+	Context("Operating with TaskRun Conditions", func() {
+		var (
+			client *fakes.FakeClient
+			ctl    test.Catalog
+			br     *build.BuildRun
+			tr     *v1beta1.TaskRun
+		)
+
+		tr = ctl.TaskRunWithStatus("foo", "bar")
+		br = ctl.DefaultBuildRun("foo", "bar")
+		client = &fakes.FakeClient{}
+
+		It("updates BuildRun condition when TaskRun timeout", func() {
+
+			fakeTRCondition := &apis.Condition{
+				Type:    apis.ConditionSucceeded,
+				Reason:  "TaskRunTimeout",
+				Message: "not relevant",
+			}
+
+			Expect(resources.UpdateBuildRunUsingTaskRunCondition(
+				context.TODO(),
+				client,
+				br,
+				tr,
+				fakeTRCondition,
+			)).To(BeNil())
+		})
+
+		It("updates BuildRun condition when TaskRun fails and pod not found", func() {
+
+			// stub a GET API call that fails with not found
+			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				switch object.(type) {
+				case *corev1.Pod:
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+				return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+			}
+			// fake the calls with the above stub
+			client.GetCalls(getClientStub)
+
+			fakeTRCondition := &apis.Condition{
+				Type:    apis.ConditionSucceeded,
+				Reason:  "Failed",
+				Message: "not relevant",
+			}
+
+			Expect(resources.UpdateBuildRunUsingTaskRunCondition(
+				context.TODO(),
+				client,
+				br,
+				tr,
+				fakeTRCondition,
+			)).To(BeNil())
+		})
+
+		It("updates a BuildRun condition when the related TaskRun fails and pod containers are available", func() {
+
+			// generate a pod that have a single container and
+			// one entry in the ContainerStatuses field, with
+			// an exitCode
+			taskRunGeneratedPod := corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foopod",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "foobar-container",
+						},
+					},
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "foobar-container",
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									Reason:   "foobar",
+									ExitCode: 1,
+								},
+							},
+						},
+					},
+				},
+			}
+
+			// stub a GET API call with taskRunGeneratedPod
+			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				switch object := object.(type) {
+				case *corev1.Pod:
+					taskRunGeneratedPod.DeepCopyInto(object)
+					return nil
+				}
+				return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+			}
+
+			// fake the calls with the above stub
+			client.GetCalls(getClientStub)
+
+			fakeTRCondition := &apis.Condition{
+				Type:    apis.ConditionSucceeded,
+				Reason:  "Failed",
+				Message: "not relevant",
+			}
+
+			Expect(resources.UpdateBuildRunUsingTaskRunCondition(
+				context.TODO(),
+				client,
+				br,
+				tr,
+				fakeTRCondition,
+			)).To(BeNil())
+		})
+
+		It("updates a BuildRun condition when the related TaskRun fails and pod containers are not available", func() {
+
+			taskRunGeneratedPod := corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foobar",
+				},
+			}
+
+			// stub a GET API call with the above taskRunGeneratedPod spec
+			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				switch object := object.(type) {
+				case *corev1.Pod:
+					taskRunGeneratedPod.DeepCopyInto(object)
+					return nil
+				}
+				return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+			}
+			// fake the calls with the above stub
+			client.GetCalls(getClientStub)
+
+			fakeTRCondition := &apis.Condition{
+				Type:    apis.ConditionSucceeded,
+				Reason:  "Failed",
+				Message: "not relevant",
+			}
+
+			Expect(resources.UpdateBuildRunUsingTaskRunCondition(
+				context.TODO(),
+				client,
+				br,
+				tr,
+				fakeTRCondition,
+			)).To(BeNil())
 		})
 	})
 })

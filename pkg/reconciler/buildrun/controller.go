@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -28,11 +27,6 @@ import (
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
 
 // Add creates a new BuildRun Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -40,17 +34,6 @@ type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Sch
 func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "buildrun-controller")
 	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference))
-}
-
-// NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
-	return &ReconcileBuildRun{
-		ctx:                   ctx,
-		config:                c,
-		client:                mgr.GetClient(),
-		scheme:                mgr.GetScheme(),
-		setOwnerReferenceFunc: ownerRef,
-	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -140,18 +123,4 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			}
 		}),
 	}, predTaskRun)
-}
-
-// blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileBuildRun{}
-
-// ReconcileBuildRun reconciles a BuildRun object
-type ReconcileBuildRun struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	ctx                   context.Context
-	config                *config.Config
-	client                client.Client
-	scheme                *runtime.Scheme
-	setOwnerReferenceFunc setOwnerReferenceFunc
 }

@@ -41,17 +41,6 @@ func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference))
 }
 
-// NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
-	return &ReconcileBuild{
-		ctx:                   ctx,
-		config:                c,
-		client:                mgr.GetClient(),
-		scheme:                mgr.GetScheme(),
-		setOwnerReferenceFunc: ownerRef,
-	}
-}
-
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
@@ -183,17 +172,6 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			return reconcileList
 		}),
 	}, preSecret)
-}
-
-// ReconcileBuild reconciles a Build object
-type ReconcileBuild struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	ctx                   context.Context
-	config                *config.Config
-	client                client.Client
-	scheme                *runtime.Scheme
-	setOwnerReferenceFunc setOwnerReferenceFunc
 }
 
 func buildSecretRefAnnotationExist(annotation map[string]string) (string, bool) {

@@ -165,6 +165,26 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 	}
 }
 
+// BuildWithOutputSecret ....
+func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName string) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: build.BuildSpec{
+			Source: build.GitSource{
+				URL: "https://github.com/qu1queee/taxi",
+			},
+			Output: build.Image{
+				SecretRef: &corev1.LocalObjectReference{
+					Name: secretName,
+				},
+			},
+		},
+	}
+}
+
 // ClusterBuildStrategy to support tests
 func (c *Catalog) ClusterBuildStrategy(name string) *build.ClusterBuildStrategy {
 	return &build.ClusterBuildStrategy{
@@ -447,6 +467,41 @@ func (c *Catalog) StubBuildCRDsPodAndTaskRun(
 			return nil
 		}
 		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+// TaskRunWithStatus returns a minimal tekton TaskRun with an Status
+func (c *Catalog) TaskRunWithStatus(trName string, ns string) *v1beta1.TaskRun {
+	return &v1beta1.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      trName,
+			Namespace: ns,
+		},
+		Spec: v1beta1.TaskRunSpec{
+			Timeout: &metav1.Duration{
+				Duration: time.Minute * 2,
+			},
+		},
+		Status: v1beta1.TaskRunStatus{
+			Status: knativev1beta1.Status{
+				Conditions: knativev1beta1.Conditions{
+					{
+						Type:   apis.ConditionSucceeded,
+						Reason: "Unknown",
+						Status: corev1.ConditionUnknown,
+					},
+				},
+			},
+			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+				PodName: "foobar-pod",
+				StartTime: &metav1.Time{
+					Time: time.Now(),
+				},
+				CompletionTime: &metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		},
 	}
 }
 
@@ -735,6 +790,21 @@ func (c *Catalog) DefaultServiceAccount(name string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+		},
+	}
+}
+
+// ServiceAccountWithControllerRef ... TODO
+func (c *Catalog) ServiceAccountWithControllerRef(name string) *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Name: "ss",
+					Kind: "BuildRun",
+				},
+			},
 		},
 	}
 }
