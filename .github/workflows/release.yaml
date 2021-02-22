@@ -19,11 +19,15 @@ jobs:
       with:
         fetch-depth: 0
     - name: Build Release Changelog
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PREVIOUS_TAG: ${{ github.event.inputs.tags }}
       run: |
-        git fetch --all --tags --prune --force
-        echo -e "# Insert Title\n" > Changes.md
-        git log --pretty=format:"%h -  %s - %an" ${{ github.event.inputs.tags }}..HEAD | grep -v "Merge pull" >> Changes.md
-        echo -e "## Features\n\n## Fixes\n\n## Backwards incompatible changes\n\n## Docs\n\n## Misc\n\n## Thanks" >> Changes.md    - name: Draft Release
+        # might not be necessary but make sure
+        chmod +x "${GITHUB_WORKSPACE}/.github/draft_release_notes.sh"
+        export GITHUB_TOKEN
+        export PREVIOUS_TAG
+        "${GITHUB_WORKSPACE}/.github/draft_release_notes.sh"
     - name: Draft release
       id: draft_release
       uses: actions/create-release@v1
