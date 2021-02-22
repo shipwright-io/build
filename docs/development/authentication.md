@@ -25,7 +25,7 @@ There are two places where users might need to define authentication when buildi
 
 ## Build Secrets Annotation
 
-Users need to add an annotation `build.build.dev/referenced.secret: "true"` to a build secret so that build controller can decide to take a reconcile action when a secret event (`create`, `update` and `delete`) happens. Below is a secret example with build annotation:
+Users need to add an annotation `build.shipwright.io/referenced.secret: "true"` to a build secret so that build controller can decide to take a reconcile action when a secret event (`create`, `update` and `delete`) happens. Below is a secret example with build annotation:
 
 ```yaml
 apiVersion: v1
@@ -34,7 +34,7 @@ data:
 kind: Secret
 metadata:
   annotations:
-    build.build.dev/referenced.secret: "true"
+    build.shipwright.io/referenced.secret: "true"
   name: secret-docker
 type: kubernetes.io/dockerconfigjson
 ```
@@ -45,7 +45,7 @@ If you are using `kubectl` command create secrets, then you can first create bui
 
 ```sh
 kubectl -n ${namespace} create secret docker-registry example-secret --docker-server=${docker-server} --docker-username="${username}" --docker-password="${password}" --docker-email=me@here.com
-kubectl -n ${namespace} annotate secrets example-secret build.build.dev/referenced.secret='true'
+kubectl -n ${namespace} annotate secrets example-secret build.shipwright.io/referenced.secret='true'
 ```
 
 ## Authentication for Git
@@ -70,7 +70,7 @@ metadata:
   annotations:
     tekton.dev/git-0: github.com
     tekton.dev/git-1: gitlab.com
-    build.build.dev/referenced.secret: "true"
+    build.shipwright.io/referenced.secret: "true"
 type: kubernetes.io/ssh-auth
 data:
   ssh-privatekey: <base64 <~/.ssh/id_rsa>
@@ -91,7 +91,7 @@ metadata:
   annotations:
     tekton.dev/git-0: https://github.com
     tekton.dev/git-1: https://gitlab.com
-    build.build.dev/referenced.secret: "true"
+    build.shipwright.io/referenced.secret: "true"
 type: kubernetes.io/basic-auth
 stringData:
   username: <cleartext username>
@@ -107,7 +107,7 @@ Depending on the secret type, there are two ways of doing this:
 When using ssh auth, users should follow:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah-golang-build
@@ -121,7 +121,7 @@ spec:
 When using basic auth, users should follow:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah-golang-build
@@ -146,7 +146,7 @@ kubectl --namespace <YOUR_NAMESPACE> create secret docker-registry <CONTAINER_RE
   --docker-username=<USERNAME> \
   --docker-password=<PASSWORD> \
   --docker-email=me@here.com
-kubectl --namespace <YOUR_NAMESPACE> annotate secrets <CONTAINER_REGISTRY_SECRET_NAME> build.build.dev/referenced.secret='true'
+kubectl --namespace <YOUR_NAMESPACE> annotate secrets <CONTAINER_REGISTRY_SECRET_NAME> build.shipwright.io/referenced.secret='true'
 ```
 
 _Notes:_ When generating a secret to access docker hub, the `REGISTRY_HOST` value should be `https://index.docker.io/v1/`, the username is the Docker ID.
@@ -158,7 +158,7 @@ With the right secret in place (_note: Ensure creation of secret in the proper K
 For container registries, the secret should be placed under the `spec.output.credentials` path.
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah-golang-build

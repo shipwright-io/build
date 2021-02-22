@@ -232,7 +232,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			br, err := tb.GetBR(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.build.dev \"%s\" not found", BUILD+tb.Namespace)))
+			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.shipwright.io \"%s\" not found", BUILD+tb.Namespace)))
 			Expect(br.Status.StartTime).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("Failed"))
@@ -293,7 +293,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).ToNot(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
-			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.build.dev \"%s\" not found", BUILD+tb.Namespace+"foobar")))
+			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.shipwright.io \"%s\" not found", BUILD+tb.Namespace+"foobar")))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("Failed"))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))

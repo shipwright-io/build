@@ -7,7 +7,7 @@ package test
 // MinimalBuildahBuildRun defines a simple
 // BuildRun with a referenced Build
 const MinimalBuildahBuildRun = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildah-run
@@ -19,7 +19,7 @@ spec:
 // BuildahBuildRunWithSA defines a BuildRun
 // with a service-account
 const BuildahBuildRunWithSA = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildah-run
@@ -34,7 +34,7 @@ spec:
 // BuildahBuildRunWithSAAndOutput defines a BuildRun
 // with a service-account and output overrides
 const BuildahBuildRunWithSAAndOutput = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildah-run
@@ -51,7 +51,7 @@ spec:
 // BuildpacksBuildRunWithSA defines a BuildRun
 // with a service-account
 const BuildpacksBuildRunWithSA = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildpacks-v3-run
@@ -67,7 +67,7 @@ spec:
 // BuildahBuildRunWithTimeOutAndSA defines a BuildRun
 // with a service-account and timeout
 const BuildahBuildRunWithTimeOutAndSA = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildah-run
@@ -83,7 +83,7 @@ spec:
 // MinimalBuildRun defines a minimal BuildRun
 // with a reference to a not existing Build
 const MinimalBuildRun = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 spec:
   buildRef:
@@ -93,7 +93,7 @@ spec:
 // MinimalBuildRunWithSpecifiedServiceAccount defines a minimal BuildRun
 // with a reference to a not existing serviceAccount
 const MinimalBuildRunWithSpecifiedServiceAccount = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 spec:
   buildRef:
@@ -105,7 +105,7 @@ spec:
 // MinimalBuildRunWithSAGeneration defines a minimal BuildRun
 // with a reference to a not existing Build
 const MinimalBuildRunWithSAGeneration = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 spec:
   serviceAccount:
@@ -117,7 +117,7 @@ spec:
 // MinimalBuildRunWithTimeOut defines a BuildRun with
 // an override for the Build Timeout
 const MinimalBuildRunWithTimeOut = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 spec:
   timeout: 1s
@@ -128,7 +128,7 @@ spec:
 // MinimalBuildRunWithOutput defines a BuildRun with
 // an override for the Build Output
 const MinimalBuildRunWithOutput = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 spec:
   output:

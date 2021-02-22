@@ -107,7 +107,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				buildRun.Labels = make(map[string]string)
 			}
 
-			// Set OwnerReference for Build and BuildRun only when build.build.dev/build-run-deletion is set "true"
+			// Set OwnerReference for Build and BuildRun only when build.shipwright.io/build-run-deletion is set "true"
 			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true" && !resources.IsOwnedByBuild(build, buildRun.OwnerReferences) {
 				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
 					build.Status.Reason = buildv1alpha1.SetOwnerReferenceFailed

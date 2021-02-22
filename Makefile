@@ -242,7 +242,7 @@ install-with-pprof:
 install-apis:
 	kubectl apply -f deploy/crds/
 	# Wait for the CRD type to be established; this can take a second or two.
-	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.build.dev
+	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.shipwright.io
 
 install-controller: install-apis
 	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/

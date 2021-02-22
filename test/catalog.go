@@ -511,7 +511,7 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, n
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trName,
 			Namespace: ns,
-			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
+			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
@@ -540,7 +540,7 @@ func (c *Catalog) TaskRunWithCompletionAndStartTime(trName string, buildRunName 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trName,
 			Namespace: ns,
-			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
+			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
@@ -573,7 +573,7 @@ func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName stri
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trName,
 			Namespace: ns,
-			Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
+			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
@@ -615,7 +615,7 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 }
 
 // BuildWithBuildRunDeletions returns a minimal Build object with the
-// build.build.dev/build-run-deletion annotation set to true
+// build.shipwright.io/build-run-deletion annotation set to true
 func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
 	return &build.Build{
 		ObjectMeta: metav1.ObjectMeta{
@@ -635,7 +635,7 @@ func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName stri
 }
 
 // BuildWithBuildRunDeletionsAndFakeNS returns a minimal Build object with the
-// build.build.dev/build-run-deletion annotation set to true in a fake namespace
+// build.shipwright.io/build-run-deletion annotation set to true in a fake namespace
 func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
 	return &build.Build{
 		ObjectMeta: metav1.ObjectMeta{

@@ -7,7 +7,7 @@ package test
 // MinimalBuildahBuild defines a simple
 // Build with a source and a strategy
 const MinimalBuildahBuild = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah
@@ -23,7 +23,7 @@ spec:
 // BuildahBuildWithOutput defines a simple
 // Build with a source, strategy and output
 const BuildahBuildWithOutput = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah
@@ -41,7 +41,7 @@ spec:
 // source, strategy, builder, output and
 // timeout
 const BuildpacksBuildWithBuilderAndTimeOut = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildpacks-v3
@@ -66,7 +66,7 @@ spec:
 // Buildah with source, strategy, output and
 // timeout
 const BuildahBuildWithTimeOut = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah
@@ -83,7 +83,7 @@ spec:
 
 // BuildBSMinimal defines a Build with a BuildStrategy
 const BuildBSMinimal = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -97,7 +97,7 @@ spec:
 // BuildCBSMinimal defines a Build with a
 // ClusterBuildStrategy
 const BuildCBSMinimal = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -111,7 +111,7 @@ spec:
 // BuildCBSMinimalWithFakeSecret defines a Build with a
 // ClusterBuildStrategy and an not existing secret
 const BuildCBSMinimalWithFakeSecret = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -127,7 +127,7 @@ spec:
 // BuildWithOutputRefSecret defines a Build with a
 // referenced secret under spec.output
 const BuildWithOutputRefSecret = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -144,7 +144,7 @@ spec:
 // BuildWithSourceRefSecret defines a Build with a
 // referenced secret under spec.source
 const BuildWithSourceRefSecret = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -161,7 +161,7 @@ spec:
 // BuildWithBuilderRefSecret defines a Build with a
 // referenced secret under spec.builder
 const BuildWithBuilderRefSecret = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -180,7 +180,7 @@ spec:
 // BuildWithMultipleRefSecrets defines a Build with
 // multiple referenced secrets under spec
 const BuildWithMultipleRefSecrets = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -201,7 +201,7 @@ spec:
 // BuildCBSWithShortTimeOut defines a Build with a
 // ClusterBuildStrategy and a short timeout
 const BuildCBSWithShortTimeOut = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -216,7 +216,7 @@ spec:
 // BuildCBSWithWrongURL defines a Build with a
 // ClusterBuildStrategy and a non-existing url
 const BuildCBSWithWrongURL = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
@@ -230,11 +230,11 @@ spec:
 // BuildCBSWithVerifyRepositoryAnnotation defines a Build
 // with the verify repository annotation key
 const BuildCBSWithVerifyRepositoryAnnotation = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   annotations:
-    build.build.dev/verify.repository: ""
+    build.shipwright.io/verify.repository: ""
 spec:
   strategy:
     kind: ClusterBuildStrategy
@@ -245,7 +245,7 @@ spec:
 // BuildCBSWithoutVerifyRepositoryAnnotation defines a minimal
 // Build without source url and annotation
 const BuildCBSWithoutVerifyRepositoryAnnotation = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   strategy:
@@ -258,11 +258,11 @@ spec:
 // ClusterBuildStrategy and the annotation for automatic BuildRun
 // deletion
 const BuildCBSWithBuildRunDeletion = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   annotations:
-    build.build.dev/build-run-deletion: "true"
+    build.shipwright.io/build-run-deletion: "true"
 spec:
   source:
     url: "https://github.com/qu1queee/taxi"

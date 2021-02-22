@@ -40,7 +40,7 @@ const (
 
 const (
 	// BuildDomain is the domain used for all labels and annotations for this resource
-	BuildDomain = "build.build.dev"
+	BuildDomain = "build.shipwright.io"
 
 	// LabelBuild is a label key for defining the build name
 	LabelBuild = BuildDomain + "/name"

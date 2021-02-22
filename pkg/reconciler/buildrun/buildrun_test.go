@@ -402,7 +402,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      taskRunName,
 						Namespace: ns,
-						Labels:    map[string]string{"buildrun.build.dev/name": buildRunName},
+						Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 					},
 					Spec: v1beta1.TaskRunSpec{},
 					Status: v1beta1.TaskRunStatus{

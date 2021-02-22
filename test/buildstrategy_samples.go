@@ -8,7 +8,7 @@ package test
 // BuildStrategy for Buildah with two steps
 // each of them with different container resources
 const MinimalBuildahBuildStrategy = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildStrategy
 metadata:
   name: buildah
@@ -62,12 +62,12 @@ spec:
 // BuildStrategy for Buildah with a single step
 // and container resources
 const BuildahBuildStrategySingleStep = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildStrategy
 metadata:
   annotations:
     kubernetes.io/ingress-bandwidth: 1M
-    clusterbuildstrategy.build.dev/dummy: aValue
+    clusterbuildstrategy.shipwright.io/dummy: aValue
     kubectl.kubernetes.io/last-applied-configuration: anotherValue
     kubernetes.io/egress-bandwidth: 1M
   name: buildah
@@ -102,7 +102,7 @@ spec:
 // BuildStrategy for Buildpacks with a single step
 // and container resources
 const BuildpacksBuildStrategySingleStep = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildStrategy
 metadata:
   name: buildpacks-v3

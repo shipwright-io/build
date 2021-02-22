@@ -49,7 +49,7 @@ In order to prevent users from triggering `BuildRuns` (_execution of a Build_) t
 | --- | --- |
 | BuildStrategyNotFound   | The referenced namespace-scope strategy doesn´t exist. |
 | ClusterBuildStrategyNotFound   | The referenced cluster-scope strategy doesn´t exist. |
-| SetOwnerReferenceFailed   | Setting ownerreferences between a Build and a BuildRun failed. This is triggered when making use of the `build.build.dev/build-run-deletion` annotation in a Build. |
+| SetOwnerReferenceFailed   | Setting ownerreferences between a Build and a BuildRun failed. This is triggered when making use of the `build.shipwright.io/build-run-deletion` annotation in a Build. |
 | SpecSourceSecretNotFound | The secret used to authenticate to git doesn´t exist. |
 | SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn´t exist. |
 | SpecRuntimeSecretRefNotFound | The secret used to authenticate to the container registry doesn´t exist.|
@@ -62,7 +62,7 @@ In order to prevent users from triggering `BuildRuns` (_execution of a Build_) t
 The `Build` definition supports the following fields:
 
 - Required:
-  - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `build.dev/v1alpha1`.
+  - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1alpha1`.
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `Build`.
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `Build`.
   - `spec.source.URL` - Refers to the Git repository containing the source code.
@@ -76,7 +76,7 @@ The `Build` definition supports the following fields:
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build.
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
-  - `metadata.annotations[build.build.dev/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
+  - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
 
 ### Defining the Source
 
@@ -86,17 +86,17 @@ A `Build` resource can specify a Git source, together with other parameters like
 - `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name.
 - `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently, only supported by `buildah`, `kaniko` and `buildpacks` build strategies.
 
-By default, the Build controller will validate that the Git repository exists. If the validation is not desired, users can define the `build.build.dev/verify.repository` annotation with `false`. For example:
+By default, the Build controller will validate that the Git repository exists. If the validation is not desired, users can define the `build.shipwright.io/verify.repository` annotation with `false`. For example:
 
-Example of a `Build` with the **build.build.dev/verify.repository** annotation, in order to disable the `spec.source.url` validation.
+Example of a `Build` with the **build.shipwright.io/verify.repository** annotation, in order to disable the `spec.source.url` validation.
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah-golang-build
   annotations:
-    build.build.dev/verify.repository: "false"
+    build.shipwright.io/verify.repository: "false"
 spec:
   source:
     url: https://github.com/qu1queee/taxi
@@ -108,7 +108,7 @@ _Note_: The Build controller only validates two scenarios. The first one where t
 Example of a `Build` with a source with **credentials** defined by the user.
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildpack-nodejs-build
@@ -122,7 +122,7 @@ spec:
 Example of a `Build` with a source that specifies an specific subfolder on the repository.
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah-custom-context-dockerfile
@@ -135,7 +135,7 @@ spec:
 Example of a `Build` that specifies an specific branch on the git repository:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah-golang-build
@@ -157,7 +157,7 @@ A `Build` resource can specify the `BuildStrategy` to use, these are:
 Defining the strategy is straightforward, you need to define the `name` and the `kind`. For example:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildpack-nodejs-build
@@ -172,7 +172,7 @@ spec:
 A `Build` resource can specify an image containing the tools to build the final image. Users can do this via the `spec.builder` or the `spec.dockerfile`. For example, the user choose  the `Dockerfile` file under the source repository.
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildah-golang-build
@@ -189,7 +189,7 @@ spec:
 Another example, when the user chooses to use a `builder` image ( This is required for `source-to-image` buildStrategy, because for different code languages, they have different builders. ):
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: s2i-nodejs-build
@@ -210,7 +210,7 @@ A `Build` resource can specify the output where the image should be pushed. For 
 For example, the user specify a public registry:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: s2i-nodejs-build
@@ -229,7 +229,7 @@ spec:
 Another example, is when the user specifies a private registry:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: s2i-nodejs-build
@@ -254,7 +254,7 @@ Runtime-image is a new image composed with build-strategy outcome. On which you 
 The following examples illustrates how to the `runtime`:
 
 ```yml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: nodejs-ex-runtime
@@ -305,13 +305,13 @@ Under the cover, the runtime image will be an additional step in the generated T
 
 ## BuildRun deletion
 
-A `Build` can automatically delete a related `BuildRun`. To enable this feature set the  `build.build.dev/build-run-deletion` annotation to `true` in the `Build` instance. By default the annotation is never present in a `Build` definition. See an example of how to define this annotation:
+A `Build` can automatically delete a related `BuildRun`. To enable this feature set the  `build.shipwright.io/build-run-deletion` annotation to `true` in the `Build` instance. By default the annotation is never present in a `Build` definition. See an example of how to define this annotation:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: kaniko-golang-build
   annotations:
-    build.build.dev/build-run-deletion: "true"
+    build.shipwright.io/build-run-deletion: "true"
 ```

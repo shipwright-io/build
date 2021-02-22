@@ -47,7 +47,7 @@ When the controller reconciles it:
 The `BuildRun` definition supports the following fields:
 
 - Required:
-  - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `build.dev/v1alpha1`.
+  - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1alpha1`.
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `BuildRun`.
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `BuildRun`.
   - `spec.buildRef` - Specifies an existing `Build` resource instance to use.
@@ -62,7 +62,7 @@ The `BuildRun` definition supports the following fields:
 A `BuildRun` resource can reference a `Build` resource, that indicates what image to build. For example:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced
@@ -76,7 +76,7 @@ spec:
 A `BuildRun` resource can define a serviceaccount to use. Usually this SA will host all related secrets referenced on the `Build` resource, for example:
 
 ```yaml
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced

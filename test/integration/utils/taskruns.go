@@ -20,7 +20,7 @@ import (
 
 // GetTaskRunFromBuildRun retrieves an owned TaskRun based on the BuildRunName
 func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRun, error) {
-	taskRunLabelSelector := fmt.Sprintf("buildrun.build.dev/name=%s", buildRunName)
+	taskRunLabelSelector := fmt.Sprintf("buildrun.shipwright.io/name=%s", buildRunName)
 
 	trInterface := t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace)
 

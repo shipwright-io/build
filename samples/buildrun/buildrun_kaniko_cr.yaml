@@ -1,5 +1,5 @@
 ---
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: kaniko-golang-buildrun

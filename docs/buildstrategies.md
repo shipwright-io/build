@@ -26,7 +26,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-There are two types of strategies, the `ClusterBuildStrategy` (`clusterbuildstrategies.build.dev/v1alpha1`) and the `BuildStrategy` (`buildstrategies.build.dev/v1alpha1`). Both strategies define a shared group of steps, needed to fullfil the application build.
+There are two types of strategies, the `ClusterBuildStrategy` (`clusterbuildstrategies.shipwright.io/v1alpha1`) and the `BuildStrategy` (`buildstrategies.shipwright.io/v1alpha1`). Both strategies define a shared group of steps, needed to fullfil the application build.
 
 A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is available within a namespace.
 
@@ -97,7 +97,7 @@ To use this strategy follow this steps:
 - Create a `Build` resource that uses `quay.io` or `DockerHub` image repository for pushing the image. Also, provide credentials to access it.
 
   ```yaml
-  apiVersion: build.dev/v1alpha1
+  apiVersion: shipwright.io/v1alpha1
   kind: Build
   metadata:
     name: buildpack-nodejs-build
@@ -115,7 +115,7 @@ To use this strategy follow this steps:
 - Start a `BuildRun` resource.
 
   ```yaml
-  apiVersion: build.dev/v1alpha1
+  apiVersion: shipwright.io/v1alpha1
   kind: BuildRun
   metadata:
     name: buildpack-nodejs-buildrun
@@ -178,7 +178,7 @@ If the strategy admins would require to have multiple flavours of the same strat
 
 ```yaml
 ---
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: kaniko-small
@@ -222,7 +222,7 @@ spec:
           cpu: 250m
           memory: 65Mi
 ---
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: kaniko-medium
@@ -271,7 +271,7 @@ The above provides more control and flexibility for the strategy admins. For `en
 
 ```yaml
 ---
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: kaniko-medium
@@ -495,9 +495,9 @@ Annotations can be defined for a BuildStrategy/ClusterBuildStrategy as for any o
 The following annotations are not propagated:
 
 - `kubectl.kubernetes.io/last-applied-configuration`
-- `clusterbuildstrategy.build.dev/*`
-- `buildstrategy.build.dev/*`
-- `build.build.dev/*`
-- `buildrun.build.dev/*`
+- `clusterbuildstrategy.shipwright.io/*`
+- `buildstrategy.shipwright.io/*`
+- `build.shipwright.io/*`
+- `buildrun.shipwright.io/*`
 
 A Kubernetes administrator can further restrict the usage of annotations by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).
