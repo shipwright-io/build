@@ -5,18 +5,10 @@ go:
 services:
   - docker
 install:
-  - make travis
   - |
     # Install ko
-    curl -L https://github.com/google/ko/releases/download/v0.8.0/ko_0.8.0_Linux_x86_64.tar.gz | tar xzf - ko
-    chmod +x ./ko
-    sudo mv ko /usr/local/bin
+    curl -fsL https://github.com/google/ko/releases/download/v0.8.0/ko_0.8.0_Linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin ko
 
-script:
-  - set -e
-  - make
-  - make test-e2e TEST_IMAGE_REPO="$(./hack/install-registry.sh show):5000/shipwright-io/build-e2e"
-  - set +e
 deploy:
   - provider: script
     script: make release TAG=latest

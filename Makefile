@@ -247,6 +247,9 @@ install-apis:
 install-operator: install-apis
 	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
 
+install-operator-kind: install-apis
+	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
+
 install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
 
@@ -276,7 +279,3 @@ kind-tekton:
 kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
-
-travis: install-counterfeiter ginkgo gocov kubectl kind
-	./hack/install-tekton.sh
-	./hack/install-operator-sdk.sh

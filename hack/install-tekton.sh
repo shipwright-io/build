@@ -15,8 +15,6 @@ TEKTON_VERSION="${TEKTON_VERSION:-v0.20.1}"
 TEKTON_HOST="github.com"
 TEKTON_HOST_PATH="tektoncd/pipeline/releases/download"
 
-echo "# Deploying Tekton Pipelines Operator '${TEKTON_VERSION}'"
+echo "# Deploying Tekton Pipelines '${TEKTON_VERSION}'"
 
-kubectl apply \
-    --filename="https://${TEKTON_HOST}/${TEKTON_HOST_PATH}/${TEKTON_VERSION}/release.yaml" \
-    --output="yaml"
+kubectl apply -f "https://${TEKTON_HOST}/${TEKTON_HOST_PATH}/${TEKTON_VERSION}/release.yaml"
