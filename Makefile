@@ -20,7 +20,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 # configure zap based logr
-ZAP_FLAGS ?= --zap-level=debug --zap-encoder=console
+ZAP_FLAGS ?= --zap-log-level=debug --zap-encoder=console
 # extra flags passed to operator-sdk
 OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
