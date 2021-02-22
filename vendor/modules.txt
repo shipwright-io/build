@@ -23,11 +23,6 @@ github.com/beorn7/perks/quantile
 github.com/blang/semver
 # github.com/cespare/xxhash/v2 v2.1.1
 github.com/cespare/xxhash/v2
-# github.com/coreos/prometheus-operator v0.38.1-0.20200424145508-7e176fda06cc
-github.com/coreos/prometheus-operator/pkg/apis/monitoring
-github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1
-github.com/coreos/prometheus-operator/pkg/client/versioned/scheme
-github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/emicklei/go-restful v2.9.5+incompatible
@@ -245,8 +240,6 @@ github.com/operator-framework/operator-sdk/internal/util/k8sutil
 github.com/operator-framework/operator-sdk/internal/util/kubebuilder
 github.com/operator-framework/operator-sdk/internal/util/projutil
 github.com/operator-framework/operator-sdk/pkg/k8sutil
-github.com/operator-framework/operator-sdk/pkg/kube-metrics
-github.com/operator-framework/operator-sdk/pkg/metrics
 github.com/operator-framework/operator-sdk/pkg/ready
 github.com/operator-framework/operator-sdk/pkg/test
 github.com/operator-framework/operator-sdk/pkg/test/e2eutil
@@ -749,9 +742,6 @@ k8s.io/kube-openapi/pkg/generators
 k8s.io/kube-openapi/pkg/generators/rules
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/util/sets
-# k8s.io/kube-state-metrics v1.7.2
-k8s.io/kube-state-metrics/pkg/metric
-k8s.io/kube-state-metrics/pkg/metrics_store
 # k8s.io/kubectl v0.18.10
 ## explicit
 k8s.io/kubectl/pkg/scheme
