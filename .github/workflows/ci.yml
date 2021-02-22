@@ -24,14 +24,17 @@ jobs:
           run: make test-unit-coverage
     integration:
         strategy:
+          fail-fast: false
           matrix:
             go-version: [1.15.x]
             os: [ubuntu-latest]
             kubernetes:
-              - v1.17.17
+              # Only v1.18 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
+              #- v1.17.17
               - v1.18.15
-              - v1.19.7
-              - v1.20.2
+              #- v1.19.7
+              #- v1.20.2
+          max-parallel: 1
         runs-on: ${{ matrix.os }}
         steps:
         - name: Install Go
@@ -64,14 +67,17 @@ jobs:
           run: make test-integration
     e2e:
         strategy:
+          fail-fast: false
           matrix:
             go-version: [1.15.x]
             os: [ubuntu-latest]
             kubernetes:
-              - v1.17.17
+              # Only v1.18 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
+              #- v1.17.17
               - v1.18.15
-              - v1.19.7
-              - v1.20.2
+              #- v1.19.7
+              #- v1.20.2
+          max-parallel: 2
         runs-on: ${{ matrix.os }}
         steps:
         - name: Install Go
@@ -107,7 +113,7 @@ jobs:
             kubectl apply -f test/data/registry.yaml
             kubectl -n registry rollout status deployment registry --timeout=1m
         - name: Install ko
-          run: curl -fsL https://github.com/google/ko/releases/download/v0.8.0/ko_0.8.0_Linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin ko
+          run: curl -fsL https://github.com/google/ko/releases/download/v0.8.1/ko_0.8.1_Linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin ko
         - name: Install Shipwright Build
           run: |
             make install-operator-kind
@@ -117,5 +123,14 @@ jobs:
         - name: Build operator logs
           if: ${{ failure() }}
           run: |
-            POD_NAME=$(kubectl -n build-operator get pod -o json | jq -r '.items[0].metadata.name')
+            echo "# Pods:"
+            kubectl -n build-operator get pod
+            PODS=$(kubectl -n build-operator get pod -o json)
+            POD_NAME=$(echo "${PODS}" | jq -r '.items[] | select(.metadata.name | startswith("build-operator-")) | .metadata.name')
+            RESTART_COUNT=$(echo "${PODS}" | jq -r ".items[] | select(.metadata.name == \"${POD_NAME}\") | .status.containerStatuses[0].restartCount")
+            if [ "${RESTART_COUNT}" != "0" ]; then
+              echo "# Previous logs:"
+              kubectl -n build-operator logs "${POD_NAME}" --previous
+            fi
+            echo "# Logs:"
             kubectl -n build-operator logs "${POD_NAME}"

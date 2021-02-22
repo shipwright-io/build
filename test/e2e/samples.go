@@ -18,6 +18,7 @@ import (
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"knative.dev/pkg/apis"
 
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -81,7 +82,7 @@ func amendBuild(identifier string, b *operator.Build) {
 }
 
 // CreateBuild loads the builds definition from the file path, unifies the output image based on
-// the identifier and creates it in a namespace
+// the identifier, creates it in a namespace and waits for it to be registered
 func createBuild(ctx *framework.Context, namespace string, identifier string, filePath string, timeout time.Duration, retry time.Duration) {
 	Logf("Creating build %s", identifier)
 
@@ -98,6 +99,23 @@ func createBuild(ctx *framework.Context, namespace string, identifier string, fi
 	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
 
 	Logf("Build %s created", identifier)
+
+	buildName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      b.Name,
+	}
+
+	trueCondition := corev1.ConditionTrue
+	falseCondition := corev1.ConditionFalse
+
+	Eventually(func() corev1.ConditionStatus {
+		err = clientGet(buildName, b)
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving a build")
+
+		Expect(b.Status.Registered).ToNot(Equal(falseCondition), "Build registered status is false")
+
+		return b.Status.Registered
+	}, time.Duration(20*getTimeoutMultiplier())*time.Second, time.Second).Should(Equal(trueCondition), "Build was not registered")
 }
 
 // retrieveBuildAndBuildRun will retrieve the build and buildRun

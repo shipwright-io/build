@@ -82,6 +82,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
@@ -104,6 +107,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
@@ -117,6 +123,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		It("should be able to override the build output", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			buildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
@@ -149,6 +158,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			// Wait for BR to get an Starttime
@@ -175,6 +187,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			Expect(tb.CreateBuild(build)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
@@ -237,6 +252,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
@@ -258,6 +276,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		It("fails the buildrun with a not found Reason", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			buildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
@@ -287,6 +308,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		It("creates one tr per buildrun with the original build data", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			buildRun01, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace+"01",
@@ -340,6 +364,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
 				BUILD+tb.Namespace,
@@ -352,7 +379,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
 			Expect(err).To(BeNil())
 
-			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			br, err := tb.GetBRTillOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
 			Expect(ownerReferenceNames(br.OwnerReferences)).Should(ContainElement(buildObject.Name))
 
@@ -368,6 +395,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		It("does not deletes the buildrun if the annotation is changed", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
@@ -389,7 +419,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			err = tb.DeleteBuild(BUILD + tb.Namespace)
 			Expect(err).To(BeNil())
 
-			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			br, err := tb.GetBRTillNotOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
 			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
 
@@ -397,6 +427,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		It("does not deletes the buildrun if the annotation is removed", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
@@ -418,7 +451,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			err = tb.DeleteBuild(BUILD + tb.Namespace)
 			Expect(err).To(BeNil())
 
-			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			br, err := tb.GetBRTillNotOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
 			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
 
@@ -426,6 +459,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		It("does delete the buildrun after several modifications of the annotation", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
 				BUILDRUN+tb.Namespace,
@@ -457,7 +493,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(patchedBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]).To(Equal("true"))
 
-			br, err := tb.GetBR(BUILDRUN + tb.Namespace)
+			br, err := tb.GetBRTillOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
 			Expect(ownerReferenceNames(br.OwnerReferences)).Should(ContainElement(buildObject.Name))
 

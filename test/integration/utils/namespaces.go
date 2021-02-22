@@ -8,7 +8,9 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // This class is intended to host all CRUD calls for Namespace primitive resources
@@ -25,7 +27,30 @@ func (t *TestBuild) CreateNamespace() error {
 	if err != nil {
 		return err
 	}
-	return nil
+
+	// wait for the default service account to exist and contain the token secret
+	var (
+		pollServiceAccount = func() (bool, error) {
+
+			serviceAccountInterface := t.Clientset.CoreV1().ServiceAccounts(t.Namespace)
+
+			serviceAccount, err := serviceAccountInterface.Get(context.TODO(), "default", metav1.GetOptions{})
+			if err != nil {
+				if !apierrors.IsNotFound(err) {
+					return false, err
+				}
+				return false, nil
+			}
+
+			if len(serviceAccount.Secrets) > 0 {
+				return true, nil
+			}
+
+			return false, nil
+		}
+	)
+
+	return wait.PollImmediate(t.Interval, t.TimeOut, pollServiceAccount)
 }
 
 // DeleteNamespaces remove existing namespaces that match the provided list name items

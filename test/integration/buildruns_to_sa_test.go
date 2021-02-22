@@ -6,6 +6,7 @@ package integration_test
 
 import (
 	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo"
@@ -71,6 +72,9 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
@@ -99,6 +103,9 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
@@ -115,6 +122,9 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 				expectedServiceAccount = "pipeline"
 			}
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
@@ -137,6 +147,9 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 		It("it fails and updates buildrun conditions if the specified serviceaccount doesn't exist", func() {
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
@@ -149,4 +162,3 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 		})
 	})
 })
-
