@@ -123,7 +123,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v1.3.0
+      image: gcr.io/kaniko-project/executor:v1.5.1
       workingDir: /workspace/source
       securityContext:
         runAsUser: 0
@@ -151,6 +151,7 @@ spec:
         - --destination=$(build.output.image)
         - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
+        - --push-retry=3
       resources:
         limits:
           cpu: 500m
@@ -171,7 +172,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v1.3.0
+      image: gcr.io/kaniko-project/executor:v1.5.1
       workingDir: /workspace/source
       securityContext:
         runAsUser: 0
@@ -199,6 +200,7 @@ spec:
         - --destination=$(build.output.image)
         - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
+        - --push-retry=3
       resources:
         limits:
           cpu: 500m
@@ -283,7 +285,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v1.3.0
+      image: gcr.io/kaniko-project/executor:v1.5.1
       workingDir: /workspace/source
       securityContext:
         runAsUser: 0
@@ -311,6 +313,7 @@ spec:
         - --destination=$(build.output.image)
         - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
+        - --push-retry=3
       resources:
         limits:
           cpu: 500m
