@@ -36,13 +36,13 @@ spec:
             exec:
               command:
                 - stat
-                - /tmp/operator-sdk-ready
+                - /tmp/shipwright-build-ready
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             exec:
               command:
                 - stat
-                - /tmp/operator-sdk-ready
+                - /tmp/shipwright-build-ready
             initialDelaySeconds: 5
             periodSeconds: 10
