@@ -19,7 +19,7 @@ const (
 	// E.g. if 5 seconds is wanted, the CTX_TIMEOUT=5
 	contextTimeoutEnvVar = "CTX_TIMEOUT"
 
-	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.3.0"
+	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.5.1"
 	kanikoImageEnvVar  = "KANIKO_CONTAINER_IMAGE"
 
 	// environment variable to override the buckets

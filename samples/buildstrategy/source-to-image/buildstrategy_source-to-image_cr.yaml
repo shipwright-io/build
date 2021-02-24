@@ -24,12 +24,13 @@ spec:
         - '--destination=$(build.output.image)'
         - '--oci-layout-path=/workspace/output/image'
         - '--snapshotMode=redo'
+        - '--push-retry=3'
       command:
         - /kaniko/executor
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
-      image: gcr.io/kaniko-project/executor:v1.3.0
+      image: gcr.io/kaniko-project/executor:v1.5.1
       name: build-and-push
       securityContext:
         runAsUser: 0

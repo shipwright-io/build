@@ -32,7 +32,7 @@ A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is a
 
 ## Available ClusterBuildStrategies
 
-Well-known strategies can be boostrapped from [here](../samples/buildstrategy). The current supported Cluster BuildStrategy are:
+Well-known strategies can be bootstrapped from [here](../samples/buildstrategy). The current supported Cluster BuildStrategy are:
 
 - [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
 - [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)
@@ -185,7 +185,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.3.0
+      image: gcr.io/kaniko-project/executor:v1.5.1
       workingDir: /workspace/source
       securityContext:
         runAsUser: 0
@@ -211,6 +211,9 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=/workspace/source/$(build.source.contextDir)
         - --destination=$(build.output.image)
+        - --oci-layout-path=/workspace/output/image
+        - --snapshotMode=redo
+        - --push-retry=3
       resources:
         limits:
           cpu: 250m
@@ -226,7 +229,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.3.0
+      image: gcr.io/kaniko-project/executor:v1.5.1
       workingDir: /workspace/source
       securityContext:
         runAsUser: 0
@@ -252,6 +255,9 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=/workspace/source/$(build.source.contextDir)
         - --destination=$(build.output.image)
+        - --oci-layout-path=/workspace/output/image
+        - --snapshotMode=redo
+        - --push-retry=3
       resources:
         limits:
           cpu: 500m
