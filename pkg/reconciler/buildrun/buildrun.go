@@ -150,6 +150,14 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			ctxlog.Info(ctx, "creating TaskRun from BuildRun", namespace, request.Namespace, name, generatedTaskRun.GenerateName, "BuildRun", buildRun.Name)
 			if err = r.client.Create(ctx, generatedTaskRun); err != nil {
 				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
+				serviceAccountName := &generatedTaskRun.Spec.ServiceAccountName
+				buildRun.Status.ServiceAccountName = serviceAccountName
+				if err = r.client.Status().Update(ctx, buildRun); err != nil {
+					// we ignore the error here to prevent another reconciliation that would create another TaskRun,
+					// the LatestTaskRunRef field will also be set in the reconciliation from a TaskRun
+					// risk is that when the controller is now restarted before the field is set, another TaskRun will be created
+					ctxlog.Error(ctx, err, "Failed to update BuildRun status is ignored", namespace, request.Namespace, name, request.Name)
+				}
 				return reconcile.Result{}, resources.HandleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
 			}
 
@@ -188,6 +196,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		} else if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
+		buildRun.Status.ServiceAccountName = &lastTaskRun.Spec.ServiceAccountName
 
 		// Check if the BuildRun is already finished, this happens if the build controller is restarted.
 		// It then reconciles all TaskRuns. This is valuable if the build controller was down while the TaskRun
@@ -211,6 +220,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				serviceAccount := &corev1.ServiceAccount{}
 				serviceAccount.Name = resources.GetGeneratedServiceAccountName(buildRun)
 				serviceAccount.Namespace = buildRun.Namespace
+				buildRun.Status.ServiceAccountName = &serviceAccount.Name
 
 				ctxlog.Info(ctx, "deleting service account", namespace, request.Namespace, name, request.Name)
 				if err = r.client.Delete(ctx, serviceAccount); err != nil && !apierrors.IsNotFound(err) {
