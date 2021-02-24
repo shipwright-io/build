@@ -67,6 +67,9 @@ var _ = Describe("Integration tests ClusterBuildStrategies and TaskRuns", func()
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)

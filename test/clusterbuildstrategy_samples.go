@@ -247,6 +247,29 @@ spec:
         memory: 128Mi
 `
 
+// ClusterBuildStrategySleep30s is a strategy that does only sleep 30 seconds
+const ClusterBuildStrategySleep30s = `
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: noop
+spec:
+  buildSteps:
+  - name: sleep30
+    image: alpine:latest
+    command:
+    - sleep
+    args:
+    - "30s"
+    resources:
+      limits:
+        cpu: 250m
+        memory: 128Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+`
+
 // ClusterBuildStrategyWithAnnotations is a cluster build strategy that contains annotations
 const ClusterBuildStrategyWithAnnotations = `
 apiVersion: build.dev/v1alpha1

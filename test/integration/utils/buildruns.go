@@ -6,6 +6,8 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,6 +92,70 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
 }
 
+// GetBRTillNotOwner returns a BuildRun that has not an owner.
+// If the timeout is reached or it fails when retrieving the BuildRun it will
+// stop polling and return
+func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*v1alpha1.BuildRun, error) {
+
+	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+
+	var (
+		pollBRTillNotOwner = func() (bool, error) {
+
+			buildRun, err := brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil && !apierrors.IsNotFound(err) {
+				return false, err
+			}
+
+			for _, ownerReference := range buildRun.OwnerReferences {
+				if ownerReference.Name == owner {
+					return false, nil
+				}
+			}
+
+			return true, nil
+		}
+	)
+
+	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillNotOwner); err != nil {
+		return nil, err
+	}
+
+	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+}
+
+// GetBRTillOwner returns a BuildRun that has an owner.
+// If the timeout is reached or it fails when retrieving the BuildRun it will
+// stop polling and return
+func (t *TestBuild) GetBRTillOwner(name string, owner string) (*v1alpha1.BuildRun, error) {
+
+	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+
+	var (
+		pollBRTillOwner = func() (bool, error) {
+
+			buildRun, err := brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil && !apierrors.IsNotFound(err) {
+				return false, err
+			}
+
+			for _, ownerReference := range buildRun.OwnerReferences {
+				if ownerReference.Name == owner {
+					return true, nil
+				}
+			}
+
+			return false, nil
+		}
+	)
+
+	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillOwner); err != nil {
+		return nil, err
+	}
+
+	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+}
+
 // GetBRTillStartTime returns a BuildRun that have a StartTime set.
 // If the timeout is reached or it fails when retrieving the BuildRun it will
 // stop polling and return
@@ -106,6 +172,15 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) 
 			}
 			if buildRun.Status.StartTime != nil {
 				return true, nil
+			}
+
+			// early exit
+			if buildRun.Status.CompletionTime != nil {
+				if buildRunJSON, err := json.Marshal(buildRun); err == nil {
+					return false, fmt.Errorf("buildrun is completed: %s", buildRunJSON)
+				}
+
+				return false, fmt.Errorf("buildrun is completed")
 			}
 
 			return false, nil
