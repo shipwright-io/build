@@ -65,8 +65,8 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			// Evaluates to false if the object has been confirmed deleted.
-			return !e.DeleteStateUnknown
+			// Never reconcile on deletion, there is nothing we have to do
+			return false
 		},
 	}
 
@@ -90,8 +90,10 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			return false
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			// Evaluates to false if the object has been confirmed deleted.
-			return !e.DeleteStateUnknown
+			o := e.Object.(*v1beta1.TaskRun)
+
+			// If the TaskRun was deleted before completion, then we reconcile to update the BuildRun to a Failed status
+			return o.Status.CompletionTime == nil
 		},
 	}
 
