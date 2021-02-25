@@ -79,3 +79,14 @@ func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) (
 
 	return
 }
+
+// DeleteTR deletes a TaskRun from a desired namespace
+func (t *TestBuild) DeleteTR(name string) error {
+	trInterface := t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace)
+
+	if err := trInterface.Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
+		return err
+	}
+
+	return nil
+}

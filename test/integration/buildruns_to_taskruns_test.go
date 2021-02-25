@@ -393,4 +393,66 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 		})
 	})
+
+	Context("when a buildrun is created and the taskrun deleted before completion", func() {
+
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSMinimal)
+			buildRunSample = []byte(test.MinimalBuildRun)
+		})
+
+		It("should reflect a Failed reason", func() {
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			tb.DeleteTR(tr.Name)
+
+			expectedReason := fmt.Sprintf("taskRun %s doesn't exist", tr.Name)
+			actualReason, err := tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
+		})
+	})
+
+	Context("when a buildrun is created and the taskrun deleted after successful completion", func() {
+
+		It("should reflect a Success reason", func() {
+			WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategyNoOp), func() {
+				_, _, buildRunObject := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+
+				_, err = tb.GetBRTillCompletion(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				reason, err := tb.GetBRReason(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(reason).To(Equal("Succeeded"))
+
+				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(tr.Status.CompletionTime).NotTo(BeNil())
+
+				tb.DeleteTR(tr.Name)
+
+				// in a test case, it is hard to verify that something (marking the BuildRun failed) is not happening, we quickly check the TaskRun is gone and
+				// check one more time that the BuildRun is still Succeeded
+				_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to find an owned TaskRun"))
+
+				reason, err = tb.GetBRReason(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(reason).To(Equal("Succeeded"))
+			})
+		})
+	})
 })
