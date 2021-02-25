@@ -130,7 +130,7 @@ jobs:
             RESTART_COUNT=$(echo "${PODS}" | jq -r ".items[] | select(.metadata.name == \"${POD_NAME}\") | .status.containerStatuses[0].restartCount")
             if [ "${RESTART_COUNT}" != "0" ]; then
               echo "# Previous logs:"
-              kubectl -n build-operator logs "${POD_NAME}" --previous
+              kubectl -n build-operator logs "${POD_NAME}" --previous || true
             fi
             echo "# Logs:"
             kubectl -n build-operator logs "${POD_NAME}"
