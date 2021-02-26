@@ -153,6 +153,7 @@ A `Build` resource can specify the `BuildStrategy` to use, these are:
 - [Buildpacks-v3](buildstrategies.md#buildpacks-v3)
 - [Buildah](buildstrategies.md#buildah)
 - [Kaniko](buildstrategies.md#kaniko)
+* [ko](docs/buildstrategies.md#ko)
 
 Defining the strategy is straightforward, you need to define the `name` and the `kind`. For example:
 

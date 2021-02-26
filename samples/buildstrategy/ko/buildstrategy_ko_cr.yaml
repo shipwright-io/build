@@ -1,0 +1,90 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: ko
+spec:
+  buildSteps:
+    - name: prepare
+      image: golang:1.15
+      securityContext:
+        runAsUser: 0
+        capabilities:
+          add: 
+            - CHOWN
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          chown -R 1000:1000 /workspace/output
+          chown -R 1000:1000 /workspace/source
+          chown -R 1000:1000 /tekton/home
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+    - name: build-and-push
+      image: golang:1.15
+      workingDir: /workspace/source
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      env:
+        - name: DOCKER_CONFIG
+          value: /tekton/home/.docker
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          # Parse image URL to extract repository and tag, must work with
+          # - a URL without a tag and a port: registry/image
+          # - a URL without a tag but a port: registry:port/image
+          # - a URL with a tag but without a port: registry/image:tag
+          # - a URL with both a tag and a port: registry:port/image:tag
+
+          IMAGE=$(build.output.image)
+
+          REPO=
+          TAG=
+
+          IFS=':' read -ra PARTS <<< "${IMAGE}"
+          for PART in "${PARTS[@]}"; do
+            if [ "${REPO}" == "" ]; then
+              REPO="${PART}"
+          	elif [[ "${PART}" == *"/"* ]]; then
+              REPO="${REPO}:${PART}"
+            elif [ "${TAG}" == "" ]; then
+              TAG="${PART}"
+            else
+              REPO="${REPO}:${TAG}"
+              TAG="${PART}"
+            fi
+          done
+
+          # Download ko
+          pushd /tmp > /dev/null
+            curl -f -s -L https://github.com/google/ko/releases/download/v0.8.1/ko_0.8.1_Linux_x86_64.tar.gz | tar xzf - ko
+          popd > /dev/null
+
+          # Run ko
+          if [ "${TAG}" == "" ]; then
+            GOROOT=$(go env GOROOT) KO_DOCKER_REPO="${REPO}" /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/workspace/output/image
+          else
+            GOROOT=$(go env GOROOT) KO_DOCKER_REPO="${REPO}" /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/workspace/output/image --tags="${TAG}"
+          fi
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi

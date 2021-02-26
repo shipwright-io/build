@@ -39,6 +39,7 @@ The following [Build Strategies](docs/buildstrategies.md) are installed by defau
 * [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
 * [Buildah](docs/buildstrategies.md#buildah)
 * [Kaniko](docs/buildstrategies.md#kaniko)
+* [ko](docs/buildstrategies.md#ko)
 
 Users have the option to define their own `BuildStrategy` or `ClusterBuildStrategy` resources and make them available for consumption via the `Build` resource.
 
