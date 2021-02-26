@@ -1,0 +1,17 @@
+---
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: ko-build
+  annotations:
+    build.build.dev/build-run-deletion: "false"
+spec:
+  source:
+    url: https://github.com/shipwright-io/build
+    contextDir: cmd/manager
+    revision: master
+  strategy:
+    name: ko
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/build-operator

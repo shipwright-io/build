@@ -375,6 +375,23 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a ko build is defined", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("ko")
+
+			// create the build definition
+			createBuild(ctx, namespace, testID, "samples/build/build_ko_cr.yaml", cleanupTimeout, cleanupRetryInterval)
+		})
+
+		It("successfully runs a build", func() {
+			br, err = buildRunTestData(namespace, testID, "samples/buildrun/buildrun_ko_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(ctx, namespace, br, cleanupTimeout, cleanupRetryInterval)
+		})
+	})
+
 	Context("when a s2i build is defined", func() {
 
 		BeforeEach(func() {

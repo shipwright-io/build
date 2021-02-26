@@ -16,13 +16,16 @@ SPDX-License-Identifier: Apache-2.0
   - [Try it](#try-it)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
+- [ko](#ko)
+  - [Installing ko Strategy](#installing-ko-strategy)
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
-- [Steps resources definition](#steps-resources-definition)
+- [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
-  - [How does Tekton Pipelines handles resources](#how-does-tekton-pipelines-handles-resources)
+  - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
   - [Examples of Tekton resources management](#examples-of-tekton-resources-management)
+- [Annotations](#annotations)
 
 ## Overview
 
@@ -32,7 +35,7 @@ A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is a
 
 ## Available ClusterBuildStrategies
 
-Well-known strategies can be bootstrapped from [here](../samples/buildstrategy). The current supported Cluster BuildStrategy are:
+Well-known strategies can be boostrapped from [here](../samples/buildstrategy). The current supported Cluster BuildStrategy are:
 
 - [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
 - [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)
@@ -70,7 +73,6 @@ The [buildpacks-v3][buildpacks] BuildStrategy/ClusterBuildStrategy uses a Cloud 
 - [`heroku/buildpacks:18`][hubheroku]
 - [`cloudfoundry/cnb:bionic`][hubcloudfoundry]
 - [`docker.io/paketobuildpacks/builder:full`](https://hub.docker.com/r/paketobuildpacks/builder/tags)
-
 
 ### Installing Buildpacks v3 Strategy
 
@@ -139,6 +141,20 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 ```
 
 ---
+
+## ko
+
+The `ko` ClusterBuilderStrategy is using [ko](https://github.com/google/ko)'s publish command to build an image from a Golang main package.
+
+### Installing ko Strategy
+
+To install the cluster scope strategy, use:
+
+```sh
+kubectl apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
+```
+
+**Note**: The build strategy currently uses the `spec.contextDir` of the Build in a different way than this property is designed for: the Git repository must be a Go module with the go.mod file at the root. The `contextDir` specifies the path to the main package. You can check the [example](../samples/build/build_ko_cr.yaml) which is set up to build the Shipwright Build operator. This behavior will eventually be corrected once [Exhaustive list of generalized Build API/CRD attributes #184](https://github.com/shipwright-io/build/issues/184) / [Custom attributes from the Build CR could be used as parameters while defining a BuildStrategy #537](https://github.com/shipwright-io/build/issues/537) are done.
 
 ## Source to Image
 
