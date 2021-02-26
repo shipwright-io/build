@@ -8,7 +8,7 @@ package test
 // BuildStrategy for Buildah with two steps
 // each of them with different container resources
 const MinimalBuildahClusterBuildStrategy = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildStrategy
 metadata:
   name: buildah
@@ -62,7 +62,7 @@ spec:
 // BuildStrategy for Buildah with a single step
 // and container resources
 const ClusterBuildStrategySingleStep = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: buildah
@@ -116,7 +116,7 @@ spec:
 // Kaniko, which is very close to the actual Kaniko build strategy example in
 // the project
 const ClusterBuildStrategySingleStepKaniko = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: kaniko
@@ -165,7 +165,7 @@ spec:
 // strategy that has a configuration error (misspelled command flag) so that
 // it will fail in Tekton
 const ClusterBuildStrategySingleStepKanikoError = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: kaniko
@@ -212,7 +212,7 @@ spec:
 
 // ClusterBuildStrategyNoOp is a strategy that does nothing and has no dependencies
 const ClusterBuildStrategyNoOp = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: noop
@@ -274,12 +274,12 @@ spec:
 
 // ClusterBuildStrategyWithAnnotations is a cluster build strategy that contains annotations
 const ClusterBuildStrategyWithAnnotations = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   annotations:
     kubernetes.io/ingress-bandwidth: 1M
-    clusterbuildstrategy.build.dev/dummy: aValue
+    clusterbuildstrategy.shipwright.io/dummy: aValue
     kubectl.kubernetes.io/last-applied-configuration: anotherValue
   name: kaniko
 spec:

@@ -73,7 +73,7 @@ echo "Task run: ${TASK_RUN_NAME}"
 
 # Find the pod, it has labels for the build run and task run name
 
-PODS=$(kubectl get pods -l "buildrun.build.dev/name=${BUILD_RUN_NAME},tekton.dev/taskRun=${TASK_RUN_NAME}" -n "${NAMESPACE}" -o json)
+PODS=$(kubectl get pods -l "buildrun.shipwright.io/name=${BUILD_RUN_NAME},tekton.dev/taskRun=${TASK_RUN_NAME}" -n "${NAMESPACE}" -o json)
 PODS_LENGTH=$(echo "${PODS}" | jq ".items | length")
 
 if [ "${PODS_LENGTH}" -eq 0 ]; then

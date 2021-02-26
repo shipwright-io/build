@@ -24,9 +24,9 @@ type FakeBuilds struct {
 	ns   string
 }
 
-var buildsResource = schema.GroupVersionResource{Group: "build.dev", Version: "v1alpha1", Resource: "builds"}
+var buildsResource = schema.GroupVersionResource{Group: "shipwright.io", Version: "v1alpha1", Resource: "builds"}
 
-var buildsKind = schema.GroupVersionKind{Group: "build.dev", Version: "v1alpha1", Kind: "Build"}
+var buildsKind = schema.GroupVersionKind{Group: "shipwright.io", Version: "v1alpha1", Kind: "Build"}
 
 // Get takes name of the build, and returns the corresponding build object, and an error if there is any.
 func (c *FakeBuilds) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Build, err error) {

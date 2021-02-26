@@ -56,7 +56,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
 
-			// Avoid reconciling when for updates on the BuildRun, the build.build.dev/name
+			// Avoid reconciling when for updates on the BuildRun, the build.shipwright.io/name
 			// label is set, and when a BuildRun already have a referenced TaskRun.
 			if o.GetLabels()[buildv1alpha1.LabelBuild] == "" || o.Status.LatestTaskRunRef != nil {
 				return false

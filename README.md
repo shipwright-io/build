@@ -109,7 +109,7 @@ Examples of `Build` resource using the example strategies installed by default.
 
   ```bash
   $ kubectl apply -f - <<EOF
-  apiVersion: build.dev/v1alpha1
+  apiVersion: shipwright.io/v1alpha1
   kind: Build
   metadata:
     name: buildpack-nodejs-build
@@ -130,7 +130,7 @@ Examples of `Build` resource using the example strategies installed by default.
 
   ```bash
   $ kubectl apply -f - <<EOF
-  apiVersion: build.dev/v1alpha1
+  apiVersion: shipwright.io/v1alpha1
   kind: BuildRun
   metadata:
     name: buildpack-nodejs-build-1

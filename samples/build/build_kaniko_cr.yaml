@@ -1,10 +1,10 @@
 ---
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: kaniko-golang-build
   annotations:
-    build.build.dev/build-run-deletion: "true"
+    build.shipwright.io/build-run-deletion: "true"
 spec:
   source:
     url: https://github.com/qu1queee/taxi

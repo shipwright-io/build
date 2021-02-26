@@ -11,7 +11,7 @@ import (
 
 const (
 	// BuildRunDomain is the domain used for all labels and annotations for this resource
-	BuildRunDomain = "buildrun.build.dev"
+	BuildRunDomain = "buildrun.shipwright.io"
 
 	// LabelBuildRun is a label key for BuildRuns to define the name of the BuildRun
 	LabelBuildRun = BuildRunDomain + "/name"

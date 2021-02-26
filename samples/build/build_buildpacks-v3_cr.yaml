@@ -1,10 +1,10 @@
 ---
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: buildpack-nodejs-build
   annotations:
-    build.build.dev/build-run-deletion: "false"
+    build.shipwright.io/build-run-deletion: "false"
 spec:
   source:
     url: https://github.com/sclorg/nodejs-ex

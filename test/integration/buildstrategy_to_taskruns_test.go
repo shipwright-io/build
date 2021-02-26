@@ -80,7 +80,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 
 			Expect(taskRun.Annotations["kubernetes.io/egress-bandwidth"]).To(Equal("1M"))
 			Expect(taskRun.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
-			_, containsKey := taskRun.Annotations["clusterbuildstrategy.build.dev/dummy"]
+			_, containsKey := taskRun.Annotations["clusterbuildstrategy.shipwright.io/dummy"]
 			Expect(containsKey).To(BeFalse())
 			_, containsKey = taskRun.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
 			Expect(containsKey).To(BeFalse())

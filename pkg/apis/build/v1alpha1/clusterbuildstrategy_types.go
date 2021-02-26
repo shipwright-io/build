@@ -12,7 +12,7 @@ import (
 
 const (
 	// ClusterBuildStrategyDomain is the domain used for all labels and annotations for this resource
-	ClusterBuildStrategyDomain = "clusterbuildstrategy.build.dev"
+	ClusterBuildStrategyDomain = "clusterbuildstrategy.shipwright.io"
 
 	// LabelClusterBuildStrategyName is a label key for defining the cluster build strategy name
 	LabelClusterBuildStrategyName = ClusterBuildStrategyDomain + "/name"

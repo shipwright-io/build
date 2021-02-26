@@ -1,4 +1,4 @@
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: source-to-image

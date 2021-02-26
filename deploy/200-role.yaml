@@ -67,7 +67,7 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - build.dev
+  - shipwright.io
   resources:
   - '*'
   - buildstrategies

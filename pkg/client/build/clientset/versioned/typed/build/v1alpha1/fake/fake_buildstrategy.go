@@ -24,9 +24,9 @@ type FakeBuildStrategies struct {
 	ns   string
 }
 
-var buildstrategiesResource = schema.GroupVersionResource{Group: "build.dev", Version: "v1alpha1", Resource: "buildstrategies"}
+var buildstrategiesResource = schema.GroupVersionResource{Group: "shipwright.io", Version: "v1alpha1", Resource: "buildstrategies"}
 
-var buildstrategiesKind = schema.GroupVersionKind{Group: "build.dev", Version: "v1alpha1", Kind: "BuildStrategy"}
+var buildstrategiesKind = schema.GroupVersionKind{Group: "shipwright.io", Version: "v1alpha1", Kind: "BuildStrategy"}
 
 // Get takes name of the buildStrategy, and returns the corresponding buildStrategy object, and an error if there is any.
 func (c *FakeBuildStrategies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.BuildStrategy, err error) {

@@ -45,7 +45,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "http://github.com/qu1queee/taxi"
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
@@ -95,7 +95,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "https://github.com/qu1queee/taxi"
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
@@ -145,7 +145,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "foobar"
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
@@ -172,7 +172,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "false"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "false"
 			buildObject.Spec.Source.URL = "foobar"
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -198,7 +198,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "https://github.yourco.com/org/build-fake"
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
@@ -224,7 +224,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "https://github.yourco.com/org/build-fake"
 			buildObject.Spec.Source.SecretRef = &corev1.LocalObjectReference{Name: "foobar"}
 
@@ -256,7 +256,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "git@github.com:shipwright-io/build-fake.git"
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
@@ -284,7 +284,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.ObjectMeta.Annotations["build.build.dev/verify.repository"] = "true"
+			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "ssh://github.com/shipwright-io/build-fake.git"
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())

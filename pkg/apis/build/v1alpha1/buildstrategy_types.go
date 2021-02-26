@@ -12,7 +12,7 @@ import (
 
 const (
 	// BuildStrategyDomain is the domain used for all labels and annotations for this resource
-	BuildStrategyDomain = "buildstrategy.build.dev"
+	BuildStrategyDomain = "buildstrategy.shipwright.io"
 
 	// LabelBuildStrategyName is a label key for defining the build strategy name
 	LabelBuildStrategyName = BuildStrategyDomain + "/name"
