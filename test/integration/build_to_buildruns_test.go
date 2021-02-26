@@ -193,12 +193,12 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
-			br, err := tb.GetBRTillStartTime(buildRunObject.Name)
+			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			Expect(tb.DeleteBuild(BUILD + tb.Namespace)).To(BeNil())
 
-			br, err = tb.GetBR(buildRunObject.Name)
+			br, err := tb.GetBR(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Type).To(Equal(v1alpha1.Succeeded))
@@ -227,10 +227,10 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
-			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+			_, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			br, err = tb.GetBR(buildRunObject.Name)
+			br, err := tb.GetBR(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("Build.build.dev \"%s\" not found", BUILD+tb.Namespace)))
 			Expect(br.Status.StartTime).To(BeNil())
