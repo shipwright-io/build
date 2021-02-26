@@ -2,8 +2,8 @@ SHELL := /bin/bash
 
 # output directory, where all artifacts will be created and managed
 OUTPUT_DIR ?= build/_output
-# relative path to operator binary
-OPERATOR = $(OUTPUT_DIR)/bin/build-operator
+# relative path to controller binary
+OPERATOR = $(OUTPUT_DIR)/bin/shipwright-build-controller
 
 # golang cache directory path
 GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
@@ -27,7 +27,7 @@ OPERATOR_SDK_EXTRA_ARGS ?= --debug
 # test namespace name
 TEST_NAMESPACE ?= default
 
-# CI: tekton pipelines operator version
+# CI: tekton pipelines controller version
 TEKTON_VERSION ?= v0.20.1
 # CI: operator-sdk version
 SDK_VERSION ?= v0.18.2
@@ -231,7 +231,7 @@ test-e2e-plain: ginkgo
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
 	$(GINKGO) ${TEST_E2E_FLAGS} test/e2e
 
-.PHONY: install install-apis install-operator install-strategies
+.PHONY: install install-apis install-controller install-strategies
 
 install:
 	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
@@ -244,21 +244,21 @@ install-apis:
 	# Wait for the CRD type to be established; this can take a second or two.
 	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.build.dev
 
-install-operator: install-apis
+install-controller: install-apis
 	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
 
-install-operator-kind: install-apis
+install-controller-kind: install-apis
 	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
 
 install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
 
 local: vendor install-strategies
-	OPERATOR_NAME=build-operator \
+	OPERATOR_NAME=shipwright-build-controller \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
 local-plain: vendor
-	OPERATOR_NAME=build-operator \
+	OPERATOR_NAME=shipwright-build-controller \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
 clean:

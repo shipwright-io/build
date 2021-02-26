@@ -1,12 +1,12 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: build-operator
+  name: shipwright-build-controller
 subjects:
 - kind: ServiceAccount
-  name: build-operator
-  namespace: build-operator
+  name: shipwright-build-controller
+  namespace: shipwright-build
 roleRef:
   kind: ClusterRole
-  name: build-operator
+  name: shipwright-build-controller
   apiGroup: rbac.authorization.k8s.io

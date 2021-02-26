@@ -90,7 +90,7 @@ func main() {
 
 	mgr, err := controller.NewManager(ctx, buildCfg, cfg, manager.Options{
 		LeaderElection:          true,
-		LeaderElectionID:        "build-operator-lock",
+		LeaderElectionID:        "shipwright-build-controller-lock",
 		LeaderElectionNamespace: buildCfg.ManagerOptions.LeaderElectionNamespace,
 		LeaseDuration:           buildCfg.ManagerOptions.LeaseDuration,
 		RenewDeadline:           buildCfg.ManagerOptions.RenewDeadline,

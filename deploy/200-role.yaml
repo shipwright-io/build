@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: build-operator
+  name: shipwright-build-controller
 rules:
 - apiGroups:
   - ""
@@ -48,7 +48,7 @@ rules:
 - apiGroups:
   - apps
   resourceNames:
-  - build-operator
+  - shipwright-build
   resources:
   - deployments/finalizers
   verbs:
