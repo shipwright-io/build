@@ -15,6 +15,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.20.1
 	go.uber.org/zap v1.16.0
+	golang.org/x/net v0.0.0-20201209123823-ac852fbbde11
 	k8s.io/api v0.18.12
 	k8s.io/apimachinery v0.19.0
 	k8s.io/client-go v12.0.0+incompatible
@@ -29,11 +30,6 @@ require (
 
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v14.2.0+incompatible // Required by OLM
-	// github.com/operator-framework/operator-registry requires Sirupsen/logrus@v1.7.0
-	github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.7.0
-	// Pin docker/* to versions used to spinning up local test registries by operator-sdk
-	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
-	github.com/docker/docker => github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/go-logr/logr => github.com/go-logr/logr v0.1.0 // v0.2.0 release doesn't have logr.InfoLogger
 	k8s.io/apimachinery => k8s.io/apimachinery v0.18.10
 	k8s.io/client-go => k8s.io/client-go v0.18.10 // Required by prometheus-operator
