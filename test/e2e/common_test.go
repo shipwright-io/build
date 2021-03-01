@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package e2e
+package e2e_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,22 +14,46 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	"knative.dev/pkg/apis"
 
+	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	utilrand "k8s.io/apimachinery/pkg/util/rand"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/util/rand"
+	knativeapis "knative.dev/pkg/apis"
 
-	operator "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/test/integration/utils"
 )
 
+func generateTestID(id string) string {
+	return id + "-" + rand.String(5)
+}
+
+func removeTestIDSuffix(id string) string {
+	return id[:len(id)-6]
+}
+
+func createBuild(testBuild *utils.TestBuild, identifier string, filePath string, timeout time.Duration, interval time.Duration) *buildv1alpha1.Build {
+	build, err := buildTestData(testBuild.Namespace, identifier, filePath)
+	Expect(err).ToNot(HaveOccurred(), "Error retrieving build test data")
+
+	amendBuild(identifier, build)
+
+	err = testBuild.CreateBuild(build)
+	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
+	Logf("Build %s created", identifier)
+
+	build, err = testBuild.GetBuildTillValidation(build.Name)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(build.Status.Reason).To(Equal(buildv1alpha1.SucceedStatus))
+
+	return build
+}
+
 // amendOutputImageURL amend container image URL based on informed image repository.
-func amendOutputImageURL(b *operator.Build, imageRepo string) {
+func amendOutputImageURL(b *buildv1alpha1.Build, imageRepo string) {
 	if imageRepo == "" {
 		return
 	}
@@ -44,24 +67,24 @@ func amendOutputImageURL(b *operator.Build, imageRepo string) {
 }
 
 // amendOutputSecretRef amend secret-ref for output image.
-func amendOutputSecretRef(b *operator.Build, secretName string) {
+func amendOutputSecretRef(b *buildv1alpha1.Build, secretName string) {
 	if secretName == "" {
 		return
 	}
-	b.Spec.Output.SecretRef = &v1.LocalObjectReference{Name: secretName}
+	b.Spec.Output.SecretRef = &corev1.LocalObjectReference{Name: secretName}
 	Logf("Amended object: name='%s', secret-ref='%s'", b.Name, secretName)
 }
 
 // amendSourceSecretName patch Build source.SecretRef with secret name.
-func amendSourceSecretName(b *operator.Build, secretName string) {
+func amendSourceSecretName(b *buildv1alpha1.Build, secretName string) {
 	if secretName == "" {
 		return
 	}
-	b.Spec.Source.SecretRef = &v1.LocalObjectReference{Name: secretName}
+	b.Spec.Source.SecretRef = &corev1.LocalObjectReference{Name: secretName}
 }
 
 // amendSourceURL patch Build source.URL with informed string.
-func amendSourceURL(b *operator.Build, sourceURL string) {
+func amendSourceURL(b *buildv1alpha1.Build, sourceURL string) {
 	if sourceURL == "" {
 		return
 	}
@@ -69,7 +92,7 @@ func amendSourceURL(b *operator.Build, sourceURL string) {
 }
 
 // amendBuild make changes on build object.
-func amendBuild(identifier string, b *operator.Build) {
+func amendBuild(identifier string, b *buildv1alpha1.Build) {
 	amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 	if strings.Contains(identifier, "github") {
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGithub))
@@ -81,68 +104,30 @@ func amendBuild(identifier string, b *operator.Build) {
 	amendOutputSecretRef(b, os.Getenv(EnvVarImageRepoSecret))
 }
 
-// CreateBuild loads the builds definition from the file path, unifies the output image based on
-// the identifier, creates it in a namespace and waits for it to be registered
-func createBuild(ctx *framework.Context, namespace string, identifier string, filePath string, timeout time.Duration, retry time.Duration) {
-	Logf("Creating build %s", identifier)
-
-	rootDir, err := getRootDir()
-	Expect(err).ToNot(HaveOccurred(), "Unable to get root dir")
-
-	b, err := buildTestData(namespace, identifier, rootDir+"/"+filePath)
-	Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
-
-	amendBuild(identifier, b)
-
-	f := framework.Global
-	err = f.Client.Create(context.TODO(), b, cleanupOptions(ctx, timeout, retry))
-	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
-
-	Logf("Build %s created", identifier)
-
-	buildName := types.NamespacedName{
-		Namespace: namespace,
-		Name:      b.Name,
-	}
-
-	trueCondition := corev1.ConditionTrue
-	falseCondition := corev1.ConditionFalse
-
-	Eventually(func() corev1.ConditionStatus {
-		err = clientGet(buildName, b)
-		Expect(err).ToNot(HaveOccurred(), "Error retrieving a build")
-
-		Expect(b.Status.Registered).ToNot(Equal(falseCondition), "Build registered status is false")
-
-		return b.Status.Registered
-	}, time.Duration(20*getTimeoutMultiplier())*time.Second, time.Second).Should(Equal(trueCondition), "Build was not registered")
-}
-
 // retrieveBuildAndBuildRun will retrieve the build and buildRun
-func retrieveBuildAndBuildRun(namespace string, buildRunName string) (*operator.BuildRun, *operator.Build, error) {
-	buildRun := &operator.BuildRun{}
-	build := &operator.Build{}
-	err := clientGet(types.NamespacedName{Name: buildRunName, Namespace: namespace}, buildRun)
+func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1alpha1.BuildRun, *buildv1alpha1.Build, error) {
+	buildRun, err := lookupBuildRun(testBuild, types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get BuildRun %s: %s", buildRunName, err)
 		return nil, nil, err
 	}
+
 	buildName := buildRun.Spec.BuildRef.Name
-	err = clientGet(types.NamespacedName{Name: buildName, Namespace: namespace}, build)
+
+	build, err := lookupBuild(testBuild, types.NamespacedName{Name: buildName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get Build %s: %s", buildName, err)
 		return buildRun, nil, err
 	}
+
 	return buildRun, build, nil
 }
 
 // printTestFailureDebugInfo will output the status of Build, BuildRun, TaskRun and Pod, also print logs of Pod
-func printTestFailureDebugInfo(namespace string, buildRunName string) {
+func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, buildRunName string) {
 	Logf("Print failed BuildRun's log")
 
-	f := framework.Global
-
-	buildRun, build, err := retrieveBuildAndBuildRun(namespace, buildRunName)
+	buildRun, build, err := retrieveBuildAndBuildRun(testBuild, namespace, buildRunName)
 	if err != nil {
 		Logf("Failed to retrieve build and buildrun logs: %w", err)
 	}
@@ -155,7 +140,7 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 	}
 
 	if buildRun != nil {
-		brCondition := buildRun.Status.GetCondition(operator.Succeeded)
+		brCondition := buildRun.Status.GetCondition(buildv1alpha1.Succeeded)
 		if brCondition != nil {
 			Logf("The status of BuildRun %s: status=%s, reason=%s", buildRun.Name, brCondition.Status, brCondition.Reason)
 		}
@@ -167,8 +152,8 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 
 		// Only log details of TaskRun if Tekton objects can be accessed
 		if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
-			if taskRun, _ := getTaskRun(f, buildRun); taskRun != nil {
-				condition := taskRun.Status.GetCondition(apis.ConditionSucceeded)
+			if taskRun, _ := lookupTaskRun(testBuild, types.NamespacedName{Name: *buildRun.Status.LatestTaskRunRef, Namespace: namespace}); taskRun != nil {
+				condition := taskRun.Status.GetCondition(knativeapis.ConditionSucceeded)
 				if condition != nil {
 					Logf("The status of TaskRun %s: reason=%s, message=%s", taskRun.Name, condition.Reason, condition.Message)
 				}
@@ -182,23 +167,21 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 		}
 
 		// retrieve or query pod depending on whether we have the pod name from the TaskRun
-		var pod *v1.Pod
+		var pod *corev1.Pod
 		if podName != "" {
-			pod = &v1.Pod{}
-			if err = clientGet(types.NamespacedName{Name: podName, Namespace: namespace}, pod); err != nil {
+			pod, err = lookupPod(testBuild, types.NamespacedName{Name: podName, Namespace: namespace})
+			if err != nil {
 				Logf("Error retrieving pod %s: %v", podName, err)
 				pod = nil
 			}
 		} else {
-			listOptions := client.ListOptions{
-				Namespace: namespace,
-				LabelSelector: labels.SelectorFromSet(map[string]string{
-					operator.LabelBuildRun: buildRunName,
+			podList, err := testBuild.Clientset.CoreV1().Pods(namespace).List(testBuild.Context, metav1.ListOptions{
+				LabelSelector: labels.FormatLabels(map[string]string{
+					buildv1alpha1.LabelBuildRun: buildRunName,
 				}),
-			}
+			})
 
-			podList := &v1.PodList{}
-			if err = f.Client.List(context.TODO(), podList, &listOptions); err == nil && len(podList.Items) > 0 {
+			if err == nil && len(podList.Items) > 0 {
 				pod = &podList.Items[0]
 			}
 		}
@@ -211,7 +194,7 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 
 			// Loop through the containers to print their logs
 			for _, container := range pod.Spec.Containers {
-				req := f.KubeClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{
+				req := testBuild.Clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
 					TypeMeta:  metav1.TypeMeta{},
 					Container: container.Name,
 					Follow:    false,
@@ -234,12 +217,4 @@ func printTestFailureDebugInfo(namespace string, buildRunName string) {
 			}
 		}
 	}
-}
-
-func generateTestID(id string) string {
-	return id + "-" + utilrand.String(5)
-}
-
-func removeTestIDSuffix(id string) string {
-	return id[:len(id)-6]
 }

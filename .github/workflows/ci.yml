@@ -119,7 +119,7 @@ jobs:
             make install-controller-kind
             kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
         - name: Test
-          run: TEST_E2E_OPERATOR=managed_outside TEST_NAMESPACE=shipwright-build TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e make test-e2e
+          run: TEST_E2E_CONTROLLER=managed_outside TEST_NAMESPACE=shipwright-build TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e make test-e2e
         - name: Build controller logs
           if: ${{ failure() }}
           run: |

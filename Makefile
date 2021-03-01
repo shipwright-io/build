@@ -36,7 +36,7 @@ SDK_VERSION ?= v0.18.2
 TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=30m -progress -stream -trace -v
 
 # E2E test operator behavior, can be start_local or managed_outside
-TEST_E2E_OPERATOR ?= start_local
+TEST_E2E_CONTROLLER ?= start_local
 
 # E2E test service account name to be used for the build runs, can be set to generated to use the generated service account feature
 TEST_E2E_SERVICEACCOUNT_NAME ?= pipeline
@@ -228,7 +228,7 @@ test-e2e-plain: ginkgo
 	GO111MODULE=on \
 	TEST_OPERATOR_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
-	TEST_E2E_OPERATOR=${TEST_E2E_OPERATOR} \
+	TEST_E2E_CONTROLLER=${TEST_E2E_CONTROLLER} \
 	TEST_E2E_CREATE_GLOBALOBJECTS=${TEST_E2E_CREATE_GLOBALOBJECTS} \
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
 	TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
