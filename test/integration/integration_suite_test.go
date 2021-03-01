@@ -40,26 +40,26 @@ var _ = BeforeEach(func() {
 
 	deleteNSList = append(deleteNSList, tb.Namespace)
 
-	// We store a channel for each Build operator instance we start,
+	// We store a channel for each Build controller instance we start,
 	// so that we can nuke the instance later inside the AfterEach Ginkgo
 	// block
-	tb.StopBuildOperator, err = tb.StartBuildOperator()
+	tb.StopBuildControllers, err = tb.StartBuildControllers()
 	if err != nil {
-		fmt.Println("fail to start the Build powerful operator", err)
+		fmt.Println("fail to start the powerful Build controllers", err)
 	}
 })
 
 var _ = AfterEach(func() {
 	// Close the channel, meaning we nuke an instance of the Build
 	// operator
-	if tb.StopBuildOperator != nil {
-		close(tb.StopBuildOperator)
+	if tb.StopBuildControllers != nil {
+		close(tb.StopBuildControllers)
 	}
 
-	if CurrentGinkgoTestDescription().Failed && tb.BuildOperatorLogBuffer != nil {
+	if CurrentGinkgoTestDescription().Failed && tb.BuildControllerLogBuffer != nil {
 		// print operator logs
 		fmt.Println("\nLogs of the operator:")
-		fmt.Printf("%v\n", tb.BuildOperatorLogBuffer)
+		fmt.Printf("%v\n", tb.BuildControllerLogBuffer)
 	}
 })
 

@@ -4,5 +4,10 @@
 
 package version
 
-// Version describes the version of build
-var Version = "0.0.1"
+// Version describes the version of Shipwright build controller
+var Version = ""
+
+// SetVersion sets the version of Shipwright build controller from go flags
+func SetVersion(version string) {
+	Version = version
+}

@@ -56,14 +56,14 @@ var _ = Describe("Config", func() {
 			})
 		})
 
-		It("should allow for an override of the operator leader election namespace using an environment variable", func() {
+		It("should allow for an override of the Shipwright build controller leader election namespace using an environment variable", func() {
 			var overrides = map[string]string{"BUILD_CONTROLLER_LEADER_ELECTION_NAMESPACE": "shipwright-build"}
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
 				Expect(config.ManagerOptions.LeaderElectionNamespace).To(Equal("shipwright-build"))
 			})
 		})
 
-		It("should allow for an override of the operator leader election times using environment variables", func() {
+		It("should allow for an override of the Shipwright build controller leader election times using environment variables", func() {
 			var overrides = map[string]string{
 				"BUILD_CONTROLLER_LEASE_DURATION": "42s",
 				"BUILD_CONTROLLER_RENEW_DEADLINE": "32s",

@@ -11,10 +11,10 @@ import (
 	"github.com/shipwright-io/build/pkg/controller"
 )
 
-// StartBuildOperator initialize an operator as if being call from main,
+// StartBuildControllers initialize an operator as if being call from main,
 // but it disables the prometheus metrics and leader election. This intended
 // to for testing.
-func (t *TestBuild) StartBuildOperator() (chan struct{}, error) {
+func (t *TestBuild) StartBuildControllers() (chan struct{}, error) {
 	c := buildconfig.NewDefaultConfig()
 
 	mgr, err := controller.NewManager(t.Context, c, t.KubeConfig, manager.Options{
