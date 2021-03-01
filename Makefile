@@ -71,6 +71,10 @@ IMAGE_HOST ?= quay.io
 IMAGE ?= shipwright/shipwright-operator
 TAG ?= latest
 
+# options for generating crds with controller-gen
+CONTROLLER_GEN="${GOBIN}/controller-gen"
+CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+
 .EXPORT_ALL_VARIABLES:
 
 default: build
@@ -279,3 +283,7 @@ kind-tekton:
 kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
+
+generate-crds:
+	./hack/install-controller-gen.sh
+	"$(CONTROLLER_GEN)" "$(CRD_OPTIONS)" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=deploy/crds
