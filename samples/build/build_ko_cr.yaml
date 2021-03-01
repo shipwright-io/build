@@ -14,4 +14,4 @@ spec:
     name: ko
     kind: ClusterBuildStrategy
   output:
-    image: image-registry.openshift-image-registry.svc:5000/build-examples/build-operator
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/shipwright-build
