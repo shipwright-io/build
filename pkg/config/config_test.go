@@ -76,6 +76,22 @@ var _ = Describe("Config", func() {
 				Expect(*config.ManagerOptions.RetryPeriod).To(Equal(time.Duration(10 * time.Second)))
 			})
 		})
+
+		It("should allow for an override of concurrent reconciles of the controllers", func() {
+			var overrides = map[string]string{
+				"BUILD_MAX_CONCURRENT_RECONCILES":                "2",
+				"BUILDRUN_MAX_CONCURRENT_RECONCILES":             "3",
+				"BUILDSTRATEGY_MAX_CONCURRENT_RECONCILES":        "4",
+				"CLUSTERBUILDSTRATEGY_MAX_CONCURRENT_RECONCILES": "5",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.Controllers.Build.MaxConcurrentReconciles).To(Equal(2))
+				Expect(config.Controllers.BuildRun.MaxConcurrentReconciles).To(Equal(3))
+				Expect(config.Controllers.BuildStrategy.MaxConcurrentReconciles).To(Equal(4))
+				Expect(config.Controllers.ClusterBuildStrategy.MaxConcurrentReconciles).To(Equal(5))
+			})
+		})
 	})
 })
 

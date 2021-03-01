@@ -36,6 +36,12 @@ const (
 	leaseDurationEnvVar = "BUILD_CONTROLLER_LEASE_DURATION"
 	renewDeadlineEnvVar = "BUILD_CONTROLLER_RENEW_DEADLINE"
 	retryPeriodEnvVar   = "BUILD_CONTROLLER_RETRY_PERIOD"
+
+	// environment variable for the controllers
+	controllerBuildMaxConcurrentReconciles                = "BUILD_MAX_CONCURRENT_RECONCILES"
+	controllerBuildRunMaxConcurrentReconciles             = "BUILDRUN_MAX_CONCURRENT_RECONCILES"
+	controllerBuildStrategyMaxConcurrentReconciles        = "BUILDSTRATEGY_MAX_CONCURRENT_RECONCILES"
+	controllerClusterBuildStrategyMaxConcurrentReconciles = "CLUSTERBUILDSTRATEGY_MAX_CONCURRENT_RECONCILES"
 )
 
 var (
@@ -52,6 +58,7 @@ type Config struct {
 	KanikoContainerImage string
 	Prometheus           PrometheusConfig
 	ManagerOptions       ManagerOptions
+	Controllers          Controllers
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -70,6 +77,19 @@ type ManagerOptions struct {
 	RetryPeriod             *time.Duration
 }
 
+// Controllers contains the options for the different controllers
+type Controllers struct {
+	Build                ControllerOptions
+	BuildRun             ControllerOptions
+	BuildStrategy        ControllerOptions
+	ClusterBuildStrategy ControllerOptions
+}
+
+// ControllerOptions contains configurable options for a controller
+type ControllerOptions struct {
+	MaxConcurrentReconciles int
+}
+
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
 func NewDefaultConfig() *Config {
 	return &Config{
@@ -82,6 +102,20 @@ func NewDefaultConfig() *Config {
 		},
 		ManagerOptions: ManagerOptions{
 			LeaderElectionNamespace: leaderElectionNamespaceDefault,
+		},
+		Controllers: Controllers{
+			Build: ControllerOptions{
+				MaxConcurrentReconciles: 0,
+			},
+			BuildRun: ControllerOptions{
+				MaxConcurrentReconciles: 0,
+			},
+			BuildStrategy: ControllerOptions{
+				MaxConcurrentReconciles: 0,
+			},
+			ClusterBuildStrategy: ControllerOptions{
+				MaxConcurrentReconciles: 0,
+			},
 		},
 	}
 }
@@ -130,6 +164,19 @@ func (c *Config) SetConfigFromEnv() error {
 		return err
 	}
 
+	if err := updateIntOption(&c.Controllers.Build.MaxConcurrentReconciles, controllerBuildMaxConcurrentReconciles); err != nil {
+		return err
+	}
+	if err := updateIntOption(&c.Controllers.BuildRun.MaxConcurrentReconciles, controllerBuildRunMaxConcurrentReconciles); err != nil {
+		return err
+	}
+	if err := updateIntOption(&c.Controllers.BuildStrategy.MaxConcurrentReconciles, controllerBuildStrategyMaxConcurrentReconciles); err != nil {
+		return err
+	}
+	if err := updateIntOption(&c.Controllers.ClusterBuildStrategy.MaxConcurrentReconciles, controllerClusterBuildStrategyMaxConcurrentReconciles); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -168,6 +215,18 @@ func updateBuildOperatorDurationOption(d **time.Duration, envVarName string) err
 		}
 
 		*d = &valueDuration
+	}
+
+	return nil
+}
+
+func updateIntOption(i *int, envVarName string) error {
+	if value := os.Getenv(envVarName); value != "" {
+		intValue, err := strconv.ParseInt(value, 10, 0)
+		if err != nil {
+			return err
+		}
+		*i = int(intValue)
 	}
 
 	return nil
