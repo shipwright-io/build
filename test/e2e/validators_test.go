@@ -29,8 +29,6 @@ import (
 )
 
 const (
-	EnvVarCreateGlobalObjects  = "TEST_E2E_CREATE_GLOBALOBJECTS"
-	EnvVarController           = "TEST_E2E_CONTROLLER"
 	EnvVarServiceAccountName   = "TEST_E2E_SERVICEACCOUNT_NAME"
 	EnvVarVerifyTektonObjects  = "TEST_E2E_VERIFY_TEKTONOBJECTS"
 	EnvVarTimeoutMultiplier    = "TEST_E2E_TIMEOUT_MULTIPLIER"
@@ -131,16 +129,6 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 	Expect(err).ToNot(HaveOccurred(), "on creating container registry secret")
 }
 
-// createClusterBuildStrategy create ClusterBuildStrategy resource.
-func createClusterBuildStrategy(testBuild *utils.TestBuild, cbs *buildv1alpha1.ClusterBuildStrategy) {
-	_, err := testBuild.BuildClientSet.BuildV1alpha1().ClusterBuildStrategies().Create(testBuild.Context, cbs, metav1.CreateOptions{})
-	if err != nil && apierrors.IsAlreadyExists(err) {
-		return
-	}
-
-	Expect(err).NotTo(HaveOccurred(), "Failed to create cluster build strategy")
-}
-
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
 func validateBuildRunToSucceed(
 	testBuild *utils.TestBuild,
@@ -239,17 +227,6 @@ func buildStrategyTestData(ns string, buildStrategyCRPath string) (*buildv1alpha
 	buildStrategy.SetNamespace(ns)
 
 	return buildStrategy, err
-}
-
-// clusterBuildStrategyTestData gets the us the ClusterBuildStrategy test data set up
-func clusterBuildStrategyTestData(buildStrategyCRPath string) (*buildv1alpha1.ClusterBuildStrategy, error) {
-	obj, err := readAndDecode(buildStrategyCRPath)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterBuildStrategy := obj.(*buildv1alpha1.ClusterBuildStrategy)
-	return clusterBuildStrategy, err
 }
 
 func buildTestData(namespace string, identifier string, filePath string) (*buildv1alpha1.Build, error) {

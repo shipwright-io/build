@@ -12,13 +12,6 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	buildconfig "github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/controller"
-	"github.com/shipwright-io/build/test/integration/utils"
 )
 
 // Logf logs data
@@ -55,26 +48,4 @@ func getGinkgoNode() int {
 		return 0
 	}
 	return ginkgoNode
-}
-
-func startLocalOperator(testBuild *utils.TestBuild, stop chan struct{}) {
-	buildCfg := buildconfig.NewDefaultConfig()
-	err := buildCfg.SetConfigFromEnv()
-	Expect(err).ToNot(HaveOccurred())
-
-	mgr, err := controller.NewManager(testBuild.Context, buildCfg, testBuild.KubeConfig, manager.Options{
-		LeaderElection:          true,
-		LeaderElectionID:        "shipwright-build-controller-lock",
-		LeaderElectionNamespace: testBuild.Namespace,
-		LeaseDuration:           buildCfg.ManagerOptions.LeaseDuration,
-		RenewDeadline:           buildCfg.ManagerOptions.RenewDeadline,
-		RetryPeriod:             buildCfg.ManagerOptions.RetryPeriod,
-		Namespace:               "",
-	})
-	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		err := mgr.Start(stop)
-		Expect(err).ToNot(HaveOccurred(), "Failed to start local operator")
-	}()
 }
