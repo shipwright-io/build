@@ -5,8 +5,8 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: https://github.com/qu1queee/taxi
-    revision: master
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
   strategy:
     name: buildah
     kind: ClusterBuildStrategy

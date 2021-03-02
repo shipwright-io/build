@@ -293,7 +293,8 @@ metadata:
   name: kaniko-medium
 spec:
   source:
-    url: https://github.com/qu1queee/taxi
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy

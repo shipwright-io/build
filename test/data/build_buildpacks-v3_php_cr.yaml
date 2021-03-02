@@ -7,7 +7,6 @@ spec:
   source:
     url: https://github.com/cloudfoundry/cf-acceptance-tests
     contextDir: assets/php
-    revision: main
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
