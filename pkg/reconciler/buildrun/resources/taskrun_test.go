@@ -121,7 +121,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			namespace = "build-test"
 			contextDir = "src"
-			revision = "master"
+			revision = ""
 			builderImage = &buildv1alpha1.Image{
 				ImageURL: "heroku/buildpacks:18",
 			}
