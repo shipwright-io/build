@@ -5,8 +5,8 @@ metadata:
   name: buildah-custom-context-dockerfile
 spec:
   source:
-    url: https://github.com/SaschaSchwarze0/npm-simple
-    contextDir: renamed
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: docker-build-renamed
   strategy:
     name: buildah
     kind: ClusterBuildStrategy
