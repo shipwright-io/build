@@ -38,13 +38,21 @@ type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Sch
 // and Start it when the Manager is Started.
 func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "build-controller")
-	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference))
+	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference), c.Controllers.Build.MaxConcurrentReconciles)
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error {
+func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles int) error {
+	// Create the controller options
+	options := controller.Options{
+		Reconciler: r,
+	}
+	if maxConcurrentReconciles > 0 {
+		options.MaxConcurrentReconciles = maxConcurrentReconciles
+	}
+
 	// Create a new controller
-	c, err := controller.New("build-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("build-controller", mgr, options)
 	if err != nil {
 		return err
 	}
@@ -80,8 +88,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 	}
 
 	// Watch for changes to primary resource Build
-	err = c.Watch(&source.Kind{Type: &build.Build{}}, &handler.EnqueueRequestForObject{}, pred)
-	if err != nil {
+	if err = c.Watch(&source.Kind{Type: &build.Build{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
 		return err
 	}
 

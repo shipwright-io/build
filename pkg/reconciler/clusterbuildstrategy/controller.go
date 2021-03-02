@@ -22,22 +22,25 @@ import (
 // and Start it when the Manager is Started.
 func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "clusterbuildstrategy-controller")
-	return add(ctx, mgr, NewReconciler(ctx, c, mgr))
+	return add(ctx, mgr, NewReconciler(ctx, c, mgr), c.Controllers.ClusterBuildStrategy.MaxConcurrentReconciles)
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error {
+func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles int) error {
+	// Create the controller options
+	options := controller.Options{
+		Reconciler: r,
+	}
+	if maxConcurrentReconciles > 0 {
+		options.MaxConcurrentReconciles = maxConcurrentReconciles
+	}
+
 	// Create a new controller
-	c, err := controller.New("clusterbuildstrategy-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("clusterbuildstrategy-controller", mgr, options)
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to primary resource ClusterBuildStrategy
-	err = c.Watch(&source.Kind{Type: &buildv1alpha1.ClusterBuildStrategy{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.Watch(&source.Kind{Type: &buildv1alpha1.ClusterBuildStrategy{}}, &handler.EnqueueRequestForObject{})
 }

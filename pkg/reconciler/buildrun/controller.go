@@ -33,13 +33,21 @@ type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Sch
 // and Start it when the Manager is Started.
 func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "buildrun-controller")
-	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference))
+	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference), c.Controllers.BuildRun.MaxConcurrentReconciles)
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error {
+func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles int) error {
+	// Create the controller options
+	options := controller.Options{
+		Reconciler: r,
+	}
+	if maxConcurrentReconciles > 0 {
+		options.MaxConcurrentReconciles = maxConcurrentReconciles
+	}
+
 	// Create a new controller
-	c, err := controller.New("buildrun-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("buildrun-controller", mgr, options)
 	if err != nil {
 		return err
 	}
@@ -98,8 +106,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler) error
 	}
 
 	// Watch for changes to primary resource BuildRun
-	err = c.Watch(&source.Kind{Type: &buildv1alpha1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun)
-	if err != nil {
+	if err = c.Watch(&source.Kind{Type: &buildv1alpha1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun); err != nil {
 		return err
 	}
 
