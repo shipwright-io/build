@@ -83,7 +83,7 @@ The `Build` definition supports the following fields:
 A `Build` resource can specify a Git source, together with other parameters like:
 
 - `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the `ssh` data.
-- `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name.
+- `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name. If not defined, it will fallback to the git repository default branch.
 - `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently, only supported by `buildah`, `kaniko` and `buildpacks` build strategies.
 
 By default, the Build controller will validate that the Git repository exists. If the validation is not desired, users can define the `build.shipwright.io/verify.repository` annotation with `false`. For example:

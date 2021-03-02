@@ -180,7 +180,10 @@ func GenerateTaskRun(
 	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
 
-	revision := "master"
+	// Set revision to empty if the field is not specified in the Build.
+	// This will force Tekton Controller to do a git symbolic-link to HEAD
+	// giving back the default branch of the repository
+	revision := ""
 	if build.Spec.Source.Revision != nil {
 		revision = *build.Spec.Source.Revision
 	}
