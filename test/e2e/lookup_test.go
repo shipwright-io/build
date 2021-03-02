@@ -15,8 +15,8 @@ import (
 	"github.com/shipwright-io/build/test/integration/utils"
 )
 
-func lookupSecret(build *utils.TestBuild, entity types.NamespacedName) (*corev1.Secret, error) {
-	result, err := lookupRuntimeObject(testBuild, func() (runtime.Object, error) {
+func lookupSecret(testBuild *utils.TestBuild, entity types.NamespacedName) (*corev1.Secret, error) {
+	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return testBuild.
 			Clientset.
 			CoreV1().
@@ -24,15 +24,11 @@ func lookupSecret(build *utils.TestBuild, entity types.NamespacedName) (*corev1.
 			Get(testBuild.Context, entity.Name, metav1.GetOptions{})
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return result.(*corev1.Secret), nil
+	return result.(*corev1.Secret), err
 }
 
 func lookupPod(testBuild *utils.TestBuild, entity types.NamespacedName) (*corev1.Pod, error) {
-	result, err := lookupRuntimeObject(testBuild, func() (runtime.Object, error) {
+	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return testBuild.
 			Clientset.
 			CoreV1().
@@ -40,39 +36,27 @@ func lookupPod(testBuild *utils.TestBuild, entity types.NamespacedName) (*corev1
 			Get(testBuild.Context, entity.Name, metav1.GetOptions{})
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return result.(*corev1.Pod), nil
+	return result.(*corev1.Pod), err
 }
 
 func lookupBuild(testBuild *utils.TestBuild, entity types.NamespacedName) (*buildv1alpha1.Build, error) {
-	result, err := lookupRuntimeObject(testBuild, func() (runtime.Object, error) {
+	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return testBuild.GetBuild(entity.Name)
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return result.(*buildv1alpha1.Build), nil
+	return result.(*buildv1alpha1.Build), err
 }
 
 func lookupBuildRun(testBuild *utils.TestBuild, entity types.NamespacedName) (*buildv1alpha1.BuildRun, error) {
-	result, err := lookupRuntimeObject(testBuild, func() (runtime.Object, error) {
+	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return testBuild.GetBR(entity.Name)
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return result.(*buildv1alpha1.BuildRun), nil
+	return result.(*buildv1alpha1.BuildRun), err
 }
 
 func lookupTaskRun(testBuild *utils.TestBuild, entity types.NamespacedName) (*pipelinev1beta1.TaskRun, error) {
-	result, err := lookupRuntimeObject(testBuild, func() (runtime.Object, error) {
+	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return testBuild.
 			PipelineClientSet.
 			TektonV1beta1().
@@ -80,15 +64,11 @@ func lookupTaskRun(testBuild *utils.TestBuild, entity types.NamespacedName) (*pi
 			Get(testBuild.Context, entity.Name, metav1.GetOptions{})
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return result.(*pipelinev1beta1.TaskRun), nil
+	return result.(*pipelinev1beta1.TaskRun), err
 }
 
 func lookupServiceAccount(testBuild *utils.TestBuild, entity types.NamespacedName) (*corev1.ServiceAccount, error) {
-	result, err := lookupRuntimeObject(testBuild, func() (runtime.Object, error) {
+	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return testBuild.
 			Clientset.
 			CoreV1().
@@ -96,9 +76,5 @@ func lookupServiceAccount(testBuild *utils.TestBuild, entity types.NamespacedNam
 			Get(testBuild.Context, entity.Name, metav1.GetOptions{})
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return result.(*corev1.ServiceAccount), nil
+	return result.(*corev1.ServiceAccount), err
 }

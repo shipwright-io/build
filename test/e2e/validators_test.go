@@ -41,7 +41,7 @@ const (
 	EnvVarSourceURLSecret      = "TEST_SOURCE_SECRET"
 )
 
-func lookupRuntimeObject(testBuild *utils.TestBuild, f func() (runtime.Object, error)) (result runtime.Object, err error) {
+func lookupRuntimeObject(f func() (runtime.Object, error)) (result runtime.Object, err error) {
 	err = wait.PollImmediate(4*time.Second, 60*time.Second, func() (bool, error) {
 		result, err = f()
 		if err != nil {
@@ -130,12 +130,7 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 }
 
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
-func validateBuildRunToSucceed(
-	testBuild *utils.TestBuild,
-	testBuildRun *buildv1alpha1.BuildRun,
-	timeout time.Duration,
-	retry time.Duration,
-) {
+func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1alpha1.BuildRun) {
 	trueCondition := corev1.ConditionTrue
 	falseCondition := corev1.ConditionFalse
 

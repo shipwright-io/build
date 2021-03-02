@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -35,7 +34,7 @@ func removeTestIDSuffix(id string) string {
 	return id[:len(id)-6]
 }
 
-func createBuild(testBuild *utils.TestBuild, identifier string, filePath string, timeout time.Duration, interval time.Duration) *buildv1alpha1.Build {
+func createBuild(testBuild *utils.TestBuild, identifier string, filePath string) *buildv1alpha1.Build {
 	build, err := buildTestData(testBuild.Namespace, identifier, filePath)
 	Expect(err).ToNot(HaveOccurred(), "Error retrieving build test data")
 

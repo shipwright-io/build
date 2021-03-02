@@ -60,8 +60,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"samples/build/build_buildah_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -69,7 +67,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -83,8 +81,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_buildah_cr_custom_context+dockerfile.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -92,7 +88,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildah_cr_custom_context+dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -106,8 +102,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"samples/build/build_buildpacks-v3-heroku_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -115,7 +109,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -136,8 +130,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"samples/build/build_buildpacks-v3-heroku_namespaced_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -145,7 +137,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 
 		AfterEach(func() {
@@ -164,8 +156,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"samples/build/build_buildpacks-v3_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -173,7 +163,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -194,8 +184,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"samples/build/build_buildpacks-v3_namespaced_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -203,7 +191,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 
 		AfterEach(func() {
@@ -222,8 +210,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_buildpacks-v3_php_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -231,7 +217,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_php_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -245,8 +231,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_buildpacks-v3_ruby_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -254,7 +238,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_ruby_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -268,8 +252,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_buildpacks-v3_golang_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -277,7 +259,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -291,8 +273,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_buildpacks-v3_java_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -300,7 +280,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_java_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -313,8 +293,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_buildpacks-v3_nodejs_runtime-image_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -322,7 +300,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_nodejs_runtime-image_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -336,8 +314,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"samples/build/build_kaniko_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -345,7 +321,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -359,8 +335,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_kaniko_cr_advanced_dockerfile.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -368,7 +342,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_kaniko_cr_advanced_dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -382,8 +356,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"test/data/build_kaniko_cr_custom_context+dockerfile.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -391,7 +363,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_kaniko_cr_custom_context+dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -405,8 +377,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				testBuild,
 				testID,
 				"samples/build/build_source-to-image_cr.yaml",
-				cleanupTimeout,
-				cleanupRetryInterval,
 			)
 		})
 
@@ -414,7 +384,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
 
@@ -436,8 +406,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					testBuild,
 					testID,
 					"test/data/build_buildah_cr_private_github.yaml",
-					cleanupTimeout,
-					cleanupRetryInterval,
 				)
 			})
 
@@ -445,7 +413,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-				validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+				validateBuildRunToSucceed(testBuild, buildRun)
 			})
 		})
 
@@ -459,8 +427,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					testBuild,
 					testID,
 					"test/data/build_buildah_cr_private_gitlab.yaml",
-					cleanupTimeout,
-					cleanupRetryInterval,
 				)
 			})
 
@@ -468,7 +434,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+				validateBuildRunToSucceed(testBuild, buildRun)
 			})
 		})
 
@@ -482,8 +448,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					testBuild,
 					testID,
 					"test/data/build_kaniko_cr_private_github.yaml",
-					cleanupTimeout,
-					cleanupRetryInterval,
 				)
 			})
 
@@ -491,7 +455,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-				validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+				validateBuildRunToSucceed(testBuild, buildRun)
 			})
 		})
 
@@ -505,8 +469,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					testBuild,
 					testID,
 					"test/data/build_kaniko_cr_private_gitlab.yaml",
-					cleanupTimeout,
-					cleanupRetryInterval,
 				)
 			})
 
@@ -514,7 +476,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+				validateBuildRunToSucceed(testBuild, buildRun)
 			})
 		})
 
@@ -528,8 +490,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					testBuild,
 					testID,
 					"test/data/build_source-to-image_cr_private_github.yaml",
-					cleanupTimeout,
-					cleanupRetryInterval,
 				)
 			})
 
@@ -537,7 +497,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
 				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-				validateBuildRunToSucceed(testBuild, buildRun, cleanupTimeout, cleanupRetryInterval)
+				validateBuildRunToSucceed(testBuild, buildRun)
 			})
 		})
 	})
