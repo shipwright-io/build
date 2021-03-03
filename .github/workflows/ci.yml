@@ -127,10 +127,14 @@ jobs:
             kubectl -n shipwright-build get pod
             PODS=$(kubectl -n shipwright-build get pod -o json)
             POD_NAME=$(echo "${PODS}" | jq -r '.items[] | select(.metadata.name | startswith("shipwright-build-controller-")) | .metadata.name')
-            RESTART_COUNT=$(echo "${PODS}" | jq -r ".items[] | select(.metadata.name == \"${POD_NAME}\") | .status.containerStatuses[0].restartCount")
-            if [ "${RESTART_COUNT}" != "0" ]; then
-              echo "# Previous logs:"
-              kubectl -n shipwright-build logs "${POD_NAME}" --previous || true
+            if [ "${POD_NAME}" != "" ]; then
+              RESTART_COUNT=$(echo "${PODS}" | jq -r ".items[] | select(.metadata.name == \"${POD_NAME}\") | .status.containerStatuses[0].restartCount")
+              if [ "${RESTART_COUNT}" != "0" ]; then
+                echo "# Previous logs:"
+                kubectl -n shipwright-build logs "${POD_NAME}" --previous || true
+              fi
+              echo "# Logs:"
+              kubectl -n shipwright-build logs "${POD_NAME}"
+            else
+              echo "# Pod is missing, there are no logs to retrieve, bailing out..."
             fi
-            echo "# Logs:"
-            kubectl -n shipwright-build logs "${POD_NAME}"
