@@ -15,7 +15,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.20.1
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20201209123823-ac852fbbde11
+	golang.org/x/net v0.0.0-20201209123823-ac852fbbde11 // indirect
 	k8s.io/api v0.18.12
 	k8s.io/apimachinery v0.19.0
 	k8s.io/client-go v12.0.0+incompatible
