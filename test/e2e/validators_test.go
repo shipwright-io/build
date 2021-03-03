@@ -141,10 +141,7 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
 	nextStatusLog := time.Now().Add(60 * time.Second)
 	Eventually(func() corev1.ConditionStatus {
-		// TODO (Re-)Introduce retry logic ...
-		// buildRunNsName := types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace}
-		// err = clientGet(testBuild, buildRunNsName, testBuildRun)
-		testBuildRun, err = testBuild.GetBR(testBuildRun.Name)
+		testBuildRun, err = lookupBuildRun(testBuild, types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		if testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded) == nil {
