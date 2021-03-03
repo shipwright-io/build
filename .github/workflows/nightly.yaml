@@ -1,0 +1,66 @@
+name: Nightly Release
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+  schedule:
+  - cron: '0 5 * * *' # 5 AM UTC = Midnight EST
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d-%s')"
+
+    - name: Get latest nightly release upload_url
+      id: get_release
+      run: |
+        UPLOAD_URL=$(curl https://api.github.com/repos/${GITHUB_REPOSITORY}/releases | jq -r '.[] | select(.name | startswith("Nightly Releases")).upload_url' | tail -n 1 | cut -d"{" -f1)
+        echo "Latest nightly release upload URL is ${UPLOAD_URL}"
+        echo "::set-output name=upload_url::${UPLOAD_URL}"
+
+    - name: Install Go
+      uses: actions/setup-go@v2
+    - name: Install Ko
+      run: |
+        echo '::group:: install ko'
+        curl -L https://github.com/google/ko/releases/download/v0.8.0/ko_0.8.0_Linux_x86_64.tar.gz | tar xzf - ko
+        chmod +x ./ko
+        sudo mv ko /usr/local/bin
+        echo '::endgroup::'
+
+    - name: Ko resolve nightly.yaml
+      env:
+        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+        IMAGE_HOST: quay.io
+        IMAGE: shipwright/shipwright-operator
+      run: |
+        make release
+        mv release.yaml nightly-${{ steps.date.outputs.date }}.yaml
+        mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
+
+    - name: Upload Release Asset
+      id: upload_release_asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_release.outputs.upload_url }}?name=nightly-${{ steps.date.outputs.date }}.yaml
+        asset_path: ./nightly-${{ steps.date.outputs.date }}.yaml
+        asset_name: nightly-${{ steps.date.outputs.date}}.yaml
+        asset_content_type: application/x-yaml
+    - name: Upload Release Asset
+      id: upload_release_asset-debug
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_release.outputs.upload_url }}?name=nightly-${{ steps.date.outputs.date }}-debug.yaml
+        asset_path: ./nightly-${{ steps.date.outputs.date }}-debug.yaml
+        asset_name: nightly-${{ steps.date.outputs.date}}-debug.yaml
+        asset_content_type: application/x-yaml
