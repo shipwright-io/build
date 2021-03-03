@@ -6,17 +6,11 @@ package e2e_test
 
 import (
 	"os"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-)
-
-var (
-	cleanupRetryInterval = time.Second * 1
-	cleanupTimeout       = time.Second * 5
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
@@ -27,9 +21,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		build    *buildv1alpha1.Build
 		buildRun *buildv1alpha1.BuildRun
 	)
-
-	BeforeEach(func() {
-	})
 
 	AfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {

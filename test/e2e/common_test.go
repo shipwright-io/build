@@ -6,7 +6,6 @@ package e2e_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -199,7 +198,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 					Follow:    false,
 				})
 
-				podLogs, err := req.Stream(context.TODO())
+				podLogs, err := req.Stream(testBuild.Context)
 				if err != nil {
 					Logf("Failed to retrieve the logs of container %s: %v", container.Name, err)
 					continue
