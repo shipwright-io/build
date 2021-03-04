@@ -9,9 +9,6 @@ SPDX-License-Identifier: Apache-2.0
     <a alt="GoReport" href="https://goreportcard.com/report/github.com/shipwright-io/build">
         <img src="https://goreportcard.com/badge/github.com/shipwright-io/build">
     </a>
-    <a alt="Travis-CI Status" href="https://travis-ci.org/github/shipwright-io/build">
-        <img src="https://travis-ci.org/shipwright-io/build.svg?branch=master">
-    </a>
     <img alt="License" src="https://img.shields.io/github/license/shipwright-io/build">
     <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"> <img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
 </p>
