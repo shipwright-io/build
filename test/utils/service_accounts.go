@@ -8,7 +8,6 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -34,7 +33,8 @@ func (t *TestBuild) CreateSAFromName(saName string) error {
 }
 
 // GetSA retrieves an existing service-account by name
-func (t *TestBuild) GetSA(saName string) (*v1.ServiceAccount, error) {
+// Deprecated: Use LookupServiceAccount instead.
+func (t *TestBuild) GetSA(saName string) (*corev1.ServiceAccount, error) {
 	client := t.Clientset.CoreV1().ServiceAccounts(t.Namespace)
 	sa, err := client.Get(context.TODO(), saName, metav1.GetOptions{})
 	if err != nil {

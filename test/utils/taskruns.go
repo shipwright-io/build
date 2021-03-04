@@ -32,7 +32,7 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRu
 	}
 
 	if len(trList.Items) != 1 {
-		return nil, fmt.Errorf("failed to find an owned TaskRun based on a Buildrun %s name", buildRunName)
+		return nil, fmt.Errorf("failed to find an owned TaskRun based on a Buildrun %s/%s name", t.Namespace, buildRunName)
 	}
 
 	return &trList.Items[0], nil

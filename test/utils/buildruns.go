@@ -30,6 +30,7 @@ func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 }
 
 // GetBR retrieves a BuildRun from a desired namespace
+// Deprecated: Use LookupBuildRun instead.
 func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
 	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
 

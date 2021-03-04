@@ -37,6 +37,7 @@ func (t *TestBuild) DeleteBuild(name string) error {
 }
 
 // GetBuild returns a Build based on name
+// Deprecated: Use LookupBuild instead
 func (t *TestBuild) GetBuild(name string) (*v1alpha1.Build, error) {
 	return t.BuildClientSet.
 		BuildV1alpha1().

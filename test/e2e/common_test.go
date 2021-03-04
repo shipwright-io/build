@@ -13,13 +13,13 @@ import (
 	"strings"
 
 	. "github.com/onsi/gomega"
+	knativeapis "knative.dev/pkg/apis"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	knativeapis "knative.dev/pkg/apis"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test/utils"
@@ -104,7 +104,7 @@ func amendBuild(identifier string, b *buildv1alpha1.Build) {
 
 // retrieveBuildAndBuildRun will retrieve the build and buildRun
 func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1alpha1.BuildRun, *buildv1alpha1.Build, error) {
-	buildRun, err := lookupBuildRun(testBuild, types.NamespacedName{Name: buildRunName, Namespace: namespace})
+	buildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get BuildRun %s: %s", buildRunName, err)
 		return nil, nil, err
@@ -112,7 +112,7 @@ func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buil
 
 	buildName := buildRun.Spec.BuildRef.Name
 
-	build, err := lookupBuild(testBuild, types.NamespacedName{Name: buildName, Namespace: namespace})
+	build, err := testBuild.LookupBuild(types.NamespacedName{Name: buildName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get Build %s: %s", buildName, err)
 		return buildRun, nil, err
@@ -150,7 +150,8 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 
 		// Only log details of TaskRun if Tekton objects can be accessed
 		if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
-			if taskRun, _ := lookupTaskRun(testBuild, types.NamespacedName{Name: *buildRun.Status.LatestTaskRunRef, Namespace: namespace}); taskRun != nil {
+			taskRun, _ := testBuild.LookupTaskRun(types.NamespacedName{Name: *buildRun.Status.LatestTaskRunRef, Namespace: namespace})
+			if taskRun != nil {
 				condition := taskRun.Status.GetCondition(knativeapis.ConditionSucceeded)
 				if condition != nil {
 					Logf("The status of TaskRun %s: reason=%s, message=%s", taskRun.Name, condition.Reason, condition.Message)
@@ -167,7 +168,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 		// retrieve or query pod depending on whether we have the pod name from the TaskRun
 		var pod *corev1.Pod
 		if podName != "" {
-			pod, err = lookupPod(testBuild, types.NamespacedName{Name: podName, Namespace: namespace})
+			pod, err = testBuild.LookupPod(types.NamespacedName{Name: podName, Namespace: namespace})
 			if err != nil {
 				Logf("Error retrieving pod %s: %v", podName, err)
 				pod = nil

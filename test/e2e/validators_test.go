@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -20,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/kubectl/pkg/scheme"
 
 	"github.com/shipwright-io/build/pkg/apis"
@@ -40,38 +38,6 @@ const (
 	EnvVarSourceURLGitlab      = "TEST_PRIVATE_GITLAB"
 	EnvVarSourceURLSecret      = "TEST_SOURCE_SECRET"
 )
-
-func lookupRuntimeObject(f func() (runtime.Object, error)) (result runtime.Object, err error) {
-	err = wait.PollImmediate(4*time.Second, 60*time.Second, func() (bool, error) {
-		result, err = f()
-		if err != nil {
-			// check if we have an error that we want to retry
-			if isRetryableError(err) {
-				Logf("lookup of runtime object failed with: '%v', but will be retried", err)
-				return false, nil
-			}
-
-			// return all other errors directly
-			Logf("lookup of runtime object failed with: '%v'", err)
-			return true, err
-		}
-
-		// successful call
-		return true, nil
-	})
-
-	return
-}
-
-func isRetryableError(err error) bool {
-	return apierrors.IsServerTimeout(err) ||
-		apierrors.IsTimeout(err) ||
-		apierrors.IsTooManyRequests(err) ||
-		apierrors.IsInternalError(err) ||
-		err.Error() == "etcdserver: request timed out" ||
-		err.Error() == "rpc error: code = Unavailable desc = transport is closing" ||
-		strings.Contains(err.Error(), "net/http: request canceled while waiting for connection")
-}
 
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
 // Otherwise it will create the service account. No error occurs if the service account already exists.
@@ -106,7 +72,7 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 		return
 	}
 
-	_, err := lookupSecret(testBuild, types.NamespacedName{Namespace: testBuild.Namespace, Name: secretName})
+	_, err := testBuild.LookupSecret( types.NamespacedName{Namespace: testBuild.Namespace, Name: secretName})
 	if err == nil {
 		Logf("Container registry secret is found at '%s/%s'", testBuild.Namespace, secretName)
 		return
@@ -141,7 +107,7 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
 	nextStatusLog := time.Now().Add(60 * time.Second)
 	Eventually(func() corev1.ConditionStatus {
-		testBuildRun, err = lookupBuildRun(testBuild, types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
+		testBuildRun, err = testBuild.LookupBuildRun( types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		if testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded) == nil {
@@ -188,7 +154,7 @@ func validateServiceAccountDeletion(buildRun *buildv1alpha1.BuildRun, namespace 
 	}
 
 	Logf("Verifying that service account '%s' has been deleted.", saNamespacedName.Name)
-	_, err := lookupServiceAccount(testBuild, saNamespacedName)
+	_, err := testBuild.LookupServiceAccount( saNamespacedName)
 	Expect(err).To(HaveOccurred(), "Expected error to retrieve the generated service account after build run completion.")
 	Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Expected service account to be deleted.")
 }
