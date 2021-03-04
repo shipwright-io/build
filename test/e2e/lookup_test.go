@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/test/integration/utils"
+	"github.com/shipwright-io/build/test/utils"
 )
 
 func lookupSecret(testBuild *utils.TestBuild, entity types.NamespacedName) (*corev1.Secret, error) {

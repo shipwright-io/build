@@ -22,7 +22,7 @@ import (
 	knativeapis "knative.dev/pkg/apis"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/test/integration/utils"
+	"github.com/shipwright-io/build/test/utils"
 )
 
 func generateTestID(id string) string {
