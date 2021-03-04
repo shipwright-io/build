@@ -71,39 +71,26 @@ Examples of `Build` resource using the example strategies installed by default.
 ## Try it!
 
 * Get a [Kubernetes](https://kubernetes.io/) cluster and [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) set up to connect to your cluster.
-* Clone this repository from GitHub at the v0.3.0 tag:
+* Install [Tekton](https://cloud.google.com/tekton) `v0.20.1`:
+    ```bash
+    $ kubectl apply -f https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.20.1/release.yaml
+    ```
+
+* Install Shipwright build controller `v0.4.0`:
 
   ```bash
-  $ git clone --branch v0.3.0 https://github.com/shipwright-io/build.git
-  ...
-  $ cd build/
+  $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.4.0/release.yaml
   ```
 
-  _Coming soon - install Shipwright Build via kubectl!_
-
-* Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.20.1.
+* Install sample build strategies:
 
   ```bash
-  $ hack/install-tekton.sh
-  ```
-
-* Install Shipwright and sample strategies via `make`:
-
-  ```bash
-  $ make install
-  ```
-
-* Add a push secret to your container image repository, such as one on Docker Hub or quay.io:
-
-  ```yaml
-  $ kubectl create secret generic push-secret \
-  --from-file=.dockerconfigjson=$HOME/.docker/config.json \
-  --type=kubernetes.io/dockerconfigjson
+  $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.4.0/default_strategies.yaml
   ```
 
 * Create a [Cloud Native Buildpacks](samples/build/build_buildpacks_v3_cr.yaml) build, replacing
   `<MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>` with the registry hostname, username, and repository your
-  cluster has access to and that you have permission to push images to.
+  cluster has access to and that you have permission to push images to by creating or using the secret `push-secret`:
 
   ```bash
   $ kubectl apply -f - <<EOF
@@ -124,7 +111,14 @@ Examples of `Build` resource using the example strategies installed by default.
   EOF
   ```
 
-* Run your build:
+* Check your build status:
+    ```bash
+    ✔ $ kubectl get builds
+    NAME                     REGISTERED   REASON      BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
+    buildpack-nodejs-build   True         Succeeded   ClusterBuildStrategy   buildpacks-v3       68s
+    ```
+
+* Submit your buildrun:
 
   ```bash
   $ kubectl apply -f - <<EOF
@@ -140,6 +134,14 @@ Examples of `Build` resource using the example strategies installed by default.
   EOF
   ```
 
+* Wait your buildrun is completed:
+    ```bash
+    ✔ $ kubectl get buildruns
+    NAME                       SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
+    buildpack-nodejs-build-1   True        Succeeded   69s         2s
+    ```
+  After your buildrun is completed, check your container registry `<MY_REGISTRY>/<MY_USERNAME>`, you will find the new generated image `<MY_REPO>:latest` is uploaded there.
+  
 ## Roadmap
 
 ### Build Strategies Support
