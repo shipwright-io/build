@@ -5,8 +5,8 @@ metadata:
   name: buildpack-java-build
 spec:
   source:
-    url: https://github.com/cloudfoundry/cf-acceptance-tests
-    contextDir: assets/java
+    url: https://github.com/shipwright-io/sample-java
+    contextDir: source-build
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy

@@ -7,7 +7,8 @@ metadata:
     build.shipwright.io/build-run-deletion: "false"
 spec:
   source:
-    url: https://github.com/SaschaSchwarze0/java-simple
+    url: https://github.com/shipwright-io/sample-java
+    contextDir: docker-build
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy
