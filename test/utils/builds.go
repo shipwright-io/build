@@ -63,33 +63,22 @@ func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt ty
 // GetBuildTillValidation polls until a Build gets a validation and updates
 // it´s registered field. If timeout is reached or an error is found, it will
 // return with an error
-func (t *TestBuild) GetBuildTillValidation(name string) (*v1alpha1.Build, error) {
-
-	var (
-		pollBuildTillRegistration = func() (bool, error) {
-
-			bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
-
-			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
-			if err != nil && !apierrors.IsNotFound(err) {
-				return false, err
-			}
-			// TODO: we might improve the conditional here
-			if buildRun.Status.Registered != "" {
-				return true, nil
-			}
-
-			return false, nil
+func (t *TestBuild) GetBuildTillValidation(name string) (build *v1alpha1.Build, err error) {
+	err = wait.PollImmediate(t.Interval, t.TimeOut, func() (bool, error) {
+		build, err = t.LookupBuild(types.NamespacedName{Namespace: t.Namespace, Name: name})
+		if err != nil && !apierrors.IsNotFound(err) {
+			return false, err
 		}
-	)
 
-	brInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+		// TODO: we might improve the conditional here
+		if build.Status.Registered != "" {
+			return true, nil
+		}
 
-	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBuildTillRegistration); err != nil {
-		return nil, err
-	}
+		return false, nil
+	})
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return
 }
 
 // GetBuildTillRegistration polls until a Build gets a desired validation and updates
