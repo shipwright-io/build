@@ -3,7 +3,7 @@ on:
       branches: [ master ]
     push:
       branches: [ master ]
-name: ci/github
+name: Unit, Integration, and E2E Tests
 jobs:
     unit:
         strategy:
