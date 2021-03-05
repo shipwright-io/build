@@ -12,7 +12,7 @@ import (
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
+
 	"github.com/spf13/pflag"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -38,7 +38,6 @@ func printVersion(ctx context.Context) {
 	ctxlog.Info(ctx, fmt.Sprintf("Operator Version: %s", version.Version))
 	ctxlog.Info(ctx, fmt.Sprintf("Go Version: %s", runtime.Version()))
 	ctxlog.Info(ctx, fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	ctxlog.Info(ctx, fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 }
 
 func main() {

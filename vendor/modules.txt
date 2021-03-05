@@ -100,6 +100,7 @@ github.com/go-git/go-git/v5/utils/merkletrie/noder
 ## explicit
 github.com/go-logr/logr
 # github.com/go-logr/zapr v0.1.1
+## explicit
 github.com/go-logr/zapr
 # github.com/go-openapi/jsonpointer v0.19.3
 github.com/go-openapi/jsonpointer
@@ -139,6 +140,7 @@ github.com/googleapis/gnostic/OpenAPIv2
 github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
 # github.com/gophercloud/gophercloud v0.6.0
+## explicit
 github.com/gophercloud/gophercloud
 github.com/gophercloud/gophercloud/openstack
 github.com/gophercloud/gophercloud/openstack/identity/v2/tenants
@@ -210,9 +212,6 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/operator-framework/operator-sdk v0.18.2
-## explicit
-github.com/operator-framework/operator-sdk/version
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/prometheus/client_golang v1.8.0
@@ -294,7 +293,6 @@ golang.org/x/crypto/ssh/terminal
 golang.org/x/mod/module
 golang.org/x/mod/semver
 # golang.org/x/net v0.0.0-20201209123823-ac852fbbde11
-## explicit
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/html
