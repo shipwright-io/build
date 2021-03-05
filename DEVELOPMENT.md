@@ -145,6 +145,10 @@ As you make changes to the code, you can redeploy your controller with:
    ```sh
    ko apply -P -R -f deploy/
    ```
+You may use the following command to re-generate CRDs of build and buildrun if you change their spec:
+   ```sh
+   make generate-crds
+   ```
 
 ### Tear it down
 
