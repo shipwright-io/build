@@ -8,6 +8,7 @@ on:
 
 jobs:
   nightly:
+    if: github.repository == "shipwright-io/build"
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

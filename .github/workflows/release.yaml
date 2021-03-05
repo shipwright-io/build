@@ -12,6 +12,7 @@ on:
 
 jobs:
   release:
+    if: github.repository == "shipwright-io/build"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
