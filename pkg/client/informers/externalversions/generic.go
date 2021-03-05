@@ -40,15 +40,15 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=build.dev, Version=v1alpha1
+	// Group=shipwright.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("builds"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Build().V1alpha1().Builds().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Shipwright().V1alpha1().Builds().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("buildruns"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Build().V1alpha1().BuildRuns().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Shipwright().V1alpha1().BuildRuns().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("buildstrategies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Build().V1alpha1().BuildStrategies().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Shipwright().V1alpha1().BuildStrategies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("clusterbuildstrategies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Build().V1alpha1().ClusterBuildStrategies().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Shipwright().V1alpha1().ClusterBuildStrategies().Informer()}, nil
 
 	}
 

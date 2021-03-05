@@ -45,10 +45,8 @@ func (t *TestBuild) LookupPod(entity types.NamespacedName) (*corev1.Pod, error) 
 
 func (t *TestBuild) LookupBuild(entity types.NamespacedName) (*buildv1alpha1.Build, error) {
 	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
-		return t.BuildClientSet.
-			BuildV1alpha1().
-			Builds(entity.Namespace).
-			Get(t.Context, entity.Name, metav1.GetOptions{})
+		return t.BuildClientSet.ShipwrightV1alpha1().
+			Builds(entity.Namespace).Get(t.Context, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*buildv1alpha1.Build), err
@@ -56,10 +54,8 @@ func (t *TestBuild) LookupBuild(entity types.NamespacedName) (*buildv1alpha1.Bui
 
 func (t *TestBuild) LookupBuildRun(entity types.NamespacedName) (*buildv1alpha1.BuildRun, error) {
 	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
-		return t.BuildClientSet.
-			BuildV1alpha1().
-			BuildRuns(entity.Namespace).
-			Get(t.Context, entity.Name, metav1.GetOptions{})
+		return t.BuildClientSet.ShipwrightV1alpha1().
+			BuildRuns(entity.Namespace).Get(t.Context, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*buildv1alpha1.BuildRun), err

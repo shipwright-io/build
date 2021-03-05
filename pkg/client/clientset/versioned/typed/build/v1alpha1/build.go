@@ -45,7 +45,7 @@ type builds struct {
 }
 
 // newBuilds returns a Builds
-func newBuilds(c *BuildV1alpha1Client, namespace string) *builds {
+func newBuilds(c *ShipwrightV1alpha1Client, namespace string) *builds {
 	return &builds{
 		client: c.RESTClient(),
 		ns:     namespace,

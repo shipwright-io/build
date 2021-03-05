@@ -21,7 +21,7 @@ import (
 
 // CreateBuild generates a Build on the current test namespace
 func (t *TestBuild) CreateBuild(build *v1alpha1.Build) error {
-	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+	bInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 
 	_, err := bInterface.Create(context.TODO(), build, metav1.CreateOptions{})
 	return err
@@ -29,7 +29,7 @@ func (t *TestBuild) CreateBuild(build *v1alpha1.Build) error {
 
 // DeleteBuild deletes a Build on the desired namespace
 func (t *TestBuild) DeleteBuild(name string) error {
-	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+	bInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 
 	err := bInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
 
@@ -39,10 +39,8 @@ func (t *TestBuild) DeleteBuild(name string) error {
 // GetBuild returns a Build based on name
 // Deprecated: Use LookupBuild instead
 func (t *TestBuild) GetBuild(name string) (*v1alpha1.Build, error) {
-	return t.BuildClientSet.
-		BuildV1alpha1().
-		Builds(t.Namespace).
-		Get(context.TODO(), name, metav1.GetOptions{})
+	return t.BuildClientSet.ShipwrightV1alpha1().
+		Builds(t.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
 // PatchBuild patches an existing Build using the merge patch type
@@ -52,7 +50,7 @@ func (t *TestBuild) PatchBuild(buildName string, data []byte) (*v1alpha1.Build, 
 
 // PatchBuildWithPatchType patches an existing Build and allows specifying the patch type
 func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt types.PatchType) (*v1alpha1.Build, error) {
-	bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+	bInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 	b, err := bInterface.Patch(context.TODO(), buildName, pt, data, metav1.PatchOptions{})
 	if err != nil {
 		return nil, err
@@ -89,7 +87,7 @@ func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.Condi
 	var (
 		pollBuildTillRegistration = func() (bool, error) {
 
-			bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+			bInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 
 			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
@@ -104,7 +102,7 @@ func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.Condi
 		}
 	)
 
-	brInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 
 	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBuildTillRegistration); err != nil {
 		return nil, err
@@ -121,7 +119,7 @@ func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMess
 	var (
 		pollBuildTillMessageContainsSubString = func() (bool, error) {
 
-			bInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+			bInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 
 			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
@@ -136,7 +134,7 @@ func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMess
 		}
 	)
 
-	brInterface := t.BuildClientSet.BuildV1alpha1().Builds(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 
 	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBuildTillMessageContainsSubString); err != nil {
 		return nil, err

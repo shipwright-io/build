@@ -20,7 +20,7 @@ import (
 
 // FakeBuildRuns implements BuildRunInterface
 type FakeBuildRuns struct {
-	Fake *FakeBuildV1alpha1
+	Fake *FakeShipwrightV1alpha1
 	ns   string
 }
 

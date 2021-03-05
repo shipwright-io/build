@@ -20,7 +20,7 @@ import (
 
 // FakeClusterBuildStrategies implements ClusterBuildStrategyInterface
 type FakeClusterBuildStrategies struct {
-	Fake *FakeBuildV1alpha1
+	Fake *FakeShipwrightV1alpha1
 }
 
 var clusterbuildstrategiesResource = schema.GroupVersionResource{Group: "shipwright.io", Version: "v1alpha1", Resource: "clusterbuildstrategies"}

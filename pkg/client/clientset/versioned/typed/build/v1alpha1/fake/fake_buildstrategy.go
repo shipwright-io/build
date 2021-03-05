@@ -20,7 +20,7 @@ import (
 
 // FakeBuildStrategies implements BuildStrategyInterface
 type FakeBuildStrategies struct {
-	Fake *FakeBuildV1alpha1
+	Fake *FakeShipwrightV1alpha1
 	ns   string
 }
 

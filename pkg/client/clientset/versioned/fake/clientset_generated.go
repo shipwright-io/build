@@ -8,8 +8,8 @@ package fake
 
 import (
 	clientset "github.com/shipwright-io/build/pkg/client/clientset/versioned"
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	fakebuildv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
+	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	fakeshipwrightv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -64,7 +64,7 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 
 var _ clientset.Interface = &Clientset{}
 
-// BuildV1alpha1 retrieves the BuildV1alpha1Client
-func (c *Clientset) BuildV1alpha1() buildv1alpha1.BuildV1alpha1Interface {
-	return &fakebuildv1alpha1.FakeBuildV1alpha1{Fake: &c.Fake}
+// ShipwrightV1alpha1 retrieves the ShipwrightV1alpha1Client
+func (c *Clientset) ShipwrightV1alpha1() shipwrightv1alpha1.ShipwrightV1alpha1Interface {
+	return &fakeshipwrightv1alpha1.FakeShipwrightV1alpha1{Fake: &c.Fake}
 }

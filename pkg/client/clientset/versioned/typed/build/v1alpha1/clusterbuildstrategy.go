@@ -44,7 +44,7 @@ type clusterBuildStrategies struct {
 }
 
 // newClusterBuildStrategies returns a ClusterBuildStrategies
-func newClusterBuildStrategies(c *BuildV1alpha1Client) *clusterBuildStrategies {
+func newClusterBuildStrategies(c *ShipwrightV1alpha1Client) *clusterBuildStrategies {
 	return &clusterBuildStrategies{
 		client: c.RESTClient(),
 	}

@@ -21,7 +21,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	buildClient "github.com/shipwright-io/build/pkg/client/build/clientset/versioned"
+	buildClient "github.com/shipwright-io/build/pkg/client/clientset/versioned"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/test"
 	// from https://github.com/kubernetes/client-go/issues/345

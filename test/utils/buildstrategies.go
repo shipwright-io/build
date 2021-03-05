@@ -16,7 +16,7 @@ import (
 
 // CreateBuildStrategy generates a BuildStrategy on the current test namespace
 func (t *TestBuild) CreateBuildStrategy(bs *v1alpha1.BuildStrategy) error {
-	bsInterface := t.BuildClientSet.BuildV1alpha1().BuildStrategies(t.Namespace)
+	bsInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildStrategies(t.Namespace)
 
 	_, err := bsInterface.Create(context.TODO(), bs, metav1.CreateOptions{})
 	if err != nil {
@@ -27,7 +27,7 @@ func (t *TestBuild) CreateBuildStrategy(bs *v1alpha1.BuildStrategy) error {
 
 // DeleteBuildStrategy deletes a BuildStrategy on the current test namespace
 func (t *TestBuild) DeleteBuildStrategy(name string) error {
-	bsInterface := t.BuildClientSet.BuildV1alpha1().BuildStrategies(t.Namespace)
+	bsInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildStrategies(t.Namespace)
 
 	return bsInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
 }

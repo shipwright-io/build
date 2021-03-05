@@ -12,29 +12,29 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeBuildV1alpha1 struct {
+type FakeShipwrightV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeBuildV1alpha1) Builds(namespace string) v1alpha1.BuildInterface {
+func (c *FakeShipwrightV1alpha1) Builds(namespace string) v1alpha1.BuildInterface {
 	return &FakeBuilds{c, namespace}
 }
 
-func (c *FakeBuildV1alpha1) BuildRuns(namespace string) v1alpha1.BuildRunInterface {
+func (c *FakeShipwrightV1alpha1) BuildRuns(namespace string) v1alpha1.BuildRunInterface {
 	return &FakeBuildRuns{c, namespace}
 }
 
-func (c *FakeBuildV1alpha1) BuildStrategies(namespace string) v1alpha1.BuildStrategyInterface {
+func (c *FakeShipwrightV1alpha1) BuildStrategies(namespace string) v1alpha1.BuildStrategyInterface {
 	return &FakeBuildStrategies{c, namespace}
 }
 
-func (c *FakeBuildV1alpha1) ClusterBuildStrategies() v1alpha1.ClusterBuildStrategyInterface {
+func (c *FakeShipwrightV1alpha1) ClusterBuildStrategies() v1alpha1.ClusterBuildStrategyInterface {
 	return &FakeClusterBuildStrategies{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeBuildV1alpha1) RESTClient() rest.Interface {
+func (c *FakeShipwrightV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

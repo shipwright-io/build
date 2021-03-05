@@ -45,7 +45,7 @@ type buildStrategies struct {
 }
 
 // newBuildStrategies returns a BuildStrategies
-func newBuildStrategies(c *BuildV1alpha1Client, namespace string) *buildStrategies {
+func newBuildStrategies(c *ShipwrightV1alpha1Client, namespace string) *buildStrategies {
 	return &buildStrategies{
 		client: c.RESTClient(),
 		ns:     namespace,

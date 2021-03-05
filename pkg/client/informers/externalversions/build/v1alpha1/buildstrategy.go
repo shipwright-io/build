@@ -50,13 +50,13 @@ func NewFilteredBuildStrategyInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.BuildV1alpha1().BuildStrategies(namespace).List(context.TODO(), options)
+				return client.ShipwrightV1alpha1().BuildStrategies(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.BuildV1alpha1().BuildStrategies(namespace).Watch(context.TODO(), options)
+				return client.ShipwrightV1alpha1().BuildStrategies(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&buildv1alpha1.BuildStrategy{},

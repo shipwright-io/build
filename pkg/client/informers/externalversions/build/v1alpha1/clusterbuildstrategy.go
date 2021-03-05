@@ -49,13 +49,13 @@ func NewFilteredClusterBuildStrategyInformer(client versioned.Interface, resyncP
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.BuildV1alpha1().ClusterBuildStrategies().List(context.TODO(), options)
+				return client.ShipwrightV1alpha1().ClusterBuildStrategies().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.BuildV1alpha1().ClusterBuildStrategies().Watch(context.TODO(), options)
+				return client.ShipwrightV1alpha1().ClusterBuildStrategies().Watch(context.TODO(), options)
 			},
 		},
 		&buildv1alpha1.ClusterBuildStrategy{},
