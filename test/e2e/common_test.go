@@ -103,7 +103,7 @@ func amendBuild(identifier string, b *buildv1alpha1.Build) {
 }
 
 // retrieveBuildAndBuildRun will retrieve the build and buildRun
-func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1alpha1.BuildRun, *buildv1alpha1.Build, error) {
+func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1alpha1.Build, *buildv1alpha1.BuildRun, error) {
 	buildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get BuildRun %s: %s", buildRunName, err)
@@ -115,17 +115,17 @@ func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buil
 	build, err := testBuild.LookupBuild(types.NamespacedName{Name: buildName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get Build %s: %s", buildName, err)
-		return buildRun, nil, err
+		return nil, buildRun, err
 	}
 
-	return buildRun, build, nil
+	return build, buildRun, nil
 }
 
 // printTestFailureDebugInfo will output the status of Build, BuildRun, TaskRun and Pod, also print logs of Pod
 func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, buildRunName string) {
 	Logf("Print failed BuildRun's log")
 
-	buildRun, build, err := retrieveBuildAndBuildRun(testBuild, namespace, buildRunName)
+	build, buildRun, err := retrieveBuildAndBuildRun(testBuild, namespace, buildRunName)
 	if err != nil {
 		Logf("Failed to retrieve build and buildrun logs: %w", err)
 	}
