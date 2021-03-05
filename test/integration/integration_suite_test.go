@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/shipwright-io/build/test/integration/utils"
+	"github.com/shipwright-io/build/test/utils"
 )
 
 func TestIntegration(t *testing.T) {

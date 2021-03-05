@@ -1,8 +1,0 @@
----
-apiVersion: shipwright.io/v1alpha1
-kind: BuildRun
-metadata:
-  name: buildrun-timeout
-spec:
-  buildRef:
-    name: build-timeout
