@@ -72,7 +72,7 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 		return
 	}
 
-	_, err := testBuild.LookupSecret( types.NamespacedName{Namespace: testBuild.Namespace, Name: secretName})
+	_, err := testBuild.LookupSecret(types.NamespacedName{Namespace: testBuild.Namespace, Name: secretName})
 	if err == nil {
 		Logf("Container registry secret is found at '%s/%s'", testBuild.Namespace, secretName)
 		return
@@ -107,7 +107,7 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
 	nextStatusLog := time.Now().Add(60 * time.Second)
 	Eventually(func() corev1.ConditionStatus {
-		testBuildRun, err = testBuild.LookupBuildRun( types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
+		testBuildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		if testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded) == nil {
@@ -154,7 +154,7 @@ func validateServiceAccountDeletion(buildRun *buildv1alpha1.BuildRun, namespace 
 	}
 
 	Logf("Verifying that service account '%s' has been deleted.", saNamespacedName.Name)
-	_, err := testBuild.LookupServiceAccount( saNamespacedName)
+	_, err := testBuild.LookupServiceAccount(saNamespacedName)
 	Expect(err).To(HaveOccurred(), "Expected error to retrieve the generated service account after build run completion.")
 	Expect(apierrors.IsNotFound(err)).To(BeTrue(), "Expected service account to be deleted.")
 }

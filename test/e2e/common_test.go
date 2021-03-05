@@ -150,8 +150,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 
 		// Only log details of TaskRun if Tekton objects can be accessed
 		if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
-			taskRun, _ := testBuild.LookupTaskRun(types.NamespacedName{Name: *buildRun.Status.LatestTaskRunRef, Namespace: namespace})
-			if taskRun != nil {
+			if taskRun, _ := testBuild.LookupTaskRunUsingBuildRun(buildRun); taskRun != nil {
 				condition := taskRun.Status.GetCondition(knativeapis.ConditionSucceeded)
 				if condition != nil {
 					Logf("The status of TaskRun %s: reason=%s, message=%s", taskRun.Name, condition.Reason, condition.Message)

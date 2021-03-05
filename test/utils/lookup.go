@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -72,6 +74,45 @@ func (t *TestBuild) LookupTaskRun(entity types.NamespacedName) (*pipelinev1beta1
 	})
 
 	return result.(*pipelinev1beta1.TaskRun), err
+}
+
+func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1alpha1.BuildRun) (*pipelinev1beta1.TaskRun, error) {
+	if buildRun == nil {
+		return nil, fmt.Errorf("no BuildRun specified to lookup TaskRun")
+	}
+
+	if buildRun.Status.LatestTaskRunRef != nil {
+		return t.LookupTaskRun(types.NamespacedName{Namespace: buildRun.Namespace, Name: *buildRun.Status.LatestTaskRunRef})
+	}
+
+	tmp, err := lookupRuntimeObject(func() (runtime.Object, error) {
+		return t.PipelineClientSet.
+			TektonV1beta1().
+			TaskRuns(buildRun.Namespace).
+			List(t.Context, metav1.ListOptions{
+				LabelSelector: labels.SelectorFromSet(
+					map[string]string{
+						buildv1alpha1.LabelBuild:    buildRun.Spec.BuildRef.Name,
+						buildv1alpha1.LabelBuildRun: buildRun.Name,
+					}).String(),
+			})
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var taskRunList = tmp.(*pipelinev1beta1.TaskRunList)
+	switch len(taskRunList.Items) {
+	case 0:
+		return nil, fmt.Errorf("no TaskRun found for BuildRun %s/%s", buildRun.Namespace, buildRun.Name)
+
+	case 1:
+		return &taskRunList.Items[0], nil
+
+	default:
+		return nil, fmt.Errorf("multiple TaskRuns found for BuildRun %s/%s, which should not have happened", buildRun.Namespace, buildRun.Name)
+	}
 }
 
 func (t *TestBuild) LookupServiceAccount(entity types.NamespacedName) (*corev1.ServiceAccount, error) {
