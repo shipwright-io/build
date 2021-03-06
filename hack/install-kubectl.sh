@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #
-# Installs "kubectl" on Travis-CI Ubuntu.
+# Installs "kubectl" on Ubuntu.
 #
 
 set -eu

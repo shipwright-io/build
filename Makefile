@@ -107,7 +107,6 @@ generate:
 
 .PHONY: verify-codegen
 verify-codegen: generate
-	# TODO: Fix travis issue with ginkgo install updating go.mod and go.sum
 	# TODO: Verify vendor tree is accurate
 	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
 

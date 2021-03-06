@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #
-# Installs Operator-SDK binary at "$HOME/bin" directory, meant to work in Travis-CI (Ubuntu).
+# Installs Operator-SDK binary at "$HOME/bin" directory, meant to work on Ubuntu.
 #
 
 set -eu

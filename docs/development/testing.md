@@ -34,7 +34,7 @@ For all the testing levels, we rely on Gingko as the testing framework for defin
 
 ## Verifying your code
 
-Our Travis builds verify that your code conforms to project standards and that all generated code is up to date.
+Our CI builds verify that your code conforms to project standards and that all generated code is up to date.
 When adding files or updating APIs, please run `make generate` before submitting your code.
 
 ### Counterfeiter
@@ -195,7 +195,7 @@ _Note_: Currently the end-to-end tests are not run in parallel, and may take sev
 
 ### Running e2e tests with local registry
 
-When using [KinD](https://kind.sigs.k8s.io/) like jobs in Travis-CI, you can use a local container registry to store images created during end-to-end test execution. Run:
+When using [KinD](https://kind.sigs.k8s.io/) like jobs in CI, you can use a local container registry to store images created during end-to-end test execution. Run:
 
 ```sh
 make kind
