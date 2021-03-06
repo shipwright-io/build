@@ -50,6 +50,11 @@ func RetrieveServiceAccount(ctx context.Context, client client.Client, build *bu
 		serviceAccount.Name = serviceAccountName
 		serviceAccount.Namespace = buildRun.Namespace
 
+		// when generating a ServiceAccount on the fly, it will generate a corresponding ServiceAccount
+		// token Secret to allow API access. Avoid mounting this at the pod level while it is
+		// not used and might bring more problems during mounting.
+		mountSAToken := false
+
 		// Create the service account, use CreateOrUpdate as it might exist already from a previous reconciliation that
 		// succeeded to create the service account but failed to update the build run that references it
 		ctxlog.Info(ctx, "create or update serviceAccount for BuildRun", namespace, buildRun.Namespace, name, serviceAccountName, "BuildRun", buildRun.Name)
@@ -58,7 +63,7 @@ func RetrieveServiceAccount(ctx context.Context, client client.Client, build *bu
 
 			ownerReference := metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun"))
 			serviceAccount.SetOwnerReferences([]metav1.OwnerReference{*ownerReference})
-
+			serviceAccount.AutomountServiceAccountToken = &mountSAToken
 			ApplyCredentials(ctx, build, serviceAccount)
 
 			return nil
