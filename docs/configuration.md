@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Configuration
 
-The controller is installed into Kubernetes with reasonable defaults. However, there are some settings that can be overridden using environment variables in [`controller.yaml`](../deploy/controller.yaml).
+The controller is installed into Kubernetes with reasonable defaults. However, there are some settings that can be overridden using environment variables in [`controller.yaml`](../deploy/500-controller.yaml).
 
 The following environment variables are available:
 
