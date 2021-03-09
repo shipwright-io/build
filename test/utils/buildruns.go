@@ -20,7 +20,7 @@ import (
 
 // CreateBR generates a BuildRun on the current test namespace
 func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
-	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	_, err := brInterface.Create(context.TODO(), buildRun, metav1.CreateOptions{})
 	if err != nil {
@@ -32,7 +32,7 @@ func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 // GetBR retrieves a BuildRun from a desired namespace
 // Deprecated: Use LookupBuildRun instead.
 func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
-	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	br, err := brInterface.Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -43,7 +43,7 @@ func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
 
 // DeleteBR deletes a BuildRun from a desired namespace
 func (t *TestBuild) DeleteBR(name string) error {
-	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	if err := brInterface.Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
 		return err
@@ -69,7 +69,7 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 	var (
 		pollBRTillCompletion = func() (bool, error) {
 
-			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+			bInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
@@ -83,7 +83,7 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 		}
 	)
 
-	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillCompletion)
 	if err != nil {
@@ -98,7 +98,7 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 // stop polling and return
 func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*v1alpha1.BuildRun, error) {
 
-	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	var (
 		pollBRTillNotOwner = func() (bool, error) {
@@ -130,7 +130,7 @@ func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*v1alpha1.Buil
 // stop polling and return
 func (t *TestBuild) GetBRTillOwner(name string, owner string) (*v1alpha1.BuildRun, error) {
 
-	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	var (
 		pollBRTillOwner = func() (bool, error) {
@@ -165,7 +165,7 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) 
 	var (
 		pollBRTillCompletion = func() (bool, error) {
 
-			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+			bInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
@@ -188,7 +188,7 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) 
 		}
 	)
 
-	brInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillCompletion)
 	if err != nil {
@@ -223,7 +223,7 @@ func (t *TestBuild) GetBRTillDeletion(name string) (bool, error) {
 	var (
 		pollBRTillCompletion = func() (bool, error) {
 
-			bInterface := t.BuildClientSet.BuildV1alpha1().BuildRuns(t.Namespace)
+			bInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 			_, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {

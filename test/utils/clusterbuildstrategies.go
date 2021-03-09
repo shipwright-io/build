@@ -16,7 +16,7 @@ import (
 
 // CreateClusterBuildStrategy generates a ClusterBuildStrategy on the current test namespace
 func (t *TestBuild) CreateClusterBuildStrategy(cbs *v1alpha1.ClusterBuildStrategy) error {
-	cbsInterface := t.BuildClientSet.BuildV1alpha1().ClusterBuildStrategies()
+	cbsInterface := t.BuildClientSet.ShipwrightV1alpha1().ClusterBuildStrategies()
 
 	_, err := cbsInterface.Create(context.TODO(), cbs, metav1.CreateOptions{})
 	if err != nil {
@@ -27,7 +27,7 @@ func (t *TestBuild) CreateClusterBuildStrategy(cbs *v1alpha1.ClusterBuildStrateg
 
 // DeleteClusterBuildStrategy deletes a ClusterBuildStrategy on the desired namespace
 func (t *TestBuild) DeleteClusterBuildStrategy(name string) error {
-	cbsInterface := t.BuildClientSet.BuildV1alpha1().ClusterBuildStrategies()
+	cbsInterface := t.BuildClientSet.ShipwrightV1alpha1().ClusterBuildStrategies()
 
 	err := cbsInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err != nil {

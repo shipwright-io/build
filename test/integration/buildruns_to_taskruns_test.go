@@ -35,7 +35,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			strategyName = strategy[0]
 		}
 
-		buildRunWitcher, err := tb.BuildClientSet.BuildV1alpha1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{})
+		buildRunWitcher, err := tb.BuildClientSet.ShipwrightV1alpha1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{})
 		Expect(err).To(BeNil())
 
 		buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(BUILD+tb.Namespace, strategyName, buildDef)
