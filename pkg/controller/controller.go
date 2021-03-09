@@ -41,6 +41,13 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 		return nil, err
 	}
 
+	if config.KubeAPIOptions.Burst > 0 {
+		mgr.GetConfig().Burst = config.KubeAPIOptions.Burst
+	}
+	if config.KubeAPIOptions.QPS > 0 {
+		mgr.GetConfig().QPS = float32(config.KubeAPIOptions.QPS)
+	}
+
 	ctxlog.Info(ctx, "Registering Components.")
 
 	if err := pipelinev1beta1.AddToScheme(mgr.GetScheme()); err != nil {

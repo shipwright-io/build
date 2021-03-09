@@ -92,6 +92,18 @@ var _ = Describe("Config", func() {
 				Expect(config.Controllers.ClusterBuildStrategy.MaxConcurrentReconciles).To(Equal(5))
 			})
 		})
+
+		It("should allow for an override of kube API client configuration", func() {
+			var overrides = map[string]string{
+				"KUBE_API_BURST": "200",
+				"KUBE_API_QPS":   "300",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.KubeAPIOptions.Burst).To(Equal(200))
+				Expect(config.KubeAPIOptions.QPS).To(Equal(300))
+			})
+		})
 	})
 })
 
