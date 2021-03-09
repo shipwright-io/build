@@ -99,8 +99,8 @@ metadata:
     build.shipwright.io/verify.repository: "false"
 spec:
   source:
-    url: https://github.com/qu1queee/taxi
-    revision: master
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
 ```
 
 _Note_: The Build controller only validates two scenarios. The first one where the endpoint uses an `http/https` protocol, the second one when a `ssh` protocol (_e.g. `git@`_) is defined and none referenced secret was provided(_e.g. source.credentials.name_).
@@ -141,8 +141,8 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: https://github.com/qu1queee/taxi
-    revision: master
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
 ```
 
 ### Defining the Strategy
@@ -179,8 +179,8 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: https://github.com/qu1queee/taxi
-    revision: master
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
   strategy:
     name: buildah
     kind: ClusterBuildStrategy

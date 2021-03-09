@@ -7,7 +7,8 @@ metadata:
     build.shipwright.io/build-run-deletion: "false"
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: source-build
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy

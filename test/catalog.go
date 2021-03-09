@@ -85,7 +85,7 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "https://github.com/qu1queee/taxi",
+				URL: "https://github.com/shipwright-io/sample-go",
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
@@ -111,7 +111,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "https://github.com/qu1queee/taxi",
+				URL: "https://github.com/shipwright-io/sample-go",
 				SecretRef: &corev1.LocalObjectReference{
 					Name: "foobar",
 				},
@@ -137,7 +137,7 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "https://github.com/qu1queee/taxi",
+				URL: "https://github.com/shipwright-io/sample-go",
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
@@ -156,7 +156,7 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "https://github.com/qu1queee/taxi",
+				URL: "https://github.com/shipwright-io/sample-go",
 			},
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
@@ -174,7 +174,7 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 		},
 		Spec: build.BuildSpec{
 			Source: build.GitSource{
-				URL: "https://github.com/qu1queee/taxi",
+				URL: "https://github.com/shipwright-io/sample-go",
 			},
 			Output: build.Image{
 				SecretRef: &corev1.LocalObjectReference{

@@ -5,11 +5,11 @@ metadata:
   name: kaniko-custom-context-dockerfile
 spec:
   source:
-    url: https://github.com/SaschaSchwarze0/npm-simple
-    contextDir: renamed
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: docker-build
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy
-  dockerfile: RenamedDockerfile
+  dockerfile: Dockerfile
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/renamed-dockerfile

@@ -384,7 +384,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// validate https protocol
 			It("fails when public source URL is unreachable", func() {
-				buildSample.Spec.Source.URL = "https://github.com/qu1queee/taxi-fake"
+				buildSample.Spec.Source.URL = "https://github.com/shipwright-io/sample-go-fake"
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.RemoteRepositoryUnreachable, "remote repository unreachable")
 				statusWriter.UpdateCalls(statusCall)

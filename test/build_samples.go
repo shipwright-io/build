@@ -13,7 +13,7 @@ metadata:
   name: buildah
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     name: buildah
     kind: ClusterBuildStrategy
@@ -30,7 +30,7 @@ metadata:
   namespace: build-test
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     name: buildah
   output:
@@ -48,9 +48,8 @@ metadata:
   namespace: build-test
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
-    revision: master
-    contextDir: src
+    url: "https://github.com/shipwright-io/sample-go"
+    contextDir: docker-build
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
@@ -73,7 +72,7 @@ metadata:
   namespace: build-test
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     name: buildah
   output:
@@ -87,7 +86,7 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     kind: BuildStrategy
   output:
@@ -101,7 +100,8 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
+    contextDir: docker-build
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -115,7 +115,7 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -131,7 +131,7 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -148,7 +148,7 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
     credentials:
       name: source-secret
   strategy:
@@ -165,7 +165,7 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   builder:
     image: heroku/buildpacks:18
     credentials:
@@ -184,7 +184,7 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
     credentials:
       name: source-secret
   builder:
@@ -205,7 +205,7 @@ apiVersion: shipwright.io/v1alpha1
 kind: Build
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -265,7 +265,7 @@ metadata:
     build.shipwright.io/build-run-deletion: "true"
 spec:
   source:
-    url: "https://github.com/qu1queee/taxi"
+    url: "https://github.com/shipwright-io/sample-go"
   strategy:
     kind: ClusterBuildStrategy
   output:

@@ -5,9 +5,8 @@ metadata:
   name: buildpack-php-build
 spec:
   source:
-    url: https://github.com/cloudfoundry/cf-acceptance-tests
-    contextDir: assets/php
-    revision: main
+    url: https://github.com/shipwright-io/sample-php
+    contextDir: source-build
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy

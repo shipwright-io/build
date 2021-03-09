@@ -36,7 +36,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 	BeforeEach(func() {
 		buildpacks = "buildpacks-v3"
-		url = "https://github.com/qu1queee/taxi"
+		url = "https://github.com/shipwright-io/sample-go"
 		dockerfile = "Dockerfile"
 	})
 
@@ -120,7 +120,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			}
 
 			namespace = "build-test"
-			contextDir = "src"
+			contextDir = "docker-build"
 			revision = ""
 			builderImage = &buildv1alpha1.Image{
 				ImageURL: "heroku/buildpacks:18",

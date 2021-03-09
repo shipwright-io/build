@@ -5,9 +5,8 @@ metadata:
   name: buildpack-golang-build
 spec:
   source:
-    url: https://github.com/cloudfoundry/cf-acceptance-tests
-    contextDir: assets/catnip
-    revision: main
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: source-build
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
