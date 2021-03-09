@@ -37,11 +37,15 @@ const (
 	renewDeadlineEnvVar = "BUILD_CONTROLLER_RENEW_DEADLINE"
 	retryPeriodEnvVar   = "BUILD_CONTROLLER_RETRY_PERIOD"
 
-	// environment variable for the controllers
+	// environment variables for the controllers
 	controllerBuildMaxConcurrentReconciles                = "BUILD_MAX_CONCURRENT_RECONCILES"
 	controllerBuildRunMaxConcurrentReconciles             = "BUILDRUN_MAX_CONCURRENT_RECONCILES"
 	controllerBuildStrategyMaxConcurrentReconciles        = "BUILDSTRATEGY_MAX_CONCURRENT_RECONCILES"
 	controllerClusterBuildStrategyMaxConcurrentReconciles = "CLUSTERBUILDSTRATEGY_MAX_CONCURRENT_RECONCILES"
+
+	// environment variables for the kube API
+	kubeAPIBurst = "KUBE_API_BURST"
+	kubeAPIQPS   = "KUBE_API_QPS"
 )
 
 var (
@@ -59,6 +63,7 @@ type Config struct {
 	Prometheus           PrometheusConfig
 	ManagerOptions       ManagerOptions
 	Controllers          Controllers
+	KubeAPIOptions       KubeAPIOptions
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -90,6 +95,12 @@ type ControllerOptions struct {
 	MaxConcurrentReconciles int
 }
 
+// KubeAPIOptions contains configrable options for the kube API client
+type KubeAPIOptions struct {
+	QPS   int
+	Burst int
+}
+
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
 func NewDefaultConfig() *Config {
 	return &Config{
@@ -116,6 +127,10 @@ func NewDefaultConfig() *Config {
 			ClusterBuildStrategy: ControllerOptions{
 				MaxConcurrentReconciles: 0,
 			},
+		},
+		KubeAPIOptions: KubeAPIOptions{
+			QPS:   0,
+			Burst: 0,
 		},
 	}
 }
@@ -164,6 +179,7 @@ func (c *Config) SetConfigFromEnv() error {
 		return err
 	}
 
+	// controller settings
 	if err := updateIntOption(&c.Controllers.Build.MaxConcurrentReconciles, controllerBuildMaxConcurrentReconciles); err != nil {
 		return err
 	}
@@ -174,6 +190,14 @@ func (c *Config) SetConfigFromEnv() error {
 		return err
 	}
 	if err := updateIntOption(&c.Controllers.ClusterBuildStrategy.MaxConcurrentReconciles, controllerClusterBuildStrategyMaxConcurrentReconciles); err != nil {
+		return err
+	}
+
+	// kube API settings
+	if err := updateIntOption(&c.KubeAPIOptions.Burst, kubeAPIBurst); err != nil {
+		return err
+	}
+	if err := updateIntOption(&c.KubeAPIOptions.QPS, kubeAPIQPS); err != nil {
 		return err
 	}
 
