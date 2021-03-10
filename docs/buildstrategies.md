@@ -213,6 +213,7 @@ spec:
             - SETGID
             - SETUID
             - SETFCAP
+            - KILL
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
@@ -257,6 +258,7 @@ spec:
             - SETGID
             - SETUID
             - SETFCAP
+            - KILL
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker

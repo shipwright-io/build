@@ -202,6 +202,7 @@ func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta
 					v1.Capability("SETGID"),
 					v1.Capability("SETUID"),
 					v1.Capability("SETFCAP"),
+					v1.Capability("KILL"),
 				},
 			},
 		},
