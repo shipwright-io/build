@@ -43,6 +43,7 @@ spec:
             - SETGID
             - SETUID
             - SETFCAP
+            - KILL
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
