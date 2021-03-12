@@ -160,8 +160,8 @@ This would be useful if Project Shipwright produces additional components and cl
 
 **Risk**: Manifests uses to deploy Shipwright Builds in the `shipwright-io/operator` are not synchronized with content in `shipwright-io/build`.
 
-*Mitigation*: The operator's CI should include a test suite that runs the e2e tests in `shipwright-io/build`.
-Project maintainers should also ensure that deployment changes to `shipwright-io/build` carry across to the operator.
+*Mitigation*: The Shipwright build controller's CI should include a test suite that runs the e2e tests in `shipwright-io/build`.
+Project maintainers should also ensure that deployment changes to `shipwright-io/build` carry across to the Shipwright build controller.
 
 **Risk**: Operator will require permissions cluster admins will reject (ex - modify CRDs)
 
@@ -177,7 +177,7 @@ Test suites will need to ensure the following:
 
 1. When a `ShipwrightBuild` object is created, the corresponding build controllers are deployed and the Build APIs are added as custom resource definitions.
 2. Changes to the `ShipwrightBuild` spec are correctly reflected in the subsequent deployment.
-3. CI for the operator should include the e2e suite for `shipwright-io/build`, run against the controllers deployed by the operator.
+3. CI for the Shipwright build controller should include the e2e suite for `shipwright-io/build`, run against the controllers deployed by the operator.
 
 ### Graduation Criteria
 
@@ -190,13 +190,13 @@ Test suites will need to ensure the following:
 ##### Tech Preview -> GA
 
 - Configuration API for `ShipwrightBuild` reaches v1 stability.
-- Support for over the air upgrades of the operator _and_ the build controllers.
-- [optional] allow version skews between the operator and deployed version of Shipwright Build.
-- [optional] operator manages the Build API CRDs.
+- Support for over the air upgrades of the Shipwright build controller.
+- [optional] allow version skews between the Shipwright build controller and deployed version of Shipwright Build.
+- [optional] Shipwright build controller manages the Build API CRDs.
 
 ### Upgrade / Downgrade Strategy
 
-The operator should use leader election to ensure that when a new version of the operator is installed, it does not conflict with the existing installation.
+The Shipwright build controller should use leader election to ensure that when a new version of the operator is installed, it does not conflict with the existing installation.
 This is only required for Tech Preview - Dev Preview releases can assume that the operator is uninstalled before the new version is installed.
 
 ## Implementation History

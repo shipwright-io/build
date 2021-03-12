@@ -74,7 +74,7 @@ type PrometheusConfig struct {
 	EnabledLabels                     []string
 }
 
-// ManagerOptions contains configurable options for the build operator manager
+// ManagerOptions contains configurable options for the Shipwright build controller manager
 type ManagerOptions struct {
 	LeaderElectionNamespace string
 	LeaseDuration           *time.Duration
@@ -167,15 +167,15 @@ func (c *Config) SetConfigFromEnv() error {
 		c.ManagerOptions.LeaderElectionNamespace = leaderElectionNamespace
 	}
 
-	if err := updateBuildOperatorDurationOption(&c.ManagerOptions.LeaseDuration, leaseDurationEnvVar); err != nil {
+	if err := updateBuildControllerDurationOption(&c.ManagerOptions.LeaseDuration, leaseDurationEnvVar); err != nil {
 		return err
 	}
 
-	if err := updateBuildOperatorDurationOption(&c.ManagerOptions.RenewDeadline, renewDeadlineEnvVar); err != nil {
+	if err := updateBuildControllerDurationOption(&c.ManagerOptions.RenewDeadline, renewDeadlineEnvVar); err != nil {
 		return err
 	}
 
-	if err := updateBuildOperatorDurationOption(&c.ManagerOptions.RetryPeriod, retryPeriodEnvVar); err != nil {
+	if err := updateBuildControllerDurationOption(&c.ManagerOptions.RetryPeriod, retryPeriodEnvVar); err != nil {
 		return err
 	}
 
@@ -231,7 +231,7 @@ func updateBucketsConfig(buckets *[]float64, envVarName string) error {
 	return nil
 }
 
-func updateBuildOperatorDurationOption(d **time.Duration, envVarName string) error {
+func updateBuildControllerDurationOption(d **time.Duration, envVarName string) error {
 	if value := os.Getenv(envVarName); value != "" {
 		valueDuration, err := time.ParseDuration(value)
 		if err != nil {

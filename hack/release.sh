@@ -12,6 +12,6 @@ echo "$REGISTRY_PASSWORD" | ko login -u "$REGISTRY_USERNAME" --password-stdin "$
 echo "Building container image"
 
 # Using defaults, this pushes to:
-# quay.io/shipwright/shipwright-operator:latest
+# quay.io/shipwright/shipwright-build-controller:latest
 KO_DOCKER_REPO="$IMAGE_HOST/$IMAGE" GOFLAGS="${GO_FLAGS}" ko resolve -t "$TAG" --bare -R -f deploy/ > release.yaml
 KO_DOCKER_REPO="$IMAGE_HOST/$IMAGE" GOFLAGS="${GO_FLAGS} -tags=pprof_enabled" ko resolve -t "$TAG-debug" --bare -R -f deploy/ > release-debug.yaml

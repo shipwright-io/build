@@ -38,17 +38,17 @@ type TestBuild struct {
 	// TODO: Adding specific field for polling here, interval and timeout
 	// but I think we need a small refactoring to make them global for all
 	// tests under /test dir
-	Interval               time.Duration
-	TimeOut                time.Duration
-	KubeConfig             *rest.Config
-	Clientset              *kubernetes.Clientset
-	Namespace              string
-	StopBuildOperator      chan struct{}
-	BuildClientSet         *buildClient.Clientset
-	PipelineClientSet      *tektonClient.Clientset
-	Catalog                test.Catalog
-	Context                context.Context
-	BuildOperatorLogBuffer *bytes.Buffer
+	Interval                 time.Duration
+	TimeOut                  time.Duration
+	KubeConfig               *rest.Config
+	Clientset                *kubernetes.Clientset
+	Namespace                string
+	StopBuildControllers     chan struct{}
+	BuildClientSet           *buildClient.Clientset
+	PipelineClientSet        *tektonClient.Clientset
+	Catalog                  test.Catalog
+	Context                  context.Context
+	BuildControllerLogBuffer *bytes.Buffer
 }
 
 // NewTestBuild returns an initialized instance of TestBuild
@@ -80,15 +80,15 @@ func NewTestBuild() (*TestBuild, error) {
 
 	return &TestBuild{
 		// TODO: interval and timeout can be configured via ENV vars
-		Interval:               time.Second * 3,
-		TimeOut:                time.Second * 180,
-		KubeConfig:             restConfig,
-		Clientset:              kubeConfig,
-		Namespace:              testNamespace,
-		BuildClientSet:         buildClientSet,
-		PipelineClientSet:      pipelineClientSet,
-		Context:                ctx,
-		BuildOperatorLogBuffer: logBuffer,
+		Interval:                 time.Second * 3,
+		TimeOut:                  time.Second * 180,
+		KubeConfig:               restConfig,
+		Clientset:                kubeConfig,
+		Namespace:                testNamespace,
+		BuildClientSet:           buildClientSet,
+		PipelineClientSet:        pipelineClientSet,
+		Context:                  ctx,
+		BuildControllerLogBuffer: logBuffer,
 	}, nil
 }
 

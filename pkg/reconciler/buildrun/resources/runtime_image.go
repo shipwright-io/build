@@ -158,7 +158,7 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 	if err != nil {
 		return nil, err
 	}
-	// appling known transformation to dockerfile payload, therefore operator variables are
+	// appling known transformation to dockerfile payload, therefore the Shipwright build controller variables are
 	// applicable to all parts of the runtime Dockerfile as well
 	dockerfileTransformed := runtimeDockerfileTransformations(b, dockerfile.String())
 

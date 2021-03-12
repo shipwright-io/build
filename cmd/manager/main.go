@@ -30,12 +30,13 @@ import (
 
 // Change below variables to serve metrics on different host or port.
 var (
-	metricsHost       = "0.0.0.0"
-	metricsPort int32 = 8383
+	metricsHost        = "0.0.0.0"
+	metricsPort  int32 = 8383
+	versionGiven       = flag.String("version", "devel", "Version of Shipwright build controller running")
 )
 
 func printVersion(ctx context.Context) {
-	ctxlog.Info(ctx, fmt.Sprintf("Operator Version: %s", version.Version))
+	ctxlog.Info(ctx, fmt.Sprintf("Shipwright Build Controller Version: %s", version.Version))
 	ctxlog.Info(ctx, fmt.Sprintf("Go Version: %s", runtime.Version()))
 	ctxlog.Info(ctx, fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 }
@@ -57,13 +58,14 @@ func main() {
 	//
 	// The logger instantiated here can be changed to any logger
 	// implementing the logr.Logger interface. This logger will
-	// be propagated through the whole operator, generating
+	// be propagated through the whole Shipwright build controller, generating
 	// uniform and structured logs.
 
 	l := ctxlog.NewLogger("build")
 
 	ctx := ctxlog.NewParentContext(l)
 
+	version.SetVersion(*versionGiven)
 	printVersion(ctx)
 
 	// Get a config to talk to the apiserver

@@ -3,7 +3,7 @@ SHELL := /bin/bash
 # output directory, where all artifacts will be created and managed
 OUTPUT_DIR ?= build/_output
 # relative path to controller binary
-OPERATOR = $(OUTPUT_DIR)/bin/shipwright-build-controller
+CONTROLLER = $(OUTPUT_DIR)/bin/shipwright-build-controller
 
 # golang cache directory path
 GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
@@ -62,7 +62,7 @@ TEST_SOURCE_SECRET ?=
 
 # Image settings for building and pushing images
 IMAGE_HOST ?= quay.io
-IMAGE ?= shipwright/shipwright-operator
+IMAGE ?= shipwright/shipwright-build-controller
 TAG ?= latest
 
 # options for generating crds with controller-gen
@@ -78,14 +78,14 @@ vendor: go.mod go.sum
 	go mod vendor
 
 .PHONY: build
-build: $(OPERATOR)
+build: $(CONTROLLER)
 
-$(OPERATOR): vendor
-	go build -trimpath $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
+$(CONTROLLER): vendor
+	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/manager/main.go
 
 .PHONY: build-plain
 build-plain: 
-	go build -trimpath $(GO_FLAGS) -o $(OPERATOR) cmd/manager/main.go
+	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/manager/main.go
 
 .PHONY: build-image
 build-image:
@@ -219,7 +219,7 @@ test-e2e: install-strategies test-e2e-plain
 .PHONY: test-e2e-plain
 test-e2e-plain: ginkgo
 	GO111MODULE=on \
-	TEST_OPERATOR_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
 	TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
@@ -252,11 +252,11 @@ install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
 
 local: vendor install-strategies
-	OPERATOR_NAME=shipwright-build-controller \
+	CONTROLLER_NAME=shipwright-build-controller \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
 local-plain: vendor
-	OPERATOR_NAME=shipwright-build-controller \
+	CONTROLLER_NAME=shipwright-build-controller \
 	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
 
 clean:
