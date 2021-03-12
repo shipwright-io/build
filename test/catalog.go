@@ -614,6 +614,23 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 	}
 }
 
+// BuildWithoutStrategyKind returns a minimal Build object without an strategy kind definition
+func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildName,
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
 // BuildWithBuildRunDeletions returns a minimal Build object with the
 // build.shipwright.io/build-run-deletion annotation set to true
 func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
@@ -865,6 +882,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 				Generate: false,
 			},
 		},
+		Status: build.BuildRunStatus{},
 	}
 }
 

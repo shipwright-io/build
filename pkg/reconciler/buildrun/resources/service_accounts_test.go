@@ -141,13 +141,22 @@ var _ = Describe("Operating service accounts", func() {
 			client.GetCalls(generateGetSAStubWithError(k8serrors.NewNotFound(schema.GroupResource{}, "foobar")))
 
 			mountTokenVal := false
-			sa, err := resources.RetrieveServiceAccount(context.TODO(), client, ctl.BuildWithOutputSecret(buildName, "default", "foosecret"), buildRunSample)
+
+			client.CreateCalls(func(context context.Context, object runtime.Object, _ ...crc.CreateOption) error {
+				switch object := object.(type) {
+				case *corev1.ServiceAccount:
+					Expect(len(object.Secrets)).To(Equal(1))
+					Expect(len(object.OwnerReferences)).To(Equal(1))
+					Expect(object.Labels[buildv1alpha1.LabelBuildRun]).To(Equal(buildRunName))
+					Expect(object.Secrets[0].Name).To(Equal("foosecret"))
+					Expect(object.AutomountServiceAccountToken).To(Equal(&mountTokenVal))
+				}
+				return nil
+			})
+
+			_, err := resources.RetrieveServiceAccount(context.TODO(), client, ctl.BuildWithOutputSecret(buildName, "default", "foosecret"), buildRunSample)
 			Expect(err).To(BeNil())
-			Expect(len(sa.Secrets)).To(Equal(1))
-			Expect(len(sa.OwnerReferences)).To(Equal(1))
-			Expect(sa.Labels[buildv1alpha1.LabelBuildRun]).To(Equal(buildRunName))
-			Expect(sa.Secrets[0].Name).To(Equal("foosecret"))
-			Expect(sa.AutomountServiceAccountToken).To(Equal(&mountTokenVal))
+
 		})
 		It("should return an existing sa and not generate it again if already exists", func() {
 			buildRunSample := ctl.BuildRunWithSAGenerate(buildRunName, buildName)
