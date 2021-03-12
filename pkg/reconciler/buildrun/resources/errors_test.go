@@ -20,7 +20,7 @@ var _ = Describe("Multiple errors", func() {
 			error02 := errors.New("error02")
 			msg := "handling multiple errors"
 			customError := resources.HandleError(msg, error01, error02)
-			Expect(customError).To(Equal(fmt.Errorf("errors: %s, %s, msg: %s", error01, error02, msg)))
+			Expect(customError.Error()).To(Equal(fmt.Sprintf("errors: %s, %s, msg: %s", error01, error02, msg)))
 		})
 	})
 })

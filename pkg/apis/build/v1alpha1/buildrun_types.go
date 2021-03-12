@@ -215,6 +215,17 @@ func (brs *BuildRunStatus) GetCondition(t Type) *Condition {
 	return nil
 }
 
+// IsFailed returns a condition with a False Status
+// based on a type from a list of Conditions.
+func (brs *BuildRunStatus) IsFailed(t Type) bool {
+	for _, c := range brs.Conditions {
+		if c.Type == t {
+			return c.Status == corev1.ConditionFalse
+		}
+	}
+	return false
+}
+
 // SetCondition updates a list of conditions with the provided condition
 func (brs *BuildRunStatus) SetCondition(condition *Condition) {
 	var idx = -1
