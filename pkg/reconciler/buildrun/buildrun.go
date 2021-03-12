@@ -142,9 +142,32 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				return reconcile.Result{}, err
 			}
 
-			// Create the TaskRun, this needs to be the last step in this block to be idempotent
-			generatedTaskRun, err := r.createTaskRun(ctx, build, buildRun)
+			// Choose a service account to use
+			svcAccount, err := resources.RetrieveServiceAccount(ctx, r.client, build, buildRun)
 			if err != nil {
+				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
+					return reconcile.Result{}, nil
+				}
+				// system call failure, reconcile again
+				return reconcile.Result{}, err
+			}
+
+			strategy, err := r.getReferencedStrategy(ctx, build, buildRun)
+			if err != nil {
+				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
+					return reconcile.Result{}, nil
+				}
+				return reconcile.Result{}, err
+			}
+
+			// Create the TaskRun, this needs to be the last step in this block to be idempotent
+			generatedTaskRun, err := r.createTaskRun(ctx, svcAccount, strategy, build, buildRun)
+			if err != nil {
+				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
+					ctxlog.Info(ctx, "taskRun generation failed", namespace, request.Namespace, name, request.Name)
+					return reconcile.Result{}, nil
+				}
+				// system call failure, reconcile again
 				return reconcile.Result{}, err
 			}
 
@@ -332,49 +355,67 @@ func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request recon
 	}
 }
 
-func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*v1beta1.TaskRun, error) {
-	var generatedTaskRun *v1beta1.TaskRun
-	// Choose a service account to use
-	serviceAccount, err := resources.RetrieveServiceAccount(ctx, r.client, build, buildRun)
-	if err != nil {
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, resources.HandleError("Failed to choose a service account to use", err, updateErr)
+func (r *ReconcileBuildRun) getReferencedStrategy(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (strategy buildv1alpha1.BuilderStrategy, err error) {
+	if build.Spec.StrategyRef.Kind == nil {
+		err = fmt.Errorf("illegal state, strategy kind is unset")
+
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, fmt.Errorf("undefined strategy Kind").Error(), resources.ConditionStrategyKindIsMissing); updateErr != nil {
+			return nil, resources.HandleError("failed to get referenced strategy", err, updateErr)
+		}
+
+		return nil, err
 	}
 
-	if build.Spec.StrategyRef.Kind == nil || *build.Spec.StrategyRef.Kind == buildv1alpha1.NamespacedBuildStrategyKind {
-		buildStrategy, err := resources.RetrieveBuildStrategy(ctx, r.client, build)
+	switch *build.Spec.StrategyRef.Kind {
+	case buildv1alpha1.NamespacedBuildStrategyKind:
+		strategy, err = resources.RetrieveBuildStrategy(ctx, r.client, build)
 		if err != nil {
-			return nil, err
-		}
-		if buildStrategy != nil {
-			generatedTaskRun, err = resources.GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, buildStrategy)
-			if err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return nil, resources.HandleError("Failed to generate the taskrun with buildStrategy", err, updateErr)
+			if apierrors.IsNotFound(err) {
+				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), resources.BuildStrategyNotFound); updateErr != nil {
+					return nil, resources.HandleError("failed to get referenced strategy", err, updateErr)
+				}
 			}
 		}
-	} else if *build.Spec.StrategyRef.Kind == buildv1alpha1.ClusterBuildStrategyKind {
-		clusterBuildStrategy, err := resources.RetrieveClusterBuildStrategy(ctx, r.client, build)
+	case buildv1alpha1.ClusterBuildStrategyKind:
+		strategy, err = resources.RetrieveClusterBuildStrategy(ctx, r.client, build)
 		if err != nil {
-			return nil, err
-		}
-		if clusterBuildStrategy != nil {
-			generatedTaskRun, err = resources.GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, clusterBuildStrategy)
-			if err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return nil, resources.HandleError("Failed to generate the taskrun with clusterBuildStrategy", err, updateErr)
+			if apierrors.IsNotFound(err) {
+				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), resources.ClusterBuildStrategyNotFound); updateErr != nil {
+					return nil, resources.HandleError("failed to get referenced strategy", err, updateErr)
+				}
 			}
 		}
-	} else {
-		err := fmt.Errorf("unknown strategy %s", string(*build.Spec.StrategyRef.Kind))
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, resources.HandleError(fmt.Sprintf("Unsupported BuildStrategy Kind: %v", build.Spec.StrategyRef.Kind), err, updateErr)
+	default:
+		err = fmt.Errorf("unknown strategy %s", string(*build.Spec.StrategyRef.Kind))
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), resources.ConditionUnknownStrategyKind); updateErr != nil {
+			return nil, resources.HandleError("failed to get referenced strategy", err, updateErr)
+		}
+	}
+
+	return strategy, err
+}
+
+func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, serviceAccount *corev1.ServiceAccount, strategy buildv1alpha1.BuilderStrategy, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*v1beta1.TaskRun, error) {
+	var (
+		generatedTaskRun *v1beta1.TaskRun
+	)
+
+	generatedTaskRun, err := resources.GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, strategy)
+	if err != nil {
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), resources.ConditionTaskRunGenerationFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create taskrun runtime object", err, updateErr)
+		}
+
+		return nil, err
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun
 	if err := r.setOwnerReferenceFunc(buildRun, generatedTaskRun, r.scheme); err != nil {
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return nil, resources.HandleError("failed to set OwnerReference for BuildRun and TaskRun", err, updateErr)
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), resources.ConditionSetOwnerReferenceFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create taskrun runtime object", err, updateErr)
+		}
+
+		return nil, err
 	}
 
 	return generatedTaskRun, nil
