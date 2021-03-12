@@ -58,15 +58,17 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 
 			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have a TaskRun referenced already,
 			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun.
-			return o.Status.LatestTaskRunRef == nil
+			return o.Status.LatestTaskRunRef == nil && o.Status.CompletionTime == nil
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
 
-			// Avoid reconciling when for updates on the BuildRun, the build.shipwright.io/name
-			// label is set, and when a BuildRun already have a referenced TaskRun.
-			if o.GetLabels()[buildv1alpha1.LabelBuild] == "" || o.Status.LatestTaskRunRef != nil {
+			// Avoid reconciling when for updates on the BuildRun the following takes place
+			// - the build.shipwright.io/name label is set
+			// - when a BuildRun already have a referenced TaskRun
+			// - when a BuildRun have a completionTime set
+			if o.GetLabels()[buildv1alpha1.LabelBuild] == "" || o.Status.LatestTaskRunRef != nil || o.Status.CompletionTime != nil {
 				return false
 			}
 

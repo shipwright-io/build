@@ -33,6 +33,19 @@ var _ = Describe("Build Resource", func() {
 		// init vars
 		buildName = "foobuild"
 		client = &fakes.FakeClient{}
+		buildRun := &build.BuildRun{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "foo",
+				Namespace: "bar",
+			},
+			Spec: build.BuildRunSpec{
+				// buildRef is a mandatory field,
+				// therefore we can assume is always present
+				BuildRef: &build.BuildRef{
+					Name: buildName,
+				},
+			},
+		}
 
 		It("should be able to retrieve a build object if exists", func() {
 			buildSample := ctl.DefaultBuild(buildName, "foostrategy", build.ClusterBuildStrategyKind)
@@ -50,8 +63,8 @@ var _ = Describe("Build Resource", func() {
 			// fake the calls with the above stub definition
 			client.GetCalls(getClientStub)
 
-			build := &build.Build{}
-			Expect(resources.GetBuildObject(context.TODO(), client, buildName, "default", build)).To(BeNil())
+			buildObject := &build.Build{}
+			Expect(resources.GetBuildObject(context.TODO(), client, buildRun, buildObject)).To(BeNil())
 		})
 		It("should not retrieve a missing build object when missing", func() {
 			// stub a GET API call with buildSample contents that returns "not found"
@@ -66,7 +79,7 @@ var _ = Describe("Build Resource", func() {
 			client.GetCalls(getClientStub)
 
 			build := &build.Build{}
-			Expect(resources.GetBuildObject(context.TODO(), client, buildName, "default", build)).ToNot(BeNil())
+			Expect(resources.GetBuildObject(context.TODO(), client, buildRun, build)).ToNot(BeNil())
 		})
 		It("should be able to verify valid ownerships", func() {
 			managingController := true

@@ -15,7 +15,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -92,14 +91,31 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			}
 
 			build = &buildv1alpha1.Build{}
-			if err = resources.GetBuildObject(ctx, r.client, buildRun.Spec.BuildRef.Name, buildRun.Namespace, build); err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return reconcile.Result{}, resources.HandleError("Failed to fetch the Build instance", err, updateErr)
+			err = resources.GetBuildObject(ctx, r.client, buildRun, build)
+			if err != nil {
+				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
+					return reconcile.Result{}, nil
+				}
+				// system call failure, reconcile again
+				return reconcile.Result{}, err
 			}
 
 			// Validate if the Build was successfully registered
-			if err := r.ValidateBuildRegistration(ctx, build, buildRun); err != nil {
+			if build.Status.Registered == "" {
+				err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
+				// reconcile again until it gets a registration value
 				return reconcile.Result{}, err
+			}
+
+			if build.Status.Registered != corev1.ConditionTrue {
+				// stop reconciling and mark the BuildRun as Failed
+				// we only reconcile again if the status.Update call fails
+				message := fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
+				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, resources.ConditionBuildRegistrationFailed); updateErr != nil {
+					return reconcile.Result{}, updateErr
+				}
+
+				return reconcile.Result{}, nil
 			}
 
 			// Ensure the build-related labels on the BuildRun
@@ -173,8 +189,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 			ctxlog.Info(ctx, "creating TaskRun from BuildRun", namespace, request.Namespace, name, generatedTaskRun.GenerateName, "BuildRun", buildRun.Name)
 			if err = r.client.Create(ctx, generatedTaskRun); err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return reconcile.Result{}, resources.HandleError("Failed to create TaskRun if no TaskRun for that BuildRun exists", err, updateErr)
+				// system call failure, reconcile again
+				return reconcile.Result{}, err
 			}
 
 			// Set the LastTaskRunRef in the BuildRun status
@@ -349,7 +365,7 @@ func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request recon
 				// We ignore the errors from the following call, because the parent call of this function will always
 				// return back a reconcile.Result{}, nil. This is done to avoid infinite reconcile loops when a BuildRun
 				// does not longer exists
-				r.updateBuildRunErrorStatus(ctx, buildRun, fmt.Sprintf("taskRun %s doesn't exist", request.Name))
+				resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, fmt.Sprintf("taskRun %s doesn't exist", request.Name), resources.ConditionTaskRunIsMissing)
 			}
 		}
 	}
@@ -419,40 +435,4 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, serviceAccount *c
 	}
 
 	return generatedTaskRun, nil
-}
-
-// updateBuildRunErrorStatus updates buildRun status fields
-func (r *ReconcileBuildRun) updateBuildRunErrorStatus(ctx context.Context, buildRun *buildv1alpha1.BuildRun, errorMessage string) error {
-	// these two fields are deprecated and will be removed soon
-	//lint:ignore SA1019 should be set until removed
-	buildRun.Status.Succeeded = corev1.ConditionFalse
-	//lint:ignore SA1019 should be set until removed
-	buildRun.Status.Reason = errorMessage
-
-	now := metav1.Now()
-	buildRun.Status.CompletionTime = &now
-	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
-		LastTransitionTime: now,
-		Type:               buildv1alpha1.Succeeded,
-		Status:             corev1.ConditionFalse,
-		Reason:             "Failed",
-		Message:            errorMessage,
-	})
-	ctxlog.Debug(ctx, "updating buildRun status", namespace, buildRun.Namespace, name, buildRun.Name)
-	updateErr := r.client.Status().Update(ctx, buildRun)
-	return updateErr
-}
-
-// ValidateBuildRegistration verifies that a referenced Build is properly registered
-func (r *ReconcileBuildRun) ValidateBuildRegistration(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) error {
-	if build.Status.Registered == "" {
-		err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
-		return err
-	}
-	if build.Status.Registered != corev1.ConditionTrue {
-		err := fmt.Errorf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
-		updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-		return resources.HandleError("Build is not ready", err, updateErr)
-	}
-	return nil
 }
