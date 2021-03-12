@@ -24,7 +24,6 @@ import (
 // Common condition strings for reason, kind, etc.
 const (
 	ConditionUnknownStrategyKind     string = "UnknownStrategyKind"
-	ConditionStrategyKindIsMissing   string = "StrategyKindIsMissing"
 	ClusterBuildStrategyNotFound     string = "ClusterBuildStrategyNotFound"
 	BuildStrategyNotFound            string = "BuildStrategyNotFound"
 	ConditionSetOwnerReferenceFailed string = "SetOwnerReferenceFailed"
