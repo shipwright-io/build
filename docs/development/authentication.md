@@ -50,7 +50,7 @@ kubectl -n ${namespace} annotate secrets example-secret build.shipwright.io/refe
 
 ## Authentication for Git
 
-There are two ways for authenticating into Git (_applies to both GitLab or GitHub_). Also, see more information in the official Tekton [docs](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md#configuring-ssh-auth-authentication-for-git).
+There are two ways for authenticating into Git (_applies to both GitLab or GitHub_). Also, see more information in the official Tekton [docs](https://github.com/tektoncd/pipeline/blob/main/docs/auth.md#configuring-ssh-auth-authentication-for-git).
 
 ### SSH authentication
 
@@ -171,4 +171,4 @@ metadata:
 
 ## References
 
-See more information in the official Tekton [documentation](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md#configuring-ssh-auth-authentication-for-git) for authentication.
+See more information in the official Tekton [documentation](https://github.com/tektoncd/pipeline/blob/main/docs/auth.md#configuring-ssh-auth-authentication-for-git) for authentication.

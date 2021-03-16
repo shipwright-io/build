@@ -117,7 +117,7 @@ The assignment of the `TaskRun` annotations needs to be done in the [generate_ta
 
 ### Risks and Mitigations
 
-A risk is that the build strategy administrator starts to use an annotation-controlled feature that the Kubernetes administrator does not want to be used. Third-party policy engines like [Open Policy Agent](https://www.openpolicyagent.org/) can be used by the Kubernetes administrator to prevent this without requiring anything from our operator - an [EP in Tekton](https://github.com/tektoncd/community/blob/master/teps/0035-document-tekton-position-around-policy-authentication-authorization.md#proposal) is suggesting the same. If this is considered not enough, then option (2) from the [alternatives](#alternatives) might be required.
+A risk is that the build strategy administrator starts to use an annotation-controlled feature that the Kubernetes administrator does not want to be used. Third-party policy engines like [Open Policy Agent](https://www.openpolicyagent.org/) can be used by the Kubernetes administrator to prevent this without requiring anything from our operator - an [EP in Tekton](https://github.com/tektoncd/community/blob/main/teps/0035-document-tekton-position-around-policy-authentication-authorization.md#proposal) is suggesting the same. If this is considered not enough, then option (2) from the [alternatives](#alternatives) might be required.
 
 ## Design Details
 

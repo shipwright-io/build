@@ -43,10 +43,10 @@ of the technology this project is built on. This project extends Kubernetes (aka
 
 At this point, you may find it useful to return to these `Shipwright Build` docs:
 
--   [Shipwright Build](https://github.com/shipwright-io/build/blob/master/README.md) -
+-   [Shipwright Build](README.md) -
     Some of the terms here may make more sense!
 -   Install via [getting started for development](#getting-started)
--   [Shipwright Build overview and tutorial](https://github.com/shipwright-io/build/blob/master/docs/README.md) -
+-   [Shipwright Build overview and tutorial](docs/README.md) -
     Define `BuildStrategies`, `Builds`, and `BuildRuns`, see what happens when
     they are run
 

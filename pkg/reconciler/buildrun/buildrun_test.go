@@ -258,7 +258,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			// Docs on the TaskRun conditions can be found here
-			// https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md#monitoring-execution-status
+			// https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status
 			It("updates the BuildRun status with a PENDING reason", func() {
 
 				// initialize a TaskRun, we need this to fake the existence of a Tekton TaskRun
