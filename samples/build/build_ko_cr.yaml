@@ -9,7 +9,6 @@ spec:
   source:
     url: https://github.com/shipwright-io/build
     contextDir: cmd/manager
-    revision: master
   strategy:
     name: ko
     kind: ClusterBuildStrategy

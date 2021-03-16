@@ -15,7 +15,7 @@ type GitSource struct {
 	// URL of the git repo
 	URL string `json:"url"`
 
-	// Ref is a git reference. Optional. "master" is used by default.
+	// Ref is a git reference. Optional. If not defined, it will fallback to the git repository default branch.
 	Revision *string `json:"revision,omitempty"`
 
 	// ContextDir is a path to subfolder in the repo. Optional.

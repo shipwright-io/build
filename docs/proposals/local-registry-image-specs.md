@@ -45,7 +45,7 @@ be portable across clusters.
 The `Build` API in its present form requires that users provide a full image pull spec for image
 references. This can be cumbersome when referencing an image on an internal registry, such as those
 present in [KIND](https://kind.sigs.k8s.io/docs/user/local-registry/),
-[Rancher](https://github.com/rancher/k3d/blob/master/docs/registries.md#using-a-local-registry),
+[Rancher](https://github.com/rancher/k3d/blob/main/docs/usage/guides/registries.md#using-a-local-registry),
 [microk8s](https://microk8s.io/docs/registry-built-in), and
 [OpenShift](https://docs.openshift.com/container-platform/4.5/registry/architecture-component-imageregistry.html).
 This proposal will provide a means of declaring that an image spec references a local registry,
