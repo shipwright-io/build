@@ -14,8 +14,10 @@ import (
 )
 
 // BuildStrategyLister helps list BuildStrategies.
+// All objects returned here must be treated as read-only.
 type BuildStrategyLister interface {
 	// List lists all BuildStrategies in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BuildStrategy, err error)
 	// BuildStrategies returns an object that can list and get BuildStrategies.
 	BuildStrategies(namespace string) BuildStrategyNamespaceLister
@@ -46,10 +48,13 @@ func (s *buildStrategyLister) BuildStrategies(namespace string) BuildStrategyNam
 }
 
 // BuildStrategyNamespaceLister helps list and get BuildStrategies.
+// All objects returned here must be treated as read-only.
 type BuildStrategyNamespaceLister interface {
 	// List lists all BuildStrategies in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BuildStrategy, err error)
 	// Get retrieves the BuildStrategy from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.BuildStrategy, error)
 	BuildStrategyNamespaceListerExpansion
 }

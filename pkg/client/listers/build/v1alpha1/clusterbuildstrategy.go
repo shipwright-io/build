@@ -14,10 +14,13 @@ import (
 )
 
 // ClusterBuildStrategyLister helps list ClusterBuildStrategies.
+// All objects returned here must be treated as read-only.
 type ClusterBuildStrategyLister interface {
 	// List lists all ClusterBuildStrategies in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.ClusterBuildStrategy, err error)
 	// Get retrieves the ClusterBuildStrategy from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.ClusterBuildStrategy, error)
 	ClusterBuildStrategyListerExpansion
 }
