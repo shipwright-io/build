@@ -181,7 +181,6 @@ func (pt PipelineTask) Deps() []string {
 			continue
 		}
 		uniqueDeps.Insert(w)
-
 	}
 
 	return uniqueDeps.List()
@@ -200,66 +199,36 @@ func (pt PipelineTask) resourceDeps() []string {
 		for _, rd := range cond.Resources {
 			resourceDeps = append(resourceDeps, rd.From...)
 		}
-		for _, param := range cond.Params {
-			expressions, ok := GetVarSubstitutionExpressionsForParam(param)
-			if ok {
-				resultRefs := NewResultRefs(expressions)
-				for _, resultRef := range resultRefs {
-					resourceDeps = append(resourceDeps, resultRef.PipelineTask)
-				}
-			}
-		}
 	}
 
-	// Add any dependents from task results
-	for _, param := range pt.Params {
-		expressions, ok := GetVarSubstitutionExpressionsForParam(param)
-		if ok {
-			resultRefs := NewResultRefs(expressions)
-			for _, resultRef := range resultRefs {
-				resourceDeps = append(resourceDeps, resultRef.PipelineTask)
-			}
-		}
+	// Add any dependents from result references.
+	for _, ref := range PipelineTaskResultRefs(&pt) {
+		resourceDeps = append(resourceDeps, ref.PipelineTask)
 	}
-	// Add any dependents from when expressions
-	for _, whenExpression := range pt.WhenExpressions {
-		expressions, ok := whenExpression.GetVarSubstitutionExpressions()
-		if ok {
-			resultRefs := NewResultRefs(expressions)
-			for _, resultRef := range resultRefs {
-				resourceDeps = append(resourceDeps, resultRef.PipelineTask)
-			}
-		}
-	}
+
 	return resourceDeps
 }
 
 func (pt PipelineTask) orderingDeps() []string {
 	orderingDeps := []string{}
-	resourceDeps := pt.resourceDeps()
 	for _, runAfter := range pt.RunAfter {
-		if !contains(runAfter, resourceDeps) {
-			orderingDeps = append(orderingDeps, runAfter)
-		}
+		orderingDeps = append(orderingDeps, runAfter)
 	}
 	return orderingDeps
 }
 
-func contains(s string, arr []string) bool {
-	for _, elem := range arr {
-		if elem == s {
-			return true
-		}
-	}
-	return false
-}
-
 type PipelineTaskList []PipelineTask
 
+// Deps returns a map with key as name of a pipelineTask and value as a list of its dependencies
 func (l PipelineTaskList) Deps() map[string][]string {
 	deps := map[string][]string{}
 	for _, pt := range l {
-		deps[pt.HashKey()] = pt.Deps()
+		// get the list of deps for this pipelineTask
+		d := pt.Deps()
+		// add the pipelineTask into the map if it has any deps
+		if len(d) > 0 {
+			deps[pt.HashKey()] = d
+		}
 	}
 	return deps
 }
