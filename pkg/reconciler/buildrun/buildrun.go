@@ -218,10 +218,13 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				}
 			}
 
+			//lint:ignore SA1019 should be set until removed
 			buildRun.Status.Succeeded = taskRunStatus
 			if taskRunStatus == corev1.ConditionFalse {
+				//lint:ignore SA1019 should be set until removed
 				buildRun.Status.Reason = trCondition.Message
 			} else {
+				//lint:ignore SA1019 should be set until removed
 				buildRun.Status.Reason = trCondition.Reason
 			}
 
@@ -380,7 +383,9 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, build *buildv1alp
 // updateBuildRunErrorStatus updates buildRun status fields
 func (r *ReconcileBuildRun) updateBuildRunErrorStatus(ctx context.Context, buildRun *buildv1alpha1.BuildRun, errorMessage string) error {
 	// these two fields are deprecated and will be removed soon
+	//lint:ignore SA1019 should be set until removed
 	buildRun.Status.Succeeded = corev1.ConditionFalse
+	//lint:ignore SA1019 should be set until removed
 	buildRun.Status.Reason = errorMessage
 
 	now := metav1.Now()
