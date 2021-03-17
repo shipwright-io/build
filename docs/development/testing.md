@@ -67,7 +67,7 @@ Unit tests are designed based on the following:
 - Unit tests must pass in different OS distributions( e.g. linux, macOS ).
 - Unit tests should be run in parallel.
 
-Because we use Ginkgo for this, each controller [package](https://github.com/shipwright-io/build/tree/master/pkg/reconciler) requires a `suite_test.go` file and a relative controller test file. You can generate a suite by running `ginkgo bootstrap` under the package directory. For testing an specific controller class, you can generate the testing class by running `ginkgo generate` under the package directory.
+Because we use Ginkgo for this, each controller [package](https://github.com/shipwright-io/build/tree/main/pkg/reconciler) requires a `suite_test.go` file and a relative controller test file. You can generate a suite by running `ginkgo bootstrap` under the package directory. For testing an specific controller class, you can generate the testing class by running `ginkgo generate` under the package directory.
 
 When building unit-tests, try to follow:
 
@@ -96,8 +96,8 @@ Integration tests are designed based on the following:
 
 Before running these tests, ensure you have:
 
-- A running cluster. You can use Kind, see [installation](https://github.com/shipwright-io/build/blob/master/hack/install-kind.sh)
-- Tekton controllers installed, see [installation](https://github.com/shipwright-io/build/blob/master/hack/install-tekton.sh)
+- A running cluster. You can use Kind, see [installation](https://github.com/shipwright-io/build/blob/main/hack/install-kind.sh)
+- Tekton controllers installed, see [installation](https://github.com/shipwright-io/build/blob/main/hack/install-tekton.sh)
 
 ```sh
 make test-integration

@@ -18,7 +18,7 @@ Fixes #<insert issue number here>
 - [ ] [Set a kind label on this PR](https://prow.k8s.io/command-help#kind)  
 - [ ] Release notes block has been filled in, or marked NONE
 
-See [the contributor guide](https://github.com/shipwright-io/build/blob/master/CONTRIBUTING.md)
+See [the contributor guide](https://github.com/shipwright-io/build/blob/main/CONTRIBUTING.md)
 for details on coding conventions, github and prow interactions, and the code review process.
 
 # Release Notes
