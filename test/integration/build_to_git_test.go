@@ -60,7 +60,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 	})
 
 	Context("when the build source url protocol is a fake http without the verify annotation", func() {
-		It("should validate source url by default", func() {
+		It("should not validate source url by default", func() {
 
 			// populate Build related vars
 			buildName := BUILD + tb.Namespace
@@ -75,11 +75,12 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			// wait until the Build finish the validation
-			buildObject, err := tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
+			buildObject, err := tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
-			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.RemoteRepositoryUnreachable))
-			Expect(buildObject.Status.Message).To(Equal("remote repository unreachable"))
+			// skip validation due to empty annotation
+			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+			Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 		})
 	})
 
@@ -110,7 +111,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 	})
 
 	Context("when the build source url protocol is a fake https without the verify annotation", func() {
-		It("should validate source url by default", func() {
+		It("should not validate source url by default", func() {
 
 			// populate Build related vars
 			buildName := BUILD + tb.Namespace
@@ -125,11 +126,12 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			// wait until the Build finish the validation
-			buildObject, err := tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
+			buildObject, err := tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
-			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.RemoteRepositoryUnreachable))
-			Expect(buildObject.Status.Message).To(Equal("remote repository unreachable"))
+			// skip validation due to empty annotation
+			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+			Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 		})
 	})
 

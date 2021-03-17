@@ -27,13 +27,13 @@ type SourceURLRef struct {
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 	if s.Build.Spec.Source.SecretRef == nil {
 		switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
-		case "", "true":
+		case "true":
 			err := git.ValidateGitURLExists(s.Build.Spec.Source.URL)
 			if err != nil {
 				s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, err.Error())
 			}
 			return err
-		case "false":
+		case "", "false":
 			ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository]))
 			return nil
 		default:

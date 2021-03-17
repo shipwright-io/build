@@ -218,6 +218,9 @@ spec:
 const BuildCBSWithWrongURL = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build
+metadata:
+  annotations:
+    build.shipwright.io/verify.repository: "true"
 spec:
   source:
     url: "https://github.foobar.com/sbose78/taxi"
