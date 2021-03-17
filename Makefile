@@ -28,7 +28,7 @@ OPERATOR_SDK_EXTRA_ARGS ?= --debug
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines controller version
-TEKTON_VERSION ?= v0.20.1
+TEKTON_VERSION ?= v0.21.0
 # CI: operator-sdk version
 SDK_VERSION ?= v0.18.2
 

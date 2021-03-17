@@ -26,7 +26,7 @@ as [Kaniko](https://github.com/GoogleContainerTools/kaniko),
 | Dependency                                | Supported versions                     |
 | ----------------------------------------- | -------------------------------------- |
 | [Kubernetes](https://kubernetes.io/)      | v1.15.\*, v1.16.\*, v1.17.\*, v1.18.\* |
-| [Tekton](https://cloud.google.com/tekton) | v0.20.1                                |
+| [Tekton](https://tekton.dev) | v0.21.0                                |
 
 ## Build Strategies
 
@@ -81,7 +81,7 @@ Examples of `Build` resource using the example strategies installed by default.
 
   _Coming soon - install Shipwright Build via kubectl!_
 
-* Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.20.1.
+* Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.21.0.
 
   ```bash
   $ hack/install-tekton.sh

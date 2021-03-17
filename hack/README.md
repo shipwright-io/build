@@ -1,3 +1,8 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
 # Assorted scripts for development
 
 This directory contains several scripts useful in the development process of Shipwright Build.

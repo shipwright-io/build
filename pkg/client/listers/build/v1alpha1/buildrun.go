@@ -14,8 +14,10 @@ import (
 )
 
 // BuildRunLister helps list BuildRuns.
+// All objects returned here must be treated as read-only.
 type BuildRunLister interface {
 	// List lists all BuildRuns in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BuildRun, err error)
 	// BuildRuns returns an object that can list and get BuildRuns.
 	BuildRuns(namespace string) BuildRunNamespaceLister
@@ -46,10 +48,13 @@ func (s *buildRunLister) BuildRuns(namespace string) BuildRunNamespaceLister {
 }
 
 // BuildRunNamespaceLister helps list and get BuildRuns.
+// All objects returned here must be treated as read-only.
 type BuildRunNamespaceLister interface {
 	// List lists all BuildRuns in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BuildRun, err error)
 	// Get retrieves the BuildRun from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.BuildRun, error)
 	BuildRunNamespaceListerExpansion
 }

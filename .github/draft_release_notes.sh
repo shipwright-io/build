@@ -1,4 +1,7 @@
 #! /bin/sh
+# Copyright The Shipwright Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
 
 # this script assumes the GITHUB_TOKEN and PREVIOUS_TAG environment variables have been set;
 # it produces a 'Changes.md' file as its final output;
