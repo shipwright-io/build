@@ -373,7 +373,9 @@ var _ = Describe("Reconcile Build", func() {
 			// validate file protocol
 			It("fails when source URL is invalid", func() {
 				buildSample.Spec.Source.URL = "foobar"
-
+				buildSample.SetAnnotations(map[string]string{
+					build.AnnotationBuildVerifyRepository: "true",
+				})
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.RemoteRepositoryUnreachable, "invalid source url")
 				statusWriter.UpdateCalls(statusCall)
 
@@ -385,6 +387,9 @@ var _ = Describe("Reconcile Build", func() {
 			// validate https protocol
 			It("fails when public source URL is unreachable", func() {
 				buildSample.Spec.Source.URL = "https://github.com/shipwright-io/sample-go-fake"
+				buildSample.SetAnnotations(map[string]string{
+					build.AnnotationBuildVerifyRepository: "true",
+				})
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.RemoteRepositoryUnreachable, "remote repository unreachable")
 				statusWriter.UpdateCalls(statusCall)
@@ -392,6 +397,31 @@ var _ = Describe("Reconcile Build", func() {
 				_, err := reconciler.Reconcile(request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+
+			// skip validation because of empty sourceURL annotation
+			It("succeed when source URL is invalid because source annotation is empty", func() {
+				buildSample.Spec.Source.URL = "foobar"
+
+				// Fake some client Get calls and ensure we populate all
+				// different resources we could get during reconciliation
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						buildSample.DeepCopyInto(object)
+					case *build.ClusterBuildStrategy:
+						clusterBuildStrategySample.DeepCopyInto(object)
+					}
+					return nil
+				})
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, build.AllValidationsSucceeded)
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+				Expect(reconcile.Result{}).To(Equal(result))
 			})
 
 			// skip validation because of false sourceURL annotation
