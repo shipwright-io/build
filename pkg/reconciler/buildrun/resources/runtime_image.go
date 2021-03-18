@@ -23,9 +23,9 @@ import (
 const (
 	// runtimeDockerfileTmpl Dockerfile template to be used with runtime-image, it uses Build
 	// attributes directly as template input.
-	runtimeDockerfileTmpl = `FROM {{ .Spec.Output.ImageURL }} as builder
+	runtimeDockerfileTmpl = `FROM {{ .Spec.Output.Image }} as builder
 
-FROM {{ .Spec.Runtime.Base.ImageURL }}
+FROM {{ .Spec.Runtime.Base.Image }}
 
 {{- range $k, $v := .Spec.Runtime.Env }}
 ENV {{ $k }}="{{ $v }}"
@@ -164,8 +164,8 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 
 	// using builder-image when defined, or falling back to a default
 	imageURL := defultShellImage
-	if isBuilderImageDefined(b) {
-		imageURL = b.Spec.BuilderImage.ImageURL
+	if isBuilderDefined(b) {
+		imageURL = b.Spec.Builder.Image
 	}
 
 	container := v1.Container{
@@ -216,7 +216,7 @@ func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta
 			"--skip-tls-verify=true",
 			fmt.Sprintf("--dockerfile=%s", runtimeDockerfile),
 			fmt.Sprintf("--context=%x", path.Join(workspaceDir, contextDir)),
-			fmt.Sprintf("--destination=%s", b.Spec.Output.ImageURL),
+			fmt.Sprintf("--destination=%s", b.Spec.Output.Image),
 			"--snapshotMode=redo",
 			"--oci-layout-path=/workspace/output/image",
 		},
@@ -242,24 +242,24 @@ func AmendTaskSpecWithRuntimeImage(
 	return nil
 }
 
-// isBuilderImageDefined inspect if build contains `.spec.BuilderImage` defined.
-func isBuilderImageDefined(b *buildv1alpha1.Build) bool {
-	if b.Spec.BuilderImage == nil {
+// isBuilderDefined inspect if build contains `.spec.Builder` defined.
+func isBuilderDefined(b *buildv1alpha1.Build) bool {
+	if b.Spec.Builder == nil {
 		return false
 	}
-	if b.Spec.BuilderImage.ImageURL == "" {
+	if b.Spec.Builder.Image == "" {
 		return false
 	}
 	return true
 }
 
 // IsRuntimeDefined inspect if build has `.spec.runtime` defined, checking intermediary attributes
-// and making sure ImageURL is informed.
+// and making sure Image is informed.
 func IsRuntimeDefined(b *buildv1alpha1.Build) bool {
 	if b.Spec.Runtime == nil {
 		return false
 	}
-	if b.Spec.Runtime.Base.ImageURL == "" {
+	if b.Spec.Runtime.Base.Image == "" {
 		return false
 	}
 	return true

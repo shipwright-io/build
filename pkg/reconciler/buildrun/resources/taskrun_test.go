@@ -48,7 +48,7 @@ var _ = Describe("GenerateTaskrun", func() {
 		)
 		BeforeEach(func() {
 			builderImage = &buildv1alpha1.Image{
-				ImageURL: "quay.io/builder/image",
+				Image: "quay.io/builder/image",
 			}
 		})
 
@@ -123,7 +123,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			contextDir = "docker-build"
 			revision = ""
 			builderImage = &buildv1alpha1.Image{
-				ImageURL: "heroku/buildpacks:18",
+				Image: "heroku/buildpacks:18",
 			}
 			outputPath = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
 			outputPathBuildRun = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2"
@@ -154,7 +154,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
 				Expect(got.Labels[buildv1alpha1.LabelBuild]).To(Equal(build.Name))
 				Expect(got.Labels[buildv1alpha1.LabelBuildRun]).To(Equal(buildRun.Name))
-				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyName]).To(Equal(build.Spec.StrategyRef.Name))
+				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyName]).To(Equal(build.Spec.Strategy.Name))
 				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyGeneration]).To(Equal("0"))
 			})
 
@@ -239,7 +239,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				params := got.Spec.Params
 				for _, param := range params {
 					if param.Name == "BUILDER_IMAGE" {
-						Expect(param.Value.StringVal).To(Equal(builderImage.ImageURL))
+						Expect(param.Value.StringVal).To(Equal(builderImage.Image))
 					}
 					if param.Name == "DOCKERFILE" {
 						Expect(param.Value.StringVal).To(Equal(dockerfile))

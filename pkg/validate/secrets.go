@@ -17,20 +17,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// SecretRef contains all required fields
+// Credentials contains all required fields
 // to validate a Build spec secrets definitions
-type SecretRef struct {
+type Credentials struct {
 	Build  *build.Build
 	Client client.Client
 }
 
 // ValidatePath implements BuildPath interface and validates
 // that all referenced secrets under spec exists
-func (s SecretRef) ValidatePath(ctx context.Context) error {
+func (s Credentials) ValidatePath(ctx context.Context) error {
 	var missingSecrets []string
 	secret := &corev1.Secret{}
 
-	secretNames := s.buildSecretReferences()
+	secretNames := s.buildCredentialserences()
 
 	for refSecret, secretType := range secretNames {
 		if err := s.Client.Get(ctx, types.NamespacedName{Name: refSecret, Namespace: s.Build.Namespace}, secret); err != nil && !apierrors.IsNotFound(err) {
@@ -52,17 +52,17 @@ func (s SecretRef) ValidatePath(ctx context.Context) error {
 	return nil
 }
 
-func (s SecretRef) buildSecretReferences() map[string]build.BuildReason {
+func (s Credentials) buildCredentialserences() map[string]build.BuildReason {
 	// Validate if the referenced secrets exist in the namespace
 	secretRefMap := map[string]build.BuildReason{}
-	if s.Build.Spec.Output.SecretRef != nil && s.Build.Spec.Output.SecretRef.Name != "" {
-		secretRefMap[s.Build.Spec.Output.SecretRef.Name] = build.SpecOutputSecretRefNotFound
+	if s.Build.Spec.Output.Credentials != nil && s.Build.Spec.Output.Credentials.Name != "" {
+		secretRefMap[s.Build.Spec.Output.Credentials.Name] = build.SpecOutputSecretRefNotFound
 	}
-	if s.Build.Spec.Source.SecretRef != nil && s.Build.Spec.Source.SecretRef.Name != "" {
-		secretRefMap[s.Build.Spec.Source.SecretRef.Name] = build.SpecSourceSecretRefNotFound
+	if s.Build.Spec.Source.Credentials != nil && s.Build.Spec.Source.Credentials.Name != "" {
+		secretRefMap[s.Build.Spec.Source.Credentials.Name] = build.SpecSourceSecretRefNotFound
 	}
-	if s.Build.Spec.BuilderImage != nil && s.Build.Spec.BuilderImage.SecretRef != nil && s.Build.Spec.BuilderImage.SecretRef.Name != "" {
-		secretRefMap[s.Build.Spec.BuilderImage.SecretRef.Name] = build.SpecBuilderSecretRefNotFound
+	if s.Build.Spec.Builder != nil && s.Build.Spec.Builder.Credentials != nil && s.Build.Spec.Builder.Credentials.Name != "" {
+		secretRefMap[s.Build.Spec.Builder.Credentials.Name] = build.SpecBuilderSecretRefNotFound
 	}
 	return secretRefMap
 }

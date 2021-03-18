@@ -74,8 +74,8 @@ spec:
                   spec
                 properties:
                   credentials:
-                    description: SecretRef is a reference to the Secret containing
-                      the credentials to push the image to the registry
+                    description: Credentials references a Secret that contains credentials
+                      to access the image registry.
                     properties:
                       name:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -83,8 +83,7 @@ spec:
                         type: string
                     type: object
                   image:
-                    description: ImageURL is the URL where the image will be pushed
-                      to.
+                    description: Image is the reference of the image.
                     type: string
                 required:
                 - image
@@ -115,12 +114,12 @@ spec:
                 description: BuildSpec is the Build Spec of this BuildRun.
                 properties:
                   builder:
-                    description: BuilderImage refers to the image containing the build
+                    description: Builder refers to the image containing the build
                       tools inside which the source code would be built.
                     properties:
                       credentials:
-                        description: SecretRef is a reference to the Secret containing
-                          the credentials to push the image to the registry
+                        description: Credentials references a Secret that contains
+                          credentials to access the image registry.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -128,8 +127,7 @@ spec:
                             type: string
                         type: object
                       image:
-                        description: ImageURL is the URL where the image will be pushed
-                          to.
+                        description: Image is the reference of the image.
                         type: string
                     required:
                     - image
@@ -140,12 +138,12 @@ spec:
                       an image.
                     type: string
                   output:
-                    description: Output refers to the location where the generated
-                      image would be pushed to.
+                    description: Output refers to the location where the built image
+                      would be pushed.
                     properties:
                       credentials:
-                        description: SecretRef is a reference to the Secret containing
-                          the credentials to push the image to the registry
+                        description: Credentials references a Secret that contains
+                          credentials to access the image registry.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -153,8 +151,7 @@ spec:
                             type: string
                         type: object
                       image:
-                        description: ImageURL is the URL where the image will be pushed
-                          to.
+                        description: Image is the reference of the image.
                         type: string
                     required:
                     - image
@@ -177,14 +174,14 @@ spec:
                       type: object
                     type: array
                   runtime:
-                    description: Runtime represents the runtime-image
+                    description: Runtime represents the runtime-image.
                     properties:
                       base:
                         description: Base runtime base image.
                         properties:
                           credentials:
-                            description: SecretRef is a reference to the Secret containing
-                              the credentials to push the image to the registry
+                            description: Credentials references a Secret that contains
+                              credentials to access the image registry.
                             properties:
                               name:
                                 description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -193,8 +190,7 @@ spec:
                                 type: string
                             type: object
                           image:
-                            description: ImageURL is the URL where the image will
-                              be pushed to.
+                            description: Image is the reference of the image.
                             type: string
                         required:
                         - image
@@ -253,8 +249,8 @@ spec:
                           Optional.
                         type: string
                       credentials:
-                        description: SecretRef refers to the secret that contains
-                          credentials to access the git repo. Optional.
+                        description: Credentials references a Secret that contains
+                          credentials to access the repository.
                         properties:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -262,19 +258,19 @@ spec:
                             type: string
                         type: object
                       revision:
-                        description: Ref is a git reference. Optional. If not defined,
-                          it will fallback to the git repository default branch.
+                        description: "Revision describes the Git revision (e.g., branch,
+                          tag, commit SHA, etc.) to fetch. \n If not defined, it will
+                          fallback to the repository's default branch."
                         type: string
                       url:
-                        description: URL of the git repo
+                        description: URL describes the URL of the Git repository.
                         type: string
                     required:
                     - url
                     type: object
                   strategy:
-                    description: StrategyRef refers to the BuildStrategy to be used
-                      to build the container image. There are namespaced scope and
-                      cluster scope BuildStrategy
+                    description: Strategy references the BuildStrategy to use to build
+                      the container image.
                     properties:
                       apiVersion:
                         description: API version of the referent
@@ -290,7 +286,8 @@ spec:
                     - name
                     type: object
                   timeout:
-                    description: Timeout defines the maximum run time of a build run.
+                    description: Timeout defines the maximum amount of time the Build
+                      should take to execute.
                     format: duration
                     type: string
                 required:
@@ -303,7 +300,8 @@ spec:
                 format: date-time
                 type: string
               conditions:
-                description: Conditions
+                description: Conditions holds the latest available observations of
+                  a resource's current state.
                 items:
                   description: Condition defines the required fields for populating
                     Build controllers Conditions
@@ -340,18 +338,21 @@ spec:
                     type: string
                 type: object
               latestTaskRunRef:
-                description: PodName is the name of the pod responsible for executing
-                  this task's steps.
+                description: "LatestTaskRunRef is the name of the TaskRun responsible
+                  for executing this BuildRun. \n TODO: This should be called something
+                  like \"TaskRunName\""
                 type: string
               reason:
-                description: The Succeeded reason of the TaskRun
+                description: "The Succeeded reason of the TaskRun \n Deprecated: Use
+                  Conditions instead. This will be removed in a future release."
                 type: string
               startTime:
                 description: StartTime is the time the build is actually started.
                 format: date-time
                 type: string
               succeeded:
-                description: The Succeeded status of the TaskRun
+                description: "The Succeeded status of the TaskRun \n Deprecated: Use
+                  Conditions instead. This will be removed in a future release."
                 type: string
             type: object
         type: object

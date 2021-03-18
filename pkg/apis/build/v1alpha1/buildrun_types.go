@@ -22,7 +22,6 @@ const (
 
 // BuildRunSpec defines the desired state of BuildRun
 type BuildRunSpec struct {
-
 	// BuildRef refers to the Build
 	BuildRef *BuildRef `json:"buildRef"`
 

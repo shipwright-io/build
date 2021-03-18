@@ -37,21 +37,21 @@ var _ = Describe("Credentials", func() {
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
-					Source: buildv1alpha1.GitSource{
+					Source: buildv1alpha1.Source{
 						URL: "a/b/c",
-						SecretRef: &corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_a",
 						},
 					},
-					BuilderImage: &buildv1alpha1.Image{
-						ImageURL: "quay.io/namespace/image",
-						SecretRef: &corev1.LocalObjectReference{
+					Builder: &buildv1alpha1.Image{
+						Image: "quay.io/namespace/image",
+						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_docker.io",
 						},
 					},
 					Output: buildv1alpha1.Image{
-						ImageURL: "quay.io/namespace/image",
-						SecretRef: &corev1.LocalObjectReference{
+						Image: "quay.io/namespace/image",
+						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_quay.io",
 						},
 					},
@@ -79,9 +79,9 @@ var _ = Describe("Credentials", func() {
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
-					Source: buildv1alpha1.GitSource{
+					Source: buildv1alpha1.Source{
 						URL: "a/b/c",
-						SecretRef: &corev1.LocalObjectReference{
+						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_b",
 						},
 					},
@@ -105,9 +105,9 @@ var _ = Describe("Credentials", func() {
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
-					Source: buildv1alpha1.GitSource{
-						URL:       "a/b/c",
-						SecretRef: nil,
+					Source: buildv1alpha1.Source{
+						URL:         "a/b/c",
+						Credentials: nil,
 					},
 				},
 			}

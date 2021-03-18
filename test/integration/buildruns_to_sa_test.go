@@ -79,7 +79,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 				return false
 			}
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(buildObject.Spec.Output.SecretRef.Name, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithAnnotation(buildObject.Spec.Output.Credentials.Name, buildObject.Namespace)
 
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
@@ -97,7 +97,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			Expect(err).To(BeNil())
 
 			// Verify that the sa have our Build specified secret
-			Expect(contains(sa.Secrets, buildObject.Spec.Output.SecretRef.Name)).To(BeTrue())
+			Expect(contains(sa.Secrets, buildObject.Spec.Output.Credentials.Name)).To(BeTrue())
 
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())

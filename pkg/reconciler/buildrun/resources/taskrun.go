@@ -23,7 +23,7 @@ const (
 	inputSourceResourceName = "source"
 	inputGitSourceURL       = "url"
 	inputGitSourceRevision  = "revision"
-	inputParamBuilderImage  = "BUILDER_IMAGE"
+	inputParamBuilder  = "BUILDER_IMAGE"
 	inputParamDockerfile    = "DOCKERFILE"
 	inputParamContextDir    = "CONTEXT_DIR"
 	outputImageResourceName = "image"
@@ -36,7 +36,7 @@ func getStringTransformations(fullText string) string {
 
 	stringTransformations := map[string]string{
 		"$(build.output.image)":      "$(outputs.resources.image.url)",
-		"$(build.builder.image)":     fmt.Sprintf("$(inputs.params.%s)", inputParamBuilderImage),
+		"$(build.builder.image)":     fmt.Sprintf("$(inputs.params.%s)", inputParamBuilder),
 		"$(build.dockerfile)":        fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
 		"$(build.source.contextDir)": fmt.Sprintf("$(inputs.params.%s)", inputParamContextDir),
 	}
@@ -98,16 +98,16 @@ func GenerateTaskSpec(
 		Steps: []v1beta1.Step{},
 	}
 
-	if build.Spec.BuilderImage != nil {
-		InputBuilderImage := v1beta1.ParamSpec{
+	if build.Spec.Builder != nil {
+		InputBuilder := v1beta1.ParamSpec{
 			Description: "Image containing the build tools/logic",
-			Name:        inputParamBuilderImage,
+			Name:        inputParamBuilder,
 			Default: &v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
-				StringVal: build.Spec.BuilderImage.ImageURL,
+				StringVal: build.Spec.Builder.Image,
 			},
 		}
-		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilderImage)
+		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilder)
 	}
 
 	var vols []corev1.Volume
@@ -189,11 +189,11 @@ func GenerateTaskRun(
 	}
 
 	// retrieve expected imageURL form build or buildRun
-	var ImageURL string
+	var Image string
 	if buildRun.Spec.Output != nil {
-		ImageURL = buildRun.Spec.Output.ImageURL
+		Image = buildRun.Spec.Output.Image
 	} else {
-		ImageURL = build.Spec.Output.ImageURL
+		Image = build.Spec.Output.Image
 	}
 
 	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, strategy.GetBuildSteps())
@@ -245,7 +245,7 @@ func GenerateTaskRun(
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  outputImageResourceURL,
-										Value: ImageURL,
+										Value: Image,
 									},
 								},
 							},
@@ -274,12 +274,12 @@ func GenerateTaskRun(
 	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
 
 	var inputParams []v1beta1.Param
-	if build.Spec.BuilderImage != nil {
+	if build.Spec.Builder != nil {
 		inputParams = append(inputParams, v1beta1.Param{
-			Name: inputParamBuilderImage,
+			Name: inputParamBuilder,
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
-				StringVal: build.Spec.BuilderImage.ImageURL,
+				StringVal: build.Spec.Builder.Image,
 			},
 		})
 	}

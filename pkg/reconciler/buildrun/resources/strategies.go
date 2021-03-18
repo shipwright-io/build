@@ -21,7 +21,7 @@ func RetrieveBuildStrategy(ctx context.Context, client client.Client, build *bui
 	ctxlog.Debug(ctx, "retrieving BuildStrategy", namespace, build.Namespace, name, build.Name)
 
 	// Note: When returning the client.Get call, the buildStrategyInstance gets populated and properly returned as the first argument
-	return buildStrategyInstance, client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name, Namespace: build.Namespace}, buildStrategyInstance)
+	return buildStrategyInstance, client.Get(ctx, types.NamespacedName{Name: build.Spec.Strategy.Name, Namespace: build.Namespace}, buildStrategyInstance)
 }
 
 // RetrieveClusterBuildStrategy returns a cluster scoped strategy
@@ -31,5 +31,5 @@ func RetrieveClusterBuildStrategy(ctx context.Context, client client.Client, bui
 	ctxlog.Debug(ctx, "retrieving ClusterBuildStrategy", namespace, build.Namespace, name, build.Name)
 
 	// Note: When returning the client.Get call, the clusterBuildStrategyInstance gets populated and properly returned as the first argument
-	return clusterBuildStrategyInstance, client.Get(ctx, types.NamespacedName{Name: build.Spec.StrategyRef.Name}, clusterBuildStrategyInstance)
+	return clusterBuildStrategyInstance, client.Get(ctx, types.NamespacedName{Name: build.Spec.Strategy.Name}, clusterBuildStrategyInstance)
 }

@@ -25,7 +25,7 @@ type SourceURLRef struct {
 // that the spec.source.url exists. This validation only applies
 // to endpoints that do not require authentication.
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
-	if s.Build.Spec.Source.SecretRef == nil {
+	if s.Build.Spec.Source.Credentials == nil {
 		switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
 		case "true":
 			err := git.ValidateGitURLExists(s.Build.Spec.Source.URL)

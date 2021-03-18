@@ -43,11 +43,11 @@ func NewValidation(
 	client client.Client,
 	scheme *runtime.Scheme,
 ) (BuildPath, error) {
-	secretRef := SecretRef{
+	secretRef := Credentials{
 		Build:  build,
 		Client: client,
 	}
-	strategyRef := StrategyRef{
+	strategyRef := Strategy{
 		Build:  build,
 		Client: client,
 	}

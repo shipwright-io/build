@@ -228,9 +228,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
 			buildObject.Spec.Source.URL = "https://github.yourco.com/org/build-fake"
-			buildObject.Spec.Source.SecretRef = &corev1.LocalObjectReference{Name: "foobar"}
+			buildObject.Spec.Source.Credentials = &corev1.LocalObjectReference{Name: "foobar"}
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(buildObject.Spec.Source.SecretRef.Name, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithAnnotation(buildObject.Spec.Source.Credentials.Name, buildObject.Namespace)
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())

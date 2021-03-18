@@ -108,7 +108,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	// Increase Build count in metrics
-	buildmetrics.BuildCountInc(b.Spec.StrategyRef.Name, b.Namespace, b.Name)
+	buildmetrics.BuildCountInc(b.Spec.Strategy.Name, b.Namespace, b.Name)
 
 	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
 	return reconcile.Result{}, nil

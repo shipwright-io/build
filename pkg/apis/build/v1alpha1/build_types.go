@@ -65,38 +65,41 @@ const (
 type BuildSpec struct {
 	// Source refers to the Git repository containing the
 	// source code to be built.
-	Source GitSource `json:"source"`
+	Source Source `json:"source"`
 
-	// StrategyRef refers to the BuildStrategy to be used to
-	// build the container image.
-	// There are namespaced scope and cluster scope BuildStrategy
-	StrategyRef *StrategyRef `json:"strategy"`
+	// Strategy references the BuildStrategy to use to build the container
+	// image.
+	Strategy *Strategy `json:"strategy"`
 
-	// BuilderImage refers to the image containing the build tools
-	// inside which the source code would be built.
+	// Builder refers to the image containing the build tools inside which
+	// the source code would be built.
+	//
 	// +optional
-	BuilderImage *Image `json:"builder,omitempty"`
+	Builder *Image `json:"builder,omitempty"`
 
 	// Dockerfile is the path to the Dockerfile to be used for
 	// build strategies which bank on the Dockerfile for building
 	// an image.
+	//
 	// +optional
 	Dockerfile *string `json:"dockerfile,omitempty"`
 
 	// Parameters contains name-value that could be used to loosely
 	// type parameters in the BuildStrategy.
+	//
 	// +optional
 	Parameters *[]Parameter `json:"parameters,omitempty"`
 
-	// Runtime represents the runtime-image
+	// Runtime represents the runtime-image.
+	//
 	// +optional
 	Runtime *Runtime `json:"runtime,omitempty"`
 
-	// Output refers to the location where the generated
-	// image would be pushed to.
+	// Output refers to the location where the built image would be pushed.
 	Output Image `json:"output"`
 
-	// Timeout defines the maximum run time of a build run.
+	// Timeout defines the maximum amount of time the Build should take to execute.
+	//
 	// +optional
 	// +kubebuilder:validation:Format=duration
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
@@ -104,13 +107,14 @@ type BuildSpec struct {
 
 // Image refers to an container image with credentials
 type Image struct {
-	// ImageURL is the URL where the image will be pushed to.
-	ImageURL string `json:"image"`
+	// Image is the reference of the image.
+	Image string `json:"image"`
 
-	// SecretRef is a reference to the Secret containing the
-	// credentials to push the image to the registry
+	// Credentials references a Secret that contains credentials to access
+	// the image registry.
+	//
 	// +optional
-	SecretRef *corev1.LocalObjectReference `json:"credentials,omitempty"`
+	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
 }
 
 // Runtime represents the runtime-image, created using parts of builder-image, and a different

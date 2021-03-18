@@ -20,19 +20,19 @@ func ApplyCredentials(ctx context.Context, build *buildv1alpha1.Build, serviceAc
 	modified := false
 
 	// credentials of the source/git repo
-	sourceSecret := build.Spec.Source.SecretRef
+	sourceSecret := build.Spec.Source.Credentials
 	if sourceSecret != nil {
 		modified = updateServiceAccountIfSecretNotLinked(ctx, sourceSecret, serviceAccount) || modified
 	}
 
 	// credentials of the 'Builder' image registry
-	builderImage := build.Spec.BuilderImage
-	if builderImage != nil && builderImage.SecretRef != nil {
-		modified = updateServiceAccountIfSecretNotLinked(ctx, builderImage.SecretRef, serviceAccount) || modified
+	builderImage := build.Spec.Builder
+	if builderImage != nil && builderImage.Credentials != nil {
+		modified = updateServiceAccountIfSecretNotLinked(ctx, builderImage.Credentials, serviceAccount) || modified
 	}
 
 	// credentials of the 'output' image registry
-	sourceSecret = build.Spec.Output.SecretRef
+	sourceSecret = build.Spec.Output.Credentials
 	if sourceSecret != nil {
 		modified = updateServiceAccountIfSecretNotLinked(ctx, sourceSecret, serviceAccount) || modified
 	}
