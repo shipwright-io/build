@@ -372,14 +372,19 @@ func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request recon
 }
 
 func (r *ReconcileBuildRun) getReferencedStrategy(ctx context.Context, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (strategy buildv1alpha1.BuilderStrategy, err error) {
+
 	if build.Spec.StrategyRef.Kind == nil {
-		err = fmt.Errorf("illegal state, strategy kind is unset")
-
-		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, fmt.Errorf("undefined strategy Kind").Error(), resources.ConditionStrategyKindIsMissing); updateErr != nil {
-			return nil, resources.HandleError("failed to get referenced strategy", err, updateErr)
+		// If the strategy Kind is not specified, we default to a namespaced-scope strategy
+		ctxlog.Info(ctx, "missing strategy Kind, defaulting to a namespaced-scope one", buildRun.Name, build.Name, namespace)
+		strategy, err = resources.RetrieveBuildStrategy(ctx, r.client, build)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), resources.BuildStrategyNotFound); updateErr != nil {
+					return nil, resources.HandleError("failed to get referenced strategy", err, updateErr)
+				}
+			}
 		}
-
-		return nil, err
+		return strategy, err
 	}
 
 	switch *build.Spec.StrategyRef.Kind {

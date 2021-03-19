@@ -131,7 +131,6 @@ The following table illustrates the different states a BuildRun can have under i
 | False    | Failed                       | Yes | The BuildRun failed in one of the steps. |
 | False    | BuildRunTimeout              | Yes | The BuildRun timed out. |
 | False    | UnknownStrategyKind          | Yes | The Build specified strategy Kind is unknown. (_options: ClusterBuildStrategy or BuildStrategy_) |
-| False    | StrategyKindIsMissing        | Yes | The Build strategy Kind was not specified. (_options: ClusterBuildStrategy or BuildStrategy_) |
 | False    | ClusterBuildStrategyNotFound | Yes | The referenced cluster strategy was not found in the cluster. |
 | False    | BuildStrategyNotFound        | Yes | The referenced namespaced strategy was not found in the cluster. |
 | False    | SetOwnerReferenceFailed      | Yes | Setting ownerreferences from the BuildRun to the related TaskRun failed.  |

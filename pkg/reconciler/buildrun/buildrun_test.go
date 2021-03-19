@@ -759,7 +759,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
-			It("fails on a TaskRun creation due to undefined buildStrategy kind", func() {
+			It("fails on a TaskRun creation due to an undefined default strategy kind", func() {
 				// use a Build object that does not defines the strategy Kind field
 				buildSample = ctl.BuildWithoutStrategyKind(buildName, strategyName)
 
@@ -773,12 +773,13 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
+				// We fail here because the default strategy was not found
 				statusCall := ctl.StubBuildRunStatus(
-					"undefined strategy Kind",
+					fmt.Sprintf(" \"%v\" not found", strategyName),
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: "StrategyKindIsMissing",
+						Reason: "BuildStrategyNotFound",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -790,7 +791,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// we mark the BuildRun as Failed and do not reconcile again
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(client.GetCallCount()).To(Equal(4))
+				Expect(client.GetCallCount()).To(Equal(5))
 				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
