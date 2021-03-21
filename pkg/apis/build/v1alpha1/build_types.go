@@ -26,8 +26,8 @@ const (
 	SpecSourceSecretRefNotFound BuildReason = "SpecSourceSecretRefNotFound"
 	// SpecOutputSecretRefNotFound indicates the referenced secret in output is missing
 	SpecOutputSecretRefNotFound BuildReason = "SpecOutputSecretRefNotFound"
-	// SpecRuntimeSecretRefNotFound indicates the referenced secret in runtime is missing
-	SpecRuntimeSecretRefNotFound BuildReason = "SpecRuntimeSecretRefNotFound"
+	// SpecBuilderSecretRefNotFound indicates the referenced secret in builder is missing
+	SpecBuilderSecretRefNotFound BuildReason = "SpecBuilderSecretRefNotFound"
 	// MultipleSecretRefNotFound indicates that multiple secrets are missing
 	MultipleSecretRefNotFound BuildReason = "MultipleSecretRefNotFound"
 	// RuntimePathsCanNotBeEmpty indicates that the spec.runtime feature is used but the paths were not specified

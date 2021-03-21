@@ -309,7 +309,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SpecRuntimeSecretRefNotFound))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SpecBuilderSecretRefNotFound))
 			Expect(buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", buildObject.Spec.BuilderImage.SecretRef.Name)))
 
 		})
@@ -330,7 +330,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err := tb.GetBuildTillValidation(buildName)
 			Expect(err).To(BeNil())
 			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SpecRuntimeSecretRefNotFound))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SpecBuilderSecretRefNotFound))
 			Expect(buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", buildObject.Spec.BuilderImage.SecretRef.Name)))
 
 			sampleSecret := tb.Catalog.SecretWithAnnotation(buildObject.Spec.BuilderImage.SecretRef.Name, buildObject.Namespace)
