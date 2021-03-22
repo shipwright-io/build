@@ -22,18 +22,6 @@ type GitSource struct {
 	// +optional
 	ContextDir *string `json:"contextDir,omitempty"`
 
-	// HTTPProxy is optional.
-	HTTPProxy string `json:"httpProxy,omitempty"`
-
-	// HTTPSProxy is optional.
-	HTTPSProxy string `json:"httpsProxy,omitempty"`
-
-	// NoProxy can be used to specify domains for which no proxying should be performed. Optional.
-	NoProxy string `json:"noProxy,omitempty"`
-
 	// SecretRef refers to the secret that contains credentials to access the git repo. Optional.
 	SecretRef *corev1.LocalObjectReference `json:"credentials,omitempty"`
-
-	// Flavor of the git provider like github, gitlab, bitbucket, generic, etc. Optional.
-	Flavor string `json:"flavor,omitempty"`
 }
