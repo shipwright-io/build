@@ -112,7 +112,6 @@ func renderEntrypoint(e []string) string {
 
 // renderRuntimeDockerfile render runtime Dockerfile using build instance and pre-defined template.
 func renderRuntimeDockerfile(b *buildv1alpha1.Build) (*bytes.Buffer, error) {
-
 	tmpl, err := template.New(runtimeDockerfile).
 		Funcs(template.FuncMap{
 			"renderUserAndGroup": renderUserAndGroup,

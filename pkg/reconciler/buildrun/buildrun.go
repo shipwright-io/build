@@ -365,7 +365,7 @@ func (r *ReconcileBuildRun) VerifyRequestName(ctx context.Context, request recon
 				// We ignore the errors from the following call, because the parent call of this function will always
 				// return back a reconcile.Result{}, nil. This is done to avoid infinite reconcile loops when a BuildRun
 				// does not longer exists
-				resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, fmt.Sprintf("taskRun %s doesn't exist", request.Name), resources.ConditionTaskRunIsMissing)
+				_ = resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, fmt.Sprintf("taskRun %s doesn't exist", request.Name), resources.ConditionTaskRunIsMissing)
 			}
 		}
 	}
