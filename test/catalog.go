@@ -412,20 +412,30 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
-			b.DeepCopyInto(object)
-			return nil
+			if b != nil {
+				b.DeepCopyInto(object)
+				return nil
+			}
 		case *build.BuildRun:
-			br.DeepCopyInto(object)
-			return nil
+			if br != nil {
+				br.DeepCopyInto(object)
+				return nil
+			}
 		case *corev1.ServiceAccount:
-			sa.DeepCopyInto(object)
-			return nil
+			if sa != nil {
+				sa.DeepCopyInto(object)
+				return nil
+			}
 		case *build.ClusterBuildStrategy:
-			cb.DeepCopyInto(object)
-			return nil
+			if cb != nil {
+				cb.DeepCopyInto(object)
+				return nil
+			}
 		case *build.BuildStrategy:
-			bs.DeepCopyInto(object)
-			return nil
+			if bs != nil {
+				bs.DeepCopyInto(object)
+				return nil
+			}
 		}
 		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
 	}
@@ -606,6 +616,23 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 			StrategyRef: &build.StrategyRef{
 				Name: strategyName,
 				Kind: &strategyKind,
+			},
+		},
+		Status: build.BuildStatus{
+			Registered: corev1.ConditionTrue,
+		},
+	}
+}
+
+// BuildWithoutStrategyKind returns a minimal Build object without an strategy kind definition
+func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string) *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildName,
+		},
+		Spec: build.BuildSpec{
+			StrategyRef: &build.StrategyRef{
+				Name: strategyName,
 			},
 		},
 		Status: build.BuildStatus{
@@ -865,6 +892,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 				Generate: false,
 			},
 		},
+		Status: build.BuildRunStatus{},
 	}
 }
 

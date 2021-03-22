@@ -213,6 +213,23 @@ spec:
   timeout: 5s
 `
 
+// BuildCBSWithShortTimeOutAndRefOutputSecret defines a Build with a
+// ClusterBuildStrategy, a short timeout and an output secret
+const BuildCBSWithShortTimeOutAndRefOutputSecret = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+    credentials:
+      name: foobarsecret
+  timeout: 5s
+`
+
 // BuildCBSWithWrongURL defines a Build with a
 // ClusterBuildStrategy and a non-existing url
 const BuildCBSWithWrongURL = `

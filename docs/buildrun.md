@@ -125,11 +125,20 @@ The following table illustrates the different states a BuildRun can have under i
 
 | Status | Reason | CompletionTime is set | Description |
 | --- | --- | --- | --- |
-| Unknown | Pending   | No  | The BuildRun is waiting on a Pod in status Pending. |
-| Unknown | Running   | No  | The BuildRun has been validate and started to perform its work. |
-| True    | Succeeded | Yes | The BuildRun Pod is done. |
-| False    | Failed | Yes | The BuildRun failed in one of the steps. |
-| False    | BuildRunTimeout | Yes | The BuildRun timed out. |
+| Unknown | Pending                       | No  | The BuildRun is waiting on a Pod in status Pending. |
+| Unknown | Running                       | No  | The BuildRun has been validate and started to perform its work. |
+| True    | Succeeded                     | Yes | The BuildRun Pod is done. |
+| False    | Failed                       | Yes | The BuildRun failed in one of the steps. |
+| False    | BuildRunTimeout              | Yes | The BuildRun timed out. |
+| False    | UnknownStrategyKind          | Yes | The Build specified strategy Kind is unknown. (_options: ClusterBuildStrategy or BuildStrategy_) |
+| False    | ClusterBuildStrategyNotFound | Yes | The referenced cluster strategy was not found in the cluster. |
+| False    | BuildStrategyNotFound        | Yes | The referenced namespaced strategy was not found in the cluster. |
+| False    | SetOwnerReferenceFailed      | Yes | Setting ownerreferences from the BuildRun to the related TaskRun failed.  |
+| False    | TaskRunIsMissing             | Yes | The BuildRun related TaskRun was not found. |
+| False    | TaskRunGenerationFailed      | Yes | The generation of a TaskRun spec failed. |
+| False    | ServiceAccountNotFound       | Yes | The referenced service account was not found in the cluster. |
+| False    | BuildRegistrationFailed      | Yes | The related Build in the BuildRun is on a Failed state. |
+| False    | BuildNotFound                | Yes | The related Build in the BuildRun was not found. |
 
 _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
 

@@ -18,6 +18,21 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+)
+
+// Common condition strings for reason, kind, etc.
+const (
+	ConditionUnknownStrategyKind     string = "UnknownStrategyKind"
+	ClusterBuildStrategyNotFound     string = "ClusterBuildStrategyNotFound"
+	BuildStrategyNotFound            string = "BuildStrategyNotFound"
+	ConditionSetOwnerReferenceFailed string = "SetOwnerReferenceFailed"
+	ConditionFailed                  string = "Failed"
+	ConditionTaskRunIsMissing        string = "TaskRunIsMissing"
+	ConditionTaskRunGenerationFailed string = "TaskRunGenerationFailed"
+	ConditionServiceAccountNotFound  string = "ServiceAccountNotFound"
+	ConditionBuildRegistrationFailed string = "BuildRegistrationFailed"
+	ConditionBuildNotFound           string = "BuildNotFound"
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition
@@ -91,6 +106,33 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 		Reason:             reason,
 		Message:            message,
 	})
+
+	return nil
+}
+
+// UpdateConditionWithFalseStatus sets the Succeeded condition fields and mark
+// the condition as Status False. It also updates the object in the cluster by
+// calling client Status Update
+func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, errorMessage string, reason string) error {
+	// these two fields are deprecated and will be removed soon
+	//lint:ignore SA1019 should be set until removed
+	buildRun.Status.Succeeded = corev1.ConditionFalse
+	//lint:ignore SA1019 should be set until removed
+	buildRun.Status.Reason = errorMessage
+
+	now := metav1.Now()
+	buildRun.Status.CompletionTime = &now
+	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
+		LastTransitionTime: now,
+		Type:               buildv1alpha1.Succeeded,
+		Status:             corev1.ConditionFalse,
+		Reason:             reason,
+		Message:            errorMessage,
+	})
+	ctxlog.Debug(ctx, "updating buildRun status", namespace, buildRun.Namespace, name, buildRun.Name, "reason", reason)
+	if err := client.Status().Update(ctx, buildRun); err != nil {
+		return &ClientStatusUpdateError{err}
+	}
 
 	return nil
 }

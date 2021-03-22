@@ -7,15 +7,11 @@ package buildrun_test
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	knativeapi "knative.dev/pkg/apis"
-	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
-
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +20,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
+	knativeapi "knative.dev/pkg/apis"
+	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -34,6 +32,7 @@ import (
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildrunctl "github.com/shipwright-io/build/pkg/reconciler/buildrun"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/shipwright-io/build/test"
 )
 
@@ -48,7 +47,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 		buildRunSample                                         *build.BuildRun
 		taskRunSample                                          *v1beta1.TaskRun
 		statusWriter                                           *fakes.FakeStatusWriter
-		fakeBuildStrategyKind                                  build.BuildStrategyKind
 		taskRunName, buildRunName, buildName, strategyName, ns string
 	)
 
@@ -469,7 +467,61 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildRunSample = ctl.BuildRunWithSA(buildRunName, buildName, saName)
 			})
 
-			It("fails on a TaskRun creation due to missing service account", func() {
+			It("should return none error and stop reconciling if referenced Build is not found", func() {
+				buildRunSample = ctl.BuildRunWithoutSA(buildRunName, buildName)
+
+				// override the initial getClientStub, and generate a new stub
+				// that only contains a Buildrun
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+					case *build.BuildRun:
+						buildRunSample.DeepCopyInto(object)
+						return nil
+					}
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+				client.GetCalls(stubGetCalls)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
+			})
+
+			It("should return an error and continue reconciling if referenced Build is not found and the status update fails", func() {
+				buildRunSample = ctl.BuildRunWithoutSA(buildRunName, buildName)
+
+				// override the initial getClientStub, and generate a new stub
+				// that only contains a BuildRun
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+					case *build.BuildRun:
+						buildRunSample.DeepCopyInto(object)
+						return nil
+					}
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+				client.GetCalls(stubGetCalls)
+
+				statusWriter.UpdateCalls(func(_ context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+					switch buildRun := object.(type) {
+					case *build.BuildRun:
+						if buildRun.Status.IsFailed(build.Succeeded) {
+							return fmt.Errorf("failed miserably")
+						}
+					}
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(BeNil())
+				Expect(resources.IsClientStatusUpdateError(err)).To(BeTrue())
+			})
+
+			It("fails on a TaskRun creation due to service account not found", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Build and Buildrun, none TaskRun
@@ -490,11 +542,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
 				statusCall := ctl.StubBuildRunStatus(
-					fmt.Sprintf(" \"%s\" not found", saName),
+					fmt.Sprintf("service account %s not found", saName),
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: "Failed",
+						Reason: "ServiceAccountNotFound",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -503,19 +555,17 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
+				// we mark the BuildRun as Failed and do not reconcile again
 				_, err := reconciler.Reconcile(buildRunRequest)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Failed to choose a service account to use"))
+				Expect(err).ToNot(HaveOccurred())
 				Expect(client.GetCallCount()).To(Equal(4))
 				Expect(client.StatusCallCount()).To(Equal(2))
 			})
-
-			It("use the default serviceAccount when pipeline serviceAccount doesn't exist and generate serviceAccount is false", func() {
-				// override the BuildRun without serviceAccount and generate is false
-				buildRunSample = ctl.BuildRunWithoutSA(buildRunName, buildName)
+			It("fails on a TaskRun creation due to issues when retrieving the service account", func() {
 
 				// override the initial getClientStub, and generate a new stub
-				// that only contains a Build and Buildrun, none TaskRun
+				// that only contains a Build, BuildRun and a random error when
+				// retrieving a service account
 				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
@@ -524,17 +574,23 @@ var _ = Describe("Reconcile BuildRun", func() {
 					case *build.BuildRun:
 						buildRunSample.DeepCopyInto(object)
 						return nil
+					case *corev1.ServiceAccount:
+						return fmt.Errorf("something wrong happen")
 					}
 					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
 				}
+
 				client.GetCalls(stubGetCalls)
 
+				// we reconcile again on system call errors
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(`"default" not found, msg: Failed to choose a service account to use`))
+				Expect(err.Error()).To(ContainSubstring("something wrong happen"))
+				Expect(client.GetCallCount()).To(Equal(4))
+				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
-			It("fails on a TaskRun creation due to missing namespaced buildstrategy", func() {
+			It("fails on a TaskRun creation due to namespaced buildstrategy not found", func() {
 
 				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
@@ -547,30 +603,130 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultServiceAccount(saName)),
 				)
 
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					fmt.Sprintf(" \"%s\" not found", strategyName),
+					emptyTaskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "BuildStrategyNotFound",
+						Status: corev1.ConditionFalse,
+					},
+					corev1.ConditionFalse,
+					buildSample.Spec,
+					true,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
 				_, err := reconciler.Reconcile(buildRunRequest)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+				// we mark the BuildRun as Failed and do not reconcile again
+				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("fails on a TaskRun creation due to missing cluster buildstrategy", func() {
+			It("fails on a TaskRun creation due to issues when retrieving the buildstrategy", func() {
+
+				// override the Build to use a namespaced BuildStrategy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
+
+				// stub get calls so that on namespaced strategy retrieval, we throw a random error
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						buildSample.DeepCopyInto(object)
+						return nil
+					case *build.BuildRun:
+						buildRunSample.DeepCopyInto(object)
+						return nil
+					case *corev1.ServiceAccount:
+						ctl.DefaultServiceAccount(saName).DeepCopyInto(object)
+						return nil
+					case *build.BuildStrategy:
+						return fmt.Errorf("something wrong happen")
+					}
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+
+				// Override Stub get calls to include a service account
+				// but none BuildStrategy
+				client.GetCalls(stubGetCalls)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				// we reconcile again
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("something wrong happen"))
+				Expect(client.GetCallCount()).To(Equal(5))
+				Expect(client.StatusCallCount()).To(Equal(1))
+			})
+
+			It("fails on a TaskRun creation due to cluster buildstrategy not found", func() {
 				// override the Build to use a cluster BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// Override Stub get calls to include a service account
-				// but none BuildStrategy
+				// but none ClusterBuildStrategy
 				client.GetCalls(ctl.StubBuildRunGetWithSA(
 					buildSample,
 					buildRunSample,
 					ctl.DefaultServiceAccount(saName)),
 				)
 
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					fmt.Sprintf(" \"%s\" not found", strategyName),
+					emptyTaskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "ClusterBuildStrategyNotFound",
+						Status: corev1.ConditionFalse,
+					},
+					corev1.ConditionFalse,
+					buildSample.Spec,
+					true,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
 				_, err := reconciler.Reconcile(buildRunRequest)
+				// we mark the BuildRun as Failed and do not reconcile again
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("fails on a TaskRun creation due to issues when retrieving the clusterbuildstrategy", func() {
+
+				// override the Build to use a namespaced BuildStrategy
+				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
+
+				// stub get calls so that on cluster strategy retrieval, we throw a random error
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+					switch object := object.(type) {
+					case *build.Build:
+						buildSample.DeepCopyInto(object)
+						return nil
+					case *build.BuildRun:
+						buildRunSample.DeepCopyInto(object)
+						return nil
+					case *corev1.ServiceAccount:
+						ctl.DefaultServiceAccount(saName).DeepCopyInto(object)
+						return nil
+					case *build.ClusterBuildStrategy:
+						return fmt.Errorf("something wrong happen")
+					}
+					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+				}
+
+				client.GetCalls(stubGetCalls)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				// we reconcile again
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+				Expect(err.Error()).To(ContainSubstring("something wrong happen"))
+				Expect(client.GetCallCount()).To(Equal(5))
+				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
 			It("fails on a TaskRun creation due to unknown buildStrategy kind", func() {
-				buildSample = ctl.DefaultBuild(buildName, strategyName, fakeBuildStrategyKind)
+				buildSample = ctl.DefaultBuild(buildName, strategyName, "foobar")
 
 				// Override Stub get calls to include a service account
 				// but none BuildStrategy
@@ -580,56 +736,85 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultServiceAccount(saName)),
 				)
 
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					"unknown strategy foobar",
+					emptyTaskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "UnknownStrategyKind",
+						Status: corev1.ConditionFalse,
+					},
+					corev1.ConditionFalse,
+					buildSample.Spec,
+					true,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				// we mark the BuildRun as Failed and do not reconcile again
 				_, err := reconciler.Reconcile(buildRunRequest)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(" Unsupported BuildStrategy Kind"))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(client.GetCallCount()).To(Equal(4))
+				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
-			It("only generates the service account once if the taskRun cannot be created", func() {
-				// override the Build to use a cluster BuildStrategy
-				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
+			It("defaults to a namespaced strategy if strategy kind is not set", func() {
+				// use a Build object that does not defines the strategy Kind field
+				buildSample = ctl.BuildWithoutStrategyKind(buildName, strategyName)
 
-				// override buildrun to use a generated service account
-				buildRunName = "foobar-buildrun-sa-generate"
-				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunName, buildName)
-				buildRunSample.Labels = make(map[string]string)
-				buildRunSample.Labels[build.LabelBuild] = buildName
-				buildRunSample.Labels[build.LabelBuildGeneration] = strconv.FormatInt(buildSample.Generation, 10)
+				// Override Stub get calls to include
+				// a Build, a BuildRun, a SA and the default namespaced strategy
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					nil,
+					ctl.DefaultNamespacedBuildStrategy()), // See how we include a namespaced strategy
+				)
 
-				// Override stub calls to include only build and buildrun
-				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
-
-				// Call the reconciler
+				// We do not expect an error because all resources are in place
 				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(client.GetCallCount()).To(Equal(5))
+				Expect(client.StatusCallCount()).To(Equal(2))
+			})
 
-				// Expect an error stating that the strategy does not exist
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
+			It("should fail when strategy kind is not specied, because the namespaced strategy is not found", func() {
+				// use a Build object that does not defines the strategy Kind field
+				buildSample = ctl.BuildWithoutStrategyKind(buildName, strategyName)
 
-				// Expect one create call (service account)
-				Expect(client.CreateCallCount()).To(Equal(1))
-				_, obj, _ := client.CreateArgsForCall(0)
-				serviceAccount, castSuccessful := obj.(*corev1.ServiceAccount)
-				Expect(castSuccessful).To(BeTrue())
+				// Override Stub get calls to include
+				// a Build, a BuildRun and a SA
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					nil,
+					nil), // See how we do NOT include a namespaced strategy
+				)
 
-				// Expect zero update calls
-				Expect(client.UpdateCallCount()).To(Equal(0))
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusWriter.UpdateCalls(ctl.StubBuildRunStatus(
+					" \"foobar-strategy\" not found",
+					emptyTaskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "BuildStrategyNotFound",
+						Status: corev1.ConditionFalse,
+					},
+					corev1.ConditionFalse,
+					buildSample.Spec,
+					true,
+				))
 
-				// Change the Get stub to also return the service account
-				client.GetCalls(ctl.StubBuildRunGetWithSA(buildSample, buildRunSample, serviceAccount))
-
-				// Call the reconciler again
-				_, err = reconciler.Reconcile(buildRunRequest)
-
-				// Expect an error stating that the strategy does not exist
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(" \"%s\" not found", strategyName)))
-
-				// Expect no more create call because service account already existed
-				Expect(client.CreateCallCount()).To(Equal(1))
-
-				// Expect zero update calls because service account already existed and did not need to be modified
-				Expect(client.UpdateCallCount()).To(Equal(0))
+				// We do not expect an error because we fail the BuildRun,
+				// update its Status.Condition and stop reconciling
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(client.GetCallCount()).To(Equal(5))
+				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
 			It("fails on a TaskRun creation due to owner references errors", func() {
@@ -646,14 +831,32 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					"foobar error",
+					emptyTaskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "SetOwnerReferenceFailed",
+						Status: corev1.ConditionFalse,
+					},
+					corev1.ConditionFalse,
+					buildSample.Spec,
+					true,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
 				testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
 				reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager,
 					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
 						return fmt.Errorf("foobar error")
 					})
+
+				// we mark the BuildRun as Failed and do not reconcile again
 				_, err := reconciler.Reconcile(buildRunRequest)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("errors: foobar error"))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
 			It("succeeds creating a TaskRun from a namespaced buildstrategy", func() {
@@ -727,9 +930,26 @@ var _ = Describe("Reconcile BuildRun", func() {
 				}
 
 				client.GetCalls(getClientStub)
+
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: False, reason: something bad happened", buildName),
+					emptyTaskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "BuildRegistrationFailed",
+						Status: corev1.ConditionFalse,
+					},
+					corev1.ConditionFalse,
+					buildSample.Spec,
+					true,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				// we mark the BuildRun as Failed and do not reconcile again
 				_, err := reconciler.Reconcile(buildRunRequest)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("reason: something bad happened"))
+				Expect(err).ToNot(HaveOccurred())
 				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
@@ -867,6 +1087,35 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should return an error and stop reconciling if buildstrategy is not found", func() {
+				buildRunSample = ctl.BuildRunWithoutSA(buildRunName, buildName)
+				buildSample = ctl.BuildWithBuildRunDeletions(buildName, strategyName, build.ClusterBuildStrategyKind)
+
+				// Override Stub get calls to include a service account
+				// but none BuildStrategy
+				client.GetCalls(ctl.StubBuildRunGetWithSA(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName)),
+				)
+
+				statusWriter.UpdateCalls(func(_ context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+					switch buildRun := object.(type) {
+					case *build.BuildRun:
+						if buildRun.Status.IsFailed(build.Succeeded) {
+							return fmt.Errorf("failed miserably")
+						}
+					}
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				// we expect an error because a Client.Status Update failed and we expect another reconciliation
+				// to take place
+				Expect(err).ToNot(BeNil())
+				Expect(resources.IsClientStatusUpdateError(err)).To(BeTrue())
 			})
 		})
 	})
