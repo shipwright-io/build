@@ -759,23 +759,45 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.StatusCallCount()).To(Equal(2))
 			})
 
-			It("fails on a TaskRun creation due to an undefined default strategy kind", func() {
+			It("defaults to a namespaced strategy if strategy kind is not set", func() {
 				// use a Build object that does not defines the strategy Kind field
 				buildSample = ctl.BuildWithoutStrategyKind(buildName, strategyName)
 
-				// Override Stub get calls to include a service account
-				// but none BuildStrategy
-				client.GetCalls(ctl.StubBuildRunGetWithSA(
+				// Override Stub get calls to include
+				// a Build, a BuildRun, a SA and the default namespaced strategy
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
 					buildSample,
 					buildRunSample,
-					ctl.DefaultServiceAccount(saName)),
+					ctl.DefaultServiceAccount(saName),
+					nil,
+					ctl.DefaultNamespacedBuildStrategy()), // See how we include a namespaced strategy
+				)
+
+				// We do not expect an error because all resources are in place
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(client.GetCallCount()).To(Equal(5))
+				Expect(client.StatusCallCount()).To(Equal(2))
+			})
+
+			It("should fail when strategy kind is not specied, because the namespaced strategy is not found", func() {
+				// use a Build object that does not defines the strategy Kind field
+				buildSample = ctl.BuildWithoutStrategyKind(buildName, strategyName)
+
+				// Override Stub get calls to include
+				// a Build, a BuildRun and a SA
+				client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(saName),
+					nil,
+					nil), // See how we do NOT include a namespaced strategy
 				)
 
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
-				// We fail here because the default strategy was not found
-				statusCall := ctl.StubBuildRunStatus(
-					fmt.Sprintf(" \"%v\" not found", strategyName),
+				statusWriter.UpdateCalls(ctl.StubBuildRunStatus(
+					" \"foobar-strategy\" not found",
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
@@ -785,10 +807,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 					corev1.ConditionFalse,
 					buildSample.Spec,
 					true,
-				)
-				statusWriter.UpdateCalls(statusCall)
+				))
 
-				// we mark the BuildRun as Failed and do not reconcile again
+				// We do not expect an error because we fail the BuildRun,
+				// update its Status.Condition and stop reconciling
 				_, err := reconciler.Reconcile(buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(client.GetCallCount()).To(Equal(5))

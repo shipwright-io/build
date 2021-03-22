@@ -412,20 +412,30 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
-			b.DeepCopyInto(object)
-			return nil
+			if b != nil {
+				b.DeepCopyInto(object)
+				return nil
+			}
 		case *build.BuildRun:
-			br.DeepCopyInto(object)
-			return nil
+			if br != nil {
+				br.DeepCopyInto(object)
+				return nil
+			}
 		case *corev1.ServiceAccount:
-			sa.DeepCopyInto(object)
-			return nil
+			if sa != nil {
+				sa.DeepCopyInto(object)
+				return nil
+			}
 		case *build.ClusterBuildStrategy:
-			cb.DeepCopyInto(object)
-			return nil
+			if cb != nil {
+				cb.DeepCopyInto(object)
+				return nil
+			}
 		case *build.BuildStrategy:
-			bs.DeepCopyInto(object)
-			return nil
+			if bs != nil {
+				bs.DeepCopyInto(object)
+				return nil
+			}
 		}
 		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
 	}
