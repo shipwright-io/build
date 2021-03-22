@@ -138,7 +138,7 @@ var _ = Describe("Reconcile Build", func() {
 				}
 				buildSample.Spec.Output.SecretRef = nil
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecRuntimeSecretRefNotFound, "referenced secret non-existing not found")
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecBuilderSecretRefNotFound, "referenced secret non-existing not found")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(request)

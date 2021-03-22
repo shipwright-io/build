@@ -62,7 +62,7 @@ func (s SecretRef) buildSecretReferences() map[string]build.BuildReason {
 		secretRefMap[s.Build.Spec.Source.SecretRef.Name] = build.SpecSourceSecretRefNotFound
 	}
 	if s.Build.Spec.BuilderImage != nil && s.Build.Spec.BuilderImage.SecretRef != nil && s.Build.Spec.BuilderImage.SecretRef.Name != "" {
-		secretRefMap[s.Build.Spec.BuilderImage.SecretRef.Name] = build.SpecRuntimeSecretRefNotFound
+		secretRefMap[s.Build.Spec.BuilderImage.SecretRef.Name] = build.SpecBuilderSecretRefNotFound
 	}
 	return secretRefMap
 }
