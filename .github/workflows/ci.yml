@@ -1,8 +1,12 @@
 on: 
     pull_request:
-      branches: [ main ]
+      branches:
+      - main
+      - master
     push:
-      branches: [ main ]
+      branches: 
+      - main
+      - master
 name: Unit, Integration, and E2E Tests
 jobs:
     unit:
