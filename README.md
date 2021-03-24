@@ -13,42 +13,118 @@ SPDX-License-Identifier: Apache-2.0
     <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"> <img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
 </p>
 
-# Shipwright - a framework for building container images on Kubernetes
+# ![shipwright-logo](.docs/shipwright-logo-lightbg-512.png)
 
-Shipwright is an extensible framework for building container images on Kubernetes. With Shipwright,
-developers can define and reuse build strategies that build container images for their CI/CD
-pipelines. Any tool that builds images within a container can be supported, such
-as [Kaniko](https://github.com/GoogleContainerTools/kaniko),
-[Cloud Native Buildpacks](https://buildpacks.io/), and [Buildah](https://buildah.io/).
+Shipwright is an extensible framework for building container images on Kubernetes.
 
-## Dependencies
+## Why?
 
-| Dependency                           | Supported versions           |
-| -------------------------------------| ---------------------------- |
-| [Kubernetes](https://kubernetes.io/) | v1.17.\*, v1.18.\*, v1.19.\* |
-| [Tekton](https://tekton.dev)         | v0.21.0                      |
+With Shipwright developers get a simplified approach for building container images, by defining a minimal YAML that does not require
+any previous knowledge of containers or container tooling. All you need is your source code in git and access to a container registry.
 
-## Build Strategies
+Shipwright supports any tool that can build container images in Kubernetes clusters, such as:
 
-The following [Build Strategies](docs/buildstrategies.md) are installed by default:
+- [Kaniko](https://github.com/GoogleContainerTools/kaniko)
+- [Cloud Native Buildpacks](https://buildpacks.io/)
+- [Buildah](https://buildah.io/)
 
-* [Source-to-Image](docs/buildstrategies.md#source-to-image)
-* [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
-* [Buildah](docs/buildstrategies.md#buildah)
-* [Kaniko](docs/buildstrategies.md#kaniko)
-* [ko](docs/buildstrategies.md#ko)
+## Try It!
 
-Users have the option to define their own `BuildStrategy` or `ClusterBuildStrategy` resources and make them available for consumption via the `Build` resource.
+* We assume you already have a Kubernetes cluster (v1.18+). If you don't, you can use [Kind](/hack/install-kind.sh).
 
-## Custom Resources
+* We also require a Tekton installation (v1.19+). To install the latest version, run:
 
-Shipwright defines four CRDs:
+  ```bash
+  $ kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.20.1/release.yaml
+  ```
 
-* The `BuildStrategy` CRD and the `ClusterBuildStrategy` CRD is used to register a strategy.
-* The `Build` CRD is used to define a build configuration.
-* The `BuildRun` CRD is used to start the actually image build using a registered strategy.
+* Install the Shipwright deployment. To install the latest version, run:
 
-## Read the Docs
+  ```bash
+  $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/nightly-2021-03-24-1616591545.yaml
+  ```
+
+* Install the Shipwright strategies. To install the latest version, run::
+
+  ```bash
+  $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/default_strategies.yaml
+  ```
+
+* Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):
+
+  ```bash
+  $ REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
+  $ kubectl create secret docker-registry push-secret --docker-server=$REGISTRY_SERVER --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWORD  --docker-email=me@here.com
+  ```
+
+* Create a Build object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
+
+  ```bash
+  $ REGISTRY_ORG=<your_registry_org>
+  $ cat <<EOF | kubectl apply -f -
+  apiVersion: shipwright.io/v1alpha1
+  kind: Build
+  metadata:
+    name: buildpack-nodejs-build
+  spec:
+    source:
+      url: https://github.com/shipwright-io/sample-nodejs
+      contextDir: source-build
+    strategy:
+      name: buildpacks-v3
+      kind: ClusterBuildStrategy
+    output:
+      image: docker.io/${REGISTRY_ORG}/nodejs:latest
+      credentials:
+        name: push-secret
+  EOF
+  ```
+
+  ```bash
+  $ kubectl get builds
+  NAME                     REGISTERED   REASON      BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
+  buildpack-nodejs-build   True         Succeeded   ClusterBuildStrategy   buildpacks-v3       68s
+  ```
+
+* Submit your buildrun:
+
+  ```bash
+  $ cat <<EOF | kubectl create -f -
+  apiVersion: shipwright.io/v1alpha1
+  kind: BuildRun
+  metadata:
+    generateName: buildpack-nodejs-buildrun-
+  spec:
+    buildRef:
+      name: buildpack-nodejs-build
+  EOF
+  ```
+
+* Wait until your buildrun is completed:
+
+  ```bash
+  $ kubectl get buildruns
+  NAME                              SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
+  buildpack-nodejs-buildrun-xyzds   True        Succeeded   69s         2s
+  ```
+
+  or
+
+  ```bash
+  $ kubectl get buildrun --output name | xargs kubectl wait --for=condition=Succeeded --timeout=180s
+  ```
+
+* After your buildrun is completed, check your container registry, you will find the new generated image uploaded there.
+
+## Please tell me more!
+
+Depending on your source code, you might want to build it differently with Shipwright.
+
+To find out more on what´s the best strategy or what else can Shipwright do for you, please visit our [tutorial](/docs/tutorials/tutorial.md)!
+
+## More information
+
+### Read the Docs
 
 | Version | Docs                           | Examples                    |
 | ------- | ------------------------------ | --------------------------- |
@@ -58,108 +134,23 @@ Shipwright defines four CRDs:
 | [v0.1.1](https://github.com/shipwright-io/build/releases/tag/v0.1.1)    | [Docs @ v0.1.1](https://github.com/shipwright-io/build/tree/v0.1.1/docs) | [Examples @ v0.1.1](https://github.com/shipwright-io/build/tree/v0.1.1/samples) |
 | [v0.1.0](https://github.com/shipwright-io/build/releases/tag/v0.1.0)    | [Docs @ v0.1.0](https://github.com/shipwright-io/build/tree/v0.1.0/docs) | [Examples @ v0.1.0](https://github.com/shipwright-io/build/tree/v0.1.0/samples) |
 
-## Examples
+### Dependencies
 
-Examples of `Build` resource using the example strategies installed by default.
+| Dependency                           | Supported versions           |
+| -------------------------------------| ---------------------------- |
+| [Kubernetes](https://kubernetes.io/) | v1.17.\*, v1.18.\*, v1.19.\* |
+| [Tekton](https://tekton.dev)         | v0.21.0                      |
 
-* [`buildah`](samples/build/build_buildah_cr.yaml)
-* [`buildpacks-v3-heroku`](samples/build/build_buildpacks-v3-heroku_cr.yaml)
-* [`buildpacks-v3`](samples/build/build_buildpacks-v3_cr.yaml)
-* [`kaniko`](samples/build/build_kaniko_cr.yaml)
-* [`source-to-image`](samples/build/build_source-to-image_cr.yaml)
+## Want to get involved?
 
-## Try it!
-
-* Get a [Kubernetes](https://kubernetes.io/) cluster and [`kubectl`](https://kubernetes.io/docs/reference/kubectl/overview/) set up to connect to your cluster.
-* Clone this repository from GitHub at the v0.3.0 tag:
-
-  ```bash
-  $ git clone --branch v0.3.0 https://github.com/shipwright-io/build.git
-  ...
-  $ cd build/
-  ```
-
-  _Coming soon - install Shipwright Build via kubectl!_
-
-* Install [Tekton](https://cloud.google.com/tekton) by running [hack/install-tekton.sh](hack/install-tekton.sh), it installs v0.21.0.
-
-  ```bash
-  $ hack/install-tekton.sh
-  ```
-
-* Install Shipwright and sample strategies via `make`:
-
-  ```bash
-  $ make install
-  ```
-
-* Add a push secret to your container image repository, such as one on Docker Hub or quay.io:
-
-  ```yaml
-  $ kubectl create secret generic push-secret \
-  --from-file=.dockerconfigjson=$HOME/.docker/config.json \
-  --type=kubernetes.io/dockerconfigjson
-  ```
-
-* Create a [Cloud Native Buildpacks](samples/build/build_buildpacks_v3_cr.yaml) build, replacing
-  `<MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>` with the registry hostname, username, and repository your
-  cluster has access to and that you have permission to push images to.
-
-  ```bash
-  $ kubectl apply -f - <<EOF
-  apiVersion: shipwright.io/v1alpha1
-  kind: Build
-  metadata:
-    name: buildpack-nodejs-build
-  spec:
-    source:
-      url: https://github.com/adambkaplan/shipwright-example-nodejs.git
-    strategy:
-      name: buildpacks-v3
-      kind: ClusterBuildStrategy
-    output:
-      image: <MY_REGISTRY>/<MY_USERNAME>/<MY_REPO>:latest
-      credentials:
-        name: push-secret
-  EOF
-  ```
-
-* Run your build:
-
-  ```bash
-  $ kubectl apply -f - <<EOF
-  apiVersion: shipwright.io/v1alpha1
-  kind: BuildRun
-  metadata:
-    name: buildpack-nodejs-build-1
-  spec:
-    buildRef:
-      name: buildpack-nodejs-build
-    serviceAccount:
-      name: default
-  EOF
-  ```
-
-## Roadmap
-
-### Build Strategies Support
-
-| Build Strategy                                                                                  | Alpha | Beta | GA |
-| ----------------------------------------------------------------------------------------------- | ----- | ---- | -- |
-| [Source-to-Image](samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml)  | ☑     |      |    |
-| [Buildpacks-v3-heroku](samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)        | ☑️     |      |    |
-| [Buildpacks-v3](samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)        | ☑️     |      |    |
-| [Kaniko](samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)                             | ☑️     |      |    |
-| [Buildah](samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)                          | ☑️     |      |    |
-
-## Community meetings
+### Community meetings
 
 We host weekly meetings for contributors, maintainers and anyone interested in the project. The weekly meetings take place on Monday´s at 2pm UTC.
 
 * Meeting [minutes](https://github.com/shipwright-io/build/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting+is%3Aopen)
 * Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
 
-## Want to contribute
+### Want to contribute
 
 We are so excited to have you!
 
