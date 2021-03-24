@@ -41,7 +41,7 @@ jobs:
         IMAGE_HOST: quay.io
         IMAGE: shipwright/shipwright-operator
       run: |
-        make release
+        TAG="nightly-${{ steps.date.outputs.date }}" make release
         mv release.yaml nightly-${{ steps.date.outputs.date }}.yaml
         mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
 
