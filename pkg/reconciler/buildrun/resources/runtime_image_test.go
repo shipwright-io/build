@@ -18,15 +18,15 @@ import (
 var _ = Describe("runtime-image", func() {
 	b := &buildv1alpha1.Build{
 		Spec: buildv1alpha1.BuildSpec{
-			BuilderImage: &buildv1alpha1.Image{
-				ImageURL: "test/builder-image:latest",
+			Builder: &buildv1alpha1.Image{
+				Image: "test/builder-image:latest",
 			},
 			Output: buildv1alpha1.Image{
-				ImageURL: "test/output-image:latest",
+				Image: "test/output-image:latest",
 			},
 			Runtime: &buildv1alpha1.Runtime{
 				Base: buildv1alpha1.Image{
-					ImageURL: "test/base-image:latest",
+					Image: "test/base-image:latest",
 				},
 				Env: map[string]string{
 					"ENVIRONMENT_VARIABLE": "VALUE",

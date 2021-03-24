@@ -61,15 +61,15 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 			Annotations: map[string]string{build.AnnotationBuildVerifyRepository: "false"},
 		},
 		Spec: build.BuildSpec{
-			Source: build.GitSource{
+			Source: build.Source{
 				URL: "foobar",
 			},
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
 			Output: build.Image{
-				ImageURL: "foobar",
+				Image: "foobar",
 			},
 		},
 	}
@@ -84,16 +84,16 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.GitSource{
+			Source: build.Source{
 				URL: "https://github.com/shipwright-io/sample-go",
 			},
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
 			Output: build.Image{
-				ImageURL: "foobar",
-				SecretRef: &corev1.LocalObjectReference{
+				Image: "foobar",
+				Credentials: &corev1.LocalObjectReference{
 					Name: secretName,
 				},
 			},
@@ -110,18 +110,18 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.GitSource{
+			Source: build.Source{
 				URL: "https://github.com/shipwright-io/sample-go",
-				SecretRef: &corev1.LocalObjectReference{
+				Credentials: &corev1.LocalObjectReference{
 					Name: "foobar",
 				},
 			},
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
 			Output: build.Image{
-				ImageURL: "foobar",
+				Image: "foobar",
 			},
 		},
 	}
@@ -136,10 +136,10 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.GitSource{
+			Source: build.Source{
 				URL: "https://github.com/shipwright-io/sample-go",
 			},
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
@@ -155,10 +155,10 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.GitSource{
+			Source: build.Source{
 				URL: "https://github.com/shipwright-io/sample-go",
 			},
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 			},
 		},
@@ -173,11 +173,11 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.GitSource{
+			Source: build.Source{
 				URL: "https://github.com/shipwright-io/sample-go",
 			},
 			Output: build.Image{
-				SecretRef: &corev1.LocalObjectReference{
+				Credentials: &corev1.LocalObjectReference{
 					Name: secretName,
 				},
 			},
@@ -613,7 +613,7 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 			Name: buildName,
 		},
 		Spec: build.BuildSpec{
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
@@ -631,7 +631,7 @@ func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string
 			Name: buildName,
 		},
 		Spec: build.BuildSpec{
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 			},
 		},
@@ -650,7 +650,7 @@ func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName stri
 			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
@@ -671,7 +671,7 @@ func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategy
 			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
@@ -689,7 +689,7 @@ func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName
 			Name: buildName,
 		},
 		Spec: build.BuildSpec{
-			StrategyRef: &build.StrategyRef{
+			Strategy: &build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
@@ -748,7 +748,7 @@ func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName strin
 		},
 		Status: build.BuildRunStatus{
 			BuildSpec: &build.BuildSpec{
-				StrategyRef: &build.StrategyRef{
+				Strategy: &build.Strategy{
 					Name: "foobar",
 				},
 			},
@@ -964,7 +964,7 @@ func (c *Catalog) LoadBuildWithNameAndStrategy(name string, strategy string, d [
 		return nil, err
 	}
 	b.Name = name
-	b.Spec.StrategyRef.Name = strategy
+	b.Spec.Strategy.Name = strategy
 	return b, nil
 }
 

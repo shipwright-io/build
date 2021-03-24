@@ -50,8 +50,8 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 	return build
 }
 
-// amendOutputImageURL amend container image URL based on informed image repository.
-func amendOutputImageURL(b *buildv1alpha1.Build, imageRepo string) {
+// amendOutputImage amend container image URL based on informed image repository.
+func amendOutputImage(b *buildv1alpha1.Build, imageRepo string) {
 	if imageRepo == "" {
 		return
 	}
@@ -60,25 +60,25 @@ func amendOutputImageURL(b *buildv1alpha1.Build, imageRepo string) {
 	imageTag := removeTestIDSuffix(b.Name)
 
 	imageURL := fmt.Sprintf("%s:%s", imageRepo, imageTag)
-	b.Spec.Output.ImageURL = imageURL
+	b.Spec.Output.Image = imageURL
 	Logf("Amended object: name='%s', image-url='%s'", b.Name, imageURL)
 }
 
-// amendOutputSecretRef amend secret-ref for output image.
-func amendOutputSecretRef(b *buildv1alpha1.Build, secretName string) {
+// amendOutputCredentials amend secret-ref for output image.
+func amendOutputCredentials(b *buildv1alpha1.Build, secretName string) {
 	if secretName == "" {
 		return
 	}
-	b.Spec.Output.SecretRef = &corev1.LocalObjectReference{Name: secretName}
+	b.Spec.Output.Credentials = &corev1.LocalObjectReference{Name: secretName}
 	Logf("Amended object: name='%s', secret-ref='%s'", b.Name, secretName)
 }
 
-// amendSourceSecretName patch Build source.SecretRef with secret name.
+// amendSourceSecretName patch Build source.Credentials with secret name.
 func amendSourceSecretName(b *buildv1alpha1.Build, secretName string) {
 	if secretName == "" {
 		return
 	}
-	b.Spec.Source.SecretRef = &corev1.LocalObjectReference{Name: secretName}
+	b.Spec.Source.Credentials = &corev1.LocalObjectReference{Name: secretName}
 }
 
 // amendSourceURL patch Build source.URL with informed string.
@@ -98,8 +98,8 @@ func amendBuild(identifier string, b *buildv1alpha1.Build) {
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGitlab))
 	}
 
-	amendOutputImageURL(b, os.Getenv(EnvVarImageRepo))
-	amendOutputSecretRef(b, os.Getenv(EnvVarImageRepoSecret))
+	amendOutputImage(b, os.Getenv(EnvVarImageRepo))
+	amendOutputCredentials(b, os.Getenv(EnvVarImageRepoSecret))
 }
 
 // retrieveBuildAndBuildRun will retrieve the build and buildRun

@@ -96,7 +96,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		// Only filter events where the secret have the Build specific annotation
 		CreateFunc: func(e event.CreateEvent) bool {
 			objectAnnotations := e.Meta.GetAnnotations()
-			if _, ok := buildSecretRefAnnotationExist(objectAnnotations); ok {
+			if _, ok := buildCredentialsAnnotationExist(objectAnnotations); ok {
 				return true
 			}
 			return false
@@ -108,8 +108,8 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			oldAnnotations := e.MetaOld.GetAnnotations()
 			newAnnotations := e.MetaNew.GetAnnotations()
 
-			if _, oldBuildKey := buildSecretRefAnnotationExist(oldAnnotations); !oldBuildKey {
-				if _, newBuildKey := buildSecretRefAnnotationExist(newAnnotations); newBuildKey {
+			if _, oldBuildKey := buildCredentialsAnnotationExist(oldAnnotations); !oldBuildKey {
+				if _, newBuildKey := buildCredentialsAnnotationExist(newAnnotations); newBuildKey {
 					return true
 				}
 			}
@@ -119,7 +119,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		// Only filter events where the secret have the Build specific annotation
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			objectAnnotations := e.Meta.GetAnnotations()
-			if _, ok := buildSecretRefAnnotationExist(objectAnnotations); ok {
+			if _, ok := buildCredentialsAnnotationExist(objectAnnotations); ok {
 				return true
 			}
 			return false
@@ -152,18 +152,18 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			flagReconcile := false
 
 			for _, build := range buildList.Items {
-				if build.Spec.Source.SecretRef != nil {
-					if build.Spec.Source.SecretRef.Name == secret.Name {
+				if build.Spec.Source.Credentials != nil {
+					if build.Spec.Source.Credentials.Name == secret.Name {
 						flagReconcile = true
 					}
 				}
-				if build.Spec.Output.SecretRef != nil {
-					if build.Spec.Output.SecretRef.Name == secret.Name {
+				if build.Spec.Output.Credentials != nil {
+					if build.Spec.Output.Credentials.Name == secret.Name {
 						flagReconcile = true
 					}
 				}
-				if build.Spec.BuilderImage != nil && build.Spec.BuilderImage.SecretRef != nil {
-					if build.Spec.BuilderImage.SecretRef.Name == secret.Name {
+				if build.Spec.Builder != nil && build.Spec.Builder.Credentials != nil {
+					if build.Spec.Builder.Credentials.Name == secret.Name {
 						flagReconcile = true
 					}
 				}
@@ -181,7 +181,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 	}, preSecret)
 }
 
-func buildSecretRefAnnotationExist(annotation map[string]string) (string, bool) {
+func buildCredentialsAnnotationExist(annotation map[string]string) (string, bool) {
 	if val, ok := annotation[build.AnnotationBuildRefSecret]; ok {
 		return val, true
 	}

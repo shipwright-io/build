@@ -84,10 +84,10 @@ var _ = Describe("Reconcile Build", func() {
 	Describe("Reconcile", func() {
 		Context("when source secret is specified", func() {
 			It("fails when the secret does not exist", func() {
-				buildSample.Spec.Source.SecretRef = &corev1.LocalObjectReference{
+				buildSample.Spec.Source.Credentials = &corev1.LocalObjectReference{
 					Name: "non-existing",
 				}
-				buildSample.Spec.Output.SecretRef = nil
+				buildSample.Spec.Output.Credentials = nil
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecSourceSecretRefNotFound, "referenced secret non-existing not found")
 				statusWriter.UpdateCalls(statusCall)
@@ -98,10 +98,10 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("succeeds when the secret exists foobar", func() {
-				buildSample.Spec.Source.SecretRef = &corev1.LocalObjectReference{
+				buildSample.Spec.Source.Credentials = &corev1.LocalObjectReference{
 					Name: "existing",
 				}
-				buildSample.Spec.Output.SecretRef = nil
+				buildSample.Spec.Output.Credentials = nil
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -130,13 +130,13 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when builder image secret is specified", func() {
 			It("fails when the secret does not exist", func() {
-				buildSample.Spec.BuilderImage = &build.Image{
-					ImageURL: "busybox",
-					SecretRef: &corev1.LocalObjectReference{
+				buildSample.Spec.Builder = &build.Image{
+					Image: "busybox",
+					Credentials: &corev1.LocalObjectReference{
 						Name: "non-existing",
 					},
 				}
-				buildSample.Spec.Output.SecretRef = nil
+				buildSample.Spec.Output.Credentials = nil
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecBuilderSecretRefNotFound, "referenced secret non-existing not found")
 				statusWriter.UpdateCalls(statusCall)
@@ -147,13 +147,13 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("succeeds when the secret exists", func() {
-				buildSample.Spec.BuilderImage = &build.Image{
-					ImageURL: "busybox",
-					SecretRef: &corev1.LocalObjectReference{
+				buildSample.Spec.Builder = &build.Image{
+					Image: "busybox",
+					Credentials: &corev1.LocalObjectReference{
 						Name: "existing",
 					},
 				}
-				buildSample.Spec.Output.SecretRef = nil
+				buildSample.Spec.Output.Credentials = nil
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -218,10 +218,10 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when source secret and output secret are specified", func() {
 			It("fails when both secrets do not exist", func() {
-				buildSample.Spec.Source.SecretRef = &corev1.LocalObjectReference{
+				buildSample.Spec.Source.Credentials = &corev1.LocalObjectReference{
 					Name: "non-existing-source",
 				}
-				buildSample.Spec.Output.SecretRef = &corev1.LocalObjectReference{
+				buildSample.Spec.Output.Credentials = &corev1.LocalObjectReference{
 					Name: "non-existing-output",
 				}
 
@@ -453,7 +453,7 @@ var _ = Describe("Reconcile Build", func() {
 			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
 				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
 				buildSample.Spec.Source.URL = "https://github.yourco.com/org/build-fake"
-				buildSample.Spec.Source.SecretRef.Name = registrySecret
+				buildSample.Spec.Source.Credentials.Name = registrySecret
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
