@@ -23,7 +23,7 @@ const (
 	inputSourceResourceName = "source"
 	inputGitSourceURL       = "url"
 	inputGitSourceRevision  = "revision"
-	inputParamBuilder  = "BUILDER_IMAGE"
+	inputParamBuilder       = "BUILDER_IMAGE"
 	inputParamDockerfile    = "DOCKERFILE"
 	inputParamContextDir    = "CONTEXT_DIR"
 	outputImageResourceName = "image"

@@ -1,0 +1,10 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-private-buildrun
+spec:
+  buildRef:
+    name: buildpack-nodejs-private-build
+  serviceAccount:
+    generate: true

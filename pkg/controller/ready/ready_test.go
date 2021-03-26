@@ -22,11 +22,11 @@ var _ = Describe("controller ready helper", func() {
 	Context("setting and unsetting ready file", func() {
 		const filename = "/tmp/foobar"
 
-		BeforeEach(func(){
+		BeforeEach(func() {
 			Expect(fileExists(filename)).To(BeFalse())
 		})
 
-		AfterEach(func(){
+		AfterEach(func() {
 			os.Remove(filename)
 		})
 
@@ -63,7 +63,7 @@ var _ = Describe("controller ready helper", func() {
 		})
 
 		It("should not fail if the given file is already present", func() {
-			_, err :=os.Create(filename)
+			_, err := os.Create(filename)
 			Expect(err).ToNot(HaveOccurred())
 
 			r := NewFileReady(filename)
