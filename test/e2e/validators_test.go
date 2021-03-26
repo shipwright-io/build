@@ -27,16 +27,18 @@ import (
 )
 
 const (
-	EnvVarServiceAccountName   = "TEST_E2E_SERVICEACCOUNT_NAME"
-	EnvVarVerifyTektonObjects  = "TEST_E2E_VERIFY_TEKTONOBJECTS"
-	EnvVarTimeoutMultiplier    = "TEST_E2E_TIMEOUT_MULTIPLIER"
-	EnvVarImageRepo            = "TEST_IMAGE_REPO"
-	EnvVarEnablePrivateRepos   = "TEST_PRIVATE_REPO"
-	EnvVarImageRepoSecret      = "TEST_IMAGE_REPO_SECRET"
-	EnvVarSourceRepoSecretJSON = "TEST_IMAGE_REPO_DOCKERCONFIGJSON"
-	EnvVarSourceURLGithub      = "TEST_PRIVATE_GITHUB"
-	EnvVarSourceURLGitlab      = "TEST_PRIVATE_GITLAB"
-	EnvVarSourceURLSecret      = "TEST_SOURCE_SECRET"
+	EnvVarServiceAccountName        = "TEST_E2E_SERVICEACCOUNT_NAME"
+	EnvVarVerifyTektonObjects       = "TEST_E2E_VERIFY_TEKTONOBJECTS"
+	EnvVarTimeoutMultiplier         = "TEST_E2E_TIMEOUT_MULTIPLIER"
+	EnvVarImageRepo                 = "TEST_IMAGE_REPO"
+	EnvVarEnablePrivateRepos        = "TEST_PRIVATE_REPO"
+	EnvVarImageRepoSecret           = "TEST_IMAGE_REPO_SECRET"
+	EnvVarSourceURLGithubSecret     = "TEST_PRIVATE_GITHUB_SECRET"
+	EnvVarSourceRepoSecretJSON      = "TEST_IMAGE_REPO_DOCKERCONFIGJSON"
+	EnvVarSourceURLGithubSecretJSON = "TEST_PRIVATE_GITHUB_SSHAUTHPRIVATEKEY"
+	EnvVarSourceURLGithub           = "TEST_PRIVATE_GITHUB"
+	EnvVarSourceURLGitlab           = "TEST_PRIVATE_GITLAB"
+	EnvVarSourceURLSecret           = "TEST_SOURCE_SECRET"
 )
 
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
@@ -86,13 +88,46 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
-			".dockerconfigjson": payload,
+			corev1.DockerConfigJsonKey: payload,
 		},
 	}
 
 	Logf("Creating container-registry secret '%s/%s' (%d bytes)", testBuild.Namespace, secretName, len(payload))
 	err = testBuild.CreateSecret(secret)
 	Expect(err).ToNot(HaveOccurred(), "on creating container registry secret")
+}
+
+// createGithubSSHKeySecret use environment variables to check for container registry
+// credentials secret, when not found a new secret is created.
+func createGithubSSHKeySecret(testBuild *utils.TestBuild) {
+	secretName := os.Getenv(EnvVarSourceURLGithubSecret)
+	secretPayload := os.Getenv(EnvVarSourceURLGithubSecretJSON)
+	if secretName == "" || secretPayload == "" {
+		Logf("Private Github repository access secret won't be created.")
+		return
+	}
+
+	_, err := testBuild.LookupSecret(types.NamespacedName{Namespace: testBuild.Namespace, Name: secretName})
+	if err == nil {
+		Logf("Private Github access secret is found at '%s/%s'", testBuild.Namespace, secretName)
+		return
+	}
+
+	payload := []byte(secretPayload)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testBuild.Namespace,
+			Name:      secretName,
+		},
+		Type: corev1.SecretTypeSSHAuth,
+		Data: map[string][]byte{
+			corev1.SSHAuthPrivateKey: payload,
+		},
+	}
+
+	Logf("Creating private github access secret '%s/%s' (%d bytes)", testBuild.Namespace, secretName, len(payload))
+	err = testBuild.CreateSecret(secret)
+	Expect(err).ToNot(HaveOccurred(), "on creating private github access secret")
 }
 
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.

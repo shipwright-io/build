@@ -1,0 +1,15 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-nodejs-private-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-nodejs-private
+    credentials:
+      name: sample-private-github-sshkey
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/sample-nodejs-private
