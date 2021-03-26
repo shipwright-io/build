@@ -97,39 +97,6 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 	Expect(err).ToNot(HaveOccurred(), "on creating container registry secret")
 }
 
-// createGithubSSHKeySecret use environment variables to check for container registry
-// credentials secret, when not found a new secret is created.
-func createGithubSSHKeySecret(testBuild *utils.TestBuild) {
-	secretName := os.Getenv(EnvVarSourceURLGithubSecret)
-	secretPayload := os.Getenv(EnvVarSourceURLGithubSecretJSON)
-	if secretName == "" || secretPayload == "" {
-		Logf("Private Github repository access secret won't be created.")
-		return
-	}
-
-	_, err := testBuild.LookupSecret(types.NamespacedName{Namespace: testBuild.Namespace, Name: secretName})
-	if err == nil {
-		Logf("Private Github access secret is found at '%s/%s'", testBuild.Namespace, secretName)
-		return
-	}
-
-	payload := []byte(secretPayload)
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testBuild.Namespace,
-			Name:      secretName,
-		},
-		Type: corev1.SecretTypeSSHAuth,
-		Data: map[string][]byte{
-			corev1.SSHAuthPrivateKey: payload,
-		},
-	}
-
-	Logf("Creating private github access secret '%s/%s' (%d bytes)", testBuild.Namespace, secretName, len(payload))
-	err = testBuild.CreateSecret(secret)
-	Expect(err).ToNot(HaveOccurred(), "on creating private github access secret")
-}
-
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
 func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1alpha1.BuildRun) {
 	trueCondition := corev1.ConditionTrue

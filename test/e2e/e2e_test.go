@@ -406,13 +406,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			if os.Getenv(EnvVarEnablePrivateRepos) != "true" {
 				Skip("Skipping test cases that use a private source repository")
 			}
-
-			// create the secret containing the private ssh key to access private sample code repo
-			createGithubSSHKeySecret(testBuild)
 		})
 
 		Context("when a nodejs buildpack is defined to use a private GitHub repository", func() {
-
 			BeforeEach(func() {
 				testID = generateTestID("private-github-ruby-buildpack")
 
