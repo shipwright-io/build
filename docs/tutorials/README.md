@@ -32,19 +32,19 @@ Shipwright ships with a set of strategies that are available across the cluster.
 
 The default installation includes these [buildstrategies](/docs/buildstrategies.md):
 
-* [Source-to-Image](docs/buildstrategies.md#source-to-image)
 * [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
-* [Buildah](docs/buildstrategies.md#buildah)
 * [Kaniko](docs/buildstrategies.md#kaniko)
+* [Source-to-Image](docs/buildstrategies.md#source-to-image)
+* [Buildah](docs/buildstrategies.md#buildah)
 * [ko](docs/buildstrategies.md#ko)
 
 For more information about strategies see the related [docs](/docs/buildstrategies.md).
 
 ## Examples
 
-### [Example with Kaniko](/docs/tutorials/building_with_kaniko.md)
+* [Example with Kaniko](/docs/tutorials/building_with_kaniko.md)
 
-### [Example with Paketo](/docs/tutorials/building_with_paketo.md)
+* [Example with Buildpacks](/docs/tutorials/building_with_buildpacks.md)
 
 Depending on your source code you might want to try a specific example. The following table serves as a guide to help you understand which
 strategy to choose:
@@ -52,9 +52,11 @@ strategy to choose:
 | Sample code | Repository | ContextDir | Strategy Type | Strategy to use |
 | ----------- | ----------- | ------------- | ------------- | ------------- |
 | A go app with a Dockerfile | [shipwright-io/sample-go](https://github.com/shipwright-io/sample-go) | `/docker-build` | Dockerfile-based | Kaniko, Buildah |
-| A go app | [shipwright-io/sample-go](https://github.com/shipwright-io/sample-go) | `/source-build` | Dockerfile-less | Paketo,Heroku |
-| A ruby app | [shipwright-io/sample-ruby](https://github.com/shipwright-io/sample-ruby) | `/source-build` | Dockerfile-less | Paketo,Heroku |
+| A go app | [shipwright-io/sample-go](https://github.com/shipwright-io/sample-go) | `/source-build` | Dockerfile-less | buildpacks-v3, buildpacks-v3-heroku |
+| A ruby app | [shipwright-io/sample-ruby](https://github.com/shipwright-io/sample-ruby) | `/source-build` | Dockerfile-less | buildpacks-v3, buildpacks-v3-heroku |
 | A java app with a Dockerfile | [hipwright-io/sample-jave](https://github.com/shipwright-io/sample-java) | `/docker-build` | Dockerfile-based | Kaniko, Buildah |
-| Shipwright/Build | [shipwright-io/build](https://github.com/shipwright-io/build) |  `/cmd/manager` | Dockerfile-less | Paketo,Heroku, Ko |
+| Shipwright/Build | [shipwright-io/build](https://github.com/shipwright-io/build) |  `/cmd/manager` | Dockerfile-less | ko |
 
 _Note_: `ContextDir` is the path under the repository where the source code is located.
+
+_Note_: `Buildpacks-v3` support is provided via Paketo and Heroku. Paketo is our default tool, so any reference to buildpacks-v3 usually implies the usage of [Paketo](https://paketo.io/).

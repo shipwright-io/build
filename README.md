@@ -13,7 +13,7 @@ SPDX-License-Identifier: Apache-2.0
     <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"> <img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
 </p>
 
-# ![shipwright-logo](./docs/shipwright-logo-lightbg-512.png)
+# ![shipwright-logo](./.docs/shipwright-logo-lightbg-512.png)
 
 Shipwright is an extensible framework for building container images on Kubernetes.
 
@@ -30,9 +30,9 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 ## Try It!
 
-* We assume you already have a Kubernetes cluster (v1.18+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
+* We assume you already have a Kubernetes cluster (v1.17+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
 
-* We also require a Tekton installation (v1.19+). To install the latest version, run:
+* We also require a Tekton installation (v0.19+). To install the latest version, run:
 
   ```bash
   $ kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.20.1/release.yaml
@@ -124,7 +124,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 Depending on your source code, you might want to build it differently with Shipwright.
 
-To find out more on what's the best strategy or what else can Shipwright do for you, please visit our [tutorial](./docs/tutorials/tutorial.md)!
+To find out more on what's the best strategy or what else can Shipwright do for you, please visit our [tutorial](./docs/tutorials/README.md)!
 
 ## More information
 
@@ -143,13 +143,13 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Dependency                           | Supported versions           |
 | -------------------------------------| ---------------------------- |
 | [Kubernetes](https://kubernetes.io/) | v1.17.\*, v1.18.\*, v1.19.\* |
-| [Tekton](https://tekton.dev)         | v0.21.0                      |
+| [Tekton](https://tekton.dev)         | v0.19.0, v0.20.\*, v0.21.0   |
 
 ## Want to get involved?
 
 ### Community meetings
 
-We host weekly meetings for contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 2pm UTC.
+We host weekly meetings for contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 1pm UTC.
 
 * Meeting [minutes](https://github.com/shipwright-io/build/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting+is%3Aopen)
 * Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
