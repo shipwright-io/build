@@ -1,10 +1,10 @@
 # Shipwright Build Tutorial
 
-So you just successfully build a container image via the [`Try It!`](/README.md#Try_It!) section and you want to know more?
+So you just successfully built a container image via the [Try It!](../../README.md#try-it) section and you want to know more?
 
-At Shipwright, we´ve spent a lot of time trying to figure out the best ways to simplify the experience when
-building container images. For those Kubernetes users, Shipwright presents an alternative to build securely
-container images in-cluster.
+At Shipwright, we've spent a lot of time trying to figure out the best ways to simplify the experience when
+building container images. Shipwright provides an alternative for securely building container images in your Kubernetes cluster.
+
 
 What if we could
 
@@ -20,7 +20,7 @@ What if we could
 | **`Strategy`**      | Refers to a particular tool that will be used when building a container image, such as Kaniko, Buildah, ko, etc. |
 | **`Build`**   | Resource used to define a build configuration. |
 | **`BuildRun`**   | Resource used to start the image build mechanism. |
-| **`BuildStrategy/ClusterBuildStrategy`**   | Resource that holds a template that dictates how to build via a particular strategy. |
+| **`BuildStrategy` / `ClusterBuildStrategy`**   | Resource that holds a template that dictates how to build via a particular strategy. |
 | **`Dockerfile-less strategy`**   | Is a category given to strategies that can build container images from source code, without the notion of a Dockerfile. |
 | **`Dockerfile-based strategy`**   | Is a category given to strategies that can build container images from source code, with a reference to a Dockerfile. |
 

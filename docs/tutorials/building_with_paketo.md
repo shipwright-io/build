@@ -1,12 +1,9 @@
 
 # Building with Paketo
 
-Before starting, make sure you have a running:
+Before starting, make sure you have Tekton and Shipwright Build installed.
 
-- Tekton deployment
-- Build deployment
-
-See the [`Try It!`](/README.md#Try_It!) section for more information.
+See the [Try It!](../../README.md#try-it) section for more information.
 
 ## Getting Started
 
@@ -23,7 +20,7 @@ _Note_: For more information about authentication, please refer to the related [
 
 ## Create the strategy
 
-Ensure all strategies are in place, see the [`Try It!`](/README.md#Try_It!) section for more information.
+Ensure all strategies are in place, see the [Try It!](../../README.md#try-it) section for more information.
 
 ```sh
 $ kubectl get cbs
@@ -49,11 +46,11 @@ _Note_: For more information about strategies, please refer to the related [docs
 
 For the Build definition, we will require the following:
 
-- A github repository containing a ruby [application](https://github.com/shipwright-io/sample-ruby).
+- A GitHub repository containing a Ruby [application](https://github.com/shipwright-io/sample-ruby).
 - The `tutorial-secret` we just created.
 - The `buildpacks-v3` ClusterBuildStrategy.
 
-Let´s apply our Build and wait for it to be ready:
+Let's apply our Build and wait for it to be ready:
 
 ```bash
 $ export REGISTRY_ORG=<your_registry_org>
