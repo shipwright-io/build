@@ -13,13 +13,13 @@ SPDX-License-Identifier: Apache-2.0
     <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"> <img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
 </p>
 
-# ![shipwright-logo](.docs/shipwright-logo-lightbg-512.png)
+# ![shipwright-logo](./docs/shipwright-logo-lightbg-512.png)
 
 Shipwright is an extensible framework for building container images on Kubernetes.
 
 ## Why?
 
-With Shipwright developers get a simplified approach for building container images, by defining a minimal YAML that does not require
+With Shipwright, developers get a simplified approach for building container images, by defining a minimal YAML that does not require
 any previous knowledge of containers or container tooling. All you need is your source code in git and access to a container registry.
 
 Shipwright supports any tool that can build container images in Kubernetes clusters, such as:
@@ -30,7 +30,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 ## Try It!
 
-* We assume you already have a Kubernetes cluster (v1.18+). If you don't, you can use [Kind](/hack/install-kind.sh).
+* We assume you already have a Kubernetes cluster (v1.18+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
 
 * We also require a Tekton installation (v1.19+). To install the latest version, run:
 
@@ -44,7 +44,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/nightly-2021-03-24-1616591545.yaml
   ```
 
-* Install the Shipwright strategies. To install the latest version, run::
+* Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
   $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/default_strategies.yaml
@@ -54,7 +54,11 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
   ```bash
   $ REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
-  $ kubectl create secret docker-registry push-secret --docker-server=$REGISTRY_SERVER --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWORD  --docker-email=me@here.com
+  $ kubectl create secret docker-registry push-secret \
+      --docker-server=$REGISTRY_SERVER \
+      --docker-username=$REGISTRY_USER \
+      --docker-password=$REGISTRY_PASSWORD  \
+      --docker-email=me@here.com
   ```
 
 * Create a Build object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
@@ -74,7 +78,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
       name: buildpacks-v3
       kind: ClusterBuildStrategy
     output:
-      image: docker.io/${REGISTRY_ORG}/nodejs:latest
+      image: docker.io/${REGISTRY_ORG}/sample-nodejs:latest
       credentials:
         name: push-secret
   EOF
@@ -120,7 +124,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 Depending on your source code, you might want to build it differently with Shipwright.
 
-To find out more on what´s the best strategy or what else can Shipwright do for you, please visit our [tutorial](/docs/tutorials/tutorial.md)!
+To find out more on what's the best strategy or what else can Shipwright do for you, please visit our [tutorial](./docs/tutorials/tutorial.md)!
 
 ## More information
 
@@ -145,7 +149,7 @@ To find out more on what´s the best strategy or what else can Shipwright do for
 
 ### Community meetings
 
-We host weekly meetings for contributors, maintainers and anyone interested in the project. The weekly meetings take place on Monday´s at 2pm UTC.
+We host weekly meetings for contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 2pm UTC.
 
 * Meeting [minutes](https://github.com/shipwright-io/build/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting+is%3Aopen)
 * Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
