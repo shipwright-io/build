@@ -90,42 +90,6 @@ To install the namespaced scope strategy, use:
 kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml
 ```
 
-### Try it
-
-To use this strategy follow this steps:
-
-- Create the Kubernetes secret that host the configuration to access the container registry.
-
-- Create a `Build` resource that uses `quay.io` or `DockerHub` image repository for pushing the image. Also, provide credentials to access it.
-
-  ```yaml
-  apiVersion: shipwright.io/v1alpha1
-  kind: Build
-  metadata:
-    name: buildpack-nodejs-build
-  spec:
-    source:
-      url: https://github.com/sclorg/nodejs-ex
-    strategy:
-      name: buildpacks-v3
-      kind: ClusterBuildStrategy
-    output:
-      image: quay.io/yourorg/yourrepo
-      credentials: <your-kubernetes-container-registry-secret>
-  ```
-
-- Start a `BuildRun` resource.
-
-  ```yaml
-  apiVersion: shipwright.io/v1alpha1
-  kind: BuildRun
-  metadata:
-    name: buildpack-nodejs-buildrun
-  spec:
-    buildRef:
-      name: buildpack-nodejs-build
-  ```
-
 ---
 
 ## Kaniko
