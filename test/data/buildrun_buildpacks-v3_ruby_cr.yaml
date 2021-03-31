@@ -1,0 +1,10 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-ruby-buildrun
+spec:
+  buildRef:
+    name: buildpack-ruby-build
+  serviceAccount:
+    generate: true
