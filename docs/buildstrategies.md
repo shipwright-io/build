@@ -16,6 +16,10 @@ SPDX-License-Identifier: Apache-2.0
   - [Try it](#try-it)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
+- [BuildKit](#buildkit)
+  - [Cache Exporters](#cache-exporters)
+  - [Known Limitations](#known-limitations)
+  - [Installing BuildKit Strategy](#installing-buildkit-strategy)
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
 - [Source to Image](#source-to-image)
@@ -102,6 +106,34 @@ To install the cluster scope strategy, use:
 
 ```sh
 kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
+```
+
+---
+
+## BuildKit
+
+[BuildKit](https://github.com/moby/buildkit) is composed of the `buildctl` client and the `buildkitd` daemon. For the `buildkit` ClusterBuildStrategy, it runs on a [daemonless](https://github.com/moby/buildkit#daemonless) mode, where both client and ephemeral daemon run in a single container. In addition, it runs without privileges ( _[rootless](https://github.com/moby/buildkit/blob/master/docs/rootless.md)_ ).
+
+The `buildkit-insecure` ClusterBuildStrategy exists to support users pushing to an insecure HTTP registry. We use this strategy at the moment only for testing purposes against a local in-cluster registry. In the future, this strategy will be removed in favor of a single one where users can parameterize the secure/insecure behaviour.
+
+### Cache Exporters
+
+By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the build times. When pushing an image to a registry, it will use the `inline` export cache, which pushes the image and cache together. Please refer to [export-cache docs](https://github.com/moby/buildkit#export-cache) for more information.
+
+### Known Limitations
+
+The `buildkit` ClusterBuildStrategy currently locks the following parameters:
+
+- A `Dockerfile` name needs to be `Dockerfile`, this is currently not configurable.
+- Exporter caches are enable by default, this is currently not configurable.
+- To allow running rootless, it requires both [AppArmor](https://kubernetes.io/docs/tutorials/clusters/apparmor/) as well as [SecComp](https://kubernetes.io/docs/tutorials/clusters/seccomp/) to be disabled using the `unconfined` profile.
+
+### Installing BuildKit Strategy
+
+To install the cluster scope strategy, use:
+
+```sh
+kubectl apply -f samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml
 ```
 
 ---
