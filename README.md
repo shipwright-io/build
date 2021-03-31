@@ -120,7 +120,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 * After your buildrun is completed, check your container registry, you will find the new generated image uploaded there.
 
-## Please tell me more!
+## Please tell us more!
 
 Depending on your source code, you might want to build it differently with Shipwright.
 
@@ -149,7 +149,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 
 ### Community meetings
 
-We host weekly meetings for contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 1pm UTC.
+We host weekly meetings for users, contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 1pm UTC.
 
 * Meeting [minutes](https://github.com/shipwright-io/build/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting+is%3Aopen)
 * Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
