@@ -390,7 +390,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			createGithubSSHKeySecret(testBuild)
 		})
 
-		Context("when a ruby buildpack is defined to use a private GitHub repository", func() {
+		Context("when a nodejs buildpack is defined to use a private GitHub repository", func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-github-ruby-buildpack")
@@ -399,7 +399,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				build = createBuild(
 					testBuild,
 					testID,
-					"test/data/build_buildpacks-v3_ruby_cr_private_github.yaml",
+					"test/data/build_buildpacks-v3_private_github_cr.yaml",
 				)
 			})
 

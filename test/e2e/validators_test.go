@@ -103,7 +103,6 @@ func createGithubSSHKeySecret(testBuild *utils.TestBuild) {
 	secretName := os.Getenv(EnvVarSourceURLGithubSecret)
 	secretPayload := os.Getenv(EnvVarSourceURLGithubSecretJSON)
 	if secretName == "" || secretPayload == "" {
-		Logf("secretName: %s, secretPayload: %s", secretName, secretPayload)
 		Logf("Private Github repository access secret won't be created.")
 		return
 	}
