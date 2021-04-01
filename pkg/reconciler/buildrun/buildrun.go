@@ -204,11 +204,16 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			}
 
 			// Increase BuildRun count in metrics
-			buildmetrics.BuildRunCountInc(buildRun.Status.BuildSpec.Strategy.Name, buildRun.Namespace, buildRun.Spec.BuildRef.Name, buildRun.Name)
+			buildmetrics.BuildRunCountInc(
+				buildRun.Status.BuildSpec.StrategyName(),
+				buildRun.Namespace,
+				buildRun.Spec.BuildRef.Name,
+				buildRun.Name,
+			)
 
 			// Report buildrun ramp-up duration (time between buildrun creation and taskrun creation)
 			buildmetrics.BuildRunRampUpDurationObserve(
-				buildRun.Status.BuildSpec.Strategy.Name,
+				buildRun.Status.BuildSpec.StrategyName(),
 				buildRun.Namespace,
 				buildRun.Spec.BuildRef.Name,
 				buildRun.Name,
@@ -274,7 +279,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 				// Report the buildrun established duration (time between the creation of the buildrun and the start of the buildrun)
 				buildmetrics.BuildRunEstablishObserve(
-					buildRun.Status.BuildSpec.Strategy.Name,
+					buildRun.Status.BuildSpec.StrategyName(),
 					buildRun.Namespace,
 					buildRun.Spec.BuildRef.Name,
 					buildRun.Name,
@@ -285,46 +290,43 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			if lastTaskRun.Status.CompletionTime != nil && buildRun.Status.CompletionTime == nil {
 				buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
 
-				if buildRun.Status.BuildSpec.Strategy != nil {
-					// buildrun completion duration (total time between the creation of the buildrun and the buildrun completion)
-					buildmetrics.BuildRunCompletionObserve(
-						buildRun.Status.BuildSpec.Strategy.Name,
+				// buildrun completion duration (total time between the creation of the buildrun and the buildrun completion)
+				buildmetrics.BuildRunCompletionObserve(
+					buildRun.Status.BuildSpec.StrategyName(),
+					buildRun.Namespace,
+					buildRun.Spec.BuildRef.Name,
+					buildRun.Name,
+					buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time),
+				)
+
+				// Look for the pod created by the taskrun
+				var pod = &corev1.Pod{}
+				if err := r.client.Get(ctx, types.NamespacedName{Namespace: request.Namespace, Name: lastTaskRun.Status.PodName}, pod); err == nil {
+					if len(pod.Status.InitContainerStatuses) > 0 {
+
+						lastInitPodIdx := len(pod.Status.InitContainerStatuses) - 1
+						lastInitPod := pod.Status.InitContainerStatuses[lastInitPodIdx]
+
+						if lastInitPod.State.Terminated != nil {
+							// taskrun pod ramp-up (time between pod creation and last init container completion)
+							buildmetrics.TaskRunPodRampUpDurationObserve(
+								buildRun.Status.BuildSpec.StrategyName(),
+								buildRun.Namespace,
+								buildRun.Spec.BuildRef.Name,
+								buildRun.Name,
+								lastInitPod.State.Terminated.FinishedAt.Sub(pod.CreationTimestamp.Time),
+							)
+						}
+					}
+
+					// taskrun ramp-up duration (time between taskrun creation and taskrun pod creation)
+					buildmetrics.TaskRunRampUpDurationObserve(
+						buildRun.Status.BuildSpec.StrategyName(),
 						buildRun.Namespace,
 						buildRun.Spec.BuildRef.Name,
 						buildRun.Name,
-						buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time),
+						pod.CreationTimestamp.Time.Sub(lastTaskRun.CreationTimestamp.Time),
 					)
-
-					// Look for the pod created by the taskrun
-					var pod = &corev1.Pod{}
-					if err := r.client.Get(ctx, types.NamespacedName{Namespace: request.Namespace, Name: lastTaskRun.Status.PodName}, pod); err == nil {
-						if len(pod.Status.InitContainerStatuses) > 0 {
-
-							lastInitPodIdx := len(pod.Status.InitContainerStatuses) - 1
-							lastInitPod := pod.Status.InitContainerStatuses[lastInitPodIdx]
-
-							if lastInitPod.State.Terminated != nil {
-								// taskrun pod ramp-up (time between pod creation and last init container completion)
-								buildmetrics.TaskRunPodRampUpDurationObserve(
-									buildRun.Status.BuildSpec.Strategy.Name,
-									buildRun.Namespace,
-									buildRun.Spec.BuildRef.Name,
-									buildRun.Name,
-									lastInitPod.State.Terminated.FinishedAt.Sub(pod.CreationTimestamp.Time),
-								)
-							}
-						}
-
-						// taskrun ramp-up duration (time between taskrun creation and taskrun pod creation)
-						buildmetrics.TaskRunRampUpDurationObserve(
-							buildRun.Status.BuildSpec.Strategy.Name,
-							buildRun.Namespace,
-							buildRun.Spec.BuildRef.Name,
-							buildRun.Name,
-							pod.CreationTimestamp.Time.Sub(lastTaskRun.CreationTimestamp.Time),
-						)
-
-					}
 				}
 			}
 

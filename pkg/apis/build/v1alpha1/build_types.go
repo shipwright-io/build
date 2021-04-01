@@ -105,6 +105,16 @@ type BuildSpec struct {
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
+// StrategyName returns the name of the configured strategy, or 'undefined' in
+// case the strategy is nil (not set)
+func (buildSpec *BuildSpec) StrategyName() string {
+	if buildSpec.Strategy == nil {
+		return "undefined (nil strategy)"
+	}
+
+	return buildSpec.Strategy.Name
+}
+
 // Image refers to an container image with credentials
 type Image struct {
 	// Image is the reference of the image.
