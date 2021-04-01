@@ -5,7 +5,7 @@ metadata:
   name: buildpack-nodejs-private-build
 spec:
   source:
-    url: https://github.com/shipwright-io/sample-nodejs-private
+    url: git@github.com:shipwright-io/sample-nodejs-private.git
     credentials:
       name: sample-private-github-sshkey
   strategy:
