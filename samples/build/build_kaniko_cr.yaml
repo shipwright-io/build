@@ -14,4 +14,4 @@ spec:
     kind: ClusterBuildStrategy
   dockerfile: Dockerfile
   output:
-    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/sample-go

@@ -408,9 +408,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			}
 		})
 
-		Context("when a nodejs buildpack is defined to use a private GitHub repository", func() {
+		Context("when a nodejs build is defined to use a private GitHub repository", func() {
 			BeforeEach(func() {
-				testID = generateTestID("private-github-ruby-buildpack")
+				testID = generateTestID("private-github-nodejs-buildpack")
 
 				// create the build definition
 				build = createBuild(

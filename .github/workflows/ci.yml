@@ -119,13 +119,27 @@ jobs:
             make install-controller-kind
             kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
         - name: Test
-          env:
-            TEST_PRIVATE_REPO: true
-            TEST_PRIVATE_GITHUB_SSHAUTHPRIVATEKEY: ${{ secrets.SAMPLE_RUBY_PRIVATE_SSHKEY }}
-            TEST_PRIVATE_GITHUB_SECRET: sample-private-github-sshkey
           run: |
             export TEST_NAMESPACE=shipwright-build
             export TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
+            if [ "${{ secrets.CI_USER_PRIVATE_SSH_BASE64 }}" != "" ]; then
+              export TEST_PRIVATE_REPO=true
+              export TEST_SOURCE_SECRET=test-source-secret
+              export TEST_PRIVATE_GITHUB=git@github.com:shipwright-io/sample-nodejs-private.git
+              cat <<EOF | kubectl apply -n "${TEST_NAMESPACE}" -f -
+            ---
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: ${TEST_SOURCE_SECRET}
+              annotations:
+                tekton.dev/git-0: github.com
+            type: kubernetes.io/ssh-auth
+            data:
+              ssh-privatekey: ${{ secrets.CI_USER_PRIVATE_SSH_BASE64 }}
+            EOF
+            fi
+
             make test-e2e
 
         - name: Build controller logs

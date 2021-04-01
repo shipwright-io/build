@@ -11,4 +11,4 @@ spec:
     name: buildpacks-v3-heroku
     kind: ClusterBuildStrategy
   output:
-    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/sample-nodejs
