@@ -244,7 +244,21 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name + "-sa"))
 				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
 			})
+
+			It("should not panic in case the build spec strategy is nil", func() {
+				// As long as the Strategy is a pointer, it can happen that the
+				// field is nil. During processing, the BuildSpec is copied
+				// from the respective Build. In case Strategy is nil, the
+				// controller should not panic.
+				buildRunSample.Status.BuildSpec.Strategy = nil
+				Expect(func() {
+					result, err := reconciler.Reconcile(taskRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).ToNot(BeNil())
+				}).ShouldNot(Panic())
+			})
 		})
+
 		Context("from an existing TaskRun with Conditions", func() {
 			BeforeEach(func() {
 
