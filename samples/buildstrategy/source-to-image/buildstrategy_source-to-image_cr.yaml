@@ -30,6 +30,10 @@ spec:
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
       image: gcr.io/kaniko-project/executor:v1.5.1
       name: build-and-push
       securityContext:
