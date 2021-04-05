@@ -8,7 +8,8 @@ CONTROLLER = $(OUTPUT_DIR)/bin/shipwright-build-controller
 # golang cache directory path
 GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
 # golang target architecture
-GOARCH ?= amd64
+GO_OS ?= $(shell uname | tr '[:upper:]' '[:lower:]')
+GO_ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor -ldflags=-w
 
@@ -232,10 +233,10 @@ test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strate
 .PHONY: install install-apis install-controller install-strategies
 
 install:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
 
 install-with-pprof:
-	GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
 
 install-apis:
 	kubectl apply -f deploy/crds/
@@ -243,7 +244,7 @@ install-apis:
 	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.shipwright.io
 
 install-controller: install-apis
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
 
 install-controller-kind: install-apis
 	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
