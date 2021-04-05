@@ -26,6 +26,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 - [Kaniko](https://github.com/GoogleContainerTools/kaniko)
 - [Cloud Native Buildpacks](https://buildpacks.io/)
+- [BuildKit](https://github.com/moby/buildkit)
 - [Buildah](https://buildah.io/)
 
 ## Try It!

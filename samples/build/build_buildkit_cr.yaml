@@ -1,0 +1,19 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildkit-build
+  annotations:
+    build.build.dev/build-run-deletion: "true"
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build/
+  # Note: This needs to be a path to where the Dockerfile is located, it cannot contain the file name
+  dockerfile: docker-build/
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+
