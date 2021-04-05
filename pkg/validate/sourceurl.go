@@ -34,7 +34,7 @@ func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 			}
 			return err
 		case "", "false":
-			ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository]))
+			ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository]), namespace, s.Build.Namespace, name, s.Build.Name)
 			return nil
 		default:
 			var annoErr = fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)

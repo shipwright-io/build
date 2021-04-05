@@ -41,7 +41,7 @@ func (s Strategy) ValidatePath(ctx context.Context) error {
 				return fmt.Errorf("unknown strategy kind: %v", *s.Build.Spec.Strategy.Kind)
 			}
 		} else {
-			ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind")
+			ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind", namespace, s.Build.Namespace, name, s.Build.Name)
 			if err := s.validateBuildStrategy(ctx, s.Build.Spec.Strategy.Name, s.Build); err != nil {
 				return err
 			}
