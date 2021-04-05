@@ -30,7 +30,7 @@ spec:
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
-      image: gcr.io/kaniko-project/executor:v1.5.1
+      image: gcr.io/kaniko-project/executor:v1.5.2
       name: build-and-push
       securityContext:
         runAsUser: 0
