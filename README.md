@@ -146,6 +146,19 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | [Kubernetes](https://kubernetes.io/) | v1.17.\*, v1.18.\*, v1.19.\* |
 | [Tekton](https://tekton.dev)         | v0.19.0, v0.20.\*, v0.21.0   |
 
+### Platform support
+
+We are building container images of the Shipwright Build controller for all platforms supported by the base image that we are using which is [registry.access.redhat.com/ubi8/ubi-minimal](https://catalog.redhat.com/software/containers/ubi8/ubi-minimal/5c359a62bed8bd75a2c3fba8). Those are:
+
+- linux/amd64
+- linux/arm64
+- linux/ppc64le
+- linux/s390x
+
+All these platforms are also supported by our Tekton Pipelines dependency. Our own tests as part of our CI pipeline are all only running on and testing the linux/amd64 platform.
+
+Our sample build strategies are all functional on linux/amd64. Their support on other platforms relies on the tools being used there to be available for other platforms. For detailed information, please see [Available ClusterBuildStrategies](docs/buildstrategies.md#available-clusterbuildstrategies).
+
 ## Want to get involved?
 
 ### Community meetings

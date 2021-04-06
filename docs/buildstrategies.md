@@ -13,7 +13,6 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing Buildah Strategy](#installing-buildah-strategy)
 - [Buildpacks v3](#buildpacks-v3)
   - [Installing Buildpacks v3 Strategy](#installing-buildpacks-v3-strategy)
-  - [Try it](#try-it)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
 - [BuildKit](#buildkit)
@@ -39,26 +38,32 @@ A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is a
 
 ## Available ClusterBuildStrategies
 
-Well-known strategies can be boostrapped from [here](../samples/buildstrategy). The current supported Cluster BuildStrategy are:
+Well-known strategies can be bootstrapped from [here](../samples/buildstrategy). The currently supported Cluster BuildStrategy are:
 
-- [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
-- [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)
-- [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)
-- [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)
-- [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml)
+| Name | Supported platforms |
+| ---- | ------------------- |
+| [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml) | linux/amd64 only |
+| [BuildKit](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) | all |
+| [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
+| [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
+| [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml) | all |
+| [ko](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml) | all |
+| [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml) | linux/amd64 only |
 
 ## Available BuildStrategies
 
 The current supported namespaces BuildStrategy are:
 
-- [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml)
-- [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml)
+| Name | Supported platforms |
+| ---- | ------------------- |
+| [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml) | linux/amd64 only |
+| [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml) | linux/amd64 only |
 
 ---
 
 ## Buildah
 
-The `buildah` ClusterBuildStrategy consists of using [`buildah`](https://github.com/containers/buildah) to build and push a container image, out of a `Dockerfile`. The `Dockerfile` should be specified on the `Build` resource. Also, instead of the `spec.dockerfile`, the `spec.builderImage` can be used with `quay.io/buildah/stable` as the value when defining the `Build` resource.
+The `buildah` ClusterBuildStrategy consists of using [`buildah`](https://github.com/containers/buildah) to build and push a container image, out of a `Dockerfile`. The `Dockerfile` should be specified on the `Build` resource.
 
 ### Installing Buildah Strategy
 
@@ -151,6 +156,8 @@ kubectl apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
 ```
 
 **Note**: The build strategy currently uses the `spec.contextDir` of the Build in a different way than this property is designed for: the Git repository must be a Go module with the go.mod file at the root. The `contextDir` specifies the path to the main package. You can check the [example](../samples/build/build_ko_cr.yaml) which is set up to build the Shipwright Build controller. This behavior will eventually be corrected once [Exhaustive list of generalized Build API/CRD attributes #184](https://github.com/shipwright-io/build/issues/184) / [Custom attributes from the Build CR could be used as parameters while defining a BuildStrategy #537](https://github.com/shipwright-io/build/issues/537) are done.
+
+**Note**: The build strategy is setup to build for the platform that your Kubernetes cluster is running. Exposing the platform configuration to the Build requires the same features mentioned on the previous note.
 
 ## Source to Image
 
