@@ -23,4 +23,4 @@ pushd $GOPATH/src/github.com/shipwright-io/build
 popd
 ```
 
-_Note_: The above target will uninstall/install all related CRDs and start an instance of the controller via the `operator-sdk` binary. All existing CRDs instances will be deleted.
+_Note_: The above target will uninstall/install all related CRDs and start an instance of the controller. All existing CRDs instances will be deleted.

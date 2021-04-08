@@ -22,16 +22,12 @@ endif
 
 # configure zap based logr
 ZAP_FLAGS ?= --zap-log-level=debug --zap-encoder=console
-# extra flags passed to operator-sdk
-OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
 # test namespace name
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines controller version
 TEKTON_VERSION ?= v0.21.0
-# CI: operator-sdk version
-SDK_VERSION ?= v0.18.2
 
 # E2E test flags
 TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=30m -progress -stream -trace -v
@@ -145,9 +141,6 @@ endif
 install-counterfeiter:
 	hack/install-counterfeiter.sh
 
-install-operator-sdk:
-	hack/install-operator-sdk.sh
-
 .PHONY: govet
 govet:
 	@echo "Checking go vet"
@@ -254,11 +247,11 @@ install-strategies: install-apis
 
 local: vendor install-strategies
 	CONTROLLER_NAME=shipwright-build-controller \
-	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
+	go run cmd/manager/main.go "$(ZAP_FLAGS)"
 
 local-plain: vendor
 	CONTROLLER_NAME=shipwright-build-controller \
-	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
+	go run cmd/manager/main.go "$(ZAP_FLAGS)"
 
 clean:
 	rm -rf $(OUTPUT_DIR)

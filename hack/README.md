@@ -13,7 +13,6 @@ This directory contains several scripts useful in the development process of Shi
 - `install-counterfeiter.sh` Install the Go counterfeiter.
 - `install-kind.sh` Install the latest verified Kubernetes cluster by KinD.
 - `install-kubectl.sh` Install the kubectl command line.
-- `install-operator-sdk.sh` Install the verified oeprator-sdk command line.
 - `install-registry.sh` Install the local container registry in the KinD cluster.
 - `install-tekton.sh` Install the latest verified Tekton Pipeline release.
 - `release.sh` Creates a new release of Shipwright Build.
