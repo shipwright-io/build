@@ -32,8 +32,8 @@ jobs:
               # Only v1.18 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
               #- v1.17.17
               #- v1.18.15
-              - v1.19.7
-              #- v1.20.2
+              #- v1.19.7
+              - v1.20.2
           max-parallel: 1
         runs-on: ${{ matrix.os }}
         steps:
@@ -75,8 +75,8 @@ jobs:
               # Only v1.18 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
               #- v1.17.17
               #- v1.18.15
-              - v1.19.7
-              #- v1.20.2
+              #- v1.19.7
+              - v1.20.2
           max-parallel: 2
         runs-on: ${{ matrix.os }}
         steps:
