@@ -262,16 +262,6 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				}
 			}
 
-			//lint:ignore SA1019 should be set until removed
-			buildRun.Status.Succeeded = taskRunStatus
-			if taskRunStatus == corev1.ConditionFalse {
-				//lint:ignore SA1019 should be set until removed
-				buildRun.Status.Reason = trCondition.Message
-			} else {
-				//lint:ignore SA1019 should be set until removed
-				buildRun.Status.Reason = trCondition.Reason
-			}
-
 			buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
 
 			if buildRun.Status.StartTime == nil && lastTaskRun.Status.StartTime != nil {
