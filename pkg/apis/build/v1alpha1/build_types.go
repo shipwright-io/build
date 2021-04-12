@@ -108,6 +108,10 @@ type BuildSpec struct {
 // StrategyName returns the name of the configured strategy, or 'undefined' in
 // case the strategy is nil (not set)
 func (buildSpec *BuildSpec) StrategyName() string {
+	if buildSpec == nil {
+		return "undefined (nil buildSpec)"
+	}
+
 	if buildSpec.Strategy == nil {
 		return "undefined (nil strategy)"
 	}
