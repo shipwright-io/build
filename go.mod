@@ -14,12 +14,12 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.21.0
 	go.uber.org/zap v1.16.0
-	k8s.io/api v0.19.7
-	k8s.io/apimachinery v0.19.7
-	k8s.io/client-go v0.19.7
-	k8s.io/code-generator v0.19.7
+	k8s.io/api v0.20.2
+	k8s.io/apimachinery v0.20.2
+	k8s.io/client-go v0.20.2
+	k8s.io/code-generator v0.20.2
 	k8s.io/kube-openapi v0.0.0-20210113233702-8566a335510f
-	k8s.io/kubectl v0.19.7
+	k8s.io/kubectl v0.20.2
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 	knative.dev/pkg v0.0.0-20210127163530-0d31134d5f4e
 	sigs.k8s.io/controller-runtime v0.6.1
