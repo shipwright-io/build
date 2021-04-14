@@ -72,6 +72,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		validate.Secrets,
 		validate.Strategies,
 		validate.Runtime,
+		validate.Sources,
 	}
 
 	// trigger all current validations

@@ -67,6 +67,12 @@ type BuildSpec struct {
 	// source code to be built.
 	Source Source `json:"source"`
 
+	// Sources slice of BuildSource, defining external build artifacts complementary to VCS
+	// (`.spec.source`) data.
+	//
+	// +optional
+	Sources *[]BuildSource `json:"sources,omitempty"`
+
 	// Strategy references the BuildStrategy to use to build the container
 	// image.
 	Strategy *Strategy `json:"strategy"`
