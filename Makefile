@@ -247,11 +247,11 @@ install-strategies: install-apis
 
 local: vendor install-strategies
 	CONTROLLER_NAME=shipwright-build-controller \
-	go run cmd/manager/main.go "$(ZAP_FLAGS)"
+	go run cmd/manager/main.go $(ZAP_FLAGS)
 
 local-plain: vendor
 	CONTROLLER_NAME=shipwright-build-controller \
-	go run cmd/manager/main.go "$(ZAP_FLAGS)"
+	go run cmd/manager/main.go $(ZAP_FLAGS)
 
 clean:
 	rm -rf $(OUTPUT_DIR)
