@@ -49,14 +49,4 @@ For pull requests that don't need to be mentioned at release time, use the `/rel
 ```release-note
 NONE
 ```
-
-Note, your release note has to meet the formatting restrictions noted above precisely, or else it will not be included.
-To validate its inclusion, run:
-
-```
-# export PR_NUM=<your PR number>
-wget -q -O- https://api.github.com/repos/shipwright-io/build/issues/${PR_NUM} | grep -oPz '(?s)(?<=```release-note..)(.+?)(?=```)' | grep -avP '\W*(Your release note here|action required: your release note here|NONE)\W*'
-```
-
-If you do not see your release note text in the output, your formatting did not conform to the examples above.
 -->
