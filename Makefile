@@ -7,9 +7,15 @@ CONTROLLER = $(OUTPUT_DIR)/bin/shipwright-build-controller
 
 # golang cache directory path
 GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
+
 # golang target architecture
-GO_OS ?= $(shell uname | tr '[:upper:]' '[:lower:]')
+# Check if GO_OS is defined, if not set it to `linux` which is the only supported OS
+# this provides flexibility to users to set GO_OS in the future if require
+ifeq ($(origin GO_OS), undefined)
+GO_OS = "linux"
+endif
 GO_ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
+
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor -ldflags=-w
 
@@ -226,6 +232,7 @@ test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strate
 .PHONY: install install-apis install-controller install-strategies
 
 install:
+	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
 
 install-with-pprof:
@@ -237,6 +244,7 @@ install-apis:
 	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.shipwright.io
 
 install-controller: install-apis
+	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
 
 install-controller-kind: install-apis
