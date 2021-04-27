@@ -20,7 +20,7 @@ spec:
           set -euo pipefail
 
           chown -R 1000:1000 /workspace/output
-          chown -R 1000:1000 /workspace/source
+          chown -R 1000:1000 "$(params.shp-source-root)"
           chown -R 1000:1000 /tekton/home
       resources:
         limits:
@@ -31,7 +31,7 @@ spec:
           memory: 128Mi
     - name: build-and-push
       image: golang:1.15
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -51,7 +51,7 @@ spec:
           # - a URL with a tag but without a port: registry/image:tag
           # - a URL with both a tag and a port: registry:port/image:tag
 
-          IMAGE=$(build.output.image)
+          IMAGE=$(params.shp-output-image)
 
           REPO=
           TAG=

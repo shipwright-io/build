@@ -16,12 +16,12 @@ spec:
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
     - args:
         - '--skip-tls-verify=true'
         - '--dockerfile=/gen-source/Dockerfile.gen'
         - '--context=/gen-source'
-        - '--destination=$(build.output.image)'
+        - '--destination=$(params.shp-output-image)'
         - '--oci-layout-path=/workspace/output/image'
         - '--snapshotMode=redo'
         - '--push-retry=3'

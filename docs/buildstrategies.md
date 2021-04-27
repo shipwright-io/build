@@ -187,6 +187,16 @@ kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-i
 [s2i]: https://github.com/openshift/source-to-image
 [buildah]: https://github.com/containers/buildah
 
+## System parameters
+
+You can use parameters when defining the steps of a build strategy to access system information as well as information provided by the user in his Build or BuildRun. The following parameters are available:
+
+| Parameter                      | Description |
+| ------------------------------ | ----------- |
+| `$(params.shp-source-root)`    | The absolute path to the directory that contains the user's sources. |
+| `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in his Build, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
+| `$(params.shp-output-image)`      | The URL of the image that the user wants to push as specified in the Build's `spec.output.image`, or the override from the BuildRun's `spec.output.image`. |
+
 ## Steps Resource Definition
 
 All strategies steps can include a definition of resources(_limits and requests_) for CPU, memory and disk. For strategies with more than one step, each step(_container_) could require more resources than others. Strategy admins are free to define the values that they consider the best fit for each step. Also, identical strategies with the same steps that are only different in their name and step resources can be installed on the cluster to allow users to create a build with smaller and larger resource requirements.
@@ -205,7 +215,7 @@ spec:
   buildSteps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.5.2
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
         capabilities:
@@ -229,8 +239,8 @@ spec:
       args:
         - --skip-tls-verify=true
         - --dockerfile=$(build.dockerfile)
-        - --context=/workspace/source/$(build.source.contextDir)
-        - --destination=$(build.output.image)
+        - --context=$(params.shp-source-context)
+        - --destination=$(params.shp-output-image)
         - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
@@ -250,7 +260,7 @@ spec:
   buildSteps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.5.2
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
         capabilities:
@@ -274,8 +284,8 @@ spec:
       args:
         - --skip-tls-verify=true
         - --dockerfile=$(build.dockerfile)
-        - --context=/workspace/source/$(build.source.contextDir)
-        - --destination=$(build.output.image)
+        - --context=$(params.shp-source-context)
+        - --destination=$(params.shp-output-image)
         - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
@@ -403,14 +413,14 @@ If we will apply the following resources:
   ```yaml
     - name: buildah-bud
       image: quay.io/buildah/stable:latest
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
       command:
         - /usr/bin/buildah
       args:
         - bud
-        - --tag=$(build.output.image)
+        - --tag=$(params.shp-output-image)
         - --file=$(build.dockerfile)
         - $(build.source.contextDir)
       resources:
@@ -432,7 +442,7 @@ If we will apply the following resources:
       args:
         - push
         - --tls-verify=false
-        - docker://$(build.output.image)
+        - docker://$(params.shp-output-image)
       resources:
         limits:
           cpu: 500m

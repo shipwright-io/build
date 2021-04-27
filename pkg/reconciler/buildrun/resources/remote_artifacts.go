@@ -31,7 +31,7 @@ func remoteArtifactStep(b *buildv1alpha1.Build, image string) v1beta1.Step {
 	container := v1.Container{
 		Name:       "remote-artifacts",
 		Image:      image,
-		WorkingDir: workspaceDir,
+		WorkingDir: fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramSourceRoot),
 		Command:    []string{"/bin/sh"},
 		Args:       append([]string{"-e", "-x", "-c"}, strings.Join(script, " ; ")),
 	}

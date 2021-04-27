@@ -99,13 +99,13 @@ Here is the list of parameters that we will make available:
 
 | Name | Purpose |
 | ---- | ------- |
-| `shp-image-url` | The URL of the image to be built. |
+| `shp-output-image` | The reference of the image to be built. |
 | `shp-source-root` | The path to the directory where we download the sources to. The value is hard-coded and will be `/workspace/source` |
 | `shp-source-context` | The path to the context directory inside the sources. The value depends on the presence of the `contextDir` in the user's Build. If it is not present, then the value will be `/workspace/source`, otherwise it will be `path.Join("/workspace/source", build.spec.contextDir)`. The purpose is that a build strategy author is not required to manually concatenate these values. |
 
 The build strategy author uses those parameters using the `$(params.<PARAMETER_NAME>)` syntax.
 
-We stop supporting the `$(build.output.image)` replacement token that is today used to access the image URL from the build strategy.
+We stop supporting the `$(build.output.image)` replacement token that is today used to access the image reference from the build strategy.
 
 The build strategy documentation will list above parameters which makes them part of our API.
 
@@ -193,8 +193,6 @@ The image URL is a new configuration option of the build controller deployment (
 
 The resources of the step are also configurable at the build controller deployment level with reasonable defaults.
 
-
-
 The way we run the download logic is something we can implement in a staged approach and start with the simple approach: Just a container with the necessary command-line tools (like `git`), and a simple executable implemented by us that parses the arguments and calls the `git` binary similar to [today's logic in Tekton](https://github.com/tektoncd/pipeline/blob/v0.21.0/pkg/git/git.go).
 
 Eventually, I propose we evolve our code to use libraries like [go-git](https://github.com/go-git/go-git) to perform the logic. This enables us to improve our error handling (and retry certain network errors) and reporting as this usually can be done better when using libraries compared to when calling other executables. On the other hand, we need to check if go-git has maybe limitations (for example missing lfs support) that forces us to stay on the approach to call the `git` binary.
@@ -209,7 +207,7 @@ The complexity and the relationship with other enhancement proposals like [Add E
 
 To address the complexity, I suggest that the implementation is done in a staged approach with smaller but consistent changes (the numbering sometimes implies dependencies, but some things are also independent and can be worked on in parallel or in a different order):
 
-1. Introduce system parameter for the output image (`shp-image-url`), remove the image resource, use the new system parameter in the sample build strategies to access the designated location of the output image. Comment out those arguments in the Kaniko and ko strategies that write the image digest file.
+1. Introduce system parameter for the output image (`shp-output-image`), remove the image resource, use the new system parameter in the sample build strategies to access the designated location of the output image. Comment out those arguments in the Kaniko and ko strategies that write the image digest file.
 2. Implement a container image that accepts the arguments for the Git operation and runs the `git clone`, either already using [go-git](https://github.com/go-git/go-git) if that is easy to achieve, or using Tekton's approach to call the `git` binary. Tests for the binary must be implemented as well for public and private repositories.
 3. Introduce system parameters that point to the source directory (`shp-source-root` and `shp-source-context`) and use them in our sample build strategies as a replacement of the hardcoded `/workspace/source` paths.
 4. Introduce the `shipwright` workspace. Replace the Git resource with our own custom step that consumes the container image from (2). Stop adding the Git secret to the service account and mount it to this step directly.
@@ -276,7 +274,7 @@ To run our own logic to download the sources, instead of having one step per sou
 
 ---
 
-Instead of a single parameter for the image URL (`shp-image-url`), one could have split this into different parameters to separate the tag into an own parameter (`shp-image-tag`). This would have helped strategies that need this value separately. [We decided](https://github.com/shipwright-io/build/pull/727#discussion_r615930419) against this for simplicity and because ko is the only tool today that needs this (and parses the image URL to split it). It is possible to revisit this in the future and to provide additional parameters if needed.
+Instead of a single parameter for the output image (`shp-output-image`), one could have split this into different parameters to separate the tag into an own parameter (`shp-output-image-tag`). This would have helped strategies that need this value separately. [We decided](https://github.com/shipwright-io/build/pull/727#discussion_r615930419) against this for simplicity and because ko is the only tool today that needs this (and parses the image URL to split it). It is possible to revisit this in the future and to provide additional parameters if needed.
 
 ## Infrastructure Needed [optional]
 

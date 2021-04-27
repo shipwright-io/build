@@ -6,6 +6,7 @@ package resources
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 
@@ -20,10 +21,16 @@ import (
 )
 
 const (
+	prefixParamsResults = "shp-"
+
+	paramOutputImage   = "output-image"
+	paramSourceRoot    = "source-root"
+	paramSourceContext = "source-context"
+
 	inputSourceResourceName = "source"
 	inputGitSourceURL       = "url"
 	inputGitSourceRevision  = "revision"
-	inputParamBuilder  = "BUILDER_IMAGE"
+	inputParamBuilder       = "BUILDER_IMAGE"
 	inputParamDockerfile    = "DOCKERFILE"
 	inputParamContextDir    = "CONTEXT_DIR"
 	outputImageResourceName = "image"
@@ -35,9 +42,14 @@ const (
 func getStringTransformations(fullText string) string {
 
 	stringTransformations := map[string]string{
-		"$(build.output.image)":      "$(outputs.resources.image.url)",
-		"$(build.builder.image)":     fmt.Sprintf("$(inputs.params.%s)", inputParamBuilder),
-		"$(build.dockerfile)":        fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
+		// this will be removed, build strategy author should use $(params.shp-output-image) directly
+		"$(build.output.image)": fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramOutputImage),
+
+		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilder),
+		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
+
+		// this will be removed, build strategy author should use $(params.shp-source-context); it is still needed by the ko build
+		// strategy that mis-uses this setting to store the path to the main package; requires strategy parameter support to get rid
 		"$(build.source.contextDir)": fmt.Sprintf("$(inputs.params.%s)", inputParamContextDir),
 	}
 
@@ -93,6 +105,21 @@ func GenerateTaskSpec(
 					Type:      v1beta1.ParamTypeString,
 					StringVal: ".",
 				},
+			},
+			{
+				Name:        prefixParamsResults + paramOutputImage,
+				Description: "The URL of the image that the build produces",
+				Type:        taskv1.ParamTypeString,
+			},
+			{
+				Name:        prefixParamsResults + paramSourceContext,
+				Description: "The context directory inside the source directory",
+				Type:        taskv1.ParamTypeString,
+			},
+			{
+				Name:        prefixParamsResults + paramSourceRoot,
+				Description: "The source directory",
+				Type:        taskv1.ParamTypeString,
 			},
 		},
 		Steps: []v1beta1.Step{},
@@ -195,11 +222,11 @@ func GenerateTaskRun(
 	}
 
 	// retrieve expected imageURL form build or buildRun
-	var Image string
+	var image string
 	if buildRun.Spec.Output != nil {
-		Image = buildRun.Spec.Output.Image
+		image = buildRun.Spec.Output.Image
 	} else {
-		Image = build.Spec.Output.Image
+		image = build.Spec.Output.Image
 	}
 
 	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, strategy.GetBuildSteps())
@@ -251,7 +278,7 @@ func GenerateTaskRun(
 								Params: []taskv1.ResourceParam{
 									{
 										Name:  outputImageResourceURL,
-										Value: Image,
+										Value: image,
 									},
 								},
 							},
@@ -279,9 +306,25 @@ func GenerateTaskRun(
 
 	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
 
-	var inputParams []v1beta1.Param
+	params := []v1beta1.Param{
+		{
+			// shp-output-image
+			Name: prefixParamsResults + paramOutputImage,
+			Value: v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: image,
+			},
+		},
+		{
+			Name: prefixParamsResults + paramSourceRoot,
+			Value: v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: "/workspace/source",
+			},
+		},
+	}
 	if build.Spec.Builder != nil {
-		inputParams = append(inputParams, v1beta1.Param{
+		params = append(params, v1beta1.Param{
 			Name: inputParamBuilder,
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
@@ -290,7 +333,7 @@ func GenerateTaskRun(
 		})
 	}
 	if build.Spec.Dockerfile != nil {
-		inputParams = append(inputParams, v1beta1.Param{
+		params = append(params, v1beta1.Param{
 			Name: inputParamDockerfile,
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
@@ -299,16 +342,31 @@ func GenerateTaskRun(
 		})
 	}
 	if build.Spec.Source.ContextDir != nil {
-		inputParams = append(inputParams, v1beta1.Param{
+		params = append(params, v1beta1.Param{
 			Name: inputParamContextDir,
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: *build.Spec.Source.ContextDir,
 			},
 		})
+		params = append(params, v1beta1.Param{
+			Name: prefixParamsResults + paramSourceContext,
+			Value: v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: path.Join("/workspace/source", *build.Spec.Source.ContextDir),
+			},
+		})
+	} else {
+		params = append(params, v1beta1.Param{
+			Name: prefixParamsResults + paramSourceContext,
+			Value: v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: "/workspace/source",
+			},
+		})
 	}
 
-	expectedTaskRun.Spec.Params = inputParams
+	expectedTaskRun.Spec.Params = params
 	return expectedTaskRun, nil
 }
 
