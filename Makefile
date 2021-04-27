@@ -201,6 +201,20 @@ test-unit-coverage: test-unit gocov
 	$(GOCOV) convert build/coverage/coverprofile > build/coverage/coverprofile.json
 	$(GOCOV) report build/coverage/coverprofile.json
 
+.PHONY: test-unit-ginkgo
+test-unit-ginkgo: ginkgo
+	GO111MODULE=on $(GINKGO) \
+		-randomizeAllSpecs \
+		-randomizeSuites \
+		-failOnPending \
+		-p \
+		-compilers=2 \
+		-slowSpecThreshold=240 \
+		-race \
+		-trace \
+		internal/... \
+		pkg/...
+
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
 .PHONY: test-integration
 test-integration: install-apis ginkgo
