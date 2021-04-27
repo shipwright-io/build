@@ -17,7 +17,7 @@ spec:
       args:
         - -c
         - >
-          chown -R "1000:1000" /workspace/source &&
+          chown -R "1000:1000" "$(params.shp-source-root)" &&
           chown -R "1000:1000" /tekton/home &&
           chown -R "1000:1000" /cache &&
           chown -R "1000:1000" /layers
@@ -41,10 +41,10 @@ spec:
       command:
         - /cnb/lifecycle/creator
       args:
-        - -app=/workspace/source/$(build.source.contextDir)
+        - -app=$(params.shp-source-context)
         - -cache-dir=/cache
         - -layers=/layers
-        - $(build.output.image)
+        - $(params.shp-output-image)
       resources:
         limits:
           cpu: 500m

@@ -28,7 +28,7 @@ spec:
           chown -R 1000:1000 /tekton/home
     - name: build-and-push
       image: moby/buildkit:master-rootless
-      workingDir: /workspace/source/
+      workingDir: $(params.shp-source-root)
       env:
       - name: DOCKER_CONFIG
         value: /tekton/home/.docker
@@ -42,12 +42,12 @@ spec:
         - --progress=plain
         - --frontend=dockerfile.v0
         - --local
-        - context=/workspace/source/$(build.source.contextDir)
+        - context=$(params.shp-source-context)
         - --local
-        - dockerfile=/workspace/source/$(build.dockerfile)
+        - dockerfile=$(params.shp-source-root)/$(build.dockerfile)
         - --output
-        - type=image,name=$(build.output.image),push=true,registry.insecure=false
+        - type=image,name=$(params.shp-output-image),push=true,registry.insecure=false
         - --export-cache
         - type=inline
         - --import-cache
-        - type=registry,ref=$(build.output.image)
+        - type=registry,ref=$(params.shp-output-image)
