@@ -64,7 +64,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(err).To(BeNil())
 
 				expectedCommandOrArg = []string{
-					"bud", "--tag=$(outputs.resources.image.url)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), fmt.Sprintf("$(inputs.params.%s)", "CONTEXT_DIR"),
+					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
 				}
 			})
 
@@ -95,6 +95,52 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			It("should ensure top level volumes are populated", func() {
 				Expect(len(got.Volumes)).To(Equal(1))
+			})
+
+			It("should contain the shipwright system parameters", func() {
+				params := got.Params
+
+				paramSourceRootFound := false
+				paramSourceContextFound := false
+				paramOutputImageFound := false
+
+				// legacy params
+				paramBuilderImageFound := false
+				paramDockerfileFound := false
+				paramContextDirFound := false
+
+				for _, param := range params {
+					switch param.Name {
+					case "shp-source-root":
+						paramSourceRootFound = true
+
+					case "shp-source-context":
+						paramSourceContextFound = true
+
+					case "shp-output-image":
+						paramOutputImageFound = true
+
+					case "BUILDER_IMAGE":
+						paramBuilderImageFound = true
+
+					case "DOCKERFILE":
+						paramDockerfileFound = true
+
+					case "CONTEXT_DIR":
+						paramContextDirFound = true
+
+					default:
+						Fail(fmt.Sprintf("Unexpected param found: %s", param.Name))
+					}
+				}
+
+				Expect(paramSourceRootFound).To(BeTrue())
+				Expect(paramSourceContextFound).To(BeTrue())
+				Expect(paramOutputImageFound).To(BeTrue())
+
+				Expect(paramBuilderImageFound).To(BeFalse()) // test build has no builder image
+				Expect(paramDockerfileFound).To(BeTrue())
+				Expect(paramContextDirFound).To(BeTrue())
 			})
 		})
 	})
@@ -237,17 +283,54 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			It("should ensure generated TaskRun's spec special input params are correct", func() {
 				params := got.Spec.Params
+
+				paramSourceRootFound := false
+				paramSourceContextFound := false
+				paramOutputImageFound := false
+
+				// legacy params
+				paramBuilderImageFound := false
+				paramDockerfileFound := false
+				paramContextDirFound := false
+
 				for _, param := range params {
-					if param.Name == "BUILDER_IMAGE" {
+					switch param.Name {
+					case "shp-source-root":
+						paramSourceRootFound = true
+						Expect(param.Value.StringVal).To(Equal("/workspace/source"))
+
+					case "shp-source-context":
+						paramSourceContextFound = true
+						Expect(param.Value.StringVal).To(Equal("/workspace/source/docker-build"))
+
+					case "shp-output-image":
+						paramOutputImageFound = true
+						Expect(param.Value.StringVal).To(Equal(outputPath))
+
+					case "BUILDER_IMAGE":
+						paramBuilderImageFound = true
 						Expect(param.Value.StringVal).To(Equal(builderImage.Image))
-					}
-					if param.Name == "DOCKERFILE" {
+
+					case "DOCKERFILE":
+						paramDockerfileFound = true
 						Expect(param.Value.StringVal).To(Equal(dockerfile))
-					}
-					if param.Name == "CONTEXT_DIR" {
+
+					case "CONTEXT_DIR":
+						paramContextDirFound = true
 						Expect(param.Value.StringVal).To(Equal(contextDir))
+
+					default:
+						Fail(fmt.Sprintf("Unexpected param found: %s", param.Name))
 					}
 				}
+
+				Expect(paramSourceRootFound).To(BeTrue())
+				Expect(paramSourceContextFound).To(BeTrue())
+				Expect(paramOutputImageFound).To(BeTrue())
+
+				Expect(paramBuilderImageFound).To(BeTrue())
+				Expect(paramDockerfileFound).To(BeTrue())
+				Expect(paramContextDirFound).To(BeTrue())
 			})
 
 			It("should ensure resource replacements happen when needed", func() {
@@ -309,7 +392,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(err).To(BeNil())
 			})
 
-			It("should use the imageURL from the BuildRun", func() {
+			It("should use the imageURL from the BuildRun in the resource", func() {
 				outputResources := got.Spec.Resources.Outputs
 				for _, outputResource := range outputResources {
 					Expect(outputResource.ResourceSpec.Type).To(Equal(v1beta1.PipelineResourceTypeImage))
@@ -320,6 +403,22 @@ var _ = Describe("GenerateTaskrun", func() {
 						}
 					}
 				}
+			})
+
+			It("should use the imageURL from the BuildRun for the param", func() {
+				params := got.Spec.Params
+
+				paramOutputImageFound := false
+
+				for _, param := range params {
+					switch param.Name {
+					case "shp-output-image":
+						paramOutputImageFound = true
+						Expect(param.Value.StringVal).To(Equal(outputPathBuildRun))
+					}
+				}
+
+				Expect(paramOutputImageFound).To(BeTrue())
 			})
 		})
 	})

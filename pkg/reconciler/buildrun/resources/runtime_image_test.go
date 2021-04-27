@@ -92,7 +92,7 @@ var _ = Describe("runtime-image", func() {
 			Expect(dockerfile).ToNot(BeNil())
 
 			Expect(fmt.Sprintf("\n%s", dockerfile)).To(Equal(`
-FROM test/output-image:latest as builder
+FROM $(params.shp-output-image) as builder
 
 FROM test/base-image:latest
 ENV ENVIRONMENT_VARIABLE="VALUE"
