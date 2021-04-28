@@ -20,7 +20,7 @@ spec:
           set -euo pipefail
 
           chown -R 1000:1000 /workspace/output
-          chown -R 1000:1000 /workspace/source
+          chown -R 1000:1000 "$(params.shp-source-root)"
           chown -R 1000:1000 /tekton/home
       resources:
         limits:
@@ -31,7 +31,7 @@ spec:
           memory: 128Mi
     - name: build-and-push
       image: golang:1.15
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -51,7 +51,7 @@ spec:
           # - a URL with a tag but without a port: registry/image:tag
           # - a URL with both a tag and a port: registry:port/image:tag
 
-          IMAGE=$(build.output.image)
+          IMAGE=$(params.shp-output-image)
 
           REPO=
           TAG=
@@ -72,14 +72,22 @@ spec:
 
           # Download ko
           pushd /tmp > /dev/null
-            curl -f -s -L https://github.com/google/ko/releases/download/v0.8.1/ko_0.8.1_Linux_x86_64.tar.gz | tar xzf - ko
+            curl -f -s -L https://github.com/google/ko/releases/download/v0.8.2/ko_0.8.2_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz | tar xzf - ko
           popd > /dev/null
 
           # Run ko
+
+          # Select the platform to build based on the architecture that the cluster runs.
+          # Once there is parameter support in Shipwright, we should expose this setting there.
+          PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')/$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
+
+          export GOROOT=$(go env GOROOT)
+          export KO_DOCKER_REPO="${REPO}"
+
           if [ "${TAG}" == "" ]; then
-            GOROOT=$(go env GOROOT) KO_DOCKER_REPO="${REPO}" /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/workspace/output/image
+            /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/workspace/output/image --platform="${PLATFORM}"
           else
-            GOROOT=$(go env GOROOT) KO_DOCKER_REPO="${REPO}" /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/workspace/output/image --tags="${TAG}"
+            /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/workspace/output/image --platform="${PLATFORM}" --tags="${TAG}"
           fi
       resources:
         limits:

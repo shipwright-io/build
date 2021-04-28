@@ -22,6 +22,8 @@ const (
 	SourceURL = "sourceurl"
 	// Runtime for validating the runtime definition in Build objects
 	Runtime = "runtime"
+	// Sources for validating `spec.sources` entries
+	Sources = "sources"
 	// OwnerReferences for validating the ownerreferences between a Build
 	// and BuildRun objects
 	OwnerReferences = "ownerreferences"
@@ -43,38 +45,19 @@ func NewValidation(
 	client client.Client,
 	scheme *runtime.Scheme,
 ) (BuildPath, error) {
-	secretRef := Credentials{
-		Build:  build,
-		Client: client,
-	}
-	strategyRef := Strategy{
-		Build:  build,
-		Client: client,
-	}
-	sourceURLRef := SourceURLRef{
-		Build:  build,
-		Client: client,
-	}
-	runtimeSpecRef := RuntimeRef{
-		Build:  build,
-		Client: client,
-	}
-	ownerRef := OwnerRef{
-		Build:  build,
-		Client: client,
-		Scheme: scheme,
-	}
 	switch validationType {
 	case Secrets:
-		return secretRef, nil
+		return &Credentials{Build: build, Client: client}, nil
 	case Strategies:
-		return strategyRef, nil
+		return &Strategy{Build: build, Client: client}, nil
 	case SourceURL:
-		return sourceURLRef, nil
+		return &SourceURLRef{Build: build, Client: client}, nil
 	case Runtime:
-		return runtimeSpecRef, nil
+		return &RuntimeRef{Build: build, Client: client}, nil
 	case OwnerReferences:
-		return ownerRef, nil
+		return &OwnerRef{Build: build, Client: client, Scheme: scheme}, nil
+	case Sources:
+		return &SourcesRef{Build: build}, nil
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}

@@ -22,6 +22,7 @@ SPDX-License-Identifier: Apache-2.0
 A `Build` resource allows the user to define:
 
 - source
+- sources
 - strategy
 - builder
 - dockerfile
@@ -47,12 +48,12 @@ In order to prevent users from triggering `BuildRuns` (_execution of a Build_) t
 
 | Status.Reason | Description |
 | --- | --- |
-| BuildStrategyNotFound   | The referenced namespace-scope strategy doesn´t exist. |
-| ClusterBuildStrategyNotFound   | The referenced cluster-scope strategy doesn´t exist. |
+| BuildStrategyNotFound   | The referenced namespace-scope strategy doesn't exist. |
+| ClusterBuildStrategyNotFound   | The referenced cluster-scope strategy doesn't exist. |
 | SetOwnerReferenceFailed   | Setting ownerreferences between a Build and a BuildRun failed. This is triggered when making use of the `build.shipwright.io/build-run-deletion` annotation in a Build. |
-| SpecSourceSecretNotFound | The secret used to authenticate to git doesn´t exist. |
-| SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn´t exist. |
-| SpecBuilderSecretRefNotFound | The secret used to authenticate to the container registry doesn´t exist.|
+| SpecSourceSecretRefNotFound | The secret used to authenticate to git doesn't exist. |
+| SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist. |
+| SpecBuilderSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist.|
 | MultipleSecretRefNotFound | More than one secret is missing. At the moment, only three paths on a Build can specify a secret. |
 | RuntimePathsCanNotBeEmpty | The Runtime feature is used, but the runtime path was not defined. This is mandatory. |
 | RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only take place for http/https protocols. |
@@ -74,6 +75,7 @@ The `Build` definition supports the following fields:
 - Optional:
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
+  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into project context, before the actual build process starts.
   - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build.
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
@@ -149,11 +151,12 @@ spec:
 
 A `Build` resource can specify the `BuildStrategy` to use, these are:
 
-- [Source-to-Image](buildstrategies.md#source-to-image)
-- [Buildpacks-v3](buildstrategies.md#buildpacks-v3)
 - [Buildah](buildstrategies.md#buildah)
+- [Buildpacks-v3](buildstrategies.md#buildpacks-v3)
+- [BuildKit](buildstrategies.md#buildkit)
 - [Kaniko](buildstrategies.md#kaniko)
-* [ko](docs/buildstrategies.md#ko)
+- [ko](buildstrategies.md#ko)
+- [Source-to-Image](buildstrategies.md#source-to-image)
 
 Defining the strategy is straightforward, you need to define the `name` and the `kind`. For example:
 
@@ -248,6 +251,32 @@ spec:
       name: icr-knbuild
 ```
 
+### Sources
+
+Represents remote artifacts, as in external entities that will be added to the build context before the actual build starts. Therefore, you may employ `.spec.sources` to download artifacts from external repositories.
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: nodejs-ex
+spec:
+  sources:
+    - name: project-logo
+      url: https://gist.github.com/project/image.png
+```
+
+Under `.spec.sources` we have the following attributes:
+
+- `.name`: represents the name of resource, required attribute.
+- `.url`: universal resource location (URL), required attribute.
+
+When downloading artifacts the process is executed in the same directory where the application source-code is located, by default `/workspace/source`.
+
+Additionally, we have plan to keep evolving `.spec.sources` by adding more types of remote data declaration, this API field works as an extension point to support external and internal resource locations.
+
+At this initial stage, authentication is not supported therefore you can only download from sources without this mechanism in place.
+
 ### Runtime-Image
 
 Runtime-image is a new image composed with build-strategy outcome. On which you can compose a multi-stage image build, copying parts out the original image into a new one. This feature allows replacing the base-image of any container-image, creating leaner images, and other use-cases.
@@ -302,7 +331,7 @@ Please consider the description of the attributes under `.spec.runtime`:
 > Specifying the runtime section will cause a `BuildRun` to push `spec.output.image` twice. First, the image produced by chosen `BuildStrategy` is pushed, and next it gets reused to construct the runtime-image, which is pushed again, overwriting `BuildStrategy` outcome.
 > Be aware, specially in situations where the image push action triggers automation steps. Since the same tag will be reused, you might need to take this in consideration when using runtime-images.
 
-Under the cover, the runtime image will be an additional step in the generated Task spec of the TaskRun. It uses [Kaniko](https://github.com/GoogleContainerTools/kaniko) to run a container build using the `gcr.io/kaniko-project/executor:v1.5.1` image. You can overwrite this image by adding the environment variable `KANIKO_CONTAINER_IMAGE` to the [build controller deployment](../deploy/controller.yaml).
+Under the cover, the runtime image will be an additional step in the generated Task spec of the TaskRun. It uses [Kaniko](https://github.com/GoogleContainerTools/kaniko) to run a container build using the `gcr.io/kaniko-project/executor:v1.6.0` image. You can overwrite this image by adding the environment variable `KANIKO_CONTAINER_IMAGE` to the [build controller deployment](../deploy/controller.yaml).
 
 ## BuildRun deletion
 

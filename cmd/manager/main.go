@@ -22,7 +22,6 @@ import (
 
 	buildconfig "github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller"
-	"github.com/shipwright-io/build/pkg/controller/ready"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildMetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/shipwright-io/build/version"
@@ -74,14 +73,6 @@ func main() {
 		ctxlog.Error(ctx, err, "")
 		os.Exit(1)
 	}
-
-	r := ready.NewFileReady("/tmp/shipwright-build-ready")
-	err = r.Set()
-	if err != nil {
-		ctxlog.Error(ctx, err, "Checking for /tmp/shipwright-build-ready failed")
-		os.Exit(1)
-	}
-	defer r.Unset()
 
 	buildCfg := buildconfig.NewDefaultConfig()
 	if err := buildCfg.SetConfigFromEnv(); err != nil {

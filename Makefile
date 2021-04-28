@@ -7,8 +7,15 @@ CONTROLLER = $(OUTPUT_DIR)/bin/shipwright-build-controller
 
 # golang cache directory path
 GOCACHE ?= $(shell echo ${PWD})/$(OUTPUT_DIR)/gocache
+
 # golang target architecture
-GOARCH ?= amd64
+# Check if GO_OS is defined, if not set it to `linux` which is the only supported OS
+# this provides flexibility to users to set GO_OS in the future if require
+ifeq ($(origin GO_OS), undefined)
+GO_OS = "linux"
+endif
+GO_ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
+
 # golang global flags
 GO_FLAGS ?= -v -mod=vendor -ldflags=-w
 
@@ -21,16 +28,12 @@ endif
 
 # configure zap based logr
 ZAP_FLAGS ?= --zap-log-level=debug --zap-encoder=console
-# extra flags passed to operator-sdk
-OPERATOR_SDK_EXTRA_ARGS ?= --debug
 
 # test namespace name
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines controller version
-TEKTON_VERSION ?= v0.21.0
-# CI: operator-sdk version
-SDK_VERSION ?= v0.18.2
+TEKTON_VERSION ?= v0.23.0
 
 # E2E test flags
 TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=30m -progress -stream -trace -v
@@ -144,9 +147,6 @@ endif
 install-counterfeiter:
 	hack/install-counterfeiter.sh
 
-install-operator-sdk:
-	hack/install-operator-sdk.sh
-
 .PHONY: govet
 govet:
 	@echo "Checking go vet"
@@ -201,6 +201,20 @@ test-unit-coverage: test-unit gocov
 	$(GOCOV) convert build/coverage/coverprofile > build/coverage/coverprofile.json
 	$(GOCOV) report build/coverage/coverprofile.json
 
+.PHONY: test-unit-ginkgo
+test-unit-ginkgo: ginkgo
+	GO111MODULE=on $(GINKGO) \
+		-randomizeAllSpecs \
+		-randomizeSuites \
+		-failOnPending \
+		-p \
+		-compilers=2 \
+		-slowSpecThreshold=240 \
+		-race \
+		-trace \
+		internal/... \
+		pkg/...
+
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
 .PHONY: test-integration
 test-integration: install-apis ginkgo
@@ -232,10 +246,11 @@ test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strate
 .PHONY: install install-apis install-controller install-strategies
 
 install:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
+	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
 
 install-with-pprof:
-	GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
 
 install-apis:
 	kubectl apply -f deploy/crds/
@@ -243,7 +258,8 @@ install-apis:
 	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.shipwright.io
 
 install-controller: install-apis
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
+	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
 
 install-controller-kind: install-apis
 	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
@@ -253,11 +269,11 @@ install-strategies: install-apis
 
 local: vendor install-strategies
 	CONTROLLER_NAME=shipwright-build-controller \
-	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
+	go run cmd/manager/main.go $(ZAP_FLAGS)
 
 local-plain: vendor
 	CONTROLLER_NAME=shipwright-build-controller \
-	operator-sdk run local --operator-flags="$(ZAP_FLAGS)"
+	go run cmd/manager/main.go $(ZAP_FLAGS)
 
 clean:
 	rm -rf $(OUTPUT_DIR)

@@ -13,9 +13,12 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing Buildah Strategy](#installing-buildah-strategy)
 - [Buildpacks v3](#buildpacks-v3)
   - [Installing Buildpacks v3 Strategy](#installing-buildpacks-v3-strategy)
-  - [Try it](#try-it)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
+- [BuildKit](#buildkit)
+  - [Cache Exporters](#cache-exporters)
+  - [Known Limitations](#known-limitations)
+  - [Installing BuildKit Strategy](#installing-buildkit-strategy)
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
 - [Source to Image](#source-to-image)
@@ -35,26 +38,32 @@ A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is a
 
 ## Available ClusterBuildStrategies
 
-Well-known strategies can be boostrapped from [here](../samples/buildstrategy). The current supported Cluster BuildStrategy are:
+Well-known strategies can be bootstrapped from [here](../samples/buildstrategy). The currently supported Cluster BuildStrategy are:
 
-- [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
-- [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml)
-- [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)
-- [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml)
-- [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml)
+| Name | Supported platforms |
+| ---- | ------------------- |
+| [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml) | linux/amd64 only |
+| [BuildKit](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) | all |
+| [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
+| [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
+| [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml) | all |
+| [ko](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml) | all |
+| [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml) | linux/amd64 only |
 
 ## Available BuildStrategies
 
 The current supported namespaces BuildStrategy are:
 
-- [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml)
-- [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml)
+| Name | Supported platforms |
+| ---- | ------------------- |
+| [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml) | linux/amd64 only |
+| [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml) | linux/amd64 only |
 
 ---
 
 ## Buildah
 
-The `buildah` ClusterBuildStrategy consists of using [`buildah`](https://github.com/containers/buildah) to build and push a container image, out of a `Dockerfile`. The `Dockerfile` should be specified on the `Build` resource. Also, instead of the `spec.dockerfile`, the `spec.builderImage` can be used with `quay.io/buildah/stable` as the value when defining the `Build` resource.
+The `buildah` ClusterBuildStrategy consists of using [`buildah`](https://github.com/containers/buildah) to build and push a container image, out of a `Dockerfile`. The `Dockerfile` should be specified on the `Build` resource.
 
 ### Installing Buildah Strategy
 
@@ -106,6 +115,34 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 
 ---
 
+## BuildKit
+
+[BuildKit](https://github.com/moby/buildkit) is composed of the `buildctl` client and the `buildkitd` daemon. For the `buildkit` ClusterBuildStrategy, it runs on a [daemonless](https://github.com/moby/buildkit#daemonless) mode, where both client and ephemeral daemon run in a single container. In addition, it runs without privileges ( _[rootless](https://github.com/moby/buildkit/blob/master/docs/rootless.md)_ ).
+
+The `buildkit-insecure` ClusterBuildStrategy exists to support users pushing to an insecure HTTP registry. We use this strategy at the moment only for testing purposes against a local in-cluster registry. In the future, this strategy will be removed in favor of a single one where users can parameterize the secure/insecure behaviour.
+
+### Cache Exporters
+
+By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the build times. When pushing an image to a registry, it will use the `inline` export cache, which pushes the image and cache together. Please refer to [export-cache docs](https://github.com/moby/buildkit#export-cache) for more information.
+
+### Known Limitations
+
+The `buildkit` ClusterBuildStrategy currently locks the following parameters:
+
+- A `Dockerfile` name needs to be `Dockerfile`, this is currently not configurable.
+- Exporter caches are enable by default, this is currently not configurable.
+- To allow running rootless, it requires both [AppArmor](https://kubernetes.io/docs/tutorials/clusters/apparmor/) as well as [SecComp](https://kubernetes.io/docs/tutorials/clusters/seccomp/) to be disabled using the `unconfined` profile.
+
+### Installing BuildKit Strategy
+
+To install the cluster scope strategy, use:
+
+```sh
+kubectl apply -f samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml
+```
+
+---
+
 ## ko
 
 The `ko` ClusterBuilderStrategy is using [ko](https://github.com/google/ko)'s publish command to build an image from a Golang main package.
@@ -119,6 +156,8 @@ kubectl apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
 ```
 
 **Note**: The build strategy currently uses the `spec.contextDir` of the Build in a different way than this property is designed for: the Git repository must be a Go module with the go.mod file at the root. The `contextDir` specifies the path to the main package. You can check the [example](../samples/build/build_ko_cr.yaml) which is set up to build the Shipwright Build controller. This behavior will eventually be corrected once [Exhaustive list of generalized Build API/CRD attributes #184](https://github.com/shipwright-io/build/issues/184) / [Custom attributes from the Build CR could be used as parameters while defining a BuildStrategy #537](https://github.com/shipwright-io/build/issues/537) are done.
+
+**Note**: The build strategy is setup to build for the platform that your Kubernetes cluster is running. Exposing the platform configuration to the Build requires the same features mentioned on the previous note.
 
 ## Source to Image
 
@@ -148,6 +187,16 @@ kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-i
 [s2i]: https://github.com/openshift/source-to-image
 [buildah]: https://github.com/containers/buildah
 
+## System parameters
+
+You can use parameters when defining the steps of a build strategy to access system information as well as information provided by the user in his Build or BuildRun. The following parameters are available:
+
+| Parameter                      | Description |
+| ------------------------------ | ----------- |
+| `$(params.shp-source-root)`    | The absolute path to the directory that contains the user's sources. |
+| `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in his Build, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
+| `$(params.shp-output-image)`      | The URL of the image that the user wants to push as specified in the Build's `spec.output.image`, or the override from the BuildRun's `spec.output.image`. |
+
 ## Steps Resource Definition
 
 All strategies steps can include a definition of resources(_limits and requests_) for CPU, memory and disk. For strategies with more than one step, each step(_container_) could require more resources than others. Strategy admins are free to define the values that they consider the best fit for each step. Also, identical strategies with the same steps that are only different in their name and step resources can be installed on the cluster to allow users to create a build with smaller and larger resource requirements.
@@ -165,8 +214,8 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.5.1
-      workingDir: /workspace/source
+      image: gcr.io/kaniko-project/executor:v1.6.0
+      workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
         capabilities:
@@ -190,8 +239,8 @@ spec:
       args:
         - --skip-tls-verify=true
         - --dockerfile=$(build.dockerfile)
-        - --context=/workspace/source/$(build.source.contextDir)
-        - --destination=$(build.output.image)
+        - --context=$(params.shp-source-context)
+        - --destination=$(params.shp-output-image)
         - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
@@ -210,8 +259,8 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.5.1
-      workingDir: /workspace/source
+      image: gcr.io/kaniko-project/executor:v1.6.0
+      workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
         capabilities:
@@ -235,8 +284,8 @@ spec:
       args:
         - --skip-tls-verify=true
         - --dockerfile=$(build.dockerfile)
-        - --context=/workspace/source/$(build.source.contextDir)
-        - --destination=$(build.output.image)
+        - --context=$(params.shp-source-context)
+        - --destination=$(params.shp-output-image)
         - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
@@ -364,14 +413,14 @@ If we will apply the following resources:
   ```yaml
     - name: buildah-bud
       image: quay.io/buildah/stable:latest
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
       command:
         - /usr/bin/buildah
       args:
         - bud
-        - --tag=$(build.output.image)
+        - --tag=$(params.shp-output-image)
         - --file=$(build.dockerfile)
         - $(build.source.contextDir)
       resources:
@@ -393,7 +442,7 @@ If we will apply the following resources:
       args:
         - push
         - --tls-verify=false
-        - docker://$(build.output.image)
+        - docker://$(params.shp-output-image)
       resources:
         limits:
           cpu: 500m

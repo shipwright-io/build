@@ -7,7 +7,6 @@ package resources
 import (
 	"bytes"
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"text/template"
@@ -23,7 +22,7 @@ import (
 const (
 	// runtimeDockerfileTmpl Dockerfile template to be used with runtime-image, it uses Build
 	// attributes directly as template input.
-	runtimeDockerfileTmpl = `FROM {{ .Spec.Output.Image }} as builder
+	runtimeDockerfileTmpl = `FROM $(params.shp-output-image) as builder
 
 FROM {{ .Spec.Runtime.Base.Image }}
 
@@ -63,9 +62,6 @@ ENTRYPOINT [ {{ renderEntrypoint .Spec.Runtime.Entrypoint }} ]
 {{- end -}}
 `
 
-	// workspaceDir common workspace directory, where the source code is located.
-	workspaceDir = "/workspace/source"
-
 	// runtimeDockerfile runtime Dockerfile file name.
 	runtimeDockerfile = "Dockerfile.runtime"
 
@@ -75,9 +71,6 @@ ENTRYPOINT [ {{ renderEntrypoint .Spec.Runtime.Entrypoint }} ]
 
 // rootUserID root's UID
 var rootUserID = int64(0)
-
-// runtimeDockerfilePath path to runtime Dockerfile on workspace directory.
-var runtimeDockerfilePath = path.Join(workspaceDir, runtimeDockerfile)
 
 // renderUserAndGroup based on informed user, returns it joined by colon (":"), or empty string when
 // nil or user not informed. Follows the rules for Dockerfile's USER and "COPY --chown" directives.
@@ -132,23 +125,13 @@ func renderRuntimeDockerfile(b *buildv1alpha1.Build) (*bytes.Buffer, error) {
 
 // runtimeDockerfileTransformations search and replace special variables `$()` in informed string.
 func runtimeDockerfileTransformations(b *buildv1alpha1.Build, str string) string {
-	contextDir := getContextDir(b)
 	transformations := map[string]string{
-		"$(workspace)": path.Join(workspaceDir, contextDir),
+		"$(workspace)": fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramSourceContext),
 	}
 	for k, v := range transformations {
 		str = strings.ReplaceAll(str, k, v)
 	}
 	return str
-}
-
-// getContextDir retrieve contextDir from Source, or empty string.
-func getContextDir(b *buildv1alpha1.Build) string {
-	contextDir := ""
-	if b != nil && b.Spec.Source.ContextDir != nil {
-		contextDir = path.Join(workspaceDir, *b.Spec.Source.ContextDir)
-	}
-	return contextDir
 }
 
 // runtimeDockerfileStep trigger the rendering of Dockerfile.runtime, and use this input as a
@@ -174,12 +157,12 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 		SecurityContext: &v1.SecurityContext{
 			RunAsUser: &rootUserID,
 		},
-		WorkingDir: workspaceDir,
+		WorkingDir: fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramSourceRoot),
 		Command:    []string{"/bin/sh"},
 		Args: []string{
 			"-x",
 			"-c",
-			fmt.Sprintf("echo '%s' >%s", dockerfileTransformed, runtimeDockerfilePath),
+			fmt.Sprintf("echo '%s' >%s", dockerfileTransformed, runtimeDockerfile),
 		},
 	}
 	return &v1beta1.Step{Container: container}, nil
@@ -187,11 +170,10 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 
 // runtimeBuildAndPushStep returns a Task step to build the Dockerfile.runtime with kaniko.
 func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta1.Step {
-	contextDir := getContextDir(b)
 	container := v1.Container{
 		Name:       "kaniko-build-and-push",
 		Image:      kanikoImage,
-		WorkingDir: workspaceDir,
+		WorkingDir: fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramSourceRoot),
 		SecurityContext: &v1.SecurityContext{
 			RunAsUser: &rootUserID,
 			Capabilities: &v1.Capabilities{
@@ -215,8 +197,7 @@ func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta
 		Args: []string{
 			"--skip-tls-verify=true",
 			fmt.Sprintf("--dockerfile=%s", runtimeDockerfile),
-			fmt.Sprintf("--context=%x", path.Join(workspaceDir, contextDir)),
-			fmt.Sprintf("--destination=%s", b.Spec.Output.Image),
+			fmt.Sprintf("--destination=$(params.%s%s)", prefixParamsResults, paramOutputImage),
 			"--snapshotMode=redo",
 			"--oci-layout-path=/workspace/output/image",
 		},

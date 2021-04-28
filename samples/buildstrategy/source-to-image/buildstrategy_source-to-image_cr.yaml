@@ -16,12 +16,12 @@ spec:
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
     - args:
         - '--skip-tls-verify=true'
         - '--dockerfile=/gen-source/Dockerfile.gen'
         - '--context=/gen-source'
-        - '--destination=$(build.output.image)'
+        - '--destination=$(params.shp-output-image)'
         - '--oci-layout-path=/workspace/output/image'
         - '--snapshotMode=redo'
         - '--push-retry=3'
@@ -34,7 +34,7 @@ spec:
           value: NOT_SET
         - name: AWS_SECRET_KEY
           value: NOT_SET
-      image: gcr.io/kaniko-project/executor:v1.5.1
+      image: gcr.io/kaniko-project/executor:v1.6.0
       name: build-and-push
       securityContext:
         runAsUser: 0

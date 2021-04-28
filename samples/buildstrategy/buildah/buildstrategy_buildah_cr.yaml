@@ -7,16 +7,16 @@ spec:
   buildSteps:
     - name: buildah-bud
       image: quay.io/buildah/stable:latest
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
       command:
         - /usr/bin/buildah
       args:
         - bud
-        - --tag=$(build.output.image)
+        - --tag=$(params.shp-output-image)
         - --file=$(build.dockerfile)
-        - $(build.source.contextDir)
+        - $(params.shp-source-context)
       resources:
         limits:
           cpu: 500m
@@ -36,8 +36,8 @@ spec:
       args:
         - push
         - --tls-verify=false
-        - $(build.output.image)
-        - docker://$(build.output.image)
+        - $(params.shp-output-image)
+        - docker://$(params.shp-output-image)
       resources:
         limits:
           cpu: 500m

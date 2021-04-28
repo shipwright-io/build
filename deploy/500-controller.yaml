@@ -32,17 +32,18 @@ spec:
                   fieldPath: metadata.name
             - name: CONTROLLER_NAME
               value: "shipwright-build"
+          ports:
+            - containerPort: 8383
+              name: metrics-port
           livenessProbe:
-            exec:
-              command:
-                - stat
-                - /tmp/shipwright-build-ready
+            httpGet:
+              path: /metrics
+              port: metrics-port
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
-            exec:
-              command:
-                - stat
-                - /tmp/shipwright-build-ready
+            httpGet:
+              path: /metrics
+              port: metrics-port
             initialDelaySeconds: 5
             periodSeconds: 10

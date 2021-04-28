@@ -7,12 +7,12 @@ spec:
   buildSteps:
     - name: s2i-generate
       image: registry.redhat.io/ocp-tools-43-tech-preview/source-to-image-rhel8:latest
-      workingDir: /workspace/source
+      workingDir: $(params.shp-source-root)
       args:
         - build
         - .
         - $(build.builder.image)
-        - $(build.output.image)
+        - $(params.shp-output-image)
         - --as-dockerfile=/s2i/Dockerfile
       volumeMounts:
         - name: s2i
@@ -26,7 +26,7 @@ spec:
         - /usr/bin/buildah
       args:
         - bud
-        - --tag=$(build.output.image)
+        - --tag=$(params.shp-output-image)
       volumeMounts:
         - name: s2i
           mountPath: /s2i
@@ -41,7 +41,7 @@ spec:
       args:
         - push
         - --tls-verify=false
-        - docker://$(build.output.image)
+        - docker://$(params.shp-output-image)
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
