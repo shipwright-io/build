@@ -19,7 +19,7 @@ const (
 	// E.g. if 5 seconds is wanted, the CTX_TIMEOUT=5
 	contextTimeoutEnvVar = "CTX_TIMEOUT"
 
-	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.5.2"
+	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.6.0"
 	kanikoImageEnvVar  = "KANIKO_CONTAINER_IMAGE"
 
 	remoteArtifactsDefaultImage = "quay.io/quay/busybox:latest"
