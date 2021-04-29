@@ -25,6 +25,9 @@ const (
 	remoteArtifactsDefaultImage = "quay.io/quay/busybox:latest"
 	remoteArtifactsEnvVar       = "REMOTE_ARTIFACTS_CONTAINER_IMAGE"
 
+	gitDefaultImage = "quay.io/shipwright/git:latest"
+	gitImageEnvVar  = "GIT_CONTAINER_IMAGE"
+
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
@@ -62,6 +65,7 @@ var (
 // can be set to use on the Build controllers
 type Config struct {
 	CtxTimeOut                    time.Duration
+	GitContainerImage             string
 	KanikoContainerImage          string
 	RemoteArtifactsContainerImage string
 	Prometheus                    PrometheusConfig
@@ -109,6 +113,7 @@ type KubeAPIOptions struct {
 func NewDefaultConfig() *Config {
 	return &Config{
 		CtxTimeOut:                    contextTimeout,
+		GitContainerImage:             gitDefaultImage,
 		KanikoContainerImage:          kanikoDefaultImage,
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
 		Prometheus: PrometheusConfig{
@@ -148,6 +153,10 @@ func (c *Config) SetConfigFromEnv() error {
 			return err
 		}
 		c.CtxTimeOut = time.Duration(i) * time.Second
+	}
+
+	if gitImage := os.Getenv(gitImageEnvVar); gitImage != "" {
+		c.GitContainerImage = gitImage
 	}
 
 	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {

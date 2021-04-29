@@ -27,9 +27,8 @@ const (
 	paramSourceRoot    = "source-root"
 	paramSourceContext = "source-context"
 
-	inputSourceResourceName = "source"
-	inputGitSourceURL       = "url"
-	inputGitSourceRevision  = "revision"
+	workspaceSource = "source"
+
 	inputParamBuilder       = "BUILDER_IMAGE"
 	inputParamDockerfile    = "DOCKERFILE"
 	inputParamContextDir    = "CONTEXT_DIR"
@@ -70,14 +69,6 @@ func GenerateTaskSpec(
 
 	generatedTaskSpec := v1beta1.TaskSpec{
 		Resources: &v1beta1.TaskResources{
-			Inputs: []v1beta1.TaskResource{
-				{
-					ResourceDeclaration: taskv1.ResourceDeclaration{
-						Name: inputSourceResourceName,
-						Type: taskv1.PipelineResourceTypeGit,
-					},
-				},
-			},
 			Outputs: []v1beta1.TaskResource{
 				{
 					ResourceDeclaration: taskv1.ResourceDeclaration{
@@ -122,7 +113,13 @@ func GenerateTaskSpec(
 				Type:        taskv1.ParamTypeString,
 			},
 		},
-		Steps: []v1beta1.Step{},
+		//		Steps:   []v1beta1.Step{},
+		//		Volumes: []corev1.Volume{},
+		Workspaces: []v1beta1.WorkspaceDeclaration{
+			{
+				Name: workspaceSource,
+			},
+		},
 	}
 
 	if build.Spec.Builder != nil {
@@ -137,8 +134,10 @@ func GenerateTaskSpec(
 		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilder)
 	}
 
-	var vols []corev1.Volume
+	// define results, steps and volumes for sources
+	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build)
 
+	// define the steps coming from the build strategy
 	for _, containerValue := range buildSteps {
 
 		var taskCommand []string
@@ -172,33 +171,24 @@ func GenerateTaskSpec(
 		// Get volumeMounts added to Task's spec.Volumes
 		for _, volumeInBuildStrategy := range containerValue.VolumeMounts {
 			newVolume := true
-			for _, volumeInTask := range vols {
+			for _, volumeInTask := range generatedTaskSpec.Volumes {
 				if volumeInTask.Name == volumeInBuildStrategy.Name {
 					newVolume = false
 				}
 			}
 			if newVolume {
-				vols = append(vols, corev1.Volume{
+				generatedTaskSpec.Volumes = append(generatedTaskSpec.Volumes, corev1.Volume{
 					Name: volumeInBuildStrategy.Name,
 				})
 			}
-
 		}
 	}
-
-	generatedTaskSpec.Volumes = vols
 
 	// checking for runtime-image settings, and appending more steps to the strategy
 	if IsRuntimeDefined(build) {
 		if err := AmendTaskSpecWithRuntimeImage(cfg, &generatedTaskSpec, build); err != nil {
 			return nil, err
 		}
-	}
-
-	// when sources is defined on `spec.build` it will prepend the step to handle remote artifacts,
-	// before all other steps
-	if IsSourcesDefined(build) {
-		AmendTaskSpecWithRemoteArtifacts(cfg, &generatedTaskSpec, build)
 	}
 
 	return &generatedTaskSpec, nil
@@ -212,14 +202,6 @@ func GenerateTaskRun(
 	serviceAccountName string,
 	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
-
-	// Set revision to empty if the field is not specified in the Build.
-	// This will force Tekton Controller to do a git symbolic-link to HEAD
-	// giving back the default branch of the repository
-	revision := ""
-	if build.Spec.Source.Revision != nil {
-		revision = *build.Spec.Source.Revision
-	}
 
 	// retrieve expected imageURL form build or buildRun
 	var image string
@@ -249,26 +231,6 @@ func GenerateTaskRun(
 			ServiceAccountName: serviceAccountName,
 			TaskSpec:           taskSpec,
 			Resources: &v1beta1.TaskRunResources{
-				Inputs: []v1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-							Name: inputSourceResourceName,
-							ResourceSpec: &taskv1.PipelineResourceSpec{
-								Type: taskv1.PipelineResourceTypeGit,
-								Params: []taskv1.ResourceParam{
-									{
-										Name:  inputGitSourceURL,
-										Value: build.Spec.Source.URL,
-									},
-									{
-										Name:  inputGitSourceRevision,
-										Value: revision,
-									},
-								},
-							},
-						},
-					},
-				},
 				Outputs: []v1beta1.TaskResourceBinding{
 					{
 						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
@@ -284,6 +246,12 @@ func GenerateTaskRun(
 							},
 						},
 					},
+				},
+			},
+			Workspaces: []v1beta1.WorkspaceBinding{
+				{
+					Name:     workspaceSource,
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},

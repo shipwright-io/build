@@ -20,7 +20,6 @@ spec:
           set -euo pipefail
 
           chown -R 1000:1000 /workspace/output
-          chown -R 1000:1000 "$(params.shp-source-root)"
           chown -R 1000:1000 /tekton/home
       resources:
         limits:

@@ -58,9 +58,10 @@ var _ = Describe("Credentials", func() {
 				},
 			}
 
+			// source credential is not added to the service account
 			expectedAfterServiceAccount = &corev1.ServiceAccount{
 				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"}, {Name: "secret_docker.io"}, {Name: "secret_quay.io"},
+					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_docker.io"}, {Name: "secret_quay.io"},
 				},
 			}
 		})

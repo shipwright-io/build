@@ -73,24 +73,41 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(err).To(BeNil())
 			})
 
+			It("should contain a step to clone the Git sources", func() {
+				Expect(got.Steps[0].Name).To(Equal("source-default"))
+				Expect(got.Steps[0].Command[0]).To(Equal("/ko-app/git"))
+				Expect(got.Steps[0].Args).To(Equal([]string{
+					"--url",
+					build.Spec.Source.URL,
+					"--target",
+					"$(params.shp-source-root)",
+					"--result-file-commit-sha",
+					"$(results.shp-source-default-commit-sha.path)",
+				}))
+			})
+
+			It("should contain a result for the Git commit SHA", func() {
+				Expect(got.Results[0].Name).To(Equal("shp-source-default-commit-sha"))
+			})
+
 			It("should ensure IMAGE is replaced by builder image when needed.", func() {
-				Expect(got.Steps[0].Container.Image).To(Equal("quay.io/buildah/stable:latest"))
+				Expect(got.Steps[1].Container.Image).To(Equal("quay.io/buildah/stable:latest"))
 			})
 
 			It("should ensure command replacements happen when needed", func() {
-				Expect(got.Steps[0].Container.Command[0]).To(Equal("/usr/bin/buildah"))
+				Expect(got.Steps[1].Container.Command[0]).To(Equal("/usr/bin/buildah"))
 			})
 
 			It("should ensure resource replacements happen for the first step", func() {
-				Expect(got.Steps[0].Container.Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
+				Expect(got.Steps[1].Container.Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
 			})
 
 			It("should ensure resource replacements happen for the second step", func() {
-				Expect(got.Steps[1].Container.Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
+				Expect(got.Steps[2].Container.Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
 			})
 
 			It("should ensure arg replacements happen when needed", func() {
-				Expect(got.Steps[0].Container.Args).To(Equal(expectedCommandOrArg))
+				Expect(got.Steps[1].Container.Args).To(Equal(expectedCommandOrArg))
 			})
 
 			It("should ensure top level volumes are populated", func() {
@@ -248,7 +265,7 @@ var _ = Describe("GenerateTaskrun", func() {
 						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
 				}
-				Expect(got.Spec.TaskSpec.Steps[0].Resources).To(Equal(expectedResourceOrArg))
+				Expect(got.Spec.TaskSpec.Steps[1].Resources).To(Equal(expectedResourceOrArg))
 			})
 
 			It("should have no timeout set", func() {
@@ -344,7 +361,7 @@ var _ = Describe("GenerateTaskrun", func() {
 						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
 				}
-				Expect(got.Spec.TaskSpec.Steps[0].Resources).To(Equal(expectedResourceOrArg))
+				Expect(got.Spec.TaskSpec.Steps[1].Resources).To(Equal(expectedResourceOrArg))
 			})
 
 			It("should have the timeout set correctly", func() {

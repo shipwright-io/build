@@ -17,7 +17,6 @@ spec:
       args:
         - -c
         - >
-          chown -R "1000:1000" "$(params.shp-source-root)" &&
           chown -R "1000:1000" /tekton/home &&
           chown -R "1000:1000" /cache &&
           chown -R "1000:1000" /layers
