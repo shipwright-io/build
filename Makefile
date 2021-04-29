@@ -212,7 +212,7 @@ test-unit-ginkgo: ginkgo
 		-slowSpecThreshold=240 \
 		-race \
 		-trace \
-		internal/... \
+		cmd/... \
 		pkg/...
 
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
