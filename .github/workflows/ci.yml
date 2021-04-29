@@ -112,8 +112,8 @@ jobs:
           run: |
             kubectl apply -f test/data/registry.yaml
             kubectl -n registry rollout status deployment registry --timeout=1m
-        - name: Install ko
-          run: curl -fsL https://github.com/google/ko/releases/download/v0.8.2/ko_0.8.2_Linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin ko
+        - name: Install Ko
+          uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
         - name: Install Shipwright Build
           run: |
             make install-controller-kind
