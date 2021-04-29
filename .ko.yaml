@@ -1,1 +1,4 @@
 defaultBaseImage: registry.access.redhat.com/ubi8/ubi-minimal
+
+baseImageOverrides:
+  github.com/shipwright-io/build/cmd/git: quay.io/shipwright/base-git
