@@ -117,9 +117,9 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 
 ## BuildKit
 
-[BuildKit](https://github.com/moby/buildkit) is composed of the `buildctl` client and the `buildkitd` daemon. For the `buildkit` ClusterBuildStrategy, it runs on a [daemonless](https://github.com/moby/buildkit#daemonless) mode, where both client and ephemeral daemon run in a single container. In addition, it runs without privileges ( _[rootless](https://github.com/moby/buildkit/blob/master/docs/rootless.md)_ ).
+[BuildKit](https://github.com/moby/buildkit) is composed of the `buildctl` client and the `buildkitd` daemon. For the `buildkit` ClusterBuildStrategy, it runs on a [daemonless](https://github.com/moby/buildkit#daemonless) mode, where both client and ephemeral daemon run in a single container. In addition, it runs without privileges (_[rootless](https://github.com/moby/buildkit/blob/master/docs/rootless.md)_).
 
-The `buildkit-insecure` ClusterBuildStrategy exists to support users pushing to an insecure HTTP registry. We use this strategy at the moment only for testing purposes against a local in-cluster registry. In the future, this strategy will be removed in favor of a single one where users can parameterize the secure/insecure behaviour.
+The `buildkit-insecure` ClusterBuildStrategy exists to support users pushing to an insecure container registry. We use this strategy at the moment only for testing purposes against a local in-cluster registry. In the future, this strategy will be removed in favor of a single one where users can parameterize the secure/insecure behaviour.
 
 ### Cache Exporters
 
@@ -130,8 +130,20 @@ By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the
 The `buildkit` ClusterBuildStrategy currently locks the following parameters:
 
 - A `Dockerfile` name needs to be `Dockerfile`, this is currently not configurable.
-- Exporter caches are enable by default, this is currently not configurable.
+- Exporter caches are enabled by default, this is currently not configurable.
 - To allow running rootless, it requires both [AppArmor](https://kubernetes.io/docs/tutorials/clusters/apparmor/) as well as [SecComp](https://kubernetes.io/docs/tutorials/clusters/seccomp/) to be disabled using the `unconfined` profile.
+
+### Usage in Clusters with Pod Security Standards
+
+The BuildKit strategy contains fields with regards to security settings. It therefore depends on the respective cluster setup and administrative configuration. These settings are:
+
+- Defining the `unconfined` profile for both AppArmor and seccomp as required by the underlying `rootlesskit`.
+- The `allowPrivilegeEscalation` settings is set to `true` to be able to use binaries that have the `setuid` bit set in order to run with "root" level privileges. In case of BuildKit, this is required by `rootlesskit` in order to set the user namespace mapping file `/proc/<pid>/uid_map`.
+- Use of non-root user with UID 1000/GID 1000 as the `runAsUser`.
+
+These settings have no effect in case Pod Security Standards are not used.
+
+_Please note:_ At this point in time, there is no way to run `rootlesskit` to start the BuildKit daemon without the `allowPrivilegeEscalation` flag set to `true`. Clusters with the `Restricted` security standard in place will not be able to use this build strategy.
 
 ### Installing BuildKit Strategy
 
