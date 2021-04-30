@@ -27,12 +27,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v2
     - name: Install Ko
-      run: |
-        echo '::group:: install ko'
-        curl -L https://github.com/google/ko/releases/download/v0.8.2/ko_0.8.2_Linux_x86_64.tar.gz | tar xzf - ko
-        chmod +x ./ko
-        sudo mv ko /usr/local/bin
-        echo '::endgroup::'
+      uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
 
     - name: Ko resolve nightly.yaml
       env:
