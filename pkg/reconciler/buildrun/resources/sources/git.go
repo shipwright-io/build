@@ -25,29 +25,19 @@ func AppendGitStep(
 		Description: "The commit SHA of the cloned source.",
 	})
 
-	// initialize the step
+	// initialize the step from the template
 	gitStep := tektonv1beta1.Step{
-		Container: corev1.Container{
-			Name:  fmt.Sprintf("source-%s", name),
-			Image: cfg.GitContainerImage,
-			Command: []string{
-				"/ko-app/git",
-			},
-			Args: []string{
-				"--url",
-				source.URL,
-				"--target",
-				fmt.Sprintf("$(params.%s%s)", prefixParamsResultsVolumes, paramSourceRoot),
-				"--result-file-commit-sha",
-				fmt.Sprintf("$(results.%ssource-%s-commit-sha.path)", prefixParamsResultsVolumes, name),
-			},
-			SecurityContext: &corev1.SecurityContext{
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
-			},
+		Container: *cfg.GitContainerTemplate.DeepCopy(),
+	}
 
-			// TODO Resources
-		},
+	gitStep.Container.Name = fmt.Sprintf("source-%s", name)
+	gitStep.Container.Args = []string{
+		"--url",
+		source.URL,
+		"--target",
+		fmt.Sprintf("$(params.%s%s)", prefixParamsResultsVolumes, paramSourceRoot),
+		"--result-file-commit-sha",
+		fmt.Sprintf("$(results.%ssource-%s-commit-sha.path)", prefixParamsResultsVolumes, name),
 	}
 
 	// Check if a revision is defined

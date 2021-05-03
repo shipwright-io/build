@@ -17,8 +17,10 @@ const (
 )
 
 var (
-	nonRoot         = pointer.Int64Ptr(1000)
-	secretMountMode = pointer.Int32Ptr(256) // is 0400
+	nonRoot = pointer.Int64Ptr(1000)
+
+	// secrets are volumes and volumes are mounted as root, as we run as non-root, we must use 0444 to allow non-root to read it
+	secretMountMode = pointer.Int32Ptr(0444)
 )
 
 func AppendSecretVolume(

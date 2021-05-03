@@ -42,7 +42,7 @@ var _ = Describe("Git", func() {
 		It("adds a step", func() {
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Name).To(Equal("source-default"))
-			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.GitContainerImage))
+			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.GitContainerTemplate.Image))
 			Expect(taskSpec.Steps[0].Args).To(Equal([]string{
 				"--url",
 				"https://github.com/shipwright-io/build",
@@ -86,7 +86,7 @@ var _ = Describe("Git", func() {
 		It("adds a step", func() {
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Name).To(Equal("source-default"))
-			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.GitContainerImage))
+			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.GitContainerTemplate.Image))
 			Expect(taskSpec.Steps[0].Args).To(Equal([]string{
 				"--url",
 				"git@github.com:shipwright-io/build.git",

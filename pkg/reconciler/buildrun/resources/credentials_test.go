@@ -97,6 +97,8 @@ var _ = Describe("Credentials", func() {
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
 						URL: "a/b/c",
+					},
+					Output: buildv1alpha1.Image{
 						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_b",
 						},
@@ -134,6 +136,16 @@ var _ = Describe("Credentials", func() {
 					Source: buildv1alpha1.Source{
 						URL:         "a/b/c",
 						Credentials: nil,
+					},
+				},
+			}
+
+			// This is just a placeholder BuildRun with no
+			// SecretRef added to the ones from the Build
+			buildRun = &buildv1alpha1.BuildRun{
+				Spec: buildv1alpha1.BuildRunSpec{
+					Output: &buildv1alpha1.Image{
+						Image: "https://image.url/",
 					},
 				},
 			}

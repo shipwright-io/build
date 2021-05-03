@@ -5,12 +5,15 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -26,7 +29,9 @@ const (
 	remoteArtifactsEnvVar       = "REMOTE_ARTIFACTS_CONTAINER_IMAGE"
 
 	gitDefaultImage = "quay.io/shipwright/git:latest"
-	gitImageEnvVar  = "GIT_CONTAINER_IMAGE"
+	// gitDefaultImage            = "boatyard/git:latest"
+	gitImageEnvVar             = "GIT_CONTAINER_IMAGE"
+	gitContainerTemplateEnvVar = "GIT_CONTAINER_TEMPLATE"
 
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
@@ -59,13 +64,15 @@ var (
 	metricBuildRunCompletionDurationBuckets = prometheus.LinearBuckets(50, 50, 10)
 	metricBuildRunEstablishDurationBuckets  = []float64{0, 1, 2, 3, 5, 7, 10, 15, 20, 30}
 	metricBuildRunRampUpDurationBuckets     = prometheus.LinearBuckets(0, 1, 10)
+
+	nonRoot = pointer.Int64Ptr(1000)
 )
 
 // Config hosts different parameters that
 // can be set to use on the Build controllers
 type Config struct {
 	CtxTimeOut                    time.Duration
-	GitContainerImage             string
+	GitContainerTemplate          corev1.Container
 	KanikoContainerImage          string
 	RemoteArtifactsContainerImage string
 	Prometheus                    PrometheusConfig
@@ -103,7 +110,7 @@ type ControllerOptions struct {
 	MaxConcurrentReconciles int
 }
 
-// KubeAPIOptions contains configrable options for the kube API client
+// KubeAPIOptions contains configurable options for the kube API client
 type KubeAPIOptions struct {
 	QPS   int
 	Burst int
@@ -112,8 +119,17 @@ type KubeAPIOptions struct {
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
 func NewDefaultConfig() *Config {
 	return &Config{
-		CtxTimeOut:                    contextTimeout,
-		GitContainerImage:             gitDefaultImage,
+		CtxTimeOut: contextTimeout,
+		GitContainerTemplate: corev1.Container{
+			Image: gitDefaultImage,
+			Command: []string{
+				"/ko-app/git",
+			},
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
+			},
+		},
 		KanikoContainerImage:          kanikoDefaultImage,
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
 		Prometheus: PrometheusConfig{
@@ -155,8 +171,18 @@ func (c *Config) SetConfigFromEnv() error {
 		c.CtxTimeOut = time.Duration(i) * time.Second
 	}
 
+	if gitContainerTemplate := os.Getenv(gitContainerTemplateEnvVar); gitContainerTemplate != "" {
+		c.GitContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(gitContainerTemplate), &c.GitContainerTemplate); err != nil {
+			return err
+		}
+		if c.GitContainerTemplate.Image == "" {
+			c.GitContainerTemplate.Image = gitDefaultImage
+		}
+	}
+
 	if gitImage := os.Getenv(gitImageEnvVar); gitImage != "" {
-		c.GitContainerImage = gitImage
+		c.GitContainerTemplate.Image = gitImage
 	}
 
 	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {
