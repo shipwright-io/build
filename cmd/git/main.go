@@ -199,10 +199,27 @@ func clone(ctx context.Context) error {
 
 		switch credType {
 		case typePrivateKey:
-			var sshCmd = []string{"ssh",
-				"-i",
-				filepath.Join(flagValues.secretPath, "ssh-privatekey"),
+			// Since the key provided via a secret can have undesirable file
+			// permissions, it will end up failing due to SSH sanity checks.
+			// Therefore, create a temporary replacement with the right
+			// file permissions.
+			data, err := ioutil.ReadFile(filepath.Join(flagValues.secretPath, "ssh-privatekey"))
+			if err != nil {
+				return err
 			}
+
+			sshPrivateKeyFile, err := ioutil.TempFile(os.TempDir(), "ssh-private-key")
+			if err != nil {
+				return err
+			}
+
+			defer os.Remove(sshPrivateKeyFile.Name())
+
+			if err := ioutil.WriteFile(sshPrivateKeyFile.Name(), data, 0400); err != nil {
+				return err
+			}
+
+			var sshCmd = []string{"ssh", "-i", sshPrivateKeyFile.Name()}
 
 			var knownHostsFile = filepath.Join(flagValues.secretPath, "known_hosts")
 			if hasFile(knownHostsFile) {
