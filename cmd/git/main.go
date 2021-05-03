@@ -19,15 +19,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// CLI tool flag names
-const (
-	FlagURL                 = "url"
-	FlagRevision            = "revision"
-	FlagTarget              = "target"
-	FlagResultFileCommitSHA = "result-file-commit-sha"
-	FlagSecretPath          = "secret-path"
-)
-
 type credentialType int
 
 const (
@@ -68,11 +59,11 @@ func init() {
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddGoFlagSet(ctxlog.CustomZapFlagSet())
 
-	pflag.StringVar(&flagValues.url, FlagURL, "", "The URL of the Git repository")
-	pflag.StringVar(&flagValues.revision, FlagRevision, "", "The revision of the Git repository to be cloned. Optional, defaults to the default branch.")
-	pflag.StringVar(&flagValues.target, FlagTarget, "", "The target directory of the clone operation")
-	pflag.StringVar(&flagValues.resultFileCommitSha, FlagResultFileCommitSHA, "", "A file to write the commit sha to.")
-	pflag.StringVar(&flagValues.secretPath, FlagSecretPath, "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
+	pflag.StringVar(&flagValues.url, "url", "", "The URL of the Git repository")
+	pflag.StringVar(&flagValues.revision, "revision", "", "The revision of the Git repository to be cloned. Optional, defaults to the default branch.")
+	pflag.StringVar(&flagValues.target, "target", "", "The target directory of the clone operation")
+	pflag.StringVar(&flagValues.resultFileCommitSha, "result-file-commit-sha", "", "A file to write the commit sha to.")
+	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
 }
 
 func main() {
@@ -199,10 +190,27 @@ func clone(ctx context.Context) error {
 
 		switch credType {
 		case typePrivateKey:
-			var sshCmd = []string{"ssh",
-				"-i",
-				filepath.Join(flagValues.secretPath, "ssh-privatekey"),
+			// Since the key provided via a secret can have undesirable file
+			// permissions, it will end up failing due to SSH sanity checks.
+			// Therefore, create a temporary replacement with the right
+			// file permissions.
+			data, err := ioutil.ReadFile(filepath.Join(flagValues.secretPath, "ssh-privatekey"))
+			if err != nil {
+				return err
 			}
+
+			sshPrivateKeyFile, err := ioutil.TempFile(os.TempDir(), "ssh-private-key")
+			if err != nil {
+				return err
+			}
+
+			defer os.Remove(sshPrivateKeyFile.Name())
+
+			if err := ioutil.WriteFile(sshPrivateKeyFile.Name(), data, 0400); err != nil {
+				return err
+			}
+
+			var sshCmd = []string{"ssh", "-i", sshPrivateKeyFile.Name()}
 
 			var knownHostsFile = filepath.Join(flagValues.secretPath, "known_hosts")
 			if hasFile(knownHostsFile) {
@@ -311,28 +319,33 @@ func hasFile(elem ...string) bool {
 }
 
 func checkCredentials() (credentialType, error) {
+	// Checking whether mounted secret is of type `kubernetes.io/ssh-auth`
+	// in which case there is a file called ssh-privatekey
 	hasPrivateKey := hasFile(flagValues.secretPath, "ssh-privatekey")
 	isSSHGitURL := sshGitURLRegEx.MatchString(flagValues.url)
 	switch {
+	case hasPrivateKey && isSSHGitURL:
+		return typePrivateKey, nil
+
 	case hasPrivateKey && !isSSHGitURL:
 		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL"}
 
 	case !hasPrivateKey && isSSHGitURL:
 		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL"}
-
-	case hasPrivateKey && isSSHGitURL:
-		return typePrivateKey, nil
 	}
 
+	// Checking whether mounted secret is of type `kubernetes.io/basic-auth`
+	// in which case there need to be the files username and password
 	hasUsername := hasFile(flagValues.secretPath, "username")
 	hasPassword := hasFile(flagValues.secretPath, "password")
 	isHTTPSURL := strings.HasPrefix(flagValues.url, "https")
 	switch {
+	case hasUsername && hasPassword && isHTTPSURL:
+		return typeUsernamePassword, nil
+
 	case hasUsername && !hasPassword || !hasUsername && hasPassword:
 		return typeUndef, &ExitError{Code: 110, Message: "Basic Auth incomplete: Both username and password need to be configured"}
 
-	case hasUsername && hasPassword && isHTTPSURL:
-		return typeUsernamePassword, nil
 	}
 
 	return typeUndef, &ExitError{Code: 110, Message: "Unsupported type of credentials provided, either SSH private key or username/password is supported"}

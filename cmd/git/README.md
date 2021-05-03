@@ -7,7 +7,7 @@
 - SSH private key based access to Git repositories
 - Basic Auth username/password access to Git repositories
 - Git Large File Storage (LFS) based Git repositories
-- Recursive Submodule update
+- Recursive sub-module update
 - Cloning using default remote branch
 - Cloning using specific branch name
 - Cloning using specific tag
@@ -15,6 +15,16 @@
 - Does not interfere with local SSH config
 
 ## Development
+
+### Base image
+
+The Git Clone Wrapper wraps around command line tools to serve as convenience layer. Therefore, it requires the respective binaries to be in the path. If you want to build your own base image for the wrapper CLI, make sure the following dependencies are met:
+
+- **SSH** - version `OpenSSH_8.0p1, OpenSSL 1.1.1g FIPS  21 Apr 2020` is known to work, older versions are very likely to work as well
+- **Git** - version `2.27.0` is known to work, older versions are very likely to work as well
+- **Git Large File Storage (LFS)** - version `2.11.0` is known to be working
+
+### Run the CLI code
 
 - Run it locally:
 
