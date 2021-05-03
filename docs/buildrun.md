@@ -56,6 +56,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The value overwrites the value that is defined in the `Build`.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value which is defined in `Build`. ( Note: other properties of the output, for example, the credentials cannot be specified in the buildRun spec. )
+  - `spec.output.credentials.name` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
 
 ### Defining the BuildRef
 

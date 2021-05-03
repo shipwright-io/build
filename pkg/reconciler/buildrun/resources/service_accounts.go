@@ -70,7 +70,7 @@ func GenerateSA(ctx context.Context, client client.Client, build *buildv1alpha1.
 		ctxlog.Debug(ctx, "automatic generation of service account", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
 
 		// add the secrets references into the new sa
-		ApplyCredentials(ctx, build, serviceAccount)
+		ApplyCredentials(ctx, build, buildRun, serviceAccount)
 
 		// if we didnt have the sa, then create one and ensure the Build secrets are referenced
 		if err := client.Create(ctx, serviceAccount); err != nil {
@@ -143,7 +143,7 @@ func RetrieveServiceAccount(ctx context.Context, client client.Client, build *bu
 	}
 
 	// Add credentials and update the service account
-	if modified := ApplyCredentials(ctx, build, serviceAccount); modified {
+	if modified := ApplyCredentials(ctx, build, buildRun, serviceAccount); modified {
 		ctxlog.Info(ctx, "updating ServiceAccount with secrets from build", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
 		if err := client.Update(ctx, serviceAccount); err != nil {
 			return nil, err

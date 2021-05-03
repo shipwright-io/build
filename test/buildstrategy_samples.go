@@ -15,7 +15,7 @@ metadata:
 spec:
   buildSteps:
     - name: buildah-bud
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -37,7 +37,7 @@ spec:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       securityContext:
         privileged: true
       command:

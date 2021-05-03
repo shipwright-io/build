@@ -91,7 +91,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure IMAGE is replaced by builder image when needed.", func() {
-				Expect(got.Steps[1].Container.Image).To(Equal("quay.io/buildah/stable:latest"))
+				Expect(got.Steps[1].Container.Image).To(Equal("quay.io/containers/buildah:v1.20.1"))
 			})
 
 			It("should ensure command replacements happen when needed", func() {
