@@ -10,7 +10,7 @@ spec:
       workingDir: $(params.shp-source-root)
       args:
         - build
-        - .
+        - $(params.shp-source-context)
         - $(build.builder.image)
         - $(params.shp-output-image)
         - --as-dockerfile=/s2i/Dockerfile

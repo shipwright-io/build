@@ -7,7 +7,7 @@ spec:
     - command:
         - /usr/local/bin/s2i
         - build
-        - .
+        - $(params.shp-source-context)
         - $(build.builder.image)
         - '--as-dockerfile'
         - /gen-source/Dockerfile.gen

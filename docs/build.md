@@ -199,7 +199,8 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: source-build/
   strategy:
     name: source-to-image
     kind: ClusterBuildStrategy
@@ -220,7 +221,8 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: source-build/
   strategy:
     name: source-to-image
     kind: ClusterBuildStrategy
@@ -239,7 +241,8 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
-    url: https://github.com/sclorg/nodejs-ex
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: source-build/
   strategy:
     name: source-to-image
     kind: ClusterBuildStrategy
