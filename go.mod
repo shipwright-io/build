@@ -3,7 +3,7 @@ module github.com/shipwright-io/build
 go 1.15
 
 require (
-	github.com/go-git/go-git/v5 v5.2.0
+	github.com/go-git/go-git/v5 v5.3.1-0.20210421110026-67d34902b0c4
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0 // indirect
 	github.com/go-openapi/spec v0.20.2
