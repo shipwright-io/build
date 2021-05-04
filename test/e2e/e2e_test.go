@@ -445,105 +445,21 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			}
 		})
 
-		Context("when a Buildah build is defined to use a private GitHub repository", func() {
+		Context("when a nodejs build is defined to use a private GitHub repository", func() {
 
 			BeforeEach(func() {
-				testID = generateTestID("private-github-buildah")
+				testID = generateTestID("private-github-nodejs-buildpack")
 
 				// create the build definition
 				build = createBuild(
 					testBuild,
 					testID,
-					"test/data/build_buildah_cr_private_github.yaml",
+					"test/data/build_buildpacks-v3_private_github_cr.yaml",
 				)
 			})
 
 			It("successfully runs a build", func() {
-				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
-				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
-
-				validateBuildRunToSucceed(testBuild, buildRun)
-			})
-		})
-
-		Context("when a Buildah build is defined to use a private GitLab repository", func() {
-
-			BeforeEach(func() {
-				testID = generateTestID("private-gitlab-buildah")
-
-				// create the build definition
-				build = createBuild(
-					testBuild,
-					testID,
-					"test/data/build_buildah_cr_private_gitlab.yaml",
-				)
-			})
-
-			It("successfully runs a build", func() {
-				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
-				Expect(err).ToNot(HaveOccurred())
-
-				validateBuildRunToSucceed(testBuild, buildRun)
-			})
-		})
-
-		Context("when a Kaniko build is defined to use a private GitHub repository", func() {
-
-			BeforeEach(func() {
-				testID = generateTestID("private-github-kaniko")
-
-				// create the build definition
-				build = createBuild(
-					testBuild,
-					testID,
-					"test/data/build_kaniko_cr_private_github.yaml",
-				)
-			})
-
-			It("successfully runs a build", func() {
-				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
-				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
-
-				validateBuildRunToSucceed(testBuild, buildRun)
-			})
-		})
-
-		Context("when a Kaniko build is defined to use a private GitLab repository", func() {
-
-			BeforeEach(func() {
-				testID = generateTestID("private-gitlab-kaniko")
-
-				// create the build definition
-				build = createBuild(
-					testBuild,
-					testID,
-					"test/data/build_kaniko_cr_private_gitlab.yaml",
-				)
-			})
-
-			It("successfully runs a build", func() {
-				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
-				Expect(err).ToNot(HaveOccurred())
-
-				validateBuildRunToSucceed(testBuild, buildRun)
-			})
-		})
-
-		Context("when a s2i build is defined to use a private GitHub repository", func() {
-
-			BeforeEach(func() {
-				testID = generateTestID("private-github-s2i")
-
-				// create the build definition
-				build = createBuild(
-					testBuild,
-					testID,
-					"test/data/build_source-to-image_cr_private_github.yaml",
-				)
-			})
-
-			It("successfully runs a build", func() {
-				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
+				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_private_github_cr.yaml")
 				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 				validateBuildRunToSucceed(testBuild, buildRun)
