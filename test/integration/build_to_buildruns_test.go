@@ -207,7 +207,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 				// BuildRun reason can be ExceededNodeResources
 				// if the Tekton TaskRun Pod is queued due to
 				// insufficient cluster resources.
-				Or(Equal("Pending"), Equal("ExceededNodeResources")))
+				Or(Equal("Pending"), Equal("ExceededNodeResources"), Equal("Running")))
 		})
 	})
 
