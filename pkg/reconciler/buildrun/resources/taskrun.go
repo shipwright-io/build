@@ -113,8 +113,6 @@ func GenerateTaskSpec(
 				Type:        taskv1.ParamTypeString,
 			},
 		},
-		//		Steps:   []v1beta1.Step{},
-		//		Volumes: []corev1.Volume{},
 		Workspaces: []v1beta1.WorkspaceDeclaration{
 			{
 				Name: workspaceSource,

@@ -11,6 +11,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
+// AmendTaskSpecWithSources adds steps, results and volumes for spec.source and spec.sources
 func AmendTaskSpecWithSources(
 	cfg *config.Config,
 	taskSpec *v1beta1.TaskSpec,
@@ -23,7 +24,7 @@ func AmendTaskSpecWithSources(
 	if build.Spec.Sources != nil {
 		for _, source := range *build.Spec.Sources {
 			// today, we only have HTTP sources
-			sources.AppendHttpStep(cfg, taskSpec, source)
+			sources.AppendHTTPStep(cfg, taskSpec, source)
 		}
 	}
 }

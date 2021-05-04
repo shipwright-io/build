@@ -29,7 +29,7 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("adds the first step", func() {
-			sources.AppendHttpStep(cfg, taskSpec, buildv1alpha1.BuildSource{
+			sources.AppendHTTPStep(cfg, taskSpec, buildv1alpha1.BuildSource{
 				Name: "logo",
 				URL:  "https://shipwright.io/icons/logo.svg",
 			})
@@ -70,7 +70,7 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("updates the existing step", func() {
-			sources.AppendHttpStep(cfg, taskSpec, buildv1alpha1.BuildSource{
+			sources.AppendHTTPStep(cfg, taskSpec, buildv1alpha1.BuildSource{
 				Name: "logo",
 				URL:  "https://shipwright.io/icons/logo.svg",
 			})
@@ -100,7 +100,7 @@ var _ = Describe("HTTP", func() {
 		})
 
 		It("appends the http step", func() {
-			sources.AppendHttpStep(cfg, taskSpec, buildv1alpha1.BuildSource{
+			sources.AppendHTTPStep(cfg, taskSpec, buildv1alpha1.BuildSource{
 				Name: "logo",
 				URL:  "https://shipwright.io/icons/logo.svg",
 			})

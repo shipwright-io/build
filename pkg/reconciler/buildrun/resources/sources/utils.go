@@ -17,12 +17,11 @@ const (
 )
 
 var (
-	nonRoot = pointer.Int64Ptr(1000)
-
 	// secrets are volumes and volumes are mounted as root, as we run as non-root, we must use 0444 to allow non-root to read it
 	secretMountMode = pointer.Int32Ptr(0444)
 )
 
+// AppendSecretVolume checks if a volume for a secret already exists, if not it appends it to the TaskSpec
 func AppendSecretVolume(
 	taskSpec *tektonv1beta1.TaskSpec,
 	secretName string,

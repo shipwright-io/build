@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// AppendGitStep appends the Git step and results and volume if needed to the TaskSpec
 func AppendGitStep(
 	cfg *config.Config,
 	taskSpec *tektonv1beta1.TaskSpec,

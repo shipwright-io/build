@@ -28,8 +28,10 @@ const (
 	remoteArtifactsDefaultImage = "quay.io/quay/busybox:latest"
 	remoteArtifactsEnvVar       = "REMOTE_ARTIFACTS_CONTAINER_IMAGE"
 
-	gitDefaultImage = "quay.io/shipwright/git:latest"
-	// gitDefaultImage            = "boatyard/git:latest"
+	// the Git image is built using ko which can replace environment variable values in the deployment, so once we decide to move
+	// from environment variables to a ConfigMap, then we should move the container template, but retain the environment variable
+	// (or make it an argument like Tekton)
+	gitDefaultImage            = "quay.io/shipwright/git:latest"
 	gitImageEnvVar             = "GIT_CONTAINER_IMAGE"
 	gitContainerTemplateEnvVar = "GIT_CONTAINER_TEMPLATE"
 

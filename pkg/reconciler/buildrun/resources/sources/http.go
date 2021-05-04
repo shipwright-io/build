@@ -9,13 +9,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func AppendHttpStep(
+// AppendHTTPStep appends the step for a HTTP source to the TaskSpec
+func AppendHTTPStep(
 	cfg *config.Config,
 	taskSpec *tektonv1beta1.TaskSpec,
 	source buildv1alpha1.BuildSource,
 ) {
 	// HTTP is done currently all in a single step, see if there is already one
-	httpStep := findExistingHttpSourcesStep(taskSpec)
+	httpStep := findExistingHTTPSourcesStep(taskSpec)
 	if httpStep != nil {
 		httpStep.Container.Args[3] = fmt.Sprintf("%s ; wget \"%s\"", httpStep.Container.Args[3], source.URL)
 	} else {
@@ -41,7 +42,7 @@ func AppendHttpStep(
 	}
 }
 
-func findExistingHttpSourcesStep(taskSpec *tektonv1beta1.TaskSpec) *tektonv1beta1.Step {
+func findExistingHTTPSourcesStep(taskSpec *tektonv1beta1.TaskSpec) *tektonv1beta1.Step {
 	for _, candidateStep := range taskSpec.Steps {
 		if candidateStep.Name == "sources-http" {
 			return &candidateStep

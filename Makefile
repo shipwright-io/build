@@ -66,6 +66,7 @@ TEST_SOURCE_SECRET ?=
 # Image settings for building and pushing images
 IMAGE_HOST ?= quay.io
 IMAGE ?= shipwright/shipwright-build-controller
+GIT_IMAGE ?= shipwright/git
 TAG ?= latest
 
 # options for generating crds with controller-gen
@@ -226,6 +227,17 @@ test-integration: install-apis ginkgo
 		-trace \
 		test/integration/...
 
+
+.PHONY: test-integration-kind
+test-integration-kind: install-apis ginkgo
+	KIND_GIT_IMAGE=$$(GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko publish "./cmd/git") && \
+	GIT_CONTAINER_IMAGE=$${KIND_GIT_IMAGE} GO111MODULE=on $(GINKGO) \
+		-randomizeAllSpecs \
+		-randomizeSuites \
+		-failOnPending \
+		-slowSpecThreshold=240 \
+		-trace \
+		test/integration/...
 
 .PHONY: test-e2e
 test-e2e: install-strategies test-e2e-plain
