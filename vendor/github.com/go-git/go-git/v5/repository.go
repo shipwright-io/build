@@ -16,6 +16,7 @@ import (
 
 	"github.com/go-git/go-git/v5/storage/filesystem/dotgit"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/internal/revision"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -27,7 +28,6 @@ import (
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/go-git/go-git/v5/utils/ioutil"
 	"github.com/imdario/mergo"
-	"golang.org/x/crypto/openpgp"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/osfs"
@@ -190,10 +190,6 @@ func Open(s storage.Storer, worktree billy.Filesystem) (*Repository, error) {
 // Clone a repository into the given Storer and worktree Filesystem with the
 // given options, if worktree is nil a bare repository is created. If the given
 // storer is not empty ErrRepositoryAlreadyExists is returned.
-//
-// The provided Context must be non-nil. If the context expires before the
-// operation is complete, an error is returned. The context only affects to the
-// transport operations.
 func Clone(s storage.Storer, worktree billy.Filesystem, o *CloneOptions) (*Repository, error) {
 	return CloneContext(context.Background(), s, worktree, o)
 }
@@ -203,7 +199,7 @@ func Clone(s storage.Storer, worktree billy.Filesystem, o *CloneOptions) (*Repos
 // given storer is not empty ErrRepositoryAlreadyExists is returned.
 //
 // The provided Context must be non-nil. If the context expires before the
-// operation is complete, an error is returned. The context only affects to the
+// operation is complete, an error is returned. The context only affects the
 // transport operations.
 func CloneContext(
 	ctx context.Context, s storage.Storer, worktree billy.Filesystem, o *CloneOptions,
@@ -398,7 +394,7 @@ func PlainClone(path string, isBare bool, o *CloneOptions) (*Repository, error) 
 // ErrRepositoryAlreadyExists is returned.
 //
 // The provided Context must be non-nil. If the context expires before the
-// operation is complete, an error is returned. The context only affects to the
+// operation is complete, an error is returned. The context only affects the
 // transport operations.
 //
 // TODO(mcuadros): move isBare to CloneOptions in v5
@@ -841,12 +837,14 @@ func (r *Repository) clone(ctx context.Context, o *CloneOptions) error {
 	}
 
 	ref, err := r.fetchAndUpdateReferences(ctx, &FetchOptions{
-		RefSpecs:   c.Fetch,
-		Depth:      o.Depth,
-		Auth:       o.Auth,
-		Progress:   o.Progress,
-		Tags:       o.Tags,
-		RemoteName: o.RemoteName,
+		RefSpecs:        c.Fetch,
+		Depth:           o.Depth,
+		Auth:            o.Auth,
+		Progress:        o.Progress,
+		Tags:            o.Tags,
+		RemoteName:      o.RemoteName,
+		InsecureSkipTLS: o.InsecureSkipTLS,
+		CABundle:        o.CABundle,
 	}, o.ReferenceName)
 	if err != nil {
 		return err
@@ -1099,7 +1097,7 @@ func (r *Repository) Fetch(o *FetchOptions) error {
 // no changes to be fetched, or an error.
 //
 // The provided Context must be non-nil. If the context expires before the
-// operation is complete, an error is returned. The context only affects to the
+// operation is complete, an error is returned. The context only affects the
 // transport operations.
 func (r *Repository) FetchContext(ctx context.Context, o *FetchOptions) error {
 	if err := o.Validate(); err != nil {
@@ -1126,7 +1124,7 @@ func (r *Repository) Push(o *PushOptions) error {
 // FetchOptions.RemoteName.
 //
 // The provided Context must be non-nil. If the context expires before the
-// operation is complete, an error is returned. The context only affects to the
+// operation is complete, an error is returned. The context only affects the
 // transport operations.
 func (r *Repository) PushContext(ctx context.Context, o *PushOptions) error {
 	if err := o.Validate(); err != nil {
