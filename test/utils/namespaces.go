@@ -29,39 +29,48 @@ func (t *TestBuild) CreateNamespace() error {
 	}
 
 	// wait for the default service account to exist and contain the token secret
-	var (
-		pollServiceAccount = func() (bool, error) {
+	pollServiceAccount := func() (bool, error) {
 
-			serviceAccountInterface := t.Clientset.CoreV1().ServiceAccounts(t.Namespace)
+		serviceAccountInterface := t.Clientset.CoreV1().ServiceAccounts(t.Namespace)
 
-			serviceAccount, err := serviceAccountInterface.Get(context.TODO(), "default", metav1.GetOptions{})
-			if err != nil {
-				if !apierrors.IsNotFound(err) {
-					return false, err
-				}
-				return false, nil
+		serviceAccount, err := serviceAccountInterface.Get(context.TODO(), "default", metav1.GetOptions{})
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				return false, err
 			}
-
-			if len(serviceAccount.Secrets) > 0 {
-				return true, nil
-			}
-
 			return false, nil
 		}
-	)
+
+		if len(serviceAccount.Secrets) > 0 {
+			return true, nil
+		}
+
+		return false, nil
+	}
 
 	return wait.PollImmediate(t.Interval, t.TimeOut, pollServiceAccount)
 }
 
-// DeleteNamespaces remove existing namespaces that match the provided list name items
-func (t *TestBuild) DeleteNamespaces(nsList []string) error {
+// DeleteNamespace deletes the namespace with the current test name
+func (t *TestBuild) DeleteNamespace() error {
 	client := t.Clientset.CoreV1().Namespaces()
 
-	for _, ns := range nsList {
-		err := client.Delete(context.TODO(), ns, metav1.DeleteOptions{})
-		if err != nil {
-			return err
+	if err := client.Delete(context.TODO(), t.Namespace, metav1.DeleteOptions{}); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
 		}
+		return err
 	}
-	return nil
+
+	// wait for the namespace to be deleted
+	pollNamespace := func() (bool, error) {
+
+		if _, err := client.Get(context.TODO(), t.Namespace, metav1.GetOptions{}); err != nil && apierrors.IsNotFound(err) {
+			return true, nil
+		}
+
+		return false, nil
+	}
+
+	return wait.PollImmediate(t.Interval, t.TimeOut, pollNamespace)
 }
