@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 -->
 
 ---
-title: Expressing Environment Variables in Shipwright API
+title: Expressing Execution Environment Variables in Shipwright API
 authors:
   - "@gabemontero"
 
@@ -13,6 +13,7 @@ reviewers:
   - "@sbose78"
   - "@SaschaSchwarze0"
   - "@otaviof"
+  - "@adambkaplan"
 <!-- 
 Note from Gabe: I went light (i.e. just Shoubhik since he asked for this EP) on reviewers as a first pass,
 only because it implied a mandate / expectation.  I've chosen to update this list and folks actually review.
@@ -20,6 +21,10 @@ only because it implied a mandate / expectation.  I've chosen to update this lis
 
 approvers:
   - "@sbose78"
+  - "@SaschaSchwarze0"
+  - "@otaviof"
+  - "@adambkaplan"
+
 <!-- 
 Note from Gabe: I went light (i.e. just Shoubhik since he asked for this EP) on approvers as a first pass,
 only because it implied a mandate / expectation.  I've chosen to update this list and folks with approve permissions actually review,
@@ -28,7 +33,7 @@ where I'll certainly make sure we get multi company sign off.
 
 creation-date: 2021-04-09
 
-last-updated: 2021-04-27
+last-updated: 2021-05-05
 
 status: implementable    
 
@@ -42,10 +47,10 @@ see-also:
 
 ## Release Signoff Checklist
 
-- [ ] Enhancement is `implementable`
-- [ ] Design details are appropriately documented from clear requirements
-- [ ] Test plan is defined
-- [ ] Graduation criteria for dev preview, tech preview, GA
+- [ / ] Enhancement is `implementable`
+- [ / ] Design details are appropriately documented from clear requirements
+- [ / ] Test plan is defined
+- [ / ] Graduation criteria for dev preview, tech preview, GA
 - [ ] User-facing documentation is created in [docs](/docs/)
 
 ## Open Questions [optional]
@@ -60,6 +65,13 @@ consider the round trip experience when a client is at a different version of th
 [Kubernetes Deprecation Policy Rule #2](https://kubernetes.io/docs/reference/using-api/deprecation-policy/).
 And yes, adding an API is not the same as deprecating one, but the round trip guarantee applies (as Tekton
 learnt recently).  The use of an annotation that captures version differences comes into play.
+
+However, sentiment was conveyed during the reivew process that we should not ship a v1beta1 API without this
+enhancement proposal getting implemented.
+
+So needing this for v1beta1 is what is currently conveyed in the "Graduation Criteria" section.  If available 
+development cycles for this proposal allow that to happen, great.  But if this work is pushed out, we need to
+track this item during grooming as we execute on the overall Shipwright roadmap. 
 
 > 2. Order of precedence
 
@@ -146,13 +158,13 @@ sense.
 
 First, some role / actor terminology and detail (nothing new most likely for Shipwright community members):
 
-- A `developer` or `end user` is the person who has been provisioned a namespace, or shares a namespace with some teammates, 
-  and is using Shipwright to build images for his "application".  Most likely the `developer` will minimally be writing
-  the `BuildRun`, and quite possibly the `Build`.  Though maybe a `lead developer` creates the `Build`.  It is *conceivable*
-  a `developer` creates the `BuildStrategy` or `ClusterBuildStrategy`as well, depending on the nature of the cluster (i.e.
-  a `personal` or `team` cluster vs. a `test`, `staging`, or even `production` cluster.
-- An `admin` or `cluster admin` is more on the 'ops' side of the shop.  They have higher k8s privileges, possibly even
-  `kubeadmin`, and will have administrative tasks like provisioning namespaces for teams of `developer`, defining the k8s RBAC
+- A "developer" or "end user" is the person who has been provisioned a namespace, or shares a namespace with some teammates, 
+  and is using Shipwright to build images for his "application".  Most likely the developer will minimally be writing
+  the `BuildRun`, and quite possibly the `Build`.  Though maybe a "lead developer" creates the `Build`.  It is *conceivable*
+  a "developer" creates the `BuildStrategy` or `ClusterBuildStrategy`as well, depending on the nature of the cluster (i.e.
+  a personal or team cluster vs. a test, staging, or even production cluster.
+- An "admin" or "cluster admin" is more on the "ops" side of the shop.  They have higher k8s privileges, possibly even
+  kubeadmin, and will have administrative tasks like provisioning namespaces for teams of developers, defining the k8s RBAC
   for each of those teams (both for resources within their namesapces, as well as access to cluster scoped resources).  It 
   is envisioned these admins might control which underlying image tools are used for building images, and hence they will
   own the `BuildStrategy` and `ClusterBuildStrategy` definitions
@@ -280,7 +292,7 @@ To facilitate both mindsets, we'll add two string arrays to the `BuildStrategySp
 
 Each string array list the `EnvVar` names/keys to consider.
  
-If `AllowedEnvironmentVariables` is empty, assume all are allowed, except for those mentioned in `DisallowedEnvironmentVariables`.  
+If `AllowedEnvironmentVariables` is empty, assume all environment variable overrides are allowed, except for those mentioned in `DisallowedEnvironmentVariables`.  
 Otherwise, the list is the list, and any environment variables in `BuildStep`, `Build`, and `BuildRun` must be vetted against this list.  
 
 `DisallowedEnvironmentVariables` is redundant / ignored if `AllowedEnvironmentVariables` is set.
@@ -479,7 +491,7 @@ and examples.
 
 ### Graduation Criteria
 
-Should be part of any release before our v1.0.0
+Should be part of a milestone that ships as part of or before our v1beta1 API is declared.
 
 ### Upgrade / Downgrade Strategy
 
@@ -497,6 +509,12 @@ section will be needed.
 
 ## Drawbacks
 
+First, balancing between providing full function out of the gate vs. a reduced API that can be extended without disruption
+provided healthy debate during the crafting of this enhancement proposal.
+
+Second,  if Shipwright users end up preferring the use of third party policy engines for restricting, the parts of this 
+API that attempt to provide controls around environment variable specification will appear redundant.  More detail on
+these third party policy engines are in the [Alternatives](#alternatives) section below.
 
 ## Alternatives
 
