@@ -35,8 +35,9 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
         IMAGE_HOST: quay.io
         IMAGE: shipwright/shipwright-operator
+        TAG: "nightly-${{ steps.date.outputs.date }}"
       run: |
-        TAG="nightly-${{ steps.date.outputs.date }}" make release
+        make release
         mv release.yaml nightly-${{ steps.date.outputs.date }}.yaml
         mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
 

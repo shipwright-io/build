@@ -52,7 +52,9 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
         IMAGE_HOST: quay.io
         IMAGE: shipwright/shipwright-operator
-      run: make release
+        TAG: ${{ github.events.input.release }}
+      run: |
+        make release
     - name: Upload Release Asset
       id: upload_release_asset 
       uses: actions/upload-release-asset@v1
