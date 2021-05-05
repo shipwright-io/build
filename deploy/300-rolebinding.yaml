@@ -10,3 +10,19 @@ roleRef:
   kind: ClusterRole
   name: shipwright-build-controller
   apiGroup: rbac.authorization.k8s.io
+
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: shipwright-build-controller
+  namespace: shipwright-build
+subjects:
+- kind: ServiceAccount
+  name: shipwright-build-controller
+  namespace: shipwright-build
+roleRef:
+  kind: Role
+  name: shipwright-build-controller
+  apiGroup: rbac.authorization.k8s.io
