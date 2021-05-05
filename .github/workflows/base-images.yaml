@@ -7,6 +7,7 @@ on:
 
 jobs:
   build:
+    if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
 
     steps:
