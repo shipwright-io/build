@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	. "github.com/onsi/gomega"
 	knativeapis "knative.dev/pkg/apis"
@@ -39,13 +40,25 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 
 	amendBuild(identifier, build)
 
-	err = testBuild.CreateBuild(build)
-	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
-	Logf("Build %s created", identifier)
+	// For Builds that use a namespaces build strategy, there is a race condition: we just created the
+	// build strategy and it might be that the build controller does not yet have this in his cache
+	// and therefore marks the build as not registered with reason BuildStrategyNotFound
+	Eventually(func() buildv1alpha1.BuildReason {
+		// cleanup the build of the previous try
+		if build.Status.Registered != "" {
+			err = testBuild.DeleteBuild(build.Name)
+			Expect(err).ToNot(HaveOccurred())
+		}
 
-	build, err = testBuild.GetBuildTillValidation(build.Name)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(build.Status.Reason).To(Equal(buildv1alpha1.SucceedStatus))
+		err = testBuild.CreateBuild(build)
+		Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
+		Logf("Build %s created", identifier)
+
+		build, err = testBuild.GetBuildTillValidation(build.Name)
+		Expect(err).ToNot(HaveOccurred())
+
+		return build.Status.Reason
+	}, time.Duration(10*time.Second), time.Second).Should(Equal(buildv1alpha1.SucceedStatus))
 
 	return build
 }
