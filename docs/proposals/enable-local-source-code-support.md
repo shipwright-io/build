@@ -324,8 +324,19 @@ N/A
 
 This approach relies on a container registry being present, which should be secure in a way so that is safe for users to push source code to. Not all Kubernetes Clusters have a container registry inside it, not all developers have direct access to a container registry.
 
-## Alternatives
+# Alternatives
 
-_Note_: This EP should not lock Shipwright to a single approach for supporting local source code. The feature should be pluggable in a way, where different approaches can be supported.
+## Uploading Data to the Cluster
 
-- An alternative approach is to ensure source code always remain in-cluster, where we use volumes to mount the source into the pods. Tekton have support for mounting volumes that are available across multiple steps via `workspaces`. Or we can define this at the Pod Spec level. An advantage of keeping the source code in-cluster is that the data becomes _ephemeral_ and will get deleted together with the pod ( _when using an `emptyDir` volume type_ ).
+As mentioned before in this enhancement proposal document, currently a container build executes a `git clone` before the actual container-image build starts, this information is stored in a Kubernetes volume mounted at `/workspace/source`.
+
+Previously, in [issue #97](https://github.com/shipwright-io/build/issues/97), we've explored a different mechanism to receive users' data upload, instead of executing the regular `git clone`. This mechanism is comparable to `kubectl cp` and `oc rsync`.
+
+1. Make the build POD wait for users upload, by adding a init-container which will receive the data
+2. The init-container saves the payload on a locally mounted volume, analogous to `/workspace/source`
+3. The `BuildStrategy` steps takes place
+4. Kubernetes will handle the volume left over by the build POD, when a `emptyDir: {}` type of volume is employed, the data is discarded right after the build is complete
+
+As a general solution this alternative approach can leverage different type of Kubernetes volumes, and allows the cluster-administrator to grant privileges to end-users. In other words, it offers fine grain control over allowing specific users to upload data, and once the data is uploaded the operator can decide what will happen next.
+
+This approach requires more exploration of the building blocks employed on `kubectl cp` and `oc rysnc`, Kubernetes port-forwarding and more.
