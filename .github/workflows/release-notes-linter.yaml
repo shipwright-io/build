@@ -1,0 +1,32 @@
+---
+name: Release Note Linter
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Release Note Linter
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install wget
+      run: sudo apt-get install wget
+    - name: Install jq
+      run: sudo apt-get install jq
+    - name: Sanity Check Release Notes
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+      run: |
+        # Validate PR release notes
+        echo "Going to validate PR ${PR_NUMBER}"
+
+        MATCHES=$(wget -q  -O- https://api.github.com/repos/shipwright-io/build/pulls/${PR_NUMBER} | jq '.body | match("(```release-note\r\n(.*|NONE|action required: .*)\r\n```)")')
+        if [ -z "${MATCHES}" ]; then
+          echo "Your Release Notes were not properly defined or they are not in place, please make sure you add them."
+          echo "See our PR template for more information: https://raw.githubusercontent.com/shipwright-io/build/master/.github/pull_request_template.md"
+          exit 1
+        else
+          echo "Your Release Notes are properly in place!"
+        fi
