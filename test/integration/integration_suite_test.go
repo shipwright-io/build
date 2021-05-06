@@ -22,9 +22,8 @@ func TestIntegration(t *testing.T) {
 // TODO: clean resources in cluster, e.g. mainly cluster-scope ones
 // TODO: clean each resource created per spec
 var (
-	deleteNSList []string
-	tb           *utils.TestBuild
-	err          error
+	tb  *utils.TestBuild
+	err error
 )
 
 var _ = BeforeEach(func() {
@@ -37,8 +36,6 @@ var _ = BeforeEach(func() {
 	if err != nil {
 		fmt.Printf("fail to create namespace: %v, with error: %v", tb.Namespace, err)
 	}
-
-	deleteNSList = append(deleteNSList, tb.Namespace)
 
 	// We store a channel for each Build controller instance we start,
 	// so that we can nuke the instance later inside the AfterEach Ginkgo
@@ -56,14 +53,14 @@ var _ = AfterEach(func() {
 		close(tb.StopBuildControllers)
 	}
 
+	// Cleanup the namespace
+	if err := tb.DeleteNamespace(); err != nil {
+		fmt.Printf("failed to delete namespace: %v, with error: %v", tb.Namespace, err)
+	}
+
 	if CurrentGinkgoTestDescription().Failed && tb.BuildControllerLogBuffer != nil {
 		// print operator logs
 		fmt.Println("\nLogs of the operator:")
 		fmt.Printf("%v\n", tb.BuildControllerLogBuffer)
 	}
-})
-
-var _ = AfterSuite(func() {
-	// Ensure a proper cleanup of test environments
-	Expect(tb.DeleteNamespaces(deleteNSList)).To(BeNil())
 })

@@ -54,7 +54,7 @@ type TestBuild struct {
 // NewTestBuild returns an initialized instance of TestBuild
 func NewTestBuild() (*TestBuild, error) {
 	namespaceID := gomegaConfig.GinkgoConfig.ParallelNode*200 + int(atomic.AddInt32(&namespaceCounter, 1))
-	testNamespace := "test-build-" + strconv.Itoa(int(namespaceID))
+	testNamespace := "test-build-" + strconv.Itoa(namespaceID)
 
 	logBuffer := &bytes.Buffer{}
 	l := ctxlog.NewLoggerTo(logBuffer, testNamespace)
