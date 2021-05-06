@@ -138,6 +138,16 @@ var _ = Describe("Credentials", func() {
 				},
 			}
 
+			// This is just a placeholder BuildRun with no
+			// SecretRef added to the ones from the Build
+			buildRun = &buildv1alpha1.BuildRun{
+				Spec: buildv1alpha1.BuildRunSpec{
+					Output: &buildv1alpha1.Image{
+						Image: "https://image.url/",
+					},
+				},
+			}
+
 			expectedAfterServiceAccount = beforeServiceAccount
 		})
 
