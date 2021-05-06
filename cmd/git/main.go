@@ -67,7 +67,7 @@ func init() {
 }
 
 func main() {
-	if err := Execute(); err != nil {
+	if err := checkAndRun(); err != nil {
 		var exitcode = 1
 		switch err := err.(type) {
 		case *ExitError:
@@ -78,14 +78,22 @@ func main() {
 	}
 }
 
-// Execute performs flag parsing, input validation and the Git clone
-func Execute() error {
-	flagValues = settings{}
-	pflag.Parse()
-
+func checkAndRun() error {
 	// create logger and context
 	l := ctxlog.NewLogger("git")
 	ctx := ctxlog.NewParentContext(l)
+
+	if err := checkEnvironment(ctx); err != nil {
+		return err
+	}
+
+	return Execute(ctx)
+}
+
+// Execute performs flag parsing, input validation and the Git clone
+func Execute(ctx context.Context) error {
+	flagValues = settings{}
+	pflag.Parse()
 
 	err := runGitClone(ctx)
 	if err != nil {
@@ -102,10 +110,6 @@ func runGitClone(ctx context.Context) error {
 
 	if flagValues.target == "" {
 		return &ExitError{Code: 101, Message: "the 'target' argument must not be empty"}
-	}
-
-	if err := checkEnvironment(ctx); err != nil {
-		return err
 	}
 
 	if err := clone(ctx); err != nil {
