@@ -48,6 +48,12 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 		if build.Status.Registered != "" {
 			err = testBuild.DeleteBuild(build.Name)
 			Expect(err).ToNot(HaveOccurred())
+
+			// create a fresh object
+			build, err = buildTestData(testBuild.Namespace, identifier, filePath)
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving build test data")
+
+			amendBuild(identifier, build)
 		}
 
 		err = testBuild.CreateBuild(build)
