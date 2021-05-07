@@ -214,7 +214,10 @@ func clone(ctx context.Context) error {
 				return err
 			}
 
-			var sshCmd = []string{"ssh", "-i", sshPrivateKeyFile.Name()}
+			var sshCmd = []string{"ssh",
+				"-o", "BatchMode=yes",
+				"-i", sshPrivateKeyFile.Name(),
+			}
 
 			var knownHostsFile = filepath.Join(flagValues.secretPath, "known_hosts")
 			if hasFile(knownHostsFile) {
@@ -286,6 +289,10 @@ func clone(ctx context.Context) error {
 func git(ctx context.Context, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	ctxlog.Debug(ctx, cmd.String())
+
+	// Make sure that the spawned process does not try to prompt for infos
+	os.Setenv("GIT_TERMINAL_PROMPT", "0")
+	cmd.Stdin = nil
 
 	out, err := cmd.CombinedOutput()
 
