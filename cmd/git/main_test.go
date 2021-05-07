@@ -5,9 +5,11 @@
 package main_test
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
@@ -19,7 +21,7 @@ import (
 var _ = Describe("Git Resource", func() {
 	var run = func(args ...string) error {
 		os.Args = append([]string{"tool", "--zap-log-level", "fatal"}, args...)
-		return Execute()
+		return Execute(context.TODO())
 	}
 
 	var withTempDir = func(f func(target string)) {
@@ -288,6 +290,12 @@ var _ = Describe("Git Resource", func() {
 
 	Context("cloning repositories with Git Large File Storage", func() {
 		const exampleRepo = "https://github.com/shipwright-io/sample-lfs"
+
+		BeforeEach(func() {
+			if _, err := exec.LookPath("git-lfs"); err != nil {
+				Skip("Skipping Git Large File Storage test as `git-lfs` binary is not in the PATH")
+			}
+		})
 
 		It("should Git clone a repository to the specified target directory", func() {
 			withTempDir(func(target string) {
