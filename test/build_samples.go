@@ -291,3 +291,104 @@ spec:
   output:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
+
+// BuildWithSleepTimeParam defines a Build with a parameter
+const BuildWithSleepTimeParam = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: sleep-time
+    value: 30
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithRestrictedParam defines a Build using params that are reserved only
+// for shipwright
+const BuildWithRestrictedParam = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: shp-something
+    value: 30
+  - name: DOCKERFILE
+    value: 30
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithUndefinedParameter defines a param that was not declared under the
+// strategy parameters
+const BuildWithUndefinedParam = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: sleep-not
+    value: 30
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithEmptyStringParam defines a param that with an empty string value
+const BuildWithEmptyStringParam = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: sleep-time
+    value: ""
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithUndefinedParamAndCBS defines a param that was not declared under the
+// strategy parameters of a ClusterBuildStrategy
+const BuildWithUndefinedParamAndCBS = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: sleep-not
+    value: 30
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithSleepTimeParamAndCBS defines a Build with a parameter
+const BuildWithSleepTimeParamAndCBS = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: sleep-time
+    value: 30
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`

@@ -323,3 +323,24 @@ spec:
           cpu: 250m
           memory: 65Mi
 `
+
+// ClusterBuildStrategyWithParameters is a strategy that uses a
+// sleep command with a value for its spec.parameters
+const ClusterBuildStrategyWithParameters = `
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: strategy-with-param
+spec:
+  parameters:
+  - name: sleep-time
+    description: "time in seconds for sleeping"
+    default: "1"
+  buildSteps:
+  - name: sleep30
+    image: alpine:latest
+    command:
+    - sleep
+    args:
+    - $(params.sleep-time)
+`
