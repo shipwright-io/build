@@ -1,96 +1,60 @@
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: shipwright-build-controller
+  namespace: shipwright-build
+rules:
+- apiGroups: ['']
+  resources: ['configmaps']
+  verbs:     ['create', 'get', 'update']
+
+- apiGroups: ['']
+  resources: ['events']
+  verbs:     ['create']
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: shipwright-build-controller
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - services
-  - services/finalizers
-  - endpoints
-  - persistentvolumeclaims
-  - events
-  - configmaps
-  - secrets
-  - serviceaccounts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - daemonsets
-  - replicasets
-  - statefulsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  verbs:
-  - get
-  - create
-- apiGroups:
-  - apps
-  resourceNames:
-  - shipwright-build
-  resources:
-  - deployments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-- apiGroups:
-  - apps
-  resources:
-  - replicasets
-  - deployments
-  verbs:
-  - get
-- apiGroups:
-  - shipwright.io
-  resources:
-  - '*'
-  - buildstrategies
-  - clusterbuildstrategies
-  - buildruns
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - tasks
-  - taskruns
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+- apiGroups: ['shipwright.io']
+  resources: ['buildruns']
+  verbs:     ['get', 'list', 'update', 'watch']
+
+- apiGroups: ['shipwright.io']
+  resources: ['buildruns/status']
+  verbs:     ['update']
+
+- apiGroups: ['shipwright.io']
+  resources: ['builds']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['shipwright.io']
+  resources: ['builds/status']
+  verbs:     ['update']
+
+- apiGroups: ['shipwright.io']
+  resources: ['buildstrategies']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['shipwright.io']
+  resources: ['clusterbuildstrategies']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['tekton.dev']
+  resources: ['taskruns']
+  verbs:     ['get', 'create', 'list', 'watch']
+
+- apiGroups: ['']
+  resources: ['pods']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['']
+  resources: ['secrets']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['']
+  resources: ['serviceaccounts']
+  verbs:     ['create', 'delete', 'get', 'list', 'update', 'watch']
