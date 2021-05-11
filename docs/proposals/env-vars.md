@@ -33,7 +33,7 @@ where I'll certainly make sure we get multi company sign off.
 
 creation-date: 2021-04-09
 
-last-updated: 2021-05-05
+last-updated: 2021-05-11
 
 status: implementable    
 
@@ -66,35 +66,20 @@ consider the round trip experience when a client is at a different version of th
 And yes, adding an API is not the same as deprecating one, but the round trip guarantee applies (as Tekton
 learnt recently).  The use of an annotation that captures version differences comes into play.
 
-However, sentiment was conveyed during the reivew process that we should not ship a v1beta1 API without this
+However, sentiment was conveyed during the review process that we should not ship a v1beta1 API without this
 enhancement proposal getting implemented.
 
 So needing this for v1beta1 is what is currently conveyed in the "Graduation Criteria" section.  If available 
 development cycles for this proposal allow that to happen, great.  But if this work is pushed out, we need to
 track this item during grooming as we execute on the overall Shipwright roadmap. 
 
-> 2. Order of precedence
-
-Similar to other shipwright enhancements currently in flight, the notion of settings at a `BuildStrategy` level
-serving as a default, with the ability to override those defaults at a more granular `Build` or `BuildRun`, resonates
-with our topic here of managing environment various in Shipwright.  This order makes sense with developer flows for
-example.
-
-That said, one could also see cluster administrators wanting certain environment variables to never be set in their
-cluster, don't use certain values, or that certain environment variables always use certain values.  
-Perhaps certain values for an environment variable, or the existence of the environment variable at all,
-enable features in underlying tools encapsulated by a given `BuildStrategy` that are deemed inappropriate, unsafe,
-of too costly resource wise for the cluster in question.
-
-There are a few possibilities in how the API is or is not structured that could allow for support of each of the above
-concerns.  We should get to a consensus on which way(s) we support in the enhancement proposal. Ideally, one approach
-makes for a simpler implementation path.  If multiple approaches seem necessary, then we have to sort out if those 
-varying approaches can be staged, or have to be implemented all at once.
-
-> 3. Validation
+> 2. Validation
 
 Existing `pkg/validate/validate.go` logic, and augmenting that for the validations noted below, vs. employment of 
-a validating admission webhook.
+a validating admission webhook.  Validation at the generated CRD level via OpenAPI was also noted as a means of ensuring
+that only the allowed or blocked environment variable fields are set on a `BuildStrategy`.  At this time, this EP
+only lists the spots for validations vs. declaring which should be done where.  Decisions on which approaches are 
+employed, and for which elements of the new API they are employed, is currently deferred to implementation time. 
 
 ## Summary
 
@@ -153,21 +138,31 @@ sense.
 - The EP is *NOT* about environment variables that will be set in the final image.  It is about providing environment variables
   to the Steps/Containers and making those environment variables available to the tools called from those Steps/Containers
   as part of building the image.
+- This EP is *NOT* taking on the official establishment of new Shipwright specific personas and roles around the 
+  maintenance of `BuildStrategy`, `Build`, and `BuildRun`.
 
 ## Proposal
 
 First, some role / actor terminology and detail (nothing new most likely for Shipwright community members):
 
-- A "developer" or "end user" is the person who has been provisioned a namespace, or shares a namespace with some teammates, 
-  and is using Shipwright to build images for his "application".  Most likely the developer will minimally be writing
-  the `BuildRun`, and quite possibly the `Build`.  Though maybe a "lead developer" creates the `Build`.  It is *conceivable*
-  a "developer" creates the `BuildStrategy` or `ClusterBuildStrategy`as well, depending on the nature of the cluster (i.e.
-  a personal or team cluster vs. a test, staging, or even production cluster.
-- An "admin" or "cluster admin" is more on the "ops" side of the shop.  They have higher k8s privileges, possibly even
-  kubeadmin, and will have administrative tasks like provisioning namespaces for teams of developers, defining the k8s RBAC
-  for each of those teams (both for resources within their namesapces, as well as access to cluster scoped resources).  It 
-  is envisioned these admins might control which underlying image tools are used for building images, and hence they will
-  own the `BuildStrategy` and `ClusterBuildStrategy` definitions
+- At the time of this writing, there are no specific k8s `Roles` and `ClusterRoles` defined in Shipwright that control
+  *ONLY* the maintenance of both clustered and namespaced `BuildStrategy`, `Build`, or `BuildRun` objects.
+- In conjunction, there is no defined aggregation of such precise Shipwright `Roles` and `ClusterRoles` to the well known
+  k8s roles and personas, like "cluster-admin", "admin", "edit", and "view".
+- Nor does documentation exist in [the repository's doc folder](https://github.com/shipwright-io/build/tree/master/docs)
+  nor in [the repository's enhancement proposal guidelines folder](https://github.com/shipwright-io/build/tree/master/docs/proposals/guidelines)
+  articulating such personas for use in enhancement proposals.
+- Quite possibly though some form of the above points needs to occur in the project at some point.  
+  
+All that said, in the interim, there is at least agreement during the review process for this proposal that:
+
+- users who create `BuildRun` or `Build` objects quite possibly will not have permission to create either clustered or 
+  namespace scoped `BuildStrategy`
+- conversely, maintainers of `BuildStrategy` objects quite possibly will also have decision-making power around cluster
+  wide rules controlling use of the tools used in building images
+- where often such control entails establishing permissions around the use of environment variables and their specific 
+  settings when those tools are invoked.
+- in other words, most likely the `BuildStrategy` maintainer will have greater overall permission in the k8s cluster  
   
 Now, on to the meat of the proposal.
 
@@ -194,9 +189,10 @@ All of these features seem accessible to Shipwright, in that
 
 Independent of fully integrating Shipwright with Tekton Parameterization, a first class API for environment variables
 can be devised and implemented.  Parameter variable substitution support can land afterward without any further API change.
-We just have static settings of environment variable values.
+We can have just static settings of environment variable values with an initial implementation of this proposal, or we 
+can also claim support for use of parameterization, based on when the implementations of the different proposals land.
 
-If we look at the k8s [Container API's environment variable fields](https://github.com/kubernetes/api/blob/v0.21.0/core/v1/types.go#L2252-L2265)
+Next, if we look at the k8s [Container API's environment variable fields](https://github.com/kubernetes/api/blob/v0.21.0/core/v1/types.go#L2252-L2265)
 
 ```go
 	// List of sources to populate environment variables in the container.
@@ -262,6 +258,8 @@ type EnvironmentVariable struct {
 }
 ```
 
+This field will be added to the `Build` and `BuildRun` objects.
+
 NOTE: `valueFrom` in k8s has a range of options, from `Secret` refs, `ConfigMap` refs, field refs, etc.  The `Secret` ref
 is the one we see immediate need for, but the EP does *NOT* proscribe restrictions at this time.  Of course, as we progress
 toward implementation and customer feedback, if need be, restrictions can be added at a later date.
@@ -272,80 +270,75 @@ might update them with an array of `EnvironmentVariable`
 `BuildStrategy` needs some further consideration, in that `BuildStep` already inlines `Container`, which allows specification 
 of `EnvVar`.
 
-Those existing `BuildStep` / `Container` environment variables can be the way an administrator could ensure that 
-any environment variable exists and has a given setting.  These would be environment variables that could not be 
-changed by a `Build` or `BuildRun`.
+This proposal wants to continue to let environment variables be set at the `BuildStep` / `Container` level.
 
-But in the case where an organization wants to provide a default environment variable setting, but allow their `Build` and
-`BuildRun` creators to override the value for that setting (including setting it to the empty string, which in most 
-cases would mean "turning off" the environment variable), the `BuildStrategySpec` would have an array of Shipwright
-`EnvironmentVariable` added to it.
+However, we also want to allow the `BuildStrategy` maintainer to declare whether the value for an environment variable's
+key / value pair can be changed by the `Build` or `BuildRun`.
+
+To facilitate, the `BuildStep` type will be added to as follows:
+
+```go
+type BuildStep struct {
+   corev1.Container `json:",inline"`
+   EnvVarOverwritable   []string
+}
+```
+
+If an environment variable key is in the `EnvVarOverwritbale` array, the value can be changed at the `Build` or `BuildRun`
+level.  If the key is not present, its value cannot be changed at the `Build` or `BuildRun`.  So the default is "not overwritable".
 
 Lastly, so there are two basic mindsets from an admin perspective:
 
 - Allow any environment variable in general, but restrict a few
-- Disallow any environment variable in general, but allow a few
+- Disallow or block any environment variable in general, but allow a few
 
 To facilitate both mindsets, we'll add two string arrays to the `BuildStrategySpec`
 - `AllowedEnvironmentVariables`
-- `DisallowedEnvironmentVariables`
+- `BlockedEnvironmentVariables`
 
 Each string array list the `EnvVar` names/keys to consider.
  
-If `AllowedEnvironmentVariables` is empty, assume all environment variable overrides are allowed, except for those mentioned in `DisallowedEnvironmentVariables`.  
+If `AllowedEnvironmentVariables` is empty, assume all environment variable overrides are allowed, except for those mentioned in `BlockedEnvironmentVariables`.  
 Otherwise, the list is the list, and any environment variables in `BuildStep`, `Build`, and `BuildRun` must be vetted against this list.  
 
-`DisallowedEnvironmentVariables` is redundant / ignored if `AllowedEnvironmentVariables` is set.
+`BlockedEnvironmentVariables` is redundant / ignored if `AllowedEnvironmentVariables` is set.
 
-An admission webhook seems to be the best solution for enforcing that the `AllowedEnvironmentVariables` and `DisallowedEnvironmentVariables` lists are honored by:
+Either CRD/OpenAPI validation, an admission webhook, or a combination of the two, seems sufficient for enforcing that 
+the `AllowedEnvironmentVariables` and `BlockedEnvironmentVariables` lists follow these rules:
 
 - making sure only entries in `AllowedEnvironmentVariables` exist in any `BuildStep` on the `BuildStrategy` when it is created
 - making sure only entries in `AllowedEnvironmentVariables` exist in the new environment variable fields proscribed by
   this EP for the `Build` and `BuildRun` types.
-- making sure no entries in `DisallowedEnvironmentVariables` exist in any `BuildStep` on the `BuildStrategy` when it is created
-- making sure no entries in `DisallowedEnvironmentVariables` exist in the new environment variable fields proscribed by 
+- making sure no entries in `BlockedEnvironmentVariables` exist in any `BuildStep` on the `BuildStrategy` when it is created
+- making sure no entries in `BlockedEnvironmentVariables` exist in the new environment variable fields proscribed by 
 this EP for the `Build` and `BuildRun` types.
 
-An alternative on the admission webhook approach, the current `pkg/validate/validate.go` code has some `Build`
+There is also currently the `pkg/validate/validate.go` code which has some `Build`
 validations.  The interface proscribed there, along with the existing Strategy validation, could be augmented to ensure the 
 conditions noted above.  Expansion to consider `BuildRun` in that validation flow would be required.
 
 An open question at the top of this EP has been added for reaching a consensus around which validation path(s) to employ.
 
-Each entry of the allow and disallow arrays need to minimally support wildcards, if not regular expressions.
+Each entry of the allow and blocked arrays need to minimally support wildcards, if not regular expressions.
 This EP will leave the decision on exactly which of those choices are employed to the implementation, based on how time
 constraints shake out.
 
 Updates to `BuildSpec` and `BuildRunSpec` to allow for an array of `EnvironmentVariable` is then straight forward.
 
-With this combination of `BuildStrategySpec` (both a new `EnvironmentVariable` array and new string array called `DisallowedEnvironmentVariables` ),
+With this combination of `BuildStrategySpec` (both a new `EnvironmentVariable` array and new string array called `BlockedEnvironmentVariables` ),
 `BuildStep` (and the existing inlining of `Container`), and `EnvironmentVariable` arrays added to `BuildSpec` and 
 `BuildRunSpec`, we get an order of precedence that allows both "cluster admin centric" control over environment variables, but 
 opt in flexibility for "developer centric" overrides, on an `EnvironmentVariable` key by key basis.
 
 The order of precedence is:
 
-- `AllowedEnvironmentVariables` in the `BuildStrategySpec` is considered first.  If it is no empty, and any subsequent environment variable is not in that list, it is a validation error. 
-- `DisallowedEnvironmentVariables` in the `BuildStrategySpec` is considered first.  Any use of those keys in 
-  `BuildStep`, `BuildStrategySpec.[]EnvironmentVariable`, `BuildSpec.[]EnvironmentVariable`, `BuildRunSpec.[]EnvironmentVariable` results in a validation error.
-- `BuildStep` from the `BuildStrategySpec` is next.  The key/value pair from these override anything from
-  `BuildStrategySpec.[]EnvironmentVariable`, `BuildSpec.[]EnvironmentVariable`, `BuildRunSpec.[]EnvironmentVariable`
-- `BuildRunSpec.[]EnvironmentVariable` is next
-- followed by `BuildSpec.[]EnvironmentVariable`
-- and lastly, `BuildStrategySpec.[]EnvironmentVariable`
-
-Or conversely, the environment variables are applied in this fashion, cross-referencing with `BuildStrategySpec.AllowedEnvironmentVariables` to see if they are allowed.
-- first from `BuildStrategySpec.[]EnvironmentVariable` assuming any names from `BuildStrategySpec.([]string)DisallowedEnvironmentVariables` are not used
-- then from `BuildSpec.[]EnvironmentVariable`, assuming any names from `BuildStrategySpec.([]string)DisallowedEnvironmentVariables` are not used,
-  where values are replaced from any entries previously seeded
-- then from `BuildRunSpec.[]EnvironmentVariable`, assuming any names from `BuildStrategySpec.([]string)DisallowedEnvironmentVariable` are not used,
-  where values are replaced from any entries previously seeded
-- then from `BuildStrategySpec.[]BuildStep`, assuming any names from `BuildStrategySpec.([]string)DisallowedEnvironmentVariable` are not used,
-  where values are replaced from any entries previously seeded  
-
-To reiterate a key detail, the above methodology also provide a means of declaring whether an environment variable key/value setting can and connect be overridden. 
-If you want to ensure that environment variable key/value settings are *NOT* overridden, specify them in the `BuildStep.`  If you want
-to allow them to be overridden, specify them in the `BuildStrategySpec.[]EnvironmentVariable`, `BuildStrategySpec.[]EnvironmentVariable`, `BuildSpec.[]EnvironmentVariable`, or `BuildRunSpec.[]EnvironmentVariable`
+- `AllowedEnvironmentVariables` in the `BuildStrategySpec` is considered first.  If it is not empty, and any subsequent environment variable is not in that list, it is a validation error. 
+- `BlockedEnvironmentVariables` in the `BuildStrategySpec` is considered first.  Any use of those keys in 
+  `BuildStep`, `BuildSpec.[]EnvironmentVariable`, `BuildRunSpec.[]EnvironmentVariable` results in a validation error.
+- `BuildStep` from the `BuildStrategySpec` is next.  The key/value pair from these applied
+- If `BuildSpec.[]EnvironmentVariable` has entries, and the keys are in `BuildStep.EnvVarOverwritable`, those are applied, otherwise a validation error.
+- Then in `BuildStrategySpec.[]EnvironmentVariable` has entries, and the keys are in `BuildStep.EnvVarOverwriteable`, those are applied, otherwise a validation error.
+- Any use of Tekton Parameters are reconciled by the Tekton `TaskRun` Reconciler
 
 Lastly, some yaml to complete the visualization.
 
@@ -358,17 +351,15 @@ metadata:
   name: something-that-uses-docker
 spec:
   # nobody is allowed to change DOCKER_TLS_VERIFY
-  disallowedEnvironmentVariables:
+  BlockedEnvironmentVariables:
     - 'DOCKER_TLS_VERIFY'
-  environmentVariables:
-    # for convenience, we add the version most our users can use, but we'll allow you to override
-    - name: DOCKER_API_VERSION
-      value: '1.19'
   buildSteps:
     - command:
         - /usr/local/bin/docker
         - build
       env:
+        - name: DOCKER_API_VERSION
+          value: '1.19'
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
 
@@ -419,17 +410,17 @@ kind: ClusterBuildStrategy
 metadata:
   name: a-cluster-strategy
 spec:
-  buildSteps: #Content omitted for this example
+  buildSteps:
+    env:
+      - name: GITHUB_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: $(params.github-token-secret)
+            key: bot-token
   params:
   - name: github-token-secret
     description: Name of the secret holding the github-token.
     default: github-token
-  environmentVariables:
-  - name: GITHUB_TOKEN
-    valueFrom:
-      secretKeyRef:
-        name: $(params.github-token-secret)
-        key: bot-token
 ```
 
 Similar use of `params` and `environmentVariables` will exist in `Build` and `BuildRun` as well.
@@ -465,13 +456,15 @@ agreement with the cluster administrator has been obtained on which environment 
 
 #### Story 2
 
-As a cluster administrator, I need to make sure that the users of my cluster do not use any unsafe environment variable enabled 
+As someone in charge of maintaining `BuildStrategies` and most likely the use of Shipwright across the cluster, 
+I need to make sure that the users of my cluster do not use any unsafe environment variable enabled 
 features that exist with the underlying tools used for image management, source code management, or data transfer, when
 Shipwright runs in the cluster.
 
 #### Story 3
 
-As a cluster administrator, I need to make sure that only approved values for certain environment variables, which in turn control
+As someone in charge of maintaining `BuildStrategies` and most likely the use of Shipwright across the cluster, 
+I need to make sure that only approved values for certain environment variables, which in turn control
 features that exist with the underlying tools used for image management, source code management, or data transfer, are used when
 Shipwright runs in the cluster.
 
@@ -536,6 +529,8 @@ prevention of something explicit instead of allowance of a finite subset.
 
 ### Defaulting
 
+#### Alternative 1
+
 Also, in earlier iterations of this EP, employing possible default values for environment variables was entertained, but ultimately dismissed.
 
 The notion revolved around coupling the default value capability available in Tekton's `StepTemplate` with reuse of the k8s
@@ -556,6 +551,11 @@ type EnvironmentVariable struct {
 
 Based on user response, adding `DefaultValue` to our `EnvironmentVariable` wrapper of k8s `EnvVar` is plausible as a
 clean, new field only, API extension
+
+#### Alternative 2
+
+Another iteration of this EP when into adding a `EnvironmentVariable` array for defaulting, but then using the `BuildStep` / `Container`
+`envVar` array for controlling what could be overridden. This was replaced with the current approach.
 
 ### Config for order of precedence
 
