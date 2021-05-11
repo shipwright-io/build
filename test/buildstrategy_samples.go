@@ -144,7 +144,7 @@ spec:
   parameters:
   - name: sleep-time
     description: "time in seconds for sleeping"
-    default: 1
+    default: "1"
   buildSteps:
   - name: sleep30
     image: alpine:latest

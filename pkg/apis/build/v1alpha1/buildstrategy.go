@@ -75,4 +75,5 @@ type BuilderStrategy interface {
 	GetGeneration() int64
 	GetResourceLabels() map[string]string
 	GetBuildSteps() []BuildStep
+	GetParameters() []Parameter
 }
