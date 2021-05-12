@@ -46,22 +46,14 @@ jobs:
     - name: Install Ko
       uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
 
-    - name: Ko resolve release.yaml
+    - name: Generate and upload release.yaml
       env:
         REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
         IMAGE_HOST: quay.io
         IMAGE: shipwright/shipwright-operator
         TAG: ${{ github.events.input.release }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         make release
-    - name: Upload Release Asset
-      id: upload_release_asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.draft_release.outputs.upload_url }} 
-        asset_path: ./release.yaml
-        asset_name: release.yaml
-        asset_content_type: application/x-yaml
+        gh release upload ${TAG} release.yaml

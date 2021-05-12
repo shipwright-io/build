@@ -17,47 +17,24 @@ jobs:
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d-%s')"
 
-    - name: Get latest nightly release upload_url
-      id: get_release
-      run: |
-        UPLOAD_URL=$(curl https://api.github.com/repos/${GITHUB_REPOSITORY}/releases | jq -r '.[] | select(.name | startswith("Nightly Releases")).upload_url' | tail -n 1 | cut -d"{" -f1)
-        echo "Latest nightly release upload URL is ${UPLOAD_URL}"
-        echo "::set-output name=upload_url::${UPLOAD_URL}"
-
     - name: Install Go
       uses: actions/setup-go@v2
     - name: Install Ko
       uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
 
-    - name: Ko resolve nightly.yaml
+    - name: Generate and upload release YAMLs
       env:
         REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
         IMAGE_HOST: quay.io
         IMAGE: shipwright/shipwright-operator
         TAG: "nightly-${{ steps.date.outputs.date }}"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         make release
-        mv release.yaml nightly-${{ steps.date.outputs.date }}.yaml
-        mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
 
-    - name: Upload Release Asset
-      id: upload_release_asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_release.outputs.upload_url }}?name=nightly-${{ steps.date.outputs.date }}.yaml
-        asset_path: ./nightly-${{ steps.date.outputs.date }}.yaml
-        asset_name: nightly-${{ steps.date.outputs.date}}.yaml
-        asset_content_type: application/x-yaml
-    - name: Upload Release Asset
-      id: upload_release_asset-debug
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_release.outputs.upload_url }}?name=nightly-${{ steps.date.outputs.date }}-debug.yaml
-        asset_path: ./nightly-${{ steps.date.outputs.date }}-debug.yaml
-        asset_name: nightly-${{ steps.date.outputs.date}}-debug.yaml
-        asset_content_type: application/x-yaml
+        mv release.yaml nightly-${{ steps.date.outputs.date }}.yaml
+        gh release upload nightly nightly-${{ steps.date.outputs.date }}.yaml
+
+        mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
+        gh release upload nightly nightly-${{ steps.date.outputs.date }}-debug.yaml
