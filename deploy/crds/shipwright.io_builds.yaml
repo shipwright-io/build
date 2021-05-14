@@ -214,28 +214,18 @@ spec:
                 description: Sources slice of BuildSource, defining external build
                   artifacts complementary to VCS (`.spec.source`) data.
                 items:
-                  description: BuildSource remote artifact definition.
+                  description: BuildSource remote artifact definition, also known
+                    as "sources". Simple "name" and "url" pairs, initially without
+                    "credentials" (authentication) support yet.
                   properties:
-                    http:
-                      description: HTTP attributes for "http" remote source.
-                      properties:
-                        path:
-                          description: Path local path where remote data is stored
-                            at, relative to the container root directory.
-                          type: string
-                      type: object
                     name:
                       description: Name instance entry.
-                      type: string
-                    type:
-                      description: Type BuildSource type name.
                       type: string
                     url:
                       description: URL remote artifact location.
                       type: string
                   required:
                   - name
-                  - type
                   - url
                   type: object
                 type: array
