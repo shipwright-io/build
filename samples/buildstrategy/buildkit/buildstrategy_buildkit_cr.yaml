@@ -19,15 +19,17 @@ spec:
           add:
             - CHOWN
       command:
-        - /bin/sh
+        - /bin/chown
       args:
-        - -c
-        - |
-          set -exuo pipefail
-          whoami
-          chown -R 1000:1000 /tekton/home
+        - -R
+        - 1000:1000
+        - /tekton/home
     - name: build-and-push
       image: moby/buildkit:master-rootless
+      securityContext:
+        allowPrivilegeEscalation: true
+        runAsUser: 1000
+        runAsGroup: 1000
       workingDir: $(params.shp-source-root)
       env:
       - name: DOCKER_CONFIG
@@ -41,13 +43,8 @@ spec:
         - build
         - --progress=plain
         - --frontend=dockerfile.v0
-        - --local
-        - context=$(params.shp-source-context)
-        - --local
-        - dockerfile=$(params.shp-source-root)/$(build.dockerfile)
-        - --output
-        - type=image,name=$(params.shp-output-image),push=true,registry.insecure=false
-        - --export-cache
-        - type=inline
-        - --import-cache
-        - type=registry,ref=$(params.shp-output-image)
+        - --local=context=$(params.shp-source-context)
+        - --local=dockerfile=$(params.shp-source-root)/$(build.dockerfile)
+        - --output=type=image,name=$(params.shp-output-image),push=true,registry.insecure=false
+        - --export-cache=type=inline
+        - --import-cache=type=registry,ref=$(params.shp-output-image)
