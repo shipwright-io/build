@@ -6,9 +6,11 @@ on:
     tags-ignore:
       - '**'
     branches:
+      - main
       - master
   pull_request:
     branches:
+      - main
       - master
 
 jobs:
