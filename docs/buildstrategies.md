@@ -18,12 +18,15 @@ SPDX-License-Identifier: Apache-2.0
 - [BuildKit](#buildkit)
   - [Cache Exporters](#cache-exporters)
   - [Known Limitations](#known-limitations)
+  - [Usage in Clusters with Pod Security Standards](#usage-in-clusters-with-pod-security-standards)
   - [Installing BuildKit Strategy](#installing-buildkit-strategy)
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
+- [System parameters](#system-parameters)
+- [System results](#system-results)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
   - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
@@ -209,6 +212,17 @@ You can use parameters when defining the steps of a build strategy to access sys
 | `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in his Build, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
 | `$(params.shp-output-image)`      | The URL of the image that the user wants to push as specified in the Build's `spec.output.image`, or the override from the BuildRun's `spec.output.image`. |
 
+## System results
+
+You can optionally store the size and digest of the image your build strategy created to some files. This information will eventually be made available in the status of the BuildRun.
+
+| Result file                       | Description                                     |
+| --------------------------------- | ----------------------------------------------- |
+| `$(results.shp-image-digest.path) | File to store the digest of the image.          |
+| `$(results.shp-image-size.path)   | File to store the compressed size of the image. |
+
+You can look at sample build strategies, such as [Kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml), or [Buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml), to see how they fill some or all of the results files.
+
 ## Steps Resource Definition
 
 All strategies steps can include a definition of resources(_limits and requests_) for CPU, memory and disk. For strategies with more than one step, each step(_container_) could require more resources than others. Strategy admins are free to define the values that they consider the best fit for each step. Also, identical strategies with the same steps that are only different in their name and step resources can be installed on the cluster to allow users to create a build with smaller and larger resource requirements.
@@ -253,7 +267,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -298,7 +311,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
