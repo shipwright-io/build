@@ -45,6 +45,8 @@ jobs:
           uses: actions/setup-go@v2
           with:
             go-version: ${{ matrix.go-version }}
+        - name: Install Ko
+          uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
         - name: Check out code
           uses: actions/checkout@v2
         - name: Install kubectl
@@ -68,7 +70,9 @@ jobs:
           run: |
             make kind-tekton
         - name: Test
-          run: make test-integration
+          run: |
+            export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
+            make test-integration
     e2e:
         strategy:
           fail-fast: false
