@@ -15,18 +15,18 @@ approvers:
   - "@qu1queee"
 creation-date: 2021-04-10
 last-updated: 2021-04-20
-status: provisional
+status: implementable
 ---
 
 # Removing Tekton resource usages
 
 ## Release Signoff Checklist
 
-- [ ] Enhancement is `implementable`
-- [ ] Design details are appropriately documented from clear requirements
-- [ ] Test plan is defined
-- [X] Graduation criteria for dev preview, tech preview, GA
-- [ ] User-facing documentation is created in [docs](/docs/)
+- [x] Enhancement is `implementable`
+- [x] Design details are appropriately documented from clear requirements
+- [x] Test plan is defined
+- [x] Graduation criteria for dev preview, tech preview, GA
+- [x] User-facing documentation is created in [docs](/docs/)
 
 ## Open Questions [optional]
 
@@ -158,7 +158,9 @@ taskSpec:
         - --revision=develop                                                     # from the user's Build, omitted if not specified which will load the default branch
         - --target=$(params.shp-source-root)                                     # resolves to /workspace/source
         - --result-file-commit-sha=$(results.shp-source-default-commit-sha.path)
-      resources: [...]
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
     [...]
 ```
 
@@ -175,23 +177,27 @@ taskSpec:
         - --revision=develop                                                     # from the user's Build, omitted if not specified which will load the default branch
         - --target=$(params.shp-source-root)                                     # resolves to /workspace/source
         - --result-file-commit-sha=$(results.shp-source-default-commit-sha.path)
-        - --secret-path=/workspace/source-secrets/default
-      resources: [...]
+        - --secret-path=/workspace/shp-source-secret
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
       volumeMounts:
-        - mountPath: /workspace/source-secrets/default
-          name: ssh-secret                                                       # from the user's build
+        - mountPath: /workspace/shp-source-secret
+          name: shp-ssh-secret
           readOnly: true
   volumes:
-    - name: ssh-secret                                                           # name of the secret
+    - name: shp-ssh-secret                                                       # 'shp-' + name of the secret
       secret:
         secretName: ssh-secret                                                   # from the user's build
-        defaultMode: 256                                                         # this is 0400 in octal
+        defaultMode: 0444
     [...]
 ```
 
 The image URL is a new configuration option of the build controller deployment (similar to how Tekton allows to specify its supporting images). In our release process, we need to make sure we point to the right image in our yaml.
 
-The resources of the step are also configurable at the build controller deployment level with reasonable defaults.
+The `securityContext` of the step can be configured through a new configuration option of the build controller deployment which is using the [Container](https://pkg.go.dev/k8s.io/api/core/v1#Container) type as a template. The deployment administrator can use it to also specify other attributes, such as `resources`. By default, we will run as user/group 1000. This will also cause the sources to be available as such a user. This choice was made based on the experience that many tools run as this user, such as BuildKit or Buildpacks. Build strategies then do not anymore need to `chown` the source directory to this user. Instead, if a build strategy needs the sources as a different user (such as root), those will need the prepare step for it. This will eventually allow rootless strategies to run completely without any supporting prepare step that must run as root.
+
+The secret volume is mounted using 0444 as access mask because Kubernetes mounts secrets as root user. For SSH secrets, the implementation of the Git command will need to create a copy of the private key file with 0400 as permission to consume it. For reference, the long-standing Kubernetes issue that would simplifying this: [Allow setting ownership on mounted secrets #81089](https://github.com/kubernetes/kubernetes/issues/81089).
 
 The way we run the download logic is something we can implement in a staged approach and start with the simple approach: Just a container with the necessary command-line tools (like `git`), and a simple executable implemented by us that parses the arguments and calls the `git` binary similar to [today's logic in Tekton](https://github.com/tektoncd/pipeline/blob/v0.21.0/pkg/git/git.go).
 
@@ -215,15 +221,6 @@ To address the complexity, I suggest that the implementation is done in a staged
 6. Add a result for the image digest and extend the sample build strategies to write to this result.
 7. Improve the implementation for HTTP sources to make it consistent with this design.
 8. Define and implement a well-defined set of exit codes per resource kind and use them in the BuildRun controller for an enhanced error reporting.
-
-The goal to run as non-root is not covered in great detail in this proposal as some items are not 100 % clear to me yet, for example:
-
-- Will we need to define a `podTemplate` in the Task spec to set a global `securityContext` to run also Tekton init containers as a non-root user?
-- Is for example the `/tekton/results` directory already writable for every user?
-- Can we decide what the id of the non-root user is or will different build strategies need to use different users?
-- Do we need to give the build strategy author flexibility as which user the init containers and our source downloads run and subsequently as which user the source files are stored on disk?
-
-Trying to mitigate it by listing it here to gather feedback/ideas/suggestions on this area.
 
 ## Design Details
 
