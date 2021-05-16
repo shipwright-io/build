@@ -21,20 +21,20 @@ import (
 )
 
 const (
-	prefixParamsResults = "shp-"
+	prefixParamsResultsVolumes = "shp"
 
 	paramOutputImage   = "output-image"
 	paramSourceRoot    = "source-root"
 	paramSourceContext = "source-context"
 
-	inputSourceResourceName = "source"
-	inputGitSourceURL       = "url"
-	inputGitSourceRevision  = "revision"
-	inputParamBuilder       = "BUILDER_IMAGE"
-	inputParamDockerfile    = "DOCKERFILE"
-	inputParamContextDir    = "CONTEXT_DIR"
-	outputImageResourceName = "image"
-	outputImageResourceURL  = "url"
+	resultImageDigest = "image-digest"
+	resultImageSize   = "image-size"
+
+	workspaceSource = "source"
+
+	inputParamBuilder    = "BUILDER_IMAGE"
+	inputParamDockerfile = "DOCKERFILE"
+	inputParamContextDir = "CONTEXT_DIR"
 )
 
 // getStringTransformations gets us MANDATORY replacements using
@@ -43,7 +43,7 @@ func getStringTransformations(fullText string) string {
 
 	stringTransformations := map[string]string{
 		// this will be removed, build strategy author should use $(params.shp-output-image) directly
-		"$(build.output.image)": fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramOutputImage),
+		"$(build.output.image)": fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
 
 		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilder),
 		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
@@ -69,24 +69,6 @@ func GenerateTaskSpec(
 ) (*v1beta1.TaskSpec, error) {
 
 	generatedTaskSpec := v1beta1.TaskSpec{
-		Resources: &v1beta1.TaskResources{
-			Inputs: []v1beta1.TaskResource{
-				{
-					ResourceDeclaration: taskv1.ResourceDeclaration{
-						Name: inputSourceResourceName,
-						Type: taskv1.PipelineResourceTypeGit,
-					},
-				},
-			},
-			Outputs: []v1beta1.TaskResource{
-				{
-					ResourceDeclaration: taskv1.ResourceDeclaration{
-						Name: outputImageResourceName, // mapped from {{ .Build.OutputImage }}
-						Type: taskv1.PipelineResourceTypeImage,
-					},
-				},
-			},
-		},
 		Params: []v1beta1.ParamSpec{
 			{
 				Description: "Path to the Dockerfile",
@@ -107,22 +89,37 @@ func GenerateTaskSpec(
 				},
 			},
 			{
-				Name:        prefixParamsResults + paramOutputImage,
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 				Description: "The URL of the image that the build produces",
 				Type:        taskv1.ParamTypeString,
 			},
 			{
-				Name:        prefixParamsResults + paramSourceContext,
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 				Description: "The context directory inside the source directory",
 				Type:        taskv1.ParamTypeString,
 			},
 			{
-				Name:        prefixParamsResults + paramSourceRoot,
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
 				Description: "The source directory",
 				Type:        taskv1.ParamTypeString,
 			},
 		},
-		Steps: []v1beta1.Step{},
+		Results: []v1beta1.TaskResult{
+			{
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultImageDigest),
+				Description: "The digest of the image",
+			},
+			{
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultImageSize),
+				Description: "The compressed size of the image",
+			},
+		},
+		Workspaces: []v1beta1.WorkspaceDeclaration{
+			// workspace for the source files
+			{
+				Name: workspaceSource,
+			},
+		},
 	}
 
 	if build.Spec.Builder != nil {
@@ -137,8 +134,10 @@ func GenerateTaskSpec(
 		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilder)
 	}
 
-	var vols []corev1.Volume
+	// define results, steps and volumes for sources
+	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build)
 
+	// define the steps coming from the build strategy
 	for _, containerValue := range buildSteps {
 
 		var taskCommand []string
@@ -172,33 +171,24 @@ func GenerateTaskSpec(
 		// Get volumeMounts added to Task's spec.Volumes
 		for _, volumeInBuildStrategy := range containerValue.VolumeMounts {
 			newVolume := true
-			for _, volumeInTask := range vols {
+			for _, volumeInTask := range generatedTaskSpec.Volumes {
 				if volumeInTask.Name == volumeInBuildStrategy.Name {
 					newVolume = false
 				}
 			}
 			if newVolume {
-				vols = append(vols, corev1.Volume{
+				generatedTaskSpec.Volumes = append(generatedTaskSpec.Volumes, corev1.Volume{
 					Name: volumeInBuildStrategy.Name,
 				})
 			}
-
 		}
 	}
-
-	generatedTaskSpec.Volumes = vols
 
 	// checking for runtime-image settings, and appending more steps to the strategy
 	if IsRuntimeDefined(build) {
 		if err := AmendTaskSpecWithRuntimeImage(cfg, &generatedTaskSpec, build); err != nil {
 			return nil, err
 		}
-	}
-
-	// when sources is defined on `spec.build` it will prepend the step to handle remote artifacts,
-	// before all other steps
-	if IsSourcesDefined(build) {
-		AmendTaskSpecWithRemoteArtifacts(cfg, &generatedTaskSpec, build)
 	}
 
 	return &generatedTaskSpec, nil
@@ -212,14 +202,6 @@ func GenerateTaskRun(
 	serviceAccountName string,
 	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
-
-	// Set revision to empty if the field is not specified in the Build.
-	// This will force Tekton Controller to do a git symbolic-link to HEAD
-	// giving back the default branch of the repository
-	revision := ""
-	if build.Spec.Source.Revision != nil {
-		revision = *build.Spec.Source.Revision
-	}
 
 	// retrieve expected imageURL form build or buildRun
 	var image string
@@ -248,42 +230,11 @@ func GenerateTaskRun(
 		Spec: v1beta1.TaskRunSpec{
 			ServiceAccountName: serviceAccountName,
 			TaskSpec:           taskSpec,
-			Resources: &v1beta1.TaskRunResources{
-				Inputs: []v1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-							Name: inputSourceResourceName,
-							ResourceSpec: &taskv1.PipelineResourceSpec{
-								Type: taskv1.PipelineResourceTypeGit,
-								Params: []taskv1.ResourceParam{
-									{
-										Name:  inputGitSourceURL,
-										Value: build.Spec.Source.URL,
-									},
-									{
-										Name:  inputGitSourceRevision,
-										Value: revision,
-									},
-								},
-							},
-						},
-					},
-				},
-				Outputs: []v1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-							Name: outputImageResourceName,
-							ResourceSpec: &taskv1.PipelineResourceSpec{
-								Type: taskv1.PipelineResourceTypeImage,
-								Params: []taskv1.ResourceParam{
-									{
-										Name:  outputImageResourceURL,
-										Value: image,
-									},
-								},
-							},
-						},
-					},
+			Workspaces: []v1beta1.WorkspaceBinding{
+				// workspace for the source files
+				{
+					Name:     workspaceSource,
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -309,14 +260,14 @@ func GenerateTaskRun(
 	params := []v1beta1.Param{
 		{
 			// shp-output-image
-			Name: prefixParamsResults + paramOutputImage,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: image,
 			},
 		},
 		{
-			Name: prefixParamsResults + paramSourceRoot,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: "/workspace/source",
@@ -350,7 +301,7 @@ func GenerateTaskRun(
 			},
 		})
 		params = append(params, v1beta1.Param{
-			Name: prefixParamsResults + paramSourceContext,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: path.Join("/workspace/source", *build.Spec.Source.ContextDir),
@@ -358,7 +309,7 @@ func GenerateTaskRun(
 		})
 	} else {
 		params = append(params, v1beta1.Param{
-			Name: prefixParamsResults + paramSourceContext,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: "/workspace/source",
