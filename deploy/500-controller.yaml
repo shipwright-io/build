@@ -16,7 +16,7 @@ spec:
       serviceAccountName: shipwright-build-controller
       containers:
         - name: shipwright-build
-          image: ko://github.com/shipwright-io/build/cmd/manager
+          image: ko://github.com/shipwright-io/build/cmd/shipwright-build-controller
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -32,6 +32,8 @@ spec:
                   fieldPath: metadata.name
             - name: CONTROLLER_NAME
               value: "shipwright-build"
+            - name: GIT_CONTAINER_IMAGE
+              value: ko://github.com/shipwright-io/build/cmd/git
           ports:
             - containerPort: 8383
               name: metrics-port

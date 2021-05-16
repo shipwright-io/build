@@ -65,7 +65,7 @@ TEST_SOURCE_SECRET ?=
 
 # Image settings for building and pushing images
 IMAGE_HOST ?= quay.io
-IMAGE ?= shipwright/shipwright-build-controller
+IMAGE_NAMESPACE ?= shipwright
 TAG ?= latest
 
 # options for generating crds with controller-gen
@@ -84,19 +84,19 @@ vendor: go.mod go.sum
 build: $(CONTROLLER)
 
 $(CONTROLLER): vendor
-	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/manager/main.go
+	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/shipwright-build-controller/main.go
 
 .PHONY: build-plain
 build-plain: 
-	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/manager/main.go
+	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/shipwright-build-controller/main.go
 
 .PHONY: build-image
 build-image:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko publish --bare ./cmd/manager
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko publish --base-import-paths ./cmd/shipwright-build-controller
 
 .PHONY: build-image-with-pprof
 build-image-with-pprof:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --bare --tags=pprof ./cmd/manager
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --base-import-paths --tags=pprof ./cmd/shipwright-build-controller
 
 .PHONY: release
 release:
@@ -247,7 +247,7 @@ test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strate
 
 install:
 	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
-	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko apply --base-import-paths -R -f deploy/
 
 install-with-pprof:
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
@@ -259,7 +259,7 @@ install-apis:
 
 install-controller: install-apis
 	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
-	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko apply --base-import-paths -f deploy/
 
 install-controller-kind: install-apis
 	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
@@ -269,11 +269,11 @@ install-strategies: install-apis
 
 local: vendor install-strategies
 	CONTROLLER_NAME=shipwright-build-controller \
-	go run cmd/manager/main.go $(ZAP_FLAGS)
+	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
 local-plain: vendor
 	CONTROLLER_NAME=shipwright-build-controller \
-	go run cmd/manager/main.go $(ZAP_FLAGS)
+	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
 clean:
 	rm -rf $(OUTPUT_DIR)
