@@ -13,14 +13,11 @@ spec:
           add: 
             - CHOWN
       command:
-        - /bin/bash
+        - chown
       args:
-        - -c
-        - >
-          chown -R "1000:1000" "$(params.shp-source-root)" &&
-          chown -R "1000:1000" /tekton/home &&
-          chown -R "1000:1000" /cache &&
-          chown -R "1000:1000" /layers
+        - -R
+        - "1000:1000"
+        - /tekton/home
       resources:
         limits:
           cpu: 500m
@@ -28,23 +25,29 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
-      volumeMounts:
-        - name: cache-dir
-          mountPath: /cache
-        - name: layers-dir
-          mountPath: /layers
     - name: build-and-push
       image: heroku/buildpacks:18
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
       command:
-        - /cnb/lifecycle/creator
+        - /bin/bash
       args:
-        - -app=$(params.shp-source-context)
-        - -cache-dir=/cache
-        - -layers=/layers
-        - $(params.shp-output-image)
+        - -c
+        - |
+          set -euo pipefail
+
+          mkdir /tmp/cache /tmp/layers
+
+          /cnb/lifecycle/creator \
+            '-app=$(params.shp-source-context)' \
+            -cache-dir=/tmp/cache \
+            -layers=/tmp/layers \
+            -report=/tmp/report.toml \
+            '$(params.shp-output-image)'
+
+          # Store the image digest
+          grep digest /tmp/report.toml | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
       resources:
         limits:
           cpu: 500m
@@ -52,8 +55,3 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
-      volumeMounts:
-        - name: cache-dir
-          mountPath: /cache
-        - name: layers-dir
-          mountPath: /layers
