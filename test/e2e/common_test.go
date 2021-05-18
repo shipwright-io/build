@@ -110,10 +110,11 @@ func amendSourceURL(b *buildv1alpha1.Build, sourceURL string) {
 
 // amendBuild make changes on build object.
 func amendBuild(identifier string, b *buildv1alpha1.Build) {
-	amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 	if strings.Contains(identifier, "github") {
+		amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGithub))
 	} else if strings.Contains(identifier, "gitlab") {
+		amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGitlab))
 	}
 
