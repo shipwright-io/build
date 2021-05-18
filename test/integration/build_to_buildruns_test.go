@@ -142,7 +142,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			tr, err := tb.GetTaskRunFromBuildRun(buildRun.Name)
 			Expect(err).To(BeNil())
 
-			Expect(tr.Spec.Resources.Outputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("foobar.registry.com"))
+			Expect(tr.Spec.Params[0].Value.StringVal).To(Equal("foobar.registry.com"))
 
 		})
 	})
@@ -338,11 +338,11 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			tr01, err := tb.GetTaskRunFromBuildRun(buildRun01.Name)
 			Expect(err).To(BeNil())
-			Expect(tr01.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/shipwright-io/sample-go"))
+			Expect(tr01.Spec.TaskSpec.Steps[0].Args[1]).To(Equal("https://github.com/shipwright-io/sample-go"))
 
 			tr02, err := tb.GetTaskRunFromBuildRun(buildRun02.Name)
 			Expect(err).To(BeNil())
-			Expect(tr02.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/shipwright-io/sample-go"))
+			Expect(tr02.Spec.TaskSpec.Steps[0].Args[1]).To(Equal("https://github.com/shipwright-io/sample-go"))
 
 		})
 	})

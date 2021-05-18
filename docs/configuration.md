@@ -15,6 +15,8 @@ The following environment variables are available:
 | `CTX_TIMEOUT` | Override the default context timeout used for all Custom Resource Definition reconciliation operations. |
 | `KANIKO_CONTAINER_IMAGE` | Specify the Kaniko container image to be used for the runtime image build instead of the default, for example `gcr.io/kaniko-project/executor:v1.6.0`. |
 | `REMOTE_ARTIFACTS_CONTAINER_IMAGE` | Specify the container image used for the `.spec.sources` remote artifacts download, by default it uses `busybox:latest`. |
+| `GIT_CONTAINER_TEMPLATE` | JSON representation of a [Container](https://pkg.go.dev/k8s.io/api/core/v1#Container) template that is used for steps that clone a Git repository. Default is `{"image":"quay.io/shipwright/git:latest", "command":["/ko-app/git"], "securityContext":{"runAsUser":1000,"runAsGroup":1000}}`. The following properties are ignored as they are set by the controller: `args`, `name`. |
+| `GIT_CONTAINER_IMAGE` | Custom container image for Git clone steps. If `GIT_CONTAINER_TEMPLATE` is also specifying an image, then the value for `GIT_CONTAINER_IMAGE` has precedence. |
 | `BUILD_CONTROLLER_LEADER_ELECTION_NAMESPACE` |  Set the namespace to be used to store the `shipwright-build-controller` lock, by default it is in the same namespace as the controller itself. |
 | `BUILD_CONTROLLER_LEASE_DURATION` |  Override the `LeaseDuration`, which is the duration that non-leader candidates will wait to force acquire leadership. |
 | `BUILD_CONTROLLER_RENEW_DEADLINE` |  Override the `RenewDeadline`, which is the duration that the acting leader will retry refreshing leadership before giving up. |

@@ -58,7 +58,7 @@ strategy to choose:
 | A go app | [shipwright-io/sample-go](https://github.com/shipwright-io/sample-go) | `/source-build` | Dockerfile-less | buildpacks-v3, buildpacks-v3-heroku |
 | A ruby app | [shipwright-io/sample-ruby](https://github.com/shipwright-io/sample-ruby) | `/source-build` | Dockerfile-less | buildpacks-v3, buildpacks-v3-heroku |
 | A java app with a Dockerfile | [shipwright-io/sample-java](https://github.com/shipwright-io/sample-java) | `/docker-build` | Dockerfile-based | Kaniko, BuildKit, Buildah |
-| Shipwright/Build | [shipwright-io/build](https://github.com/shipwright-io/build) |  `/cmd/manager` | Dockerfile-less | ko |
+| Shipwright/Build | [shipwright-io/build](https://github.com/shipwright-io/build) |  `/cmd/shipwright-build-controller` | Dockerfile-less | ko |
 
 _Note_: `ContextDir` is the path under the repository where the source code is located.
 

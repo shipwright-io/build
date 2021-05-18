@@ -150,7 +150,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -200,7 +199,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -315,7 +313,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-root)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:

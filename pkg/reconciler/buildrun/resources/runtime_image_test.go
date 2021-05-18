@@ -115,7 +115,7 @@ ENTRYPOINT [ "/bin/bash", "-x", "-c" ]`,
 		It("expect to have Tekton's Task amended", func() {
 			err := AmendTaskSpecWithRuntimeImage(config.NewDefaultConfig(), taskSpec, b)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(taskSpec.Steps)).To(Equal(2))
+			Expect(len(taskSpec.Steps)).To(Equal(3))
 		})
 	})
 })

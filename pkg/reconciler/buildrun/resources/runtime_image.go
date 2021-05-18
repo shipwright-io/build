@@ -67,6 +67,13 @@ ENTRYPOINT [ {{ renderEntrypoint .Spec.Runtime.Entrypoint }} ]
 
 	// defultShellImage default image for a simple shell instance.
 	defultShellImage = "busybox:latest"
+
+	resultShellScript = `
+# Store the image digest
+grep digest /kaniko/shp-runtime-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
+
+# Store the image size
+du -b -c /kaniko/shp-runtime-image-layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > "$(results.shp-image-size.path)"`
 )
 
 // rootUserID root's UID
@@ -126,7 +133,7 @@ func renderRuntimeDockerfile(b *buildv1alpha1.Build) (*bytes.Buffer, error) {
 // runtimeDockerfileTransformations search and replace special variables `$()` in informed string.
 func runtimeDockerfileTransformations(b *buildv1alpha1.Build, str string) string {
 	transformations := map[string]string{
-		"$(workspace)": fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramSourceContext),
+		"$(workspace)": fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceContext),
 	}
 	for k, v := range transformations {
 		str = strings.ReplaceAll(str, k, v)
@@ -152,12 +159,12 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 	}
 
 	container := v1.Container{
-		Name:  "runtime-dockerfile",
+		Name:  "runtime-image-dockerfile",
 		Image: imageURL,
 		SecurityContext: &v1.SecurityContext{
 			RunAsUser: &rootUserID,
 		},
-		WorkingDir: fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramSourceRoot),
+		WorkingDir: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
 		Command:    []string{"/bin/sh"},
 		Args: []string{
 			"-x",
@@ -171,9 +178,9 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 // runtimeBuildAndPushStep returns a Task step to build the Dockerfile.runtime with kaniko.
 func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta1.Step {
 	container := v1.Container{
-		Name:       "kaniko-build-and-push",
+		Name:       "runtime-image-build-and-push",
 		Image:      kanikoImage,
-		WorkingDir: fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramSourceRoot),
+		WorkingDir: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
 		SecurityContext: &v1.SecurityContext{
 			RunAsUser: &rootUserID,
 			Capabilities: &v1.Capabilities{
@@ -197,12 +204,38 @@ func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta
 		Args: []string{
 			"--skip-tls-verify=true",
 			fmt.Sprintf("--dockerfile=%s", runtimeDockerfile),
-			fmt.Sprintf("--destination=$(params.%s%s)", prefixParamsResults, paramOutputImage),
+			fmt.Sprintf("--destination=$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
 			"--snapshotMode=redo",
-			"--oci-layout-path=/workspace/output/image",
+			"--oci-layout-path=/kaniko/shp-runtime-image-layout",
+		},
+		VolumeMounts: []v1.VolumeMount{
+			{
+				Name:      prefixParamsResultsVolumes + "-runtime-image-layout",
+				MountPath: "/kaniko/shp-runtime-image-layout",
+			},
 		},
 	}
 	return &v1beta1.Step{Container: container}
+}
+
+func resultStep() *v1beta1.Step {
+	return &v1beta1.Step{
+		Container: v1.Container{
+			Name:    "runtime-image-results",
+			Image:   defultShellImage,
+			Command: []string{"/bin/sh"},
+			Args: []string{
+				"-c",
+				resultShellScript,
+			},
+			VolumeMounts: []v1.VolumeMount{
+				{
+					Name:      prefixParamsResultsVolumes + "-runtime-image-layout",
+					MountPath: "/kaniko/shp-runtime-image-layout",
+				},
+			},
+		},
+	}
 }
 
 // AmendTaskSpecWithRuntimeImage add more steps to Tekton's Task in order to create the
@@ -212,14 +245,29 @@ func AmendTaskSpecWithRuntimeImage(
 	spec *v1beta1.TaskSpec,
 	b *buildv1alpha1.Build,
 ) error {
+	// append a volume for the OCI image layout to be passed from the Kaniko to the Results step
+	spec.Volumes = append(spec.Volumes, v1.Volume{
+		Name: prefixParamsResultsVolumes + "-runtime-image-layout",
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	})
+
+	// append the step that generates the Dockerfile
 	step, err := runtimeDockerfileStep(b)
 	if err != nil {
 		return err
 	}
 	spec.Steps = append(spec.Steps, *step)
 
+	// append the step that runs the Dockerfile build using Kaniko
 	step = runtimeBuildAndPushStep(b, cfg.KanikoContainerImage)
 	spec.Steps = append(spec.Steps, *step)
+
+	// append the step that fills the image results
+	step = resultStep()
+	spec.Steps = append(spec.Steps, *step)
+
 	return nil
 }
 

@@ -71,10 +71,10 @@ var _ = Describe("Credentials", func() {
 			}
 
 			expectedAfterServiceAccount = &corev1.ServiceAccount{
+				// source credential is not added to the service account
 				Secrets: []corev1.ObjectReference{
 					{Name: "secret_b"},
 					{Name: "secret_c"},
-					{Name: "secret_a"},
 					{Name: "secret_docker.io"},
 					{Name: "secret_buildrun.io"},
 				},
@@ -97,6 +97,8 @@ var _ = Describe("Credentials", func() {
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
 						URL: "a/b/c",
+					},
+					Output: buildv1alpha1.Image{
 						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_b",
 						},

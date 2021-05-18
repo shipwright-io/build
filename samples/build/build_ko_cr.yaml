@@ -8,7 +8,7 @@ metadata:
 spec:
   source:
     url: https://github.com/shipwright-io/build
-    contextDir: cmd/manager
+    contextDir: cmd/shipwright-build-controller
   strategy:
     name: ko
     kind: ClusterBuildStrategy
