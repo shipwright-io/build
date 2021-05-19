@@ -114,12 +114,6 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 // the condition as Status False. It also updates the object in the cluster by
 // calling client Status Update
 func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, errorMessage string, reason string) error {
-	// these two fields are deprecated and will be removed soon
-	//lint:ignore SA1019 should be set until removed
-	buildRun.Status.Succeeded = corev1.ConditionFalse
-	//lint:ignore SA1019 should be set until removed
-	buildRun.Status.Reason = errorMessage
-
 	now := metav1.Now()
 	buildRun.Status.CompletionTime = &now
 	buildRun.Status.SetCondition(&buildv1alpha1.Condition{

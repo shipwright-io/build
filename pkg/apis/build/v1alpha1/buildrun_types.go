@@ -47,20 +47,6 @@ type BuildRunStatus struct {
 	// Conditions holds the latest available observations of a resource's current state.
 	Conditions Conditions `json:"conditions,omitempty"`
 
-	// The Succeeded status of the TaskRun
-	//
-	// Deprecated: Use Conditions instead. This will be removed in a future release.
-	//
-	// +optional
-	Succeeded corev1.ConditionStatus `json:"succeeded,omitempty"`
-
-	// The Succeeded reason of the TaskRun
-	//
-	// Deprecated: Use Conditions instead. This will be removed in a future release.
-	//
-	// +optional
-	Reason string `json:"reason,omitempty"`
-
 	// LatestTaskRunRef is the name of the TaskRun responsible for executing this BuildRun.
 	//
 	// TODO: This should be called something like "TaskRunName"

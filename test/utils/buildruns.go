@@ -7,6 +7,7 @@ package utils
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -58,7 +59,11 @@ func (t *TestBuild) GetBRReason(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return br.Status.Reason, nil
+	cond := br.Status.GetCondition(v1alpha1.Succeeded)
+	if cond == nil {
+		return "", errors.New("BuildRun had no Succeeded condition")
+	}
+	return cond.Reason, nil
 }
 
 // GetBRTillCompletion returns a BuildRun that have a CompletionTime set.

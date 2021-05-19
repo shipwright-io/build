@@ -309,14 +309,14 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			expectedReason = fmt.Sprintf("TaskRun \"%s\" failed to finish within \"5s\"", tr.Name)
+			expectedReason = "BuildRunTimeout"
 			actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			tr, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(tr.Status.CompletionTime).ToNot(BeNil())
 		})
@@ -349,7 +349,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			reason, err := tb.GetBRReason(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(reason).To(ContainSubstring("the Build is not registered correctly"))
+			Expect(reason).To(Equal("BuildRegistrationFailed"))
 
 			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).ToNot(BeNil())
@@ -384,12 +384,8 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			tr, err = tb.UpdateTaskRun(tr)
 			Expect(err).To(BeNil())
 
-			expectedReason := fmt.Sprintf("TaskRun \"%s\" was cancelled", tr.Name)
-			actualReason, err := tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
-
-			expectedReason = "TaskRunCancelled"
-			actualReason, err = tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+			expectedReason := "TaskRunCancelled"
+			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 		})
 	})
@@ -418,7 +414,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			tb.DeleteTR(tr.Name)
 
-			expectedReason := fmt.Sprintf("taskRun %s doesn't exist", tr.Name)
+			expectedReason := "TaskRunIsMissing"
 			actualReason, err := tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 		})
