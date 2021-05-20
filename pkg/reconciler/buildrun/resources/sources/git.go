@@ -60,7 +60,7 @@ func AppendGitStep(
 
 		// define the volume mount on the container
 		gitStep.VolumeMounts = append(gitStep.VolumeMounts, corev1.VolumeMount{
-			Name:      fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, source.Credentials.Name),
+			Name:      SanitizeVolumeNameForSecretName(source.Credentials.Name),
 			MountPath: secretMountPath,
 			ReadOnly:  true,
 		})
