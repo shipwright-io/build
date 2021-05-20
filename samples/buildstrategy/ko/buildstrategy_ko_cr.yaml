@@ -68,7 +68,7 @@ spec:
 
           # Download ko
           pushd /tmp > /dev/null
-            curl -f -s -L https://github.com/google/ko/releases/download/v0.8.2/ko_0.8.2_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz | tar xzf - ko
+            curl -f -s -L https://github.com/google/ko/releases/download/v0.8.3/ko_0.8.3_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz | tar xzf - ko
           popd > /dev/null
 
           # Run ko
