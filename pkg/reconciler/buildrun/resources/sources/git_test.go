@@ -66,7 +66,7 @@ var _ = Describe("Git", func() {
 			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
 				URL: "git@github.com:shipwright-io/build.git",
 				Credentials: &corev1.LocalObjectReference{
-					Name: "a-secret",
+					Name: "a.secret",
 				},
 			}, "default")
 		})
@@ -80,7 +80,7 @@ var _ = Describe("Git", func() {
 			Expect(len(taskSpec.Volumes)).To(Equal(1))
 			Expect(taskSpec.Volumes[0].Name).To(Equal("shp-a-secret"))
 			Expect(taskSpec.Volumes[0].VolumeSource.Secret).NotTo(BeNil())
-			Expect(taskSpec.Volumes[0].VolumeSource.Secret.SecretName).To(Equal("a-secret"))
+			Expect(taskSpec.Volumes[0].VolumeSource.Secret.SecretName).To(Equal("a.secret"))
 		})
 
 		It("adds a step", func() {

@@ -17,16 +17,16 @@ var _ = Describe("Utils", func() {
 
 	Context("for different candidate volume names", func() {
 
-		It("retains a name that is okay", func() {
-			Expect(sources.SanitizeVolumeName("okay-name")).To(Equal("okay-name"))
+		It("adds only the prefix if the name is okay", func() {
+			Expect(sources.SanitizeVolumeNameForSecretName("okay-name")).To(Equal("shp-okay-name"))
 		})
 
-		It("replaces characters that are not allowed", func() {
-			Expect(sources.SanitizeVolumeName("bad.name")).To(Equal("bad-name"))
+		It("adds the prefix and replaces characters that are not allowed", func() {
+			Expect(sources.SanitizeVolumeNameForSecretName("bad.name")).To(Equal("shp-bad-name"))
 		})
 
-		It("reduces the length if needed", func() {
-			Expect(sources.SanitizeVolumeName("long-name-long-name-long-name-long-name-long-name-long-name-long-name-")).To(Equal("long-name-long-name-long-name-long-name-long-name-long-name-lon"))
+		It("adds the prefix and reduces the length if needed", func() {
+			Expect(sources.SanitizeVolumeNameForSecretName("long-name-long-name-long-name-long-name-long-name-long-name-long-name-")).To(Equal("shp-long-name-long-name-long-name-long-name-long-name-long-name"))
 		})
 	})
 

@@ -31,7 +31,7 @@ func AppendSecretVolume(
 	taskSpec *tektonv1beta1.TaskSpec,
 	secretName string,
 ) {
-	volumeName := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, secretName)
+	volumeName := SanitizeVolumeNameForSecretName(secretName)
 
 	// ensure we do not add the secret twice
 	for _, volume := range taskSpec.Volumes {
@@ -52,10 +52,10 @@ func AppendSecretVolume(
 	})
 }
 
-// SanitizeVolumeName ensures that there are no forbidden names in the volume name and that its name is not too long
-func SanitizeVolumeName(name string) string {
+// SanitizeVolumeNameForSecretName creates the name of a Volume for a Secret
+func SanitizeVolumeNameForSecretName(secretName string) string {
 	// remove forbidden characters
-	sanitizedName := dnsLabel1123Forbidden.ReplaceAllString(name, "-")
+	sanitizedName := dnsLabel1123Forbidden.ReplaceAllString(fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, secretName), "-")
 
 	// ensure maximum length
 	if len(sanitizedName) > 63 {
