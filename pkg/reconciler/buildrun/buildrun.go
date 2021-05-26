@@ -231,6 +231,13 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		} else if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
+		// TODO: quick test
+		for _, r := range lastTaskRun.Status.TaskRunResults {
+			buildRun.Status.BuildResults = append(buildRun.Status.BuildResults, buildv1alpha1.BuildResult{
+				Name:  r.Name,
+				Value: r.Value,
+			})
+		}
 
 		// Check if the BuildRun is already finished, this happens if the build controller is restarted.
 		// It then reconciles all TaskRuns. This is valuable if the build controller was down while the TaskRun

@@ -54,6 +54,8 @@ type BuildRunStatus struct {
 	// +optional
 	LatestTaskRunRef *string `json:"latestTaskRunRef,omitempty"`
 
+	BuildResults []BuildResult `json:"results,omitempty"`
+
 	// StartTime is the time the build is actually started.
 	// +optional
 	StartTime *metav1.Time `json:"startTime,omitempty"`
@@ -69,6 +71,11 @@ type BuildRunStatus struct {
 	// FailedAt points to the resource where the BuildRun failed
 	// +optional
 	FailedAt *FailedAt `json:"failedAt,omitempty"`
+}
+
+type BuildResult struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // FailedAt describes the location where the failure happened
