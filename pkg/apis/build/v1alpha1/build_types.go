@@ -98,6 +98,11 @@ type BuildSpec struct {
 
 	// Runtime represents the runtime-image.
 	//
+	// Deprecated: This feature is deprecated and will be removed in a
+	// future release.  See
+	// https://github.com/shipwright-io/community/blob/main/ships/deprecate-runtime.md
+	// for more information.
+	//
 	// +optional
 	Runtime *Runtime `json:"runtime,omitempty"`
 

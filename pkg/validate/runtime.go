@@ -24,6 +24,7 @@ type RuntimeRef struct {
 // that the Build spec runtime definition is properly populated
 func (r RuntimeRef) ValidatePath(ctx context.Context) error {
 	if resources.IsRuntimeDefined(r.Build) {
+		//lint:ignore SA1019 should be set until removed
 		if len(r.Build.Spec.Runtime.Paths) == 0 {
 			r.Build.Status.Reason = build.RuntimePathsCanNotBeEmpty
 			r.Build.Status.Message = "the property 'spec.runtime.paths' must not be empty"

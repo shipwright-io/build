@@ -285,9 +285,11 @@ func isBuilderDefined(b *buildv1alpha1.Build) bool {
 // IsRuntimeDefined inspect if build has `.spec.runtime` defined, checking intermediary attributes
 // and making sure Image is informed.
 func IsRuntimeDefined(b *buildv1alpha1.Build) bool {
+	//lint:ignore SA1019 should be set until removed
 	if b.Spec.Runtime == nil {
 		return false
 	}
+	//lint:ignore SA1019 should be set until removed
 	if b.Spec.Runtime.Base.Image == "" {
 		return false
 	}
