@@ -1,3 +1,8 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
 # Git Clone Wrapper
 
 **TL;DR:** As part of the build, the sources need to be retrieved. One option is to use `git` to clone the source to the container filesystem. This was used to be done by a Tekton Git Resource. This package contains Shipwright Build owned Git retrieval code, which is wrapping around the `git` CLI in a minimal container setup.
