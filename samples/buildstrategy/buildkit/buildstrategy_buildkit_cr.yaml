@@ -10,6 +10,10 @@ metadata:
     # https://kubernetes.io/docs/tutorials/clusters/seccomp/#create-a-pod-with-a-seccomp-profile-for-syscall-auditing for more information
     container.seccomp.security.alpha.kubernetes.io/step-build-and-push: unconfined
 spec:
+  parameters:
+  - name: insecure-registry
+    description: "enables the push to an insecure registry"
+    default: "false"
   buildSteps:
     - name: prepare
       image: alpine:latest
@@ -50,7 +54,7 @@ spec:
             --frontend=dockerfile.v0 \
             --local=context='$(params.shp-source-context)' \
             --local=dockerfile='$(params.shp-source-root)/$(build.dockerfile)' \
-            --output=type=image,name='$(params.shp-output-image)',push=true,registry.insecure=false \
+            --output=type=image,name='$(params.shp-output-image)',push=true,registry.insecure=$(params.insecure-registry) \
             --export-cache=type=inline \
             --import-cache=type=registry,ref='$(params.shp-output-image)' \
             --metadata-file /tmp/image-metadata.json

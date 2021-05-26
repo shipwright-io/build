@@ -25,7 +25,9 @@ SPDX-License-Identifier: Apache-2.0
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
+- [Strategy parameters](#strategy-parameters)
 - [System parameters](#system-parameters)
+- [System parameters vs Strategy parameters comparison](#system-parameters-vs-strategy-parameters-comparison)
 - [System results](#system-results)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
@@ -122,8 +124,6 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 
 [BuildKit](https://github.com/moby/buildkit) is composed of the `buildctl` client and the `buildkitd` daemon. For the `buildkit` ClusterBuildStrategy, it runs on a [daemonless](https://github.com/moby/buildkit#daemonless) mode, where both client and ephemeral daemon run in a single container. In addition, it runs without privileges (_[rootless](https://github.com/moby/buildkit/blob/master/docs/rootless.md)_).
 
-The `buildkit-insecure` ClusterBuildStrategy exists to support users pushing to an insecure container registry. We use this strategy at the moment only for testing purposes against a local in-cluster registry. In the future, this strategy will be removed in favor of a single one where users can parameterize the secure/insecure behaviour.
-
 ### Cache Exporters
 
 By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the build times. When pushing an image to a registry, it will use the `inline` export cache, which pushes the image and cache together. Please refer to [export-cache docs](https://github.com/moby/buildkit#export-cache) for more information.
@@ -202,15 +202,56 @@ kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-i
 [s2i]: https://github.com/openshift/source-to-image
 [buildah]: https://github.com/containers/buildah
 
+## Strategy parameters
+
+Strategy parameters allow users to parameterize their strategy definition, by allowing users to control the _parameters_ values via the `Build` or `BuildRun` resources.
+
+Users defining _parameters_ under their strategies require to understand the following:
+
+- **Definition**: A list of parameters should be defined under `spec.parameters`. Each list item should consist of a _name_, a _description_ and a reasonable _default_ value (_type string_). Note that a default value is not mandatory.
+- **Usage**: In order to use a parameter in the strategy steps, users should follow the following syntax: `$(params.your-parameter-name)`
+- **Parameterize**: Any `Build` or `BuildRun` referencing your strategy, can set a value for _your-parameter-name_ parameter if needed.
+
+The following is an example of a strategy that defines and uses the `sleep-time` parameter:
+
+```yaml
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: sleepy-strategy
+spec:
+  parameters:
+  - name: sleep-time
+    description: "time in seconds for sleeping"
+    default: "1"
+  buildSteps:
+  - name: a-strategy-step
+    image: alpine:latest
+    command:
+    - sleep
+    args:
+    - $(params.sleep-time)
+```
+
+See more information on how to use this parameter in a `Build` or `BuildRun` in the related [docs](./build.md#defining-params).
+
 ## System parameters
 
-You can use parameters when defining the steps of a build strategy to access system information as well as information provided by the user in his Build or BuildRun. The following parameters are available:
+Contrary to the strategy `spec.parameters`, you can use system parameters and their values defined at runtime when defining the steps of a build strategy to access system information as well as information provided by the user in their Build or BuildRun. The following parameters are available:
 
 | Parameter                      | Description |
 | ------------------------------ | ----------- |
 | `$(params.shp-source-root)`    | The absolute path to the directory that contains the user's sources. |
-| `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in his Build, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
+| `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in their `Build`, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
 | `$(params.shp-output-image)`      | The URL of the image that the user wants to push as specified in the Build's `spec.output.image`, or the override from the BuildRun's `spec.output.image`. |
+
+## System parameters vs Strategy Parameters Comparison
+
+| Parameter Type     | User Configurable | Definition    |
+| ------------------ | ------------ | ------------- |
+| System Parameter   |    No        |  At run-time, by the `BuildRun` controller.  |
+| Strategy Parameter |    Yes       |  At build-time, during the `BuildStrategy` creation. |
 
 ## System results
 

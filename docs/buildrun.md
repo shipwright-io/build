@@ -10,6 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 - [BuildRun Controller](#buildrun-controller)
 - [Configuring a BuildRun](#configuring-a-buildrun)
   - [Defining the BuildRef](#defining-the-buildref)
+  - [Defining paramValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
 - [BuildRun Status](#buildrun-status)
   - [Understanding the state of a BuildRun](#understanding-the-state-of-a-BuildRun)
@@ -18,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-The resource `BuildRun` (`buildruns.dev/v1alpha1`) is the build process of a `Build` resource definition which is executed in Kubernetes.
+The resource `BuildRun` (`buildruns.shipwright.io/v1alpha1`) is the build process of a `Build` resource definition which is executed in Kubernetes.
 
 A `BuildRun` resource allows the user to define:
 
@@ -55,6 +56,7 @@ The `BuildRun` definition supports the following fields:
 - Optional:
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The value overwrites the value that is defined in the `Build`.
+  - `spec.paramValues` - Override any _params_ defined in the referenced `Build`, as long as their name matches.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value which is defined in `Build`. ( Note: other properties of the output, for example, the credentials cannot be specified in the buildRun spec. )
   - `spec.output.credentials.name` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
 
@@ -71,6 +73,44 @@ spec:
   buildRef:
     name: buildpack-nodejs-build-namespaced
 ```
+
+### Defining ParamValues
+
+A `BuildRun` resource can override _paramValues_ defined in its referenced `Build`, as long as the `Build` defines the same _params_ name.
+
+For example, the following `BuildRun` overrides the value for _sleep-time_ param, that is defined in the _a-build_ `Build` resource.
+
+```yaml
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: a-buildrun
+spec:
+  buildRef:
+    name: a-build
+  paramValues:
+  - name: sleep-time
+    value: "30"
+
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: a-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build/
+  paramValues:
+  - name: sleep-time
+    value: "60"
+  strategy:
+    name: sleepy-strategy
+    kind: BuildStrategy
+```
+
+See more about `paramValues` usage in the related [Build](./build.md#defining-params) resource docs.
 
 ### Defining the ServiceAccount
 

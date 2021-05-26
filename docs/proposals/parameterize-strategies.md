@@ -17,7 +17,7 @@ approvers:
   - "@ImJasonH"
 creation-date: 2021-03-25
 last-updated: 2021-04-20
-status: implementable
+status: implemented
 ---
 
 # Parameterize Build Strategies
@@ -58,13 +58,13 @@ There are several reasons for the need of a more well define parameterization me
 
 ### Goals
 
-- Introduce a `spec.params` field across Build and BuildRun API´s, as a way for users to provide N parameters according to their preferred strategy of choice. Defining `spec.params` in a BuildRun overrides any definition of the same parameter in Build´s.
+- Introduce a `spec.params` field across Build and BuildRun API´s, as a way for users to provide N parameters according to their preferred strategy of choice. Defining `spec.params` in a BuildRun overrides any definition of the same param in Build´s.
 
-- Introduce a `spec.params` on Strategies, both cluster or namespaced scope. This allow strategy administrators to layout the definition of N parameters, as required for their strategies.
+- Introduce a `spec.parameters` on Strategies, both cluster or namespaced scope. This allow strategy administrators to layout the definition of N parameters, as required for their strategies.
 
 - Revisit what we consider today as default Parameters that are defined on runtime when creating `TaskRuns`. These are `DOCKERFILE`, `CONTEXT_DIR` and `BUILDER_IMAGE`. Decide if we need to reduce or extend the default definitions and properly document their usage.
 
-- Expose the usage of Tekton Params directly on the strategies, in favor of simplicity and readability. This boils down to `inputs.params.DOCKERFILE`, instead of `build.dockerfile`.
+- Expose the usage of Tekton Params directly on the strategies, in favor of simplicity and readability. This boils down to `params.DOCKERFILE`, instead of `build.dockerfile`.
 
 ### Non-Goals
 
@@ -76,7 +76,7 @@ There are several reasons for the need of a more well define parameterization me
 
 ### Part 1: Introduce spec.params
 
-Introduce the `spec.params` field across Build, BuildRun and BuildStrategies resources. This will define a list  of parameters definition, of the type `string`. This new `spec.params` does not provide support for Tekton params of the type `array`. This field can only be use, if the parameter is supported in the strategy of choice.
+Introduce the `spec.params` field across Build and BuildRun, and the `spec.parameters` for BuildStrategies resources. This will define a list  of parameters definition, of the type `string`. This new `spec.params` does not provide support for Tekton params of the type `array`. This field can only be use, if the parameter is supported in the strategy of choice.
 
 For example:
 
@@ -87,10 +87,10 @@ metadata:
   name: a-cluster-strategy
 spec:
   buildSteps: #Content omitted for this example
-  params:
+  parameters:
   - name: a-param
     description: A description of this parameter definition.
-    default: The default parameter value.
+    default: "The default parameter value"
 ```
 
 ```yaml
@@ -121,11 +121,11 @@ spec:
     value: Another parameter value because my build is not up-to-date.
 ```
 
-_Note_: If a **Buildrun** specifies `a-param` via its `spec.params` ,this will override the value defined in the `a-build`. In other words, BuildRuns have a higher priority when defining parameters.
+_Note_: If a **Buildrun** specifies `a-param` via its `spec.params`, this will override the value defined in the `a-build`. In other words, BuildRuns have a higher priority when defining params.
 
 ### Part 2: Runtime Parameters
 
-As mentioned in the Goals section, we currently define three parameters that can be constructed on runtime, also know as _runtime parameters_. Runtime parameters are define during runtime, on the creation of a Taskrun, where the paremeter definition and the parameter value mapping takes place. These runtime parameters are:
+As mentioned in the Goals section, we currently define three parameters that can be constructed on runtime, also know as _runtime parameters_ or _system parameters_. System parameters are define during runtime, on the creation of a Taskrun, where the parameter definition and the parameter value mapping takes place. These runtime parameters are:
 
 - DOCKERFILE
 - CONTEXT_DIR
@@ -166,22 +166,22 @@ Instead of doing:
 we should do:
 
 ```yaml
---context=/workspace/source/$(PARAMS.CONTEXT_DIR)
+--context=/workspace/source/$(params.CONTEXT_DIR)
 ```
 
 ### Part 4: Sanity Checks
 
-We will require a sanity check mechanism, in order to validate the quality of the defined user parameters. This belongs to implementation details, but generic examples are:
+We will require a sanity check mechanism, in order to validate the quality of the defined user params. This belongs to implementation details, but generic examples are:
 
 - Decide how to handle parameters that have none default and that are not specified at the Build/BuildRun level.
 - Validate that the defined parameter in the strategy is not a reserved runtime parameter.
-- Validate if the specified user parameter was defined in the strategy.
+- Validate if the specified user params was defined in the strategy.
 
 ### Part 5: Documentation Enhancement
 
 Currently we do not have proper documentation on:
 
-- Tutorilas on how to Build Strategies.
+- Tutorials on how to build Strategies.
 - Which are the runtime parameters and how they are used.
 
 This ensures that as part of this EP implementation, we can provide a set of documents to fulfill the above missing points.
@@ -203,7 +203,7 @@ kind: ClusterBuildStrategy
 metadata:
   name: buildkit
 spec:
-  params:
+  parameters:
   - name: DOCKERFILE_NAME
     description: Name of your Dockerfile inside the DOCKERFILE context
     default: "Dockerfile"
@@ -261,7 +261,7 @@ kind: ClusterBuildStrategy
 metadata:
   name: buildkit
 spec:
-  params:
+  parameters:
   - name: DOCKERFILE_NAME
     description: Name of your Dockerfile inside the DOCKERFILE context
     default: "Dockerfile"
@@ -285,7 +285,7 @@ kind: ClusterBuildStrategy
 metadata:
   name: buildkit
 spec:
-  params:
+  parameters:
   - name: INSECURE_REGISTRY
     description: Defines if an image should be pushed to an insecure registry
     default: false
