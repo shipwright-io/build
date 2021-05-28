@@ -155,6 +155,7 @@ func GenerateTaskSpec(
 		step := v1beta1.Step{
 			Container: corev1.Container{
 				Image:           taskImage,
+				ImagePullPolicy: containerValue.ImagePullPolicy,
 				Name:            containerValue.Name,
 				VolumeMounts:    containerValue.VolumeMounts,
 				Command:         taskCommand,
