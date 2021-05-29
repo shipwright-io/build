@@ -158,7 +158,7 @@ func checkEnvironment(ctx context.Context) error {
 }
 
 func clone(ctx context.Context) error {
-	args := []string{
+	cloneArgs := []string{
 		"clone",
 		"--quiet",
 		"--no-tags",
@@ -168,24 +168,25 @@ func clone(ctx context.Context) error {
 	switch {
 	case commitShaRegEx.MatchString(flagValues.revision):
 		commitSha = flagValues.revision
-		args = append(args,
+		cloneArgs = append(cloneArgs,
 			"--no-checkout",
 		)
 
 	case flagValues.revision != "":
-		args = append(args,
+		cloneArgs = append(cloneArgs,
 			"--branch", flagValues.revision,
 			"--depth", "1",
 			"--single-branch",
 		)
 
 	default:
-		args = append(args,
+		cloneArgs = append(cloneArgs,
 			"--depth", "1",
 			"--single-branch",
 		)
 	}
 
+	var addtlCredArgs []string
 	if flagValues.secretPath != "" {
 		credType, err := checkCredentials()
 		if err != nil {
@@ -231,8 +232,8 @@ func clone(ctx context.Context) error {
 				)
 			}
 
-			args = append(args,
-				"--config",
+			addtlCredArgs = append(addtlCredArgs,
+				"-c",
 				fmt.Sprintf(`core.sshCommand=%s`, strings.Join(sshCmd, " ")),
 			)
 
@@ -271,7 +272,9 @@ func clone(ctx context.Context) error {
 		}
 	}
 
-	if _, err := git(ctx, append(args, "--", flagValues.url, flagValues.target)...); err != nil {
+	cloneArgs = append(cloneArgs, addtlCredArgs...)
+	cloneArgs = append(cloneArgs, "--", flagValues.url, flagValues.target)
+	if _, err := git(ctx, cloneArgs...); err != nil {
 		return err
 	}
 
@@ -282,7 +285,10 @@ func clone(ctx context.Context) error {
 		}
 	}
 
-	_, err := git(ctx, "-C", flagValues.target, "submodule", "update", "--init", "--recursive")
+	submoduleArgs := []string{"-C", flagValues.target}
+	submoduleArgs = append(submoduleArgs, addtlCredArgs...)
+	submoduleArgs = append(submoduleArgs, "submodule", "update", "--init", "--recursive")
+	_, err := git(ctx, submoduleArgs...)
 	return err
 }
 
