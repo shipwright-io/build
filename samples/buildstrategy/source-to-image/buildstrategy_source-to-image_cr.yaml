@@ -11,7 +11,8 @@ spec:
         - $(build.builder.image)
         - '--as-dockerfile'
         - /gen-source/Dockerfile.gen
-      image: 'quay.io/openshift-pipeline/s2i:nightly'
+      image: quay.io/openshift-pipeline/s2i:nightly
+      imagePullPolicy: Always
       name: s2i-build-as-dockerfile
       volumeMounts:
         - mountPath: /gen-source
