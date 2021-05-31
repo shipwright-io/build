@@ -132,12 +132,12 @@ For the output image, we will also provide two more system-defined results: `shp
 
 In our sample build strategies, we should support these two results as much as possible:
 
-- `ko` supports to write an OCI image manifest file using the `--oci-layout-path` argument. The strategy needs to write that manifest to a temporary location, use a tool to extract the digest and size from the index.json file, and write this data to the result files.
-- Kaniko supports to write an OCI image manifest file using the `--oci-layout-path` argument. Kaniko is based on scratch, as such, we cannot extend the existing build-and-push step to use some tool and run some extraction logic. We need to add an extra step. For this, we need to add volumeMounts to write the temporary file in the `build-and-push` step, and consume it in the following one to extract and store the results.
+- `ko` supports to write an OCI image manifest file using the `--oci-layout-path` argument. The strategy needs to write that manifest to a temporary location, use a tool to extract the digest from the index.json file, and write this data to the result files. The size can be calculated by summing the file sizes of the blobs.
+- Kaniko supports to write an OCI image manifest file using the `--oci-layout-path` argument. Kaniko is based on scratch, as such, we cannot extend the existing build-and-push step to use some tool and run some extraction logic. We need to add an extra step. For this, we need to add volumeMounts to write the temporary file in the `build-and-push` step, and consume it in the following one to extract and store the results in the same way as for `ko`.
 - The strategy that uses s2i in combination with Kaniko needs to adopt the solution for Kaniko.
 - The Buildpacks strategies can use the `--report` argument for the [create](https://buildpacks.io/docs/concepts/components/lifecycle/create/) command to write a toml file. From there, the value can be extracted using shell logic like in the [Tekton catalog](https://github.com/tektoncd/catalog/blob/main/task/buildpacks/0.3/buildpacks.yaml#L153). Though, I prefer to use the same step to save resources. As far as I remember, only the digest is available but no size.
-- Buildah TBD `buildah inspect` ?
-- BuildKit writes the images digest to stdout only atm. There is a long-standing issue, [Add some way to get the sha256 digest of the image #1158](https://github.com/moby/buildkit/issues/1158), but no resolution yet. As alternative, one can use the [`crane digest`](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane_digest.md) command to retrieve the digest after the image was pushed. This can run in a separate step using the `gcr.io/go-containerregistry/crane` image.
+- Using Buildah, the `buildah images --format='{{.Digest}}' <IMAGE_ID>` command can be used to retrieve the digest.
+- BuildKit contains an [unreleased change](https://github.com/moby/buildkit/pull/2095) which introduces a new command line flag `--metadata-file` that we can use to get the image digest.
 
 For the runtime image support, we need to adopt the solution that is described above for Kaniko.
 

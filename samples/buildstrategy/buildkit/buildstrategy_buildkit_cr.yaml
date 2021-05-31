@@ -25,7 +25,7 @@ spec:
         - 1000:1000
         - /tekton/home
     - name: build-and-push
-      image: moby/buildkit:master-rootless
+      image: moby/buildkit:nightly-rootless
       imagePullPolicy: Always
       securityContext:
         allowPrivilegeEscalation: true
@@ -39,13 +39,21 @@ spec:
       - name: BUILDKITD_FLAGS
         value: --oci-worker-no-process-sandbox
       command:
-        - buildctl-daemonless.sh
+        - /bin/ash
       args:
-        - build
-        - --progress=plain
-        - --frontend=dockerfile.v0
-        - --local=context=$(params.shp-source-context)
-        - --local=dockerfile=$(params.shp-source-root)/$(build.dockerfile)
-        - --output=type=image,name=$(params.shp-output-image),push=true,registry.insecure=false
-        - --export-cache=type=inline
-        - --import-cache=type=registry,ref=$(params.shp-output-image)
+        - -c
+        - |
+          set -euo pipefail
+
+          buildctl-daemonless.sh build \
+            --progress=plain \
+            --frontend=dockerfile.v0 \
+            --local=context='$(params.shp-source-context)' \
+            --local=dockerfile='$(params.shp-source-root)/$(build.dockerfile)' \
+            --output=type=image,name='$(params.shp-output-image)',push=true,registry.insecure=false \
+            --export-cache=type=inline \
+            --import-cache=type=registry,ref='$(params.shp-output-image)' \
+            --metadata-file /tmp/image-metadata.json
+          
+          # Store the image digest
+          sed -E 's/.*containerimage.digest":"([^"]*).*/\1/' < /tmp/image-metadata.json > '$(results.shp-image-digest.path)'
