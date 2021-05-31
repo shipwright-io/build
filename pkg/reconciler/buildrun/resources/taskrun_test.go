@@ -62,6 +62,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
 				Expect(err).To(BeNil())
+				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
 
 				expectedCommandOrArg = []string{
 					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
@@ -97,6 +98,10 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			It("should ensure IMAGE is replaced by builder image when needed.", func() {
 				Expect(got.Steps[1].Container.Image).To(Equal("quay.io/containers/buildah:v1.20.1"))
+			})
+
+			It("should ensure ImagePullPolicy can be set by the build strategy author.", func() {
+				Expect(got.Steps[1].Container.ImagePullPolicy).To(Equal(corev1.PullPolicy("Always")))
 			})
 
 			It("should ensure command replacements happen when needed", func() {

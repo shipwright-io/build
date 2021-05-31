@@ -26,6 +26,7 @@ spec:
         - /tekton/home
     - name: build-and-push
       image: moby/buildkit:master-rootless
+      imagePullPolicy: Always
       securityContext:
         allowPrivilegeEscalation: true
         runAsUser: 1000

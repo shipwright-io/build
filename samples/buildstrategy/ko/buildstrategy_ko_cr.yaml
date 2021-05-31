@@ -7,6 +7,7 @@ spec:
   buildSteps:
     - name: prepare
       image: golang:1.15
+      imagePullPolicy: Always
       securityContext:
         runAsUser: 0
         capabilities:
