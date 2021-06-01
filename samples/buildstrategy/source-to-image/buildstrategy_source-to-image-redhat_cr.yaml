@@ -17,31 +17,32 @@ spec:
       volumeMounts:
         - name: s2i
           mountPath: /s2i
-    - name: buildah-bud
+    - name: buildah
       image: quay.io/containers/buildah:v1.20.1
       workingDir: /s2i
       securityContext:
         privileged: true
       command:
-        - /usr/bin/buildah
+        - /bin/bash
       args:
-        - bud
-        - --tag=$(params.shp-output-image)
+        - -c
+        - |
+          set -euo pipefail
+
+          # Building the image
+          echo '[INFO] Building image $(params.shp-output-image)'
+          buildah bud --tag='$(params.shp-output-image)'
+
+          # Push the image
+          echo '[INFO] Pushing image $(params.shp-output-image)'
+          buildah push \
+            --tls-verify=false \
+            'docker://$(params.shp-output-image)'
+          
+          # Store the digest result
+          buildah images \
+            --format='{{.Digest}}' \
+            '$(params.shp-output-image)' | tr -d "\n" > '$(results.shp-image-digest.path)'
       volumeMounts:
         - name: s2i
           mountPath: /s2i
-        - name: buildah-images
-          mountPath: /var/lib/containers/storage
-    - name: buildah-push
-      image: quay.io/containers/buildah:v1.20.1
-      securityContext:
-        privileged: true
-      command:
-        - /usr/bin/buildah
-      args:
-        - push
-        - --tls-verify=false
-        - docker://$(params.shp-output-image)
-      volumeMounts:
-        - name: buildah-images
-          mountPath: /var/lib/containers/storage
