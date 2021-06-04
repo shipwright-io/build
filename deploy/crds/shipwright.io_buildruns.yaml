@@ -276,11 +276,59 @@ spec:
                         as "sources". Simple "name" and "url" pairs, initially without
                         "credentials" (authentication) support yet.
                       properties:
+                        destination:
+                          description: Destination is an optional sub-directory where
+                            the source code can be downloaded. If not specified, will
+                            default to the working directory of the build.
+                          type: string
+                        git:
+                          description: Git contains the information needed to obtain
+                            source code via git-clone.
+                          properties:
+                            credentials:
+                              description: Credentials references a Secret that contains
+                                credentials to access the repository.
+                              properties:
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                              type: object
+                            revision:
+                              description: "Revision describes the Git revision (e.g.,
+                                branch, tag, commit SHA, etc.) to fetch. \n If not
+                                defined, it will fallback to the repository's default
+                                branch."
+                              type: string
+                            url:
+                              description: URL describes the URL of the Git repository.
+                              type: string
+                          required:
+                          - url
+                          type: object
+                        http:
+                          description: HTTP contains the information needed to obtain
+                            source code via HTTP download.
+                          properties:
+                            url:
+                              description: URL is the location of a source file to
+                                be downloaded via HTTP.
+                              type: string
+                          required:
+                          - url
+                          type: object
                         name:
                           description: Name instance entry.
                           type: string
+                        type:
+                          description: 'Type is the type of build source. Must be
+                            one of the following: - "Git" - "HTTP" TODO - populate
+                            this field on admission with a webhook'
+                          type: string
                         url:
-                          description: URL remote artifact location.
+                          description: URL remote artifact location. DEPRECATED -
+                            use http.url instead
                           type: string
                       required:
                       - name
@@ -361,17 +409,9 @@ spec:
                   for executing this BuildRun. \n TODO: This should be called something
                   like \"TaskRunName\""
                 type: string
-              reason:
-                description: "The Succeeded reason of the TaskRun \n Deprecated: Use
-                  Conditions instead. This will be removed in a future release."
-                type: string
               startTime:
                 description: StartTime is the time the build is actually started.
                 format: date-time
-                type: string
-              succeeded:
-                description: "The Succeeded status of the TaskRun \n Deprecated: Use
-                  Conditions instead. This will be removed in a future release."
                 type: string
             type: object
         type: object
