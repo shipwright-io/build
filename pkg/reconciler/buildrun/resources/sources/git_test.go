@@ -16,7 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ = Describe("Git", func() {
+var _ = Describe("Git via Source", func() {
 
 	cfg := config.NewDefaultConfig()
 
@@ -29,7 +29,7 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
+			sources.AppendGitSourceStep(cfg, taskSpec, buildv1alpha1.Source{
 				URL: "https://github.com/shipwright-io/build",
 			}, "default")
 		})
@@ -63,7 +63,7 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
+			sources.AppendGitSourceStep(cfg, taskSpec, buildv1alpha1.Source{
 				URL: "git@github.com:shipwright-io/build.git",
 				Credentials: &corev1.LocalObjectReference{
 					Name: "a.secret",
@@ -103,4 +103,98 @@ var _ = Describe("Git", func() {
 			Expect(taskSpec.Steps[0].VolumeMounts[0].ReadOnly).To(BeTrue())
 		})
 	})
+})
+
+var _ = Describe("Git via Sources", func() {
+
+	cfg := config.NewDefaultConfig()
+
+	var taskSpec *tektonv1beta1.TaskSpec
+	var err error
+
+	BeforeEach(func() {
+		taskSpec = &tektonv1beta1.TaskSpec{}
+	})
+
+	When("no destination is specified", func() {
+
+		JustBeforeEach(func() {
+			err = sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.BuildSource{
+				Name: "git",
+				Type: buildv1alpha1.BuildSourceTypeGit,
+				Git: &buildv1alpha1.GitBuildSource{
+					URL: "https://github.com/shipwright-io/build",
+				},
+			})
+		})
+
+		It("adds a result for the commit sha", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(taskSpec.Results)).To(Equal(1))
+			Expect(taskSpec.Results[0].Name).To(Equal("shp-source-git-commit-sha"))
+		})
+
+		It("adds a step", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(taskSpec.Steps)).To(Equal(1))
+			Expect(taskSpec.Steps[0].Name).To(Equal("source-git"))
+			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.GitContainerTemplate.Image))
+			Expect(taskSpec.Steps[0].Args).To(Equal([]string{
+				"--url",
+				"https://github.com/shipwright-io/build",
+				"--target",
+				"$(params.shp-source-root)",
+				"--result-file-commit-sha",
+				"$(results.shp-source-git-commit-sha.path)",
+			}))
+		})
+	})
+
+	When("a destination is specified", func() {
+		JustBeforeEach(func() {
+			err = sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.BuildSource{
+				Name: "git",
+				Type: buildv1alpha1.BuildSourceTypeGit,
+				Git: &buildv1alpha1.GitBuildSource{
+					URL: "https://github.com/shipwright-io/build",
+				},
+				Destination: "build",
+			})
+		})
+
+		It("sets the target to equal a subdirectory of the source root", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(taskSpec.Steps[0].Args).To(Equal([]string{
+				"--url",
+				"https://github.com/shipwright-io/build",
+				"--target",
+				"$(params.shp-source-root)/build",
+				"--result-file-commit-sha",
+				"$(results.shp-source-git-commit-sha.path)",
+			}))
+		})
+	})
+
+	When("git credentials are provided", func() {
+		JustBeforeEach(func() {
+			err = sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.BuildSource{
+				Name: "git",
+				Type: buildv1alpha1.BuildSourceTypeGit,
+				Git: &buildv1alpha1.GitBuildSource{
+					URL: "https://github.com/shipwright-io/build",
+					Credentials: &corev1.LocalObjectReference{
+						Name: "git-secret",
+					},
+				},
+			})
+		})
+
+		It("adds a volume for the secret", func() {
+			Expect(len(taskSpec.Volumes)).To(Equal(1))
+			Expect(taskSpec.Volumes[0].Name).To(Equal("shp-git-secret"))
+			Expect(taskSpec.Volumes[0].VolumeSource.Secret).NotTo(BeNil())
+			Expect(taskSpec.Volumes[0].VolumeSource.Secret.SecretName).To(Equal("git-secret"))
+		})
+	})
+
 })
