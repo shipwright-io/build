@@ -8,13 +8,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 
 	"github.com/spf13/pflag"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
+	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -95,6 +99,25 @@ func main() {
 		os.Exit(1)
 	}
 
+	// check for pipelines to exist and be available
+	installed, err := checkForPipelinesInstalled(mgr)
+	if err != nil {
+		ctxlog.Error(ctx, err, "Error while checking for TaskRuns")
+		os.Exit(1)
+	}
+	if !installed {
+		msg := "Cannot start manager: Tekton Pipelines are not installed on the cluster"
+
+		// we also want to put this into the termination log
+		// so that user can see this message as the reason pod failed
+		if err := ioutil.WriteFile(buildCfg.TerminationLogPath, []byte(msg), 0644); err != nil {
+			ctxlog.Error(ctx, err, "Error while trying to write to termination log")
+		}
+
+		ctxlog.Error(ctx, nil, msg)
+		os.Exit(1)
+	}
+
 	buildMetrics.InitPrometheus(buildCfg)
 
 	// Add optionally configured extra handlers to metrics endpoint
@@ -112,4 +135,22 @@ func main() {
 		ctxlog.Error(ctx, err, "Manager exited non-zero")
 		os.Exit(1)
 	}
+}
+
+// checkForPipelinesInstalled tries to find the "TaskRun" resource on the api
+// returns (true, nil) if resource is found, (false, nil) otherwise
+// and error as second return parameter in case of failed request
+func checkForPipelinesInstalled(mgr manager.Manager) (bool, error) {
+	rm := mgr.GetRESTMapper()
+
+	_, err := rm.KindFor(pipeline.TaskRunResource.WithVersion(pipelinev1beta1.SchemeGroupVersion.Version))
+	if err != nil {
+		if meta.IsNoMatchError(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }

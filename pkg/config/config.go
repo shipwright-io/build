@@ -59,6 +59,9 @@ const (
 	// environment variables for the kube API
 	kubeAPIBurst = "KUBE_API_BURST"
 	kubeAPIQPS   = "KUBE_API_QPS"
+
+	terminationLogPathDefault = "/dev/termination-log"
+	terminationLogPathEnvVar  = "TERMINATION_LOG_PATH"
 )
 
 var (
@@ -77,6 +80,7 @@ type Config struct {
 	GitContainerTemplate          corev1.Container
 	KanikoContainerImage          string
 	RemoteArtifactsContainerImage string
+	TerminationLogPath            string
 	Prometheus                    PrometheusConfig
 	ManagerOptions                ManagerOptions
 	Controllers                   Controllers
@@ -160,6 +164,7 @@ func NewDefaultConfig() *Config {
 			QPS:   0,
 			Burst: 0,
 		},
+		TerminationLogPath: terminationLogPathDefault,
 	}
 }
 
@@ -246,6 +251,10 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 	if err := updateIntOption(&c.KubeAPIOptions.QPS, kubeAPIQPS); err != nil {
 		return err
+	}
+
+	if terminationLogPath := os.Getenv(terminationLogPathEnvVar); terminationLogPath != "" {
+		c.TerminationLogPath = terminationLogPath
 	}
 
 	return nil
