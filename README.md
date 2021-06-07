@@ -62,7 +62,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
       --docker-email=<your_email>
   ```
 
-* Create a Build object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
+* Create a *Build* object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
 
   ```bash
   REGISTRY_ORG=<your_registry_org>
@@ -85,16 +85,15 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   EOF
   ```
 
-  ```bash
-  kubectl get builds
-  ```
-The output will be something like:
+To view the *Build* which you just created:
 
   ```
+ $ kubectl get builds
+ 
   NAME                     REGISTERED   REASON      BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
   buildpack-nodejs-build   True         Succeeded   ClusterBuildStrategy   buildpacks-v3       68s
   ```  
-* Submit your buildrun:
+* Submit your *BuildRun*:
 
   ```bash
   cat <<EOF | kubectl create -f -
@@ -108,13 +107,11 @@ The output will be something like:
   EOF
   ```
 
-* Wait until your buildrun is completed:
-
-  ```bash
-  kubectl get buildruns
-  ```
+* Wait until your *BuildRun* is completed and then you can view it as follows:
 
   ```
+  $ kubectl get buildruns
+  
   NAME                              SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
   buildpack-nodejs-buildrun-xyzds   True        Succeeded   69s         2s
   ```
@@ -122,10 +119,10 @@ The output will be something like:
   or
 
   ```bash
-  $ kubectl get buildrun --output name | xargs kubectl wait --for=condition=Succeeded --timeout=180s
+  kubectl get buildrun --output name | xargs kubectl wait --for=condition=Succeeded --timeout=180s
   ```
 
-* After your buildrun is completed, check your container registry, you will find the new generated image uploaded there.
+* After your *BuildRun* is completed, check your container registry, you will find the new generated image uploaded there.
 
 ## Please tell us more!
 
