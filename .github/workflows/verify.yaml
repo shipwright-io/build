@@ -1,5 +1,4 @@
----
-name: Sanity Checks
+name: Verify
 
 on:
   push:
@@ -14,8 +13,8 @@ on:
       - master
 
 jobs:
-  build:
-    name: Sanity Checks
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
     steps:
     - name: Set up Go 1.x
@@ -35,17 +34,17 @@ jobs:
         go get honnef.co/go/tools/cmd/staticcheck
         popd
 
-    - name: Sanity Check (go vet)
-      run: make govet
+    - run: make govet
+    - run: make ineffassign
+    - run: make golint
+    - run: make misspell
+    - run: make staticcheck
 
-    - name: Sanity Check (ineffassign)
-      run: make ineffassign
-
-    - name: Sanity Check (golint)
-      run: make golint
-
-    - name: Sanity Check (misspell)
-      run: make misspell
-
-    - name: Sanity Check (staticcheck)
-      run: make staticcheck
+    - name: Check make generate-crds
+      run: |
+        export GOPATH=$(go env GOPATH)
+        make generate-crds
+        if [[ $(git diff --stat) != '' ]]; then
+          echo "CRD YAML is out of date, run make generate-crds"
+          exit 1
+        fi
