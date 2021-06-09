@@ -1,4 +1,3 @@
----
 name: Verify
 
 on:
@@ -40,3 +39,12 @@ jobs:
     - run: make golint
     - run: make misspell
     - run: make staticcheck
+
+    - name: Check make generate-crds
+      run: |
+        export GOPATH=$(go env GOPATH)
+        make generate-crds
+        if [[ $(git diff --stat) != '' ]]; then
+          echo "CRD YAML is out of date, run make generate-crds"
+          exit 1
+        fi
