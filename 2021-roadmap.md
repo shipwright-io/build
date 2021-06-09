@@ -1,3 +1,8 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
 # **Shipwright 2021 Roadmap**
 
 **Mission Statement:** Shipwright aims to do one thing well: build images from source. Automatically, securely, reliably.

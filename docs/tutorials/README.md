@@ -1,3 +1,8 @@
+<!--
+Copyright The Shipwright Contributors
+
+SPDX-License-Identifier: Apache-2.0
+-->
 # Shipwright Build Tutorial
 
 So you just successfully built a container image via the [Try It!](../../README.md#try-it) section and you want to know more?

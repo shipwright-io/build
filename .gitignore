@@ -1,4 +1,6 @@
 # Temporary Build Files
+git
+shipwright-build-controller
 build/_output
 build/_test
 # Created by https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
