@@ -103,7 +103,7 @@ spec:
                   type: object
                 type: array
               runtime:
-                description: Runtime represents the runtime-image.
+                description: "Runtime represents the runtime-image. \n Deprecated: This feature is deprecated and will be removed in a future release.  See https://github.com/shipwright-io/community/blob/main/ships/deprecate-runtime.md for more information."
                 properties:
                   base:
                     description: Base runtime base image.

@@ -57,6 +57,7 @@ var _ = Describe("runtime-image", func() {
 		})
 
 		It("expect user and group joined by colon", func() {
+			//lint:ignore SA1019 should be set until removed
 			u := renderUserAndGroup(b.Spec.Runtime.User)
 			Expect(u).To(Equal("username:1001"))
 
@@ -77,6 +78,7 @@ var _ = Describe("runtime-image", func() {
 
 	Context("rendering entrypoint", func() {
 		It("expect entrypoint concatenated", func() {
+			//lint:ignore SA1019 should be set until removed
 			entrypoint := renderEntrypoint(b.Spec.Runtime.Entrypoint)
 
 			Expect(entrypoint).To(Equal("\"/bin/bash\", \"-x\", \"-c\""))

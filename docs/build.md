@@ -14,7 +14,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining the Strategy](#defining-the-strategy)
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining the Output](#defining-the-output)
-  - [Runtime-Image](#Runtime-Image)
+  - [Runtime-Image](#Runtime-Image) (⚠️ Deprecated)
 - [BuildRun deletion](#BuildRun-deletion)
 
 ## Overview
@@ -76,7 +76,7 @@ The `Build` definition supports the following fields:
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into project context, before the actual build process starts.
-  - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build.
+  - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build. ⚠️ Deprecated
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
 
@@ -281,6 +281,9 @@ Additionally, we have plan to keep evolving `.spec.sources` by adding more types
 At this initial stage, authentication is not supported therefore you can only download from sources without this mechanism in place.
 
 ### Runtime-Image
+
+**⚠️ Deprecated:** This feature is deprecated and will be removed in a future release.
+See https://github.com/shipwright-io/community/blob/main/ships/deprecate-runtime.md for more information.
 
 Runtime-image is a new image composed with build-strategy outcome. On which you can compose a multi-stage image build, copying parts out the original image into a new one. This feature allows replacing the base-image of any container-image, creating leaner images, and other use-cases.
 
