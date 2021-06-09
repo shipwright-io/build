@@ -36,37 +36,37 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 * We also require a Tekton installation (v0.19+). To install the latest version, run:
 
   ```bash
-  $ kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.20.1/release.yaml
+  kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.20.1/release.yaml
   ```
 
 * Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/nightly-2021-03-24-1616591545.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/nightly-2021-03-24-1616591545.yaml
   ```
 
 * Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  $ kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/default_strategies.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/default_strategies.yaml
   ```
 
 * Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):
 
   ```bash
-  $ REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
-  $ kubectl create secret docker-registry push-secret \
+  REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
+  kubectl create secret docker-registry push-secret \
       --docker-server=$REGISTRY_SERVER \
       --docker-username=$REGISTRY_USER \
       --docker-password=$REGISTRY_PASSWORD  \
-      --docker-email=me@here.com
+      --docker-email=<your_email>
   ```
 
-* Create a Build object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
+* Create a *Build* object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
 
   ```bash
-  $ REGISTRY_ORG=<your_registry_org>
-  $ cat <<EOF | kubectl apply -f -
+  REGISTRY_ORG=<your_registry_org>
+  cat <<EOF | kubectl apply -f -
   apiVersion: shipwright.io/v1alpha1
   kind: Build
   metadata:
@@ -85,16 +85,18 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   EOF
   ```
 
-  ```bash
-  $ kubectl get builds
+To view the *Build* which you just created:
+
+  ```
+ $ kubectl get builds
+ 
   NAME                     REGISTERED   REASON      BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
   buildpack-nodejs-build   True         Succeeded   ClusterBuildStrategy   buildpacks-v3       68s
-  ```
-
-* Submit your buildrun:
+  ```  
+* Submit your *BuildRun*:
 
   ```bash
-  $ cat <<EOF | kubectl create -f -
+  cat <<EOF | kubectl create -f -
   apiVersion: shipwright.io/v1alpha1
   kind: BuildRun
   metadata:
@@ -105,10 +107,11 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   EOF
   ```
 
-* Wait until your buildrun is completed:
+* Wait until your *BuildRun* is completed and then you can view it as follows:
 
-  ```bash
+  ```
   $ kubectl get buildruns
+  
   NAME                              SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
   buildpack-nodejs-buildrun-xyzds   True        Succeeded   69s         2s
   ```
@@ -116,10 +119,10 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   or
 
   ```bash
-  $ kubectl get buildrun --output name | xargs kubectl wait --for=condition=Succeeded --timeout=180s
+  kubectl get buildrun --output name | xargs kubectl wait --for=condition=Succeeded --timeout=180s
   ```
 
-* After your buildrun is completed, check your container registry, you will find the new generated image uploaded there.
+* After your *BuildRun* is completed, check your container registry, you will find the new generated image uploaded there.
 
 ## Please tell us more!
 
