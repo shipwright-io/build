@@ -52,7 +52,7 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
         IMAGE_HOST: quay.io
         IMAGE: shipwright/shipwright-operator
-        TAG: ${{ github.events.inputs.release }}
+        TAG: ${{ github.event.inputs.release }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         make release
