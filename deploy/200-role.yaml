@@ -61,7 +61,7 @@ rules:
   resources: ['taskruns']
   # BuildRuns are set as the owners of Tekton TaskRuns.
   # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "delete" permission on objects that they set owner references on.
-  verbs:     ['get', 'list', 'watch', 'create', 'delete']
+  verbs:     ['get', 'list', 'watch', 'create', 'delete', 'patch']
 
 - apiGroups: ['']
   resources: ['pods']

@@ -439,6 +439,35 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	}
 }
 
+func (c *Catalog) StubBuildCRDs(
+	b *build.Build,
+	br *build.BuildRun,
+	sa *corev1.ServiceAccount,
+	cb *build.ClusterBuildStrategy,
+	bs *build.BuildStrategy,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		case *corev1.ServiceAccount:
+			sa.DeepCopyInto(object)
+			return nil
+		case *build.ClusterBuildStrategy:
+			cb.DeepCopyInto(object)
+			return nil
+		case *build.BuildStrategy:
+			bs.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
 // StubBuildCRDsPodAndTaskRun stubs different objects in case a client
 // GET call is executed against them
 func (c *Catalog) StubBuildCRDsPodAndTaskRun(

@@ -45,7 +45,20 @@ type BuildRunSpec struct {
 	// image would be pushed to. It will overwrite the output image in build spec
 	// +optional
 	Output *Image `json:"output,omitempty"`
+
+	// State is used for canceling a buildrun (and maybe more later on).
+	// +optional
+	State BuildRunRequestedState `json:"state,omitempty"`
 }
+
+// BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.
+type BuildRunRequestedState string
+
+const (
+	// BuildRunStateCancel indicates that the user wants to cancel the BuildRun,
+	// if not already canceled or terminated
+	BuildRunStateCancel = "BuildRunCanceled"
+)
 
 // BuildRunStatus defines the observed state of BuildRun
 type BuildRunStatus struct {
@@ -126,6 +139,28 @@ type BuildRunList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BuildRun `json:"items"`
+}
+
+// IsDone returns true if the BuildRun's status indicates that it is done.
+func (br *BuildRun) IsDone() bool {
+	c := br.Status.GetCondition(Succeeded)
+	return c != nil && c.GetStatus() != corev1.ConditionUnknown
+}
+
+// HasStarted returns true if the BuildRun has a valid start time set in its status.
+func (br *BuildRun) HasStarted() bool {
+	return br.Status.StartTime != nil && !br.Status.StartTime.IsZero()
+}
+
+// IsSuccessful returns true if the BuildRun's status indicates that it is done.
+func (br *BuildRun) IsSuccessful() bool {
+	c := br.Status.GetCondition(Succeeded)
+	return c != nil && c.GetStatus() == corev1.ConditionTrue
+}
+
+// IsCanceled returns true if the BuildRun's spec status is set to BuildRunCanceled state.
+func (br *BuildRun) IsCanceled() bool {
+	return br.Spec.State == BuildRunStateCancel
 }
 
 // Conditions defines a list of Condition

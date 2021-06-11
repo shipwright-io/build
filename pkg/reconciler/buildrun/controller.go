@@ -6,7 +6,6 @@ package buildrun
 
 import (
 	"context"
-
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 
@@ -63,12 +62,18 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
+			n := e.ObjectNew.(*buildv1alpha1.BuildRun)
 
 			// Avoid reconciling when for updates on the BuildRun the following takes place
 			// - the build.shipwright.io/name label is set
-			// - when a BuildRun already have a referenced TaskRun
+			// - when a BuildRun already have a referenced TaskRun, but the latest version is not canceled
 			// - when a BuildRun have a completionTime set
-			if o.GetLabels()[buildv1alpha1.LabelBuild] == "" || o.Status.LatestTaskRunRef != nil || o.Status.CompletionTime != nil {
+			switch {
+			case o.GetLabels()[buildv1alpha1.LabelBuild] == "":
+				return false
+			case o.Status.LatestTaskRunRef != nil && !n.IsCanceled():
+				return false
+			case o.Status.CompletionTime != nil:
 				return false
 			}
 
