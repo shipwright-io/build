@@ -33,16 +33,16 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 * We assume you already have a Kubernetes cluster (v1.17+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
 
-* We also require a Tekton installation (v0.19+). To install the latest version, run:
+* We also require a Tekton installation (v0.19+). To install the newest supported version, run:
 
   ```bash
-  kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.20.1/release.yaml
+  kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.23.0/release.yaml
   ```
 
 * Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/nightly/nightly-2021-03-24-1616591545.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.5.0/release.yaml
   ```
 
 * Install the Shipwright strategies. To install the latest version, run:
@@ -137,6 +137,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version | Docs                           | Examples                    |
 | ------- | ------------------------------ | --------------------------- |
 | HEAD    | [Docs @ HEAD](/docs/README.md) | [Examples @ HEAD](/samples) |
+| [v0.5.0](https://github.com/shipwright-io/build/releases/tag/v0.5.0)    | [Docs @ v0.5.0](https://github.com/shipwright-io/build/tree/v0.5.0/docs) | [Examples @ v0.5.0](https://github.com/shipwright-io/build/tree/v0.5.0/samples) |
 | [v0.4.0](https://github.com/shipwright-io/build/releases/tag/v0.4.0)    | [Docs @ v0.4.0](https://github.com/shipwright-io/build/tree/v0.4.0/docs) | [Examples @ v0.4.0](https://github.com/shipwright-io/build/tree/v0.4.0/samples) |
 | [v0.3.0](https://github.com/shipwright-io/build/releases/tag/v0.3.0)    | [Docs @ v0.3.0](https://github.com/shipwright-io/build/tree/v0.3.0/docs) | [Examples @ v0.3.0](https://github.com/shipwright-io/build/tree/v0.3.0/samples) |
 | [v0.2.0](https://github.com/shipwright-io/build/releases/tag/v0.2.0)    | [Docs @ v0.2.0](https://github.com/shipwright-io/build/tree/v0.2.0/docs) | [Examples @ v0.2.0](https://github.com/shipwright-io/build/tree/v0.2.0/samples) |
