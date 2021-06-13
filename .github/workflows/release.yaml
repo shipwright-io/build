@@ -57,3 +57,51 @@ jobs:
       run: |
         make release
         gh release upload ${TAG} release.yaml
+
+    - name: Update docs after release creation
+      env:
+        PREVIOUS_TAG: ${{ github.event.inputs.tags }}
+        NEW_TAG: ${{ github.event.inputs.release }}
+      run: |
+        # Update README.md with new tag
+
+        sed -i 's#https://github.com/shipwright-io/build/releases/download/'"$PREVIOUS_TAG"'/release.yaml#https://github.com/shipwright-io/build/releases/download/'"$NEW_TAG"'/release.yaml#g' README.md
+        sed -i '/Examples @ HEAD/a | ['"$NEW_TAG"'](https://github.com/shipwright-io/build/releases/tag/'"$NEW_TAG"')    | [Docs @ '"$NEW_TAG"'](https://github.com/shipwright-io/build/tree/'"$NEW_TAG"'/docs) | [Examples @ '"$NEW_TAG"'](https://github.com/shipwright-io/build/tree/'"$NEW_TAG"'/samples) |' README.md
+
+    - name: Create Readme commits
+      run: |
+        git config user.name ${{ github.actor }}
+        git config user.email ${{ github.actor }}@users.noreply.github.com
+        git add README.md
+        git commit -m "Update Readme with new Tag ${{ github.event.inputs.release }}"
+        git clean -f
+    - name: Create Readme PR
+      uses: peter-evans/create-pull-request@v3
+      with:
+        commit-message: Update Readme with new Tag
+        author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+        signoff: false
+        labels: |
+          kind/documentation
+        branch: update-readme-tag-refs
+        delete-branch: true
+        title: 'Update Readme with new tag'
+        body: |
+          Update README.md
+          # Changes
+
+          - Bump tag references to ${{ github.event.inputs.release }}
+
+          # Submitter Checklist
+
+          - [ ] Includes tests if functionality changed/was added
+          - [x] Includes docs if changes are user-facing
+          - [x] [Set a kind label on this PR](https://prow.k8s.io/command-help#kind)
+          - [x] Release notes block has been filled in, or marked NONE
+
+          # Release Notes
+
+          ```release-note
+          None
+          ```
+        draft: false
