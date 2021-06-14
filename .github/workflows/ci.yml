@@ -104,6 +104,7 @@ jobs:
             version: v0.10.0
             node_image: kindest/node:${{ matrix.kubernetes }}
             cluster_name: kind
+            config: test/kind/config.yaml
             wait: 120s
         - name: Verify kind cluster
           run: |
