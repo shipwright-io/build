@@ -27,6 +27,13 @@ rules:
   resources: ['buildruns/status']
   verbs:     ['update']
 
+# This permission is required by the OwnerReferencesPermissionEnforcement admission controller,
+# which requires that controllers wishing to set OwnerReferences with blockOwnerDeletion have permission
+# to update finalizers on the owner resource.
+- apiGroups: ['shipwright.io']
+  resources: ['buildruns/finalizers']
+  verbs:     ['update']
+
 - apiGroups: ['shipwright.io']
   resources: ['builds']
   verbs:     ['get', 'list', 'watch']
