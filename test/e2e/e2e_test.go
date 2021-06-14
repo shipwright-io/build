@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/errors"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
@@ -251,6 +252,42 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(testBuild, buildRun)
+		})
+	})
+
+	Context("when a build uses the build-run-deletion annotation", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildpacks-v3-golang")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/build_buildpacks-v3_golang_delete_cr.yaml",
+			)
+		})
+
+		It("successfully deletes the BuildRun after the Build is deleted", func() {
+			By("running a build and expecting it to succeed")
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+
+			validateBuildRunToSucceed(testBuild, buildRun)
+
+			By("deleting the parent Build object")
+			err = testBuild.DeleteBuild(build.Name)
+			Expect(err).NotTo(HaveOccurred(), "error deleting the parent Build")
+			Eventually(func() bool {
+				_, err = testBuild.GetBR(buildRun.Name)
+				if err == nil {
+					return false
+				}
+				if !errors.IsNotFound(err) {
+					return false
+				}
+				return true
+			}).Should(BeTrue())
 		})
 	})
 
