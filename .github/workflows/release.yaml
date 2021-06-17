@@ -76,7 +76,7 @@ jobs:
         git commit -m "Update Readme with new Tag ${{ github.event.inputs.release }}"
         git clean -f
     - name: Create Readme PR
-      uses: peter-evans/create-pull-request@v3
+      uses: peter-evans/create-pull-request@9825ae65b1cb54b543b938503728b432a0176d29
       with:
         commit-message: Update Readme with new Tag
         author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
