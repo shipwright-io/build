@@ -1,0 +1,16 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-golang-build
+  annotations:
+    build.shipwright.io/build-run-deletion: "true"
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: source-build
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

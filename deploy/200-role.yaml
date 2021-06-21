@@ -6,7 +6,7 @@ metadata:
 rules:
 - apiGroups: ['']
   resources: ['configmaps']
-  verbs:     ['create', 'get', 'update']
+  verbs:     ['get', 'create', 'update']
 
 - apiGroups: ['']
   resources: ['events']
@@ -21,7 +21,15 @@ metadata:
 rules:
 - apiGroups: ['shipwright.io']
   resources: ['buildruns']
-  verbs:     ['get', 'list', 'update', 'watch']
+  # The build-run-deletion annotation sets an owner ref on BuildRun objects.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "delete" permission on objects that they set owner references on.
+  verbs:     ['get', 'list', 'watch', 'update', 'delete']
+
+- apiGroups: ['shipwright.io']
+  # BuildRuns are set as the owners of Tekton TaskRuns.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "update" permission on the finalizer of the parent object in the owner reference.
+  resources: ['buildruns/finalizers']
+  verbs:     ['update']
 
 - apiGroups: ['shipwright.io']
   resources: ['buildruns/status']
@@ -30,6 +38,12 @@ rules:
 - apiGroups: ['shipwright.io']
   resources: ['builds']
   verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['shipwright.io']
+  # The build-run-deletion annotation makes Builds an owner of BuildRun objects.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "update" permission on the finalizer of the parent object in the owner reference.
+  resources: ['builds/finalizers']
+  verbs:     ['update']
 
 - apiGroups: ['shipwright.io']
   resources: ['builds/status']
@@ -45,7 +59,9 @@ rules:
 
 - apiGroups: ['tekton.dev']
   resources: ['taskruns']
-  verbs:     ['get', 'create', 'list', 'watch']
+  # BuildRuns are set as the owners of Tekton TaskRuns.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "delete" permission on objects that they set owner references on.
+  verbs:     ['get', 'list', 'watch', 'create', 'delete']
 
 - apiGroups: ['']
   resources: ['pods']
@@ -57,4 +73,4 @@ rules:
 
 - apiGroups: ['']
   resources: ['serviceaccounts']
-  verbs:     ['create', 'delete', 'get', 'list', 'update', 'watch']
+  verbs:     ['get', 'list', 'watch', 'create', 'update', 'delete']
