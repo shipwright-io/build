@@ -83,7 +83,8 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 
 			if failedContainer != nil {
 				buildRun.Status.FailedAt.Container = failedContainer.Name
-				message = fmt.Sprintf("buildrun step failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
+				message = fmt.Sprintf("buildrun step %s failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
+					failedContainer.Name,
 					pod.Name,
 					pod.Namespace,
 					pod.Name,

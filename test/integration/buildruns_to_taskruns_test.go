@@ -214,7 +214,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					Expect(seq[lastIdx].Type).To(Equal(v1alpha1.Succeeded))
 					Expect(seq[lastIdx].Status).To(Equal(corev1.ConditionFalse))
 					Expect(seq[lastIdx].Reason).To(Equal("Failed"))
-					Expect(seq[lastIdx].Message).To(ContainSubstring("buildrun step failed in pod %s", taskRun.Status.PodName))
+					Expect(seq[lastIdx].Message).To(ContainSubstring("buildrun step %s failed in pod %s", "step-step-build-and-push", taskRun.Status.PodName))
 				})
 			})
 		})
