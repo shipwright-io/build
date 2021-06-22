@@ -28,6 +28,7 @@ A `Build` resource allows the user to define:
 - builder
 - dockerfile
 - output
+- env
 
 A `Build` is available within a namespace.
 
@@ -61,6 +62,8 @@ In order to prevent users from triggering `BuildRuns` (_execution of a Build_) t
 | UndefinedParameter | One or many defined `params` are not defined in the referenced strategy. Please ensure that the strategy defines them under its `spec.parameters` list. |
 | RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only take place for http/https protocols. |
 | BuildNameInvalid | The defined `Build` name (`metadata.name`) is invalid. The `Build` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
+| SpecEnvNameCanNotBeBlank | Indicates that the name for a user provided environment variable is blank. |
+| SpecEnvValueCanNotBeBlank | Indicates that the value for a user provided environment variable is blank. |
 
 ## Configuring a Build
 
@@ -84,6 +87,7 @@ The `Build` definition supports the following fields:
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
   - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
   - `spec.output.labels` - Refers to a list of `key/value` that could be used to label the output image.
+  - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
 
 ### Defining the Source
 
@@ -151,6 +155,63 @@ spec:
     url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
     revision: v0.1.0
+```
+
+Example of a `Build` that specifies environment variables:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildah-golang-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  env:
+    - name: EXAMPLE_VAR_1
+      value: "example-value-1"
+    - name: EXAMPLE_VAR_2
+      value: "example-value-2"
+```
+
+Example of a `Build` that uses the Kubernetes Downward API to
+expose a `Pod` field as an environment variable:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildah-golang-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+```
+
+Example of a `Build` that uses the Kubernetes Downward API to
+expose a `Container` field as an environment variable:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildah-golang-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  env:
+    - name: MEMORY_LIMIT
+      valueFrom:
+        resourceFieldRef:
+          containerName: my-container
+          resource: limits.memory
 ```
 
 ### Defining the Strategy
