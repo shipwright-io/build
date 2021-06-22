@@ -42,6 +42,7 @@ func (e ExitError) Error() string {
 type settings struct {
 	url                 string
 	revision            string
+	depth               uint
 	target              string
 	resultFileCommitSha string
 	secretPath          string
@@ -59,11 +60,19 @@ func init() {
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddGoFlagSet(ctxlog.CustomZapFlagSet())
 
+	// Main flags for the Git step to define the configuration, for example
+	// the flags for `url`, and `target` will always be used, but `revision`
+	// depends on the respective use case.
 	pflag.StringVar(&flagValues.url, "url", "", "The URL of the Git repository")
 	pflag.StringVar(&flagValues.revision, "revision", "", "The revision of the Git repository to be cloned. Optional, defaults to the default branch.")
 	pflag.StringVar(&flagValues.target, "target", "", "The target directory of the clone operation")
 	pflag.StringVar(&flagValues.resultFileCommitSha, "result-file-commit-sha", "", "A file to write the commit sha to.")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
+
+	// Optional flag to be able to override the default shallow clone depth,
+	// which should be fine for almost all use cases we use the Git source step
+	// for (in the context of Shipwright build).
+	pflag.UintVar(&flagValues.depth, "depth", 1, "Create a shallow clone based on the given depth")
 }
 
 func main() {
@@ -92,7 +101,7 @@ func checkAndRun() error {
 
 // Execute performs flag parsing, input validation and the Git clone
 func Execute(ctx context.Context) error {
-	flagValues = settings{}
+	flagValues = settings{depth: 1}
 	pflag.Parse()
 
 	err := runGitClone(ctx)
@@ -168,22 +177,18 @@ func clone(ctx context.Context) error {
 	switch {
 	case commitShaRegEx.MatchString(flagValues.revision):
 		commitSha = flagValues.revision
-		cloneArgs = append(cloneArgs,
-			"--no-checkout",
-		)
-
-	case flagValues.revision != "":
-		cloneArgs = append(cloneArgs,
-			"--branch", flagValues.revision,
-			"--depth", "1",
-			"--single-branch",
-		)
+		cloneArgs = append(cloneArgs, "--no-checkout")
 
 	default:
-		cloneArgs = append(cloneArgs,
-			"--depth", "1",
-			"--single-branch",
-		)
+		cloneArgs = append(cloneArgs, "--single-branch")
+
+		if flagValues.revision != "" {
+			cloneArgs = append(cloneArgs, "--branch", flagValues.revision)
+		}
+
+		if flagValues.depth > 0 {
+			cloneArgs = append(cloneArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
+		}
 	}
 
 	var addtlCredArgs []string
@@ -279,8 +284,7 @@ func clone(ctx context.Context) error {
 	}
 
 	if commitSha != "" {
-		_, err := git(ctx, "-C", flagValues.target, "checkout", commitSha)
-		if err != nil {
+		if _, err := git(ctx, "-C", flagValues.target, "checkout", commitSha); err != nil {
 			return err
 		}
 	}
@@ -288,6 +292,9 @@ func clone(ctx context.Context) error {
 	submoduleArgs := []string{"-C", flagValues.target}
 	submoduleArgs = append(submoduleArgs, addtlCredArgs...)
 	submoduleArgs = append(submoduleArgs, "submodule", "update", "--init", "--recursive")
+	if flagValues.depth > 0 {
+		submoduleArgs = append(submoduleArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
+	}
 	_, err := git(ctx, submoduleArgs...)
 	return err
 }
