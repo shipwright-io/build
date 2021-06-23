@@ -35,6 +35,8 @@ spec:
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
+        - name: HOME
+          value: /tekton/home
       command:
         - /bin/bash
       args:

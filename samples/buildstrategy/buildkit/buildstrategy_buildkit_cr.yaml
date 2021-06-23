@@ -35,6 +35,8 @@ spec:
       env:
       - name: DOCKER_CONFIG
         value: /tekton/home/.docker
+      - name: HOME
+        value: /tekton/home
       # See https://github.com/moby/buildkit/blob/master/docs/rootless.md#about---oci-worker-no-process-sandbox for more information
       - name: BUILDKITD_FLAGS
         value: --oci-worker-no-process-sandbox

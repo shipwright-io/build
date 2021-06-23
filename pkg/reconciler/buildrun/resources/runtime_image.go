@@ -196,6 +196,7 @@ func runtimeBuildAndPushStep(b *buildv1alpha1.Build, kanikoImage string) *v1beta
 			},
 		},
 		Env: []v1.EnvVar{
+			{Name: "HOME", Value: "/tekton/home/"},
 			{Name: "DOCKER_CONFIG", Value: "/tekton/home/.docker"},
 			{Name: "AWS_ACCESS_KEY_ID", Value: "NOT_SET"},
 			{Name: "AWS_SECRET_KEY", Value: "NOT_SET"},

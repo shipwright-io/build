@@ -20,6 +20,8 @@ spec:
             - SETFCAP
             - KILL
       env:
+        - name: HOME
+          value: /tekton/home
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
         - name: AWS_ACCESS_KEY_ID
