@@ -56,7 +56,7 @@ jobs:
         - name: Create kind cluster
           uses: helm/kind-action@v1.1.0
           with:
-            version: v0.10.0
+            version: v0.11.1
             node_image: kindest/node:${{ matrix.kubernetes }}
             cluster_name: kind
             wait: 120s
@@ -69,6 +69,8 @@ jobs:
         - name: Install Tekton
           run: |
             make kind-tekton
+            kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
+            kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
         - name: Test
           run: |
             export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
@@ -101,7 +103,7 @@ jobs:
         - name: Create kind cluster
           uses: helm/kind-action@v1.1.0
           with:
-            version: v0.10.0
+            version: v0.11.1
             node_image: kindest/node:${{ matrix.kubernetes }}
             cluster_name: kind
             config: test/kind/config.yaml
