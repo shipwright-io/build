@@ -31,6 +31,14 @@
           "description": "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links. Optional: Defaults to true.",
           "type": "boolean"
         },
+        "hostAliases": {
+          "description": "HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. This is only valid for non-hostNetwork pods.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.HostAlias"
+          }
+        },
         "hostNetwork": {
           "description": "HostNetwork specifies whether the pod may use the node network namespace",
           "type": "boolean"
@@ -497,8 +505,14 @@
     "v1beta1.EmbeddedTask": {
       "type": "object",
       "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
         "description": {
           "description": "Description is a user-facing description of the task that may be used to populate a UI.",
+          "type": "string"
+        },
+        "kind": {
           "type": "string"
         },
         "metadata": {
@@ -532,6 +546,11 @@
             "default": {},
             "$ref": "#/definitions/v1beta1.Sidecar"
           }
+        },
+        "spec": {
+          "description": "Spec is a specification of a custom task",
+          "default": {},
+          "$ref": "#/definitions/k8s.io.apimachinery.pkg.runtime.RawExtension"
         },
         "stepTemplate": {
           "description": "StepTemplate can be used as the basis for all step containers within the Task, so that the steps inherit settings on the base container.",
@@ -980,6 +999,10 @@
         "timeout": {
           "description": "Time after which the Pipeline times out. Defaults to never. Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
           "$ref": "#/definitions/v1.Duration"
+        },
+        "timeouts": {
+          "description": "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nTime after which the Pipeline times out. Currently three keys are accepted in the map pipeline, tasks and finally with Timeouts.pipeline \u003e= Timeouts.tasks + Timeouts.finally",
+          "$ref": "#/definitions/v1beta1.TimeoutFields"
         },
         "workspaces": {
           "description": "Workspaces holds a set of workspace bindings that must match names with those declared in the pipeline.",
@@ -1622,6 +1645,14 @@
         "workingDir": {
           "description": "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
           "type": "string"
+        },
+        "workspaces": {
+          "description": "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nWorkspaces is a list of workspaces from the Task that this Sidecar wants exclusive access to. Adding a workspace to this list means that any other Step or Sidecar that does not also request this Workspace will not have access to it.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.WorkspaceUsage"
+          }
         }
       }
     },
@@ -1819,6 +1850,14 @@
         "workingDir": {
           "description": "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
           "type": "string"
+        },
+        "workspaces": {
+          "description": "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nWorkspaces is a list of workspaces from the Task that this Step wants exclusive access to. Adding a workspace to this list means that any other Step or Sidecar that does not also request this Workspace will not have access to it.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.WorkspaceUsage"
+          }
         }
       }
     },
@@ -2434,6 +2473,23 @@
         }
       }
     },
+    "v1beta1.TimeoutFields": {
+      "type": "object",
+      "properties": {
+        "finally": {
+          "description": "Finally sets the maximum allowed duration of this pipeline's finally",
+          "$ref": "#/definitions/v1.Duration"
+        },
+        "pipeline": {
+          "description": "Pipeline sets the maximum allowed duration for execution of the entire pipeline. The sum of individual timeouts for tasks and finally must not exceed this value.",
+          "$ref": "#/definitions/v1.Duration"
+        },
+        "tasks": {
+          "description": "Tasks sets the maximum allowed duration of this pipeline's tasks",
+          "$ref": "#/definitions/v1.Duration"
+        }
+      }
+    },
     "v1beta1.WhenExpression": {
       "description": "WhenExpression allows a PipelineTask to declare expressions to be evaluated before the Task is run to determine whether the Task should be executed or skipped",
       "type": "object",
@@ -2443,22 +2499,6 @@
         "values"
       ],
       "properties": {
-        "Input": {
-          "description": "DeprecatedInput for backwards compatibility with \u003cv0.17 it is the string for guard checking which can be a static input or an output from a parent Task",
-          "type": "string"
-        },
-        "Operator": {
-          "description": "DeprecatedOperator for backwards compatibility with \u003cv0.17 it represents a DeprecatedInput's relationship to the DeprecatedValues",
-          "type": "string"
-        },
-        "Values": {
-          "description": "DeprecatedValues for backwards compatibility with \u003cv0.17 it represents a DeprecatedInput's relationship to the DeprecatedValues",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "default": ""
-          }
-        },
         "input": {
           "description": "Input is the string for guard checking which can be a static input or an output from a parent Task",
           "type": "string",
@@ -2566,6 +2606,26 @@
         },
         "workspace": {
           "description": "Workspace is the name of the workspace declared by the pipeline",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "v1beta1.WorkspaceUsage": {
+      "description": "WorkspaceUsage is used by a Step or Sidecar to declare that it wants isolated access to a Workspace defined in a Task.",
+      "type": "object",
+      "required": [
+        "name",
+        "mountPath"
+      ],
+      "properties": {
+        "mountPath": {
+          "description": "MountPath is the path that the workspace should be mounted to inside the Step or Sidecar, overriding any MountPath specified in the Task's WorkspaceDeclaration.",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the workspace this Step or Sidecar wants access to.",
           "type": "string",
           "default": ""
         }
