@@ -32,6 +32,10 @@ const (
 	MultipleSecretRefNotFound BuildReason = "MultipleSecretRefNotFound"
 	// RuntimePathsCanNotBeEmpty indicates that the spec.runtime feature is used but the paths were not specified
 	RuntimePathsCanNotBeEmpty BuildReason = "RuntimePathsCanNotBeEmpty"
+	// RestrictedParametersInUse indicates the definition of reserved shipwright parameters
+	RestrictedParametersInUse BuildReason = "RestrictedParametersInUse"
+	// UndefinedParameter indicates the definition of param that was not defined in the strategy parameters
+	UndefinedParameter BuildReason = "UndefinedParameter"
 	// RemoteRepositoryUnreachable indicates the referenced repository is unreachable
 	RemoteRepositoryUnreachable BuildReason = "RemoteRepositoryUnreachable"
 	// AllValidationsSucceeded indicates a Build was successfully validated
@@ -90,11 +94,10 @@ type BuildSpec struct {
 	// +optional
 	Dockerfile *string `json:"dockerfile,omitempty"`
 
-	// Parameters contains name-value that could be used to loosely
-	// type parameters in the BuildStrategy.
-	//
+	// Params is a list of key/value that could be used
+	// to set strategy parameters
 	// +optional
-	Parameters *[]Parameter `json:"parameters,omitempty"`
+	ParamValues []ParamValue `json:"paramValues,omitempty"`
 
 	// Runtime represents the runtime-image.
 	//

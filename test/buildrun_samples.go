@@ -90,6 +90,29 @@ spec:
     name: foobar
 `
 
+// MinimalBuildRunWithParams defines a param override
+const MinimalBuildRunWithParams = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+spec:
+  paramValues:
+  - name: sleep-time
+    value: 15
+  buildRef:
+    name: foobar
+`
+
+const MinimalBuildRunWithReservedParams = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+spec:
+  paramValues:
+  - name: shp-sleep-time
+    value: 15
+  buildRef:
+    name: foobar
+`
+
 // MinimalBuildRunWithSpecifiedServiceAccount defines a minimal BuildRun
 // with a reference to a not existing serviceAccount
 const MinimalBuildRunWithSpecifiedServiceAccount = `

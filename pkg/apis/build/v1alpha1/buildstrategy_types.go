@@ -74,6 +74,11 @@ func (s BuildStrategy) GetBuildSteps() []BuildStep {
 	return s.Spec.BuildSteps
 }
 
+// GetParameters returns the parameters defined by the build strategy
+func (s BuildStrategy) GetParameters() []Parameter {
+	return s.Spec.Parameters
+}
+
 func init() {
 	SchemeBuilder.Register(&BuildStrategy{}, &BuildStrategyList{})
 }

@@ -36,6 +36,11 @@ type BuildRunSpec struct {
 	// +kubebuilder:validation:Format=duration
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 
+	// Params is a list of key/value that could be used
+	// to set strategy parameters
+	// +optional
+	ParamValues []ParamValue `json:"paramValues,omitempty"`
+
 	// Output refers to the location where the generated
 	// image would be pushed to. It will overwrite the output image in build spec
 	// +optional

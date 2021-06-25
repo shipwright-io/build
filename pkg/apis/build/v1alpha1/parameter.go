@@ -4,9 +4,9 @@
 
 package v1alpha1
 
-// Parameter defines the data structure that would be used for
-// expressing arbitrary key/value pairs for the execution of a build
-type Parameter struct {
+// ParamValue is a key/value that populates a strategy parameter
+// used in the execution of the strategy steps
+type ParamValue struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }

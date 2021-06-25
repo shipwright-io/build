@@ -80,6 +80,20 @@ spec:
                 required:
                 - image
                 type: object
+              paramValues:
+                description: Params is a list of key/value that could be used to set strategy parameters
+                items:
+                  description: ParamValue is a key/value that populates a strategy parameter used in the execution of the strategy steps
+                  properties:
+                    name:
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - name
+                  - value
+                  type: object
+                type: array
               serviceAccount:
                 description: ServiceAccount refers to the kubernetes serviceaccount which is used for resource control. Default serviceaccount will be set if it is empty
                 properties:
@@ -138,10 +152,10 @@ spec:
                     required:
                     - image
                     type: object
-                  parameters:
-                    description: Parameters contains name-value that could be used to loosely type parameters in the BuildStrategy.
+                  paramValues:
+                    description: Params is a list of key/value that could be used to set strategy parameters
                     items:
-                      description: Parameter defines the data structure that would be used for expressing arbitrary key/value pairs for the execution of a build
+                      description: ParamValue is a key/value that populates a strategy parameter used in the execution of the strategy steps
                       properties:
                         name:
                           type: string

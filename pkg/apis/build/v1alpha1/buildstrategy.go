@@ -19,6 +19,26 @@ const (
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
 	BuildSteps []BuildStep `json:"buildSteps,omitempty"`
+	Parameters []Parameter `json:"parameters,omitempty"`
+}
+
+// Parameter holds a name-description with a default value
+// that allows strategy steps to be parameterize.
+// Build users can set a value for parameter via the Build
+// or BuildRun spec.paramValues object.
+// +optional
+type Parameter struct {
+	// Name of the parameter
+	// +required
+	Name string `json:"name"`
+
+	// Description on the parameter purpose
+	// +required
+	Description string `json:"description"`
+
+	// Reasonable default value for the parameter
+	// +optional
+	Default *string `json:"default"`
 }
 
 // BuildStep defines a partial step that needs to run in container for
@@ -55,4 +75,5 @@ type BuilderStrategy interface {
 	GetGeneration() int64
 	GetResourceLabels() map[string]string
 	GetBuildSteps() []BuildStep
+	GetParameters() []Parameter
 }

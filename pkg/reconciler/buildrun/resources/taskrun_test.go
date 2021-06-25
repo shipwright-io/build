@@ -70,7 +70,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps)
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
 				Expect(err).To(BeNil())
 			})
 

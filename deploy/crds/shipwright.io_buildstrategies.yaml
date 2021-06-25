@@ -760,6 +760,24 @@ spec:
                   - name
                   type: object
                 type: array
+              parameters:
+                items:
+                  description: Parameter holds a name-description with a default value that allows strategy steps to be parameterize. Build users can set a value for parameter via the Build or BuildRun spec.paramValues object.
+                  properties:
+                    default:
+                      description: Reasonable default value for the parameter
+                      type: string
+                    description:
+                      description: Description on the parameter purpose
+                      type: string
+                    name:
+                      description: Name of the parameter
+                      type: string
+                  required:
+                  - description
+                  - name
+                  type: object
+                type: array
             type: object
           status:
             description: BuildStrategyStatus defines the observed state of BuildStrategy

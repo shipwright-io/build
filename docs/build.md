@@ -12,6 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 - [Configuring a Build](#configuring-a-build)
   - [Defining the Source](#defining-the-source)
   - [Defining the Strategy](#defining-the-strategy)
+  - [Defining ParamValues](#defining-paramvalues)
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining the Output](#defining-the-output)
   - [Runtime-Image](#Runtime-Image) (⚠️ Deprecated)
@@ -24,6 +25,7 @@ A `Build` resource allows the user to define:
 - source
 - sources
 - strategy
+- params
 - builder
 - dockerfile
 - output
@@ -39,6 +41,7 @@ The controller watches for:
 When the controller reconciles it:
 
 - Validates if the referenced `StrategyRef` exists.
+- Validates if the specified `params` exists on the referenced strategy parameters. It also validates if the `params` names collide with the Shipwright reserved names.
 - Validates if the container `registry` output secret exists.
 - Validates if the referenced `spec.source.url` endpoint exists.
 
@@ -56,6 +59,8 @@ In order to prevent users from triggering `BuildRuns` (_execution of a Build_) t
 | SpecBuilderSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist.|
 | MultipleSecretRefNotFound | More than one secret is missing. At the moment, only three paths on a Build can specify a secret. |
 | RuntimePathsCanNotBeEmpty | The Runtime feature is used, but the runtime path was not defined. This is mandatory. |
+| RestrictedParametersInUse | One or many defined `params` are colliding with Shipwright reserved parameters. See [Defining Params](#defining-params) for more information. |
+| UndefinedParameter | One or many defined `params` are not defined in the referenced strategy. Please ensure that the strategy defines them under its `spec.parameters` list. |
 | RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only take place for http/https protocols. |
 
 ## Configuring a Build
@@ -73,7 +78,7 @@ The `Build` definition supports the following fields:
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
 - Optional:
-  - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
+  - `spec.paramValues` - Refers to a list of `key/value` that could be used to loosely type `parameters` in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into project context, before the actual build process starts.
   - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build. ⚠️ Deprecated
@@ -170,6 +175,63 @@ spec:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
 ```
+
+### Defining ParamValues
+
+A `Build` resource can specify _params_, these allow users to modify the behaviour of the referenced `BuildStrategy` steps.
+
+When using _params_, users should avoid:
+
+- Defining a `spec.paramValues` name that doesn't match one of the `spec.parameters` defined in the `BuildStrategy`.
+- Defining a `spec.paramValues` name that collides with the Shipwright reserved parameters. These are _BUILDER_IMAGE_,_DOCKERFILE_,_CONTEXT_DIR_ and any name starting with _shp-_.
+
+In general, _params_ are tighly bound to Strategy _parameters_, please make sure you understand the contents of your strategy of choice, before defining _params_ in the _Build_. `BuildRun` resources allow users to override `Build` _params_, see the related [docs](./buildrun.md#defining-params) for more information.
+
+#### Example
+
+The following `BuildStrategy` contains a single step ( _a-strategy-step_ ) with a command and arguments. The strategy defines a parameter( _sleep-time_ ) with a reasonable default, that is used in the step arguments, see _$(params.sleep-time)_.
+
+```yaml
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: sleepy-strategy
+spec:
+  parameters:
+  - name: sleep-time
+    description: "time in seconds for sleeping"
+    default: "1"
+  buildSteps:
+  - name: a-strategy-step
+    image: alpine:latest
+    command:
+    - sleep
+    args:
+    - $(params.sleep-time)
+```
+
+If users would like the above strategy to change its behaviour, e.g. _allow the step to trigger a sleep cmd longer than 1 second_, then users can modify the default behaviour, via their `Build` `spec.paramValues` definition. For example:
+
+```yaml
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: a-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build/
+  paramValues:
+  - name: sleep-time
+    value: "60"
+  strategy:
+    name: sleepy-strategy
+    kind: BuildStrategy
+```
+
+The above `Build` definition uses _sleep-time_ param, a well-defined _parameter_ under its referenced `BuildStrategy`. By doing this, the user signalizes to the referenced sleepy-strategy, the usage of a different value for its _sleep-time_ parameter.
 
 ### Defining the Builder or Dockerfile
 
