@@ -58,7 +58,7 @@ There are several reasons for the need of a more well define parameterization me
 
 ### Goals
 
-- Introduce a `spec.params` field across Build and BuildRun API´s, as a way for users to provide N parameters according to their preferred strategy of choice. Defining `spec.params` in a BuildRun overrides any definition of the same param in Build´s.
+- Introduce a `spec.paramValues` field across Build and BuildRun API´s, as a way for users to provide N parameters according to their preferred strategy of choice. Defining `spec.paramValues` in a BuildRun overrides any definition of the same param in Build´s.
 
 - Introduce a `spec.parameters` on Strategies, both cluster or namespaced scope. This allow strategy administrators to layout the definition of N parameters, as required for their strategies.
 
@@ -74,9 +74,9 @@ There are several reasons for the need of a more well define parameterization me
 
 ## Proposal
 
-### Part 1: Introduce spec.params
+### Part 1: Introduce spec.paramValues
 
-Introduce the `spec.params` field across Build and BuildRun, and the `spec.parameters` for BuildStrategies resources. This will define a list  of parameters definition, of the type `string`. This new `spec.params` does not provide support for Tekton params of the type `array`. This field can only be use, if the parameter is supported in the strategy of choice.
+Introduce the `spec.paramValues` field across Build and BuildRun, and the `spec.parameters` for BuildStrategies resources. This will define a list  of parameters definition, of the type `string`. This new `spec.paramValues` does not provide support for Tekton params of the type `array`. This field can only be use, if the parameter is supported in the strategy of choice.
 
 For example:
 
@@ -103,7 +103,7 @@ spec:
   strategy:
     name: a-strategy-with-params
   output: #Content omitted for this example
-  params:
+  paramValues:
   - name: a-param
     value: A parameter value.
 ```
@@ -116,12 +116,12 @@ metadata:
 spec:
   buildRef:
     name: a-build
-  params:
+  paramValues:
   - name: a-param
     value: Another parameter value because my build is not up-to-date.
 ```
 
-_Note_: If a **Buildrun** specifies `a-param` via its `spec.params`, this will override the value defined in the `a-build`. In other words, BuildRuns have a higher priority when defining params.
+_Note_: If a **Buildrun** specifies `a-param` via its `spec.paramValues`, this will override the value defined in the `a-build`. In other words, BuildRuns have a higher priority when defining params.
 
 ### Part 2: Runtime Parameters
 
@@ -131,7 +131,7 @@ As mentioned in the Goals section, we currently define three parameters that can
 - CONTEXT_DIR
 - BUILDER_IMAGE (_optional: It only take place if the spec.builder.image is defined_)
 
-This EP propose to stop using `BUILDER_IMAGE` as a runtime Parameter but rather to delegate its definition to user of N strategy. This means `BUILDER_IMAGE` should be defined under `spec.params` in the future.
+This EP propose to stop using `BUILDER_IMAGE` as a runtime Parameter but rather to delegate its definition to user of N strategy. This means `BUILDER_IMAGE` should be defined under `spec.paramValues` in the future.
 
 The list of runtime parameters will then look as follows:
 
@@ -243,7 +243,7 @@ spec:
   strategy:
     name: buildkit
   output: #Content omitted for this example
-  params:
+  paramValues:
   - name: DOCKERFILE_NAME
     value: "FoobarDockerfile"
 ```
@@ -311,7 +311,7 @@ spec:
   strategy:
     name: buildkit
   output: #Content omitted for this example
-  params:
+  paramValues:
   - name: INSECURE_REGISTRY
     value: false
 ```
@@ -324,7 +324,7 @@ metadata:
 spec:
   buildRef:
     name: a-build
-  params:
+  paramValues:
   - name: INSECURE_REGISTRY
     value: true
 ```
