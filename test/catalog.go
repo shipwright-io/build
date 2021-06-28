@@ -300,7 +300,7 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, sa *string, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
@@ -311,6 +311,9 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 			}
 			if object.Status.BuildSpec != nil {
 				Expect(*object.Status.BuildSpec).To(Equal(buildSpec))
+			}
+			if object.Status.ServiceAccountName != nil {
+				Expect(object.Status.ServiceAccountName).To(Equal(sa))
 			}
 		}
 		return nil

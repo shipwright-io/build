@@ -332,6 +332,9 @@ spec:
               latestTaskRunRef:
                 description: "LatestTaskRunRef is the name of the TaskRun responsible for executing this BuildRun. \n TODO: This should be called something like \"TaskRunName\""
                 type: string
+              serviceAccountName:
+                description: ServiceAccountName refers to the kubernetes serviceaccount name which is used for resource control.
+                type: string
               startTime:
                 description: StartTime is the time the build is actually started.
                 format: date-time

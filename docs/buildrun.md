@@ -131,7 +131,7 @@ spec:
 
 You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you.
 
-_**Note**_: When the SA is not defined, the `BuildRun` will default to the `default` SA in the namespace.
+_**Note**_: When the SA is not defined, the `BuildRun` will default to the `default` SA in the namespace. The `serviceAccount` used to run a `BuildRun` is set in the `Status.ServiceAccountName` field.
 
 ## Canceling a `BuildRun`
 

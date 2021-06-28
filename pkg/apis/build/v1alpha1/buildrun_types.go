@@ -72,6 +72,11 @@ type BuildRunStatus struct {
 	// +optional
 	LatestTaskRunRef *string `json:"latestTaskRunRef,omitempty"`
 
+	// ServiceAccountName refers to the kubernetes serviceaccount name
+	// which is used for resource control.
+	// +optional
+	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
+
 	// StartTime is the time the build is actually started.
 	// +optional
 	StartTime *metav1.Time `json:"startTime,omitempty"`

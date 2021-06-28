@@ -179,6 +179,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionTrue,
 					buildSample.Spec,
+					nil,
 					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -212,7 +213,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.DeleteCallCount()).To(Equal(0))
 				Expect(client.StatusCallCount()).To(Equal(0))
 			})
-
 			It("deletes a generated service account when the task run ends", func() {
 
 				// setup a buildrun to use a generated service account
@@ -232,7 +232,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// Call the reconciler
 				_, err := reconciler.Reconcile(taskRunRequest)
-
+				
 				// Expect no error
 				Expect(err).ToNot(HaveOccurred())
 
@@ -243,6 +243,32 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(castSuccessful).To(BeTrue())
 				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name + "-sa"))
 				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
+			})
+
+			It("register the serviceaccount name in the buildrun status", func() {
+				buildSample = ctl.DefaultBuild(buildName, "foobar-strategy", build.ClusterBuildStrategyKind)
+				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunSample.Name, buildName)
+				saName := buildRunSample.Name+"-sa"
+	
+				statusCall := ctl.StubBuildRunStatus(
+					"Succeeded",
+					&taskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "Succeeded",
+						Status: corev1.ConditionTrue,
+					},
+					corev1.ConditionTrue,
+					buildSample.Spec,
+					&saName,
+					false,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(taskRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
 			It("should not panic in case the build spec strategy is nil", func() {
@@ -288,6 +314,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionUnknown,
 					buildSample.Spec,
+					nil,
 					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -318,6 +345,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionUnknown,
 					buildSample.Spec,
+					nil,
 					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -345,6 +373,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionTrue,
 					buildSample.Spec,
+					nil,
 					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -440,6 +469,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					nil,
 					false,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -667,6 +697,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					nil,
 					true,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -731,6 +762,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					&saName,
 					true,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -799,6 +831,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					&saName,
 					true,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -864,6 +897,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					&saName,
 					true,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -922,6 +956,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					&saName,
 					true,
 				))
 
@@ -959,6 +994,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					&saName,
 					true,
 				)
 				statusWriter.UpdateCalls(statusCall)
@@ -1059,6 +1095,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 					corev1.ConditionFalse,
 					buildSample.Spec,
+					nil,
 					true,
 				)
 				statusWriter.UpdateCalls(statusCall)

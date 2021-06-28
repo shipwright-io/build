@@ -16,8 +16,8 @@ import (
 	"knative.dev/pkg/apis"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -234,9 +234,10 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				return reconcile.Result{}, err
 			}
 
-			// Set the LastTaskRunRef in the BuildRun status
+			// Set the LastTaskRunRef and ServiceAccountName in the BuildRun status
 			buildRun.Status.LatestTaskRunRef = &generatedTaskRun.Name
-			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name)
+			buildRun.Status.ServiceAccountName = &generatedTaskRun.Spec.ServiceAccountName
+			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name and ServiceAccount name", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name, "ServiceAccount", buildRun.Status.ServiceAccountName)
 			if err = r.client.Status().Update(ctx, buildRun); err != nil {
 				// we ignore the error here to prevent another reconciliation that would create another TaskRun,
 				// the LatestTaskRunRef field will also be set in the reconciliation from a TaskRun
@@ -305,12 +306,15 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 			taskRunStatus := trCondition.Status
 
-			// check if we should delete the generated service account by checking the build run spec and that the task run is csomplete
+			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
 			if resources.IsGeneratedServiceAccountUsed(buildRun) && (taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse) {
-				serviceAccount := &corev1.ServiceAccount{}
-				serviceAccount.Name = resources.GetGeneratedServiceAccountName(buildRun)
-				serviceAccount.Namespace = buildRun.Namespace
-
+				serviceAccount := &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: resources.GetGeneratedServiceAccountName(buildRun),
+						Namespace: buildRun.Namespace,	
+					},
+				}
+				buildRun.Status.ServiceAccountName = &serviceAccount.Name
 				ctxlog.Info(ctx, "deleting service account", namespace, request.Namespace, name, request.Name)
 				if err := r.client.Delete(ctx, serviceAccount); err != nil && !apierrors.IsNotFound(err) {
 					ctxlog.Error(ctx, err, "Error during deletion of generated service account.")
