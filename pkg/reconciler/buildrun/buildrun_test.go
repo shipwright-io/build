@@ -212,7 +212,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.DeleteCallCount()).To(Equal(0))
 				Expect(client.StatusCallCount()).To(Equal(0))
 			})
-
 			It("deletes a generated service account when the task run ends", func() {
 
 				// setup a buildrun to use a generated service account
@@ -232,7 +231,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// Call the reconciler
 				_, err := reconciler.Reconcile(taskRunRequest)
-
+				
 				// Expect no error
 				Expect(err).ToNot(HaveOccurred())
 
@@ -243,6 +242,27 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(castSuccessful).To(BeTrue())
 				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name + "-sa"))
 				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
+
+				//Expect to register the serviceaccount name in the buildrun status
+				Expect(serviceAccount.Name).To(Equal(*buildRunSample.Status.ServiceAccountName))
+			})
+
+			It("register the serviceaccount name in the buildrun status", func() {
+				// setup a buildrun
+				client.GetCalls(ctl.StubBuildRunGetWithSA(
+					buildSample,
+					buildRunSample,
+					ctl.DefaultServiceAccount(buildRunSample.Name+"-sa")),
+				)
+
+				// Call the reconciler
+				_, err := reconciler.Reconcile(taskRunRequest)
+
+				// Expect no error
+				Expect(err).ToNot(HaveOccurred())
+
+				//Expect to register the serviceaccount name in the buildrun status
+				Expect(buildRunSample.Name+"-sa").To(Equal(*buildRunSample.Status.ServiceAccountName))
 			})
 
 			It("should not panic in case the build spec strategy is nil", func() {
