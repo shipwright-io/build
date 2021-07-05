@@ -11,7 +11,7 @@
 set -eu
 
 # kind version
-KIND_VERSION="${KIND_VERSION:-v0.10.0}"
+KIND_VERSION="${KIND_VERSION:-v0.11.1}"
 
 if [ ! -f "${GOPATH}/bin/kind" ] ; then
     echo "# Installing KinD..."
