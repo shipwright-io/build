@@ -165,7 +165,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			//Delete Build
+			// Delete Build
 			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
 
 			// Wait for deletion of BuildRun

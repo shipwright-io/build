@@ -31,13 +31,13 @@ const (
 	name            = "name"
 )
 
-// BuildPath is an interface that holds a ValidaPath() function
+// BuildPath is an interface that holds a ValidatePath() function
 // for validating different Build spec paths
 type BuildPath interface {
 	ValidatePath(ctx context.Context) error
 }
 
-// NewValidation returns an specific Structure that implements
+// NewValidation returns a specific structure that implements
 // BuildPath interface
 func NewValidation(
 	validationType string,
