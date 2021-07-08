@@ -20,8 +20,8 @@ if [ ! -f "${GOPATH}/bin/controller-gen" ]; then
   popd >/dev/null 2>&1
 fi
 
-if ! grep -q " $CONTROLLER_GEN_VERSION$" <<<"$(${GOPATH}/bin/controller-gen --version)"; then
-  echo "Current controller-gen version $(${GOPATH}/bin/controller-gen --version | cut -d' ' -f2) does not match desired version $CONTROLLER_GEN_VERSION."
+if ! grep -q " $CONTROLLER_GEN_VERSION$" <<<"$("${GOPATH}"/bin/controller-gen --version)"; then
+  echo "Current controller-gen version $("${GOPATH}"/bin/controller-gen --version | cut -d' ' -f2) does not match desired version $CONTROLLER_GEN_VERSION."
   echo "In order to update, run:"
   echo "  GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_GEN_VERSION}"
   echo
@@ -29,4 +29,4 @@ if ! grep -q " $CONTROLLER_GEN_VERSION$" <<<"$(${GOPATH}/bin/controller-gen --ve
 fi
 
 # print controller-gen version
-${GOPATH}/bin/controller-gen --version
+"${GOPATH}"/bin/controller-gen --version
