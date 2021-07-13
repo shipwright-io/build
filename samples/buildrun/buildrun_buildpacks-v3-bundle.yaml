@@ -1,0 +1,10 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-bundle-buildrun
+spec:
+  buildRef:
+    name: buildpack-bundle-build
+  serviceAccount:
+    generate: true
