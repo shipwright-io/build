@@ -27,12 +27,15 @@ fi
 # Look-up current stable version from their release site
 STABLE_VERSION="$(curl --fail --silent --location https://dl.k8s.io/release/stable.txt)"
 
+# Determine the architecture
+ARCH=$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
+
 echo "# Downloading kubectl binary..."
-curl --fail --progress-bar --location "https://dl.k8s.io/release/${STABLE_VERSION}/bin/linux/amd64/kubectl" --output "${TARGET_DIR}/kubectl" && \
-  chmod a+rx "${TARGET_DIR}/kubectl"
+curl --fail --progress-bar --location "https://dl.k8s.io/release/${STABLE_VERSION}/bin/linux/${ARCH}/kubectl" --output "${TARGET_DIR}/kubectl"
+chmod a+rx "${TARGET_DIR}/kubectl"
 
 echo "# Validating kubectl binary..."
-sha256sum --check <<<"$(curl --fail --silent --location "https://dl.k8s.io/${STABLE_VERSION}/bin/linux/amd64/kubectl.sha256") ${TARGET_DIR}/kubectl"
+sha256sum --check <<<"$(curl --fail --silent --location "https://dl.k8s.io/${STABLE_VERSION}/bin/linux/${ARCH}/kubectl.sha256") ${TARGET_DIR}/kubectl"
 
 echo "# Kubectl version"
 kubectl version --client
