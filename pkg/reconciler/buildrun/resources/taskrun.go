@@ -18,6 +18,7 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/reconciler/util"
 )
 
 const (
@@ -173,6 +174,15 @@ func GenerateTaskSpec(
 		}
 
 		taskImage := getStringTransformations(containerValue.Image)
+
+		if containerValue.Env == nil {
+			containerValue.Env = []corev1.EnvVar{}
+		}
+
+		var err error
+		if containerValue.Env, err = util.MergeEnvVars(buildRun.Spec.Env, containerValue.Env, false); err != nil {
+			return nil, err
+		}
 
 		step := v1beta1.Step{
 			Container: corev1.Container{

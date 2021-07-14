@@ -73,6 +73,7 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		validate.Strategies,
 		validate.Runtime,
 		validate.Sources,
+		validate.Envs,
 	}
 
 	// trigger all current validations

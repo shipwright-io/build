@@ -45,6 +45,10 @@ type BuildRunSpec struct {
 	// image would be pushed to. It will overwrite the output image in build spec
 	// +optional
 	Output *Image `json:"output,omitempty"`
+
+	// Env contains additional environment variables that should be passed to the build container
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun

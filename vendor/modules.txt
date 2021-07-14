@@ -45,6 +45,8 @@ github.com/ProtonMail/go-crypto/rsa
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
+# github.com/axw/gocov v1.0.0
+## explicit
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
 # github.com/cespare/xxhash/v2 v2.1.1
@@ -721,6 +723,8 @@ sigs.k8s.io/controller-runtime/pkg/webhook
 sigs.k8s.io/controller-runtime/pkg/webhook/admission
 sigs.k8s.io/controller-runtime/pkg/webhook/internal/certwatcher
 sigs.k8s.io/controller-runtime/pkg/webhook/internal/metrics
+# sigs.k8s.io/kind v0.10.0
+## explicit
 # sigs.k8s.io/structured-merge-diff/v4 v4.0.2
 sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0

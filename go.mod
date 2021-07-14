@@ -3,6 +3,7 @@ module github.com/shipwright-io/build
 go 1.15
 
 require (
+	github.com/axw/gocov v1.0.0 // indirect
 	github.com/go-git/go-git/v5 v5.3.1-0.20210421110026-67d34902b0c4
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0 // indirect
@@ -23,6 +24,7 @@ require (
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 	knative.dev/pkg v0.0.0-20210331065221-952fdd90dbb0
 	sigs.k8s.io/controller-runtime v0.6.1
+	sigs.k8s.io/kind v0.10.0 // indirect
 	sigs.k8s.io/yaml v1.2.0
 )
 

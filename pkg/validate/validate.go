@@ -8,9 +8,10 @@ import (
 	"context"
 	"fmt"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 const (
@@ -24,6 +25,8 @@ const (
 	Runtime = "runtime"
 	// Sources for validating `spec.sources` entries
 	Sources = "sources"
+	// Envs for validating `spec.env` entries
+	Envs = "env"
 	// OwnerReferences for validating the ownerreferences between a Build
 	// and BuildRun objects
 	OwnerReferences = "ownerreferences"
@@ -58,6 +61,8 @@ func NewValidation(
 		return &OwnerRef{Build: build, Client: client, Scheme: scheme}, nil
 	case Sources:
 		return &SourcesRef{Build: build}, nil
+	case Envs:
+		return &Env{Build: build}, nil
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}

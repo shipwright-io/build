@@ -26,6 +26,7 @@ import (
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
+	"github.com/shipwright-io/build/pkg/reconciler/util"
 )
 
 const (
@@ -173,6 +174,14 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
 					return reconcile.Result{}, nil
 				}
+				return reconcile.Result{}, err
+			}
+
+			if buildRun.Spec.Env == nil {
+				buildRun.Spec.Env = []corev1.EnvVar{}
+			}
+
+			if buildRun.Spec.Env, err = util.MergeEnvVars(build.Spec.Env, buildRun.Spec.Env, true); err != nil {
 				return reconcile.Result{}, err
 			}
 

@@ -257,6 +257,38 @@ var _ = Describe("Reconcile BuildRun", func() {
 					Expect(result).ToNot(BeNil())
 				}).ShouldNot(Panic())
 			})
+
+			It("should merge build env vars into the buildrun env vars", func() {
+
+				// setup a buildrun to use a generated service account
+				buildSample = ctl.DefaultBuild(buildName, "foobar-strategy", build.ClusterBuildStrategyKind)
+				buildRunSample = ctl.BuildRunWithSAGenerate(buildRunSample.Name, buildName)
+				buildRunSample.Status.BuildSpec = &buildSample.Spec
+				buildRunSample.Labels = make(map[string]string)
+				buildRunSample.Labels[build.LabelBuild] = buildName
+
+				buildSample.Spec.Env = []corev1.EnvVar{
+					{Name: "ONE", Value: "oneValue"},
+					{Name: "TWO", Value: "twoValue"},
+				}
+
+				// Override Stub get calls to include a service account
+				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
+
+				// Call the reconciler
+				_, err := reconciler.Reconcile(buildRunRequest)
+				
+				// Expect no error
+				Expect(err).ToNot(HaveOccurred())
+
+				// Expect one delete call for the service account
+				Expect(client.DeleteCallCount()).To(Equal(1))
+				_, obj, _ := client.DeleteArgsForCall(0)
+				serviceAccount, castSuccessful := obj.(*corev1.ServiceAccount)
+				Expect(castSuccessful).To(BeTrue())
+				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name + "-sa"))
+				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
+			})
 		})
 
 		Context("from an existing TaskRun with Conditions", func() {
