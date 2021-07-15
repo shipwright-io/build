@@ -30,6 +30,16 @@ func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 	return nil
 }
 
+// UpdateBR updates a BuildRun on the current test namespace
+func (t *TestBuild) UpdateBR(buildRun *v1alpha1.BuildRun) error {
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
+	_, err := brInterface.Update(context.TODO(), buildRun, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetBR retrieves a BuildRun from a desired namespace
 // Deprecated: Use LookupBuildRun instead.
 func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {

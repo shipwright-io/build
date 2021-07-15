@@ -12,6 +12,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining the BuildRef](#defining-the-buildref)
   - [Defining paramValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
+- [Canceling a `BuildRun`](#canceling-a-buildrun)  
 - [BuildRun Status](#buildrun-status)
   - [Understanding the state of a BuildRun](#understanding-the-state-of-a-BuildRun)
   - [Understanding failed BuildRuns](#understanding-failed-buildruns)
@@ -132,6 +133,24 @@ You can also use set the `spec.serviceAccount.generate` path to `true`. This wil
 
 _**Note**_: When the SA is not defined, the `BuildRun` will default to the `default` SA in the namespace.
 
+## Canceling a `BuildRun`
+
+To cancel a `BuildRun` that's currently executing, update its status to mark it as canceled.
+
+When you cancel a `BuildRun`, the underlying `TaskRun` is marked as canceled per the [Tekton cancel `TaskRun` feature](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md).
+
+Example of canceling a `BuildRun`:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  # [...]
+  state: "BuildRunCanceled"
+```
+
 ## BuildRun Status
 
 The `BuildRun` resource is updated as soon as the current image building status changes:
@@ -167,7 +186,9 @@ The following table illustrates the different states a BuildRun can have under i
 | Status | Reason | CompletionTime is set | Description |
 | --- | --- | --- | --- |
 | Unknown | Pending                       | No  | The BuildRun is waiting on a Pod in status Pending. |
+| Unknown | Running                       | No  | The BuildRun has been validate and started to perform its work. |l
 | Unknown | Running                       | No  | The BuildRun has been validate and started to perform its work. |
+| Unknown | BuildRunCanceled              | No  | The user requested the BuildRun to be canceled.  This results in the BuildRun controller requesting the TaskRun be canceled.  Cancellation has not been done yet. |
 | True    | Succeeded                     | Yes | The BuildRun Pod is done. |
 | False    | Failed                       | Yes | The BuildRun failed in one of the steps. |
 | False    | BuildRunTimeout              | Yes | The BuildRun timed out. |
@@ -180,6 +201,7 @@ The following table illustrates the different states a BuildRun can have under i
 | False    | ServiceAccountNotFound       | Yes | The referenced service account was not found in the cluster. |
 | False    | BuildRegistrationFailed      | Yes | The related Build in the BuildRun is on a Failed state. |
 | False    | BuildNotFound                | Yes | The related Build in the BuildRun was not found. |
+| False    | BuildRunCanceled             | Yes | The BuildRun and underlying TaskRun were canceled successfully. |
 
 _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
 

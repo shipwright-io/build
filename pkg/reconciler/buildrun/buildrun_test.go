@@ -151,7 +151,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				result, err := reconciler.Reconcile(taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
-				Expect(client.GetCallCount()).To(Equal(2))
+				Expect(client.GetCallCount()).To(Equal(3))
 			})
 			It("does not fail when the Build does not exist", func() {
 
@@ -356,6 +356,73 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
+			It("should recognize the BuildRun is canceled", func() {
+				// set cancel
+				buildRunSampleCopy := buildRunSample.DeepCopy()
+				buildRunSampleCopy.Spec.State = build.BuildRunStateCancel
+
+				taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionUnknown, "Running")
+
+				// Override Stub get calls to include a completed TaskRun
+				// and a Pod with one initContainer Status
+				client.GetCalls(ctl.StubBuildCRDsPodAndTaskRun(
+					buildSample,
+					buildRunSampleCopy,
+					ctl.DefaultServiceAccount("foobar"),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy(),
+					taskRunSample,
+					ctl.PodWithInitContainerStatus("foobar", "init-foobar")),
+				)
+
+				cancelPatchCalled := false
+				cancelUpdateCalled := false
+				// override the updateClientStub so we can see the update on the BuildRun condition
+				stubUpdateCalls := func(context context.Context, object runtime.Object, opts ...crc.UpdateOption) error {
+					switch v := object.(type) {
+					case *build.BuildRun:
+						c := v.Status.GetCondition(build.Succeeded)
+						if c != nil && c.Reason == build.BuildRunStateCancel && c.Status == corev1.ConditionFalse {
+							cancelUpdateCalled = true
+						}
+
+					}
+					return nil
+				}
+				statusWriter.UpdateCalls(stubUpdateCalls)
+				stubPatchCalls := func(context context.Context, object runtime.Object, patch crc.Patch, opts ...crc.PatchOption) error {
+					switch v := object.(type) {
+					case *v1beta1.TaskRun:
+						if v.Name == taskRunSample.Name {
+							cancelPatchCalled = true
+						}
+					}
+					return nil
+				}
+				client.PatchCalls(stubPatchCalls)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
+				Expect(cancelPatchCalled).To(BeTrue())
+
+				// actually set value the patch would have set (but we overrode above)
+				// for next call
+				taskRunSample.Spec.Status = v1beta1.TaskRunSpecStatusCancelled
+				taskRunSample.Status.Conditions = knativev1beta1.Conditions{
+					{
+						Type:   knativeapi.ConditionSucceeded,
+						Reason: string(v1beta1.TaskRunReasonCancelled),
+						Status: corev1.ConditionFalse,
+					},
+				}
+
+				_, err = reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
+				Expect(cancelUpdateCalled).To(BeTrue())
+			})
+
 			It("updates the BuildRun status when a FALSE status occurs", func() {
 
 				taskRunSample = ctl.DefaultTaskRunWithFalseStatus(taskRunName, buildRunName, ns)
@@ -479,6 +546,41 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// override the BuildRun resource to use a BuildRun with a specified
 				// serviceaccount
 				buildRunSample = ctl.BuildRunWithSA(buildRunName, buildName, saName)
+			})
+
+			It("should recognize the BuildRun is canceled even with TaskRun missing", func() {
+				// set cancel
+				buildRunSampleCopy := buildRunSample.DeepCopy()
+				buildRunSampleCopy.Spec.State = build.BuildRunStateCancel
+
+				client.GetCalls(ctl.StubBuildCRDs(
+					buildSample,
+					buildRunSampleCopy,
+					ctl.DefaultServiceAccount("foobar"),
+					ctl.DefaultClusterBuildStrategy(),
+					ctl.DefaultNamespacedBuildStrategy(),
+				))
+
+				cancelUpdateCalled := false
+				// override the updateClientStub so we can see the update on the BuildRun condition
+				stubUpdateCalls := func(context context.Context, object runtime.Object, opts ...crc.UpdateOption) error {
+					switch v := object.(type) {
+					case *build.BuildRun:
+						c := v.Status.GetCondition(build.Succeeded)
+						if c != nil && c.Reason == build.BuildRunStateCancel {
+							cancelUpdateCalled = true
+						}
+
+					}
+					return nil
+				}
+				statusWriter.UpdateCalls(stubUpdateCalls)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
+
+				Expect(cancelUpdateCalled).To(BeTrue())
 			})
 
 			It("should return none error and stop reconciling if referenced Build is not found", func() {

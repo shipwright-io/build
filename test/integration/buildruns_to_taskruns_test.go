@@ -14,8 +14,10 @@ import (
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -357,7 +359,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		})
 	})
 
-	Context("when a buildrun is created and cancelled", func() {
+	Context("when a buildrun is created and the taskrun is cancelled", func() {
 
 		BeforeEach(func() {
 			buildSample = []byte(test.BuildCBSMinimal)
@@ -387,6 +389,49 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			expectedReason := "TaskRunCancelled"
 			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
+		})
+	})
+
+	Context("when a buildrun is created and the buildrun is cancelled", func() {
+
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSMinimal)
+			buildRunSample = []byte(test.MinimalBuildRun)
+		})
+
+		It("should reflect a TaskRunCancelled reason in the taskrun, BuildRunCanceled in the buildrun, and no completionTime", func() {
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			err := wait.PollImmediate(1*time.Second, 4*time.Second, func() (done bool, err error) {
+				bro, err := tb.GetBRTillStartTime(buildRunObject.Name)
+				if err != nil {
+					GinkgoT().Logf("error on br get: %s\n", err.Error())
+					return false, nil
+				}
+
+				bro.Spec.State = v1alpha1.BuildRunStateCancel
+				err = tb.UpdateBR(bro)
+				if err != nil {
+					GinkgoT().Logf("error on br update: %s\n", err.Error())
+					return false, nil
+				}
+				return true, nil
+			})
+			Expect(err).To(BeNil())
+
+			expectedReason := "TaskRunCancelled"
+			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired TaskRun reason; expected %s, got %s", expectedReason, actualReason))
+
+			expectedReason = v1alpha1.BuildRunStateCancel
+			actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired BuildRun reason; expected %s, got %s", expectedReason, actualReason))
 		})
 	})
 

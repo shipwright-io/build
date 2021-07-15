@@ -104,6 +104,9 @@ spec:
                     description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
                     type: string
                 type: object
+              state:
+                description: State is used for canceling a buildrun (and maybe more later on).
+                type: string
               timeout:
                 description: Timeout defines the maximum run time of this BuildRun.
                 format: duration

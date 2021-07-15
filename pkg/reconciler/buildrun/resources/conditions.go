@@ -38,14 +38,35 @@ const (
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition
 func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, taskRun *v1beta1.TaskRun, trCondition *apis.Condition) error {
 	var reason, message string = trCondition.Reason, trCondition.Message
+	status := trCondition.Status
 
 	switch v1beta1.TaskRunReason(reason) {
+	case v1beta1.TaskRunReasonStarted:
+		fallthrough
+	case v1beta1.TaskRunReasonRunning:
+		if buildRun.IsCanceled() {
+			status = corev1.ConditionUnknown // in practice the taskrun status is already unknown in this case, but we are making sure here
+			reason = buildv1alpha1.BuildRunStateCancel
+			message = "The user requested the BuildRun to be canceled.  This BuildRun controller has requested the TaskRun be canceled.  That request has not been process by Tekton's TaskRun controller yet."
+		}
+	case v1beta1.TaskRunReasonCancelled:
+		if buildRun.IsCanceled() {
+			status = corev1.ConditionFalse // in practice the taskrun status is already false in this case, bue we are making sure here
+			reason = buildv1alpha1.BuildRunStateCancel
+			message = "The BuildRun and underlying TaskRun were canceled successfully."
+		}
+
 	case v1beta1.TaskRunReasonTimedOut:
 		reason = "BuildRunTimeout"
 		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
 			buildRun.Name,
 			taskRun.Spec.Timeout.Duration,
 		)
+
+	case v1beta1.TaskRunReasonSuccessful:
+		if buildRun.IsCanceled() {
+			message = "The TaskRun completed before the request to cancel the TaskRun could be processed."
+		}
 
 	case v1beta1.TaskRunReasonFailed:
 		if taskRun.Status.CompletionTime != nil {
@@ -103,7 +124,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
 		LastTransitionTime: metav1.Now(),
 		Type:               buildv1alpha1.Succeeded,
-		Status:             trCondition.Status,
+		Status:             status,
 		Reason:             reason,
 		Message:            message,
 	})
