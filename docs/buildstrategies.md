@@ -22,12 +22,13 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing BuildKit Strategy](#installing-buildkit-strategy)
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
+  - [Parameters](#parameters)
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
 - [Strategy parameters](#strategy-parameters)
 - [System parameters](#system-parameters)
-- [System parameters vs Strategy parameters comparison](#system-parameters-vs-strategy-parameters-comparison)
+- [System parameters vs Strategy Parameters Comparison](#system-parameters-vs-strategy-parameters-comparison)
 - [System results](#system-results)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
@@ -170,9 +171,17 @@ To install the cluster scope strategy, use:
 kubectl apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
 ```
 
-**Note**: The build strategy currently uses the `spec.contextDir` of the Build in a different way than this property is designed for: the Git repository must be a Go module with the go.mod file at the root. The `contextDir` specifies the path to the main package. You can check the [example](../samples/build/build_ko_cr.yaml) which is set up to build the Shipwright Build controller. This behavior will eventually be corrected once [Exhaustive list of generalized Build API/CRD attributes #184](https://github.com/shipwright-io/build/issues/184) / [Custom attributes from the Build CR could be used as parameters while defining a BuildStrategy #537](https://github.com/shipwright-io/build/issues/537) are done.
+### Parameters
 
-**Note**: The build strategy is setup to build for the platform that your Kubernetes cluster is running. Exposing the platform configuration to the Build requires the same features mentioned on the previous note.
+The build strategy provides the following parameters that you can set in a Build or BuildRun to control its behavior:
+
+| Parameter | Description | Default |
+| -- | -- | -- |
+| `go-flags` | Value for the GOFLAGS environment variable. | Empty |
+| `go-version` | Version of Go, must match a tag from [the golang image](https://hub.docker.com/_/golang?tab=tags) | `1.16` |
+| `ko-version` | Version of ko, must be either `latest` for the newest release, or a [ko release name](https://github.com/google/ko/releases) | `latest` |
+| `package-directory` | The directory inside the context directory containing the main package. | `.` |
+| `target-platform` | Target platform to be built. For example: `linux/arm64`. Multiple platforms can be provided separated by comma, for example: `linux/arm64,linux/amd64`. The value `all` will build all platforms supported by the base image. The value `current` will build the platform on which the build runs. | `current` |
 
 ## Source to Image
 

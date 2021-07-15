@@ -6,9 +6,15 @@ metadata:
   annotations:
     build.build.dev/build-run-deletion: "false"
 spec:
+  paramValues:
+    - name: go-flags
+      value: "-v -mod=vendor -ldflags=-w"
+    - name: go-version
+      value: "1.15"
+    - name: package-directory
+      value: ./cmd/shipwright-build-controller
   source:
     url: https://github.com/shipwright-io/build
-    contextDir: cmd/shipwright-build-controller
   strategy:
     name: ko
     kind: ClusterBuildStrategy
