@@ -46,7 +46,6 @@ func TestSourcesRef_ValidatePath(t *testing.T) {
 		ctx := context.TODO()
 		err := s.ValidatePath(ctx)
 
-		t.Logf("Test: '%s', Error: '%v'", tc.description, err)
 		if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
 			t.Fatalf("%s: expectError='%v', err='%v'", tc.description, tc.expectError, err)
 		}
