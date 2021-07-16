@@ -102,12 +102,14 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			// Verify that the sa have our Build specified secret
 			Expect(contains(sa.Secrets, buildObject.Spec.Output.Credentials.Name)).To(BeTrue())
 
-			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
+			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			_, err = tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
 			Expect(err).ToNot(BeNil())
 
+			// Verify that the sa name is set in the buildrun status
+			Expect(*br.Status.ServiceAccountName).To(Equal(fmt.Sprintf("%s-sa", buildRunObject.Name)))
 		})
 	})
 
@@ -200,12 +202,15 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			br, err := tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(tr.Spec.ServiceAccountName).To(Equal("pipeline"))
+
+			// Verify that the sa name is set in the buildrun status
+			Expect(*br.Status.ServiceAccountName).To(Equal("pipeline"))
 		})
 
 		It("defaults to default serviceaccount if pipeline serviceaccount is not specified", func() {
@@ -220,12 +225,15 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			br, err := tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(tr.Spec.ServiceAccountName).To(Equal(expectedServiceAccount))
+
+			// Verify that the sa name is set in the buildrun status
+			Expect(*br.Status.ServiceAccountName).To(Equal(expectedServiceAccount))
 		})
 	})
 
