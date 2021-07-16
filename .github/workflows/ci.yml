@@ -155,8 +155,33 @@ jobs:
           run: |
             make install-controller-kind
             kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
-        - name: Test
+        - name: Generate auth for private git repo
+          if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          env:
+            TEST_SOURCE_SECRET: test-source-secret
+            TEST_REPO_PRIV_KEY: ${{ secrets.CI_USER_PRIVATE_SSH_BASE64 }}
           run: |
+            export TEST_NAMESPACE=shipwright-build
+            echo "# Creating a ssh secret for private repository test"
+            cat <<EOF | kubectl apply -n "${TEST_NAMESPACE}" -f -
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: ${TEST_SOURCE_SECRET}
+              annotations:
+                tekton.dev/git-0: github.com
+            type: kubernetes.io/ssh-auth
+            data:
+              ssh-privatekey: ${TEST_REPO_PRIV_KEY}
+            EOF
+            kubectl get secrets -n shipwright-build
+        - name: Test
+          env:
+            TEST_SOURCE_SECRET: test-source-secret
+          run: |
+            if [ "${GITHUB_EVENT_NAME}" == "push" ] && [ "${GITHUB_REF}" == "refs/heads/main"]; then
+              export TEST_PRIVATE_REPO=true
+            fi
             export TEST_NAMESPACE=shipwright-build
             export TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
             make test-e2e
