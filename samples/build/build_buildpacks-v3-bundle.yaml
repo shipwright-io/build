@@ -1,0 +1,16 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-bundle-build
+  annotations:
+    build.shipwright.io/build-run-deletion: "true"
+spec:
+  source:
+    container:
+      image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app-source
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

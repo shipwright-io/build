@@ -165,6 +165,18 @@ spec:
               source:
                 description: Source refers to the Git repository containing the source code to be built.
                 properties:
+                  container:
+                    description: Container
+                    properties:
+                      image:
+                        description: Image reference, i.e. quay.io/org/image:tag
+                        type: string
+                      pruneBundle:
+                        description: PruneBundle indicates that the source code bundle container image should be removed after a successful buildrun
+                        type: boolean
+                    required:
+                    - image
+                    type: object
                   contextDir:
                     description: ContextDir is a path to subfolder in the repo. Optional.
                     type: string

@@ -101,13 +101,15 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	falseCondition := corev1.ConditionFalse
 
 	// Ensure the BuildRun has been created
-	err := testBuild.CreateBR(testBuildRun)
-	Expect(err).ToNot(HaveOccurred(), "Failed to create BuildRun")
+	if _, err := testBuild.GetBR(testBuildRun.Name); err != nil {
+		Expect(testBuild.CreateBR(testBuildRun)).
+			ToNot(HaveOccurred(), "Failed to create BuildRun")
+	}
 
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
 	nextStatusLog := time.Now().Add(60 * time.Second)
 	Eventually(func() corev1.ConditionStatus {
-		testBuildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
+		testBuildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		if testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded) == nil {
@@ -127,6 +129,8 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
 	// Verify that the BuildSpec is still available in the status
+	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
+	Expect(err).ToNot(HaveOccurred())
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")
 
 	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))

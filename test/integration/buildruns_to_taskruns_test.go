@@ -383,7 +383,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			tr.Spec.Status = "TaskRunCancelled"
 
-			tr, err = tb.UpdateTaskRun(tr)
+			_, err = tb.UpdateTaskRun(tr)
 			Expect(err).To(BeNil())
 
 			expectedReason := "TaskRunCancelled"

@@ -1,0 +1,17 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-bundle-build
+  annotations:
+    build.shipwright.io/build-run-deletion: "true"
+spec:
+  source:
+    container:
+      image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app-source
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

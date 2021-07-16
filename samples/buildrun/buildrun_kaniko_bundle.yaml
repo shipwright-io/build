@@ -1,0 +1,10 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: kaniko-bundle-buildrun
+spec:
+  buildRef:
+    name: kaniko-bundle-build
+  serviceAccount:
+    generate: true
