@@ -125,6 +125,15 @@ spec:
               source:
                 description: Source refers to the Git repository containing the source code to be built.
                 properties:
+                  bundleContainer:
+                    description: BundleContainer
+                    properties:
+                      image:
+                        description: Image reference, i.e. quay.io/org/image:tag
+                        type: string
+                    required:
+                    - image
+                    type: object
                   contextDir:
                     description: ContextDir is a path to subfolder in the repo. Optional.
                     type: string
@@ -141,8 +150,6 @@ spec:
                   url:
                     description: URL describes the URL of the Git repository.
                     type: string
-                required:
-                - url
                 type: object
               sources:
                 description: Sources slice of BuildSource, defining external build artifacts complementary to VCS (`.spec.source`) data.
