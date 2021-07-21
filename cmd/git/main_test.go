@@ -7,6 +7,7 @@ package main_test
 import (
 	"context"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -20,7 +21,8 @@ import (
 
 var _ = Describe("Git Resource", func() {
 	var run = func(args ...string) error {
-		os.Args = append([]string{"tool", "--zap-log-level", "fatal"}, args...)
+		log.SetOutput(ioutil.Discard)
+		os.Args = append([]string{"tool", "--skip-validation"}, args...)
 		return Execute(context.TODO())
 	}
 
