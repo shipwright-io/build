@@ -500,4 +500,23 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(buildIsDeleted).To(Equal(true))
 		})
 	})
+
+	Context("when a build name is invalid", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSMinimal)
+		})
+
+		It("fails the build with a proper error in Reason", func() {
+			// Set build name more than 63 characters
+			buildObject.Name = strings.Repeat("s", 64)
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.BuildNameInvaid))
+			Expect(buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
+		})
+	})
 })

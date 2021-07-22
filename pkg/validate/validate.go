@@ -24,6 +24,8 @@ const (
 	Runtime = "runtime"
 	// Sources for validating `spec.sources` entries
 	Sources = "sources"
+	// BuildName for validating `metadata.name` entry
+	BuildName = "buildname"
 	// OwnerReferences for validating the ownerreferences between a Build
 	// and BuildRun objects
 	OwnerReferences = "ownerreferences"
@@ -58,6 +60,8 @@ func NewValidation(
 		return &OwnerRef{Build: build, Client: client, Scheme: scheme}, nil
 	case Sources:
 		return &SourcesRef{Build: build}, nil
+	case BuildName:
+		return &BuildNameRef{Build: build}, nil
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}

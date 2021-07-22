@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
@@ -19,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -93,6 +95,22 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		// If the BuildRun and TaskRun are not found, it might mean that we are running a Reconcile after a TaskRun was deleted. If this is the case, we need
 		// to identify from the request the BuildRun name associate to it and update the BuildRun Status.
 		r.VerifyRequestName(ctx, request, buildRun)
+		return reconcile.Result{}, nil
+	}
+
+	// Validating buildrun name is a valid label value
+	if errs := validation.IsValidLabelValue(buildRun.Name); len(errs) > 0 {
+		// stop reconciling and mark the BuildRun as Failed
+		if updateErr := resources.UpdateConditionWithFalseStatus(
+			ctx,
+			r.client,
+			buildRun,
+			strings.Join(errs, ", "),
+			resources.BuildRunNameInvalid,
+		); updateErr != nil {
+			return reconcile.Result{}, updateErr
+		}
+
 		return reconcile.Result{}, nil
 	}
 
