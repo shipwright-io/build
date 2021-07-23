@@ -23,7 +23,7 @@ type BuildNameRef struct {
 // that build name is a valid label value
 func (b *BuildNameRef) ValidatePath(_ context.Context) error {
 	if errs := validation.IsValidLabelValue(b.Build.Name); len(errs) > 0 {
-		b.Build.Status.Reason = build.BuildNameInvaid
+		b.Build.Status.Reason = build.BuildNameInvalid
 		b.Build.Status.Message = strings.Join(errs, ", ")
 	}
 

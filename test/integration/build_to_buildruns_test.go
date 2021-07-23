@@ -515,7 +515,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.BuildNameInvaid))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.BuildNameInvalid))
 			Expect(buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
 		})
 	})
