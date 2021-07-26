@@ -33,6 +33,7 @@ const (
 	ConditionServiceAccountNotFound  string = "ServiceAccountNotFound"
 	ConditionBuildRegistrationFailed string = "BuildRegistrationFailed"
 	ConditionBuildNotFound           string = "BuildNotFound"
+	BuildRunNameInvalid              string = "BuildRunNameInvalid"
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition

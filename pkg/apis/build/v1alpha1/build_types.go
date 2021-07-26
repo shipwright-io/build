@@ -38,6 +38,8 @@ const (
 	UndefinedParameter BuildReason = "UndefinedParameter"
 	// RemoteRepositoryUnreachable indicates the referenced repository is unreachable
 	RemoteRepositoryUnreachable BuildReason = "RemoteRepositoryUnreachable"
+	// BuildNameInvalid indicates the build name is invalid
+	BuildNameInvalid BuildReason = "BuildNameInvalid"
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
 )

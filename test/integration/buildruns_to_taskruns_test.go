@@ -7,12 +7,14 @@ package integration_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/shipwright-io/build/test"
 
 	corev1 "k8s.io/api/core/v1"
@@ -494,6 +496,53 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				Expect(err).To(BeNil())
 				Expect(reason).To(Equal("Succeeded"))
 			})
+		})
+	})
+
+	Context("when a buildrun is created with invalid name", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSMinimal)
+			buildRunSample = []byte(test.MinimalBuildRun)
+		})
+
+		It("fails the buildrun with a proper error in Reason", func() {
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			// Set buildrun name more than 63 characters
+			buildRunObject.Name = strings.Repeat("s", 64)
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			condition := br.Status.GetCondition(v1alpha1.Succeeded)
+			Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+			Expect(condition.Reason).To(Equal(resources.BuildRunNameInvalid))
+			Expect(condition.Message).To(Equal("must be no more than 63 characters"))
+		})
+
+		It("should reflect a BadRequest reason in TaskRun", func() {
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			// Set buildrun name more than 63 characters
+			buildRunObject.Name = strings.Repeat("s", 64)
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			expectedReason := "BadRequest"
+			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+			Expect(err).To(HaveOccurred(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
+
+			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
