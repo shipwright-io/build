@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"os"
 	"os/exec"
@@ -15,7 +16,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/spf13/pflag"
 )
 
@@ -46,6 +46,7 @@ type settings struct {
 	target              string
 	resultFileCommitSha string
 	secretPath          string
+	skipValidation      bool
 }
 
 var flagValues settings
@@ -56,10 +57,6 @@ var (
 )
 
 func init() {
-	// Add the zap logger flag set to the CLI. The flag set must
-	// be added before calling pflag.Parse().
-	pflag.CommandLine.AddGoFlagSet(ctxlog.CustomZapFlagSet())
-
 	// Main flags for the Git step to define the configuration, for example
 	// the flags for `url`, and `target` will always be used, but `revision`
 	// depends on the respective use case.
@@ -73,30 +70,22 @@ func init() {
 	// which should be fine for almost all use cases we use the Git source step
 	// for (in the context of Shipwright build).
 	pflag.UintVar(&flagValues.depth, "depth", 1, "Create a shallow clone based on the given depth")
+
+	// Mostly internal flag
+	pflag.BoolVar(&flagValues.skipValidation, "skip-validation", false, "skip pre-requisite validation")
 }
 
 func main() {
-	if err := checkAndRun(); err != nil {
+	if err := Execute(context.Background()); err != nil {
 		var exitcode = 1
 		switch err := err.(type) {
 		case *ExitError:
 			exitcode = err.Code
 		}
 
+		log.Print(err.Error())
 		os.Exit(exitcode)
 	}
-}
-
-func checkAndRun() error {
-	// create logger and context
-	l := ctxlog.NewLogger("git")
-	ctx := ctxlog.NewParentContext(l)
-
-	if err := checkEnvironment(ctx); err != nil {
-		return err
-	}
-
-	return Execute(ctx)
 }
 
 // Execute performs flag parsing, input validation and the Git clone
@@ -104,12 +93,16 @@ func Execute(ctx context.Context) error {
 	flagValues = settings{depth: 1}
 	pflag.Parse()
 
-	err := runGitClone(ctx)
-	if err != nil {
-		ctxlog.Error(ctx, err, "program failed with an error")
+	// pre-req checks
+	if err := checkEnvironment(ctx); err != nil {
+		return err
 	}
 
-	return err
+	if err := runGitClone(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func runGitClone(ctx context.Context) error {
@@ -140,6 +133,10 @@ func runGitClone(ctx context.Context) error {
 }
 
 func checkEnvironment(ctx context.Context) error {
+	if flagValues.skipValidation {
+		return nil
+	}
+
 	var checks = []struct{ toolName, versionArg string }{
 		{toolName: "ssh", versionArg: "-V"},
 		{toolName: "git", versionArg: "version"},
@@ -157,9 +154,10 @@ func checkEnvironment(ctx context.Context) error {
 			return err
 		}
 
-		ctxlog.Info(ctx, check.toolName,
-			"path", path,
-			"version", strings.TrimRight(string(out), "\n"),
+		log.Printf("Info: %s (%s): %s\n",
+			check.toolName,
+			path,
+			strings.TrimRight(string(out), "\n"),
 		)
 	}
 
@@ -296,13 +294,34 @@ func clone(ctx context.Context) error {
 	if flagValues.depth > 0 {
 		submoduleArgs = append(submoduleArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
 	}
-	_, err := git(ctx, submoduleArgs...)
-	return err
+
+	if _, err := git(ctx, submoduleArgs...); err != nil {
+		return err
+	}
+
+	revision := flagValues.revision
+	if revision == "" {
+		// user requested to clone the default branch, determine the branch name
+		refParse, err := git(ctx, "-C", flagValues.target, "rev-parse", "--abbrev-ref", "HEAD")
+		if err != nil {
+			return err
+		}
+
+		revision = strings.TrimRight(refParse, "\n")
+	}
+
+	log.Printf("Successfully loaded %s (%s) into %s\n",
+		flagValues.url,
+		revision,
+		flagValues.target,
+	)
+
+	return nil
 }
 
 func git(ctx context.Context, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", args...)
-	ctxlog.Debug(ctx, cmd.String())
+	log.Print(cmd.String())
 
 	// Make sure that the spawned process does not try to prompt for infos
 	os.Setenv("GIT_TERMINAL_PROMPT", "0")
@@ -328,11 +347,6 @@ func git(ctx context.Context, args ...string) (string, error) {
 				Cause:   err,
 			}
 		}
-
-		ctxlog.Error(ctx, err, "git command failed",
-			"command", cmd.String(),
-			"output", output,
-		)
 	}
 
 	return output, err
