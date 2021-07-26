@@ -221,6 +221,7 @@ func clone(ctx context.Context) error {
 			}
 
 			var sshCmd = []string{"ssh",
+				"-o", "LogLevel=ERROR",
 				"-o", "BatchMode=yes",
 				"-i", sshPrivateKeyFile.Name(),
 			}
