@@ -299,14 +299,20 @@ func clone(ctx context.Context) error {
 		return err
 	}
 
-	head, err := ioutil.ReadFile(filepath.Join(flagValues.target, ".git", "HEAD"))
-	if err != nil {
-		return err
+	revision := flagValues.revision
+	if revision == "" {
+		// user requested to clone the default branch, determine the branch name
+		refParse, err := git(ctx, "-C", flagValues.target, "rev-parse", "--abbrev-ref", "HEAD")
+		if err != nil {
+			return err
+		}
+
+		revision = strings.TrimRight(refParse, "\n")
 	}
 
 	log.Printf("Successfully loaded %s (%s) into %s\n",
 		flagValues.url,
-		strings.TrimRight(string(head), "\n"),
+		revision,
 		flagValues.target,
 	)
 
