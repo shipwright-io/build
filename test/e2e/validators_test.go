@@ -43,23 +43,34 @@ const (
 // Otherwise it will create the service account. No error occurs if the service account already exists.
 func createPipelineServiceAccount(testBuild *utils.TestBuild) {
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
-
 	if serviceAccountName == "generated" {
 		Logf("Skipping creation of service account, generated one will be used per build run.")
-	} else {
-		serviceAccount := &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testBuild.Namespace,
-				Name:      serviceAccountName,
-			},
-		}
-
-		Logf("Creating '%s' service-account", serviceAccountName)
-		_, err := testBuild.Clientset.CoreV1().ServiceAccounts(testBuild.Namespace).Create(testBuild.Context, serviceAccount, metav1.CreateOptions{})
-		if err != nil && !apierrors.IsAlreadyExists(err) {
-			Expect(err).ToNot(HaveOccurred(), "Error creating service account")
-		}
+		return
 	}
+
+	if _, err := testBuild.LookupServiceAccount(types.NamespacedName{Namespace: testBuild.Namespace, Name: serviceAccountName}); err == nil {
+		Logf("Skipping creation of service account, reusing existing one.")
+		return
+	}
+
+	Logf("Creating '%s' service-account", serviceAccountName)
+	_, err := testBuild.Clientset.CoreV1().
+		ServiceAccounts(testBuild.Namespace).
+		Create(testBuild.Context,
+			&corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testBuild.Namespace,
+					Name:      serviceAccountName,
+				}},
+			metav1.CreateOptions{})
+
+	// Due to concurrency, it could be that some other routine already finished creating the service-account
+	if err != nil && apierrors.IsAlreadyExists(err) {
+		Logf("Creation failed, because service-account %q is already in the system.", serviceAccountName)
+		return
+	}
+
+	Expect(err).ToNot(HaveOccurred(), "Error creating service account")
 }
 
 // createContainerRegistrySecret use environment variables to check for container registry
