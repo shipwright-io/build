@@ -5,7 +5,7 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
-    url: git@github.com:qu1queee/new-nodejs-ex.git
+    url: git@github.com:shipwright-io/sample-nodejs-private.git
   strategy:
     name: source-to-image
     kind: ClusterBuildStrategy
