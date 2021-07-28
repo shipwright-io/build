@@ -89,7 +89,7 @@ func resolveAuthBasedOnTarget(ref name.Reference) (authn.Authenticator, error) {
 	}
 
 	// Look-up the respective registry server inside the credentials
-	var registryName = ref.Context().RegistryStr()
+	registryName := ref.Context().RegistryStr()
 	if registryName == name.DefaultRegistry {
 		registryName = authn.DefaultAuthKey
 	}

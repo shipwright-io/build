@@ -22,7 +22,7 @@ func AmendTaskSpecWithSources(
 	case build.Spec.Source.BundleContainer != nil:
 		sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source, "default")
 
-	default:
+	case build.Spec.Source.URL != "":
 		sources.AppendGitStep(cfg, taskSpec, build.Spec.Source, "default")
 	}
 

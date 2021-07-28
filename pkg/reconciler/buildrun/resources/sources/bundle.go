@@ -27,7 +27,7 @@ func AppendBundleStep(
 	}
 
 	// add the build-specific details
-	bundleStep.Container.Name = fmt.Sprintf("bundle-%s", name)
+	bundleStep.Container.Name = fmt.Sprintf("source-%s", name)
 	bundleStep.Container.Args = []string{
 		"--image", source.BundleContainer.Image,
 		"--target", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),

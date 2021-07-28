@@ -247,6 +247,7 @@ func Unpack(in io.Reader, targetPath string) error {
 			}
 
 			if _, err := io.Copy(file, tr); err != nil {
+				file.Close()
 				return err
 			}
 
