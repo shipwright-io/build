@@ -22,6 +22,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing BuildKit Strategy](#installing-buildkit-strategy)
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
+    - [Scanning with Trivy](#scanning-with-trivy)
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
@@ -52,6 +53,7 @@ Well-known strategies can be bootstrapped from [here](../samples/buildstrategy).
 | [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
 | [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
 | [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml) | all |
+| [kaniko-trivy](../samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml) | all |
 | [ko](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml) | all |
 | [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml) | linux/amd64 only |
 
@@ -108,7 +110,7 @@ kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3
 
 ## Kaniko
 
-The `kaniko` ClusterBuildStrategy is composed by Kaniko's `executor` [kaniko], with the objective of building a container-image, out of a `Dockerfile` and context directory.
+The `kaniko` ClusterBuildStrategy is composed by Kaniko's `executor` [kaniko], with the objective of building a container-image, out of a `Dockerfile` and context directory. The `kaniko-trivy` ClusterBuildStrategy adds [trivy](https://github.com/aquasecurity/trivy) scanning and refuses to push images with critical vulnerabilities.
 
 ### Installing Kaniko Strategy
 
@@ -117,6 +119,18 @@ To install the cluster scope strategy, use:
 ```sh
 kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 ```
+
+#### Scanning with Trivy
+
+You can also incorporate scanning into the ClusterBuildStrategy. The `kaniko-trivy` ClusterBuildStrategy builds the image with `kaniko`, then scans with [trivy](https://github.com/aquasecurity/trivy). The BuildRun will then exit with an error if there is a critical vulnerability, instead of pushing the vulnerable image into the container registry.
+
+To install the cluster scope strategy, use:
+
+```sh
+kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
+```
+
+*Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Consider something like [source-to-image](https://github.com/openshift/source-to-image#security) if you want to build untrusted code.*
 
 ---
 
