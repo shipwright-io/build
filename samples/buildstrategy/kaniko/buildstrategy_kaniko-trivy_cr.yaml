@@ -54,7 +54,7 @@ spec:
     # Reference:
     # https://ibm-gsi-ecosystem.github.io/ibm-gsi-cloudnative-journey/developer-advanced-2/devsecops-trivy/
     - name: trivy-scan
-      image: aquasec/trivy:0.19.2
+      image: docker.io/aquasec/trivy:0.19.2
       volumeMounts:
       - mountPath: /image/
         name: tar
