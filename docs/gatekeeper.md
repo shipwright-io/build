@@ -10,7 +10,7 @@ An organization may want to limit builds to trusted sources, such as a github or
 
 ### Configure Gatekeeper to watch for `Build` resources
 
-Either Create or append to your gatekeeper-system config. This configmap specificies all resources that Gatekeeper will monitor.
+Either Create or append to your gatekeeper-system config. This configmap specifies all resources that Gatekeeper will monitor.
 
 ```yaml
 apiVersion: config.gatekeeper.sh/v1alpha1
@@ -141,7 +141,7 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/hello-world
 ```
 
-Attempting to create this will yeild an error.
+Attempting to create this will yield an error.
 
 ```sh
 $ kubectl apply -f hello-world-build.yaml
