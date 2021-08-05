@@ -166,13 +166,13 @@ func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1alp
 
 		now := time.Now()
 		if now.After(nextStatusLog) {
-			Logf("Still waiting for build run '%s' to succeed.", testBuildRun.Name)
+			Logf("Still waiting for build run '%s' to fail.", testBuildRun.Name)
 			nextStatusLog = time.Now().Add(60 * time.Second)
 		}
 
 		return testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded).Status
 
-	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
+	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not succeed")
 
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")

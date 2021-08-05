@@ -82,7 +82,7 @@ spec:
       args:
         - push
         - /image/image.tar
-        - $(build.output.image)
+        - $(params.shp-output-image)
       env:
         - name: DOCKER_CONFIG
           value: /root/.docker/

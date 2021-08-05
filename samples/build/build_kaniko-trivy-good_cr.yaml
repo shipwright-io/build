@@ -7,8 +7,7 @@ metadata:
     build.shipwright.io/build-run-deletion: "true"
 spec:
   source:
-    url: https://github.com/blairdrummond/sample-scanning
-    contextDir: .
+    url: https://github.com/shipwright-io/sample-scanning
   strategy:
     name: kaniko-trivy
     kind: ClusterBuildStrategy
