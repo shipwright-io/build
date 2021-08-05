@@ -15,6 +15,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing Buildpacks v3 Strategy](#installing-buildpacks-v3-strategy)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
+  - [Scanning with Trivy](#scanning-with-trivy)
 - [BuildKit](#buildkit)
   - [Cache Exporters](#cache-exporters)
   - [Known Limitations](#known-limitations)
@@ -22,7 +23,6 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing BuildKit Strategy](#installing-buildkit-strategy)
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
-    - [Scanning with Trivy](#scanning-with-trivy)
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
@@ -53,7 +53,6 @@ Well-known strategies can be bootstrapped from [here](../samples/buildstrategy).
 | [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
 | [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
 | [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml) | all |
-| [kaniko-trivy](../samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml) | all |
 | [ko](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml) | all |
 | [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml) | linux/amd64 only |
 
@@ -130,7 +129,7 @@ To install the cluster scope strategy, use:
 kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
 ```
 
-*Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Consider something like [source-to-image](https://github.com/openshift/source-to-image#security) if you want to build untrusted code.*
+*Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Frameworks/strategies such as build-packs or source-to-image (which avoid directly building a Dockerfile) should be considered if you need guardrails around the code you want to build.* 
 
 ---
 

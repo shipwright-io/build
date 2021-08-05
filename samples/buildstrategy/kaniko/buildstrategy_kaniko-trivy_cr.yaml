@@ -51,8 +51,6 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
-    # Reference:
-    # https://ibm-gsi-ecosystem.github.io/ibm-gsi-cloudnative-journey/developer-advanced-2/devsecops-trivy/
     - name: trivy-scan
       image: docker.io/aquasec/trivy:0.19.2
       volumeMounts:
@@ -72,12 +70,8 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
-
-    # Reference:
-    # https://ibm-gsi-ecosystem.github.io/ibm-gsi-cloudnative-journey/developer-advanced-2/devsecops-trivy/
     - name: crane-push
       image: gcr.io/go-containerregistry/crane:v0.6.0
-      # Needed to read the docker config
       securityContext:
         runAsUser: 0
       volumeMounts:
