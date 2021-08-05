@@ -91,7 +91,7 @@ The `Build` definition supports the following fields:
 A `Build` resource can specify a Git source, together with other parameters like:
 
 - `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the `ssh` data.
-- `source.revision` - An specific revision to select from the source repository, this can be a commit or branch name. If not defined, it will fallback to the git repository default branch.
+- `source.revision` - An specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fallback to the git repository default branch.
 - `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here. Currently, only supported by `buildah`, `kaniko` and `buildpacks` build strategies.
 
 By default, the Build controller won't validate that the Git repository exists. If the validation is desired, users can define the `build.shipwright.io/verify.repository` annotation with `true` explicitly. For example:
@@ -140,7 +140,7 @@ spec:
     contextDir: renamed
 ```
 
-Example of a `Build` that specifies an specific branch on the git repository:
+Example of a `Build` that specifies the tag `v.0.1.0` for the git repository:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -151,6 +151,7 @@ spec:
   source:
     url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
+    revision: v0.1.0
 ```
 
 ### Defining the Strategy
