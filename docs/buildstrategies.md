@@ -399,8 +399,8 @@ For a more concrete example, let´s take a look on the following scenarios:
 
 If we will apply the following resources:
 
-- [buildahBuild](../samples/build/buildah/build_buildah_cr.yaml)
-- [buildahBuildRun](../samples/buildrun/buildah/buildrun_buildah_cr.yaml)
+- [buildahBuild](../samples/build/build_buildah_cr.yaml)
+- [buildahBuildRun](../samples/buildrun/buildrun_buildah_cr.yaml)
 - [buildahClusterBuildStrategy](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
 
 We will see some differences between the `TaskRun` definition and the `pod` definition.
