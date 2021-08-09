@@ -1,0 +1,16 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: kaniko-trivy-good-build
+  annotations:
+    build.shipwright.io/build-run-deletion: "true"
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-scanning
+  strategy:
+    name: kaniko-trivy
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile.good
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/good-trivy

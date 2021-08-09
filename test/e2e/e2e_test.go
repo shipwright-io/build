@@ -395,6 +395,48 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Kaniko+Trivy build is defined to use an image with no critical CVEs", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("kaniko-trivy-good")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"samples/build/build_kaniko-trivy-good_cr.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko-trivy-good_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(testBuild, buildRun)
+		})
+	})
+
+	Context("when a Kaniko+Trivy build is defined to use an image with a critical CVE", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("kaniko-trivy-bad")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"samples/build/build_kaniko-trivy-bad_cr.yaml",
+			)
+		})
+
+		It("fails to run a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko-trivy-bad_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToFail(testBuild, buildRun)
+		})
+	})
+
 	Context("when a Buildkit build with a contextDir and a path to a Dockerfile is defined", func() {
 
 		BeforeEach(func() {
