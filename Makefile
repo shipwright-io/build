@@ -293,6 +293,10 @@ kind-tekton:
 kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
+verify:
+	./hack/generate-fakes.sh
+	./hack/generate-copyright.sh
+	./hack/verify-generate.sh
 
 generate-crds:
 	./hack/install-controller-gen.sh
