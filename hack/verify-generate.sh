@@ -28,6 +28,6 @@ GOFLAGS="" GOPATH=${GOPATH} /bin/bash ${CODEGEN_PKG}/generate-groups.sh "deepcop
 
 if [ "$(git diff | grep pkg/client/clientset | wc -l)" -gt "0" ]; then
     echo ""
-    echo "OOPS! It seems either hack/update-codegen.sh is not run or changes on the clientset is not not pushed!"
+    echo "OOPS! It seems either hack/update-codegen.sh is not run or changes on the clientset is not pushed!"
     exit 1
 fi
