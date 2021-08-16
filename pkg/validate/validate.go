@@ -20,8 +20,6 @@ const (
 	Strategies = "strategy"
 	// SourceURL for validating the source URL in Build objects
 	SourceURL = "sourceurl"
-	// Runtime for validating the runtime definition in Build objects
-	Runtime = "runtime"
 	// Sources for validating `spec.sources` entries
 	Sources = "sources"
 	// BuildName for validating `metadata.name` entry
@@ -54,8 +52,6 @@ func NewValidation(
 		return &Strategy{Build: build, Client: client}, nil
 	case SourceURL:
 		return &SourceURLRef{Build: build, Client: client}, nil
-	case Runtime:
-		return &RuntimeRef{Build: build, Client: client}, nil
 	case OwnerReferences:
 		return &OwnerRef{Build: build, Client: client, Scheme: scheme}, nil
 	case Sources:

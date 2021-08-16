@@ -30,8 +30,6 @@ const (
 	SpecBuilderSecretRefNotFound BuildReason = "SpecBuilderSecretRefNotFound"
 	// MultipleSecretRefNotFound indicates that multiple secrets are missing
 	MultipleSecretRefNotFound BuildReason = "MultipleSecretRefNotFound"
-	// RuntimePathsCanNotBeEmpty indicates that the spec.runtime feature is used but the paths were not specified
-	RuntimePathsCanNotBeEmpty BuildReason = "RuntimePathsCanNotBeEmpty"
 	// RestrictedParametersInUse indicates the definition of reserved shipwright parameters
 	RestrictedParametersInUse BuildReason = "RestrictedParametersInUse"
 	// UndefinedParameter indicates the definition of param that was not defined in the strategy parameters
@@ -101,16 +99,6 @@ type BuildSpec struct {
 	// +optional
 	ParamValues []ParamValue `json:"paramValues,omitempty"`
 
-	// Runtime represents the runtime-image.
-	//
-	// Deprecated: This feature is deprecated and will be removed in a
-	// future release.  See
-	// https://github.com/shipwright-io/community/blob/main/ships/deprecate-runtime.md
-	// for more information.
-	//
-	// +optional
-	Runtime *Runtime `json:"runtime,omitempty"`
-
 	// Output refers to the location where the built image would be pushed.
 	Output Image `json:"output"`
 
@@ -145,51 +133,6 @@ type Image struct {
 	//
 	// +optional
 	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
-}
-
-// Runtime represents the runtime-image, created using parts of builder-image, and a different
-// base-image than originally.
-type Runtime struct {
-	// Base runtime base image.
-	// +optional
-	Base Image `json:"base,omitempty"`
-
-	// Env environment variables for runtime.
-	// +optional
-	Env map[string]string `json:"env,omitempty"`
-
-	// Labels map of additional labels to be applied on image.
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// WorkDir runtime image working directory `WORKDIR`.
-	// +optional
-	WorkDir string `json:"workDir,omitempty"`
-
-	// Run arbitrary commands to run before copying data into runtime-image.
-	// +optional
-	Run []string `json:"run,omitempty"`
-
-	// Paths list of directories/files to be copied into runtime-image, using colon ":" to split up source and destination paths.
-	// +optional
-	Paths []string `json:"paths,omitempty"`
-
-	// User definitions of user and group for runtime-image.
-	User *User `json:"user,omitempty"`
-
-	// Entrypoint runtime-image entrypoint.
-	// +optional
-	Entrypoint []string `json:"entrypoint,omitempty"`
-}
-
-// User holds the user name and group information for runtime-image.
-type User struct {
-	// Name user name to be employed in runtime-image.
-	Name string `json:"name"`
-
-	// Group group name or GID employed in runtime-image.
-	// +optional
-	Group string `json:"group,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build
