@@ -4,9 +4,25 @@ kind: ClusterBuildStrategy
 metadata:
   name: ko
 spec:
+  parameters:
+    - name: go-flags
+      description: "Value for the GOFLAGS environment variable."
+      default: ""
+    - name: go-version
+      description: "Version of Go, must match a tag from https://hub.docker.com/_/golang?tab=tags"
+      default: "1.16"
+    - name: ko-version
+      description: "Version of ko, must be either 'latest', or a release name from https://github.com/google/ko/releases"
+      default: latest
+    - name: package-directory
+      description: "The directory inside the context directory containing the main package."
+      default: "."
+    - name: target-platform
+      description: "Target platform to be built. For example: 'linux/arm64'. Multiple platforms can be provided separated by comma, for example: 'linux/arm64,linux/amd64'. The value 'all' will build all platforms supported by the base image. The value 'current' will build the platform on which the build runs."
+      default: current
   buildSteps:
     - name: prepare
-      image: golang:1.15
+      image: golang:$(params.go-version)
       imagePullPolicy: Always
       securityContext:
         runAsUser: 0
@@ -27,7 +43,8 @@ spec:
           cpu: 100m
           memory: 128Mi
     - name: build-and-push
-      image: golang:1.15
+      image: golang:$(params.go-version)
+      imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 1000
@@ -37,6 +54,8 @@ spec:
           value: /tekton/home/.docker
         - name: HOME
           value: /tekton/home
+        - name: GOFLAGS
+          value: $(params.go-flags)
       command:
         - /bin/bash
       args:
@@ -69,31 +88,52 @@ spec:
             fi
           done
 
-          # Download ko
-          pushd /tmp > /dev/null
-            curl -f -s -L https://github.com/google/ko/releases/download/v0.8.3/ko_0.8.3_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz | tar xzf - ko
-          popd > /dev/null
+          # Determine the ko version
+          KO_VERSION='$(params.ko-version)'
+          if [ "${KO_VERSION}" == "latest" ]; then
+            KO_VERSION=$(curl --silent "https://api.github.com/repos/google/ko/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          fi
+
+          # Create one variable with v-suffix and one without as we need both for the download URL
+          if [[ ${KO_VERSION} = v* ]]; then
+            KO_VERSION_WITH_V=${KO_VERSION}
+            KO_VERSION_WITHOUT_V=${KO_VERSION:1}
+          else
+            KO_VERSION_WITH_V=v${KO_VERSION}
+            KO_VERSION_WITHOUT_V=${KO_VERSION}
+          fi
+
+          # Download ko to the temp directory
+          curl -f -s -L "https://github.com/google/ko/releases/download/${KO_VERSION_WITH_V}/ko_${KO_VERSION_WITHOUT_V}_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz" | tar xzf - -C /tmp ko
+
+          # Determine the platform
+          PLATFORM='$(params.target-platform)'
+          if [ "${PLATFORM}" == "current" ]; then
+            PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')/$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
+          fi
+
+          # Print version information
+          go version
+          echo "ko version $(/tmp/ko version)"
 
           # Run ko
-
-          # Select the platform to build based on the architecture that the cluster runs.
-          # Once there is parameter support in Shipwright, we should expose this setting there.
-          PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')/$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
 
           export GOROOT=$(go env GOROOT)
           export KO_DOCKER_REPO="${REPO}"
 
-          if [ "${TAG}" == "" ]; then
-            /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}"
-          else
-            /tmp/ko publish "./$(build.source.contextDir)" --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}" --tags="${TAG}"
-          fi
+          pushd '$(params.shp-source-context)' > /dev/null
+            if [ "${TAG}" == "" ]; then
+              /tmp/ko publish '$(params.package-directory)' --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}"
+            else
+              /tmp/ko publish '$(params.package-directory)' --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}" --tags="${TAG}"
+            fi
+          popd > /dev/null
 
           # Store the image digest
-          grep digest /tmp/layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
+          grep digest /tmp/layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > '$(results.shp-image-digest.path)'
 
           # Store the image size
-          du -b -c /tmp/layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > "$(results.shp-image-size.path)"
+          du -b -c /tmp/layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > '$(results.shp-image-size.path)'
       resources:
         limits:
           cpu: 500m
