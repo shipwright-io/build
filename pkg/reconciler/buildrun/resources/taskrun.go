@@ -207,13 +207,6 @@ func GenerateTaskSpec(
 		}
 	}
 
-	// checking for runtime-image settings, and appending more steps to the strategy
-	if IsRuntimeDefined(build) {
-		if err := AmendTaskSpecWithRuntimeImage(cfg, &generatedTaskSpec, build); err != nil {
-			return nil, err
-		}
-	}
-
 	return &generatedTaskSpec, nil
 }
 

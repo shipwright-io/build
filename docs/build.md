@@ -344,65 +344,6 @@ Additionally, we have plan to keep evolving `.spec.sources` by adding more types
 
 At this initial stage, authentication is not supported therefore you can only download from sources without this mechanism in place.
 
-### Runtime-Image
-
-**⚠️ Deprecated:** This feature is deprecated and will be removed in a future release.
-See https://github.com/shipwright-io/community/blob/main/ships/deprecate-runtime.md for more information.
-
-Runtime-image is a new image composed with build-strategy outcome. On which you can compose a multi-stage image build, copying parts out the original image into a new one. This feature allows replacing the base-image of any container-image, creating leaner images, and other use-cases.
-
-The following examples illustrates how to the `runtime`:
-
-```yml
-apiVersion: shipwright.io/v1alpha1
-kind: Build
-metadata:
-  name: nodejs-ex-runtime
-spec:
-  strategy:
-    name: buildpacks-v3
-    kind: ClusterBuildStrategy
-  source:
-    url: https://github.com/sclorg/nodejs-ex.git
-  output:
-    image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex
-  runtime:
-    base:
-      image: docker.io/node:latest
-    workDir: /home/node/app
-    run:
-      - echo "Before copying data..."
-    user:
-      name: node
-      group: "1000"
-    paths:
-      - $(workspace):/home/node/app
-    entrypoint:
-      - npm
-      - start
-```
-
-This build will produce a Node.js based application where a single directory is imported from the image built by buildpacks strategy. The data copied is using the `.spec.runtime.user` directive, and the image also runs based on it.
-
-Please consider the description of the attributes under `.spec.runtime`:
-
-- `.base`: specifies the runtime base-image to be used, using Image as type
-- `.workDir`: path to WORKDIR in runtime-image
-- `.env`: runtime-image additional environment variables, key-value
-- `.labels`: runtime-image additional labels, key-value
-- `.run`: arbitrary commands to be executed as `RUN` blocks, before `COPY`
-- `.user.name`: username employed on `USER` directive, and also to change ownership of files copied to the runtime-image
-- `.user.group`: group name (or GID), employed to change ownership and on `USER` directive
-- `.paths`: list of files or directory paths to be copied to runtime-image, those can be defined as `<source>:<destination>` split by colon (`:`). You can use the `$(workspace)` placeholder to access the directory where your source repository is cloned, if `spec.source.contextDir` is defined, then `$(workspace)` to context directory location
-- `.entrypoint`: entrypoint command, specified as a list
-
-> ⚠️ **Image Tag Overwrite**
->
-> Specifying the runtime section will cause a `BuildRun` to push `spec.output.image` twice. First, the image produced by chosen `BuildStrategy` is pushed, and next it gets reused to construct the runtime-image, which is pushed again, overwriting `BuildStrategy` outcome.
-> Be aware, specially in situations where the image push action triggers automation steps. Since the same tag will be reused, you might need to take this in consideration when using runtime-images.
-
-Under the cover, the runtime image will be an additional step in the generated Task spec of the TaskRun. It uses [Kaniko](https://github.com/GoogleContainerTools/kaniko) to run a container build using the `gcr.io/kaniko-project/executor:v1.6.0` image. You can overwrite this image by adding the environment variable `KANIKO_CONTAINER_IMAGE` to the [build controller deployment](../deploy/controller.yaml).
-
 ## BuildRun deletion
 
 A `Build` can automatically delete a related `BuildRun`. To enable this feature set the  `build.shipwright.io/build-run-deletion` annotation to `true` in the `Build` instance. By default the annotation is never present in a `Build` definition. See an example of how to define this annotation:
