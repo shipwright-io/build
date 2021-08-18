@@ -34,6 +34,8 @@ spec:
               value: "shipwright-build"
             - name: GIT_CONTAINER_IMAGE
               value: ko://github.com/shipwright-io/build/cmd/git
+            - name: MUTATE_IMAGE_CONTAINER_IMAGE
+              value: ko://github.com/shipwright-io/build/cmd/mutate-image
           ports:
             - containerPort: 8383
               name: metrics-port

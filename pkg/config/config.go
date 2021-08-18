@@ -35,6 +35,10 @@ const (
 	gitImageEnvVar             = "GIT_CONTAINER_IMAGE"
 	gitContainerTemplateEnvVar = "GIT_CONTAINER_TEMPLATE"
 
+	mutateImageDefaultImage            = "quay.io/shipwright/mutate-image:latest"
+	mutateImageEnvVar                  = "MUTATE_IMAGE_CONTAINER_IMAGE"
+	mutateImageContainerTemplateEnvVar = "MUTATE_IMAGE_CONTAINER_TEMPLATE"
+
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
@@ -70,14 +74,16 @@ var (
 	metricBuildRunEstablishDurationBuckets  = []float64{0, 1, 2, 3, 5, 7, 10, 15, 20, 30}
 	metricBuildRunRampUpDurationBuckets     = prometheus.LinearBuckets(0, 1, 10)
 
+	root    = pointer.Int64Ptr(0)
 	nonRoot = pointer.Int64Ptr(1000)
 )
 
 // Config hosts different parameters that
 // can be set to use on the Build controllers
 type Config struct {
-	CtxTimeOut                    time.Duration
-	GitContainerTemplate          corev1.Container
+	CtxTimeOut time.Duration
+	GitContainerTemplate,
+	MutateImageContainerTemplate corev1.Container
 	KanikoContainerImage          string
 	RemoteArtifactsContainerImage string
 	TerminationLogPath            string
@@ -138,6 +144,33 @@ func NewDefaultConfig() *Config {
 		},
 		KanikoContainerImage:          kanikoDefaultImage,
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
+		MutateImageContainerTemplate: corev1.Container{
+			Image: mutateImageDefaultImage,
+			Command: []string{
+				"mutate-image",
+			},
+			// We explicitly define HOME=/tekton/home because this was always set in the
+			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			Env: []corev1.EnvVar{
+				{
+					Name:  "HOME",
+					Value: "/tekton/home",
+				},
+			},
+			// The mutate image step runs after the build strategy steps where an arbitrary
+			// user could have been used to write the result files for the image digest. The
+			// mutate image step will overwrite the image digest file. To be able to do this
+			// in all possible scenarios, we run this step as root with DAC_OVERRIDE
+			// capability.
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser: root,
+				Capabilities: &corev1.Capabilities{
+					Add: []corev1.Capability{
+						"DAC_OVERRIDE",
+					},
+				},
+			},
+		},
 		Prometheus: PrometheusConfig{
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
@@ -191,6 +224,22 @@ func (c *Config) SetConfigFromEnv() error {
 	// the dedicated environment variable for the image overwrites what is defined in the git container template
 	if gitImage := os.Getenv(gitImageEnvVar); gitImage != "" {
 		c.GitContainerTemplate.Image = gitImage
+	}
+
+	if mutateImageContainerTemplate := os.Getenv(mutateImageContainerTemplateEnvVar); mutateImageContainerTemplate != "" {
+		c.GitContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(mutateImageContainerTemplate), &c.MutateImageContainerTemplate); err != nil {
+			return err
+		}
+		if c.MutateImageContainerTemplate.Image == "" {
+			c.MutateImageContainerTemplate.Image = mutateImageDefaultImage
+		}
+	}
+
+	// the dedicated environment variable for the image overwrites
+	// what is defined in the mutate image container template
+	if mutateImage := os.Getenv(mutateImageEnvVar); mutateImage != "" {
+		c.MutateImageContainerTemplate.Image = mutateImage
 	}
 
 	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {
