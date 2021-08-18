@@ -54,7 +54,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 		Context("when the task spec is generated", func() {
 			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuild))
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithAnnotationAndLabel))
 				Expect(err).To(BeNil())
 
 				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
@@ -135,6 +135,23 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Params).To(utils.ContainNamedElement("DOCKERFILE"))
 
 				Expect(len(got.Params)).To(Equal(5))
+			})
+
+			It("should contain a step to mutate the image", func() {
+				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Command[0]).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Args).To(Equal([]string{
+					"--image",
+					"$(params.shp-output-image)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"result-file-image-size",
+					"$(results.shp-image-size.path)",
+					"--annotation",
+					"org.opencontainers.image.url=https://my-company.com/images",
+					"--label",
+					"maintainer=team@my-company.com",
+				}))
 			})
 		})
 	})
