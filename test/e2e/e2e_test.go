@@ -312,26 +312,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a buildpacks-v3 build is defined for a nodejs app with runtime-image", func() {
-
-		BeforeEach(func() {
-			testID = generateTestID("buildpacks-v3-nodejs-ex-runtime")
-
-			build = createBuild(
-				testBuild,
-				testID,
-				"test/data/build_buildpacks-v3_nodejs_runtime-image_cr.yaml",
-			)
-		})
-
-		It("successfully runs a build", func() {
-			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_nodejs_runtime-image_cr.yaml")
-			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
-
-			validateBuildRunToSucceed(testBuild, buildRun)
-		})
-	})
-
 	Context("when a Kaniko build is defined to use public GitHub", func() {
 
 		BeforeEach(func() {
