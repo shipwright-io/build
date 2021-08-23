@@ -279,10 +279,10 @@ Contrary to the strategy `spec.parameters`, you can use system parameters and th
 
 You can optionally store the size and digest of the image your build strategy created to some files. This information will eventually be made available in the status of the BuildRun.
 
-| Result file                       | Description                                     |
-| --------------------------------- | ----------------------------------------------- |
-| `$(results.shp-image-digest.path) | File to store the digest of the image.          |
-| `$(results.shp-image-size.path)   | File to store the compressed size of the image. |
+| Result file                        | Description                                     |
+| ---------------------------------- | ----------------------------------------------- |
+| `$(results.shp-image-digest.path)` | File to store the digest of the image.          |
+| `$(results.shp-image-size.path)`   | File to store the compressed size of the image. |
 
 You can look at sample build strategies, such as [Kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml), or [Buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml), to see how they fill some or all of the results files.
 
