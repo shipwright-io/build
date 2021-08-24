@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// The algorithm to mutate the image was inspired by
+// https://github.com/google/go-containerregistry/blob/main/cmd/crane/cmd/mutate.go
+
 package main
 
 import (
@@ -195,7 +198,10 @@ func runMutateImage(ctx context.Context) error {
 		return fmt.Errorf("pushing %s: %v", ref, err)
 	}
 
-	fmt.Println(r.Context().Digest(digest.String()))
+	fmt.Printf(
+		"The image %s was mutated successfully. The new digest is: %s.\n",
+		flagValues.image, r.Context().Digest(digest.String()),
+	)
 
 	// Writing image digest to file
 	if resultFileImageDigest := flagValues.resultFileImageDigest; resultFileImageDigest != "" {
