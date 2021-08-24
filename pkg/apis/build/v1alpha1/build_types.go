@@ -133,6 +133,16 @@ type Image struct {
 	//
 	// +optional
 	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
+
+	// Annotations references the additional annotations to be applied on the image
+	//
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Labels references the additional labels to be applied on the image
+	//
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build

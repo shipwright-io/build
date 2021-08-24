@@ -37,6 +37,54 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
 
+// BuildahBuildWithAnnotationAndLabel defines a simple
+// Build with a source, strategy, output,
+// annotations and labels
+const BuildahBuildWithAnnotationAndLabel = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildah
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+    labels:
+      "maintainer": "team@my-company.com"
+    annotations:
+      "org.opencontainers.image.url": https://my-company.com/images
+`
+
+// BuildahBuildWithMultipleAnnotationAndLabel defines a
+// Build with a source, strategy, output,
+// multiple annotations and labels
+const BuildahBuildWithMultipleAnnotationAndLabel = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildah
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+    labels:
+      "maintainer": "team@my-company.com"
+      "description": "This is my cool image"
+    annotations:
+      "org.opencontainers.image.url": https://my-company.com/images
+      "org.opencontainers.image.source": "https://github.com/org/repo"
+`
+
 // BuildpacksBuildWithBuilderAndTimeOut defines a Build with
 // source, strategy, builder, output and
 // timeout

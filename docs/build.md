@@ -6,17 +6,16 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build
 
-- [Overview](#overview)
-- [Build Controller](#build-controller)
-- [Build Validations](#build-validations)
-- [Configuring a Build](#configuring-a-build)
-  - [Defining the Source](#defining-the-source)
-  - [Defining the Strategy](#defining-the-strategy)
-  - [Defining ParamValues](#defining-paramvalues)
-  - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
-  - [Defining the Output](#defining-the-output)
-  - [Runtime-Image](#Runtime-Image) (⚠️ Deprecated)
-- [BuildRun deletion](#BuildRun-deletion)
+  - [Overview](#overview)
+  - [Build Controller](#build-controller)
+  - [Build Validations](#build-validations)
+  - [Configuring a Build](#configuring-a-build)
+    - [Defining the Source](#defining-the-source)
+    - [Defining the Strategy](#defining-the-strategy)
+    - [Defining ParamValues](#defining-paramvalues)
+    - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
+    - [Defining the Output](#defining-the-output)
+  - [BuildRun deletion](#BuildRun-deletion)
 
 ## Overview
 
@@ -58,7 +57,6 @@ In order to prevent users from triggering `BuildRuns` (_execution of a Build_) t
 | SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist. |
 | SpecBuilderSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist.|
 | MultipleSecretRefNotFound | More than one secret is missing. At the moment, only three paths on a Build can specify a secret. |
-| RuntimePathsCanNotBeEmpty | The Runtime feature is used, but the runtime path was not defined. This is mandatory. |
 | RestrictedParametersInUse | One or many defined `params` are colliding with Shipwright reserved parameters. See [Defining Params](#defining-params) for more information. |
 | UndefinedParameter | One or many defined `params` are not defined in the referenced strategy. Please ensure that the strategy defines them under its `spec.parameters` list. |
 | RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only take place for http/https protocols. |
@@ -82,9 +80,10 @@ The `Build` definition supports the following fields:
   - `spec.paramValues` - Refers to a list of `key/value` that could be used to loosely type `parameters` in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into project context, before the actual build process starts.
-  - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build. ⚠️ Deprecated
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
+  - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
+  - `spec.output.labels` - Refers to a list of `key/value` that could be used to label the output image.
 
 ### Defining the Source
 
@@ -274,7 +273,9 @@ spec:
 
 ### Defining the Output
 
-A `Build` resource can specify the output where the image should be pushed. For external private registries it is recommended to specify a secret with the related data to access it.
+A `Build` resource can specify the output where the image should be pushed. For external private registries it is recommended to specify a secret with the related data to access it. There is an option available to specify the annotation and labels for the output image (annotations and labels mentioned here are specific to the container image and do not have any relation with the `Build` annotations).
+
+**NOTE**: When you specify annotations or labels, the output image will get pushed twice. The first push comes from the build strategy. A follow-on update will then change the image configuration to add the annotations and labels. If you have automation in place based on push events in your container registry, be aware of this behavior.
 
 For example, the user specify a public registry:
 
@@ -316,6 +317,46 @@ spec:
     image: us.icr.io/source-to-image-build/nodejs-ex
     credentials:
       name: icr-knbuild
+```
+
+Example of user specifies image annotations and labels:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: s2i-nodejs-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: source-build/
+  strategy:
+    name: source-to-image
+    kind: ClusterBuildStrategy
+  builder:
+    image: docker.io/centos/nodejs-10-centos7
+  output:
+    image: us.icr.io/source-to-image-build/nodejs-ex
+    credentials:
+      name: icr-knbuild
+    annotations:
+      "org.opencontainers.image.source": "https://github.com/org/repo"
+      "org.opencontainers.image.url": "https://my-company.com/images"
+    labels:
+      "maintainer": "team@my-company.com"
+      "description": "This is my cool image"
+```
+
+Annotations added to the output image can be verified by running the command:
+
+```sh
+  docker manifest inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".annotations"
+```
+
+Labels added to the output image can be verified by running the command (image should be available in host machine):
+
+```sh
+  docker inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".[].Config.Labels"
 ```
 
 ### Sources
