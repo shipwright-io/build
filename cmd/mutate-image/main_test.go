@@ -19,6 +19,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/pflag"
 
 	. "github.com/shipwright-io/build/cmd/mutate-image"
 )
@@ -48,6 +49,15 @@ var _ = Describe("Image Mutate Resource", func() {
 				Skip(fmt.Sprintf("Skipping test case, because environment variable %s is not set", env))
 			}
 		}
+	})
+
+	resetFlags := func() {
+		// Reset flag variables
+		pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
+	}
+
+	AfterEach(func() {
+		resetFlags()
 	})
 
 	imageURL := fmt.Sprintf("%s/%s", os.Getenv(imageHost), os.Getenv(image))
@@ -206,7 +216,9 @@ var _ = Describe("Image Mutate Resource", func() {
 				"--image",
 				tag.String(),
 				"--annotation",
-				"org.opencontainers.image.url=https://my-company.com/images,org.opencontainers.image.source=https://github.com/org/repo",
+				"org.opencontainers.image.url=https://my-company.com/images",
+				"--annotation",
+				"org.opencontainers.image.source=https://github.com/org/repo",
 			)).To(BeNil())
 
 			Expect(getImageAnnotation(tag.String(), "org.opencontainers.image.url")).
@@ -237,7 +249,9 @@ var _ = Describe("Image Mutate Resource", func() {
 				"--image",
 				tag.String(),
 				"--label",
-				"description=image description,maintainer=team@my-company.com",
+				"description=image description",
+				"--label",
+				"maintainer=team@my-company.com",
 			)).To(BeNil())
 
 			Expect(getImageConfigLabel(tag.String(), "description")).

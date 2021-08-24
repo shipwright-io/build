@@ -6,7 +6,6 @@ package resources
 
 import (
 	"fmt"
-	"strings"
 
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
@@ -44,23 +43,23 @@ func mutateArgs(annotations, labels map[string]string) []string {
 	}
 
 	if len(annotations) > 0 {
-		args = append(args, "--annotation", convertMutateArgs(annotations))
+		args = append(args, convertMutateArgs("--annotation", annotations)...)
 	}
 
 	if len(labels) > 0 {
-		args = append(args, "--label", convertMutateArgs(labels))
+		args = append(args, convertMutateArgs("--label", labels)...)
 	}
 
 	return args
 }
 
 // convertMutateArgs to convert the argument map to comma seprated values
-func convertMutateArgs(args map[string]string) string {
+func convertMutateArgs(flag string, args map[string]string) []string {
 	var result []string
 
 	for key, value := range args {
-		result = append(result, fmt.Sprintf("%s=%s", key, value))
+		result = append(result, flag, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	return strings.Join(result, ",")
+	return result
 }

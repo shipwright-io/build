@@ -137,7 +137,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(len(got.Params)).To(Equal(5))
 			})
 
-			It("should contain a step to mutate the image", func() {
+			It("should contain a step to mutate the image with single mutate args", func() {
 				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
 				Expect(got.Steps[3].Command[0]).To(Equal("mutate-image"))
 				Expect(got.Steps[3].Args).To(Equal([]string{
@@ -149,6 +149,33 @@ var _ = Describe("GenerateTaskrun", func() {
 					"$(results.shp-image-size.path)",
 					"--annotation",
 					"org.opencontainers.image.url=https://my-company.com/images",
+					"--label",
+					"maintainer=team@my-company.com",
+				}))
+			})
+
+			It("should contain a step to mutate the image with multiple mutate args", func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithMultipleAnnotationAndLabel))
+				Expect(err).To(BeNil())
+
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				Expect(err).To(BeNil())
+
+				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Command[0]).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Args).Should(ConsistOf([]string{
+					"--image",
+					"$(params.shp-output-image)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"result-file-image-size",
+					"$(results.shp-image-size.path)",
+					"--annotation",
+					"org.opencontainers.image.source=https://github.com/org/repo",
+					"--annotation",
+					"org.opencontainers.image.url=https://my-company.com/images",
+					"--label",
+					"description=This is my cool image",
 					"--label",
 					"maintainer=team@my-company.com",
 				}))

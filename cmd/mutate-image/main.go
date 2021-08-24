@@ -57,20 +57,40 @@ func (ht *headerTransport) RoundTrip(in *http.Request) (*http.Response, error) {
 
 type settings struct {
 	annotation,
-	label []string
+	label *[]string
 	image,
 	resultFileImageDigest,
 	resultFileImageSize string
 }
 
+func getAnnotation() []string {
+	var annotation []string
+
+	if flagValues.annotation != nil {
+		return append(annotation, *flagValues.annotation...)
+	}
+
+	return annotation
+}
+
+func getLabel() []string {
+	var label []string
+
+	if flagValues.annotation != nil {
+		return append(label, *flagValues.label...)
+	}
+
+	return label
+}
+
 var flagValues settings
 
-func init() {
+func initializeFlag() {
 	// Main flags for the image mutate step to define the configuration, for example
 	// the flag `image` will always be used.
 	pflag.StringVar(&flagValues.image, "image", "", "The name of image in container registry")
-	pflag.StringSliceVarP(&flagValues.annotation, "annotation", "", nil, "New annotations to add")
-	pflag.StringSliceVarP(&flagValues.label, "label", "", nil, "New labels to add")
+	flagValues.annotation = pflag.StringArray("annotation", nil, "New annotations to add")
+	flagValues.label = pflag.StringArray("label", nil, "New labels to add")
 	pflag.StringVar(&flagValues.resultFileImageDigest, "result-file-image-digest", "", "A file to write the image digest to")
 	pflag.StringVar(&flagValues.resultFileImageSize, "result-file-image-size", "", "A file to write the image size to")
 }
@@ -91,12 +111,16 @@ func main() {
 
 // Execute performs flag parsing, input validation and the image mutation
 func Execute(ctx context.Context) error {
-	flagValues = settings{}
+	initializeFlag()
 	pflag.Parse()
+
 	return runMutateImage(ctx)
 }
 
 func runMutateImage(ctx context.Context) error {
+	annotation := getAnnotation()
+	label := getLabel()
+
 	if flagValues.image == "" {
 		return &ExitError{Code: 100, Message: "the 'image' argument must not be empty"}
 	}
@@ -104,7 +128,7 @@ func runMutateImage(ctx context.Context) error {
 	options := getOptions(ctx)
 	ref := flagValues.image
 
-	if len(flagValues.annotation) != 0 {
+	if len(annotation) != 0 {
 		desc, err := crane.Head(ref, *options...)
 		if err != nil {
 			return fmt.Errorf("checking %s: %v", ref, err)
@@ -131,7 +155,7 @@ func runMutateImage(ctx context.Context) error {
 		cfg.Config.Labels = map[string]string{}
 	}
 
-	labels, err := splitKeyVals(flagValues.label)
+	labels, err := splitKeyVals(label)
 	if err != nil {
 		return err
 	}
@@ -140,7 +164,7 @@ func runMutateImage(ctx context.Context) error {
 		cfg.Config.Labels[k] = v
 	}
 
-	annotations, err := splitKeyVals(flagValues.annotation)
+	annotations, err := splitKeyVals(annotation)
 	if err != nil {
 		return err
 	}

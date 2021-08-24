@@ -24,7 +24,7 @@ As part of the build, the output image needs to be mutated (annotated and labele
   --annotation "org.opencontainers.image.url=https://my-company.com/images" \
   --label "maintaner=team@my-company.com"
   ```
-   Multiple values for annotation and label can be provided as comma-separated values (`--label "description=image description,maintainer=team@my-company.com"`). If we are trying to mutate the image in a private registry, authentication to the registry should be done before running the command.
+  If we are trying to mutate the image in a private registry, authentication to the registry should be done before running the command.
 
 - Run it using `ko` (base image defined in `.ko.yaml`)
 
