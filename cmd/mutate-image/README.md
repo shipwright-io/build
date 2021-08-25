@@ -10,7 +10,7 @@ As part of the build, the output image needs to be mutated (annotated and labele
 ## Features
 
 - Mutate the image with [annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md)
-- Mutate the image wth labels
+- Mutate the image with labels
 
 ## Development
 
@@ -22,8 +22,9 @@ As part of the build, the output image needs to be mutated (annotated and labele
   go run cmd/mutate-image/main.go \
   --image $IMAGE \
   --annotation "org.opencontainers.image.url=https://my-company.com/images" \
-  --label "maintaner=team@my-company.com"
+  --label "maintainer=team@my-company.com"
   ```
+
   If we are trying to mutate the image in a private registry, authentication to the registry should be done before running the command.
 
 - Run it using `ko` (base image defined in `.ko.yaml`)
