@@ -43,6 +43,11 @@ func (t *TestBuild) GetBuild(name string) (*v1alpha1.Build, error) {
 		Builds(t.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
+// ListBuilds returns existing Builds from the desired namespace
+func (t *TestBuild) ListBuilds(namespace string) (*v1alpha1.BuildList, error) {
+	return t.BuildClientSet.ShipwrightV1alpha1().Builds(namespace).List(t.Context, metav1.ListOptions{})
+}
+
 // PatchBuild patches an existing Build using the merge patch type
 func (t *TestBuild) PatchBuild(buildName string, data []byte) (*v1alpha1.Build, error) {
 	return t.PatchBuildWithPatchType(buildName, data, types.MergePatchType)
