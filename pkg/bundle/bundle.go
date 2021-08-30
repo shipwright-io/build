@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -144,19 +145,24 @@ func Pack(directory string) (io.Reader, error) {
 	var tw = tar.NewWriter(&buf)
 	defer tw.Close()
 
-	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(directory, func(path string, d fs.DirEntry, err error) error {
 		// Bail out on path errors
 		if err != nil {
 			return err
 		}
 
 		// Skip files on the ignore list
-		if matcher.Match(split(path), info.IsDir()) {
-			if info.IsDir() {
+		if matcher.Match(split(path), d.IsDir()) {
+			if d.IsDir() {
 				return filepath.SkipDir
 			}
 
 			return nil
+		}
+
+		info, err := d.Info()
+		if err != nil {
+			return err
 		}
 
 		header, err := tar.FileInfoHeader(info, path)
