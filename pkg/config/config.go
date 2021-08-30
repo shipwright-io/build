@@ -39,6 +39,11 @@ const (
 	mutateImageEnvVar                  = "MUTATE_IMAGE_CONTAINER_IMAGE"
 	mutateImageContainerTemplateEnvVar = "MUTATE_IMAGE_CONTAINER_TEMPLATE"
 
+	// Analog to the Git image, the bundle image is also created by ko
+	bundleDefaultImage            = "quay.io/shipwright/bundle:latest"
+	bundleImageEnvVar             = "BUNDLE_CONTAINER_IMAGE"
+	bundleContainerTemplateEnvVar = "BUNDLE_CONTAINER_TEMPLATE"
+
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
@@ -84,6 +89,7 @@ type Config struct {
 	CtxTimeOut time.Duration
 	GitContainerTemplate,
 	MutateImageContainerTemplate corev1.Container
+	BundleContainerTemplate       corev1.Container
 	KanikoContainerImage          string
 	RemoteArtifactsContainerImage string
 	TerminationLogPath            string
@@ -136,6 +142,16 @@ func NewDefaultConfig() *Config {
 			Image: gitDefaultImage,
 			Command: []string{
 				"/ko-app/git",
+			},
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
+			},
+		},
+		BundleContainerTemplate: corev1.Container{
+			Image: bundleDefaultImage,
+			Command: []string{
+				"/ko-app/bundle",
 			},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser:  nonRoot,
@@ -240,6 +256,21 @@ func (c *Config) SetConfigFromEnv() error {
 	// what is defined in the mutate image container template
 	if mutateImage := os.Getenv(mutateImageEnvVar); mutateImage != "" {
 		c.MutateImageContainerTemplate.Image = mutateImage
+	}
+
+	if bundleContainerTemplate := os.Getenv(bundleContainerTemplateEnvVar); bundleContainerTemplate != "" {
+		c.BundleContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(bundleContainerTemplate), &c.BundleContainerTemplate); err != nil {
+			return err
+		}
+		if c.BundleContainerTemplate.Image == "" {
+			c.BundleContainerTemplate.Image = bundleDefaultImage
+		}
+	}
+
+	// the dedicated environment variable for the image overwrites what is defined in the bundle container template
+	if bundleImage := os.Getenv(bundleImageEnvVar); bundleImage != "" {
+		c.BundleContainerTemplate.Image = bundleImage
 	}
 
 	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {

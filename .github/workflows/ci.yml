@@ -12,7 +12,7 @@ jobs:
     unit:
         strategy:
           matrix:
-            go-version: [1.15.x]
+            go-version: [1.16.x]
             os: [ubuntu-latest]
         runs-on: ${{ matrix.os }}
         steps:
@@ -30,7 +30,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            go-version: [1.15.x]
+            go-version: [1.16.x]
             os: [ubuntu-latest]
             kubernetes:
               # Only v1.20 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
@@ -92,7 +92,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            go-version: [1.15.x]
+            go-version: [1.16.x]
             os: [ubuntu-latest]
             kubernetes:
               # Only v1.20 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"

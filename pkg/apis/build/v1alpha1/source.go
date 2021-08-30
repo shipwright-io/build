@@ -8,10 +8,23 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// BundleContainer describes the source code bundle container to pull
+type BundleContainer struct {
+	// Image reference, i.e. quay.io/org/image:tag
+	Image string `json:"image"`
+}
+
 // Source describes the Git source repository to fetch.
 type Source struct {
 	// URL describes the URL of the Git repository.
-	URL string `json:"url"`
+	//
+	// +optional
+	URL string `json:"url,omitempty"`
+
+	// BundleContainer
+	//
+	// +optional
+	BundleContainer *BundleContainer `json:"bundleContainer"`
 
 	// Revision describes the Git revision (e.g., branch, tag, commit SHA,
 	// etc.) to fetch.

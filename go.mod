@@ -1,6 +1,6 @@
 module github.com/shipwright-io/build
 
-go 1.15
+go 1.16
 
 require (
 	github.com/docker/cli v20.10.7+incompatible
