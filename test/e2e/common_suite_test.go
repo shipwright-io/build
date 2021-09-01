@@ -13,7 +13,9 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	core "k8s.io/api/core/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -70,12 +72,20 @@ func (b *buildPrototype) OutputImage(image string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
+	if name != "" {
+		b.build.Spec.Output.Credentials = &core.LocalObjectReference{Name: name}
+	}
+
+	return b
+}
+
 func (b buildPrototype) Create() (*buildv1alpha1.Build, error) {
 	return testBuild.
 		BuildClientSet.
 		ShipwrightV1alpha1().
 		Builds(b.build.Namespace).
-		Create(context.Background(), &b.build, v1.CreateOptions{})
+		Create(context.Background(), &b.build, meta.CreateOptions{})
 }
 
 func NewBuildRunPrototype() *buildRunPrototype {
@@ -106,7 +116,7 @@ func (b *buildRunPrototype) Create() (*buildv1alpha1.BuildRun, error) {
 		BuildClientSet.
 		ShipwrightV1alpha1().
 		BuildRuns(b.buildRun.Namespace).
-		Create(context.Background(), &b.buildRun, v1.CreateOptions{})
+		Create(context.Background(), &b.buildRun, meta.CreateOptions{})
 }
 
 // Logf logs data

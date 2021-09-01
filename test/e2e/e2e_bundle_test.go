@@ -65,6 +65,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				SourceContextDir("docker-build").
 				Dockerfile("Dockerfile").
 				OutputImage(outputImage).
+				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -86,6 +87,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				SourceBundle(inputImage).
 				SourceContextDir("source-build").
 				OutputImage(outputImage).
+				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -108,6 +110,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				SourceContextDir("docker-build").
 				Dockerfile("Dockerfile").
 				OutputImage(outputImage).
+				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
