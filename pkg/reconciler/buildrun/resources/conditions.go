@@ -7,7 +7,6 @@ package resources
 import (
 	"context"
 	"fmt"
-
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -112,6 +111,9 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 					pod.Name,
 					failedContainer.Name,
 				)
+			} else if pod.Status.Reason == "Evicted" {
+				message = pod.Status.Message
+				reason = buildv1alpha1.BuildRunStatePodEvicted
 			} else {
 				message = fmt.Sprintf("buildrun failed due to an unexpected error in pod %s: for detailed information: kubectl --namespace %s logs %s --all-containers",
 					pod.Name,
