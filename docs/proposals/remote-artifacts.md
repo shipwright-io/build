@@ -26,6 +26,8 @@ status: provisional
 Shipwright Remote Artifacts
 ---------------------------
 
+**Build Enhancement Proposals have been moved into the Shipwright [Community](https://github.com/shipwright-io/community) repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date [SHIP](https://github.com/shipwright-io/community/blob/main/ships/0008-remote-artifacts.md) for more information.**
+
 # Summary
 
 Remote artifacts are dependencies of the software building process, they represent binaries or

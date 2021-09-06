@@ -22,7 +22,8 @@ status: implementable
 
 # Enable Local Source Code Support
 
-_Please note:_ This is the original proposal, check [shipwright-io/community SHIP #16](https://github.com/shipwright-io/community/blob/main/ships/0016-enable-local-source-code-support.md) for updates.
+**Build Enhancement Proposals have been moved into the Shipwright [Community](https://github.com/shipwright-io/community) repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date [SHIP](https://github.com/shipwright-io/community/blob/main/ships/0016-enable-local-source-code-support.md) for more information.**
+
 
 ## Release Signoff Checklist
 
