@@ -15,10 +15,17 @@ import (
 	. "github.com/onsi/ginkgo"
 
 	core "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+)
+
+const (
+	pollCreateInterval = 1 * time.Second
+	pollCreateTimeout  = 10 * time.Second
 )
 
 type buildPrototype struct{ build buildv1alpha1.Build }
@@ -80,12 +87,29 @@ func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
 	return b
 }
 
-func (b buildPrototype) Create() (*buildv1alpha1.Build, error) {
-	return testBuild.
+func (b buildPrototype) Create() (build *buildv1alpha1.Build, err error) {
+	ctx := context.Background()
+
+	_, err = testBuild.
 		BuildClientSet.
 		ShipwrightV1alpha1().
 		Builds(b.build.Namespace).
-		Create(context.Background(), &b.build, meta.CreateOptions{})
+		Create(ctx, &b.build, meta.CreateOptions{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = wait.PollImmediate(pollCreateInterval, pollCreateTimeout, func() (done bool, err error) {
+		build, err = testBuild.BuildClientSet.ShipwrightV1alpha1().Builds(b.build.Namespace).Get(ctx, b.build.Name, meta.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		return build.Status.Registered == v1.ConditionTrue, nil
+	})
+
+	return
 }
 
 func NewBuildRunPrototype() *buildRunPrototype {
