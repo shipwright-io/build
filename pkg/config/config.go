@@ -22,9 +22,6 @@ const (
 	// E.g. if 5 seconds is wanted, the CTX_TIMEOUT=5
 	contextTimeoutEnvVar = "CTX_TIMEOUT"
 
-	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.6.0"
-	kanikoImageEnvVar  = "KANIKO_CONTAINER_IMAGE"
-
 	remoteArtifactsDefaultImage = "quay.io/quay/busybox:latest"
 	remoteArtifactsEnvVar       = "REMOTE_ARTIFACTS_CONTAINER_IMAGE"
 
@@ -90,7 +87,6 @@ type Config struct {
 	GitContainerTemplate,
 	MutateImageContainerTemplate corev1.Container
 	BundleContainerTemplate       corev1.Container
-	KanikoContainerImage          string
 	RemoteArtifactsContainerImage string
 	TerminationLogPath            string
 	Prometheus                    PrometheusConfig
@@ -158,7 +154,6 @@ func NewDefaultConfig() *Config {
 				RunAsGroup: nonRoot,
 			},
 		},
-		KanikoContainerImage:          kanikoDefaultImage,
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
 		MutateImageContainerTemplate: corev1.Container{
 			Image: mutateImageDefaultImage,
@@ -271,10 +266,6 @@ func (c *Config) SetConfigFromEnv() error {
 	// the dedicated environment variable for the image overwrites what is defined in the bundle container template
 	if bundleImage := os.Getenv(bundleImageEnvVar); bundleImage != "" {
 		c.BundleContainerTemplate.Image = bundleImage
-	}
-
-	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {
-		c.KanikoContainerImage = kanikoImage
 	}
 
 	if remoteArtifactsImage := os.Getenv(remoteArtifactsEnvVar); remoteArtifactsImage != "" {
