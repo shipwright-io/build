@@ -35,6 +35,8 @@ const (
 	inputParamBuilder    = "BUILDER_IMAGE"
 	inputParamDockerfile = "DOCKERFILE"
 	inputParamContextDir = "CONTEXT_DIR"
+
+	imageMutateContainerName = "mutate-image"
 )
 
 // getStringTransformations gets us MANDATORY replacements using
@@ -205,6 +207,12 @@ func GenerateTaskSpec(
 				})
 			}
 		}
+	}
+
+	// Amending task spec with image mutate step if annotations or labels are
+	// specified in build manifest
+	if len(build.Spec.Output.Annotations) > 0 || len(build.Spec.Output.Labels) > 0 {
+		amendTaskSpecWithImageMutate(cfg, &generatedTaskSpec, build.Spec.Output)
 	}
 
 	return &generatedTaskSpec, nil

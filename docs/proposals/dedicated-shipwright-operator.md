@@ -22,6 +22,8 @@ status: implementable
 
 # Dedicated Shipwright Operator
 
+**Build Enhancement Proposals have been moved into the Shipwright [Community](https://github.com/shipwright-io/community) repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date [SHIP](https://github.com/shipwright-io/community/blob/main/ships/0011-dedicated-shipwright-operator.md) for more information.**
+
 ## Release Signoff Checklist
 
 - [x] Enhancement is `implementable`

@@ -58,6 +58,10 @@ const (
 	// BuildRunStateCancel indicates that the user wants to cancel the BuildRun,
 	// if not already canceled or terminated
 	BuildRunStateCancel = "BuildRunCanceled"
+
+	// BuildRunStatePodEvicted indicates that if the pods got evicted
+	// due to some reason. (Probably ran out of ephemeral storage)
+	BuildRunStatePodEvicted = "PodEvicted"
 )
 
 // BuildRunStatus defines the observed state of BuildRun

@@ -22,9 +22,6 @@ const (
 	// E.g. if 5 seconds is wanted, the CTX_TIMEOUT=5
 	contextTimeoutEnvVar = "CTX_TIMEOUT"
 
-	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.6.0"
-	kanikoImageEnvVar  = "KANIKO_CONTAINER_IMAGE"
-
 	remoteArtifactsDefaultImage = "quay.io/quay/busybox:latest"
 	remoteArtifactsEnvVar       = "REMOTE_ARTIFACTS_CONTAINER_IMAGE"
 
@@ -34,6 +31,15 @@ const (
 	gitDefaultImage            = "quay.io/shipwright/git:latest"
 	gitImageEnvVar             = "GIT_CONTAINER_IMAGE"
 	gitContainerTemplateEnvVar = "GIT_CONTAINER_TEMPLATE"
+
+	mutateImageDefaultImage            = "quay.io/shipwright/mutate-image:latest"
+	mutateImageEnvVar                  = "MUTATE_IMAGE_CONTAINER_IMAGE"
+	mutateImageContainerTemplateEnvVar = "MUTATE_IMAGE_CONTAINER_TEMPLATE"
+
+	// Analog to the Git image, the bundle image is also created by ko
+	bundleDefaultImage            = "quay.io/shipwright/bundle:latest"
+	bundleImageEnvVar             = "BUNDLE_CONTAINER_IMAGE"
+	bundleContainerTemplateEnvVar = "BUNDLE_CONTAINER_TEMPLATE"
 
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
@@ -70,15 +76,17 @@ var (
 	metricBuildRunEstablishDurationBuckets  = []float64{0, 1, 2, 3, 5, 7, 10, 15, 20, 30}
 	metricBuildRunRampUpDurationBuckets     = prometheus.LinearBuckets(0, 1, 10)
 
+	root    = pointer.Int64Ptr(0)
 	nonRoot = pointer.Int64Ptr(1000)
 )
 
 // Config hosts different parameters that
 // can be set to use on the Build controllers
 type Config struct {
-	CtxTimeOut                    time.Duration
-	GitContainerTemplate          corev1.Container
-	KanikoContainerImage          string
+	CtxTimeOut time.Duration
+	GitContainerTemplate,
+	MutateImageContainerTemplate corev1.Container
+	BundleContainerTemplate       corev1.Container
 	RemoteArtifactsContainerImage string
 	TerminationLogPath            string
 	Prometheus                    PrometheusConfig
@@ -136,8 +144,44 @@ func NewDefaultConfig() *Config {
 				RunAsGroup: nonRoot,
 			},
 		},
-		KanikoContainerImage:          kanikoDefaultImage,
+		BundleContainerTemplate: corev1.Container{
+			Image: bundleDefaultImage,
+			Command: []string{
+				"/ko-app/bundle",
+			},
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
+			},
+		},
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
+		MutateImageContainerTemplate: corev1.Container{
+			Image: mutateImageDefaultImage,
+			Command: []string{
+				"mutate-image",
+			},
+			// We explicitly define HOME=/tekton/home because this was always set in the
+			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			Env: []corev1.EnvVar{
+				{
+					Name:  "HOME",
+					Value: "/tekton/home",
+				},
+			},
+			// The mutate image step runs after the build strategy steps where an arbitrary
+			// user could have been used to write the result files for the image digest. The
+			// mutate image step will overwrite the image digest file. To be able to do this
+			// in all possible scenarios, we run this step as root with DAC_OVERRIDE
+			// capability.
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser: root,
+				Capabilities: &corev1.Capabilities{
+					Add: []corev1.Capability{
+						"DAC_OVERRIDE",
+					},
+				},
+			},
+		},
 		Prometheus: PrometheusConfig{
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
@@ -193,8 +237,35 @@ func (c *Config) SetConfigFromEnv() error {
 		c.GitContainerTemplate.Image = gitImage
 	}
 
-	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {
-		c.KanikoContainerImage = kanikoImage
+	if mutateImageContainerTemplate := os.Getenv(mutateImageContainerTemplateEnvVar); mutateImageContainerTemplate != "" {
+		c.GitContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(mutateImageContainerTemplate), &c.MutateImageContainerTemplate); err != nil {
+			return err
+		}
+		if c.MutateImageContainerTemplate.Image == "" {
+			c.MutateImageContainerTemplate.Image = mutateImageDefaultImage
+		}
+	}
+
+	// the dedicated environment variable for the image overwrites
+	// what is defined in the mutate image container template
+	if mutateImage := os.Getenv(mutateImageEnvVar); mutateImage != "" {
+		c.MutateImageContainerTemplate.Image = mutateImage
+	}
+
+	if bundleContainerTemplate := os.Getenv(bundleContainerTemplateEnvVar); bundleContainerTemplate != "" {
+		c.BundleContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(bundleContainerTemplate), &c.BundleContainerTemplate); err != nil {
+			return err
+		}
+		if c.BundleContainerTemplate.Image == "" {
+			c.BundleContainerTemplate.Image = bundleDefaultImage
+		}
+	}
+
+	// the dedicated environment variable for the image overwrites what is defined in the bundle container template
+	if bundleImage := os.Getenv(bundleImageEnvVar); bundleImage != "" {
+		c.BundleContainerTemplate.Image = bundleImage
 	}
 
 	if remoteArtifactsImage := os.Getenv(remoteArtifactsEnvVar); remoteArtifactsImage != "" {

@@ -126,7 +126,7 @@ func amendBuild(identifier string, b *buildv1alpha1.Build) {
 func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1alpha1.Build, *buildv1alpha1.BuildRun, error) {
 	buildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
-		Logf("Failed to get BuildRun %s: %s", buildRunName, err)
+		Logf("Failed to get BuildRun %q: %s", buildRunName, err)
 		return nil, nil, err
 	}
 
@@ -147,7 +147,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 
 	build, buildRun, err := retrieveBuildAndBuildRun(testBuild, namespace, buildRunName)
 	if err != nil {
-		Logf("Failed to retrieve build and buildrun logs: %w", err)
+		Logf("Failed to retrieve build and buildrun logs: %v", err)
 	}
 
 	if build != nil {

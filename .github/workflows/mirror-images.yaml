@@ -1,0 +1,25 @@
+name: Mirror pre-requisite images for Shipwright samples
+
+on:
+  schedule:
+  - cron: '0 0 * * *'
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  build:
+    if: ${{ github.repository == 'shipwright-io/build' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install crane
+        run: curl --fail --silent --location https://github.com/google/go-containerregistry/releases/download/v0.6.0/go-containerregistry_Linux_x86_64.tar.gz | tar -xzf - -C /usr/local/bin crane
+
+      - name: Login to container registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | crane auth login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin quay.io
+
+      - name: Mirror images
+        run: |
+          crane cp golang:1.16 quay.io/shipwright-samples/golang:1.16
+          crane cp maven:3-jdk-8-openj9 quay.io/shipwright-samples/maven:3-jdk-8-openj9
+          crane cp openliberty/open-liberty:kernel-java8-openj9-ubi quay.io/shipwright-samples/open-liberty:kernel-java8-openj9-ubi
+          crane cp node:12 quay.io/shipwright-samples/node:12

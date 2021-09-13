@@ -519,4 +519,30 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
 		})
 	})
+	Context("when a build generateName is provided but none name", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSMinimal)
+		})
+
+		It("automatically sanitize the name and never fail the Build", func() {
+			// Set build name more than 63 characters
+			// Kubernetes will sanitize the name of the object by shrinking the
+			// provided generateName in combination with random chars in a way that
+			// they do not exceed 63 chars.
+			buildObject.Name = ""
+			buildObject.GenerateName = strings.Repeat("s", 70)
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildList, err := tb.ListBuilds(tb.Namespace)
+			Expect(err).To(BeNil())
+
+			// We assume there is always a single build in the namespace, therefore we get index 0
+			buildObject, err = tb.GetBuildTillValidation(buildList.Items[0].Name)
+			Expect(err).To(BeNil())
+
+			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+			Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+		})
+	})
 })

@@ -31,13 +31,6 @@ var _ = Describe("Config", func() {
 			})
 		})
 
-		It("should allow for an override of the default Kaniko project image using an environment variable", func() {
-			var overrides = map[string]string{"KANIKO_CONTAINER_IMAGE": "gcr.io/kaniko-project/executor:v1.0.1"}
-			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.KanikoContainerImage).To(Equal("gcr.io/kaniko-project/executor:v1.0.1"))
-			})
-		})
-
 		It("should allow for an override of the Prometheus buckets settings using an environment variable", func() {
 			var overrides = map[string]string{
 				"PROMETHEUS_BR_COMP_DUR_BUCKETS":   "1,2,3,4",

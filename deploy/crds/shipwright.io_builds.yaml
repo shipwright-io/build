@@ -56,6 +56,11 @@ spec:
               builder:
                 description: Builder refers to the image containing the build tools inside which the source code would be built.
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations references the additional annotations to be applied on the image
+                    type: object
                   credentials:
                     description: Credentials references a Secret that contains credentials to access the image registry.
                     properties:
@@ -66,6 +71,11 @@ spec:
                   image:
                     description: Image is the reference of the image.
                     type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels references the additional labels to be applied on the image
+                    type: object
                 required:
                 - image
                 type: object
@@ -75,6 +85,11 @@ spec:
               output:
                 description: Output refers to the location where the built image would be pushed.
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations references the additional annotations to be applied on the image
+                    type: object
                   credentials:
                     description: Credentials references a Secret that contains credentials to access the image registry.
                     properties:
@@ -85,6 +100,11 @@ spec:
                   image:
                     description: Image is the reference of the image.
                     type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels references the additional labels to be applied on the image
+                    type: object
                 required:
                 - image
                 type: object
@@ -105,6 +125,15 @@ spec:
               source:
                 description: Source refers to the Git repository containing the source code to be built.
                 properties:
+                  bundleContainer:
+                    description: BundleContainer
+                    properties:
+                      image:
+                        description: Image reference, i.e. quay.io/org/image:tag
+                        type: string
+                    required:
+                    - image
+                    type: object
                   contextDir:
                     description: ContextDir is a path to subfolder in the repo. Optional.
                     type: string
@@ -121,8 +150,6 @@ spec:
                   url:
                     description: URL describes the URL of the Git repository.
                     type: string
-                required:
-                - url
                 type: object
               sources:
                 description: Sources slice of BuildSource, defining external build artifacts complementary to VCS (`.spec.source`) data.

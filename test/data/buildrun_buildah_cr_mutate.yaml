@@ -1,0 +1,8 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildah-golang-build-mutate
+spec:
+  buildRef:
+    name: buildah-golang-build-mutate

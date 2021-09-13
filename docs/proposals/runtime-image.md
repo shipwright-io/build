@@ -15,6 +15,8 @@ status: design
 Runtime-Image Support
 ---------------------
 
+**Build Enhancement Proposals have been moved into the Shipwright [Community](https://github.com/shipwright-io/community) repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date [SHIP](https://github.com/shipwright-io/community/blob/main/ships/0005-runtime-image.md) for more information.**
+
 # Summary
 
 This enhancement proposal describes the support of runtime-image in build-v2 operator. A runtime-image is a composition based on the image just created by a third-party builder, used as input for the runtime-image.

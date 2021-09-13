@@ -202,7 +202,8 @@ The following table illustrates the different states a BuildRun can have under i
 | False    | BuildRegistrationFailed      | Yes | The related Build in the BuildRun is on a Failed state. |
 | False    | BuildNotFound                | Yes | The related Build in the BuildRun was not found. |
 | False    | BuildRunCanceled             | Yes | The BuildRun and underlying TaskRun were canceled successfully. |
-| False | BuildRunNameInvalid | Yes | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
+| False    | BuildRunNameInvalid          | Yes | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
+| False    | PodEvicted                   | Yes | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
 
 _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
 

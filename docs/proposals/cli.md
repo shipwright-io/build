@@ -24,6 +24,8 @@ status: provisional
 CLI
 ---
 
+**Build Enhancement Proposals have been moved into the Shipwright [Community](https://github.com/shipwright-io/community) repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date [SHIP](https://github.com/shipwright-io/community/blob/main/ships/0009-cli.md) for more information.**
+
 # Summary
 
 This enhancement proposal describes a command-line client for Shipwright Build operator, covering
