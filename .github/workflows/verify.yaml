@@ -32,6 +32,7 @@ jobs:
         go get golang.org/x/lint/golint
         go get github.com/client9/misspell/cmd/misspell
         go get honnef.co/go/tools/cmd/staticcheck
+        go get github.com/maxbrunsfeld/counterfeiter/v6
         popd
 
     - run: make govet
