@@ -37,15 +37,15 @@ jobs:
         go get github.com/maxbrunsfeld/counterfeiter/v6
         popd
 
-    - run: make govet
-    - run: make ineffassign
-    - run: make golint
-    - run: make misspell
-    - run: make staticcheck
-    - run: make generate
+    - run: make -C $GOPATH/src/github.com/shipwright-io/build govet
+    - run: make -C $GOPATH/src/github.com/shipwright-io/build ineffassign
+    - run: make -C $GOPATH/src/github.com/shipwright-io/build golint
+    - run: make -C $GOPATH/src/github.com/shipwright-io/build misspell
+    - run: make -C $GOPATH/src/github.com/shipwright-io/build staticcheck
+    - run: make -C $GOPATH/src/github.com/shipwright-io/build generate
 
     - name: Check make generate-crds
       run: |
         export GOPATH=$(go env GOPATH)
-        make generate-crds
-    - run: make verify
+        make -C $GOPATH/src/github.com/shipwright-io/build generate-crds
+    - run: make -C $GOPATH/src/github.com/shipwright-io/build verify
