@@ -48,6 +48,8 @@ jobs:
         cp -R * $GOPATH/src/github.com/shipwright-io/build
         pushd $GOPATH/src/github.com/shipwright-io/build
         make generate
+        popd
+        cp -R $GOPATH/src/github.com/shipwright-io/build/pkg/client ./pkg/
     
     - name: Check make generate-crds
       run: |
