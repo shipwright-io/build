@@ -40,10 +40,10 @@ jobs:
     - run: make golint
     - run: make misspell
     - run: make staticcheck
-    - run: make generate
 
     - name: Check make generate-crds
       run: |
         export GOPATH=$(go env GOPATH)
+        make make generate
         make generate-crds
     - run: make verify
