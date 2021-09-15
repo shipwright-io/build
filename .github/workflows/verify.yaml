@@ -24,6 +24,8 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
+      with:
+        path: '$GOPATH/src/github.com'
 
     - name: Install Tools
       run: |
