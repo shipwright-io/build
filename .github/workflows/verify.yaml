@@ -40,10 +40,17 @@ jobs:
     - run: make golint
     - run: make misspell
     - run: make staticcheck
-
+  
+    - name: Perform make generate in the GOPATH
+      run: |
+        export GOPATH=$(go env GOPATH)
+        mkdir -p $GOPATH/src/github.com/shipwright-io/build
+        cp -R * $GOPATH/src/github.com/shipwright-io/build
+        pushd $GOPATH/src/github.com/shipwright-io/build
+        make generate
+    
     - name: Check make generate-crds
       run: |
         export GOPATH=$(go env GOPATH)
-        make generate
         make generate-crds
     - run: make verify
