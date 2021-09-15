@@ -44,6 +44,6 @@ jobs:
     - name: Check make generate-crds
       run: |
         export GOPATH=$(go env GOPATH)
-        make make generate
+        make generate
         make generate-crds
     - run: make verify
