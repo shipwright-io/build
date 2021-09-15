@@ -24,12 +24,9 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-      with:
-        path: /home/runner/go/src/github.com
 
     - name: Install Tools
       run: |
-        ls -l
         pushd $(mktemp -d)
         go get github.com/gordonklaus/ineffassign
         go get golang.org/x/lint/golint
@@ -38,15 +35,15 @@ jobs:
         go get github.com/maxbrunsfeld/counterfeiter/v6
         popd
 
-    - run: make -C /home/runner/go/src/github.com/shipwright-io/build govet
-    - run: make -C /home/runner/go/src/github.com/shipwright-io/build ineffassign
-    - run: make -C /home/runner/go/src/github.com/shipwright-io/build golint
-    - run: make -C /home/runner/go/src/github.com/shipwright-io/build misspell
-    - run: make -C /home/runner/go/src/github.com/shipwright-io/build staticcheck
-    - run: make -C /home/runner/go/src/github.com/shipwright-io/build generate
+    - run: make govet
+    - run: make ineffassign
+    - run: make golint
+    - run: make misspell
+    - run: make staticcheck
+    - run: make generate
 
     - name: Check make generate-crds
       run: |
         export GOPATH=$(go env GOPATH)
-        make -C /home/runner/go/src/github.com/shipwright-io/build generate-crds
-    - run: make -C /home/runner/go/src/github.com/shipwright-io/build verify
+        make generate-crds
+    - run: make verify
