@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,10 +22,11 @@ import (
 )
 
 type settings struct {
-	help       bool
-	image      string
-	target     string
-	secretPath string
+	help        bool
+	image       string
+	target      string
+	secretPath  string
+	imageDigest string
 }
 
 var flagValues settings
@@ -36,6 +38,7 @@ func init() {
 	// Main flags of the bundle step
 	pflag.StringVar(&flagValues.image, "image", "", "Location of the bundle image (mandatory)")
 	pflag.StringVar(&flagValues.target, "target", "/workspace/source", "The target directory to place the code")
+	pflag.StringVar(&flagValues.imageDigest, "result-file-image-digest", "", "A file to write the image digest")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains access credentials (optional)")
 }
 
@@ -70,15 +73,31 @@ func Do(ctx context.Context) error {
 	}
 
 	log.Printf("Pulling image %q", ref)
-	if err := bundle.PullAndUnpack(
+
+	img, err := bundle.PullAndUnpack(
 		ref,
 		flagValues.target,
 		remote.WithContext(ctx),
-		remote.WithAuth(auth)); err != nil {
+		remote.WithAuth(auth))
+	if err != nil {
 		return err
 	}
 
 	log.Printf("Image content was extracted to %s\n", flagValues.target)
+
+	digest, err := (*img).Digest()
+	if err != nil {
+		return fmt.Errorf("digesting new image: %v", err)
+	}
+
+	if flagValues.imageDigest != "" {
+		if err = ioutil.WriteFile(
+			flagValues.imageDigest, []byte(digest.String()), 0644,
+		); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
