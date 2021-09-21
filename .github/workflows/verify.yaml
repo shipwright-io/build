@@ -22,29 +22,27 @@ jobs:
       with:
         go-version: 1.16.x
 
-    - name: Check out code into the Go module directory
+    - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        path: go/src/github.com/shipwright-io/build
 
     - name: Install Tools
       run: |
-        pushd $(mktemp -d)
-        go get github.com/gordonklaus/ineffassign
-        go get golang.org/x/lint/golint
-        go get github.com/client9/misspell/cmd/misspell
-        go get honnef.co/go/tools/cmd/staticcheck
-        popd
+        go install github.com/gordonklaus/ineffassign@latest
+        go install golang.org/x/lint/golint@latest
+        go install github.com/client9/misspell/cmd/misspell@latest
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        go install github.com/maxbrunsfeld/counterfeiter/v6@latest
 
-    - run: make govet
-    - run: make ineffassign
-    - run: make golint
-    - run: make misspell
-    - run: make staticcheck
-
-    - name: Check make generate-crds
+    - name: Checks
+      env:
+        GOPATH: "/home/runner/work/build/build/go"
       run: |
-        export GOPATH=$(go env GOPATH)
-        make generate-crds
-        if [[ $(git diff --stat) != '' ]]; then
-          echo "CRD YAML is out of date, run make generate-crds"
-          exit 1
-        fi
+        make -C $GOPATH/src/github.com/shipwright-io/build \
+          govet \
+          ineffassign \
+          golint \
+          misspell \
+          staticcheck \
+          verify-codegen

@@ -110,8 +110,7 @@ generate:
 
 .PHONY: verify-codegen
 verify-codegen: generate
-	# TODO: Verify vendor tree is accurate
-	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
+	@hack/verify-generate.sh
 
 ginkgo:
 ifeq (, $(shell which ginkgo))
