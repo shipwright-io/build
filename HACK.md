@@ -24,13 +24,13 @@ If your `Build`'s `outputImage` is to be pushed to the OpenShift internal regist
 `pipeline` service account has the required role:
 
 ```sh
-oc policy add-role-to-user registry-editor pipeline
+oc policy add-role-to-user registry-editor -z pipeline
 ```
 
 Or
 
 ```sh
-oc policy add-role-to-user  system:image-builder  pipeline
+oc policy add-role-to-user  system:image-builder -z pipeline
 ```
 
 In the near future, the above would be setup by the controller.

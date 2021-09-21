@@ -1,4 +1,5 @@
 # Temporary Build Files
+.DS_Store
 git
 shipwright-build-controller
 build/_output
