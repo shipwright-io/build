@@ -48,7 +48,7 @@ TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
 TEST_E2E_TIMEOUT_MULTIPLIER ?= 1
 
 # test repository to store images build during end-to-end tests
-TEST_IMAGE_REPO ?= quay.io/shipwright-io/build-e2e
+TEST_IMAGE_REPO ?= ghcr.io/shipwright-io/build-e2e
 # test container registyr secret name
 TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime
@@ -72,9 +72,27 @@ TAG ?= latest
 CONTROLLER_GEN="${GOBIN}/controller-gen"
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
+# The CONTAINER_ENGINE variable is used for specifying the container engine. By default 'docker' is used
+# # but this can be overridden when calling make, e.g.
+# # CONTAINER_ENGINE=podman make container-image
+CONTAINER_ENGINE ?= docker
+IMAGE_REGISTRY ?= ghcr.io/shipwright-io
+SHIPWRIGHT_VERSION = latest
+DEVELOPER_TOOLS_DOCKERFILE = images/developer-tools/Dockerfile
+IMAGE_VERSION = $(shell scripts/hash-files.sh $(DEVELOPER_TOOLS_DOCKERFILE) Makefile | cut -c 1-12)
+CONTAINER_IMAGE = $(IMAGE_REGISTRY)/shipwright-builder-image:$(SHIPWRIGHT_VERSION)-$(IMAGE_VERSION)
+CONTAINER_RUN = $(CONTAINER_ENGINE) run --rm --interactive --tty --volume $(CURDIR):/src
+
 .EXPORT_ALL_VARIABLES:
 
 default: build
+
+container-image: ## Build a container image for the preview of the website
+	$(CONTAINER_ENGINE) build -f $(DEVELOPER_TOOLS_DOCKERFILE) --tag $(CONTAINER_IMAGE)
+
+container-make: container-image ## Run make using the development container. A target can be passed using the TARGET=my-target argument. Example: `make container-make TARGET=ginkgo` Run `make container-image` before this.
+	$(CONTAINER_RUN) --cap-drop=ALL --cap-add=AUDIT_WRITE --mount type=tmpfs,destination=/tmp,tmpfs-mode=01777 $(CONTAINER_IMAGE) make $(TARGET)
+
 
 .PHONY: vendor
 vendor: go.mod go.sum

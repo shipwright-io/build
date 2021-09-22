@@ -32,3 +32,9 @@ jobs:
           pushd images/git
             IMAGE=ghcr.io/${{ github.repository_owner }}/base-git docker buildx bake --push -f ../docker-bake.hcl
           popd
+
+      - name: Build developer tools image
+        run: |
+          pushd images/developer-tools
+            IMAGE=ghcr.io/${{ github.repository_owner }}/developer-tools docker buildx bake --push -f ../docker-bake.hcl
+          popd
