@@ -139,7 +139,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			It("should contain a step to mutate the image with single mutate args", func() {
 				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
-				Expect(got.Steps[3].Command[0]).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
 				Expect(got.Steps[3].Args).To(Equal([]string{
 					"--image",
 					"$(params.shp-output-image)",
@@ -162,7 +162,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
-				Expect(got.Steps[3].Command[0]).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
 				Expect(got.Steps[3].Args).Should(ConsistOf([]string{
 					"--image",
 					"$(params.shp-output-image)",
