@@ -32,7 +32,11 @@ var _ = Describe("Bundle Loader", func() {
 		f(path)
 	}
 
-	Context("Error cases", func() {
+	Context("validations and error cases", func() {
+		It("should succeed in case the help is requested", func() {
+			Expect(run("--help")).ToNot(HaveOccurred())
+		})
+
 		It("should fail in case the image is not specified", func() {
 			Expect(run(
 				"--image", "",

@@ -40,6 +40,7 @@ func (e ExitError) Error() string {
 }
 
 type settings struct {
+	help                bool
 	url                 string
 	revision            string
 	depth               uint
@@ -57,6 +58,9 @@ var (
 )
 
 func init() {
+	// Explicitly define the help flag so that --help can be invoked and returns status code 0
+	pflag.BoolVar(&flagValues.help, "help", false, "Print the help")
+
 	// Main flags for the Git step to define the configuration, for example
 	// the flags for `url`, and `target` will always be used, but `revision`
 	// depends on the respective use case.
@@ -92,6 +96,11 @@ func main() {
 func Execute(ctx context.Context) error {
 	flagValues = settings{depth: 1}
 	pflag.Parse()
+
+	if flagValues.help {
+		pflag.Usage()
+		return nil
+	}
 
 	// pre-req checks
 	if err := checkEnvironment(ctx); err != nil {

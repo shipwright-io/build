@@ -59,6 +59,7 @@ func (ht *headerTransport) RoundTrip(in *http.Request) (*http.Response, error) {
 }
 
 type settings struct {
+	help bool
 	annotation,
 	label *[]string
 	image,
@@ -89,6 +90,9 @@ func getLabel() []string {
 var flagValues settings
 
 func initializeFlag() {
+	// Explicitly define the help flag so that --help can be invoked and returns status code 0
+	pflag.BoolVar(&flagValues.help, "help", false, "Print the help")
+
 	// Main flags for the image mutate step to define the configuration, for example
 	// the flag `image` will always be used.
 	pflag.StringVar(&flagValues.image, "image", "", "The name of image in container registry")
@@ -116,6 +120,11 @@ func main() {
 func Execute(ctx context.Context) error {
 	initializeFlag()
 	pflag.Parse()
+
+	if flagValues.help {
+		pflag.Usage()
+		return nil
+	}
 
 	return runMutateImage(ctx)
 }

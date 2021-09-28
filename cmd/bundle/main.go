@@ -20,13 +20,20 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var flagValues struct {
+type settings struct {
+	help       bool
 	image      string
 	target     string
 	secretPath string
 }
 
+var flagValues settings
+
 func init() {
+	// Explicitly define the help flag so that --help can be invoked and returns status code 0
+	pflag.BoolVar(&flagValues.help, "help", false, "Print the help")
+
+	// Main flags of the bundle step
 	pflag.StringVar(&flagValues.image, "image", "", "Location of the bundle image (mandatory)")
 	pflag.StringVar(&flagValues.target, "target", "/workspace/source", "The target directory to place the code")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains access credentials (optional)")
@@ -40,7 +47,13 @@ func main() {
 
 // Do is the main entry point of the bundle command
 func Do(ctx context.Context) error {
+	flagValues = settings{}
 	pflag.Parse()
+
+	if flagValues.help {
+		pflag.Usage()
+		return nil
+	}
 
 	if flagValues.image == "" {
 		return fmt.Errorf("mandatory flag --image is not set")
