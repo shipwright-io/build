@@ -53,6 +53,10 @@ var _ = Describe("Git Resource", func() {
 	}
 
 	Context("validations and error cases", func() {
+		It("should succeed in case the help is requested", func() {
+			Expect(run("--help")).ToNot(HaveOccurred())
+		})
+
 		It("should fail in case mandatory arguments are missing", func() {
 			Expect(run()).To(HaveOccurred())
 		})
