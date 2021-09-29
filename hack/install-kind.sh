@@ -15,9 +15,9 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # kind version
 KIND_VERSION="${KIND_VERSION:-v0.11.1}"
 
-if [ ! -f "${GOPATH}/bin/kind" ] ; then
+if ! hash kind > /dev/null 2>&1 ; then
     echo "# Installing KinD..."
-    go get sigs.k8s.io/kind@${KIND_VERSION}
+    go install "sigs.k8s.io/kind@${KIND_VERSION}"
 fi
 
 # print kind version
