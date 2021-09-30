@@ -181,7 +181,7 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1alpha1.BuildRu
 
 	for _, result := range tr.Status.TaskRunResults {
 		switch result.Name {
-		case "shp-source-default-bundle-image-digest":
+		case "shp-source-default-image-digest":
 			Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Bundle.Digest))
 		case "shp-image-digest":
 			Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))

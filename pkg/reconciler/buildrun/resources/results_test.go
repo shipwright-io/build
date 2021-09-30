@@ -31,6 +31,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 		It("should surface the TaskRun results emitting from default(git) source step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
+			br.Status.BuildSpec.Source.URL = "https://github.com/shipwright-io/sample-go"
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
@@ -42,7 +43,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Value: "foo bar",
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr)
+			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))
@@ -51,14 +52,17 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 		It("should surface the TaskRun results emitting from default(bundle) source step", func() {
 			bundleImageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
+			br.Status.BuildSpec.Source.BundleContainer = &build.BundleContainer{
+				Image: "quay.io/shipwright/source-bundle:latest",
+			}
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-source-default-bundle-image-digest",
+					Name:  "shp-source-default-image-digest",
 					Value: bundleImageDigest,
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr)
+			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Bundle.Digest).To(Equal(bundleImageDigest))
@@ -77,7 +81,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Value: "230",
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr)
+			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
 
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
 			Expect(br.Status.Output.Size).To(Equal("230"))
@@ -86,6 +90,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from source and output step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
+			br.Status.BuildSpec.Source.URL = "https://github.com/shipwright-io/sample-go"
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
@@ -105,7 +110,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Value: "230",
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr)
+			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))

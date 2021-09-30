@@ -64,3 +64,13 @@ func SanitizeVolumeNameForSecretName(secretName string) string {
 
 	return sanitizedName
 }
+
+func findResultValue(results []tektonv1beta1.TaskRunResult, name string) string {
+	for _, result := range results {
+		if result.Name == name {
+			return result.Value
+		}
+	}
+
+	return ""
+}

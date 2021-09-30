@@ -24,7 +24,7 @@ func AppendBundleStep(
 ) {
 	// append the result
 	taskSpec.Results = append(taskSpec.Results, pipeline.TaskResult{
-		Name:        fmt.Sprintf("%s-source-%s-bundle-image-digest", prefixParamsResultsVolumes, name),
+		Name:        fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name),
 		Description: "The digest of the bundle image.",
 	})
 
@@ -38,7 +38,7 @@ func AppendBundleStep(
 	bundleStep.Container.Args = []string{
 		"--image", source.BundleContainer.Image,
 		"--target", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
-		"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-bundle-image-digest.path)", prefixParamsResultsVolumes, name),
+		"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", prefixParamsResultsVolumes, name),
 	}
 
 	// add credentials mount, if provided
@@ -61,4 +61,16 @@ func AppendBundleStep(
 	}
 
 	taskSpec.Steps = append(taskSpec.Steps, bundleStep)
+}
+
+// AppendBundleResult append bundle source result to build run
+func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipeline.TaskRunResult) {
+	imageDigest := findResultValue(results, fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name))
+
+	buildRun.Status.Sources = append(buildRun.Status.Sources, build.SourceResult{
+		Name: name,
+		Bundle: &build.BundleSourceResult{
+			Digest: imageDigest,
+		},
+	})
 }

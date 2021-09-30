@@ -37,9 +37,9 @@ func mutateArgs(annotations, labels map[string]string) []string {
 		"--image",
 		fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
 		"--result-file-image-digest",
-		fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, resultImageDigest),
+		fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageDigestResult),
 		"result-file-image-size",
-		fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, resultImageSize),
+		fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageSizeResult),
 	}
 
 	if len(annotations) > 0 {

@@ -23,11 +23,11 @@ import (
 )
 
 type settings struct {
-	help        bool
-	image       string
-	target      string
-	secretPath  string
-	imageDigest string
+	help                  bool
+	image                 string
+	target                string
+	secretPath            string
+	resultFileImageDigest string
 }
 
 var flagValues settings
@@ -39,7 +39,8 @@ func init() {
 	// Main flags of the bundle step
 	pflag.StringVar(&flagValues.image, "image", "", "Location of the bundle image (mandatory)")
 	pflag.StringVar(&flagValues.target, "target", "/workspace/source", "The target directory to place the code")
-	pflag.StringVar(&flagValues.imageDigest, "result-file-image-digest", "", "A file to write the image digest")
+	pflag.StringVar(&flagValues.resultFileImageDigest, "result-file-image-digest", "", "A file to write the image digest")
+
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains access credentials (optional)")
 }
 
@@ -86,13 +87,13 @@ func Do(ctx context.Context) error {
 
 	log.Printf("Image content was extracted to %s\n", flagValues.target)
 
-	digest, err := (*img).Digest()
-	if err != nil {
-		return fmt.Errorf("digesting new image: %v", err)
-	}
+	if flagValues.resultFileImageDigest != "" {
+		digest, err := (*img).Digest()
+		if err != nil {
+			return fmt.Errorf("retrieving digest of bundle image: %v", err)
+		}
 
-	if flagValues.imageDigest != "" {
-		if err = ioutil.WriteFile(flagValues.imageDigest, []byte(digest.String()), 0644); err != nil {
+		if err = ioutil.WriteFile(flagValues.resultFileImageDigest, []byte(digest.String()), 0644); err != nil {
 			return err
 		}
 	}

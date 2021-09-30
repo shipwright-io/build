@@ -27,9 +27,6 @@ const (
 	paramSourceRoot    = "source-root"
 	paramSourceContext = "source-context"
 
-	resultImageDigest = "image-digest"
-	resultImageSize   = "image-size"
-
 	workspaceSource = "source"
 
 	inputParamBuilder    = "BUILDER_IMAGE"
@@ -107,16 +104,6 @@ func GenerateTaskSpec(
 				Type:        taskv1.ParamTypeString,
 			},
 		},
-		Results: []v1beta1.TaskResult{
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultImageDigest),
-				Description: "The digest of the image",
-			},
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultImageSize),
-				Description: "The compressed size of the image",
-			},
-		},
 		Workspaces: []v1beta1.WorkspaceDeclaration{
 			// workspace for the source files
 			{
@@ -124,6 +111,8 @@ func GenerateTaskSpec(
 			},
 		},
 	}
+
+	generatedTaskSpec.Results = getTaskSpecResults()
 
 	if build.Spec.Builder != nil {
 		InputBuilder := v1beta1.ParamSpec{
