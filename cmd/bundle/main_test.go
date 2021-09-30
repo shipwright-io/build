@@ -44,6 +44,7 @@ var _ = Describe("Bundle Loader", func() {
 		})
 	})
 
+	// TODO
 	Context("Pulling image anonymously", func() {
 		const exampleImage = "quay.io/shipwright/source-bundle:latest"
 
