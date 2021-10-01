@@ -46,12 +46,11 @@ func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.B
 			buildRun.Status.Output.Digest = result.Value
 
 		case generateOutputResultName(imageSizeResult):
-			size, err := strconv.ParseInt(result.Value, 10, 64)
-			if err != nil {
+			if size, err := strconv.ParseInt(result.Value, 10, 64); err != nil {
 				ctxlog.Info(ctx, "invalid value for output image size from taskRun result", namespace, request.Namespace, name, request.Name, "error", err)
+			} else {
+				buildRun.Status.Output.Size = size
 			}
-
-			buildRun.Status.Output.Size = size
 		}
 	}
 }

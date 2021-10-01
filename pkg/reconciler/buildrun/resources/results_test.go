@@ -6,7 +6,6 @@ package resources_test
 
 import (
 	"context"
-	"strconv"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -102,11 +101,8 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
 
-			size, err := strconv.ParseInt("230", 10, 64)
-			Expect(err).To(BeNil())
-
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
-			Expect(br.Status.Output.Size).To(Equal(size))
+			Expect(br.Status.Output.Size).To(Equal(int64(230)))
 		})
 
 		It("should surface the TaskRun results emitting from source and output step", func() {
@@ -134,14 +130,11 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
 
-			size, err := strconv.ParseInt("230", 10, 64)
-			Expect(err).To(BeNil())
-
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))
 			Expect(br.Status.Sources[0].Git.CommitAuthor).To(Equal("foo bar"))
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
-			Expect(br.Status.Output.Size).To(Equal(size))
+			Expect(br.Status.Output.Size).To(Equal(int64(230)))
 		})
 	})
 })

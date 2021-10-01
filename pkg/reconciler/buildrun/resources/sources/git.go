@@ -6,6 +6,7 @@ package sources
 
 import (
 	"fmt"
+	"strings"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
@@ -92,11 +93,13 @@ func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []te
 	commitAuthor := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult))
 	commitSha := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitSHAResult))
 
-	buildRun.Status.Sources = append(buildRun.Status.Sources, buildv1alpha1.SourceResult{
-		Name: name,
-		Git: &buildv1alpha1.GitSourceResult{
-			CommitAuthor: commitAuthor,
-			CommitSha:    commitSha,
-		},
-	})
+	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" {
+		buildRun.Status.Sources = append(buildRun.Status.Sources, buildv1alpha1.SourceResult{
+			Name: name,
+			Git: &buildv1alpha1.GitSourceResult{
+				CommitAuthor: commitAuthor,
+				CommitSha:    commitSha,
+			},
+		})
+	}
 }

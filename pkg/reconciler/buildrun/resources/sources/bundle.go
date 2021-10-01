@@ -6,6 +6,7 @@ package sources
 
 import (
 	"fmt"
+	"strings"
 
 	core "k8s.io/api/core/v1"
 
@@ -67,10 +68,12 @@ func AppendBundleStep(
 func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipeline.TaskRunResult) {
 	imageDigest := findResultValue(results, fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name))
 
-	buildRun.Status.Sources = append(buildRun.Status.Sources, build.SourceResult{
-		Name: name,
-		Bundle: &build.BundleSourceResult{
-			Digest: imageDigest,
-		},
-	})
+	if strings.TrimSpace(imageDigest) != "" {
+		buildRun.Status.Sources = append(buildRun.Status.Sources, build.SourceResult{
+			Name: name,
+			Bundle: &build.BundleSourceResult{
+				Digest: imageDigest,
+			},
+		})
+	}
 }
