@@ -60,6 +60,7 @@ jobs:
       run: |
         make release
         gh release upload ${TAG} release.yaml
+        gh release upload ${TAG} sample-strategies.yaml
 
     - name: Update docs after release creation
       env:
