@@ -103,7 +103,7 @@ type Output struct {
 	Digest string `json:"digest,omitempty"`
 
 	// Size holds the compressed size of output image
-	Size string `json:"size,omitempty"`
+	Size int64 `json:"size,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun

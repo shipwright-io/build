@@ -5,11 +5,15 @@
 package resources
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 
 	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -20,8 +24,10 @@ const (
 // UpdateBuildRunUsingTaskResults surface the task results
 // to the buildrun
 func UpdateBuildRunUsingTaskResults(
+	ctx context.Context,
 	buildRun *build.BuildRun,
 	taskRunResult []pipeline.TaskRunResult,
+	request reconcile.Request,
 ) {
 	// Set source results
 	updateBuildRunStatusWithSourceResult(buildRun, taskRunResult)
@@ -30,17 +36,22 @@ func UpdateBuildRunUsingTaskResults(
 	buildRun.Status.Output = &build.Output{}
 
 	// Set output results
-	updateBuildRunStatusWithOutputResult(buildRun, taskRunResult)
+	updateBuildRunStatusWithOutputResult(ctx, buildRun, taskRunResult, request)
 }
 
-func updateBuildRunStatusWithOutputResult(buildRun *build.BuildRun, taskRunResult []pipeline.TaskRunResult) {
+func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.BuildRun, taskRunResult []pipeline.TaskRunResult, request reconcile.Request) {
 	for _, result := range taskRunResult {
 		switch result.Name {
 		case generateOutputResultName(imageDigestResult):
 			buildRun.Status.Output.Digest = result.Value
 
 		case generateOutputResultName(imageSizeResult):
-			buildRun.Status.Output.Size = result.Value
+			size, err := strconv.ParseInt(result.Value, 10, 64)
+			if err != nil {
+				ctxlog.Info(ctx, "invalid value for output image size from taskRun result", namespace, request.Namespace, name, request.Name, "error", err)
+			}
+
+			buildRun.Status.Output.Size = size
 		}
 	}
 }

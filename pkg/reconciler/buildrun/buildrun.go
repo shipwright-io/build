@@ -298,7 +298,8 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 
 		if len(lastTaskRun.Status.TaskRunResults) > 0 {
-			resources.UpdateBuildRunUsingTaskResults(buildRun, lastTaskRun.Status.TaskRunResults)
+			ctxlog.Info(ctx, "surfacing taskRun results to BuildRun status", namespace, request.Namespace, name, request.Name)
+			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, lastTaskRun.Status.TaskRunResults, request)
 		}
 
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)

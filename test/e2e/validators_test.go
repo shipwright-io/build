@@ -165,7 +165,9 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) 
 		case "shp-image-digest":
 			Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
 		case "shp-image-size":
-			Expect(result.Value).To(Equal(testBuildRun.Status.Output.Size))
+			size, err := strconv.ParseInt(result.Value, 10, 64)
+			Expect(err).To(BeNil())
+			Expect(size).To(Equal(testBuildRun.Status.Output.Size))
 		}
 	}
 }
@@ -186,7 +188,9 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1alpha1.BuildRu
 		case "shp-image-digest":
 			Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
 		case "shp-image-size":
-			Expect(result.Value).To(Equal(testBuildRun.Status.Output.Size))
+			size, err := strconv.ParseInt(result.Value, 10, 64)
+			Expect(err).To(BeNil())
+			Expect(size).To(Equal(testBuildRun.Status.Output.Size))
 		}
 	}
 }

@@ -5,6 +5,9 @@
 package resources_test
 
 import (
+	"context"
+	"strconv"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -13,6 +16,8 @@ import (
 	"github.com/shipwright-io/build/test"
 
 	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var _ = Describe("TaskRun results to BuildRun", func() {
@@ -20,12 +25,26 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 	Context("when a BuildRun complete successfully", func() {
 		var (
-			br *build.BuildRun
-			tr *pipelinev1beta1.TaskRun
+			taskRunRequest reconcile.Request
+			br             *build.BuildRun
+			tr             *pipelinev1beta1.TaskRun
 		)
 
+		ctx := context.Background()
+
+		// returns a reconcile.Request based on an resource name and namespace
+		newReconcileRequest := func(name string, ns string) reconcile.Request {
+			return reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      name,
+					Namespace: ns,
+				},
+			}
+		}
+
 		BeforeEach(func() {
-			tr = ctl.DefaultTaskRun("foo", "bar")
+			taskRunRequest = newReconcileRequest("foo-p8nts", "bar")
+			tr = ctl.DefaultTaskRun("foo-p8nts", "bar")
 			br = ctl.DefaultBuildRun("foo", "bar")
 		})
 
@@ -43,7 +62,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Value: "foo bar",
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))
@@ -62,7 +81,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Value: bundleImageDigest,
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Bundle.Digest).To(Equal(bundleImageDigest))
@@ -81,10 +100,13 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Value: "230",
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
+
+			size, err := strconv.ParseInt("230", 10, 64)
+			Expect(err).To(BeNil())
 
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
-			Expect(br.Status.Output.Size).To(Equal("230"))
+			Expect(br.Status.Output.Size).To(Equal(size))
 		})
 
 		It("should surface the TaskRun results emitting from source and output step", func() {
@@ -110,13 +132,16 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Value: "230",
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(br, tr.Status.TaskRunResults)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
+
+			size, err := strconv.ParseInt("230", 10, 64)
+			Expect(err).To(BeNil())
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))
 			Expect(br.Status.Sources[0].Git.CommitAuthor).To(Equal("foo bar"))
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
-			Expect(br.Status.Output.Size).To(Equal("230"))
+			Expect(br.Status.Output.Size).To(Equal(size))
 		})
 	})
 })

@@ -317,7 +317,8 @@ spec:
                     type: string
                   size:
                     description: Size holds the compressed size of output image
-                    type: string
+                    format: int64
+                    type: integer
                 type: object
               sources:
                 description: Sources holds the results emitted from the step definition of different sources
