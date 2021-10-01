@@ -278,7 +278,10 @@ func getOptions(ctx context.Context) *[]crane.Option {
 	options = append(options, crane.WithContext(ctx))
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: false}
+	transport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: false,
+		MinVersion:         tls.VersionTLS12,
+	}
 
 	var rt http.RoundTripper = transport
 	// Add any http headers if they are set in the config file.
