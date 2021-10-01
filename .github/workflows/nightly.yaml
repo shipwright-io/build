@@ -10,12 +10,18 @@ jobs:
   nightly:
     if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
+    env:
+      IMAGE_HOST: quay.io
+      IMAGE_NAMESPACE: shipwright
     steps:
     - uses: actions/checkout@v2
 
     - name: Get current date
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d-%s')"
+
+    - name: Install crane
+      run: curl --fail --silent --location https://github.com/google/go-containerregistry/releases/download/v0.6.0/go-containerregistry_Linux_x86_64.tar.gz | tar -xzf - -C /usr/local/bin crane
 
     - name: Install Go
       uses: actions/setup-go@v2
@@ -29,8 +35,6 @@ jobs:
       env:
         REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-        IMAGE_HOST: quay.io
-        IMAGE: shipwright/shipwright-operator
         TAG: "nightly-${{ steps.date.outputs.date }}"
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -41,3 +45,13 @@ jobs:
 
         mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
         gh release upload nightly nightly-${{ steps.date.outputs.date }}-debug.yaml
+
+        mv sample-strategies.yaml nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
+        gh release upload nightly nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
+    - name: Update latest tag of supporting images
+      working-directory: ./cmd
+      run: |
+        for command in *
+        do
+          crane copy "${IMAGE_HOST}/${IMAGE_NAMESPACE}/${command}:nightly-${{ steps.date.outputs.date }}" "${IMAGE_HOST}/${IMAGE_NAMESPACE}/${command}:latest"
+        done
