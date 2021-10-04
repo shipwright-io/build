@@ -249,7 +249,7 @@ func validateServiceAccountDeletion(buildRun *buildv1alpha1.BuildRun, namespace 
 	}
 
 	saNamespacedName := types.NamespacedName{
-		Name:      buildRun.Name + "-sa",
+		Name:      buildRun.Name,
 		Namespace: namespace,
 	}
 
