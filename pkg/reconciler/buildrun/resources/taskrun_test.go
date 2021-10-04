@@ -84,6 +84,8 @@ var _ = Describe("GenerateTaskrun", func() {
 					"$(params.shp-source-root)",
 					"--result-file-commit-sha",
 					"$(results.shp-source-default-commit-sha.path)",
+					"--result-file-commit-author",
+					"$(results.shp-source-default-commit-author.path)",
 				}))
 			})
 
