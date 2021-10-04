@@ -151,23 +151,26 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) 
 	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
 	Expect(err).ToNot(HaveOccurred())
 
-	tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
-	Expect(err).ToNot(HaveOccurred())
-
 	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
 
-	for _, result := range tr.Status.TaskRunResults {
-		switch result.Name {
-		case "shp-source-default-commit-sha":
-			Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitSha))
-		case "shp-source-default-commit-author":
-			Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitAuthor))
-		case "shp-image-digest":
-			Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
-		case "shp-image-size":
-			size, err := strconv.ParseInt(result.Value, 10, 64)
-			Expect(err).To(BeNil())
-			Expect(size).To(Equal(testBuildRun.Status.Output.Size))
+	// Only run the TaskRun checks if Tekton objects can be accessed
+	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, result := range tr.Status.TaskRunResults {
+			switch result.Name {
+			case "shp-source-default-commit-sha":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitSha))
+			case "shp-source-default-commit-author":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitAuthor))
+			case "shp-image-digest":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
+			case "shp-image-size":
+				size, err := strconv.ParseInt(result.Value, 10, 64)
+				Expect(err).To(BeNil())
+				Expect(size).To(Equal(testBuildRun.Status.Output.Size))
+			}
 		}
 	}
 }
@@ -176,21 +179,24 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1alpha1.BuildRu
 	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
 	Expect(err).ToNot(HaveOccurred())
 
-	tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
-	Expect(err).ToNot(HaveOccurred())
-
 	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
 
-	for _, result := range tr.Status.TaskRunResults {
-		switch result.Name {
-		case "shp-source-default-image-digest":
-			Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Bundle.Digest))
-		case "shp-image-digest":
-			Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
-		case "shp-image-size":
-			size, err := strconv.ParseInt(result.Value, 10, 64)
-			Expect(err).To(BeNil())
-			Expect(size).To(Equal(testBuildRun.Status.Output.Size))
+	// Only run the TaskRun checks if Tekton objects can be accessed
+	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, result := range tr.Status.TaskRunResults {
+			switch result.Name {
+			case "shp-source-default-image-digest":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Bundle.Digest))
+			case "shp-image-digest":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
+			case "shp-image-size":
+				size, err := strconv.ParseInt(result.Value, 10, 64)
+				Expect(err).To(BeNil())
+				Expect(size).To(Equal(testBuildRun.Status.Output.Size))
+			}
 		}
 	}
 }
