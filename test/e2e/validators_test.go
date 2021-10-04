@@ -148,15 +148,15 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 }
 
 func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) {
+	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
+
 	// Only run the TaskRun checks if Tekton objects can be accessed
 	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
-		testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
-		Expect(err).ToNot(HaveOccurred())
-
 		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
 		Expect(err).ToNot(HaveOccurred())
-
-		Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
 
 		for _, result := range tr.Status.TaskRunResults {
 			switch result.Name {
@@ -176,15 +176,15 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) 
 }
 
 func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1alpha1.BuildRun) {
+	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
+
 	// Only run the TaskRun checks if Tekton objects can be accessed
 	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
-		testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
-		Expect(err).ToNot(HaveOccurred())
-
 		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
 		Expect(err).ToNot(HaveOccurred())
-
-		Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
 
 		for _, result := range tr.Status.TaskRunResults {
 			switch result.Name {
