@@ -148,12 +148,22 @@ type BuildRunStatus struct {
 	// FailedAt points to the resource where the BuildRun failed
 	// +optional
 	FailedAt *FailedAt `json:"failedAt,omitempty"`
+
+	// Failure contains error details that are collected and surfaced from TaskRun
+	// +optional
+	Failure *Failure `json:"failure,omitempty"`
 }
 
 // FailedAt describes the location where the failure happened
 type FailedAt struct {
 	Pod       string `json:"pod,omitempty"`
 	Container string `json:"container,omitempty"`
+}
+
+// Failure describes an error while building images
+type Failure struct {
+	Reason  string `json:"reason,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 // BuildRef can be used to refer to a specific instance of a Build.

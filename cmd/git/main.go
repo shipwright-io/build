@@ -50,6 +50,8 @@ type settings struct {
 	target                 string
 	resultFileCommitSha    string
 	resultFileCommitAuthor string
+	resultErrorMessage     string
+	resultErrorReason      string
 	secretPath             string
 	skipValidation         bool
 }
@@ -74,6 +76,9 @@ func init() {
 	pflag.StringVar(&flagValues.resultFileCommitSha, "result-file-commit-sha", "", "A file to write the commit sha to.")
 	pflag.StringVar(&flagValues.resultFileCommitAuthor, "result-file-commit-author", "", "A file to write the commit author to.")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
+
+	pflag.StringVar(&flagValues.resultErrorMessage, "result-error-message", "", "A file to write the error message to.")
+	pflag.StringVar(&flagValues.resultErrorReason, "result-error-reason", "", "A file to write the error reason to.")
 
 	// Optional flag to be able to override the default shallow clone depth,
 	// which should be fine for almost all use cases we use the Git source step
@@ -101,6 +106,8 @@ func main() {
 func Execute(ctx context.Context) error {
 	flagValues = settings{depth: 1}
 	pflag.Parse()
+	ioutil.WriteFile(flagValues.resultErrorMessage, []byte("fail message"), 0644)
+	ioutil.WriteFile(flagValues.resultErrorReason, []byte("cred-failed"), 0644)
 
 	if flagValues.help {
 		pflag.Usage()
@@ -131,6 +138,8 @@ func runGitClone(ctx context.Context) error {
 	}
 
 	if err := clone(ctx); err != nil {
+		ioutil.WriteFile(flagValues.resultErrorMessage, []byte(err.Error()), 0644)
+		ioutil.WriteFile(flagValues.resultErrorReason, []byte("cred-failed"), 0644)
 		return err
 	}
 
@@ -232,7 +241,10 @@ func clone(ctx context.Context) error {
 	var addtlCredArgs []string
 	if flagValues.secretPath != "" {
 		credType, err := checkCredentials()
+
 		if err != nil {
+			ioutil.WriteFile(flagValues.resultErrorMessage, []byte(err.Error()), 0644)
+			ioutil.WriteFile(flagValues.resultErrorReason, []byte("cred-failed"), 0644)
 			return err
 		}
 

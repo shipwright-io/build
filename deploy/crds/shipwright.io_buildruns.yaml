@@ -466,6 +466,14 @@ spec:
                   pod:
                     type: string
                 type: object
+              failure:
+                description: Failure contains error details that are collected and surfaced from TaskRun
+                properties:
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                type: object
               latestTaskRunRef:
                 description: "LatestTaskRunRef is the name of the TaskRun responsible for executing this BuildRun. \n TODO: This should be called something like \"TaskRunName\""
                 type: string
