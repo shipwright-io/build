@@ -27,6 +27,8 @@ const (
 	typeUsernamePassword
 )
 
+var useNoTagsFlag = false
+
 // ExitError is an error which has an exit code to be used in os.Exit() to
 // return both an exit code and an error message
 type ExitError struct {
@@ -109,6 +111,10 @@ func Execute(ctx context.Context) error {
 		return err
 	}
 
+	// Check if Git CLI supports --no-tags for clone
+	out, _ := git(ctx, "clone", "-h")
+	useNoTagsFlag = strings.Contains(out, "--no-tags")
+
 	if err := runGitClone(ctx); err != nil {
 		return err
 	}
@@ -190,7 +196,10 @@ func clone(ctx context.Context) error {
 	cloneArgs := []string{
 		"clone",
 		"--quiet",
-		"--no-tags",
+	}
+
+	if useNoTagsFlag {
+		cloneArgs = append(cloneArgs, "--no-tags")
 	}
 
 	var commitSha string
