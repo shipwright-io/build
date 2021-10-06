@@ -31,6 +31,12 @@ const (
 
 // GetGeneratedServiceAccountName returns the name of the generated service account for a build run
 func GetGeneratedServiceAccountName(buildRun *buildv1alpha1.BuildRun) string {
+	return buildRun.Name
+}
+
+// GetHeritageGeneratedServiceAccountName return the name of the generated service account for
+// a build run as it was used in older releases of Shipwright Build
+func GetHeritageGeneratedServiceAccountName(buildRun *buildv1alpha1.BuildRun) string {
 	return buildRun.Name + "-sa"
 }
 
@@ -83,6 +89,33 @@ func GenerateSA(ctx context.Context, client client.Client, build *buildv1alpha1.
 	default:
 		return nil, err
 	}
+}
+
+// DeleteServiceAccount deletes the service account of a completed BuildRun if the service account
+// was generated
+func DeleteServiceAccount(ctx context.Context, client client.Client, completedBuildRun *buildv1alpha1.BuildRun) error {
+	if !IsGeneratedServiceAccountUsed(completedBuildRun) {
+		return nil
+	}
+
+	serviceAccount := &corev1.ServiceAccount{}
+	serviceAccount.Name = GetGeneratedServiceAccountName(completedBuildRun)
+	serviceAccount.Namespace = completedBuildRun.Namespace
+
+	ctxlog.Info(ctx, "deleting service account", namespace, completedBuildRun.Namespace, name, completedBuildRun.Name, "serviceAccount", serviceAccount.Name)
+	if err := client.Delete(ctx, serviceAccount); err != nil {
+		if apierrors.IsNotFound(err) {
+			serviceAccount.Name = GetHeritageGeneratedServiceAccountName(completedBuildRun)
+			ctxlog.Info(ctx, "deleting service account", namespace, completedBuildRun.Namespace, name, completedBuildRun.Name, "serviceAccount", serviceAccount.Name)
+			err = client.Delete(ctx, serviceAccount)
+		}
+
+		if err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // getDefaultNamespaceSA retrieves a pipeline or default sa per namespace. This is used when users do not specify a service account

@@ -96,7 +96,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			sa, err := tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			sa, err := tb.GetSA(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			// Verify that the sa have our Build specified secret
@@ -105,7 +105,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			_, err = tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			_, err = tb.GetSA(buildRunObject.Name)
 			Expect(err).ToNot(BeNil())
 
 		})
@@ -144,7 +144,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			bro, err := tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			sa, err := tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			sa, err := tb.GetSA(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
 			// Verify that the sa have our Build specified secret
@@ -177,7 +177,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			Expect(err).To(BeNil())
 
 			// confirm SA gone
-			_, err = tb.GetSA(fmt.Sprintf("%s-sa", buildRunObject.Name))
+			_, err = tb.GetSA(buildRunObject.Name)
 			Expect(err).ToNot(BeNil())
 
 		})

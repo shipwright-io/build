@@ -227,7 +227,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					buildSample,
 					buildRunSample,
 					taskRunSample,
-					ctl.DefaultServiceAccount(buildRunSample.Name+"-sa")),
+					ctl.DefaultServiceAccount(buildRunSample.Name)),
 				)
 
 				// Call the reconciler
@@ -241,7 +241,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, obj, _ := client.DeleteArgsForCall(0)
 				serviceAccount, castSuccessful := obj.(*corev1.ServiceAccount)
 				Expect(castSuccessful).To(BeTrue())
-				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name + "-sa"))
+				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name))
 				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
 			})
 

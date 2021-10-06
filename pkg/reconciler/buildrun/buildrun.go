@@ -310,14 +310,9 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 			taskRunStatus := trCondition.Status
 
-			// check if we should delete the generated service account by checking the build run spec and that the task run is csomplete
-			if resources.IsGeneratedServiceAccountUsed(buildRun) && (taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse) {
-				serviceAccount := &corev1.ServiceAccount{}
-				serviceAccount.Name = resources.GetGeneratedServiceAccountName(buildRun)
-				serviceAccount.Namespace = buildRun.Namespace
-
-				ctxlog.Info(ctx, "deleting service account", namespace, request.Namespace, name, request.Name)
-				if err := r.client.Delete(ctx, serviceAccount); err != nil && !apierrors.IsNotFound(err) {
+			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
+			if taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse {
+				if err := resources.DeleteServiceAccount(ctx, r.client, buildRun); err != nil {
 					ctxlog.Error(ctx, err, "Error during deletion of generated service account.")
 					return reconcile.Result{}, err
 				}
