@@ -1234,5 +1234,104 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(resources.IsClientStatusUpdateError(err)).To(BeTrue())
 			})
 		})
+
+		Context("when environment variables are specified", func() {
+			JustBeforeEach(func() {
+
+			})
+			It("fails when the name is blank", func() {
+				buildRunSample.Spec.Env = []corev1.EnvVar{
+					{
+						Name:  "",
+						Value: "some-value",
+					},
+				}
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvNameCanNotBeBlank, "name for environment variable must not be blank")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+
+			})
+			It("fails when the name is blank using valueFrom", func() {
+				buildRunSample.Spec.Env = []corev1.EnvVar{
+					{
+						Name: "",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath: "my-field-path",
+							},
+						},
+					},
+				}
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvNameCanNotBeBlank, "name for environment variable must not be blank")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+
+			})
+			It("fails when both value and valueFrom are specified", func() {
+				buildRunSample.Spec.Env = []corev1.EnvVar{
+					{
+						Name:  "some-name",
+						Value: "some-value",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath: "my-field-path",
+							},
+						},
+					},
+				}
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified, "only one of value or valueFrom must be specified")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+
+			})
+			It("succeeds with compliant env var using Value", func() {
+				buildRunSample.Spec.Env = []corev1.EnvVar{
+					{
+						Name:  "some-name",
+						Value: "some-value",
+					},
+				}
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.BuildReason(build.Succeeded), "all validations succeeded")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+
+			})
+			It("succeeds with compliant env var using ValueFrom", func() {
+				buildRunSample.Spec.Env = []corev1.EnvVar{
+					{
+						Name: "some-name",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath: "my-field-path",
+							},
+						},
+					},
+				}
+
+				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.BuildReason(build.Succeeded), "all validations succeeded")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+
+			})
+		})
 	})
 })

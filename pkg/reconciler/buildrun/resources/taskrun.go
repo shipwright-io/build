@@ -18,6 +18,7 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/env"
 )
 
 const (
@@ -150,6 +151,13 @@ func GenerateTaskSpec(
 
 	}
 
+	// Combine the environment variables specified in the Build object and the BuildRun object
+	// env vars in the BuildRun supercede those in the Build, overwriting them
+	combinedEnvs, err := env.MergeEnvVars(buildRun.Spec.Env, build.Spec.Env, true)
+	if err != nil {
+		return nil, err
+	}
+
 	// define the steps coming from the build strategy
 	for _, containerValue := range buildSteps {
 
@@ -165,6 +173,13 @@ func GenerateTaskSpec(
 
 		taskImage := getStringTransformations(containerValue.Image)
 
+		// Any collision between the env vars in the Container step and those in the Build/BuildRun
+		// will result in an error and cause a failed TaskRun
+		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
+		if err != nil {
+			return &generatedTaskSpec, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
+		}
+
 		step := v1beta1.Step{
 			Container: corev1.Container{
 				Image:           taskImage,
@@ -176,7 +191,7 @@ func GenerateTaskSpec(
 				SecurityContext: containerValue.SecurityContext,
 				WorkingDir:      containerValue.WorkingDir,
 				Resources:       containerValue.Resources,
-				Env:             containerValue.Env,
+				Env:             stepEnv,
 			},
 		}
 

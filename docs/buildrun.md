@@ -62,6 +62,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.paramValues` - Override any _params_ defined in the referenced `Build`, as long as their name matches.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value which is defined in `Build`. ( Note: other properties of the output, for example, the credentials cannot be specified in the buildRun spec. )
   - `spec.output.credentials.name` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
+  - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool that is being used by the chosen build strategy.
 
 ### Defining the BuildRef
 
@@ -151,6 +152,62 @@ metadata:
 spec:
   # [...]
   state: "BuildRunCanceled"
+```
+
+### Specifying Environment Variables
+
+An example of a `BuildRun` that specifies environment variables:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-namespaced
+  env:
+    - name: EXAMPLE_VAR_1
+      value: "example-value-1"
+    - name: EXAMPLE_VAR_2
+      value: "example-value-2"
+```
+
+Example of a `BuildRun` that uses the Kubernetes Downward API to
+expose a `Pod` field as an environment variable:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-namespaced
+  env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+```
+
+Example of a `BuildRun` that uses the Kubernetes Downward API to
+expose a `Container` field as an environment variable:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-namespaced
+  env:
+    - name: MEMORY_LIMIT
+      valueFrom:
+        resourceFieldRef:
+          containerName: my-container
+          resource: limits.memory
 ```
 
 ## BuildRun Status
