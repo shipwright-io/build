@@ -28,6 +28,7 @@ const (
 )
 
 var useNoTagsFlag = false
+var useDepthForSubmodule = false
 
 // ExitError is an error which has an exit code to be used in os.Exit() to
 // return both an exit code and an error message
@@ -111,9 +112,7 @@ func Execute(ctx context.Context) error {
 		return err
 	}
 
-	// Check if Git CLI supports --no-tags for clone
-	out, _ := git(ctx, "clone", "-h")
-	useNoTagsFlag = strings.Contains(out, "--no-tags")
+	checkGitVersionSpecificSettings(ctx)
 
 	if err := runGitClone(ctx); err != nil {
 		return err
@@ -190,6 +189,16 @@ func checkEnvironment(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func checkGitVersionSpecificSettings(ctx context.Context) {
+	// Check if Git CLI supports --no-tags for clone
+	out, _ := git(ctx, "clone", "-h")
+	useNoTagsFlag = strings.Contains(out, "--no-tags")
+
+	// Check if Git CLI support --single-branch and therefore shallow clones using --depth
+	out, _ = git(ctx, "submodule", "-h")
+	useDepthForSubmodule = strings.Contains(out, "single-branch")
 }
 
 func clone(ctx context.Context) error {
@@ -322,7 +331,7 @@ func clone(ctx context.Context) error {
 	submoduleArgs := []string{"-C", flagValues.target}
 	submoduleArgs = append(submoduleArgs, addtlCredArgs...)
 	submoduleArgs = append(submoduleArgs, "submodule", "update", "--init", "--recursive")
-	if flagValues.depth > 0 {
+	if useDepthForSubmodule && flagValues.depth > 0 {
 		submoduleArgs = append(submoduleArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
 	}
 
