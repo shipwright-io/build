@@ -32,16 +32,10 @@ import (
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
-var (
-	taskRunGroupVersionKind = schema.GroupVersionKind{
-		Group:   SchemeGroupVersion.Group,
-		Version: SchemeGroupVersion.Version,
-		Kind:    pipeline.TaskRunControllerName,
-	}
-)
-
 // TaskRunSpec defines the desired state of TaskRun
 type TaskRunSpec struct {
+	// +optional
+	Debug *TaskRunDebug `json:"debug,omitempty"`
 	// +optional
 	Params []Param `json:"params,omitempty"`
 	// +optional
@@ -76,6 +70,12 @@ const (
 	// if not already cancelled or terminated
 	TaskRunSpecStatusCancelled = "TaskRunCancelled"
 )
+
+// TaskRunDebug defines the breakpoint config for a particular TaskRun
+type TaskRunDebug struct {
+	// +optional
+	Breakpoint []string `json:"breakpoint,omitempty"`
+}
 
 // TaskRunInputs holds the input values that this task was invoked with.
 type TaskRunInputs struct {
@@ -229,9 +229,9 @@ type TaskRunResult struct {
 	Value string `json:"value"`
 }
 
-// GetOwnerReference gets the task run as owner reference for any related objects
-func (tr *TaskRun) GetOwnerReference() metav1.OwnerReference {
-	return *metav1.NewControllerRef(tr, taskRunGroupVersionKind)
+// GetGroupVersionKind implements kmeta.OwnerRefable.
+func (*TaskRun) GetGroupVersionKind() schema.GroupVersionKind {
+	return SchemeGroupVersion.WithKind(pipeline.TaskRunControllerName)
 }
 
 // GetStatusCondition returns the task run status as a ConditionAccessor

@@ -35,6 +35,10 @@ import (
 const (
 	// PipelineTasksAggregateStatus is a param representing aggregate status of all dag pipelineTasks
 	PipelineTasksAggregateStatus = "tasks.status"
+	// PipelineTasks is a value representing a task is a member of "tasks" section of the pipeline
+	PipelineTasks = "tasks"
+	// PipelineFinallyTasks is a value representing a task is a member of "finally" section of the pipeline
+	PipelineFinallyTasks = "finally"
 )
 
 // +genclient
@@ -223,9 +227,6 @@ func (pt PipelineTask) validateCustomTask() (errs *apis.FieldError) {
 	}
 	if pt.Resources != nil {
 		errs = errs.Also(apis.ErrInvalidValue("custom tasks do not support PipelineResources", "resources"))
-	}
-	if pt.Timeout != nil {
-		errs = errs.Also(apis.ErrInvalidValue("custom tasks do not support timeout", "timeout"))
 	}
 	return errs
 }

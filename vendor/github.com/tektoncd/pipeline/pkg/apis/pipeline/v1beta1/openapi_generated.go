@@ -86,6 +86,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskResources":                     schema_pkg_apis_pipeline_v1beta1_TaskResources(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskResult":                        schema_pkg_apis_pipeline_v1beta1_TaskResult(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRun":                           schema_pkg_apis_pipeline_v1beta1_TaskRun(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunDebug":                      schema_pkg_apis_pipeline_v1beta1_TaskRunDebug(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunInputs":                     schema_pkg_apis_pipeline_v1beta1_TaskRunInputs(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunList":                       schema_pkg_apis_pipeline_v1beta1_TaskRunList(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunOutputs":                    schema_pkg_apis_pipeline_v1beta1_TaskRunOutputs(ref),
@@ -2648,7 +2649,7 @@ func schema_pkg_apis_pipeline_v1beta1_Sidecar(ref common.ReferenceCallback) comm
 					},
 					"startupProbe": {
 						SchemaProps: spec.SchemaProps{
-							Description: "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. This is a beta feature enabled by the StartupProbe feature flag. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+							Description: "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
 							Ref:         ref("k8s.io/api/core/v1.Probe"),
 						},
 					},
@@ -3004,7 +3005,7 @@ func schema_pkg_apis_pipeline_v1beta1_Step(ref common.ReferenceCallback) common.
 					},
 					"startupProbe": {
 						SchemaProps: spec.SchemaProps{
-							Description: "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. This is a beta feature enabled by the StartupProbe feature flag. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+							Description: "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
 							Ref:         ref("k8s.io/api/core/v1.Probe"),
 						},
 					},
@@ -3087,6 +3088,13 @@ func schema_pkg_apis_pipeline_v1beta1_Step(ref common.ReferenceCallback) common.
 									},
 								},
 							},
+						},
+					},
+					"onError": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnError defines the exiting behavior of a container on error can be set to [ continue | stopAndFail ] stopAndFail indicates exit the taskRun if the container exits with non-zero exit code continue indicates continue executing the rest of the steps irrespective of the container exit code",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -3501,6 +3509,33 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRun(ref common.ReferenceCallback) comm
 	}
 }
 
+func schema_pkg_apis_pipeline_v1beta1_TaskRunDebug(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunDebug defines the breakpoint config for a particular TaskRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"breakpoint": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1beta1_TaskRunInputs(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3699,6 +3734,11 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunSpec(ref common.ReferenceCallback) 
 				Description: "TaskRunSpec defines the desired state of TaskRun",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"debug": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunDebug"),
+						},
+					},
 					"params": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"array"},
@@ -3772,7 +3812,7 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunSpec(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunResources", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunDebug", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunResources", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
