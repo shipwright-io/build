@@ -103,7 +103,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 		// init the Build resource, this never change throughout this test suite
 		buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
-
+		buildRunSample = ctl.DefaultBuildRun(buildRunName, buildName)
 	})
 
 	// JustBeforeEach will always execute just before the It() specs,
@@ -1236,9 +1236,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 		})
 
 		Context("when environment variables are specified", func() {
-			JustBeforeEach(func() {
-
-			})
 			It("fails when the name is blank", func() {
 				buildRunSample.Spec.Env = []corev1.EnvVar{
 					{
