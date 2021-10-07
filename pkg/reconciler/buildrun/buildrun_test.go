@@ -104,6 +104,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 		// init the Build resource, this never change throughout this test suite
 		buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 		buildRunSample = ctl.DefaultBuildRun(buildRunName, buildName)
+		taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded")
 	})
 
 	// JustBeforeEach will always execute just before the It() specs,
