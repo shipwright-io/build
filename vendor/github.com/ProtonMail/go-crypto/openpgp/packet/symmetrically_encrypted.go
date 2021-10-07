@@ -178,7 +178,7 @@ const mdcPacketTagByte = byte(0x80) | 0x40 | 19
 
 func (ser *seMDCReader) Close() error {
 	if ser.error {
-		return errors.SignatureError("error during reading")
+		return errors.ErrMDCMissing
 	}
 
 	for !ser.eof {
@@ -189,7 +189,7 @@ func (ser *seMDCReader) Close() error {
 			break
 		}
 		if err != nil {
-			return errors.SignatureError("error during reading")
+			return errors.ErrMDCMissing
 		}
 	}
 
@@ -197,12 +197,12 @@ func (ser *seMDCReader) Close() error {
 
 	final := ser.h.Sum(nil)
 	if subtle.ConstantTimeCompare(final, ser.trailer[2:]) != 1 {
-		return errors.SignatureError("hash mismatch")
+		return errors.ErrMDCHashMismatch
 	}
 	// The hash already includes the MDC header, but we still check its value
 	// to confirm encryption correctness
 	if ser.trailer[0] != mdcPacketTagByte || ser.trailer[1] != sha1.Size {
-		return errors.SignatureError("MDC packet not found")
+		return errors.ErrMDCMissing
 	}
 	return nil
 }

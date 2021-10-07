@@ -11,9 +11,9 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/ProtonMail/go-crypto/curve25519"
 	"github.com/ProtonMail/go-crypto/openpgp/aes/keywrap"
 	"github.com/ProtonMail/go-crypto/openpgp/internal/ecc"
+	"golang.org/x/crypto/curve25519"
 )
 
 // Generates a private-public key-pair.

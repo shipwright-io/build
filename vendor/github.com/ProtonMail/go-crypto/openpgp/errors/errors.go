@@ -41,6 +41,9 @@ func (b SignatureError) Error() string {
 	return "openpgp: invalid signature: " + string(b)
 }
 
+var ErrMDCHashMismatch error = SignatureError("MDC hash mismatch")
+var ErrMDCMissing error = SignatureError("MDC packet not found")
+
 type signatureExpiredError int
 
 func (se signatureExpiredError) Error() string {

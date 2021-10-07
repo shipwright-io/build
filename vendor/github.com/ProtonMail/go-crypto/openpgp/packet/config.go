@@ -74,6 +74,10 @@ type Config struct {
 	// this is not present or has a value of zero, it never expires."
 	// https://tools.ietf.org/html/rfc4880#section-5.2.3.10
 	SigLifetimeSecs uint32
+	// SigningKeyId is used to specify the signing key to use (by Key ID).
+	// By default, the signing key is selected automatically, preferring
+	// signing subkeys if available.
+	SigningKeyId uint64
 }
 
 func (c *Config) Random() io.Reader {
@@ -153,4 +157,11 @@ func (c *Config) AEAD() *AEADConfig {
 		return nil
 	}
 	return c.AEADConfig
+}
+
+func (c *Config) SigningKey() uint64 {
+	if c == nil {
+		return 0
+	}
+	return c.SigningKeyId
 }

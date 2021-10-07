@@ -9,7 +9,7 @@ import (
 	"crypto/cipher"
 	"crypto/des"
 
-	"github.com/ProtonMail/go-crypto/cast5"
+	"golang.org/x/crypto/cast5"
 )
 
 // Cipher is an official symmetric key cipher algorithm. See RFC 4880,

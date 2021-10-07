@@ -5,17 +5,17 @@
 package packet
 
 import (
+	"crypto"
+	"crypto/rsa"
 	"encoding/binary"
 	"io"
 	"math/big"
 	"strconv"
 
-	"crypto"
 	"github.com/ProtonMail/go-crypto/openpgp/ecdh"
 	"github.com/ProtonMail/go-crypto/openpgp/elgamal"
 	"github.com/ProtonMail/go-crypto/openpgp/errors"
 	"github.com/ProtonMail/go-crypto/openpgp/internal/encoding"
-	"github.com/ProtonMail/go-crypto/rsa"
 )
 
 const encryptedKeyVersion = 3

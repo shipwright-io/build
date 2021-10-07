@@ -9,11 +9,11 @@ package packet // import "github.com/ProtonMail/go-crypto/openpgp/packet"
 import (
 	"bytes"
 	"crypto/cipher"
+	"crypto/rsa"
 	"io"
 
 	"github.com/ProtonMail/go-crypto/openpgp/errors"
 	"github.com/ProtonMail/go-crypto/openpgp/internal/algorithm"
-	"github.com/ProtonMail/go-crypto/rsa"
 )
 
 // readFull is the same as io.ReadFull except that reading zero bytes returns
