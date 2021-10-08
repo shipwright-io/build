@@ -114,7 +114,7 @@ spec:
     kind: BuildStrategy
 ```
 
-See more about `paramValues` usage in the related [Build](./build.md#defining-params) resource docs.
+See more about `paramValues` usage in the related [Build](./build.md#defining-paramvalues) resource docs.
 
 ### Defining the ServiceAccount
 
@@ -276,8 +276,7 @@ In addition, the `Status.Conditions` will host under the `Message` field a compa
 
 After the successful completion of a `BuildRun`, the `.status` field contains the results (`.status.taskResults`) emitted from the `TaskRun` steps generate by the `BuildRun` controller as part of processing the `BuildRun`. These results contain valuable metadata for users, like the _image digest_ or the _commit sha_ of the source code used for building.
 The results from the source step will be surfaced to the `.status.sources` and the results from 
-the [output step](https://github.com/shipwright-io/build/blob/main/docs/buildstrategies.md#system-results) 
-will be surfaced to the `.status.output` field of a `BuildRun`.
+the [output step](buildstrategies.md#system-results) will be surfaced to the `.status.output` field of a `BuildRun`.
 
 Example of a `BuildRun` with surfaced results for `git` source:
 

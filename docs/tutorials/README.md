@@ -37,22 +37,20 @@ Shipwright ships with a set of strategies that are available across the cluster.
 
 The default installation includes these [buildstrategies](/docs/buildstrategies.md):
 
-* [Buildpacks-v3](docs/buildstrategies.md#buildpacks-v3)
-* [Kaniko](docs/buildstrategies.md#kaniko)
-* [BuildKit](docs/buildstrategies.md#buildkit)
-* [Source-to-Image](docs/buildstrategies.md#source-to-image)
-* [Buildah](docs/buildstrategies.md#buildah)
-* [ko](docs/buildstrategies.md#ko)
+* [Buildpacks-v3](../buildstrategies.md#buildpacks-v3)
+* [Kaniko](../buildstrategies.md#kaniko)
+* [BuildKit](../buildstrategies.md#buildkit)
+* [Source-to-Image](../buildstrategies.md#source-to-image)
+* [Buildah](../buildstrategies.md#buildah)
+* [ko](../buildstrategies.md#ko)
 
-For more information about strategies see the related [docs](/docs/buildstrategies.md).
+For more information about strategies see the related [docs](../buildstrategies.md).
 
 ## Examples
 
-* [Example with Kaniko](/docs/tutorials/building_with_kaniko.md)
-
-* [Example with Buildpacks](/docs/tutorials/building_with_buildpacks.md)
-
-* [Example with BuildKit](/docs/tutorials/building_with_buildkit.md)
+* [Example with Kaniko](building_with_kaniko.md)
+* [Example with Buildpacks](building_with_buildpacks.md)
+* [Example with BuildKit](building_with_buildkit.md)
 
 Depending on your source code you might want to try a specific example. The following table serves as a guide to help you understand which
 strategy to choose:

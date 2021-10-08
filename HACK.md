@@ -46,4 +46,4 @@ make clean && make build
 
 # Testing
 
-Please refer to the [testing docs](/docs/development/testing.md) for more information about our test levels.
+Please refer to the [testing docs](docs/development/testing.md) for more information about our test levels.
