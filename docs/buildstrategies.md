@@ -130,7 +130,7 @@ To install the cluster scope strategy, use:
 kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
 ```
 
-*Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Frameworks/strategies such as build-packs or source-to-image (which avoid directly building a Dockerfile) should be considered if you need guardrails around the code you want to build.* 
+*Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Frameworks/strategies such as build-packs or source-to-image (which avoid directly building a Dockerfile) should be considered if you need guardrails around the code you want to build.*
 
 ---
 
@@ -256,7 +256,7 @@ spec:
     - $(params.sleep-time)
 ```
 
-See more information on how to use this parameter in a `Build` or `BuildRun` in the related [docs](./build.md#defining-params).
+See more information on how to use this parameter in a `Build` or `BuildRun` in the related [docs](./build.md#defining-paramvalues).
 
 ## System parameters
 
@@ -507,8 +507,8 @@ In this scenario, only one container can have the `spec.resources.requests` defi
 
 If we will apply the following resources:
 
-- [buildahBuild](../samples/build/buildah/build_buildah_cr.yaml)
-- [buildahBuildRun](../samples/buildrun/buildah/buildrun_buildah_cr.yaml)
+- [buildahBuild](../samples/build/build_buildah_cr.yaml)
+- [buildahBuildRun](../samples/buildrun/buildrun_buildah_cr.yaml)
 - We will use a modified buildah strategy, with the following steps resources:
 
   ```yaml
