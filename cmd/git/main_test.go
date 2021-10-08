@@ -17,6 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/shipwright-io/build/cmd/git"
+	shpgit "github.com/shipwright-io/build/pkg/git"
 )
 
 var _ = Describe("Git Resource", func() {
@@ -368,6 +369,168 @@ var _ = Describe("Git Resource", func() {
 					Expect(filecontent(filename)).To(Equal("Enrique Encalada"))
 				})
 			})
+		})
+	})
+
+	Context("failure diagnostics", func() {
+		const exampleSSHGithubRepo = "git@github.com:shipwright-io/sample-go.git"
+		const nonExistingSSHGithubRepo = "git@github.com:shipwright-io/sample-go-nonexistent.git"
+		const exampleHTTPGithubNonExistent = "https://github.com/shipwright-io/sample-go-nonexistent.git"
+		const ghHTTPRepo = "https://github.com/shipwright-io/sample-go.git"
+
+		const exampleSSHGitlabRepo = "git@gitlab.com:gitlab-org/gitlab-runner.git"
+		const nonExistingSSHGitlabRepo = "git@gitlab.com:gitlab-org/gitlab-runner-nonexistent.git"
+		const exampleHTTPGitlabNonExistent = "https://gitlab.com/gitlab-org/gitlab-runner-nonexistent.git"
+		const glHTTPRepo = "https://gitlab.com/gitlab-org/gitlab-runner.git"
+
+		var sshPrivateKey string
+		var knownHosts string
+
+		BeforeEach(func() {
+			if sshPrivateKey = os.Getenv("TEST_GIT_PRIVATE_SSH_KEY"); sshPrivateKey == "" {
+				Skip("Skipping private repository tests since TEST_GIT_PRIVATE_SSH_KEY environment variable is not set")
+			}
+
+			if knownHosts = os.Getenv("TEST_GIT_KNOWN_HOSTS"); knownHosts == "" {
+				Skip("Skipping private repository test since TEST_GIT_KNOWN_HOSTS environment variable is not set")
+			}
+		})
+		It("should detect invalid basic auth credentials", func() {
+			testForRepo := func(repo string) {
+				withTempDir(func(secret string) {
+					// Mock the filesystem state of `kubernetes.io/basic-auth` type secret volume mount
+					file(filepath.Join(secret, "username"), 0400, []byte("ship"))
+					file(filepath.Join(secret, "password"), 0400, []byte("ghp_sFhFsSHhTzMDreGRLjmks4Tzuzgthdvfsrta"))
+
+					withTempDir(func(target string) {
+						err := run(
+							"--url", repo,
+							"--secret-path", secret,
+							"--target", target,
+						)
+
+						Expect(err).ToNot(BeNil())
+
+						errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+
+						Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthInvalidUserOrPass.String()))
+					})
+				})
+			}
+
+			testForRepo(exampleHTTPGitlabNonExistent)
+			testForRepo(exampleHTTPGithubNonExistent)
+		})
+		It("should detect invalid ssh credentials", func() {
+			// no key -> invalid key
+			testForRepo := func(repo string) {
+				withTempFile("error-reason", func(reasonFile string) {
+					withTempFile("error-message", func(messageFile string) {
+						withTempDir(func(target string) {
+							withTempDir(func(secret string) {
+								// Mock the filesystem state of `kubernetes.io/ssh-auth` type secret volume mount
+								file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte(sshPrivateKey+"invalid"))
+								file(filepath.Join(secret, "known_hosts"), 0600, []byte(knownHosts))
+
+								err := run(
+									"--url", repo,
+									"--target", target,
+									"--result-error-message", messageFile,
+									"--result-error-reason", reasonFile,
+									"--secret",
+								)
+
+								Expect(err).ToNot(BeNil())
+
+								errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+
+								Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthInvalidKey.String()))
+							})
+						})
+					})
+				})
+			}
+			testForRepo(exampleSSHGithubRepo)
+			testForRepo(exampleSSHGitlabRepo)
+		})
+		It("should prompt auth for non-existing or private repo", func() {
+			testForRepo := func(repo string) {
+				withTempFile("error-reason", func(reasonFile string) {
+					withTempFile("error-message", func(messageFile string) {
+						withTempDir(func(target string) {
+							err := run(
+								"--url", repo,
+								"--target", target,
+								"--result-error-message", messageFile,
+								"--result-error-reason", reasonFile,
+							)
+
+							Expect(err).ToNot(BeNil())
+
+							errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+
+							Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthPrompted.String()))
+						})
+					})
+				})
+			}
+
+			testForRepo(exampleHTTPGithubNonExistent)
+			testForRepo(exampleHTTPGitlabNonExistent)
+		})
+		It("should detect non-existing revision given authentication", func() {
+			testRepo := func(repo string) {
+				withTempFile("error-reason", func(reasonFile string) {
+					withTempFile("error-message", func(messageFile string) {
+						withTempDir(func(target string) {
+							// Mock the filesystem state of `kubernetes.io/ssh-auth` type secret volume mount
+							err := run(
+								"--url", repo,
+								"--target", target,
+								"--revision", "non-existent",
+							)
+
+							Expect(err).ToNot(BeNil())
+
+							errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+							Expect(errorResult.Reason.String()).To(Equal(shpgit.BranchNotFound.String()))
+						})
+					})
+				})
+			}
+
+			testRepo(ghHTTPRepo)
+			testRepo(glHTTPRepo)
+
+		})
+		It("should detect non-existing repo given ssh authentication", func() {
+			testRepo := func(repo string) {
+				withTempFile("error-reason", func(reasonFile string) {
+					withTempFile("error-message", func(messageFile string) {
+						withTempDir(func(target string) {
+							withTempDir(func(secret string) {
+								// Mock the filesystem state of `kubernetes.io/ssh-auth` type secret volume mount
+								file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte(sshPrivateKey))
+								file(filepath.Join(secret, "known_hosts"), 0600, []byte(knownHosts))
+
+								err := run(
+									"--url", repo,
+									"--target", target,
+									"--secret-path", secret,
+								)
+
+								Expect(err).ToNot(BeNil())
+
+								errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+								Expect(errorResult.Reason.String()).To(Equal(shpgit.RepositoryNotFound.String()))
+							})
+						})
+					})
+				})
+			}
+
+			testRepo(nonExistingSSHGithubRepo)
+			testRepo(nonExistingSSHGitlabRepo)
 		})
 	})
 })

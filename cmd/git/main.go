@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"strings"
 
+	shpgit "github.com/shipwright-io/build/pkg/git"
 	"github.com/spf13/pflag"
 )
 
@@ -36,6 +37,7 @@ type ExitError struct {
 	Code    int
 	Message string
 	Cause   error
+	Reason  shpgit.ErrorClass
 }
 
 func (e ExitError) Error() string {
@@ -77,6 +79,7 @@ func init() {
 	pflag.StringVar(&flagValues.resultFileCommitAuthor, "result-file-commit-author", "", "A file to write the commit author to.")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
 
+	// Flags with paths for writing error related information
 	pflag.StringVar(&flagValues.resultErrorMessage, "result-error-message", "", "A file to write the error message to.")
 	pflag.StringVar(&flagValues.resultErrorReason, "result-error-reason", "", "A file to write the error reason to.")
 
@@ -97,6 +100,10 @@ func main() {
 			exitcode = err.Code
 		}
 
+		if err = writeErrorResults(shpgit.NewErrorResultFromMessage(err.Error())); err != nil {
+			log.Printf("Could not write error results: %s", err.Error())
+		}
+
 		log.Print(err.Error())
 		os.Exit(exitcode)
 	}
@@ -106,8 +113,6 @@ func main() {
 func Execute(ctx context.Context) error {
 	flagValues = settings{depth: 1}
 	pflag.Parse()
-	ioutil.WriteFile(flagValues.resultErrorMessage, []byte("fail message"), 0644)
-	ioutil.WriteFile(flagValues.resultErrorReason, []byte("cred-failed"), 0644)
 
 	if flagValues.help {
 		pflag.Usage()
@@ -138,8 +143,6 @@ func runGitClone(ctx context.Context) error {
 	}
 
 	if err := clone(ctx); err != nil {
-		ioutil.WriteFile(flagValues.resultErrorMessage, []byte(err.Error()), 0644)
-		ioutil.WriteFile(flagValues.resultErrorReason, []byte("cred-failed"), 0644)
 		return err
 	}
 
@@ -241,10 +244,7 @@ func clone(ctx context.Context) error {
 	var addtlCredArgs []string
 	if flagValues.secretPath != "" {
 		credType, err := checkCredentials()
-
 		if err != nil {
-			ioutil.WriteFile(flagValues.resultErrorMessage, []byte(err.Error()), 0644)
-			ioutil.WriteFile(flagValues.resultErrorReason, []byte("cred-failed"), 0644)
 			return err
 		}
 
@@ -419,10 +419,10 @@ func checkCredentials() (credentialType, error) {
 		return typePrivateKey, nil
 
 	case hasPrivateKey && !isSSHGitURL:
-		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL"}
+		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL", Reason: shpgit.AuthInvalidUserOrPass}
 
 	case !hasPrivateKey && isSSHGitURL:
-		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL"}
+		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL", Reason: shpgit.AuthInvalidKey}
 	}
 
 	// Checking whether mounted secret is of type `kubernetes.io/basic-auth`
@@ -435,9 +435,24 @@ func checkCredentials() (credentialType, error) {
 		return typeUsernamePassword, nil
 
 	case hasUsername && !hasPassword || !hasUsername && hasPassword:
-		return typeUndef, &ExitError{Code: 110, Message: "Basic Auth incomplete: Both username and password need to be configured"}
+		return typeUndef, &ExitError{Code: 110, Message: "Basic Auth incomplete: Both username and password need to be configured", Reason: shpgit.AuthInvalidUserOrPass}
 
 	}
 
 	return typeUndef, &ExitError{Code: 110, Message: "Unsupported type of credentials provided, either SSH private key or username/password is supported"}
+}
+
+func writeErrorResults(failure *shpgit.ErrorResult) (err error) {
+	if flagValues.resultErrorReason == "" || flagValues.resultErrorMessage == "" {
+		return nil
+	}
+
+	if err = ioutil.WriteFile(flagValues.resultErrorMessage, []byte(strings.TrimSpace(failure.Message)), 0644); err != nil {
+		return err
+	}
+	if err = ioutil.WriteFile(flagValues.resultErrorReason, []byte(failure.Reason.String()), 0644); err != nil {
+		return err
+	}
+
+	return nil
 }
