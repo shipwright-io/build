@@ -56,9 +56,9 @@ type MessageDetails struct {
 	// been consumed. Once EOF has been seen, the following fields are
 	// valid. (An authentication code failure is reported as a
 	// SignatureError error when reading from UnverifiedBody.)
-	Signature                *packet.Signature   // the signature packet itself.
-	SignatureError           error               // nil if the signature is good.
-	UnverifiedSignatures     []*packet.Signature // all other unverified signature packets.
+	Signature            *packet.Signature   // the signature packet itself.
+	SignatureError       error               // nil if the signature is good.
+	UnverifiedSignatures []*packet.Signature // all other unverified signature packets.
 
 	decrypted io.ReadCloser
 }
@@ -200,8 +200,12 @@ FindKey:
 		if len(symKeys) != 0 && passphrase != nil {
 			for _, s := range symKeys {
 				key, cipherFunc, err := s.Decrypt(passphrase)
+				// On wrong passphrase, session key decryption is very likely to result in an invalid cipherFunc:
+				// only for < 5% of cases we will proceed to decrypt the data
 				if err == nil {
 					decrypted, err = edp.Decrypt(cipherFunc, key)
+					// TODO: ErrKeyIncorrect is no longer thrown on SEIP decryption,
+					// but it might still be relevant for when we implement AEAD decryption (otherwise, remove?)
 					if err != nil && err != errors.ErrKeyIncorrect {
 						return nil, err
 					}
@@ -209,7 +213,6 @@ FindKey:
 						break FindKey
 					}
 				}
-
 			}
 		}
 	}
@@ -218,7 +221,11 @@ FindKey:
 	if err := packets.Push(decrypted); err != nil {
 		return nil, err
 	}
-	return readSignedMessage(packets, md, keyring, config)
+	mdFinal, sensitiveParsingErr := readSignedMessage(packets, md, keyring, config)
+	if sensitiveParsingErr != nil {
+		return nil, errors.StructuralError("parsing error")
+	}
+	return mdFinal, nil
 }
 
 // readSignedMessage reads a possibly signed message if mdin is non-zero then
@@ -313,15 +320,21 @@ type checkReader struct {
 	md *MessageDetails
 }
 
-func (cr checkReader) Read(buf []byte) (n int, err error) {
-	n, err = cr.md.LiteralData.Body.Read(buf)
-	if err == io.EOF {
+func (cr checkReader) Read(buf []byte) (int, error) {
+	n, sensitiveParsingError := cr.md.LiteralData.Body.Read(buf)
+	if sensitiveParsingError == io.EOF {
 		mdcErr := cr.md.decrypted.Close()
 		if mdcErr != nil {
-			err = mdcErr
+			return n, mdcErr
 		}
+		return n, io.EOF
 	}
-	return
+
+	if sensitiveParsingError != nil {
+		return n, errors.StructuralError("parsing error")
+	}
+
+	return n, nil
 }
 
 // signatureCheckReader wraps an io.Reader from a LiteralData packet and hashes
@@ -334,15 +347,15 @@ type signatureCheckReader struct {
 	config         *packet.Config
 }
 
-func (scr *signatureCheckReader) Read(buf []byte) (n int, err error) {
-	n, err = scr.md.LiteralData.Body.Read(buf)
+func (scr *signatureCheckReader) Read(buf []byte) (int, error) {
+	n, sensitiveParsingError := scr.md.LiteralData.Body.Read(buf)
 
 	// Hash only if required
 	if scr.md.SignedBy != nil {
 		scr.wrappedHash.Write(buf[:n])
 	}
 
-	if err == io.EOF {
+	if sensitiveParsingError == io.EOF {
 		var p packet.Packet
 		var readError error
 		var sig *packet.Signature
@@ -351,7 +364,7 @@ func (scr *signatureCheckReader) Read(buf []byte) (n int, err error) {
 		for readError == nil {
 			var ok bool
 			if sig, ok = p.(*packet.Signature); ok {
-				if sig.Version == 5 && (sig.SigType == 0x00 || sig.SigType == 0x01){
+				if sig.Version == 5 && (sig.SigType == 0x00 || sig.SigType == 0x01) {
 					sig.Metadata = scr.md.LiteralData
 				}
 
@@ -384,11 +397,17 @@ func (scr *signatureCheckReader) Read(buf []byte) (n int, err error) {
 		if scr.md.decrypted != nil {
 			mdcErr := scr.md.decrypted.Close()
 			if mdcErr != nil {
-				err = mdcErr
+				return n, mdcErr
 			}
 		}
+		return n, io.EOF
 	}
-	return
+
+	if sensitiveParsingError != nil {
+		return n, errors.StructuralError("parsing error")
+	}
+
+	return n, nil
 }
 
 // CheckDetachedSignature takes a signed file and a detached signature and

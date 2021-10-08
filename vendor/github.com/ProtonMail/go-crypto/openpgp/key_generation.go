@@ -6,14 +6,17 @@ package openpgp
 
 import (
 	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	goerrors "errors"
+	"io"
 	"math/big"
 
-	"github.com/ProtonMail/go-crypto/ed25519"
 	"github.com/ProtonMail/go-crypto/openpgp/ecdh"
 	"github.com/ProtonMail/go-crypto/openpgp/errors"
 	"github.com/ProtonMail/go-crypto/openpgp/internal/algorithm"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
-	"github.com/ProtonMail/go-crypto/rsa"
+	"golang.org/x/crypto/ed25519"
 )
 
 // NewEntity returns an Entity that contains a fresh RSA/RSA keypair with a
@@ -235,12 +238,15 @@ func newSigner(config *packet.Config) (signer crypto.Signer, err error) {
 	switch config.PublicKeyAlgorithm() {
 	case packet.PubKeyAlgoRSA:
 		bits := config.RSAModulusBits()
-		var primaryPrimes []*big.Int
-		if config != nil && len(config.RSAPrimes) >= 2 {
-			primaryPrimes = config.RSAPrimes[0:2]
-			config.RSAPrimes = config.RSAPrimes[2:]
+		if bits < 1024 {
+			return nil, errors.InvalidArgumentError("bits must be >= 1024")
 		}
-		return rsa.GenerateKeyWithPrimes(config.Random(), bits, primaryPrimes)
+		if config != nil && len(config.RSAPrimes) >= 2 {
+			primes := config.RSAPrimes[0:2]
+			config.RSAPrimes = config.RSAPrimes[2:]
+			return generateRSAKeyWithPrimes(config.Random(), 2, bits, primes)
+		}
+		return rsa.GenerateKey(config.Random(), bits)
 	case packet.PubKeyAlgoEdDSA:
 		_, priv, err := ed25519.GenerateKey(config.Random())
 		if err != nil {
@@ -257,12 +263,15 @@ func newDecrypter(config *packet.Config) (decrypter interface{}, err error) {
 	switch config.PublicKeyAlgorithm() {
 	case packet.PubKeyAlgoRSA:
 		bits := config.RSAModulusBits()
-		var primaryPrimes []*big.Int
-		if config != nil && len(config.RSAPrimes) >= 2 {
-			primaryPrimes = config.RSAPrimes[0:2]
-			config.RSAPrimes = config.RSAPrimes[2:]
+		if bits < 1024 {
+			return nil, errors.InvalidArgumentError("bits must be >= 1024")
 		}
-		return rsa.GenerateKeyWithPrimes(config.Random(), bits, primaryPrimes)
+		if config != nil && len(config.RSAPrimes) >= 2 {
+			primes := config.RSAPrimes[0:2]
+			config.RSAPrimes = config.RSAPrimes[2:]
+			return generateRSAKeyWithPrimes(config.Random(), 2, bits, primes)
+		}
+		return rsa.GenerateKey(config.Random(), bits)
 	case packet.PubKeyAlgoEdDSA:
 		fallthrough // When passing EdDSA, we generate an ECDH subkey
 	case packet.PubKeyAlgoECDH:
@@ -274,4 +283,93 @@ func newDecrypter(config *packet.Config) (decrypter interface{}, err error) {
 	default:
 		return nil, errors.InvalidArgumentError("unsupported public key algorithm")
 	}
+}
+
+var bigOne = big.NewInt(1)
+
+// generateRSAKeyWithPrimes generates a multi-prime RSA keypair of the
+// given bit size, using the given random source and prepopulated primes.
+func generateRSAKeyWithPrimes(random io.Reader, nprimes int, bits int, prepopulatedPrimes []*big.Int) (*rsa.PrivateKey, error) {
+	priv := new(rsa.PrivateKey)
+	priv.E = 65537
+
+	if nprimes < 2 {
+		return nil, goerrors.New("generateRSAKeyWithPrimes: nprimes must be >= 2")
+	}
+
+	if bits < 1024 {
+		return nil, goerrors.New("generateRSAKeyWithPrimes: bits must be >= 1024")
+	}
+
+	primes := make([]*big.Int, nprimes)
+
+NextSetOfPrimes:
+	for {
+		todo := bits
+		// crypto/rand should set the top two bits in each prime.
+		// Thus each prime has the form
+		//   p_i = 2^bitlen(p_i) × 0.11... (in base 2).
+		// And the product is:
+		//   P = 2^todo × α
+		// where α is the product of nprimes numbers of the form 0.11...
+		//
+		// If α < 1/2 (which can happen for nprimes > 2), we need to
+		// shift todo to compensate for lost bits: the mean value of 0.11...
+		// is 7/8, so todo + shift - nprimes * log2(7/8) ~= bits - 1/2
+		// will give good results.
+		if nprimes >= 7 {
+			todo += (nprimes - 2) / 5
+		}
+		for i := 0; i < nprimes; i++ {
+			var err error
+			if len(prepopulatedPrimes) == 0 {
+				primes[i], err = rand.Prime(random, todo/(nprimes-i))
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				primes[i] = prepopulatedPrimes[0]
+				prepopulatedPrimes = prepopulatedPrimes[1:]
+			}
+
+			todo -= primes[i].BitLen()
+		}
+
+		// Make sure that primes is pairwise unequal.
+		for i, prime := range primes {
+			for j := 0; j < i; j++ {
+				if prime.Cmp(primes[j]) == 0 {
+					continue NextSetOfPrimes
+				}
+			}
+		}
+
+		n := new(big.Int).Set(bigOne)
+		totient := new(big.Int).Set(bigOne)
+		pminus1 := new(big.Int)
+		for _, prime := range primes {
+			n.Mul(n, prime)
+			pminus1.Sub(prime, bigOne)
+			totient.Mul(totient, pminus1)
+		}
+		if n.BitLen() != bits {
+			// This should never happen for nprimes == 2 because
+			// crypto/rand should set the top two bits in each prime.
+			// For nprimes > 2 we hope it does not happen often.
+			continue NextSetOfPrimes
+		}
+
+		priv.D = new(big.Int)
+		e := big.NewInt(int64(priv.E))
+		ok := priv.D.ModInverse(e, totient)
+
+		if ok != nil {
+			priv.Primes = primes
+			priv.N = n
+			break
+		}
+	}
+
+	priv.Precompute()
+	return priv, nil
 }
