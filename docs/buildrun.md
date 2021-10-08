@@ -17,6 +17,7 @@ SPDX-License-Identifier: Apache-2.0
 - [BuildRun Status](#buildrun-status)
   - [Understanding the state of a BuildRun](#understanding-the-state-of-a-buildrun)
   - [Understanding failed BuildRuns](#understanding-failed-buildruns)
+    - [Understanding failed git-source step](#understanding-failed-git-source-step)
   - [Step Results in BuildRun Status](#step-results-in-buildrun-status)
   - [Build Snapshot](#build-snapshot)
 - [Relationship with Tekton Tasks](#relationship-with-tekton-tasks)
@@ -291,6 +292,23 @@ status:
       to access it.
     reason: GitRemotePrivate
 ```
+
+#### Understanding failed git-source step
+
+All git related operations support error reporting via `Status.FailureDetails`. The following table explains the possible
+error reasons:
+
+| Reason |  Description |
+| --- |  --- |
+| `GitAuthInvalidUserOrPass` | Basic authentication has failed. Check your username or password. Note: GitHub requires a personal access token instead of your regular password. |
+| `GitAuthInvalidKey` | The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
+| `GitRevisionNotFound` | The remote revision does not exist. Check the revision specified in your Build. |
+| `GitRemoteRepositoryNotFound`| The source repository does not exist, or you have insufficient permission to access it. |
+| `GitRemoteRepositoryPrivate` | You are trying to access a non existing or private repository without having sufficient permissions to access it via HTTPS. |
+| `GitBasicAuthIncomplete`| Basic Auth incomplete: Both username and password need to be configured. |
+| `GitSSHAuthUnexpected`| Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL. |
+| `GitSSHAuthExpected`| Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL. |
+| `GitError` | The specific error reason is unknown. Check the error message for more information. |
 
 ### Step Results in BuildRun Status
 

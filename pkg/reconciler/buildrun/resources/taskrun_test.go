@@ -94,6 +94,10 @@ var _ = Describe("GenerateTaskrun", func() {
 					"$(results.shp-source-default-commit-author.path)",
 					"--result-file-branch-name",
 					"$(results.shp-source-default-branch-name.path)",
+					"--result-file-error-message",
+					"$(results.shp-error-message.path)",
+					"--result-file-error-reason",
+					"$(results.shp-error-reason.path)",
 				}))
 			})
 
