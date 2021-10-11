@@ -287,7 +287,7 @@ status:
     # [...]
   output:
     digest: sha256:07626e3c7fdd28d5328a8d6df8d29cd3da760c7f5e2070b534f9b880ed093a53
-    size: "1989004"
+    size: 1989004
   sources:
   - name: default
     git:
@@ -304,7 +304,7 @@ status:
     # [...]
   output:
     digest: sha256:07626e3c7fdd28d5328a8d6df8d29cd3da760c7f5e2070b534f9b880ed093a53
-    size: "1989004"
+    size: 1989004
   sources:
   - name: default
     bundle:
