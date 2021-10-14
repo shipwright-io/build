@@ -466,9 +466,17 @@ spec:
                   pod:
                     type: string
                 type: object
-              failure:
-                description: Failure contains error details that are collected and surfaced from TaskRun
+              failureDetails:
+                description: FailureDetails contains error details that are collected and surfaced from TaskRun
                 properties:
+                  location:
+                    description: FailedAt describes the location where the failure happened
+                    properties:
+                      container:
+                        type: string
+                      pod:
+                        type: string
+                    type: object
                   message:
                     type: string
                   reason:

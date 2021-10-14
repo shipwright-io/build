@@ -11,13 +11,11 @@ import (
 	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // Common condition strings for reason, kind, etc.
@@ -70,8 +68,8 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 
 	case v1beta1.TaskRunReasonFailed:
 		if taskRun.Status.CompletionTime != nil {
-			var pod corev1.Pod
-			if err := client.Get(ctx, types.NamespacedName{Namespace: taskRun.Namespace, Name: taskRun.Status.PodName}, &pod); err != nil {
+			pod, failedContainer, err := extractFailedPodAndContainer(ctx, client, taskRun)
+			if err != nil {
 				// when trying to customize the Condition Message field, ensure the Message cover the case
 				// when a Pod is deleted.
 				// Note: this is an edge case, but not doing this prevent a BuildRun from being marked as Failed
@@ -84,23 +82,6 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 			}
 
 			buildRun.Status.FailedAt = &buildv1alpha1.FailedAt{Pod: pod.Name}
-
-			// Since the container status list is not sorted, as a quick workaround mark all failed containers
-			var failures = make(map[string]struct{})
-			for _, containerStatus := range pod.Status.ContainerStatuses {
-				if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode != 0 {
-					failures[containerStatus.Name] = struct{}{}
-				}
-			}
-
-			// Find the first container that failed
-			var failedContainer *corev1.Container
-			for i, container := range pod.Spec.Containers {
-				if _, has := failures[container.Name]; has {
-					failedContainer = &pod.Spec.Containers[i]
-					break
-				}
-			}
 
 			if failedContainer != nil {
 				buildRun.Status.FailedAt.Container = failedContainer.Name

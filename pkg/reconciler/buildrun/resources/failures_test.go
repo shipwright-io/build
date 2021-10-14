@@ -1,8 +1,10 @@
 package resources
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/shipwright-io/build/pkg/controller/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,6 +16,8 @@ import (
 
 var _ = Describe("Surfacing errors", func() {
 	Context("resources.UpdateBuildRunUsingTaskFailures", func() {
+		ctx := context.Background()
+		client := &fakes.FakeClient{}
 
 		It("surfaces errors to BuildRun in failed TaskRun", func() {
 			redTaskRun := v1beta1.TaskRun{}
@@ -37,10 +41,10 @@ var _ = Describe("Surfacing errors", func() {
 			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep)
 			redBuild := v1alpha1.BuildRun{}
 
-			UpdateBuildRunUsingTaskFailures(&redBuild, &redTaskRun)
+			UpdateBuildRunUsingTaskFailures(ctx, client, &redBuild, &redTaskRun)
 
-			Expect(redBuild.Status.Failure.Message).To(Equal(errorMessageValue))
-			Expect(redBuild.Status.Failure.Reason).To(Equal(errorReasonValue))
+			Expect(redBuild.Status.FailureDetails.Message).To(Equal(errorMessageValue))
+			Expect(redBuild.Status.FailureDetails.Reason).To(Equal(errorReasonValue))
 		})
 
 		It("failed TaskRun without error reason and message", func() {
@@ -58,9 +62,9 @@ var _ = Describe("Surfacing errors", func() {
 			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep)
 			redBuild := v1alpha1.BuildRun{}
 
-			UpdateBuildRunUsingTaskFailures(&redBuild, &redTaskRun)
+			UpdateBuildRunUsingTaskFailures(ctx, client, &redBuild, &redTaskRun)
 
-			Expect(redBuild.Status.Failure).To(BeNil())
+			Expect(redBuild.Status.FailureDetails).To(BeNil())
 		})
 
 		It("no errors present in BuildRun for successful TaskRun", func() {
@@ -68,9 +72,9 @@ var _ = Describe("Surfacing errors", func() {
 			greenTaskRun.Status.Conditions = append(greenTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionSucceeded})
 			greenBuildRun := v1alpha1.BuildRun{}
 
-			UpdateBuildRunUsingTaskFailures(&greenBuildRun, &greenTaskRun)
+			UpdateBuildRunUsingTaskFailures(ctx, client, &greenBuildRun, &greenTaskRun)
 
-			Expect(greenBuildRun.Status.Failure).To(BeNil())
+			Expect(greenBuildRun.Status.FailureDetails).To(BeNil())
 		})
 
 		It("TaskRun has not condition succeeded so nothing to do", func() {
@@ -78,8 +82,8 @@ var _ = Describe("Surfacing errors", func() {
 			unfinishedTaskRun.Status.Conditions = append(unfinishedTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionReady})
 			unfinishedBuildRun := v1alpha1.BuildRun{}
 
-			UpdateBuildRunUsingTaskFailures(&unfinishedBuildRun, &unfinishedTaskRun)
-			Expect(unfinishedBuildRun.Status.Failure).To(BeNil())
+			UpdateBuildRunUsingTaskFailures(ctx, client, &unfinishedBuildRun, &unfinishedTaskRun)
+			Expect(unfinishedBuildRun.Status.FailureDetails).To(BeNil())
 		})
 
 		It("TaskRun has a unknown reason", func() {
@@ -87,8 +91,8 @@ var _ = Describe("Surfacing errors", func() {
 			unknownTaskRun.Status.Conditions = append(unknownTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionSucceeded, Reason: "random"})
 			unknownBuildRun := v1alpha1.BuildRun{}
 
-			UpdateBuildRunUsingTaskFailures(&unknownBuildRun, &unknownTaskRun)
-			Expect(unknownBuildRun.Status.Failure).To(BeNil())
+			UpdateBuildRunUsingTaskFailures(ctx, client, &unknownBuildRun, &unknownTaskRun)
+			Expect(unknownBuildRun.Status.FailureDetails).To(BeNil())
 		})
 	})
 })

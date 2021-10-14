@@ -308,7 +308,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				return reconcile.Result{}, err
 			}
 
-			resources.UpdateBuildRunUsingTaskFailures(buildRun, lastTaskRun)
+			resources.UpdateBuildRunUsingTaskFailures(ctx, r.client, buildRun, lastTaskRun)
 			taskRunStatus := trCondition.Status
 
 			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
