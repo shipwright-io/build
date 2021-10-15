@@ -108,16 +108,6 @@ func GenerateTaskSpec(
 				Type:        taskv1.ParamTypeString,
 			},
 		},
-		Results: []v1beta1.TaskResult{
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorMessage),
-				Description: "The error description of the task run",
-			},
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorReason),
-				Description: "The error reason of the task run",
-			},
-		},
 		Workspaces: []v1beta1.WorkspaceDeclaration{
 			// workspace for the source files
 			{
@@ -126,7 +116,7 @@ func GenerateTaskSpec(
 		},
 	}
 
-	generatedTaskSpec.Results = append(generatedTaskSpec.Results, getTaskSpecResults()...)
+	generatedTaskSpec.Results = append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
 
 	if build.Spec.Builder != nil {
 		InputBuilder := v1beta1.ParamSpec{

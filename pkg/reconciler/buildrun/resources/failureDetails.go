@@ -1,10 +1,16 @@
+// Copyright The Shipwright Contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package resources
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis"
@@ -26,9 +32,7 @@ func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, 
 	}
 }
 
-func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) *buildv1alpha1.FailureDetails {
-	shipError := buildv1alpha1.FailureDetails{}
-
+func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason string, errorMessage string, hasReasonAndMessage bool) {
 	for _, step := range taskRun.Status.Steps {
 		message := step.Terminated.Message
 		var taskRunResults []v1beta1.PipelineResourceResult
@@ -39,20 +43,16 @@ func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) *buildv1alpha1.Fai
 
 		for _, result := range taskRunResults {
 			if result.Key == prefixedResultErrorMessage {
-				shipError.Message = result.Value
+				errorMessage = result.Value
 			}
 
 			if result.Key == prefixedResultErrorReason {
-				shipError.Reason = result.Value
+				errorReason = result.Value
 			}
 		}
 	}
 
-	if len(shipError.Message) == 0 || len(shipError.Reason) == 0 {
-		return nil
-	}
-
-	return &shipError
+	return errorReason, errorMessage, true
 }
 
 func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (*v1.Pod, *v1.Container, error) {
@@ -61,7 +61,7 @@ func extractFailedPodAndContainer(ctx context.Context, client client.Client, tas
 		return nil, nil, err
 	}
 
-	var failures = make(map[string]struct{})
+	failures := make(map[string]struct{})
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode != 0 {
 			failures[containerStatus.Name] = struct{}{}
@@ -80,18 +80,40 @@ func extractFailedPodAndContainer(ctx context.Context, client client.Client, tas
 	return &pod, failedContainer, nil
 }
 
+func isEmpty(failure *buildv1alpha1.FailureDetails) bool {
+	return failure.Location == nil && len(failure.Reason) == 0 && len(failure.Message) == 0
+}
+
 func extractFailureDetails(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (failure *buildv1alpha1.FailureDetails) {
-	if failure = extractFailureReasonAndMessage(taskRun); failure == nil {
-		return nil
+	failure = &buildv1alpha1.FailureDetails{}
+
+	if reason, message, hasReasonAndMessage := extractFailureReasonAndMessage(taskRun); hasReasonAndMessage {
+		failure.Reason = reason
+		failure.Message = message
 	}
 
 	pod, container, _ := extractFailedPodAndContainer(ctx, client, taskRun)
 
-	if pod == nil || container == nil {
-		return failure
+	if pod != nil && container != nil {
+		failure.Location = &buildv1alpha1.FailedAt{Container: container.Name, Pod: pod.Name}
 	}
 
-	failure.Location = &buildv1alpha1.FailedAt{Container: container.Name, Pod: pod.Name}
+	if isEmpty(failure) {
+		return nil
+	}
 
 	return failure
+}
+
+func getFailureDetailsTaskSpecResults() []pipeline.TaskResult {
+	return []pipeline.TaskResult{
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorMessage),
+			Description: "The error description of the task run",
+		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorReason),
+			Description: "The error reason of the task run",
+		},
+	}
 }

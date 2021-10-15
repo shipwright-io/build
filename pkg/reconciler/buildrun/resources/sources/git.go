@@ -51,9 +51,9 @@ func AppendGitStep(
 		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitSHAResult),
 		"--result-file-commit-author",
 		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitAuthorResult),
-		"--result-error-message",
+		"--result-file-error-message",
 		fmt.Sprintf("$(results.%s-error-message.path)", prefixParamsResultsVolumes),
-		"--result-error-reason",
+		"--result-file-error-reason",
 		fmt.Sprintf("$(results.%s-error-reason.path)", prefixParamsResultsVolumes),
 	}
 

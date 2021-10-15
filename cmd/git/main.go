@@ -46,16 +46,16 @@ func (e ExitError) Error() string {
 
 type settings struct {
 	help                   bool
+	skipValidation         bool
+	depth                  uint
 	url                    string
 	revision               string
-	depth                  uint
 	target                 string
 	resultFileCommitSha    string
 	resultFileCommitAuthor string
-	resultErrorMessage     string
-	resultErrorReason      string
+	resultFileErrorMessage string
+	resultFileErrorReason  string
 	secretPath             string
-	skipValidation         bool
 }
 
 var flagValues settings
@@ -80,8 +80,8 @@ func init() {
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
 
 	// Flags with paths for writing error related information
-	pflag.StringVar(&flagValues.resultErrorMessage, "result-error-message", "", "A file to write the error message to.")
-	pflag.StringVar(&flagValues.resultErrorReason, "result-error-reason", "", "A file to write the error reason to.")
+	pflag.StringVar(&flagValues.resultFileErrorMessage, "result-file-error-message", "", "A file to write the error message to.")
+	pflag.StringVar(&flagValues.resultFileErrorReason, "result-file-error-reason", "", "A file to write the error reason to.")
 
 	// Optional flag to be able to override the default shallow clone depth,
 	// which should be fine for almost all use cases we use the Git source step
@@ -112,6 +112,7 @@ func main() {
 // Execute performs flag parsing, input validation and the Git clone
 func Execute(ctx context.Context) error {
 	flagValues = settings{depth: 1}
+
 	pflag.Parse()
 
 	if flagValues.help {
@@ -419,10 +420,18 @@ func checkCredentials() (credentialType, error) {
 		return typePrivateKey, nil
 
 	case hasPrivateKey && !isSSHGitURL:
-		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL", Reason: shpgit.AuthInvalidUserOrPass}
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthUnexpectedSSH.ToMessage(),
+			Reason:  shpgit.AuthUnexpectedSSH,
+		}
 
 	case !hasPrivateKey && isSSHGitURL:
-		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL", Reason: shpgit.AuthInvalidKey}
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthExpectedSSH.ToMessage(),
+			Reason:  shpgit.AuthExpectedSSH,
+		}
 	}
 
 	// Checking whether mounted secret is of type `kubernetes.io/basic-auth`
@@ -435,22 +444,33 @@ func checkCredentials() (credentialType, error) {
 		return typeUsernamePassword, nil
 
 	case hasUsername && !hasPassword || !hasUsername && hasPassword:
-		return typeUndef, &ExitError{Code: 110, Message: "Basic Auth incomplete: Both username and password need to be configured", Reason: shpgit.AuthInvalidUserOrPass}
-
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthBasicIncomplete.ToMessage(),
+			Reason:  shpgit.AuthBasicIncomplete,
+		}
 	}
 
 	return typeUndef, &ExitError{Code: 110, Message: "Unsupported type of credentials provided, either SSH private key or username/password is supported"}
 }
 
 func writeErrorResults(failure *shpgit.ErrorResult) (err error) {
-	if flagValues.resultErrorReason == "" || flagValues.resultErrorMessage == "" {
+	if flagValues.resultFileErrorReason == "" || flagValues.resultFileErrorMessage == "" {
 		return nil
 	}
 
-	if err = ioutil.WriteFile(flagValues.resultErrorMessage, []byte(strings.TrimSpace(failure.Message)), 0644); err != nil {
+	messageToWrite := failure.Message
+	messageLengthThreshold := 300
+
+	if len(messageToWrite) > messageLengthThreshold {
+		messageToWrite = messageToWrite[:messageLengthThreshold-3] + "..."
+	}
+
+	if err = ioutil.WriteFile(flagValues.resultFileErrorMessage, []byte(strings.TrimSpace(messageToWrite)), 0666); err != nil {
 		return err
 	}
-	if err = ioutil.WriteFile(flagValues.resultErrorReason, []byte(failure.Reason.String()), 0644); err != nil {
+
+	if err = ioutil.WriteFile(flagValues.resultFileErrorReason, []byte(failure.Reason.String()), 0666); err != nil {
 		return err
 	}
 

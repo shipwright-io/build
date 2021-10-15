@@ -1,3 +1,7 @@
+// Copyright The Shipwright Contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package git
 
 import (
@@ -6,37 +10,30 @@ import (
 )
 
 var _ = Describe("Parsing Git Error Messages", func() {
-	Context("parse raw to PrefixToken", func() {
+	Context("parse raw to prefixToken", func() {
 		It("should recognize and parse fatal", func() {
 			parsed := parsePrefix("fatal")
 
-			Expect(parsed.scope).To(Equal(Fatal))
+			Expect(parsed.scope).To(Equal(fatalPrefix))
 			Expect(parsed.raw).To(Equal("fatal"))
 		})
 		It("should recognize and parse remote", func() {
 			parsed := parsePrefix("remote")
 
-			Expect(parsed.scope).To(Equal(Remote))
+			Expect(parsed.scope).To(Equal(remotePrefix))
 			Expect(parsed.raw).To(Equal("remote"))
-		})
-		It("should recognize and parse warning", func() {
-			parsed := parsePrefix("warning")
-
-			Expect(parsed.scope).To(Equal(Warning))
-			Expect(parsed.raw).To(Equal("warning"))
 		})
 		It("should not parse unknown input as general", func() {
 			parsed := parsePrefix("random")
 
-			Expect(parsed.scope).To(Equal(General))
+			Expect(parsed.scope).To(Equal(unknownPrefix))
 			Expect(parsed.raw).To(Equal("random"))
 		})
 	})
-
-	Context("Parse raw to ErrorToken", func() {
+	Context("Parse raw to errorToken", func() {
 		It("should recognize and parse unknown branch", func() {
 			parsed := parseErrorMessage("Remote branch not found")
-			Expect(parsed.class).To(Equal(BranchNotFound))
+			Expect(parsed.class).To(Equal(RevisionNotFound))
 		})
 		It("should recognize and parse invalid auth key", func() {
 			parsed := parseErrorMessage("could not read from remote.")

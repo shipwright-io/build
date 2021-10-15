@@ -435,8 +435,8 @@ var _ = Describe("Git Resource", func() {
 								err := run(
 									"--url", repo,
 									"--target", target,
-									"--result-error-message", messageFile,
-									"--result-error-reason", reasonFile,
+									"--result-file-error-message", messageFile,
+									"--result-file-error-reason", reasonFile,
 									"--secret",
 								)
 
@@ -461,8 +461,8 @@ var _ = Describe("Git Resource", func() {
 							err := run(
 								"--url", repo,
 								"--target", target,
-								"--result-error-message", messageFile,
-								"--result-error-reason", reasonFile,
+								"--result-file-error-message", messageFile,
+								"--result-file-error-reason", reasonFile,
 							)
 
 							Expect(err).ToNot(BeNil())
@@ -493,7 +493,7 @@ var _ = Describe("Git Resource", func() {
 							Expect(err).ToNot(BeNil())
 
 							errorResult := shpgit.NewErrorResultFromMessage(err.Error())
-							Expect(errorResult.Reason.String()).To(Equal(shpgit.BranchNotFound.String()))
+							Expect(errorResult.Reason.String()).To(Equal(shpgit.RevisionNotFound.String()))
 						})
 					})
 				})
