@@ -258,6 +258,27 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Buildpacks v3 build is defined for a golang runtime with `BP_GO_TARGETS` env", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildpacks-v3-golang")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/build_buildpacks-v3_golang_cr+env.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+
+			validateBuildRunToSucceed(testBuild, buildRun)
+		})
+	})
+
 	Context("when a build uses the build-run-deletion annotation", func() {
 
 		BeforeEach(func() {
