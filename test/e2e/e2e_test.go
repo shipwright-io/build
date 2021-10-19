@@ -259,7 +259,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	})
 
 	Context("when a Buildpacks v3 build is defined for a golang runtime with `BP_GO_TARGETS` env", func() {
-
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-golang")
 
@@ -267,7 +266,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			build = createBuild(
 				testBuild,
 				testID,
-				"test/data/build_buildpacks-v3_golang_cr+env.yaml",
+				"test/data/build_buildpacks-v3_golang_cr_env.yaml",
 			)
 		})
 

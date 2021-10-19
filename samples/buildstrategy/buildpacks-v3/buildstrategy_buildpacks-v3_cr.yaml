@@ -46,9 +46,8 @@ spec:
 
           for env in "${envs[@]}"; do
               IFS='=' read -r key value string <<< "$env"
-              if [[ "$key" != "" && "$value" != "" ]]; then
+              if [[ "$key" != "" ]]; then
                   path="${ENV_DIR}/${key}"
-                  echo "--> Writing ${path}..."
                   echo -n "$value" > "$path"
               fi
           done

@@ -6,10 +6,10 @@ metadata:
 spec:
   source:
     url: https://github.com/shipwright-io/sample-go
-    contextDir: source-build
+    contextDir: source-build-with-package
   env:
     - name: BP_GO_TARGETS
-      value: "target-build"
+      value: "main-package"
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy

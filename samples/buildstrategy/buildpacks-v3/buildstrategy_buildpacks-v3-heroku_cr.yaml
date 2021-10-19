@@ -10,7 +10,7 @@ spec:
       securityContext:
         runAsUser: 0
         capabilities:
-          add: 
+          add:
             - CHOWN
       command:
         - chown
@@ -39,6 +39,19 @@ spec:
 
           mkdir /tmp/cache /tmp/layers
 
+          echo "> Processing environment variables..."
+          ENV_DIR="/platform/env"
+
+          envs=($(env))
+
+          for env in "${envs[@]}"; do
+              IFS='=' read -r key value string <<< "$env"
+              if [[ "$key" != "" ]]; then
+                  path="${ENV_DIR}/${key}"
+                  echo -n "$value" > "$path"
+              fi
+          done
+
           /cnb/lifecycle/creator \
             '-app=$(params.shp-source-context)' \
             -cache-dir=/tmp/cache \
@@ -48,6 +61,9 @@ spec:
 
           # Store the image digest
           grep digest /tmp/report.toml | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
+      volumeMounts:
+        - mountPath: /platform/env
+          name: platform-env
       resources:
         limits:
           cpu: 500m
