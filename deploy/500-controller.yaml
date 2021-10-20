@@ -34,6 +34,8 @@ spec:
               value: "shipwright-build"
             - name: GIT_CONTAINER_IMAGE
               value: ko://github.com/shipwright-io/build/cmd/git
+            - name: GIT_REWRITE_RULE
+              value: yes
             - name: MUTATE_IMAGE_CONTAINER_IMAGE
               value: ko://github.com/shipwright-io/build/cmd/mutate-image
             - name: BUNDLE_CONTAINER_IMAGE
