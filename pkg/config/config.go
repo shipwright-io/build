@@ -88,7 +88,7 @@ var (
 type Config struct {
 	CtxTimeOut time.Duration
 	GitContainerTemplate,
-	MutateImageContainerTemplate corev1.Container
+	MutateImageContainerTemplate  corev1.Container
 	BundleContainerTemplate       corev1.Container
 	RemoteArtifactsContainerImage string
 	TerminationLogPath            string
@@ -259,7 +259,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if githubRewrite := os.Getenv(githubRewriteRule); githubRewrite != "" {
-		if strings.ToLower(githubRewrite) == "yes" {
+		if strings.ToLower(githubRewrite) == "true" {
 			c.GitRewriteRule = true
 		}
 	}

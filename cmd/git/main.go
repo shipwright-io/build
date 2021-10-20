@@ -52,6 +52,7 @@ type settings struct {
 	resultFileCommitAuthor string
 	secretPath             string
 	skipValidation         bool
+	gitUrlRewrite 		   bool
 }
 
 var flagValues settings
@@ -82,6 +83,7 @@ func init() {
 
 	// Mostly internal flag
 	pflag.BoolVar(&flagValues.skipValidation, "skip-validation", false, "skip pre-requisite validation")
+	pflag.BoolVar(&flagValues.gitUrlRewrite, "git-url-rewrite-rule", false, "rewrite the git url")
 }
 
 func main() {
@@ -201,6 +203,11 @@ func checkGitVersionSpecificSettings(ctx context.Context) {
 	useDepthForSubmodule = strings.Contains(out, "single-branch")
 }
 
+func convertToSSH(repoUrlHost string) string {
+	// url.ssh://git@github.ibm.com/.insteadOf https://github.ibm.com/
+	return fmt.Sprintf("url.ssh://git@%s/.insteadOf https://%s/", repoUrlHost, repoUrlHost);
+}
+
 func clone(ctx context.Context) error {
 	cloneArgs := []string{
 		"clone",
@@ -313,6 +320,13 @@ func clone(ctx context.Context) error {
 			if _, err := git(ctx, "config", "--global", "credential.helper", fmt.Sprintf("store --file %s", credHelperFile.Name())); err != nil {
 				return err
 			}
+			if flagValues.gitUrlRewrite {
+				sshUrl := convertToSSH(repoURL.Host)
+				if _, err := git(ctx, "config", "--global", sshUrl); err != nil {
+					return err
+				}
+			}
+
 		}
 	}
 
