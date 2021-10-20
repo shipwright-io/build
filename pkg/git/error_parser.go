@@ -81,15 +81,21 @@ func (rawToken rawToken) String() string {
 func (class ErrorClass) String() string {
 	switch class {
 	case AuthInvalidUserOrPass:
-		return "git-auth-basic"
+		return "git-auth-basic-invalid"
 	case AuthInvalidKey:
-		return "git-auth-ssh"
+		return "git-auth-ssh-invalid"
 	case RevisionNotFound:
 		return "git-remote-revision"
 	case RepositoryNotFound:
 		return "git-remote-repository"
 	case AuthPrompted:
 		return "git-remote-private"
+	case AuthBasicIncomplete:
+		return "git-auth-basic-incomplete"
+	case AuthUnexpectedSSH:
+		return "git-auth-ssh-unexpected"
+	case AuthExpectedSSH:
+		return "git-auth-ssh-expected"
 	}
 
 	return "git-error"

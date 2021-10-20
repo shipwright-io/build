@@ -268,9 +268,43 @@ _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/te
 
 ### Understanding failed BuildRuns
 
-To make it easier for users to understand why did a BuildRun failed, users can infer from the `Status.FailedAt` field, the pod and container where the failure took place.
+[DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer from the `Status.FailedAt` field, the pod and container where the failure took place.
 
 In addition, the `Status.Conditions` will host under the `Message` field a compacted message containing the `kubectl` command to trigger, in order to retrieve the logs.
+
+Lastly, users can check `Status.FailureDetails` to get a humanly-readable error message, reason, the failed pod and container.
+The message and reason are only included if the build strategy provides them.
+
+Example of failed BuildRun:
+
+```yaml 
+# [...]
+status:
+  # [...]
+  failureDetails:
+    location:
+      container: step-source-default
+      pod: baran-build-buildrun-gzmv5-b7wbf-pod-bbpqr
+    message: The source repository does not exist, or you have insufficient permission
+      to access it.
+    reason: git-remote-private
+```
+
+#### Understanding failed git-source step
+
+All git related operations support error reporting via `Status.FailureDetails`. The following table explains the possible
+error reasons: 
+
+| Reason |  Description |
+| --- |  --- |
+| `git-auth-basic-invalid` | Basic authentication has failed. Check your username or password. Note: GitHub requires a personal access token instead of your regular password. |
+| `git-auth-ssh-invalid` | 	The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
+| `git-remote-revision` | The remote revision does not exist. Check your revision argument. |
+| `git-remote-repository`| The source repository does not exist, or you have insufficient permission to access it. |
+| `git-remote-private` | You are trying to access a non existing or private repository without having sufficient permissions to access it via HTTPS. |
+| `git-auth-basic-incomplete`| Basic Auth incomplete: Both username and password need to be configured. |
+| `git-auth-ssh-unexpected`| Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL. |
+| `git-auth-ssh-expected`| Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL. |
 
 ### Step Results in BuildRun Status
 

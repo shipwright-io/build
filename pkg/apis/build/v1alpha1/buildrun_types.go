@@ -146,6 +146,7 @@ type BuildRunStatus struct {
 	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
 
 	// FailedAt points to the resource where the BuildRun failed
+	// Deprecated: part of FailureDetails and thus redundant
 	// +optional
 	FailedAt *FailedAt `json:"failedAt,omitempty"`
 
