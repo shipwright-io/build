@@ -63,7 +63,7 @@ spec:
           set -euo pipefail
           
           # Store the image digest
-          grep digest /kaniko/oci-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
+          grep digest /kaniko/oci-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-IMAGE_DIGEST.path)"
 
           # store the image url
           echo $(params.shp-IMAGE_URL) | tee $(results.shp-IMAGE_URL.path)
