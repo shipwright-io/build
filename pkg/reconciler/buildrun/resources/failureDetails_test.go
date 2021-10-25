@@ -68,7 +68,8 @@ var _ = Describe("Surfacing errors", func() {
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &redBuild, &redTaskRun)
 
-			Expect(redBuild.Status.FailureDetails).To(BeNil())
+			Expect(redBuild.Status.FailureDetails.Reason).To(BeEmpty())
+			Expect(redBuild.Status.FailureDetails.Message).To(BeEmpty())
 		})
 
 		It("no errors present in BuildRun for successful TaskRun", func() {

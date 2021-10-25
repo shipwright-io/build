@@ -81,24 +81,24 @@ func (rawToken rawToken) String() string {
 func (class ErrorClass) String() string {
 	switch class {
 	case AuthInvalidUserOrPass:
-		return "git-auth-basic-invalid"
+		return "GitAuthInvalidUserOrPass"
 	case AuthInvalidKey:
-		return "git-auth-ssh-invalid"
+		return "GitAuthInvalidKey"
 	case RevisionNotFound:
-		return "git-remote-revision"
+		return "GitRevisionNotFound"
 	case RepositoryNotFound:
-		return "git-remote-repository"
+		return "GitRemoteRepositoryNotFound"
 	case AuthPrompted:
-		return "git-remote-private"
+		return "GitRemoteRepositoryPrivate"
 	case AuthBasicIncomplete:
-		return "git-auth-basic-incomplete"
+		return "GitBasicAuthIncomplete"
 	case AuthUnexpectedSSH:
-		return "git-auth-ssh-unexpected"
+		return "GitSSHAuthUnexpected"
 	case AuthExpectedSSH:
-		return "git-auth-ssh-expected"
+		return "GitSSHAuthExpected"
 	}
 
-	return "git-error"
+	return "GitError"
 }
 
 // ToMessage is a function that transforms an error class to an error message

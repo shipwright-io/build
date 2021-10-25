@@ -298,8 +298,8 @@ error reasons:
 | Reason |  Description |
 | --- |  --- |
 | `git-auth-basic-invalid` | Basic authentication has failed. Check your username or password. Note: GitHub requires a personal access token instead of your regular password. |
-| `git-auth-ssh-invalid` | 	The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
-| `git-remote-revision` | The remote revision does not exist. Check your revision argument. |
+| `git-auth-ssh-invalid` | The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
+| `git-remote-revision` | The remote revision does not exist. Check the revision specified in your Build. |
 | `git-remote-repository`| The source repository does not exist, or you have insufficient permission to access it. |
 | `git-remote-private` | You are trying to access a non existing or private repository without having sufficient permissions to access it via HTTPS. |
 | `git-auth-basic-incomplete`| Basic Auth incomplete: Both username and password need to be configured. |

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis"
@@ -80,12 +79,9 @@ func extractFailedPodAndContainer(ctx context.Context, client client.Client, tas
 	return &pod, failedContainer, nil
 }
 
-func isEmpty(failure *buildv1alpha1.FailureDetails) bool {
-	return failure.Location == nil && len(failure.Reason) == 0 && len(failure.Message) == 0
-}
-
 func extractFailureDetails(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (failure *buildv1alpha1.FailureDetails) {
-	failure = &buildv1alpha1.FailureDetails{}
+	failure = &buildv1alpha1.FailureDetails{ }
+	failure.Location = &buildv1alpha1.FailedAt{ Pod: taskRun.Status.PodName }
 
 	if reason, message, hasReasonAndMessage := extractFailureReasonAndMessage(taskRun); hasReasonAndMessage {
 		failure.Reason = reason
@@ -95,18 +91,15 @@ func extractFailureDetails(ctx context.Context, client client.Client, taskRun *v
 	pod, container, _ := extractFailedPodAndContainer(ctx, client, taskRun)
 
 	if pod != nil && container != nil {
-		failure.Location = &buildv1alpha1.FailedAt{Container: container.Name, Pod: pod.Name}
-	}
-
-	if isEmpty(failure) {
-		return nil
+		failure.Location.Pod = pod.Name
+		failure.Location.Container = container.Name
 	}
 
 	return failure
 }
 
-func getFailureDetailsTaskSpecResults() []pipeline.TaskResult {
-	return []pipeline.TaskResult{
+func getFailureDetailsTaskSpecResults() []v1beta1.TaskResult {
+	return []v1beta1.TaskResult{
 		{
 			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorMessage),
 			Description: "The error description of the task run",

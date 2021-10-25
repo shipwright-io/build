@@ -5,11 +5,12 @@
 package e2e_test
 
 import (
-	"os"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/shipwright-io/build/pkg/git"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"os"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
@@ -597,6 +598,33 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 				validateBuildRunToSucceed(testBuild, buildRun)
 			})
+		})
+	})
+
+	Context("when a s2i build uses a non-existent git repository as source", func() {
+		It("fails because of prompted authentication which surfaces the to the BuildRun", func() {
+			testID = generateTestID("s2i-failing")
+
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/build_non_existing_repo.yaml",
+			)
+
+			buildRun, err = buildRunTestData(build.Namespace, testID, "test/data/buildrun_non_existing_repo.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToFail(testBuild, buildRun)
+
+			Eventually(func() *buildv1alpha1.FailureDetails {
+				buildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: buildRun.Name, Namespace: testBuild.Namespace})
+
+				return buildRun.Status.FailureDetails
+			}).ShouldNot(BeNil())
+
+			Expect(buildRun.Status.FailureDetails.Message).To(Equal(git.AuthPrompted.ToMessage()))
+			Expect(buildRun.Status.FailureDetails.Reason).To(Equal(git.AuthPrompted.String()))
+			Expect(buildRun.Status.FailureDetails.Location).ToNot(BeNil())
 		})
 	})
 })
