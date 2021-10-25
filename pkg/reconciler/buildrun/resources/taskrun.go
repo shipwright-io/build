@@ -24,7 +24,7 @@ import (
 const (
 	prefixParamsResultsVolumes = "shp"
 
-	paramOutputImage   = "IMAGE_URL"
+	paramOutputImage   = "output-image"
 	paramSourceRoot    = "source-root"
 	paramSourceContext = "source-context"
 

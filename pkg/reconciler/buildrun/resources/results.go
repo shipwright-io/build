@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	imageDigestResult = "IMAGE_DIGEST"
+	imageDigestResult = "image-digest"
 	imageSizeResult   = "image-size"
 )
 
@@ -68,10 +68,6 @@ func getTaskSpecResults() []pipeline.TaskResult {
 		{
 			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, imageSizeResult),
 			Description: "The compressed size of the image",
-		},
-		{
-			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
-			Description: "The url of the built image",
 		},
 	}
 }
