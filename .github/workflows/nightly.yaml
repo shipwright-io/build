@@ -11,30 +11,26 @@ jobs:
     if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
     env:
-      IMAGE_HOST: quay.io
-      IMAGE_NAMESPACE: shipwright
+      IMAGE_HOST: ghcr.io
+      IMAGE_NAMESPACE: ${{ github.repository }}
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.16.x
+
+    # Install tools
+    - uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
+    - uses: imjasonh/setup-crane@01d26682810dcd47bfc8eb1efe791558123a9373
 
     - name: Get current date
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d-%s')"
 
-    - name: Install crane
-      run: curl --fail --silent --location https://github.com/google/go-containerregistry/releases/download/v0.6.0/go-containerregistry_Linux_x86_64.tar.gz | tar -xzf - -C /usr/local/bin crane
-
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.16.x
-
-    - name: Install Ko
-      uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
-
     - name: Generate and upload release YAMLs
       env:
-        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        REGISTRY_USERNAME: ${{ github.repository_owner }}
         TAG: "nightly-${{ steps.date.outputs.date }}"
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
