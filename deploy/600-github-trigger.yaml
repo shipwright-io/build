@@ -1,0 +1,84 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: ClusterTriggerBinding
+metadata:
+  name: shipwright-executor
+spec:
+  params:
+    - name: git-revision
+      value: $(body.head_commit.id)
+    - name: git-tree
+      value: $(body.ref)
+---
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: shipwright-executor
+spec:
+  params:
+    - default: main
+      description: The git revision of the source code
+      name: git_revision
+      type: string
+    - description: The git revision of the source code
+      name: git_tree
+      type: string
+    - default: latest
+      description: The OpenShift Version to use
+      name: VERSION
+      type: string
+  steps:
+    - image: >-
+        image-registry.openshift-image-registry.svc:5000/openshift/cli:$(params.VERSION)
+      name: oc
+      resources: {}
+      script: >
+        #!/usr/bin/env bash
+        [[ "$(workspaces.manifest-dir.bound)" == "true" ]] && \
+        cd $(workspaces.manifest-dir.path)
+        [[ "$(workspaces.kubeconfig-dir.bound)" == "true" ]] && \
+        [[ -f $(workspaces.kubeconfig-dir.path)/kubeconfig ]] && \
+        export KUBECONFIG=$(workspaces.kubeconfig-dir.path)/kubeconfig
+        export realbranch=$(echo $(params.git_tree) | rev | cut -d/ -f1 | rev)
+        echo
+        "{\"apiVersion\":\"shipwright.io\/v1alpha1\",\"kind\":\"Build\",\"metadata\":{\"name\":\"build-webhook-$realbranch\"},\"spec\":{\"builder\":{\"image\":\"docker.io\/centos\/nodejs-10-centos7\"},\"output\":{\"credentials\":{\"name\":\"my-docker-credentials\"},\"image\":\"docker.io\/sbose78\/sample-nodejs\"},\"source\":{\"contextDir\":\"source-build\/\",\"url\":\"https:\/\/github.com\/sbose78\/sample-nodejs\",\"revision\":\"$realbranch\"},\"strategy\":{\"kind\":\"ClusterBuildStrategy\",\"name\":\"source-to-image\"}}}"
+        | kubectl apply -f -
+        echo
+        "{\"apiVersion\":\"shipwright.io\/v1alpha1\",\"kind\":\"BuildRun\",\"metadata\":{\"name\":\"buildrun-webhook-$(params.git_revision)\"},\"spec\":{\"buildRef\":{\"name\":\"build-webhook-$realbranch\"},\"output\":{\"image\":\"docker.io\/sbose78\/sample-nodejs:$realbranch\",\"credentials\":{\"name\":\"my-docker-credentials\"}}}}"
+        | kubectl apply -f -
+  workspaces:
+    - description: >-
+        The workspace which contains kubernetes manifests which we want to apply
+        on the cluster.
+      name: manifest-dir
+      optional: true
+    - description: >-
+        The workspace which contains the the kubeconfig file if in case we want
+        to run the oc command on another cluster.
+      name: kubeconfig-dir
+      optional: true
+---
+# TODO: Add permission objects so that the TaskRun's service account 
+# is able to create Shipwright resources.
+# General RBAC updates, should be merged into 200-role.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: shipwright-triggers
+rules:
+- apiGroups: ["triggers.tekton.dev"]
+  resources: ["eventlisteners","triggertemplates"]
+  verbs: ["create","list", "get", "patch", "delete"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: shipwright-triggers
+subjects:
+  - kind: ServiceAccount
+    name: shipwright-build-controller
+    namespace: shipwright-build
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: shipwright-triggers
+---

@@ -8,9 +8,7 @@ import (
 	"context"
 
 	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	triggersapi "github.com/tektoncd/triggers/pkg/apis/triggers/v1alpha1"
 
 	"github.com/shipwright-io/build/pkg/apis"
 	"github.com/shipwright-io/build/pkg/config"
@@ -19,6 +17,8 @@ import (
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun"
 	"github.com/shipwright-io/build/pkg/reconciler/buildstrategy"
 	"github.com/shipwright-io/build/pkg/reconciler/clusterbuildstrategy"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // NewManager add all the controllers to the manager and register the required schemes
@@ -38,6 +38,10 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 	ctxlog.Info(ctx, "Registering Components.")
 
 	if err := pipelinev1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		return nil, err
+	}
+
+	if err := triggersapi.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, err
 	}
 

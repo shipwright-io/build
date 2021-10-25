@@ -6,9 +6,12 @@ package build
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -19,6 +22,9 @@ import (
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/shipwright-io/build/pkg/validate"
+
+	taskrunapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	triggersapi "github.com/tektoncd/triggers/pkg/apis/triggers/v1alpha1"
 )
 
 // ReconcileBuild reconciles a Build object
@@ -99,6 +105,113 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 		if b.Status.Reason != build.SucceedStatus {
 			return r.UpdateBuildStatusAndRetreat(ctx, b)
+		}
+	}
+
+	if !strings.Contains(b.Name, "webhook") {
+		// If the name of the Build resource contains the substring
+		// "webhook", it implies that this was created out of a webhook event.
+		// Really, poor man's way of avoiding an infinite loop.
+
+		resourceTemplateTaskRun := taskrunapi.TaskRun{
+			ObjectMeta: v1.ObjectMeta{
+				GenerateName: b.Name + "-",
+				Namespace:    b.Namespace,
+			},
+			TypeMeta: v1.TypeMeta{
+				Kind:       "TaskRun",
+				APIVersion: taskrunapi.SchemeGroupVersion.Group + "/" + taskrunapi.SchemeGroupVersion.Version,
+			},
+			Spec: taskrunapi.TaskRunSpec{
+				Params: []taskrunapi.Param{
+					{
+						Name: "git_revision",
+						Value: taskrunapi.ArrayOrString{
+							Type:      taskrunapi.ParamTypeString,
+							StringVal: "$(tt.params.git-revision)",
+						},
+					},
+					{
+						Name: "git_tree",
+						Value: taskrunapi.ArrayOrString{
+							Type:      taskrunapi.ParamTypeString,
+							StringVal: "$(tt.params.git-tree)",
+						},
+					},
+				},
+
+				// ClusterTask "shipwright-executor" is a ClusterTask which
+				// creates the appropriate BuildRun ( and Build, since embedded buildSpec is not
+				// supported in BuildRuns yet ).
+				TaskRef: &taskrunapi.TaskRef{
+					Name:       "shipwright-executor",
+					Kind:       "ClusterTask",
+					APIVersion: "tekton.dev/v1beta1",
+				},
+			},
+		}
+
+		resourceTemplateTaskRunBytes, err := json.Marshal(resourceTemplateTaskRun)
+		if err != nil {
+			// fail silently for now.
+			ctxlog.Error(ctx, err, "Failed to convert TaskRun resource", namespace, request.Namespace, name, request.Name)
+		}
+
+		triggerTemplate := triggersapi.TriggerTemplate{}
+		triggerTemplate.Name = b.Name
+		triggerTemplate.Namespace = b.Namespace
+		triggerTemplate.Spec = triggersapi.TriggerTemplateSpec{
+			Params: []triggersapi.ParamSpec{
+				{
+					Name: "git-revision",
+				},
+				{
+					Name: "git-tree",
+				},
+			},
+			ResourceTemplates: []triggersapi.TriggerResourceTemplate{
+				{
+					RawExtension: runtime.RawExtension{Raw: resourceTemplateTaskRunBytes},
+				},
+			},
+		}
+
+		err = r.client.Create(ctx, &triggerTemplate)
+		if err != nil {
+			// fail silently for now.
+			ctxlog.Error(ctx, err, "Failed to create TriggerTemplate", namespace, request.Namespace, name, request.Name)
+		}
+
+		eventListener := triggersapi.EventListener{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      b.Name,
+				Namespace: b.Namespace,
+			},
+			Spec: triggersapi.EventListenerSpec{
+				// If left empty, the "default" service account would be used.
+				// Should leave his empty?
+				ServiceAccountName: "pipeline",
+				Triggers: []triggersapi.EventListenerTrigger{
+					{
+						Bindings: []*triggersapi.TriggerSpecBinding{
+							{
+								// ClusterTriggerBinding "shipwright-executor" will need
+								// to be shipped as part of the Shipwright installation.
+								Ref:  "shipwright-executor",
+								Kind: triggersapi.ClusterTriggerBindingKind,
+							},
+						},
+						Template: &triggersapi.TriggerSpecTemplate{
+							Ref: &triggerTemplate.Name,
+						},
+					},
+				},
+			},
+		}
+
+		err = r.client.Create(ctx, &eventListener)
+		if err != nil {
+			ctxlog.Error(ctx, err, "Failed to create EventListener", namespace, request.Namespace, name, request.Name)
 		}
 	}
 
