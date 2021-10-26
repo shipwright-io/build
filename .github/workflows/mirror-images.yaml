@@ -11,15 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install crane
-        run: curl --fail --silent --location https://github.com/google/go-containerregistry/releases/download/v0.6.0/go-containerregistry_Linux_x86_64.tar.gz | tar -xzf - -C /usr/local/bin crane
-
-      - name: Login to container registry
-        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | crane auth login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin quay.io
+      - uses: imjasonh/setup-crane@01d26682810dcd47bfc8eb1efe791558123a9373
 
       - name: Mirror images
+        env:
+          REPO: ghcr.io/${{ github.repository_owner }}/shipwright-samples
         run: |
-          crane cp golang:1.16 quay.io/shipwright-samples/golang:1.16
-          crane cp maven:3-jdk-8-openj9 quay.io/shipwright-samples/maven:3-jdk-8-openj9
-          crane cp openliberty/open-liberty:kernel-java8-openj9-ubi quay.io/shipwright-samples/open-liberty:kernel-java8-openj9-ubi
-          crane cp node:12 quay.io/shipwright-samples/node:12
+          for img in \
+            golang:1.16 \
+            maven:3-jdk-8-openj9 \
+            node:12 \
+            open-liberty:kernel-java8-openj9-ubi \
+            ; do
+
+            crane cp ${img} ${REPO}/${img}
+          done
