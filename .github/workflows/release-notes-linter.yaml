@@ -4,7 +4,7 @@ name: Release Note Linter
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   build:
@@ -22,10 +22,21 @@ jobs:
         # Validate PR release notes
         echo "Going to validate PR ${PR_NUMBER}"
 
+        echo "First making sure you have not left the PR template as is"
+        # Describe any user facing changes here, or delete this block.
+        TEMPLATE_LEFT_AS_IS=$(wget -q  -O- https://api.github.com/repos/shipwright-io/build/pulls/${PR_NUMBER} | jq '.body | match("(Describe any user facing changes here, or delete this block)")')
+        if [ -z "${TEMPLATE_LEFT_AS_IS}" ]; then
+          echo "You appear to have attempted to update the PR template to define a release note."
+        else
+          echo "You have not made any changes for release notes in your PR description.  Edit your PR description per the instructions at https://raw.githubusercontent.com/shipwright-io/build/main/.github/pull_request_template.md"
+          exit 1
+        fi
+
+        echo "Now checking against valid structure for release notes"
         MATCHES=$(wget -q  -O- https://api.github.com/repos/shipwright-io/build/pulls/${PR_NUMBER} | jq '.body | match("(```release-note\r\n(.*|NONE|action required: .*)\r\n```)")')
         if [ -z "${MATCHES}" ]; then
           echo "Your Release Notes were not properly defined or they are not in place, please make sure you add them."
-          echo "See our PR template for more information: https://raw.githubusercontent.com/shipwright-io/build/master/.github/pull_request_template.md"
+          echo "See our PR template for more information: https://raw.githubusercontent.com/shipwright-io/build/main/.github/pull_request_template.md"
           exit 1
         else
           echo "Your Release Notes are properly in place!"
