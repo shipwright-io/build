@@ -14,11 +14,22 @@ jobs:
   release:
     if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
+    env:
+      IMAGE_HOST: ghcr.io
+      IMAGE_NAMESPACE: ${{ github.repository }}
+      TAG: ${{ github.event.inputs.release }}
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Fetch all history, needed for release note generation.
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.16.x
+
+    # Install tools
+    - uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
+
     - name: Build Release Changelog
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -29,6 +40,7 @@ jobs:
         export GITHUB_TOKEN
         export PREVIOUS_TAG
         "${GITHUB_WORKSPACE}/.github/draft_release_notes.sh"
+
     - name: Draft release
       id: draft_release
       uses: actions/create-release@v1
@@ -41,21 +53,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.16.x
-
-    - name: Install Ko
-      uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
-
     - name: Generate and upload release.yaml
       env:
-        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-        IMAGE_HOST: quay.io
-        IMAGE: shipwright/shipwright-operator
-        TAG: ${{ github.event.inputs.release }}
+        REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        REGISTRY_USERNAME: ${{ github.repository_owner }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         make release
