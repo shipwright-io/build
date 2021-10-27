@@ -17,12 +17,12 @@ jobs:
         env:
           REPO: ghcr.io/${{ github.repository_owner }}/shipwright-samples
         run: |
-          for img in \
-            golang:1.16 \
-            maven:3-jdk-8-openj9 \
-            node:12 \
-            open-liberty:kernel-java8-openj9-ubi \
+          for IMAGE in \
+            library/golang:1.16 \
+            library/maven:3-jdk-8-openj9 \
+            library/node:12 \
+            openliberty/open-liberty:kernel-java8-openj9-ubi \
             ; do
 
-            crane cp ${img} ${REPO}/${img}
+            echo crane cp "${IMAGE}" "${REPO}/$(cut -d/ -f2 <<<"${IMAGE}")"
           done
