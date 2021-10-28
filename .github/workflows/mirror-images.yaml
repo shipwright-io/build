@@ -21,6 +21,7 @@ jobs:
             library/golang:1.16 \
             library/maven:3-jdk-8-openj9 \
             library/node:12 \
+            library/python:3.8 \
             openliberty/open-liberty:kernel-java8-openj9-ubi \
             ; do
 
