@@ -71,7 +71,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from default(bundle) source step", func() {
 			bundleImageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
 			br.Status.BuildSpec.Source.BundleContainer = &build.BundleContainer{
-				Image: "quay.io/shipwright/source-bundle:latest",
+				Image: "ghcr.io/shipwright-io/build/source-bundle:latest",
 			}
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,

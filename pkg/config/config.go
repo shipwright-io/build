@@ -28,16 +28,16 @@ const (
 	// the Git image is built using ko which can replace environment variable values in the deployment, so once we decide to move
 	// from environment variables to a ConfigMap, then we should move the container template, but retain the environment variable
 	// (or make it an argument like Tekton)
-	gitDefaultImage            = "quay.io/shipwright/git:latest"
+	gitDefaultImage            = "ghcr.io/shipwright-io/build/git:latest"
 	gitImageEnvVar             = "GIT_CONTAINER_IMAGE"
 	gitContainerTemplateEnvVar = "GIT_CONTAINER_TEMPLATE"
 
-	mutateImageDefaultImage            = "quay.io/shipwright/mutate-image:latest"
+	mutateImageDefaultImage            = "ghcr.io/shipwright-io/build/mutate-image:latest"
 	mutateImageEnvVar                  = "MUTATE_IMAGE_CONTAINER_IMAGE"
 	mutateImageContainerTemplateEnvVar = "MUTATE_IMAGE_CONTAINER_TEMPLATE"
 
 	// Analog to the Git image, the bundle image is also created by ko
-	bundleDefaultImage            = "quay.io/shipwright/bundle:latest"
+	bundleDefaultImage            = "ghcr.io/shipwright-io/build/bundle:latest"
 	bundleImageEnvVar             = "BUNDLE_CONTAINER_IMAGE"
 	bundleContainerTemplateEnvVar = "BUNDLE_CONTAINER_TEMPLATE"
 

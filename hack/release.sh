@@ -13,9 +13,6 @@ echo "Building container image"
 
 echo "Adding io.shipwright.vcs-ref label with value: ${GITHUB_SHA}"
 
-# Using defaults, this pushes to:
-# - quay.io/shipwright/git:latest
-# - quay.io/shipwright/shipwright-build-controller:latest
 KO_DOCKER_REPO="${IMAGE_HOST}/${IMAGE_NAMESPACE}" GOFLAGS="${GO_FLAGS}" ko resolve \
   --base-import-paths \
   --tags "${TAG}" \

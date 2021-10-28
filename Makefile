@@ -48,7 +48,7 @@ TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
 TEST_E2E_TIMEOUT_MULTIPLIER ?= 1
 
 # test repository to store images build during end-to-end tests
-TEST_IMAGE_REPO ?= quay.io/shipwright-io/build-e2e
+TEST_IMAGE_REPO ?= ghcr.io/shipwright-io/build/build-e2e
 # test container registyr secret name
 TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime
@@ -64,8 +64,8 @@ TEST_PRIVATE_GITLAB ?=
 TEST_SOURCE_SECRET ?=
 
 # Image settings for building and pushing images
-IMAGE_HOST ?= quay.io
-IMAGE_NAMESPACE ?= shipwright
+IMAGE_HOST ?= ghcr.io
+IMAGE_NAMESPACE ?= shipwright-io/build
 TAG ?= latest
 
 # options for generating crds with controller-gen
