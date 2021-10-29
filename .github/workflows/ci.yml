@@ -4,6 +4,9 @@ on:
       - main
       - master
     push:
+      paths-ignore:
+      - 'README.md'
+      - 'docs/**'
       branches: 
       - main
       - master
