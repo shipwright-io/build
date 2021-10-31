@@ -23,7 +23,15 @@ const (
 // BuildRunSpec defines the desired state of BuildRun
 type BuildRunSpec struct {
 	// BuildRef refers to the Build
-	BuildRef *BuildRef `json:"buildRef"`
+	// +optional
+	BuildRef *BuildRef `json:"buildRef,omitempty"`
+
+	// BuildSpec refers to the specifications of a build object
+	// This can be used to reduce build creation and execution into a single-step process
+	// by defining the buildSpec within the buildRun directly.
+	// This is not meant to override an existing build object
+	//+optional
+	BuildSpec BuildSpec `json:"buildSpec,omitempty"`
 
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.

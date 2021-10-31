@@ -64,8 +64,8 @@ TEST_PRIVATE_GITLAB ?=
 TEST_SOURCE_SECRET ?=
 
 # Image settings for building and pushing images
-IMAGE_HOST ?= quay.io
-IMAGE_NAMESPACE ?= shipwright
+IMAGE_HOST ?= docker.io
+IMAGE_NAMESPACE ?= jaideepr97
 TAG ?= latest
 
 # options for generating crds with controller-gen

@@ -7,6 +7,7 @@ package resources
 import (
 	"context"
 	"fmt"
+
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +34,7 @@ const (
 	ConditionBuildRegistrationFailed string = "BuildRegistrationFailed"
 	ConditionBuildNotFound           string = "BuildNotFound"
 	BuildRunNameInvalid              string = "BuildRunNameInvalid"
+	BuildRunMisconfigured            string = "BuildRunMisconfigured"
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition

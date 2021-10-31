@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -98,6 +99,38 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, nil
 	}
 
+	// Checking if buildRun defines its own BuildSpec and references or overrides an existing build at the same time
+	if (!reflect.DeepEqual(buildRun.Spec.BuildSpec, buildv1alpha1.BuildSpec{})) && (buildRun.Spec.BuildRef != nil || buildRun.Spec.Output != nil) {
+		//stop reconciling and mark the BuildRun as Failed
+		if updateErr := resources.UpdateConditionWithFalseStatus(
+			ctx,
+			r.client,
+			buildRun,
+			"BuildRun cannot reference an existing build object or override an existing build spec while defining its own BuildSpec",
+			resources.BuildRunMisconfigured,
+		); updateErr != nil {
+			return reconcile.Result{}, updateErr
+		}
+
+		return reconcile.Result{}, nil
+	}
+
+	// Checking if buildRun doesn't define its own BuildSpec or reference an existing build
+	if (reflect.DeepEqual(buildRun.Spec.BuildSpec, buildv1alpha1.BuildSpec{})) && (buildRun.Spec.BuildRef == nil) {
+		//stop reconciling and mark the BuildRun as Failed
+		if updateErr := resources.UpdateConditionWithFalseStatus(
+			ctx,
+			r.client,
+			buildRun,
+			"BuildRun must either reference an existing build object or define its own BuildSpec",
+			resources.BuildRunMisconfigured,
+		); updateErr != nil {
+			return reconcile.Result{}, updateErr
+		}
+
+		return reconcile.Result{}, nil
+	}
+
 	// Validating buildrun name is a valid label value
 	if errs := validation.IsValidLabelValue(buildRun.Name); len(errs) > 0 {
 		// stop reconciling and mark the BuildRun as Failed
@@ -124,31 +157,40 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if apierrors.IsNotFound(getTaskRunErr) {
 
 			build = &buildv1alpha1.Build{}
-			err := resources.GetBuildObject(ctx, r.client, buildRun, build)
-			if err != nil {
-				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
+
+			// Populating referenced build from the cluster when not buildRun doesn't define its own BuildSpec
+			if buildRun.Spec.BuildRef != nil {
+				err := resources.GetBuildObject(ctx, r.client, buildRun, build)
+				if err != nil {
+					if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
+						return reconcile.Result{}, nil
+					}
+					// system call failure, reconcile again
+					return reconcile.Result{}, err
+				}
+			} else if !reflect.DeepEqual(buildRun.Spec.BuildSpec, buildv1alpha1.BuildSpec{}) {
+				build.Spec = buildRun.Spec.BuildSpec
+			}
+
+			// Checking Build registration status only if referencing existing builds
+			if buildRun.Spec.BuildRef != nil {
+				// Validate if the Build was successfully registered
+				if build.Status.Registered == "" {
+					err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
+					// reconcile again until it gets a registration value
+					return reconcile.Result{}, err
+				}
+
+				if build.Status.Registered != corev1.ConditionTrue {
+					// stop reconciling and mark the BuildRun as Failed
+					// we only reconcile again if the status.Update call fails
+					message := fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
+					if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, resources.ConditionBuildRegistrationFailed); updateErr != nil {
+						return reconcile.Result{}, updateErr
+					}
 					return reconcile.Result{}, nil
 				}
-				// system call failure, reconcile again
-				return reconcile.Result{}, err
-			}
 
-			// Validate if the Build was successfully registered
-			if build.Status.Registered == "" {
-				err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
-				// reconcile again until it gets a registration value
-				return reconcile.Result{}, err
-			}
-
-			if build.Status.Registered != corev1.ConditionTrue {
-				// stop reconciling and mark the BuildRun as Failed
-				// we only reconcile again if the status.Update call fails
-				message := fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
-				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, resources.ConditionBuildRegistrationFailed); updateErr != nil {
-					return reconcile.Result{}, updateErr
-				}
-
-				return reconcile.Result{}, nil
 			}
 
 			// Ensure the build-related labels on the BuildRun
@@ -177,16 +219,19 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				updateBuildRunRequired = true
 			}
 
-			buildGeneration := strconv.FormatInt(build.Generation, 10)
-			if buildRun.GetLabels()[buildv1alpha1.LabelBuild] != build.Name || buildRun.GetLabels()[buildv1alpha1.LabelBuildGeneration] != buildGeneration {
-				buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
-				buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = buildGeneration
-				ctxlog.Info(ctx, "updating BuildRun labels", namespace, request.Namespace, name, request.Name)
-				updateBuildRunRequired = true
+			// Propogating build-related labels to BuildRun if referencing existing build
+			if buildRun.Spec.BuildRef != nil {
+				buildGeneration := strconv.FormatInt(build.Generation, 10)
+				if buildRun.GetLabels()[buildv1alpha1.LabelBuild] != build.Name || buildRun.GetLabels()[buildv1alpha1.LabelBuildGeneration] != buildGeneration {
+					buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
+					buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = buildGeneration
+					ctxlog.Info(ctx, "updating BuildRun labels", namespace, request.Namespace, name, request.Name)
+					updateBuildRunRequired = true
+				}
 			}
 
 			if updateBuildRunRequired {
-				if err = r.client.Update(ctx, buildRun); err != nil {
+				if err := r.client.Update(ctx, buildRun); err != nil {
 					return reconcile.Result{}, err
 				}
 				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, request.Namespace, name, request.Name)
@@ -195,7 +240,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			// Set the Build spec in the BuildRun status
 			buildRun.Status.BuildSpec = &build.Spec
 			ctxlog.Info(ctx, "updating BuildRun status", namespace, request.Namespace, name, request.Name)
-			if err = r.client.Status().Update(ctx, buildRun); err != nil {
+			if err := r.client.Status().Update(ctx, buildRun); err != nil {
 				return reconcile.Result{}, err
 			}
 
