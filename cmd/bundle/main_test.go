@@ -23,7 +23,14 @@ import (
 
 var _ = Describe("Bundle Loader", func() {
 	var run = func(args ...string) error {
+		// discard log output
 		log.SetOutput(ioutil.Discard)
+
+		// discard stderr output
+		var tmp = os.Stderr
+		os.Stderr = nil
+		defer func() { os.Stderr = tmp }()
+
 		os.Args = append([]string{"tool"}, args...)
 		return Do(context.Background())
 	}
