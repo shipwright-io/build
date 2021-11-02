@@ -296,8 +296,34 @@ status:
  # [...]
   output:
     digest: sha256:07626e3c7fdd28d5328a8d6df8d29cd3da760c7f5e2070b534f9b880ed093a53
-    size: "1989004"
+    size: 1989004
   # [...]
+```
+
+Additionally, you can store error details for debugging purposes when a BuildRun fails using your strategy.
+
+| Result file                        | Description                                     |
+| ---------------------------------- | ----------------------------------------------- |
+| `$(results.shp-error-reason.path)` | File to store the error reason.          |
+| `$(results.shp-error-message.path)` | File to store the error message. |
+
+Reason is intended to be a one-word, CamelCase classification of the error source, with the first letter capitalized.
+Error details are only propagated if the build container terminates with a non-zero exit code.
+This information will be available in the `.status.failureDetails` field of the BuildRun. 
+
+```yaml 
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+# [...]
+status:
+  # [...]
+  failureDetails:
+    location:
+      container: step-source-default
+      pod: baran-build-buildrun-gzmv5-b7wbf-pod-bbpqr
+    message: The source repository does not exist, or you have insufficient permission
+      to access it.
+    reason: GitRemotePrivate
 ```
 
 ## Steps Resource Definition

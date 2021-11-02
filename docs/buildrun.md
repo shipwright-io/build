@@ -269,9 +269,28 @@ _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/te
 
 ### Understanding failed BuildRuns
 
-To make it easier for users to understand why did a BuildRun failed, users can infer from the `Status.FailedAt` field, the pod and container where the failure took place.
+[DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer from the `Status.FailedAt` field, the pod and container where the failure took place.
 
 In addition, the `Status.Conditions` will host under the `Message` field a compacted message containing the `kubectl` command to trigger, in order to retrieve the logs.
+
+Lastly, users can check `Status.FailureDetails` field, which includes the same information available in the `Status.FailedAt` field, 
+as well as a humanly-readable error message and reason.
+The message and reason are only included if the build strategy provides them.
+
+Example of failed BuildRun:
+
+```yaml 
+# [...]
+status:
+  # [...]
+  failureDetails:
+    location:
+      container: step-source-default
+      pod: baran-build-buildrun-gzmv5-b7wbf-pod-bbpqr
+    message: The source repository does not exist, or you have insufficient permission
+      to access it.
+    reason: GitRemotePrivate
+```
 
 ### Step Results in BuildRun Status
 

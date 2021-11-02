@@ -558,11 +558,30 @@ spec:
                   type: object
                 type: array
               failedAt:
-                description: FailedAt points to the resource where the BuildRun failed
+                description: 'Deprecated: FailedAt points to the resource where the
+                  BuildRun failed'
                 properties:
                   container:
                     type: string
                   pod:
+                    type: string
+                type: object
+              failureDetails:
+                description: FailureDetails contains error details that are collected
+                  and surfaced from TaskRun
+                properties:
+                  location:
+                    description: FailedAt describes the location where the failure
+                      happened
+                    properties:
+                      container:
+                        type: string
+                      pod:
+                        type: string
+                    type: object
+                  message:
+                    type: string
+                  reason:
                     type: string
                 type: object
               latestTaskRunRef:

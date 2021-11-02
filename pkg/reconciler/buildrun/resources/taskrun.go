@@ -113,7 +113,7 @@ func GenerateTaskSpec(
 		},
 	}
 
-	generatedTaskSpec.Results = getTaskSpecResults()
+	generatedTaskSpec.Results = append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
 
 	if build.Spec.Builder != nil {
 		InputBuilder := v1beta1.ParamSpec{
