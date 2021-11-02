@@ -21,7 +21,14 @@ import (
 
 var _ = Describe("Git Resource", func() {
 	var run = func(args ...string) error {
+		// discard log output
 		log.SetOutput(ioutil.Discard)
+
+		// discard stderr output
+		var tmp = os.Stderr
+		os.Stderr = nil
+		defer func() { os.Stderr = tmp }()
+
 		os.Args = append([]string{"tool", "--skip-validation"}, args...)
 		return Execute(context.TODO())
 	}
