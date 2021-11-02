@@ -99,6 +99,10 @@ type GitSourceResult struct {
 
 	// CommitAuthor holds the commit author of a git source
 	CommitAuthor string `json:"commitAuthor,omitempty"`
+
+	// BranchName holds the default branch name of the git source
+	// this will be set only when revision is not specified in Build object
+	BranchName string `json:"branchName,omitempty"`
 }
 
 // Output holds the results emitted from the output step (build-and-push)

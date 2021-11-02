@@ -278,7 +278,7 @@ After the successful completion of a `BuildRun`, the `.status` field contains th
 The results from the source step will be surfaced to the `.status.sources` and the results from 
 the [output step](buildstrategies.md#system-results) will be surfaced to the `.status.output` field of a `BuildRun`.
 
-Example of a `BuildRun` with surfaced results for `git` source:
+Example of a `BuildRun` with surfaced results for `git` source (note that the `branchName` is only included if the Build does not specify any `revision`):
 
 ```yaml
 # [...]
@@ -293,6 +293,7 @@ status:
     git:
       commitAuthor: xxx xxxxxx
       commitSha: f25822b85021d02059c9ac8a211ef3804ea8fdde
+      branchName: main
 ```
 
 Another example of a `BuildRun` with surfaced results for local source code(`bundle`) source:

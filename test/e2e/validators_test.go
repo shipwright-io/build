@@ -164,6 +164,8 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) 
 				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitSha))
 			case "shp-source-default-commit-author":
 				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitAuthor))
+			case "shp-source-default-branch-name":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.BranchName))
 			case "shp-image-digest":
 				Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
 			case "shp-image-size":

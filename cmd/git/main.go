@@ -50,6 +50,7 @@ type settings struct {
 	target                 string
 	resultFileCommitSha    string
 	resultFileCommitAuthor string
+	resultFileBranchName   string
 	secretPath             string
 	skipValidation         bool
 }
@@ -73,6 +74,7 @@ func init() {
 	pflag.StringVar(&flagValues.target, "target", "", "The target directory of the clone operation")
 	pflag.StringVar(&flagValues.resultFileCommitSha, "result-file-commit-sha", "", "A file to write the commit sha to.")
 	pflag.StringVar(&flagValues.resultFileCommitAuthor, "result-file-commit-author", "", "A file to write the commit author to.")
+	pflag.StringVar(&flagValues.resultFileBranchName, "result-file-branch-name", "", "A file to write the branch name to.")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
 
 	// Optional flag to be able to override the default shallow clone depth,
@@ -152,6 +154,17 @@ func runGitClone(ctx context.Context) error {
 		}
 
 		if err = ioutil.WriteFile(flagValues.resultFileCommitAuthor, []byte(output), 0644); err != nil {
+			return err
+		}
+	}
+
+	if strings.TrimSpace(flagValues.revision) == "" && strings.TrimSpace(flagValues.resultFileBranchName) != "" {
+		output, err := git(ctx, "-C", flagValues.target, "rev-parse", "--abbrev-ref", "HEAD")
+		if err != nil {
+			return err
+		}
+
+		if err := ioutil.WriteFile(flagValues.resultFileBranchName, []byte(output), 0644); err != nil {
 			return err
 		}
 	}

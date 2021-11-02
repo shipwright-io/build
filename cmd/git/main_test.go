@@ -376,5 +376,20 @@ var _ = Describe("Git Resource", func() {
 				})
 			})
 		})
+
+		It("should store branch-name into file specified in --result-file-branch-name flag", func() {
+			withTempFile("branch-name", func(filename string) {
+
+				withTempDir(func(target string) {
+					Expect(run(
+						"--url", exampleRepo,
+						"--target", target,
+						"--result-file-branch-name", filename,
+					)).ToNot(HaveOccurred())
+
+					Expect(filecontent(filename)).To(Equal("main"))
+				})
+			})
+		})
 	})
 })
