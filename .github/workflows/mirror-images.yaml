@@ -24,6 +24,5 @@ jobs:
             library/python:3.8 \
             openliberty/open-liberty:kernel-java8-openj9-ubi \
             ; do
-
-            echo crane cp "${IMAGE}" "${REPO}/$(cut -d/ -f2 <<<"${IMAGE}")"
+            crane cp "${IMAGE}" "${REPO}/$(cut -d/ -f2 <<<"${IMAGE}")"
           done
