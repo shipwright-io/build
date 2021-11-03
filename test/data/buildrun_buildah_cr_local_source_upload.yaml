@@ -1,0 +1,11 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildah-golang-local-source-upload
+spec:
+  buildRef:
+    name: buildah-local-source-upload
+  sources:
+    - name: local-copy
+      type: LocalCopy

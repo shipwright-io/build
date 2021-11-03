@@ -41,6 +41,11 @@ const (
 	bundleImageEnvVar             = "BUNDLE_CONTAINER_IMAGE"
 	bundleContainerTemplateEnvVar = "BUNDLE_CONTAINER_TEMPLATE"
 
+	// environment variable to hold waiter's container image, created by ko
+	waiterDefaultImage            = "ghcr.io/shipwright-io/build/waiter:latest"
+	waiterImageEnvVar             = "WAITER_CONTAINER_IMAGE"
+	waiterContainerTemplateEnvVar = "WAITER_CONTAINER_TEMPLATE"
+
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
 	metricBuildRunEstablishDurationBucketsEnvVar  = "PROMETHEUS_BR_EST_DUR_BUCKETS"
@@ -86,10 +91,11 @@ var (
 // Config hosts different parameters that
 // can be set to use on the Build controllers
 type Config struct {
-	CtxTimeOut time.Duration
-	GitContainerTemplate,
-	MutateImageContainerTemplate corev1.Container
+	CtxTimeOut                    time.Duration
+	GitContainerTemplate          corev1.Container
+	MutateImageContainerTemplate  corev1.Container
 	BundleContainerTemplate       corev1.Container
+	WaiterContainerTemplate       corev1.Container
 	RemoteArtifactsContainerImage string
 	TerminationLogPath            string
 	Prometheus                    PrometheusConfig
@@ -186,6 +192,19 @@ func NewDefaultConfig() *Config {
 				},
 			},
 		},
+		WaiterContainerTemplate: corev1.Container{
+			Image: waiterDefaultImage,
+			Command: []string{
+				"/ko-app/waiter",
+			},
+			Args: []string{
+				"start",
+			},
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
+			},
+		},
 		Prometheus: PrometheusConfig{
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
@@ -276,6 +295,20 @@ func (c *Config) SetConfigFromEnv() error {
 	// the dedicated environment variable for the image overwrites what is defined in the bundle container template
 	if bundleImage := os.Getenv(bundleImageEnvVar); bundleImage != "" {
 		c.BundleContainerTemplate.Image = bundleImage
+	}
+
+	if waiterContainerTemplate := os.Getenv(waiterContainerTemplateEnvVar); waiterContainerTemplate != "" {
+		c.WaiterContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(waiterContainerTemplate), &c.WaiterContainerTemplate); err != nil {
+			return err
+		}
+		if c.WaiterContainerTemplate.Image == "" {
+			c.WaiterContainerTemplate.Image = waiterDefaultImage
+		}
+	}
+
+	if waiterImage := os.Getenv(waiterImageEnvVar); waiterImage != "" {
+		c.WaiterContainerTemplate.Image = waiterImage
 	}
 
 	if remoteArtifactsImage := os.Getenv(remoteArtifactsEnvVar); remoteArtifactsImage != "" {

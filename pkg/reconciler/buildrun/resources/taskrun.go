@@ -127,8 +127,8 @@ func GenerateTaskSpec(
 		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilder)
 	}
 
-	// define results, steps and volumes for sources
-	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build)
+	// define the results, steps and volumes for sources, or alternatively, wait for user upload
+	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build, buildRun)
 
 	// Add the strategy defined parameters into the Task spec
 	for _, p := range strategyParams {
@@ -148,7 +148,6 @@ func GenerateTaskSpec(
 		}
 
 		generatedTaskSpec.Params = append(generatedTaskSpec.Params, param)
-
 	}
 
 	// Combine the environment variables specified in the Build object and the BuildRun object

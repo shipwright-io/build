@@ -176,6 +176,24 @@ var _ = Describe("Config", func() {
 			})
 		})
 
+		It("should allow for an override of the Waiter container template", func() {
+			var overrides = map[string]string{
+				"WAITER_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.WaiterContainerTemplate).To(Equal(corev1.Container{
+					Image: "myregistry/custom/image",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("0.5"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+				}))
+			})
+		})
+
 		It("should allow for an override of the Mutate-Image container template and image", func() {
 			overrides := map[string]string{
 				"MUTATE_IMAGE_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/mutate-image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
@@ -185,6 +203,45 @@ var _ = Describe("Config", func() {
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
 				Expect(config.MutateImageContainerTemplate).To(Equal(corev1.Container{
 					Image: "myregistry/custom/mutate-image:override",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("0.5"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+				}))
+			})
+
+		})
+
+		It("should allow for an override of the Waiter container image", func() {
+			var overrides = map[string]string{
+				"WAITER_CONTAINER_IMAGE": "myregistry/custom/image",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				nonRoot := pointer.Int64Ptr(1000)
+				Expect(config.WaiterContainerTemplate).To(Equal(corev1.Container{
+					Image:   "myregistry/custom/image",
+					Command: []string{"/ko-app/waiter"},
+					Args:    []string{"start"},
+					SecurityContext: &corev1.SecurityContext{
+						RunAsUser:  nonRoot,
+						RunAsGroup: nonRoot,
+					},
+				}))
+			})
+		})
+
+		It("should allow for an override of the Waiter container template and image", func() {
+			var overrides = map[string]string{
+				"WAITER_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
+				"WAITER_CONTAINER_IMAGE":    "myregistry/custom/image:override",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.WaiterContainerTemplate).To(Equal(corev1.Container{
+					Image: "myregistry/custom/image:override",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("0.5"),

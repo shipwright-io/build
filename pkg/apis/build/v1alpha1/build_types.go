@@ -102,6 +102,7 @@ type BuildSpec struct {
 
 	// Params is a list of key/value that could be used
 	// to set strategy parameters
+	//
 	// +optional
 	ParamValues []ParamValue `json:"paramValues,omitempty"`
 

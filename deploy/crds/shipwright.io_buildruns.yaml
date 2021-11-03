@@ -232,6 +232,32 @@ spec:
                     description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
                     type: string
                 type: object
+              sources:
+                description: Sources slice of BuildSource, defining external build
+                  artifacts complementary to VCS (`.spec.source`) data.
+                items:
+                  description: BuildSource remote artifact definition, also known
+                    as "sources". Simple "name" and "url" pairs, initially without
+                    "credentials" (authentication) support yet.
+                  properties:
+                    name:
+                      description: Name instance entry.
+                      type: string
+                    timeout:
+                      description: Timeout how long the BuildSource execution must
+                        take.
+                      type: string
+                    type:
+                      description: Type is the BuildSource qualifier, the type of
+                        the data-source.
+                      type: string
+                    url:
+                      description: URL remote artifact location.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
               state:
                 description: State is used for canceling a buildrun (and maybe more
                   later on).
@@ -488,12 +514,19 @@ spec:
                         name:
                           description: Name instance entry.
                           type: string
+                        timeout:
+                          description: Timeout how long the BuildSource execution
+                            must take.
+                          type: string
+                        type:
+                          description: Type is the BuildSource qualifier, the type
+                            of the data-source.
+                          type: string
                         url:
                           description: URL remote artifact location.
                           type: string
                       required:
                       - name
-                      - url
                       type: object
                     type: array
                   strategy:
