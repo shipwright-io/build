@@ -17,6 +17,7 @@ import (
 const (
 	commitSHAResult    = "commit-sha"
 	commitAuthorResult = "commit-author"
+	branchName         = "branch-name"
 )
 
 // AppendGitStep appends the Git step and results and volume if needed to the TaskSpec
@@ -33,6 +34,9 @@ func AppendGitStep(
 	}, tektonv1beta1.TaskResult{
 		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult),
 		Description: "The author of the last commit of the cloned source.",
+	}, tektonv1beta1.TaskResult{
+		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName),
+		Description: "The name of the branch used of the cloned source.",
 	})
 
 	// initialize the step from the template
@@ -51,6 +55,8 @@ func AppendGitStep(
 		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitSHAResult),
 		"--result-file-commit-author",
 		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitAuthorResult),
+		"--result-file-branch-name",
+		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, branchName),
 	}
 
 	// Check if a revision is defined
@@ -92,13 +98,15 @@ func AppendGitStep(
 func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []tektonv1beta1.TaskRunResult) {
 	commitAuthor := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult))
 	commitSha := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitSHAResult))
+	branchName := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName))
 
-	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" {
+	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" || strings.TrimSpace(branchName) != "" {
 		buildRun.Status.Sources = append(buildRun.Status.Sources, buildv1alpha1.SourceResult{
 			Name: name,
 			Git: &buildv1alpha1.GitSourceResult{
 				CommitAuthor: commitAuthor,
 				CommitSha:    commitSha,
+				BranchName:   branchName,
 			},
 		})
 	}

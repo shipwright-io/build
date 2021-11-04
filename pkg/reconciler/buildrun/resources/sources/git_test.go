@@ -34,10 +34,11 @@ var _ = Describe("Git", func() {
 			}, "default")
 		})
 
-		It("adds results for the commit sha and commit author", func() {
-			Expect(len(taskSpec.Results)).To(Equal(2))
+		It("adds results for the commit sha, commit author and branch name", func() {
+			Expect(len(taskSpec.Results)).To(Equal(3))
 			Expect(taskSpec.Results[0].Name).To(Equal("shp-source-default-commit-sha"))
 			Expect(taskSpec.Results[1].Name).To(Equal("shp-source-default-commit-author"))
+			Expect(taskSpec.Results[2].Name).To(Equal("shp-source-default-branch-name"))
 		})
 
 		It("adds a step", func() {
@@ -53,6 +54,8 @@ var _ = Describe("Git", func() {
 				"$(results.shp-source-default-commit-sha.path)",
 				"--result-file-commit-author",
 				"$(results.shp-source-default-commit-author.path)",
+				"--result-file-branch-name",
+				"$(results.shp-source-default-branch-name.path)",
 			}))
 		})
 	})
@@ -74,10 +77,11 @@ var _ = Describe("Git", func() {
 			}, "default")
 		})
 
-		It("adds results for the commit sha and commit author", func() {
-			Expect(len(taskSpec.Results)).To(Equal(2))
+		It("adds results for the commit sha, commit author and branch name", func() {
+			Expect(len(taskSpec.Results)).To(Equal(3))
 			Expect(taskSpec.Results[0].Name).To(Equal("shp-source-default-commit-sha"))
 			Expect(taskSpec.Results[1].Name).To(Equal("shp-source-default-commit-author"))
+			Expect(taskSpec.Results[2].Name).To(Equal("shp-source-default-branch-name"))
 		})
 
 		It("adds a volume for the secret", func() {
@@ -100,6 +104,8 @@ var _ = Describe("Git", func() {
 				"$(results.shp-source-default-commit-sha.path)",
 				"--result-file-commit-author",
 				"$(results.shp-source-default-commit-author.path)",
+				"--result-file-branch-name",
+				"$(results.shp-source-default-branch-name.path)",
 				"--secret-path",
 				"/workspace/shp-source-secret",
 			}))

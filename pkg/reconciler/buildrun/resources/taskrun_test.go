@@ -12,7 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -92,6 +92,8 @@ var _ = Describe("GenerateTaskrun", func() {
 					"$(results.shp-source-default-commit-sha.path)",
 					"--result-file-commit-author",
 					"$(results.shp-source-default-commit-author.path)",
+					"--result-file-branch-name",
+					"$(results.shp-source-default-branch-name.path)",
 				}))
 			})
 
