@@ -11,6 +11,7 @@ SPDX-License-Identifier: Apache-2.0
     </a>
     <img alt="License" src="https://img.shields.io/github/license/shipwright-io/build">
     <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"> <img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
+    <a href="https://bestpractices.coreinfrastructure.org/projects/5315"><img src="https://bestpractices.coreinfrastructure.org/projects/5315/badge"></a>
 </p>
 
 # ![shipwright-logo](./.docs/shipwright-logo-lightbg-512.png)
