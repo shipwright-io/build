@@ -2,7 +2,6 @@ name: Nightly Release
 
 on:
   workflow_dispatch:  # Manual trigger
-
   schedule:
   - cron: '0 5 * * *' # 5 AM UTC = Midnight EST
 
@@ -10,9 +9,15 @@ jobs:
   nightly:
     if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # To be able to get OIDC ID token to sign images.
+      contents: write  # To be able to update releases.
+      packages: write  # To be able to push images and signatures.
+
     env:
       IMAGE_HOST: ghcr.io
       IMAGE_NAMESPACE: ${{ github.repository }}
+
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-go@v2
@@ -22,6 +27,7 @@ jobs:
     # Install tools
     - uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
     - uses: imjasonh/setup-crane@01d26682810dcd47bfc8eb1efe791558123a9373
+    - uses: sigstore/cosign-installer@v1.2.0
 
     - name: Get current date
       id: date
@@ -44,10 +50,28 @@ jobs:
 
         mv sample-strategies.yaml nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
         gh release upload nightly nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
+
     - name: Update latest tag of supporting images
       working-directory: ./cmd
       run: |
         for command in *
         do
           crane copy "${IMAGE_HOST}/${IMAGE_NAMESPACE}/${command}:nightly-${{ steps.date.outputs.date }}" "${IMAGE_HOST}/${IMAGE_NAMESPACE}/${command}:latest"
+        done
+
+    - name: Sign released images
+      env:
+        # This enables keyless mode
+        # (https://github.com/sigstore/cosign/blob/main/KEYLESS.md) which signs
+        # images using an ephemeral key tied to the GitHub Actions identity via
+        # OIDC.
+        COSIGN_EXPERIMENTAL: "true"
+      run: |
+        for f in \
+          nightly-${{ steps.date.outputs.date }}.yaml \
+          nightly-${{ steps.date.outputs.date }}-debug.yaml; do
+          grep -o "ghcr.io[^\"]*" $f | xargs cosign sign \
+              -a sha=${{ github.sha }} \
+              -a run_id=${{ github.run_id }} \
+              -a run_attempt=${{ github.run_attempt }}
         done
