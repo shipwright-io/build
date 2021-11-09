@@ -6,11 +6,9 @@ on:
       - '**'
     branches:
       - main
-      - master
   pull_request:
     branches:
       - main
-      - master
 
 jobs:
   verify:
@@ -34,15 +32,12 @@ jobs:
         go install github.com/client9/misspell/cmd/misspell@latest
         go install honnef.co/go/tools/cmd/staticcheck@latest
         go install github.com/maxbrunsfeld/counterfeiter/v6@latest
+        go install github.com/securego/gosec/v2/cmd/gosec@latest
 
     - name: Checks
       env:
         GOPATH: "/home/runner/work/build/build/go"
       run: |
         make -C $GOPATH/src/github.com/shipwright-io/build \
-          govet \
-          ineffassign \
-          golint \
-          misspell \
-          staticcheck \
+          sanity-check \
           verify-codegen
