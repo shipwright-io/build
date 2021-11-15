@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -213,10 +213,16 @@ func GenerateTaskSpec(
 		}
 	}
 
+	buildRunOutput := buildRun.Spec.Output
+	if buildRunOutput == nil {
+		buildRunOutput = &buildv1alpha1.Image{}
+	}
+
 	// Amending task spec with image mutate step if annotations or labels are
-	// specified in build manifest
-	if len(build.Spec.Output.Annotations) > 0 || len(build.Spec.Output.Labels) > 0 {
-		amendTaskSpecWithImageMutate(cfg, &generatedTaskSpec, build.Spec.Output)
+	// specified in build manifest or buildRun manifest
+	if len(build.Spec.Output.Annotations) > 0 || len(build.Spec.Output.Labels) > 0 ||
+		len(buildRunOutput.Annotations) > 0 || len(buildRunOutput.Labels) > 0 {
+		amendTaskSpecWithImageMutate(cfg, &generatedTaskSpec, build.Spec.Output, *buildRunOutput)
 	}
 
 	return &generatedTaskSpec, nil

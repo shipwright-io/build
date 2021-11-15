@@ -280,6 +280,90 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(err.Error()).To(Equal("error(s) occurred merging environment variables into BuildStrategy \"buildah\" steps: [environment variable \"MY_VAR_1\" already exists, environment variable \"MY_VAR_2\" already exists]"))
 			})
 		})
+
+		Context("when only BuildRun has output image labels and annotation defined ", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithOutputImageLabelsAndAnnotations))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+				Expect(err).To(BeNil())
+				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+
+				expectedCommandOrArg = []string{
+					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+				}
+
+				JustBeforeEach(func() {
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+					Expect(err).To(BeNil())
+				})
+
+				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
+					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+					Expect(got.Steps[3].Args).To(Equal([]string{
+						"--image",
+						"$(params.shp-output-image)",
+						"--result-file-image-digest",
+						"$(results.shp-image-digest.path)",
+						"result-file-image-size",
+						"$(results.shp-image-size.path)",
+						"--annotation",
+						"org.opencontainers.owner=my-company",
+						"--label",
+						"maintainer=new-team@my-company.com",
+						"foo=bar",
+					}))
+				})
+			})
+		})
+
+		Context("when Build and BuildRun both have output image labels and annotation defined ", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithAnnotationAndLabel))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithOutputImageLabelsAndAnnotations))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+				Expect(err).To(BeNil())
+				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+
+				expectedCommandOrArg = []string{
+					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+				}
+
+				JustBeforeEach(func() {
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+					Expect(err).To(BeNil())
+				})
+
+				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
+					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+					Expect(got.Steps[3].Args).To(Equal([]string{
+						"--image",
+						"$(params.shp-output-image)",
+						"--result-file-image-digest",
+						"$(results.shp-image-digest.path)",
+						"result-file-image-size",
+						"$(results.shp-image-size.path)",
+						"--annotation",
+						"org.opencontainers.owner=my-company",
+						"org.opencontainers.image.url=https://my-company.com/images",
+						"--label",
+						"maintainer=new-team@my-company.com",
+						"foo=bar",
+					}))
+				})
+			})
+		})
+
 	})
 
 	Describe("Generate the TaskRun", func() {
