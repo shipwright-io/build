@@ -355,9 +355,9 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.RestrictedParametersInUse))
-			Expect(buildObject.Status.Message).To(HavePrefix("The following parameters are restricted and cannot be set:"))
-			Expect(buildObject.Status.Message).To(ContainSubstring("shp-something"))
+			Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.RestrictedParametersInUse))
+			Expect(*buildObject.Status.Message).To(HavePrefix("The following parameters are restricted and cannot be set:"))
+			Expect(*buildObject.Status.Message).To(ContainSubstring("shp-something"))
 		})
 
 		It("fails the Build due to the definition of an undefined param in the strategy", func() {
@@ -376,8 +376,8 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.UndefinedParameter))
-			Expect(buildObject.Status.Message).To(Equal("The following parameters are not defined in the build strategy: sleep-not"))
+			Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.UndefinedParameter))
+			Expect(*buildObject.Status.Message).To(Equal("The following parameters are not defined in the build strategy: sleep-not"))
 		})
 
 		It("allows a user to set an empty string on parameter without default", func() {

@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/pointer"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
@@ -39,7 +40,7 @@ var _ = Describe("Credentials", func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL: "a/b/c",
+						URL: pointer.StringPtr("a/b/c"),
 						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_a",
 						},
@@ -96,7 +97,7 @@ var _ = Describe("Credentials", func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL: "a/b/c",
+						URL: pointer.StringPtr("a/b/c"),
 					},
 					Output: buildv1alpha1.Image{
 						Credentials: &corev1.LocalObjectReference{
@@ -134,7 +135,7 @@ var _ = Describe("Credentials", func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL:         "a/b/c",
+						URL:         pointer.StringPtr("a/b/c"),
 						Credentials: nil,
 					},
 				},

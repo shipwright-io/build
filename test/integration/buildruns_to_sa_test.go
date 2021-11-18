@@ -158,7 +158,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 					return false, nil
 				}
 
-				bro.Spec.State = v1alpha1.BuildRunStateCancel
+				bro.Spec.State = v1alpha1.BuildRunRequestedStatePtr(v1alpha1.BuildRunStateCancel)
 				err = tb.UpdateBR(bro)
 				if err != nil {
 					GinkgoT().Logf("error on br update: %s\n", err.Error())
@@ -250,8 +250,8 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			Expect(buildRunCondition).ToNot(BeNil())
 			Expect(buildRunCondition.Status).To(Equal(corev1.ConditionFalse))
-			Expect(buildRunCondition.Reason).To(Equal("ServiceAccountNotFound"))
-			Expect(buildRunCondition.Message).To(ContainSubstring("not found"))
+			Expect(*buildRunCondition.Reason).To(Equal("ServiceAccountNotFound"))
+			Expect(*buildRunCondition.Message).To(ContainSubstring("not found"))
 		})
 	})
 })

@@ -90,11 +90,11 @@ func TestEnv_ValidatePath(t *testing.T) {
 			if err := e.ValidatePath(context.Background()); (err != nil) != tt.wantErr {
 				t.Errorf("Env.ValidatePath() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if b.Status.Reason != build.BuildReason(tt.errReason) {
-				t.Errorf("Build.Status.Reason = %v, wanted: %v", b.Status.Reason, tt.errReason)
+			if b.Status.Reason != nil && *b.Status.Reason != build.BuildReason(tt.errReason) {
+				t.Errorf("Build.Status.Reason = %v, wanted: %v", *b.Status.Reason, tt.errReason)
 			}
-			if b.Status.Message != tt.errMessage {
-				t.Errorf("Build.Status.Message = %v, wanted: %v", b.Status.Message, tt.errMessage)
+			if b.Status.Message != nil && *b.Status.Message != tt.errMessage {
+				t.Errorf("Build.Status.Message = %v, wanted: %v", *b.Status.Message, tt.errMessage)
 			}
 		})
 	}

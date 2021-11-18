@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -84,9 +85,9 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: "foobar",
+				URL: pointer.StringPtr("foobar"),
 			},
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
@@ -107,9 +108,9 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: "https://github.com/shipwright-io/sample-go",
+				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
 			},
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
@@ -133,12 +134,12 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: "https://github.com/shipwright-io/sample-go",
+				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
 				Credentials: &corev1.LocalObjectReference{
 					Name: "foobar",
 				},
 			},
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
@@ -159,9 +160,9 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: "https://github.com/shipwright-io/sample-go",
+				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
 			},
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
@@ -178,9 +179,9 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: "https://github.com/shipwright-io/sample-go",
+				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
 			},
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 			},
 		},
@@ -196,7 +197,7 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: "https://github.com/shipwright-io/sample-go",
+				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
 			},
 			Output: build.Image{
 				Credentials: &corev1.LocalObjectReference{
@@ -228,9 +229,9 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReas
 	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
-			Expect(object.Status.Registered).To(Equal(status))
-			Expect(object.Status.Reason).To(Equal(reason))
-			Expect(object.Status.Message).To(Equal(message))
+			Expect(*object.Status.Registered).To(Equal(status))
+			Expect(*object.Status.Reason).To(Equal(reason))
+			Expect(*object.Status.Message).To(Equal(message))
 		}
 		return nil
 	}
@@ -310,11 +311,11 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
-			if object.Status.Message != "" {
-				Expect(object.Status.Message).To(Equal(message))
+			if object.Status.Message != nil && *object.Status.Message != "" {
+				Expect(*object.Status.Message).To(Equal(message))
 			}
-			if object.Status.Reason != "" {
-				Expect(object.Status.Reason).To(Equal(reason))
+			if object.Status.Reason != nil && *object.Status.Reason != "" {
+				Expect(*object.Status.Reason).To(Equal(reason))
 			}
 		}
 		return nil
@@ -328,7 +329,7 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 		case *build.BuildRun:
 			if !tolerateEmptyStatus {
 				Expect(object.Status.GetCondition(build.Succeeded).Status).To(Equal(condition.Status))
-				Expect(object.Status.GetCondition(build.Succeeded).Reason).To(Equal(condition.Reason))
+				Expect(*object.Status.GetCondition(build.Succeeded).Reason).To(Equal(*condition.Reason))
 				Expect(object.Status.LatestTaskRunRef).To(Equal(name))
 			}
 			if object.Status.BuildSpec != nil {
@@ -662,13 +663,13 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 			Name: buildName,
 		},
 		Spec: build.BuildSpec{
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: corev1.ConditionTrue,
+			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
 		},
 	}
 }
@@ -680,12 +681,12 @@ func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string
 			Name: buildName,
 		},
 		Spec: build.BuildSpec{
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: corev1.ConditionTrue,
+			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
 		},
 	}
 }
@@ -699,13 +700,13 @@ func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName stri
 			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: corev1.ConditionTrue,
+			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
 		},
 	}
 }
@@ -720,13 +721,13 @@ func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategy
 			Annotations: map[string]string{build.AnnotationBuildRunDeletion: "true"},
 		},
 		Spec: build.BuildSpec{
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: corev1.ConditionTrue,
+			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
 		},
 	}
 }
@@ -738,14 +739,14 @@ func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName
 			Name: buildName,
 		},
 		Spec: build.BuildSpec{
-			Strategy: &build.Strategy{
+			Strategy: build.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: corev1.ConditionFalse,
-			Reason:     "something bad happened",
+			Registered: build.ConditionStatusPtr(corev1.ConditionFalse),
+			Reason:     build.BuildReasonPtr("something bad happened"),
 		},
 	}
 }
@@ -758,7 +759,7 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
+			BuildRef: build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -797,13 +798,13 @@ func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName strin
 		},
 		Status: build.BuildRunStatus{
 			BuildSpec: &build.BuildSpec{
-				Strategy: &build.Strategy{
+				Strategy: build.Strategy{
 					Name: "foobar",
 				},
 			},
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
+			BuildRef: build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -828,7 +829,7 @@ func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, build
 			OwnerReferences: []metav1.OwnerReference{fakeOwnerRef},
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
+			BuildRef: build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -844,7 +845,7 @@ func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName strin
 			Namespace: "foobarns",
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
+			BuildRef: build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -916,8 +917,8 @@ func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {
 			Conditions: build.Conditions{
 				build.Condition{
 					Type:    build.Succeeded,
-					Reason:  "foobar",
-					Message: "foo is not bar",
+					Reason:  pointer.StringPtr("foobar"),
+					Message: pointer.StringPtr("foo is not bar"),
 					Status:  corev1.ConditionUnknown,
 				},
 			},
@@ -933,12 +934,12 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
+			BuildRef: build.BuildRef{
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
 				Name:     &saName,
-				Generate: false,
+				Generate: pointer.BoolPtr(false),
 			},
 		},
 		Status: build.BuildRunStatus{},
@@ -952,11 +953,11 @@ func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *buil
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
+			BuildRef: build.BuildRef{
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
-				Generate: false,
+				Generate: pointer.BoolPtr(false),
 			},
 		},
 	}
@@ -970,11 +971,11 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: &build.BuildRef{
+			BuildRef: build.BuildRef{
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
-				Generate: true,
+				Generate: pointer.BoolPtr(true),
 			},
 		},
 	}

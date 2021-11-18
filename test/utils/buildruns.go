@@ -73,7 +73,7 @@ func (t *TestBuild) GetBRReason(name string) (string, error) {
 	if cond == nil {
 		return "", errors.New("BuildRun had no Succeeded condition")
 	}
-	return cond.Reason, nil
+	return *cond.Reason, nil
 }
 
 // GetBRTillCompletion returns a BuildRun that have a CompletionTime set.

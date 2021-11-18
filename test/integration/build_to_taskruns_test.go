@@ -72,9 +72,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
 
-				Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label value as empty string", func() {
@@ -87,9 +87,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
 
-				Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with annotation", func() {
@@ -102,9 +102,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
 
-				Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label", func() {
@@ -117,9 +117,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
 
-				Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with both label and annotation", func() {
@@ -137,9 +137,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
 
-				Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 			})
 		})
 

@@ -58,7 +58,7 @@ func (b *buildPrototype) BuildStrategy(name string) *buildPrototype {
 
 func (b *buildPrototype) ClusterBuildStrategy(name string) *buildPrototype {
 	var cbs = buildv1alpha1.ClusterBuildStrategyKind
-	b.build.Spec.Strategy = &buildv1alpha1.Strategy{
+	b.build.Spec.Strategy = buildv1alpha1.Strategy{
 		Kind: &cbs,
 		Name: name,
 	}
@@ -85,7 +85,7 @@ func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
 }
 
 func (b *buildPrototype) Dockerfile(dockerfile string) *buildPrototype {
-	b.build.Spec.Dockerfile = pointer.StringPtr(dockerfile)
+	b.build.Spec.Dockerfile = &dockerfile
 	return b
 }
 
@@ -219,7 +219,7 @@ func (b buildPrototype) Create() (build *buildv1alpha1.Build, err error) {
 			return false, err
 		}
 
-		return build.Status.Registered == v1.ConditionTrue, nil
+		return build.Status.Registered != nil && *build.Status.Registered == v1.ConditionTrue, nil
 	})
 
 	return
@@ -235,7 +235,7 @@ func (b *buildRunPrototype) Name(name string) *buildRunPrototype {
 }
 
 func (b *buildRunPrototype) ForBuild(build *buildv1alpha1.Build) *buildRunPrototype {
-	b.buildRun.Spec.BuildRef = &buildv1alpha1.BuildRef{Name: build.Name}
+	b.buildRun.Spec.BuildRef = buildv1alpha1.BuildRef{Name: build.Name}
 	b.buildRun.ObjectMeta.Namespace = build.Namespace
 	return b
 }
@@ -244,7 +244,7 @@ func (b *buildRunPrototype) GenerateServiceAccount() *buildRunPrototype {
 	if b.buildRun.Spec.ServiceAccount == nil {
 		b.buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{}
 	}
-	b.buildRun.Spec.ServiceAccount.Generate = true
+	b.buildRun.Spec.ServiceAccount.Generate = pointer.BoolPtr(true)
 	return b
 }
 

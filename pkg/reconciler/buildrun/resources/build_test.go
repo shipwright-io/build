@@ -41,7 +41,7 @@ var _ = Describe("Build Resource", func() {
 			Spec: build.BuildRunSpec{
 				// buildRef is a mandatory field,
 				// therefore we can assume is always present
-				BuildRef: &build.BuildRef{
+				BuildRef: build.BuildRef{
 					Name: buildName,
 				},
 			},

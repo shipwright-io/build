@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
+	"k8s.io/utils/pointer"
 
 	"github.com/shipwright-io/build/pkg/apis"
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -251,7 +252,7 @@ func validateServiceAccountDeletion(buildRun *buildv1alpha1.BuildRun, namespace 
 		}
 	}
 
-	if buildRun.Spec.ServiceAccount == nil || !buildRun.Spec.ServiceAccount.Generate {
+	if buildRun.Spec.ServiceAccount == nil || buildRun.Spec.ServiceAccount.Generate == nil || !*buildRun.Spec.ServiceAccount.Generate {
 		Logf("Skipping validation of service account deletion because service account is not generated")
 		return
 	}
@@ -330,7 +331,7 @@ func buildRunTestData(ns string, identifier string, filePath string) (*buildv1al
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 	if serviceAccountName == "generated" {
 		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
-			Generate: true,
+			Generate: pointer.BoolPtr(true),
 		}
 	} else {
 		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{

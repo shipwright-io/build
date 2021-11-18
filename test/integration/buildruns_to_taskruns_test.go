@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/utils/pointer"
 )
 
 var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
@@ -120,12 +121,12 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 					condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
 					if condition != nil {
-						condition.LastTransitionTime = metav1.Time{Time: fakeTime}
+						condition.LastTransitionTime = &metav1.Time{Time: fakeTime}
 						seq = append(seq, condition)
 					}
 
 					// Pending -> Running
-					if condition != nil && condition.Reason == "Running" {
+					if condition != nil && *condition.Reason == "Running" {
 						buildRunWatcher.Stop()
 					}
 				}
@@ -137,16 +138,16 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				Expect(seq).Should(ContainElement(&v1alpha1.Condition{
 					Type:               v1alpha1.Succeeded,
 					Status:             corev1.ConditionUnknown,
-					LastTransitionTime: metav1.Time{Time: fakeTime},
-					Reason:             "Pending",
-					Message:            "Pending",
+					LastTransitionTime: &metav1.Time{Time: fakeTime},
+					Reason:             pointer.StringPtr("Pending"),
+					Message:            pointer.StringPtr("Pending"),
 				}))
 				Expect(seq).Should(ContainElement(&v1alpha1.Condition{
 					Type:               v1alpha1.Succeeded,
 					Status:             corev1.ConditionUnknown,
-					LastTransitionTime: metav1.Time{Time: fakeTime},
-					Reason:             "Running",
-					Message:            "Not all Steps in the Task have finished executing",
+					LastTransitionTime: &metav1.Time{Time: fakeTime},
+					Reason:             pointer.StringPtr("Running"),
+					Message:            pointer.StringPtr("Not all Steps in the Task have finished executing"),
 				}))
 			})
 		})
@@ -290,9 +291,9 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			b, err := tb.GetBuildTillRegistration(buildObject.Name, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
-			Expect(b.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(b.Status.Reason).To(Equal(v1alpha1.RemoteRepositoryUnreachable))
-			Expect(b.Status.Message).To(ContainSubstring("no such host"))
+			Expect(*b.Status.Registered).To(Equal(corev1.ConditionFalse))
+			Expect(*b.Status.Reason).To(Equal(v1alpha1.RemoteRepositoryUnreachable))
+			Expect(*b.Status.Message).To(ContainSubstring("no such host"))
 
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
@@ -365,7 +366,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					return false, nil
 				}
 
-				bro.Spec.State = v1alpha1.BuildRunStateCancel
+				bro.Spec.State = v1alpha1.BuildRunRequestedStatePtr(v1alpha1.BuildRunStateCancel)
 				err = tb.UpdateBR(bro)
 				if err != nil {
 					GinkgoT().Logf("error on br update: %s\n", err.Error())
@@ -468,8 +469,8 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			condition := br.Status.GetCondition(v1alpha1.Succeeded)
 			Expect(condition.Status).To(Equal(corev1.ConditionFalse))
-			Expect(condition.Reason).To(Equal(resources.BuildRunNameInvalid))
-			Expect(condition.Message).To(Equal("must be no more than 63 characters"))
+			Expect(*condition.Reason).To(Equal(resources.BuildRunNameInvalid))
+			Expect(*condition.Message).To(Equal("must be no more than 63 characters"))
 		})
 
 		It("should reflect a BadRequest reason in TaskRun", func() {
