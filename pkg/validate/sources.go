@@ -20,12 +20,7 @@ type SourcesRef struct {
 // ValidatePath executes the validation routine, inspecting the `build.spec.sources` path, which
 // contains a slice of BuildSource.
 func (s *SourcesRef) ValidatePath(_ context.Context) error {
-	if s.Build.Spec.Sources == nil {
-		return nil
-	}
-	sources := *s.Build.Spec.Sources
-
-	for _, source := range sources {
+	for _, source := range s.Build.Spec.Sources {
 		if err := s.validateSourceEntry(source); err != nil {
 			return err
 		}

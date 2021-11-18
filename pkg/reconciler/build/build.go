@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -60,8 +61,8 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	// Populate the status struct with default values
-	b.Status.Registered = corev1.ConditionFalse
-	b.Status.Reason = build.SucceedStatus
+	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionFalse)
+	b.Status.Reason = build.BuildReasonPtr(build.SucceedStatus)
 
 	// build a list of current validation types
 	validationTypes := []string{
@@ -95,13 +96,13 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 				ctxlog.Info(ctx, "unexpected error during ownership reference validation", namespace, request.Namespace, name, request.Name, "error", err)
 			}
 		}
-		if b.Status.Reason != build.SucceedStatus {
+		if b.Status.Reason == nil || *b.Status.Reason != build.SucceedStatus {
 			return r.UpdateBuildStatusAndRetreat(ctx, b)
 		}
 	}
 
-	b.Status.Registered = corev1.ConditionTrue
-	b.Status.Message = build.AllValidationsSucceeded
+	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionTrue)
+	b.Status.Message = pointer.StringPtr(build.AllValidationsSucceeded)
 	err = r.client.Status().Update(ctx, b)
 	if err != nil {
 		return reconcile.Result{}, err

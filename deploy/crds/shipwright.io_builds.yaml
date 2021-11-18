@@ -431,6 +431,8 @@ spec:
                 description: The Register status of the Build
                 type: string
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

@@ -19,7 +19,7 @@ type Source struct {
 	// URL describes the URL of the Git repository.
 	//
 	// +optional
-	URL string `json:"url,omitempty"`
+	URL *string `json:"url,omitempty"`
 
 	// BundleContainer
 	//

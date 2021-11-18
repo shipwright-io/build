@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -40,8 +41,8 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 		for _, buildRun := range buildRunList.Items {
 			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
 				if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
-					o.Build.Status.Reason = build.SetOwnerReferenceFailed
-					o.Build.Status.Message = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
+					o.Build.Status.Reason = build.BuildReasonPtr(build.SetOwnerReferenceFailed)
+					o.Build.Status.Message = pointer.StringPtr(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
 				}
 				if err = o.Client.Update(ctx, &buildRun); err != nil {
 					return err

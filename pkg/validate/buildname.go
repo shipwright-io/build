@@ -11,6 +11,7 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/utils/pointer"
 )
 
 // BuildNameRef contains all required fields
@@ -23,8 +24,8 @@ type BuildNameRef struct {
 // that build name is a valid label value
 func (b *BuildNameRef) ValidatePath(_ context.Context) error {
 	if errs := validation.IsValidLabelValue(b.Build.Name); len(errs) > 0 {
-		b.Build.Status.Reason = build.BuildNameInvalid
-		b.Build.Status.Message = strings.Join(errs, ", ")
+		b.Build.Status.Reason = build.BuildReasonPtr(build.BuildNameInvalid)
+		b.Build.Status.Message = pointer.StringPtr(strings.Join(errs, ", "))
 	}
 
 	return nil

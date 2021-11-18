@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -132,16 +133,22 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			}
 
 			// Validate if the Build was successfully registered
-			if build.Status.Registered == "" {
+			if build.Status.Registered == nil || *build.Status.Registered == "" {
 				err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
 				// reconcile again until it gets a registration value
 				return reconcile.Result{}, err
 			}
 
-			if build.Status.Registered != corev1.ConditionTrue {
+			if build.Status.Registered != nil && *build.Status.Registered != corev1.ConditionTrue {
 				// stop reconciling and mark the BuildRun as Failed
 				// we only reconcile again if the status.Update call fails
-				message := fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, build.Status.Registered, build.Status.Reason)
+				var reason buildv1alpha1.BuildReason
+
+				if build.Status.Reason != nil {
+					reason = *build.Status.Reason
+				}
+
+				message := fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: %s, reason: %s", build.Name, *build.Status.Registered, reason)
 				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, resources.ConditionBuildRegistrationFailed); updateErr != nil {
 					return reconcile.Result{}, updateErr
 				}
@@ -165,8 +172,8 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			// Set OwnerReference for Build and BuildRun only when build.shipwright.io/build-run-deletion is set "true"
 			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true" && !resources.IsOwnedByBuild(build, buildRun.OwnerReferences) {
 				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
-					build.Status.Reason = buildv1alpha1.SetOwnerReferenceFailed
-					build.Status.Message = fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
+					build.Status.Reason = buildv1alpha1.BuildReasonPtr(buildv1alpha1.SetOwnerReferenceFailed)
+					build.Status.Message = pointer.StringPtr(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
 					if err := r.client.Status().Update(ctx, build); err != nil {
 						return reconcile.Result{}, err
 					}

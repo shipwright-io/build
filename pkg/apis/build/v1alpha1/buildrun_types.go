@@ -23,7 +23,7 @@ const (
 // BuildRunSpec defines the desired state of BuildRun
 type BuildRunSpec struct {
 	// BuildRef refers to the Build
-	BuildRef *BuildRef `json:"buildRef"`
+	BuildRef BuildRef `json:"buildRef"`
 
 	// Sources slice of BuildSource, defining external build artifacts complementary to VCS
 	// (`.spec.source`) data.
@@ -54,7 +54,7 @@ type BuildRunSpec struct {
 
 	// State is used for canceling a buildrun (and maybe more later on).
 	// +optional
-	State BuildRunRequestedState `json:"state,omitempty"`
+	State *BuildRunRequestedState `json:"state,omitempty"`
 
 	// Env contains additional environment variables that should be passed to the build container
 	// +optional
@@ -63,6 +63,11 @@ type BuildRunSpec struct {
 
 // BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.
 type BuildRunRequestedState string
+
+// BuildRunRequestedStatePtr returns a pointer to the passed BuildRunRequestedState.
+func BuildRunRequestedStatePtr(s BuildRunRequestedState) *BuildRunRequestedState {
+	return &s
+}
 
 const (
 	// BuildRunStateCancel indicates that the user wants to cancel the BuildRun,
@@ -183,7 +188,7 @@ type BuildRef struct {
 	Name string `json:"name"`
 	// API version of the referent
 	// +optional
-	APIVersion string `json:"apiVersion,omitempty"`
+	APIVersion *string `json:"apiVersion,omitempty"`
 }
 
 // ServiceAccount can be used to refer to a specific ServiceAccount.
@@ -193,7 +198,7 @@ type ServiceAccount struct {
 	Name *string `json:"name,omitempty"`
 	// If generates a new ServiceAccount for the build
 	// +optional
-	Generate bool `json:"generate,omitempty"`
+	Generate *bool `json:"generate,omitempty"`
 }
 
 // +genclient
@@ -210,7 +215,7 @@ type BuildRun struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BuildRunSpec   `json:"spec,omitempty"`
+	Spec   BuildRunSpec   `json:"spec"`
 	Status BuildRunStatus `json:"status,omitempty"`
 }
 
@@ -242,7 +247,7 @@ func (br *BuildRun) IsSuccessful() bool {
 
 // IsCanceled returns true if the BuildRun's spec status is set to BuildRunCanceled state.
 func (br *BuildRun) IsCanceled() bool {
-	return br.Spec.State == BuildRunStateCancel
+	return br.Spec.State != nil && *br.Spec.State == BuildRunStateCancel
 }
 
 // Conditions defines a list of Condition
@@ -270,15 +275,15 @@ type Condition struct {
 
 	// LastTransitionTime last time the condition transit from one status to another.
 	// +optional
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty" description:"last time the condition transit from one status to another"`
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty" description:"last time the condition transit from one status to another"`
 
 	// The reason for the condition last transition.
 	// +optional
-	Reason string `json:"reason,omitempty" description:"one-word CamelCase reason for the condition's last transition"`
+	Reason *string `json:"reason,omitempty" description:"one-word CamelCase reason for the condition's last transition"`
 
 	// A human readable message indicating details about the transition.
 	// +optional
-	Message string `json:"message,omitempty" description:"human-readable message indicating details about last transition"`
+	Message *string `json:"message,omitempty" description:"human-readable message indicating details about last transition"`
 }
 
 func init() {
@@ -291,7 +296,7 @@ func (c *Condition) GetReason() string {
 	if c == nil {
 		return ""
 	}
-	return c.Reason
+	return *c.Reason
 }
 
 // GetMessage returns the condition Message, it ensures that by getting the Message
@@ -300,7 +305,7 @@ func (c *Condition) GetMessage() string {
 	if c == nil {
 		return ""
 	}
-	return c.Message
+	return *c.Message
 }
 
 // GetStatus returns the condition Status, it ensures that by getting the Status

@@ -48,7 +48,7 @@ func AppendGitStep(
 	gitStep.Container.Name = fmt.Sprintf("source-%s", name)
 	gitStep.Container.Args = []string{
 		"--url",
-		source.URL,
+		*source.URL,
 		"--target",
 		fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
 		"--result-file-commit-sha",
