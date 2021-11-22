@@ -23,6 +23,28 @@ spec:
           fieldPath: "my-fieldpath"
 `
 
+// BuildahBuildRunWithOutputImageLabelsAndAnnotations defines a BuildRun
+// with a output image labels and annotation
+const BuildahBuildRunWithOutputImageLabelsAndAnnotations = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildah-run
+  namespace: build-test
+spec:
+  buildRef:
+    name: buildah
+  serviceAccount:
+    name: buildpacks-v3-serviceaccount
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2
+	labels:
+	  "maintainer": "new-team@my-company.com"
+	  "foo": "bar"
+	annotations:
+	  "org.opencontainers.owner": "my-company"
+`
+
 // MinimalBuildahBuildRun defines a simple
 // BuildRun with a referenced Build
 const MinimalBuildahBuildRun = `
