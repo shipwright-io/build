@@ -147,7 +147,7 @@ As you make changes to the code, you can redeploy your controller with:
    ```
 You may use the following command to re-generate CRDs of build and buildrun if you change their spec:
    ```sh
-   make generate-crds
+   make generate
    ```
 
 ### Tear it down

@@ -107,9 +107,11 @@ generate:
 	hack/update-codegen.sh
 	hack/generate-fakes.sh
 	hack/generate-copyright.sh
+	hack/install-controller-gen.sh
+	"$(CONTROLLER_GEN)" "$(CRD_OPTIONS)" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=deploy/crds
 
-.PHONY: verify-codegen
-verify-codegen: generate
+.PHONY: verify-generate
+verify-generate: generate
 	@hack/verify-generate.sh
 
 ginkgo:
@@ -299,6 +301,3 @@ kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
 
-generate-crds:
-	./hack/install-controller-gen.sh
-	"$(CONTROLLER_GEN)" "$(CRD_OPTIONS)" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=deploy/crds
