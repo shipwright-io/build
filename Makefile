@@ -121,8 +121,8 @@ ifeq (, $(shell which ginkgo))
 	GINKGO_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$GINKGO_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get -u github.com/onsi/ginkgo/ginkgo ;\
-	go get -u github.com/onsi/gomega/... ;\
+	go install github.com/onsi/ginkgo/ginkgo@latest ;\
+	go install github.com/onsi/gomega/... ;\
 	rm -rf $$GINKGO_GEN_TMP_DIR ;\
 	}
 GINKGO=$(GOBIN)/ginkgo
@@ -137,7 +137,7 @@ ifeq (, $(shell which gocov))
 	GOCOV_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$GOCOV_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get github.com/axw/gocov/gocov@v1.0.0 ;\
+	go install github.com/axw/gocov/gocov@v1.0.0 ;\
 	rm -rf $$GOCOV_GEN_TMP_DIR ;\
 	}
 GOCOV=$(GOBIN)/gocov
