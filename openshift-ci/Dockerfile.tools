@@ -32,11 +32,11 @@ WORKDIR /tmp
 RUN mkdir -p $GOPATH/bin
 RUN mkdir -p /tmp/goroot
 
-RUN curl -Lo go1.16.linux-amd64.tar.gz https://dl.google.com/go/go1.16.linux-amd64.tar.gz && tar -C /tmp/goroot -xzf go1.16.linux-amd64.tar.gz
+RUN curl -Lo go1.17.linux-amd64.tar.gz https://dl.google.com/go/go1.17.linux-amd64.tar.gz && tar -C /tmp/goroot -xzf go1.17.linux-amd64.tar.gz
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl $GOPATH/bin/
 
-RUN go get -u github.com/onsi/ginkgo/ginkgo  # installs the ginkgo CLI
-RUN go get -u github.com/onsi/gomega/...     # fetches the matcher library
+RUN go install github.com/onsi/ginkgo/ginkgo@latest  # installs the ginkgo CLI
+RUN go install github.com/onsi/gomega/...            # fetches the matcher library
 
 RUN mkdir -p ${GOPATH}/src/${GO_PACKAGE_PATH}/
 
