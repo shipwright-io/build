@@ -69,6 +69,11 @@ func AppendGitStep(
 		)
 	}
 
+	// If configure, use Git URL rewrite flag
+	if cfg.GitRewriteRule {
+		gitStep.Container.Args = append(gitStep.Container.Args, "--git-url-rewrite-rule")
+	}
+
 	if source.Credentials != nil {
 		// ensure the value is there
 		AppendSecretVolume(taskSpec, source.Credentials.Name)

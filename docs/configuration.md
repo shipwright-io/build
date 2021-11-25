@@ -29,3 +29,4 @@ The following environment variables are available:
 | `KUBE_API_BURST` | Burst to use for the Kubernetes API client. See [Config.Burst](https://pkg.go.dev/k8s.io/client-go/rest#Config.Burst). A value of 0 or lower will use the default from client-go, which currently is 10. Default is 0. |
 | `KUBE_API_QPS` | QPS to use for the Kubernetes API client. See [Config.QPS](https://pkg.go.dev/k8s.io/client-go/rest#Config.QPS). A value of 0 or lower will use the default from client-go, which currently is 5. Default is 0. |
 | `TERMINATION_LOG_PATH` | Path of the termination log. This is where controller application will write the reason of its termination. Default value is `/dev/termination-log`. |
+| `GIT_ENABLE_REWRITE_RULE` | Enable Git wrapper to setup a URL `insteadOf` Git config rewrite rule for the respective source URL hostname. Default is `false`. |

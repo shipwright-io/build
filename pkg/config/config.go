@@ -68,6 +68,9 @@ const (
 
 	terminationLogPathDefault = "/dev/termination-log"
 	terminationLogPathEnvVar  = "TERMINATION_LOG_PATH"
+
+	// environment variable for the Git rewrite setting
+	useGitRewriteRule = "GIT_ENABLE_REWRITE_RULE"
 )
 
 var (
@@ -93,6 +96,7 @@ type Config struct {
 	ManagerOptions                ManagerOptions
 	Controllers                   Controllers
 	KubeAPIOptions                KubeAPIOptions
+	GitRewriteRule                bool
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -209,6 +213,7 @@ func NewDefaultConfig() *Config {
 			Burst: 0,
 		},
 		TerminationLogPath: terminationLogPathDefault,
+		GitRewriteRule:     false,
 	}
 }
 
@@ -251,6 +256,11 @@ func (c *Config) SetConfigFromEnv() error {
 	// what is defined in the mutate image container template
 	if mutateImage := os.Getenv(mutateImageEnvVar); mutateImage != "" {
 		c.MutateImageContainerTemplate.Image = mutateImage
+	}
+
+	// Mark that the Git wrapper is suppose to use Git rewrite rule
+	if useGitRewriteRule := os.Getenv(useGitRewriteRule); useGitRewriteRule != "" {
+		c.GitRewriteRule = strings.ToLower(useGitRewriteRule) == "true"
 	}
 
 	if bundleContainerTemplate := os.Getenv(bundleContainerTemplateEnvVar); bundleContainerTemplate != "" {

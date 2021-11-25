@@ -53,6 +53,7 @@ type settings struct {
 	resultFileBranchName   string
 	secretPath             string
 	skipValidation         bool
+	gitURLRewrite          bool
 }
 
 var flagValues settings
@@ -84,6 +85,7 @@ func init() {
 
 	// Mostly internal flag
 	pflag.BoolVar(&flagValues.skipValidation, "skip-validation", false, "skip pre-requisite validation")
+	pflag.BoolVar(&flagValues.gitURLRewrite, "git-url-rewrite", false, "set Git config to use url-insteadOf setting based on Git repository URL")
 }
 
 func main() {
@@ -324,6 +326,38 @@ func clone(ctx context.Context) error {
 			}
 
 			if _, err := git(ctx, "config", "--global", "credential.helper", fmt.Sprintf("store --file %s", credHelperFile.Name())); err != nil {
+				return err
+			}
+		}
+	}
+
+	if flagValues.gitURLRewrite {
+		var hostname string
+		switch {
+		case strings.HasPrefix(flagValues.url, "git@"):
+			trimmed := strings.TrimPrefix(flagValues.url, "git@")
+			splitted := strings.SplitN(trimmed, ":", 2)
+			hostname = splitted[0]
+
+		case strings.HasPrefix(flagValues.url, "http"):
+			repoURL, err := url.Parse(flagValues.url)
+			if err != nil {
+				return err
+			}
+			hostname = repoURL.Host
+
+		default:
+			log.Printf("Failed to setup Git URL rewrite, unknown/unsupported URL type: %q\n", flagValues.url)
+		}
+
+		if hostname != "" {
+			_, err := git(ctx,
+				"config",
+				"--global",
+				fmt.Sprintf("url.ssh://git@%s/.insteadOf", hostname),
+				fmt.Sprintf("https://%s/", hostname))
+
+			if err != nil {
 				return err
 			}
 		}

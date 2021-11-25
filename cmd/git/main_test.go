@@ -251,6 +251,25 @@ var _ = Describe("Git Resource", func() {
 				})
 			})
 		})
+
+		It("should Git clone a private repository using a SSH private key that contains a HTTPS submodule", func() {
+			withTempDir(func(secret string) {
+				// Mock the filesystem state of `kubernetes.io/ssh-auth` type secret volume mount
+				file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte(sshPrivateKey))
+
+				withTempDir(func(target string) {
+					Expect(run(
+						"--url", "git@github.com:shipwright-io/sample-submodule-private.git",
+						"--secret-path", secret,
+						"--target", target,
+						"--git-url-rewrite",
+					)).ToNot(HaveOccurred())
+
+					Expect(filepath.Join(target, "README.md")).To(BeAnExistingFile())
+					Expect(filepath.Join(target, "src", "sample-nodejs-private", "README.md")).To(BeAnExistingFile())
+				})
+			})
+		})
 	})
 
 	Context("cloning private repositories using basic auth", func() {
