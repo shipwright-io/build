@@ -139,7 +139,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				return reconcile.Result{}, err
 			}
 
-			if build.Status.Registered != nil && *build.Status.Registered != corev1.ConditionTrue {
+			if *build.Status.Registered != corev1.ConditionTrue {
 				// stop reconciling and mark the BuildRun as Failed
 				// we only reconcile again if the status.Update call fails
 				var reason buildv1alpha1.BuildReason
@@ -173,7 +173,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true" && !resources.IsOwnedByBuild(build, buildRun.OwnerReferences) {
 				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
 					build.Status.Reason = buildv1alpha1.BuildReasonPtr(buildv1alpha1.SetOwnerReferenceFailed)
-					build.Status.Message = pointer.StringPtr(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
+					build.Status.Message = pointer.String(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
 					if err := r.client.Status().Update(ctx, build); err != nil {
 						return reconcile.Result{}, err
 					}

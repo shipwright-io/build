@@ -49,7 +49,7 @@ func (b *buildPrototype) Namespace(namespace string) *buildPrototype {
 
 func (b *buildPrototype) BuildStrategy(name string) *buildPrototype {
 	var bs = buildv1alpha1.NamespacedBuildStrategyKind
-	b.build.Spec.Strategy = &buildv1alpha1.Strategy{
+	b.build.Spec.Strategy = buildv1alpha1.Strategy{
 		Kind: &bs,
 		Name: name,
 	}
@@ -66,7 +66,7 @@ func (b *buildPrototype) ClusterBuildStrategy(name string) *buildPrototype {
 }
 
 func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
-	b.build.Spec.Source.URL = repository
+	b.build.Spec.Source.URL = pointer.String(repository)
 	b.build.Spec.Source.BundleContainer = nil
 	return b
 }
@@ -80,7 +80,7 @@ func (b *buildPrototype) SourceBundle(image string) *buildPrototype {
 }
 
 func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
-	b.build.Spec.Source.ContextDir = pointer.StringPtr(contextDir)
+	b.build.Spec.Source.ContextDir = pointer.String(contextDir)
 	return b
 }
 
@@ -244,7 +244,7 @@ func (b *buildRunPrototype) GenerateServiceAccount() *buildRunPrototype {
 	if b.buildRun.Spec.ServiceAccount == nil {
 		b.buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{}
 	}
-	b.buildRun.Spec.ServiceAccount.Generate = pointer.BoolPtr(true)
+	b.buildRun.Spec.ServiceAccount.Generate = pointer.Bool(true)
 	return b
 }
 

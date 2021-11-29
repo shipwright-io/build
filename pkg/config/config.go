@@ -84,8 +84,8 @@ var (
 	metricBuildRunEstablishDurationBuckets  = []float64{0, 1, 2, 3, 5, 7, 10, 15, 20, 30}
 	metricBuildRunRampUpDurationBuckets     = prometheus.LinearBuckets(0, 1, 10)
 
-	root    = pointer.Int64Ptr(0)
-	nonRoot = pointer.Int64Ptr(1000)
+	root    = pointer.Int64(0)
+	nonRoot = pointer.Int64(1000)
 )
 
 // Config hosts different parameters that

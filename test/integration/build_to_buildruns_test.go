@@ -84,8 +84,8 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
 	})
 
@@ -108,8 +108,8 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
 
 		It("should be able to override the build output", func() {
@@ -195,7 +195,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(br.Status.CompletionTime).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Type).To(Equal(v1alpha1.Succeeded))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionUnknown))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(
 				// BuildRun reason can be ExceededNodeResources
 				// if the Tekton TaskRun Pod is queued due to
 				// insufficient cluster resources.
@@ -226,8 +226,8 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
 
 		})
 	})
@@ -252,8 +252,8 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRegistrationFailed"))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("Build is not registered correctly"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRegistrationFailed"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("Build is not registered correctly"))
 		})
 	})
 
@@ -284,8 +284,8 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(br.Status.CompletionTime).ToNot(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
-			Expect(*br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
+			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
 		})
 	})
 

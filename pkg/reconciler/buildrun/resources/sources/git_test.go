@@ -31,7 +31,7 @@ var _ = Describe("Git", func() {
 
 		JustBeforeEach(func() {
 			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
-				URL: pointer.StringPtr("https://github.com/shipwright-io/build"),
+				URL: pointer.String("https://github.com/shipwright-io/build"),
 			}, "default")
 		})
 
@@ -75,7 +75,7 @@ var _ = Describe("Git", func() {
 
 		JustBeforeEach(func() {
 			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
-				URL: pointer.StringPtr("git@github.com:shipwright-io/build.git"),
+				URL: pointer.String("git@github.com:shipwright-io/build.git"),
 				Credentials: &corev1.LocalObjectReference{
 					Name: "a.secret",
 				},

@@ -331,7 +331,7 @@ func buildRunTestData(ns string, identifier string, filePath string) (*buildv1al
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 	if serviceAccountName == "generated" {
 		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
-			Generate: pointer.BoolPtr(true),
+			Generate: pointer.Bool(true),
 		}
 	} else {
 		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{

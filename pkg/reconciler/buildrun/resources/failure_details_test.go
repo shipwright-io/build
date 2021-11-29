@@ -87,7 +87,7 @@ var _ = Describe("Surfacing errors", func() {
 
 			errorReason := pipelinev1beta1.PipelineResourceResult{Key: errorReasonKey, Value: errorReasonValue}
 			errorMessage := pipelinev1beta1.PipelineResourceResult{Key: errorMessageKey, Value: errorMessageValue}
-			message, _ := json.Marshal([]pipelinev1beta1.PipelineResourceResult{ errorReason, errorMessage })
+			message, _ := json.Marshal([]pipelinev1beta1.PipelineResourceResult{errorReason, errorMessage})
 
 			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message)}
 

@@ -25,7 +25,7 @@ type BuildNameRef struct {
 func (b *BuildNameRef) ValidatePath(_ context.Context) error {
 	if errs := validation.IsValidLabelValue(b.Build.Name); len(errs) > 0 {
 		b.Build.Status.Reason = build.BuildReasonPtr(build.BuildNameInvalid)
-		b.Build.Status.Message = pointer.StringPtr(strings.Join(errs, ", "))
+		b.Build.Status.Message = pointer.String(strings.Join(errs, ", "))
 	}
 
 	return nil

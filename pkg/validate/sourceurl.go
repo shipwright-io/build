@@ -26,7 +26,7 @@ type SourceURLRef struct {
 // that the spec.source.url exists. This validation only applies
 // to endpoints that do not require authentication.
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
-	if s.Build.Spec.Source.Credentials == nil {
+	if s.Build.Spec.Source.Credentials == nil && s.Build.Spec.Source.URL != nil {
 		switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
 		case "true":
 			if err := git.ValidateGitURLExists(ctx, *s.Build.Spec.Source.URL); err != nil {
@@ -51,5 +51,5 @@ func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 // MarkBuildStatus updates a Build Status fields
 func (s SourceURLRef) MarkBuildStatus(b *build.Build, reason build.BuildReason, msg string) {
 	b.Status.Reason = build.BuildReasonPtr(reason)
-	b.Status.Message = pointer.StringPtr(msg)
+	b.Status.Message = pointer.String(msg)
 }

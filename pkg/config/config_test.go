@@ -125,7 +125,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				nonRoot := pointer.Int64Ptr(1000)
+				nonRoot := pointer.Int64(1000)
 				Expect(config.GitContainerTemplate).To(Equal(corev1.Container{
 					Image: "myregistry/custom/git-image",
 					Command: []string{
@@ -220,7 +220,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				nonRoot := pointer.Int64Ptr(1000)
+				nonRoot := pointer.Int64(1000)
 				Expect(config.WaiterContainerTemplate).To(Equal(corev1.Container{
 					Image:   "myregistry/custom/image",
 					Command: []string{"/ko-app/waiter"},

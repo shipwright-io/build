@@ -250,8 +250,8 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			Expect(buildRunCondition).ToNot(BeNil())
 			Expect(buildRunCondition.Status).To(Equal(corev1.ConditionFalse))
-			Expect(*buildRunCondition.Reason).To(Equal("ServiceAccountNotFound"))
-			Expect(*buildRunCondition.Message).To(ContainSubstring("not found"))
+			Expect(buildRunCondition.Reason).To(Equal("ServiceAccountNotFound"))
+			Expect(buildRunCondition.Message).To(ContainSubstring("not found"))
 		})
 	})
 })

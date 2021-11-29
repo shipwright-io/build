@@ -102,7 +102,7 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionTrue)
-	b.Status.Message = pointer.StringPtr(build.AllValidationsSucceeded)
+	b.Status.Message = pointer.String(build.AllValidationsSucceeded)
 	err = r.client.Status().Update(ctx, b)
 	if err != nil {
 		return reconcile.Result{}, err

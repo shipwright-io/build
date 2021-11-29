@@ -65,7 +65,7 @@ func GenerateSA(ctx context.Context, client client.Client, build *buildv1alpha1.
 					*metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun")),
 				},
 			},
-			AutomountServiceAccountToken: pointer.BoolPtr(false),
+			AutomountServiceAccountToken: pointer.Bool(false),
 		}
 		ctxlog.Debug(ctx, "automatic generation of service account", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
 

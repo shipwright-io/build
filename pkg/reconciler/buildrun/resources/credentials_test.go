@@ -40,7 +40,7 @@ var _ = Describe("Credentials", func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL: pointer.StringPtr("a/b/c"),
+						URL: pointer.String("a/b/c"),
 						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_a",
 						},
@@ -97,7 +97,7 @@ var _ = Describe("Credentials", func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL: pointer.StringPtr("a/b/c"),
+						URL: pointer.String("a/b/c"),
 					},
 					Output: buildv1alpha1.Image{
 						Credentials: &corev1.LocalObjectReference{
@@ -135,7 +135,7 @@ var _ = Describe("Credentials", func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL:         pointer.StringPtr("a/b/c"),
+						URL:         pointer.String("a/b/c"),
 						Credentials: nil,
 					},
 				},

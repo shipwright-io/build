@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -85,7 +84,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.StringPtr("foobar"),
+				URL: pointer.String("foobar"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -108,7 +107,7 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
+				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -134,7 +133,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
+				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 				Credentials: &corev1.LocalObjectReference{
 					Name: "foobar",
 				},
@@ -160,7 +159,7 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
+				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -179,7 +178,7 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
+				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -197,7 +196,7 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.StringPtr("https://github.com/shipwright-io/sample-go"),
+				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 			},
 			Output: build.Image{
 				Credentials: &corev1.LocalObjectReference{
@@ -225,8 +224,8 @@ func (c *Catalog) FakeClusterBuildStrategyNotFound(name string) error {
 // StubFunc is used to simulate the status of the Build
 // after a .Status().Update() call in the controller. This
 // receives a parameter to return an specific status state
-func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(*object.Status.Registered).To(Equal(status))
@@ -239,8 +238,8 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReas
 
 // StubBuildUpdateOwnerReferences simulates and assert an updated
 // BuildRun object ownerreferences
-func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName string, isOwnerController *bool, blockOwnerDeletion *bool) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName string, isOwnerController *bool, blockOwnerDeletion *bool) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			Expect(object.OwnerReferences[0].Kind).To(Equal(ownerKind))
@@ -307,8 +306,8 @@ func (c *Catalog) StubBuildAndTaskRun(
 }
 
 // StubBuildStatusReason asserts Status fields on a Build resource
-func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			if object.Status.Message != nil && *object.Status.Message != "" {
@@ -323,13 +322,13 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			if !tolerateEmptyStatus {
 				Expect(object.Status.GetCondition(build.Succeeded).Status).To(Equal(condition.Status))
-				Expect(*object.Status.GetCondition(build.Succeeded).Reason).To(Equal(*condition.Reason))
+				Expect(object.Status.GetCondition(build.Succeeded).Reason).To(Equal(condition.Reason))
 				Expect(object.Status.LatestTaskRunRef).To(Equal(name))
 			}
 			if object.Status.BuildSpec != nil {
@@ -341,8 +340,8 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 }
 
 // StubBuildRunLabel asserts Label fields on a BuildRun resource
-func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			Expect(object.Labels[build.LabelBuild]).To(Equal(buildSample.Name))
@@ -917,8 +916,8 @@ func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {
 			Conditions: build.Conditions{
 				build.Condition{
 					Type:    build.Succeeded,
-					Reason:  pointer.StringPtr("foobar"),
-					Message: pointer.StringPtr("foo is not bar"),
+					Reason:  "foobar",
+					Message: "foo is not bar",
 					Status:  corev1.ConditionUnknown,
 				},
 			},
@@ -939,7 +938,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 			},
 			ServiceAccount: &build.ServiceAccount{
 				Name:     &saName,
-				Generate: pointer.BoolPtr(false),
+				Generate: pointer.Bool(false),
 			},
 		},
 		Status: build.BuildRunStatus{},
@@ -957,7 +956,7 @@ func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *buil
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
-				Generate: pointer.BoolPtr(false),
+				Generate: pointer.Bool(false),
 			},
 		},
 	}
@@ -975,7 +974,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
-				Generate: pointer.BoolPtr(true),
+				Generate: pointer.Bool(true),
 			},
 		},
 	}

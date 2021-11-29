@@ -29,7 +29,7 @@ type BuildRunSpec struct {
 	// (`.spec.source`) data.
 	//
 	// +optional
-	Sources *[]BuildSource `json:"sources,omitempty"`
+	Sources []BuildSource `json:"sources,omitempty"`
 
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.
@@ -131,12 +131,12 @@ type BuildRunStatus struct {
 	// of different sources
 	//
 	// +optional
-	Sources []SourceResult `json:"sources"`
+	Sources []SourceResult `json:"sources,omitempty"`
 
 	// Output holds the results emitted from step definition of an output
 	//
 	// +optional
-	Output *Output `json:"output"`
+	Output *Output `json:"output,omitempty"`
 
 	// Conditions holds the latest available observations of a resource's current state.
 	Conditions Conditions `json:"conditions,omitempty"`
@@ -274,16 +274,13 @@ type Condition struct {
 	Status corev1.ConditionStatus `json:"status" description:"status of the condition, one of True, False, Unknown"`
 
 	// LastTransitionTime last time the condition transit from one status to another.
-	// +optional
-	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty" description:"last time the condition transit from one status to another"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime" description:"last time the condition transit from one status to another"`
 
 	// The reason for the condition last transition.
-	// +optional
-	Reason *string `json:"reason,omitempty" description:"one-word CamelCase reason for the condition's last transition"`
+	Reason string `json:"reason" description:"one-word CamelCase reason for the condition's last transition"`
 
 	// A human readable message indicating details about the transition.
-	// +optional
-	Message *string `json:"message,omitempty" description:"human-readable message indicating details about last transition"`
+	Message string `json:"message" description:"human-readable message indicating details about last transition"`
 }
 
 func init() {
@@ -296,7 +293,7 @@ func (c *Condition) GetReason() string {
 	if c == nil {
 		return ""
 	}
-	return *c.Reason
+	return c.Reason
 }
 
 // GetMessage returns the condition Message, it ensures that by getting the Message
@@ -305,7 +302,7 @@ func (c *Condition) GetMessage() string {
 	if c == nil {
 		return ""
 	}
-	return *c.Message
+	return c.Message
 }
 
 // GetStatus returns the condition Status, it ensures that by getting the Status

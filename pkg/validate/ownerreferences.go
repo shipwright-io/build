@@ -42,7 +42,7 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
 				if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
 					o.Build.Status.Reason = build.BuildReasonPtr(build.SetOwnerReferenceFailed)
-					o.Build.Status.Message = pointer.StringPtr(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
+					o.Build.Status.Message = pointer.String(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
 				}
 				if err = o.Client.Update(ctx, &buildRun); err != nil {
 					return err

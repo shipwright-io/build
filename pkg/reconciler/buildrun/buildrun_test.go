@@ -171,7 +171,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("Succeeded"),
+						Reason: "Succeeded",
 						Status: corev1.ConditionTrue,
 					},
 					corev1.ConditionTrue,
@@ -267,7 +267,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("Pending"),
+						Reason: "Pending",
 						Status: corev1.ConditionUnknown,
 					},
 					corev1.ConditionUnknown,
@@ -297,7 +297,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("Running"),
+						Reason: "Running",
 						Status: corev1.ConditionUnknown,
 					},
 					corev1.ConditionUnknown,
@@ -324,7 +324,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("Succeeded"),
+						Reason: "Succeeded",
 						Status: corev1.ConditionTrue,
 					},
 					corev1.ConditionTrue,
@@ -366,7 +366,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
-						if c != nil && *c.Reason == build.BuildRunStateCancel && c.Status == corev1.ConditionFalse {
+						if c != nil && c.Reason == build.BuildRunStateCancel && c.Status == corev1.ConditionFalse {
 							cancelUpdateCalled = true
 						}
 
@@ -419,7 +419,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					&taskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("something bad happened"),
+						Reason: "something bad happened",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -551,7 +551,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
-						if c != nil && *c.Reason == build.BuildRunStateCancel {
+						if c != nil && c.Reason == build.BuildRunStateCancel {
 							cancelUpdateCalled = true
 						}
 
@@ -646,7 +646,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("ServiceAccountNotFound"),
+						Reason: "ServiceAccountNotFound",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -710,7 +710,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("BuildStrategyNotFound"),
+						Reason: "BuildStrategyNotFound",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -778,7 +778,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("ClusterBuildStrategyNotFound"),
+						Reason: "ClusterBuildStrategyNotFound",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -843,7 +843,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("UnknownStrategyKind"),
+						Reason: "UnknownStrategyKind",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -901,7 +901,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("BuildStrategyNotFound"),
+						Reason: "BuildStrategyNotFound",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -938,7 +938,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("SetOwnerReferenceFailed"),
+						Reason: "SetOwnerReferenceFailed",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -1037,7 +1037,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: pointer.StringPtr("BuildRegistrationFailed"),
+						Reason: "BuildRegistrationFailed",
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -1179,8 +1179,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// in the build
 				clientUpdateCalls := ctl.StubBuildUpdateOwnerReferences("Build",
 					buildName,
-					pointer.BoolPtr(true),
-					pointer.BoolPtr(true),
+					pointer.Bool(true),
+					pointer.Bool(true),
 				)
 				client.UpdateCalls(clientUpdateCalls)
 

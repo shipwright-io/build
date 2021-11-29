@@ -370,7 +370,7 @@ var _ = Describe("Reconcile Build", func() {
 		Context("when source URL is specified", func() {
 			// validate file protocol
 			It("fails when source URL is invalid", func() {
-				buildSample.Spec.Source.URL = pointer.StringPtr("foobar")
+				buildSample.Spec.Source.URL = pointer.String("foobar")
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -384,7 +384,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// validate https protocol
 			It("fails when public source URL is unreachable", func() {
-				buildSample.Spec.Source.URL = pointer.StringPtr("https://github.com/shipwright-io/sample-go-fake")
+				buildSample.Spec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go-fake")
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -399,7 +399,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// skip validation because of empty sourceURL annotation
 			It("succeed when source URL is invalid because source annotation is empty", func() {
-				buildSample.Spec.Source.URL = pointer.StringPtr("foobar")
+				buildSample.Spec.Source.URL = pointer.String("foobar")
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -450,7 +450,7 @@ var _ = Describe("Reconcile Build", func() {
 			// skip validation because build references a sourceURL secret
 			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
 				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
-				buildSample.Spec.Source.URL = pointer.StringPtr("https://github.yourco.com/org/build-fake")
+				buildSample.Spec.Source.URL = pointer.String("https://github.yourco.com/org/build-fake")
 				buildSample.Spec.Source.Credentials.Name = registrySecret
 
 				// Fake some client Get calls and ensure we populate all

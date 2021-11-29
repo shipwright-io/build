@@ -758,6 +758,9 @@ spec:
                       description: Type of condition
                       type: string
                   required:
+                  - lastTransitionTime
+                  - message
+                  - reason
                   - status
                   - type
                   type: object

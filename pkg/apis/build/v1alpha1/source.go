@@ -24,7 +24,7 @@ type Source struct {
 	// BundleContainer
 	//
 	// +optional
-	BundleContainer *BundleContainer `json:"bundleContainer"`
+	BundleContainer *BundleContainer `json:"bundleContainer,omitempty"`
 
 	// Revision describes the Git revision (e.g., branch, tag, commit SHA,
 	// etc.) to fetch.

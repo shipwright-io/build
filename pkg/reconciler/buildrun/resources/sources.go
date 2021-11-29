@@ -21,12 +21,10 @@ func isLocalCopyBuildSource(
 	buildRun *buildv1alpha1.BuildRun,
 ) *buildv1alpha1.BuildSource {
 	sources := []buildv1alpha1.BuildSource{}
-	if build.Spec.Sources != nil {
-		sources = append(sources, build.Spec.Sources...)
-	}
-	if buildRun.Spec.Sources != nil {
-		sources = append(sources, *buildRun.Spec.Sources...)
-	}
+
+	sources = append(sources, build.Spec.Sources...)
+	sources = append(sources, buildRun.Spec.Sources...)
+
 	for _, source := range sources {
 		if source.Type == buildv1alpha1.LocalCopy {
 			return &source

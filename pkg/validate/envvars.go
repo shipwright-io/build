@@ -47,13 +47,13 @@ func (e *Env) validate(envVar corev1.EnvVar) []error {
 
 	if envVar.Name == "" {
 		e.Build.Status.Reason = build.BuildReasonPtr(build.SpecEnvNameCanNotBeBlank)
-		e.Build.Status.Message = pointer.StringPtr("name for environment variable must not be blank")
+		e.Build.Status.Message = pointer.String("name for environment variable must not be blank")
 		allErrs = append(allErrs, fmt.Errorf("%s", *e.Build.Status.Message))
 	}
 
 	if envVar.Value != "" && envVar.ValueFrom != nil {
 		e.Build.Status.Reason = build.BuildReasonPtr(build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)
-		e.Build.Status.Message = pointer.StringPtr("only one of value or valueFrom must be specified")
+		e.Build.Status.Message = pointer.String("only one of value or valueFrom must be specified")
 		allErrs = append(allErrs, fmt.Errorf("%s", *e.Build.Status.Message))
 	}
 

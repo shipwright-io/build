@@ -19,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"knative.dev/pkg/apis"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -69,14 +68,13 @@ var _ = Describe("Conditions", func() {
 
 		It("should be able to set a condition based on a type", func() {
 			br := ctl.DefaultBuildRun("foo", "bar")
-			lastTransitionTime := metav1.Now()
 			// generate a condition of the type Succeeded
 			tmpCond := &build.Condition{
 				Type:               build.Succeeded,
 				Status:             corev1.ConditionUnknown,
-				Message:            pointer.StringPtr("foobar"),
-				Reason:             pointer.StringPtr("foo is bar"),
-				LastTransitionTime: &lastTransitionTime,
+				Message:            "foobar",
+				Reason:             "foo is bar",
+				LastTransitionTime: metav1.Now(),
 			}
 
 			// set the condition on the BuildRun resource
@@ -97,15 +95,13 @@ var _ = Describe("Conditions", func() {
 			reason := br.Status.GetCondition(build.Succeeded).GetReason()
 			Expect(reason).To(Equal("foobar"))
 
-			lastTransitionTime := metav1.Now()
-
 			// generate a condition in order to update the existing one
 			tmpCond := &build.Condition{
 				Type:               build.Succeeded,
 				Status:             corev1.ConditionUnknown,
-				Message:            pointer.StringPtr("foobar was updated"),
-				Reason:             pointer.StringPtr("foo is bar"),
-				LastTransitionTime: &lastTransitionTime,
+				Message:            "foobar was updated",
+				Reason:             "foo is bar",
+				LastTransitionTime: metav1.Now(),
 			}
 
 			// update the condition on the BuildRun resource
@@ -280,7 +276,7 @@ var _ = Describe("Conditions", func() {
 			)).To(BeNil())
 
 			// Finally, check the output of the buildRun
-			Expect(*br.Status.GetCondition(
+			Expect(br.Status.GetCondition(
 				build.Succeeded).Reason,
 			).To(Equal(build.BuildRunStatePodEvicted))
 		})
