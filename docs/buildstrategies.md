@@ -634,3 +634,12 @@ The following annotations are not propagated:
 - `buildrun.shipwright.io/*`
 
 A Kubernetes administrator can further restrict the usage of annotations by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).
+
+## Volumes and VolumeMounts
+
+Build steps can declare a `volumeMount`, which allows data in the provided path to be shared across build steps.
+When a `volumeMount` is declared, Shipwright will create an `emptyDir` volume with the corresponding name.
+Build steps whose volume mounts share the same name will share the same underlying `emtpyDir` volume.
+
+In a future release, build strategy authors will be able to use other volume types for the volume mounts.
+When this feature is introduced, the volume and volume type will need to be explicitly declared.
