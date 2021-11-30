@@ -296,6 +296,38 @@ func clone(ctx context.Context) error {
 				fmt.Sprintf(`core.sshCommand=%s`, strings.Join(sshCmd, " ")),
 			)
 
+			// When the Git URL rewrite is enabled, additional Git config
+			// options are required to introduce a rewrite rule so that
+			// HTTPS URLs are rewritten into Git+SSH URLs on the fly for
+			// the main clone as well as the submodule operations. This
+			// only makes sense in case a private key is configured.
+			if flagValues.gitURLRewrite {
+				var hostname string
+				switch {
+				case strings.HasPrefix(flagValues.url, "git@"):
+					trimmed := strings.TrimPrefix(flagValues.url, "git@")
+					splitted := strings.SplitN(trimmed, ":", 2)
+					hostname = splitted[0]
+
+				case strings.HasPrefix(flagValues.url, "http"):
+					repoURL, err := url.Parse(flagValues.url)
+					if err != nil {
+						return err
+					}
+					hostname = repoURL.Host
+
+				default:
+					log.Printf("Failed to setup Git URL rewrite, unknown/unsupported URL type: %q\n", flagValues.url)
+				}
+
+				if hostname != "" {
+					addtlGitArgs = append(addtlGitArgs,
+						"-c",
+						fmt.Sprintf("url.ssh://git@%s/.insteadOf=https://%s/", hostname, hostname),
+					)
+				}
+			}
+
 		case typeUsernamePassword:
 			repoURL, err := url.Parse(flagValues.url)
 			if err != nil {
@@ -328,33 +360,6 @@ func clone(ctx context.Context) error {
 			addtlGitArgs = append(addtlGitArgs,
 				"-c",
 				fmt.Sprintf("credential.helper=%s", fmt.Sprintf("store --file %s", credHelperFile.Name())),
-			)
-		}
-	}
-
-	if flagValues.gitURLRewrite {
-		var hostname string
-		switch {
-		case strings.HasPrefix(flagValues.url, "git@"):
-			trimmed := strings.TrimPrefix(flagValues.url, "git@")
-			splitted := strings.SplitN(trimmed, ":", 2)
-			hostname = splitted[0]
-
-		case strings.HasPrefix(flagValues.url, "http"):
-			repoURL, err := url.Parse(flagValues.url)
-			if err != nil {
-				return err
-			}
-			hostname = repoURL.Host
-
-		default:
-			log.Printf("Failed to setup Git URL rewrite, unknown/unsupported URL type: %q\n", flagValues.url)
-		}
-
-		if hostname != "" {
-			addtlGitArgs = append(addtlGitArgs,
-				"-c",
-				fmt.Sprintf("url.ssh://git@%s/.insteadOf=https://%s/", hostname, hostname),
 			)
 		}
 	}
