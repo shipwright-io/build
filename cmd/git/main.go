@@ -450,8 +450,12 @@ func checkCredentials() (credentialType, error) {
 	// in which case there is a file called ssh-privatekey
 	hasPrivateKey := hasFile(flagValues.secretPath, "ssh-privatekey")
 	isSSHGitURL := sshGitURLRegEx.MatchString(flagValues.url)
+	isGitURLRewriteSet := flagValues.gitURLRewrite
 	switch {
 	case hasPrivateKey && isSSHGitURL:
+		return typePrivateKey, nil
+
+	case hasPrivateKey && !isSSHGitURL && isGitURLRewriteSet:
 		return typePrivateKey, nil
 
 	case hasPrivateKey && !isSSHGitURL:
