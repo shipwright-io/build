@@ -244,7 +244,7 @@ func clone(ctx context.Context) error {
 		}
 	}
 
-	var addtlCredArgs []string
+	var addtlGitArgs []string
 	if flagValues.secretPath != "" {
 		credType, err := checkCredentials()
 		if err != nil {
@@ -291,10 +291,42 @@ func clone(ctx context.Context) error {
 				)
 			}
 
-			addtlCredArgs = append(addtlCredArgs,
+			addtlGitArgs = append(addtlGitArgs,
 				"-c",
 				fmt.Sprintf(`core.sshCommand=%s`, strings.Join(sshCmd, " ")),
 			)
+
+			// When the Git URL rewrite is enabled, additional Git config
+			// options are required to introduce a rewrite rule so that
+			// HTTPS URLs are rewritten into Git+SSH URLs on the fly for
+			// the main clone as well as the submodule operations. This
+			// only makes sense in case a private key is configured.
+			if flagValues.gitURLRewrite {
+				var hostname string
+				switch {
+				case strings.HasPrefix(flagValues.url, "git@"):
+					trimmed := strings.TrimPrefix(flagValues.url, "git@")
+					splitted := strings.SplitN(trimmed, ":", 2)
+					hostname = splitted[0]
+
+				case strings.HasPrefix(flagValues.url, "http"):
+					repoURL, err := url.Parse(flagValues.url)
+					if err != nil {
+						return err
+					}
+					hostname = repoURL.Host
+
+				default:
+					log.Printf("Failed to setup Git URL rewrite, unknown/unsupported URL type: %q\n", flagValues.url)
+				}
+
+				if hostname != "" {
+					addtlGitArgs = append(addtlGitArgs,
+						"-c",
+						fmt.Sprintf("url.ssh://git@%s/.insteadOf=https://%s/", hostname, hostname),
+					)
+				}
+			}
 
 		case typeUsernamePassword:
 			repoURL, err := url.Parse(flagValues.url)
@@ -325,45 +357,14 @@ func clone(ctx context.Context) error {
 				return err
 			}
 
-			if _, err := git(ctx, "config", "--global", "credential.helper", fmt.Sprintf("store --file %s", credHelperFile.Name())); err != nil {
-				return err
-			}
+			addtlGitArgs = append(addtlGitArgs,
+				"-c",
+				fmt.Sprintf("credential.helper=%s", fmt.Sprintf("store --file %s", credHelperFile.Name())),
+			)
 		}
 	}
 
-	if flagValues.gitURLRewrite {
-		var hostname string
-		switch {
-		case strings.HasPrefix(flagValues.url, "git@"):
-			trimmed := strings.TrimPrefix(flagValues.url, "git@")
-			splitted := strings.SplitN(trimmed, ":", 2)
-			hostname = splitted[0]
-
-		case strings.HasPrefix(flagValues.url, "http"):
-			repoURL, err := url.Parse(flagValues.url)
-			if err != nil {
-				return err
-			}
-			hostname = repoURL.Host
-
-		default:
-			log.Printf("Failed to setup Git URL rewrite, unknown/unsupported URL type: %q\n", flagValues.url)
-		}
-
-		if hostname != "" {
-			_, err := git(ctx,
-				"config",
-				"--global",
-				fmt.Sprintf("url.ssh://git@%s/.insteadOf", hostname),
-				fmt.Sprintf("https://%s/", hostname))
-
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	cloneArgs = append(cloneArgs, addtlCredArgs...)
+	cloneArgs = append(cloneArgs, addtlGitArgs...)
 	cloneArgs = append(cloneArgs, "--", flagValues.url, flagValues.target)
 	if _, err := git(ctx, cloneArgs...); err != nil {
 		return err
@@ -376,7 +377,7 @@ func clone(ctx context.Context) error {
 	}
 
 	submoduleArgs := []string{"-C", flagValues.target}
-	submoduleArgs = append(submoduleArgs, addtlCredArgs...)
+	submoduleArgs = append(submoduleArgs, addtlGitArgs...)
 	submoduleArgs = append(submoduleArgs, "submodule", "update", "--init", "--recursive")
 	if useDepthForSubmodule && flagValues.depth > 0 {
 		submoduleArgs = append(submoduleArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
@@ -449,8 +450,12 @@ func checkCredentials() (credentialType, error) {
 	// in which case there is a file called ssh-privatekey
 	hasPrivateKey := hasFile(flagValues.secretPath, "ssh-privatekey")
 	isSSHGitURL := sshGitURLRegEx.MatchString(flagValues.url)
+	isGitURLRewriteSet := flagValues.gitURLRewrite
 	switch {
 	case hasPrivateKey && isSSHGitURL:
+		return typePrivateKey, nil
+
+	case hasPrivateKey && !isSSHGitURL && isGitURLRewriteSet:
 		return typePrivateKey, nil
 
 	case hasPrivateKey && !isSSHGitURL:
