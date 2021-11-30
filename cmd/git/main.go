@@ -244,7 +244,7 @@ func clone(ctx context.Context) error {
 		}
 	}
 
-	var addtlCredArgs []string
+	var addtlGitArgs []string
 	if flagValues.secretPath != "" {
 		credType, err := checkCredentials()
 		if err != nil {
@@ -291,7 +291,7 @@ func clone(ctx context.Context) error {
 				)
 			}
 
-			addtlCredArgs = append(addtlCredArgs,
+			addtlGitArgs = append(addtlGitArgs,
 				"-c",
 				fmt.Sprintf(`core.sshCommand=%s`, strings.Join(sshCmd, " ")),
 			)
@@ -325,9 +325,10 @@ func clone(ctx context.Context) error {
 				return err
 			}
 
-			if _, err := git(ctx, "config", "--global", "credential.helper", fmt.Sprintf("store --file %s", credHelperFile.Name())); err != nil {
-				return err
-			}
+			addtlGitArgs = append(addtlGitArgs,
+				"-c",
+				fmt.Sprintf("credential.helper=%s", fmt.Sprintf("store --file %s", credHelperFile.Name())),
+			)
 		}
 	}
 
@@ -351,19 +352,14 @@ func clone(ctx context.Context) error {
 		}
 
 		if hostname != "" {
-			_, err := git(ctx,
-				"config",
-				"--global",
-				fmt.Sprintf("url.ssh://git@%s/.insteadOf", hostname),
-				fmt.Sprintf("https://%s/", hostname))
-
-			if err != nil {
-				return err
-			}
+			addtlGitArgs = append(addtlGitArgs,
+				"-c",
+				fmt.Sprintf("url.ssh://git@%s/.insteadOf=https://%s/", hostname, hostname),
+			)
 		}
 	}
 
-	cloneArgs = append(cloneArgs, addtlCredArgs...)
+	cloneArgs = append(cloneArgs, addtlGitArgs...)
 	cloneArgs = append(cloneArgs, "--", flagValues.url, flagValues.target)
 	if _, err := git(ctx, cloneArgs...); err != nil {
 		return err
@@ -376,7 +372,7 @@ func clone(ctx context.Context) error {
 	}
 
 	submoduleArgs := []string{"-C", flagValues.target}
-	submoduleArgs = append(submoduleArgs, addtlCredArgs...)
+	submoduleArgs = append(submoduleArgs, addtlGitArgs...)
 	submoduleArgs = append(submoduleArgs, "submodule", "update", "--init", "--recursive")
 	if useDepthForSubmodule && flagValues.depth > 0 {
 		submoduleArgs = append(submoduleArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
