@@ -18,7 +18,7 @@ spec:
         - name: s2i
           mountPath: /s2i
     - name: buildah
-      image: quay.io/containers/buildah:v1.20.1
+      image: quay.io/containers/buildah:v1.23.1
       workingDir: /s2i
       securityContext:
         privileged: true
