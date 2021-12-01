@@ -71,7 +71,7 @@ func AppendGitStep(
 
 	// If configure, use Git URL rewrite flag
 	if cfg.GitRewriteRule {
-		gitStep.Container.Args = append(gitStep.Container.Args, "--git-url-rewrite-rule")
+		gitStep.Container.Args = append(gitStep.Container.Args, "--git-url-rewrite")
 	}
 
 	if source.Credentials != nil {
