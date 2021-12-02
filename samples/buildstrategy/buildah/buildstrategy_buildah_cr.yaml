@@ -5,6 +5,48 @@ metadata:
   name: buildah
 spec:
   buildSteps:
+    - name: prepare
+      image: docker.io/library/bash:5.1.4
+      imagePullPolicy: Always
+      securityContext:
+        privileged: true
+      command:
+        - /usr/local/bin/bash
+      args:
+        - -c
+        - |
+          set -eo pipefail
+
+          echo "> Creating registries config file..."
+
+          formate(){
+              array=(`echo $1 | tr ',' ' '`)
+              str=""
+              for m in "${array[@]}"; do
+                  str=$str"'${m}', "
+              done
+
+              echo ${str%??}
+          }
+
+          path="$(params.shp-source-context)/registries.conf"
+          registries_search=`formate $(params.REGISTRIES_SEARCH)`
+          registries_insecure=`formate $(params.REGISTRIES_INSECURE)`
+          registries_block=`formate $(params.REGISTRIES_BLOCK)`
+
+          echo -e "[registries.search]" >> "$path"
+          echo -e "registries = [${registries_search}]\n" >> "$path"
+          echo -e "[registries.insecure]" >> "$path"
+          echo -e "registries = [${registries_insecure}]\n" >> "$path"
+          echo -e "[registries.block]" >> "$path"
+          echo -e "registries = [${registries_block}]\n" >> "$path"
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
     - name: build-and-push
       image: quay.io/containers/buildah:v1.23.1
       workingDir: $(params.shp-source-root)
@@ -20,6 +62,7 @@ spec:
           # Building the image
           echo '[INFO] Building image $(params.shp-output-image)'
           buildah bud \
+            --registries-conf='$(params.shp-source-context)/registries.conf' \
             --tag='$(params.shp-output-image)' \
             --file='$(build.dockerfile)' \
             '$(params.shp-source-context)'
@@ -42,3 +85,13 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  parameters:
+    - description: The registries for searching short name images such as `golang:latest`, separated by commas.
+      name: REGISTRIES_SEARCH
+      default: docker.io,quay.io
+    - description: The fully-qualified name of insecure registries. An insecure registry is one that does not have a valid SSL certificate or only does HTTP.
+      name: REGISTRIES_INSECURE
+      default: ""
+    - description: The registries that need to block pull access.
+      name: REGISTRIES_BLOCK
+      default: ""
