@@ -29,9 +29,35 @@ spec:
         - |
           set -euo pipefail
 
+          echo "Creating registries config file..."
+
+          formate(){
+              array=(`echo $1 | tr ',' ' '`)
+              str=""
+              for m in "${array[@]}"; do
+                  str=$str"'${m}', "
+              done
+
+              echo ${str%??}
+          }
+
+          path="/tmp/registries.conf"
+          registry_search="$(formate "$(params.registry-search)")"
+          registry_insecure="$(formate "$(params.registry-insecure)")"
+          registry_block="$(formate "$(params.registry-block)")"
+
+          echo -e "[registries.search]" >> "$path"
+          echo -e "registries = [${registry_search}]\n" >> "$path"
+          echo -e "[registries.insecure]" >> "$path"
+          echo -e "registries = [${registry_insecure}]\n" >> "$path"
+          echo -e "[registries.block]" >> "$path"
+          echo -e "registries = [${registry_block}]\n" >> "$path"
+
           # Building the image
           echo '[INFO] Building image $(params.shp-output-image)'
-          buildah bud --tag='$(params.shp-output-image)'
+          buildah bud \
+            --registries-conf='/tmp/registries.conf' \
+            --tag='$(params.shp-output-image)'
 
           # Push the image
           echo '[INFO] Pushing image $(params.shp-output-image)'
@@ -46,3 +72,13 @@ spec:
       volumeMounts:
         - name: s2i
           mountPath: /s2i
+  parameters:
+    - description: The registries for searching short name images such as `golang:latest`, separated by commas.
+      name: registry-search
+      default: docker.io,quay.io
+    - description: The fully-qualified name of insecure registries. An insecure registry is one that does not have a valid SSL certificate or only does HTTP.
+      name: registry-insecure
+      default: ""
+    - description: The registries that need to block pull access.
+      name: registry-block
+      default: ""
