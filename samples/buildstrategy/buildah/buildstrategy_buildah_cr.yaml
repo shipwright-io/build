@@ -30,9 +30,9 @@ spec:
           }
 
           path="/tmp/registries.conf"
-          registry_search=`formate $(params.registry-search)`
-          registry_insecure=`formate $(params.registry-insecure)`
-          registry_block=`formate $(params.registry-block)`
+          registry_search="$(formate "$(params.registry-search)")"
+          registry_insecure="$(formate "$(params.registry-insecure)")"
+          registry_block="$(formate "$(params.registry-block)")"
 
           echo -e "[registries.search]" >> "$path"
           echo -e "registries = [${registry_search}]\n" >> "$path"
