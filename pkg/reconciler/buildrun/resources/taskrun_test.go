@@ -6,12 +6,13 @@ package resources_test
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -19,24 +20,29 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/shipwright-io/build/test"
+	"github.com/shipwright-io/build/test/utils"
 )
 
 var _ = Describe("GenerateTaskrun", func() {
 
 	var (
-		build                       *buildv1alpha1.Build
-		buildRun                    *buildv1alpha1.BuildRun
-		buildStrategy               *buildv1alpha1.BuildStrategy
-		builderImage                *buildv1alpha1.Image
-		dockerfile, buildpacks, url string
-		ctl                         test.Catalog
+		build                  *buildv1alpha1.Build
+		buildWithEnvs          *buildv1alpha1.Build
+		buildRun               *buildv1alpha1.BuildRun
+		buildRunWithEnvs       *buildv1alpha1.BuildRun
+		buildStrategy          *buildv1alpha1.BuildStrategy
+		buildStrategyStepNames map[string]struct{}
+		buildStrategyWithEnvs  *buildv1alpha1.BuildStrategy
+		builderImage           *buildv1alpha1.Image
+		dockerfile, buildpacks string
+		ctl                    test.Catalog
 	)
 
 	BeforeEach(func() {
 		buildpacks = "buildpacks-v3"
-		url = "https://github.com/shipwright-io/sample-go"
 		dockerfile = "Dockerfile"
 	})
 
@@ -54,7 +60,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 		Context("when the task spec is generated", func() {
 			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuild))
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithAnnotationAndLabel))
 				Expect(err).To(BeNil())
 
 				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
@@ -62,6 +68,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
 				Expect(err).To(BeNil())
+				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
 
 				expectedCommandOrArg = []string{
 					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
@@ -69,28 +76,58 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps)
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
 				Expect(err).To(BeNil())
 			})
 
+			It("should contain a step to clone the Git sources", func() {
+				Expect(got.Steps[0].Name).To(Equal("source-default"))
+				Expect(got.Steps[0].Command[0]).To(Equal("/ko-app/git"))
+				Expect(got.Steps[0].Args).To(Equal([]string{
+					"--url",
+					build.Spec.Source.URL,
+					"--target",
+					"$(params.shp-source-root)",
+					"--result-file-commit-sha",
+					"$(results.shp-source-default-commit-sha.path)",
+					"--result-file-commit-author",
+					"$(results.shp-source-default-commit-author.path)",
+					"--result-file-branch-name",
+					"$(results.shp-source-default-branch-name.path)",
+				}))
+			})
+
+			It("should contain results for the image", func() {
+				Expect(got.Results).To(utils.ContainNamedElement("shp-image-digest"))
+				Expect(got.Results).To(utils.ContainNamedElement("shp-image-size"))
+			})
+
+			It("should contain a result for the Git commit SHA", func() {
+				Expect(got.Results).To(utils.ContainNamedElement("shp-source-default-commit-sha"))
+			})
+
 			It("should ensure IMAGE is replaced by builder image when needed.", func() {
-				Expect(got.Steps[0].Container.Image).To(Equal("quay.io/buildah/stable:latest"))
+				Expect(got.Steps[1].Container.Image).To(Equal("quay.io/containers/buildah:v1.20.1"))
+			})
+
+			It("should ensure ImagePullPolicy can be set by the build strategy author.", func() {
+				Expect(got.Steps[1].Container.ImagePullPolicy).To(Equal(corev1.PullPolicy("Always")))
 			})
 
 			It("should ensure command replacements happen when needed", func() {
-				Expect(got.Steps[0].Container.Command[0]).To(Equal("/usr/bin/buildah"))
+				Expect(got.Steps[1].Container.Command[0]).To(Equal("/usr/bin/buildah"))
 			})
 
 			It("should ensure resource replacements happen for the first step", func() {
-				Expect(got.Steps[0].Container.Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
+				Expect(got.Steps[1].Container.Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
 			})
 
 			It("should ensure resource replacements happen for the second step", func() {
-				Expect(got.Steps[1].Container.Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
+				Expect(got.Steps[2].Container.Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
 			})
 
 			It("should ensure arg replacements happen when needed", func() {
-				Expect(got.Steps[0].Container.Args).To(Equal(expectedCommandOrArg))
+				Expect(got.Steps[1].Container.Args).To(Equal(expectedCommandOrArg))
 			})
 
 			It("should ensure top level volumes are populated", func() {
@@ -98,60 +135,244 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should contain the shipwright system parameters", func() {
-				params := got.Params
-
-				paramSourceRootFound := false
-				paramSourceContextFound := false
-				paramOutputImageFound := false
+				Expect(got.Params).To(utils.ContainNamedElement("shp-source-root"))
+				Expect(got.Params).To(utils.ContainNamedElement("shp-source-context"))
+				Expect(got.Params).To(utils.ContainNamedElement("shp-output-image"))
 
 				// legacy params
-				paramBuilderImageFound := false
-				paramDockerfileFound := false
-				paramContextDirFound := false
+				Expect(got.Params).ToNot(utils.ContainNamedElement("BUILDER_IMAGE")) // test build has no builder image
+				Expect(got.Params).To(utils.ContainNamedElement("CONTEXT_DIR"))
+				Expect(got.Params).To(utils.ContainNamedElement("DOCKERFILE"))
 
-				for _, param := range params {
-					switch param.Name {
-					case "shp-source-root":
-						paramSourceRootFound = true
+				Expect(len(got.Params)).To(Equal(5))
+			})
 
-					case "shp-source-context":
-						paramSourceContextFound = true
+			It("should contain a step to mutate the image with single mutate args", func() {
+				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+				Expect(got.Steps[3].Args).To(Equal([]string{
+					"--image",
+					"$(params.shp-output-image)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"result-file-image-size",
+					"$(results.shp-image-size.path)",
+					"--annotation",
+					"org.opencontainers.image.url=https://my-company.com/images",
+					"--label",
+					"maintainer=team@my-company.com",
+				}))
+			})
 
-					case "shp-output-image":
-						paramOutputImageFound = true
+			It("should contain a step to mutate the image with multiple mutate args", func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithMultipleAnnotationAndLabel))
+				Expect(err).To(BeNil())
 
-					case "BUILDER_IMAGE":
-						paramBuilderImageFound = true
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				Expect(err).To(BeNil())
 
-					case "DOCKERFILE":
-						paramDockerfileFound = true
-
-					case "CONTEXT_DIR":
-						paramContextDirFound = true
-
-					default:
-						Fail(fmt.Sprintf("Unexpected param found: %s", param.Name))
-					}
-				}
-
-				Expect(paramSourceRootFound).To(BeTrue())
-				Expect(paramSourceContextFound).To(BeTrue())
-				Expect(paramOutputImageFound).To(BeTrue())
-
-				Expect(paramBuilderImageFound).To(BeFalse()) // test build has no builder image
-				Expect(paramDockerfileFound).To(BeTrue())
-				Expect(paramContextDirFound).To(BeTrue())
+				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+				Expect(got.Steps[3].Args).Should(ConsistOf([]string{
+					"--image",
+					"$(params.shp-output-image)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"result-file-image-size",
+					"$(results.shp-image-size.path)",
+					"--annotation",
+					"org.opencontainers.image.source=https://github.com/org/repo",
+					"--annotation",
+					"org.opencontainers.image.url=https://my-company.com/images",
+					"--label",
+					"description=This is my cool image",
+					"--label",
+					"maintainer=team@my-company.com",
+				}))
 			})
 		})
+
+		Context("when env vars are defined", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuild))
+				Expect(err).To(BeNil())
+
+				buildWithEnvs, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuildWithEnvVars))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
+				Expect(err).To(BeNil())
+
+				buildRunWithEnvs, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRunWithEnvVars))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+				Expect(err).To(BeNil())
+				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+				buildStrategyStepNames = make(map[string]struct{})
+				for _, step := range buildStrategy.Spec.BuildSteps {
+					buildStrategyStepNames[step.Name] = struct{}{}
+				}
+
+				buildStrategyWithEnvs, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategyWithEnvs))
+				Expect(err).To(BeNil())
+
+				expectedCommandOrArg = []string{
+					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+				}
+			})
+
+			It("should contain env vars specified in Build in every BuildStrategy step", func() {
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				Expect(err).To(BeNil())
+
+				combinedEnvs, err := env.MergeEnvVars(buildRun.Spec.Env, buildWithEnvs.Spec.Env, true)
+				Expect(err).NotTo(HaveOccurred())
+
+				for _, step := range got.Steps {
+					if _, ok := buildStrategyStepNames[step.Name]; ok {
+						Expect(len(step.Env)).To(Equal(len(combinedEnvs)))
+						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeTrue())
+					} else {
+						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeFalse())
+					}
+				}
+			})
+
+			It("should contain env vars specified in BuildRun in every step", func() {
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				Expect(err).To(BeNil())
+
+				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, build.Spec.Env, true)
+				Expect(err).NotTo(HaveOccurred())
+
+				for _, step := range got.Steps {
+					if _, ok := buildStrategyStepNames[step.Name]; ok {
+						Expect(len(step.Env)).To(Equal(len(combinedEnvs)))
+						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeTrue())
+					} else {
+						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeFalse())
+					}
+				}
+			})
+
+			It("should override Build env vars with BuildRun env vars in every step", func() {
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				Expect(err).To(BeNil())
+
+				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, buildWithEnvs.Spec.Env, true)
+				Expect(err).NotTo(HaveOccurred())
+
+				for _, step := range got.Steps {
+					if _, ok := buildStrategyStepNames[step.Name]; ok {
+						Expect(len(step.Env)).To(Equal(len(combinedEnvs)))
+						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeTrue())
+					} else {
+						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeFalse())
+					}
+
+				}
+			})
+
+			It("should fail attempting to override an env var in a BuildStrategy", func() {
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategyWithEnvs.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("error(s) occurred merging environment variables into BuildStrategy \"buildah\" steps: [environment variable \"MY_VAR_1\" already exists, environment variable \"MY_VAR_2\" already exists]"))
+			})
+		})
+
+		Context("when only BuildRun has output image labels and annotation defined ", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithOutputImageLabelsAndAnnotations))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+				Expect(err).To(BeNil())
+				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+
+				expectedCommandOrArg = []string{
+					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+				}
+
+				JustBeforeEach(func() {
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+					Expect(err).To(BeNil())
+				})
+
+				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
+					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+					Expect(got.Steps[3].Args).To(Equal([]string{
+						"--image",
+						"$(params.shp-output-image)",
+						"--result-file-image-digest",
+						"$(results.shp-image-digest.path)",
+						"result-file-image-size",
+						"$(results.shp-image-size.path)",
+						"--annotation",
+						"org.opencontainers.owner=my-company",
+						"--label",
+						"maintainer=new-team@my-company.com",
+						"foo=bar",
+					}))
+				})
+			})
+		})
+
+		Context("when Build and BuildRun both have output image labels and annotation defined ", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithAnnotationAndLabel))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithOutputImageLabelsAndAnnotations))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+				Expect(err).To(BeNil())
+				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+
+				expectedCommandOrArg = []string{
+					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+				}
+
+				JustBeforeEach(func() {
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+					Expect(err).To(BeNil())
+				})
+
+				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
+					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+					Expect(got.Steps[3].Args).To(Equal([]string{
+						"--image",
+						"$(params.shp-output-image)",
+						"--result-file-image-digest",
+						"$(results.shp-image-digest.path)",
+						"result-file-image-size",
+						"$(results.shp-image-size.path)",
+						"--annotation",
+						"org.opencontainers.owner=my-company",
+						"org.opencontainers.image.url=https://my-company.com/images",
+						"--label",
+						"maintainer=new-team@my-company.com",
+						"foo=bar",
+					}))
+				})
+			})
+		})
+
 	})
 
 	Describe("Generate the TaskRun", func() {
 		var (
-			k8sDuration30s                                                                      *metav1.Duration
-			k8sDuration1m                                                                       *metav1.Duration
-			namespace, contextDir, revision, outputPath, outputPathBuildRun, serviceAccountName string
-			got                                                                                 *v1beta1.TaskRun
-			err                                                                                 error
+			k8sDuration30s                                                            *metav1.Duration
+			k8sDuration1m                                                             *metav1.Duration
+			namespace, contextDir, outputPath, outputPathBuildRun, serviceAccountName string
+			got                                                                       *v1beta1.TaskRun
+			err                                                                       error
 		)
 		BeforeEach(func() {
 			duration, err := time.ParseDuration("30s")
@@ -167,7 +388,6 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			namespace = "build-test"
 			contextDir = "docker-build"
-			revision = ""
 			builderImage = &buildv1alpha1.Image{
 				Image: "heroku/buildpacks:18",
 			}
@@ -210,31 +430,8 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
 			})
 
-			It("should ensure generated TaskRun's input and output resources are correct", func() {
-				inputResources := got.Spec.Resources.Inputs
-				for _, inputResource := range inputResources {
-					Expect(inputResource.ResourceSpec.Type).To(Equal(v1beta1.PipelineResourceTypeGit))
-					params := inputResource.ResourceSpec.Params
-					for _, param := range params {
-						if param.Name == "url" {
-							Expect(param.Value).To(Equal(url))
-						}
-						if param.Name == "revision" {
-							Expect(param.Value).To(Equal(revision))
-						}
-					}
-				}
-
-				outputResources := got.Spec.Resources.Outputs
-				for _, outputResource := range outputResources {
-					Expect(outputResource.ResourceSpec.Type).To(Equal(v1beta1.PipelineResourceTypeImage))
-					params := outputResource.ResourceSpec.Params
-					for _, param := range params {
-						if param.Name == "url" {
-							Expect(param.Value).To(Equal(outputPath))
-						}
-					}
-				}
+			It("should ensure generated TaskRun has no resources", func() {
+				Expect(got.Spec.Resources).To(BeNil())
 			})
 
 			It("should ensure resource replacements happen when needed", func() {
@@ -248,7 +445,7 @@ var _ = Describe("GenerateTaskrun", func() {
 						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
 				}
-				Expect(got.Spec.TaskSpec.Steps[0].Resources).To(Equal(expectedResourceOrArg))
+				Expect(got.Spec.TaskSpec.Steps[1].Resources).To(Equal(expectedResourceOrArg))
 			})
 
 			It("should have no timeout set", func() {
@@ -344,7 +541,7 @@ var _ = Describe("GenerateTaskrun", func() {
 						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
 				}
-				Expect(got.Spec.TaskSpec.Steps[0].Resources).To(Equal(expectedResourceOrArg))
+				Expect(got.Spec.TaskSpec.Steps[1].Resources).To(Equal(expectedResourceOrArg))
 			})
 
 			It("should have the timeout set correctly", func() {
@@ -390,19 +587,6 @@ var _ = Describe("GenerateTaskrun", func() {
 			JustBeforeEach(func() {
 				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
 				Expect(err).To(BeNil())
-			})
-
-			It("should use the imageURL from the BuildRun in the resource", func() {
-				outputResources := got.Spec.Resources.Outputs
-				for _, outputResource := range outputResources {
-					Expect(outputResource.ResourceSpec.Type).To(Equal(v1beta1.PipelineResourceTypeImage))
-					params := outputResource.ResourceSpec.Params
-					for _, param := range params {
-						if param.Name == "url" {
-							Expect(param.Value).To(Equal(outputPathBuildRun))
-						}
-					}
-				}
 			})
 
 			It("should use the imageURL from the BuildRun for the param", func() {

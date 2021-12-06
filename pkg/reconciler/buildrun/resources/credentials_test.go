@@ -20,6 +20,7 @@ var _ = Describe("Credentials", func() {
 
 	var (
 		build                       *buildv1alpha1.Build
+		buildRun                    *buildv1alpha1.BuildRun
 		beforeServiceAccount        *corev1.ServiceAccount
 		expectedAfterServiceAccount *corev1.ServiceAccount
 	)
@@ -58,16 +59,31 @@ var _ = Describe("Credentials", func() {
 				},
 			}
 
+			buildRun = &buildv1alpha1.BuildRun{
+				Spec: buildv1alpha1.BuildRunSpec{
+					Output: &buildv1alpha1.Image{
+						Image: "quay.io/namespace/brImage",
+						Credentials: &corev1.LocalObjectReference{
+							Name: "secret_buildrun.io",
+						},
+					},
+				},
+			}
+
 			expectedAfterServiceAccount = &corev1.ServiceAccount{
+				// source credential is not added to the service account
 				Secrets: []corev1.ObjectReference{
-					{Name: "secret_b"}, {Name: "secret_c"}, {Name: "secret_a"}, {Name: "secret_docker.io"}, {Name: "secret_quay.io"},
+					{Name: "secret_b"},
+					{Name: "secret_c"},
+					{Name: "secret_docker.io"},
+					{Name: "secret_buildrun.io"},
 				},
 			}
 		})
 
 		It("adds the credentials to the service account", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := resources.ApplyCredentials(context.TODO(), build, afterServiceAccount)
+			modified := resources.ApplyCredentials(context.TODO(), build, buildRun, afterServiceAccount)
 
 			Expect(modified).To(BeTrue())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
@@ -81,9 +97,21 @@ var _ = Describe("Credentials", func() {
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
 						URL: "a/b/c",
+					},
+					Output: buildv1alpha1.Image{
 						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_b",
 						},
+					},
+				},
+			}
+
+			// This is just a placeholder BuildRun with no
+			// SecretRef added to the ones from the Build
+			buildRun = &buildv1alpha1.BuildRun{
+				Spec: buildv1alpha1.BuildRunSpec{
+					Output: &buildv1alpha1.Image{
+						Image: "https://image.url/",
 					},
 				},
 			}
@@ -93,7 +121,7 @@ var _ = Describe("Credentials", func() {
 
 		It("keeps the service account unchanged", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := resources.ApplyCredentials(context.TODO(), build, afterServiceAccount)
+			modified := resources.ApplyCredentials(context.TODO(), build, buildRun, afterServiceAccount)
 
 			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))
@@ -112,12 +140,22 @@ var _ = Describe("Credentials", func() {
 				},
 			}
 
+			// This is just a placeholder BuildRun with no
+			// SecretRef added to the ones from the Build
+			buildRun = &buildv1alpha1.BuildRun{
+				Spec: buildv1alpha1.BuildRunSpec{
+					Output: &buildv1alpha1.Image{
+						Image: "https://image.url/",
+					},
+				},
+			}
+
 			expectedAfterServiceAccount = beforeServiceAccount
 		})
 
 		It("keeps the service account unchanged", func() {
 			afterServiceAccount := beforeServiceAccount.DeepCopy()
-			modified := resources.ApplyCredentials(context.TODO(), build, afterServiceAccount)
+			modified := resources.ApplyCredentials(context.TODO(), build, buildRun, afterServiceAccount)
 
 			Expect(modified).To(BeFalse())
 			Expect(afterServiceAccount).To(Equal(expectedAfterServiceAccount))

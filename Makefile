@@ -33,7 +33,7 @@ ZAP_FLAGS ?= --zap-log-level=debug --zap-encoder=console
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines controller version
-TEKTON_VERSION ?= v0.23.0
+TEKTON_VERSION ?= v0.27.3
 
 # E2E test flags
 TEST_E2E_FLAGS ?= -failFast -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=30m -progress -stream -trace -v
@@ -48,7 +48,7 @@ TEST_E2E_VERIFY_TEKTONOBJECTS ?= true
 TEST_E2E_TIMEOUT_MULTIPLIER ?= 1
 
 # test repository to store images build during end-to-end tests
-TEST_IMAGE_REPO ?= quay.io/shipwright-io/build-e2e
+TEST_IMAGE_REPO ?= ghcr.io/shipwright-io/build/build-e2e
 # test container registyr secret name
 TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime
@@ -64,8 +64,8 @@ TEST_PRIVATE_GITLAB ?=
 TEST_SOURCE_SECRET ?=
 
 # Image settings for building and pushing images
-IMAGE_HOST ?= quay.io
-IMAGE ?= shipwright/shipwright-build-controller
+IMAGE_HOST ?= ghcr.io
+IMAGE_NAMESPACE ?= shipwright-io/build
 TAG ?= latest
 
 # options for generating crds with controller-gen
@@ -84,19 +84,19 @@ vendor: go.mod go.sum
 build: $(CONTROLLER)
 
 $(CONTROLLER): vendor
-	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/manager/main.go
+	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/shipwright-build-controller/main.go
 
 .PHONY: build-plain
 build-plain: 
-	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/manager/main.go
+	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/shipwright-build-controller/main.go
 
 .PHONY: build-image
 build-image:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko publish --bare ./cmd/manager
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko publish --base-import-paths ./cmd/shipwright-build-controller
 
 .PHONY: build-image-with-pprof
 build-image-with-pprof:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --bare --tags=pprof ./cmd/manager
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --base-import-paths --tags=pprof ./cmd/shipwright-build-controller
 
 .PHONY: release
 release:
@@ -107,11 +107,12 @@ generate:
 	hack/update-codegen.sh
 	hack/generate-fakes.sh
 	hack/generate-copyright.sh
+	hack/install-controller-gen.sh
+	"$(CONTROLLER_GEN)" "$(CRD_OPTIONS)" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=deploy/crds
 
-.PHONY: verify-codegen
-verify-codegen: generate
-	# TODO: Verify vendor tree is accurate
-	git diff --quiet -- ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)vendor/*'
+.PHONY: verify-generate
+verify-generate: generate
+	@hack/verify-generate.sh
 
 ginkgo:
 ifeq (, $(shell which ginkgo))
@@ -120,8 +121,8 @@ ifeq (, $(shell which ginkgo))
 	GINKGO_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$GINKGO_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get -u github.com/onsi/ginkgo/ginkgo ;\
-	go get -u github.com/onsi/gomega/... ;\
+	go install github.com/onsi/ginkgo/ginkgo@latest ;\
+	go install github.com/onsi/gomega/... ;\
 	rm -rf $$GINKGO_GEN_TMP_DIR ;\
 	}
 GINKGO=$(GOBIN)/ginkgo
@@ -136,7 +137,7 @@ ifeq (, $(shell which gocov))
 	GOCOV_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$GOCOV_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get github.com/axw/gocov/gocov@v1.0.0 ;\
+	go install github.com/axw/gocov/gocov@v1.0.0 ;\
 	rm -rf $$GOCOV_GEN_TMP_DIR ;\
 	}
 GOCOV=$(GOBIN)/gocov
@@ -152,33 +153,39 @@ govet:
 	@echo "Checking go vet"
 	@go vet ./...
 
-# Install it via: go get -u github.com/gordonklaus/ineffassign
+# Install it via: go install github.com/gordonklaus/ineffassign@latest
 .PHONY: ineffassign
 ineffassign:
 	@echo "Checking ineffassign"
 	@ineffassign ./...
 
-# Install it via: go get -u golang.org/x/lint/golint
+# Install it via: go install golang.org/x/lint/golint@latest
 # See https://github.com/golang/lint/issues/320 for details regarding the grep
 .PHONY: golint
 golint:
 	@echo "Checking golint"
 	@go list ./... | grep -v -e /vendor -e /test | xargs -L1 golint -set_exit_status
 
-# Install it via: go get -u github.com/client9/misspell/cmd/misspell
+# Install it via: go install github.com/securego/gosec/v2/cmd/gosec@latest
+.PHONY: gosec
+gosec:
+	@echo "Checking gosec"
+	gosec -confidence medium -severity high ./...
+
+# Install it via: go install github.com/client9/misspell/cmd/misspell@latest
 .PHONY: misspell
 misspell:
 	@echo "Checking misspell"
 	@find . -type f -not -path './vendor/*' -not -path './.git/*' -not -path './build/*' -print0 | xargs -0 misspell -source=text -error
 
-# Install it via: go get -u honnef.co/go/tools/cmd/staticcheck
+# Install it via: go install honnef.co/go/tools/cmd/staticcheck@latest
 .PHONY: staticcheck
 staticcheck:
 	@echo "Checking staticcheck"
 	@go list ./... | grep -v /test | xargs staticcheck
 
 .PHONY: sanity-check
-sanity-check: ineffassign golint govet misspell staticcheck
+sanity-check: ineffassign golint gosec govet misspell staticcheck
 
 # https://github.com/shipwright-io/build/issues/123
 test: test-unit
@@ -212,7 +219,7 @@ test-unit-ginkgo: ginkgo
 		-slowSpecThreshold=240 \
 		-race \
 		-trace \
-		internal/... \
+		cmd/... \
 		pkg/...
 
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
@@ -247,7 +254,7 @@ test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strate
 
 install:
 	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
-	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -R -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko apply --base-import-paths -R -f deploy/
 
 install-with-pprof:
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
@@ -259,7 +266,7 @@ install-apis:
 
 install-controller: install-apis
 	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
-	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE)" GOFLAGS="$(GO_FLAGS)" ko apply --bare -f deploy/
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko apply --base-import-paths -f deploy/
 
 install-controller-kind: install-apis
 	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
@@ -269,11 +276,11 @@ install-strategies: install-apis
 
 local: vendor install-strategies
 	CONTROLLER_NAME=shipwright-build-controller \
-	go run cmd/manager/main.go $(ZAP_FLAGS)
+	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
 local-plain: vendor
 	CONTROLLER_NAME=shipwright-build-controller \
-	go run cmd/manager/main.go $(ZAP_FLAGS)
+	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
 clean:
 	rm -rf $(OUTPUT_DIR)
@@ -294,6 +301,3 @@ kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
 
-generate-crds:
-	./hack/install-controller-gen.sh
-	"$(CONTROLLER_GEN)" "$(CRD_OPTIONS)" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=deploy/crds

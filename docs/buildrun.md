@@ -10,15 +10,19 @@ SPDX-License-Identifier: Apache-2.0
 - [BuildRun Controller](#buildrun-controller)
 - [Configuring a BuildRun](#configuring-a-buildrun)
   - [Defining the BuildRef](#defining-the-buildref)
+  - [Defining ParamValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
+- [Canceling a `BuildRun`](#canceling-a-buildrun)
 - [BuildRun Status](#buildrun-status)
-  - [Understanding the state of a BuildRun](#understanding-the-state-of-a-BuildRun)
+  - [Understanding the state of a BuildRun](#understanding-the-state-of-a-buildrun)
   - [Understanding failed BuildRuns](#understanding-failed-buildruns)
+  - [Step Results in BuildRun Status](#step-results-in-buildrun-status)
+  - [Build Snapshot](#build-snapshot)
 - [Relationship with Tekton Tasks](#relationship-with-tekton-tasks)
 
 ## Overview
 
-The resource `BuildRun` (`buildruns.dev/v1alpha1`) is the build process of a `Build` resource definition which is executed in Kubernetes.
+The resource `BuildRun` (`buildruns.shipwright.io/v1alpha1`) is the build process of a `Build` resource definition which is executed in Kubernetes.
 
 A `BuildRun` resource allows the user to define:
 
@@ -55,7 +59,10 @@ The `BuildRun` definition supports the following fields:
 - Optional:
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The value overwrites the value that is defined in the `Build`.
+  - `spec.paramValues` - Override any _params_ defined in the referenced `Build`, as long as their name matches.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value which is defined in `Build`. ( Note: other properties of the output, for example, the credentials cannot be specified in the buildRun spec. )
+  - `spec.output.credentials.name` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
+  - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool that is being used by the chosen build strategy.
 
 ### Defining the BuildRef
 
@@ -70,6 +77,44 @@ spec:
   buildRef:
     name: buildpack-nodejs-build-namespaced
 ```
+
+### Defining ParamValues
+
+A `BuildRun` resource can override _paramValues_ defined in its referenced `Build`, as long as the `Build` defines the same _params_ name.
+
+For example, the following `BuildRun` overrides the value for _sleep-time_ param, that is defined in the _a-build_ `Build` resource.
+
+```yaml
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: a-buildrun
+spec:
+  buildRef:
+    name: a-build
+  paramValues:
+  - name: sleep-time
+    value: "30"
+
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: a-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build/
+  paramValues:
+  - name: sleep-time
+    value: "60"
+  strategy:
+    name: sleepy-strategy
+    kind: BuildStrategy
+```
+
+See more about `paramValues` usage in the related [Build](./build.md#defining-paramvalues) resource docs.
 
 ### Defining the ServiceAccount
 
@@ -90,6 +135,80 @@ spec:
 You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you.
 
 _**Note**_: When the SA is not defined, the `BuildRun` will default to the `default` SA in the namespace.
+
+## Canceling a `BuildRun`
+
+To cancel a `BuildRun` that's currently executing, update its status to mark it as canceled.
+
+When you cancel a `BuildRun`, the underlying `TaskRun` is marked as canceled per the [Tekton cancel `TaskRun` feature](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md).
+
+Example of canceling a `BuildRun`:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  # [...]
+  state: "BuildRunCanceled"
+```
+
+### Specifying Environment Variables
+
+An example of a `BuildRun` that specifies environment variables:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-namespaced
+  env:
+    - name: EXAMPLE_VAR_1
+      value: "example-value-1"
+    - name: EXAMPLE_VAR_2
+      value: "example-value-2"
+```
+
+Example of a `BuildRun` that uses the Kubernetes Downward API to
+expose a `Pod` field as an environment variable:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-namespaced
+  env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+```
+
+Example of a `BuildRun` that uses the Kubernetes Downward API to
+expose a `Container` field as an environment variable:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-namespaced
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-namespaced
+  env:
+    - name: MEMORY_LIMIT
+      valueFrom:
+        resourceFieldRef:
+          containerName: my-container
+          resource: limits.memory
+```
 
 ## BuildRun Status
 
@@ -126,7 +245,9 @@ The following table illustrates the different states a BuildRun can have under i
 | Status | Reason | CompletionTime is set | Description |
 | --- | --- | --- | --- |
 | Unknown | Pending                       | No  | The BuildRun is waiting on a Pod in status Pending. |
+| Unknown | Running                       | No  | The BuildRun has been validate and started to perform its work. |l
 | Unknown | Running                       | No  | The BuildRun has been validate and started to perform its work. |
+| Unknown | BuildRunCanceled              | No  | The user requested the BuildRun to be canceled.  This results in the BuildRun controller requesting the TaskRun be canceled.  Cancellation has not been done yet. |
 | True    | Succeeded                     | Yes | The BuildRun Pod is done. |
 | False    | Failed                       | Yes | The BuildRun failed in one of the steps. |
 | False    | BuildRunTimeout              | Yes | The BuildRun timed out. |
@@ -139,6 +260,9 @@ The following table illustrates the different states a BuildRun can have under i
 | False    | ServiceAccountNotFound       | Yes | The referenced service account was not found in the cluster. |
 | False    | BuildRegistrationFailed      | Yes | The related Build in the BuildRun is on a Failed state. |
 | False    | BuildNotFound                | Yes | The related Build in the BuildRun was not found. |
+| False    | BuildRunCanceled             | Yes | The BuildRun and underlying TaskRun were canceled successfully. |
+| False    | BuildRunNameInvalid          | Yes | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
+| False    | PodEvicted                   | Yes | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
 
 _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
 
@@ -147,6 +271,48 @@ _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/te
 To make it easier for users to understand why did a BuildRun failed, users can infer from the `Status.FailedAt` field, the pod and container where the failure took place.
 
 In addition, the `Status.Conditions` will host under the `Message` field a compacted message containing the `kubectl` command to trigger, in order to retrieve the logs.
+
+### Step Results in BuildRun Status
+
+After the successful completion of a `BuildRun`, the `.status` field contains the results (`.status.taskResults`) emitted from the `TaskRun` steps generate by the `BuildRun` controller as part of processing the `BuildRun`. These results contain valuable metadata for users, like the _image digest_ or the _commit sha_ of the source code used for building.
+The results from the source step will be surfaced to the `.status.sources` and the results from 
+the [output step](buildstrategies.md#system-results) will be surfaced to the `.status.output` field of a `BuildRun`.
+
+Example of a `BuildRun` with surfaced results for `git` source (note that the `branchName` is only included if the Build does not specify any `revision`):
+
+```yaml
+# [...]
+status:
+  buildSpec:
+    # [...]
+  output:
+    digest: sha256:07626e3c7fdd28d5328a8d6df8d29cd3da760c7f5e2070b534f9b880ed093a53
+    size: 1989004
+  sources:
+  - name: default
+    git:
+      commitAuthor: xxx xxxxxx
+      commitSha: f25822b85021d02059c9ac8a211ef3804ea8fdde
+      branchName: main
+```
+
+Another example of a `BuildRun` with surfaced results for local source code(`bundle`) source:
+
+```yaml
+# [...]
+status:
+  buildSpec:
+    # [...]
+  output:
+    digest: sha256:07626e3c7fdd28d5328a8d6df8d29cd3da760c7f5e2070b534f9b880ed093a53
+    size: 1989004
+  sources:
+  - name: default
+    bundle:
+      digest: sha256:0f5e2070b534f9b880ed093a537626e3c7fdd28d5328a8d6df8d29cd3da760c7
+```
+
+**Note**: The digest and size of the output image are only included if the build strategy provides them. See [System results](buildstrategies.md#system-results).
 
 ### Build Snapshot
 

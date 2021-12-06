@@ -16,7 +16,7 @@ spec:
       serviceAccountName: shipwright-build-controller
       containers:
         - name: shipwright-build
-          image: ko://github.com/shipwright-io/build/cmd/manager
+          image: ko://github.com/shipwright-io/build/cmd/shipwright-build-controller
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -32,6 +32,14 @@ spec:
                   fieldPath: metadata.name
             - name: CONTROLLER_NAME
               value: "shipwright-build"
+            - name: GIT_CONTAINER_IMAGE
+              value: ko://github.com/shipwright-io/build/cmd/git
+            - name: GIT_ENABLE_REWRITE_RULE
+              value: "false"
+            - name: MUTATE_IMAGE_CONTAINER_IMAGE
+              value: ko://github.com/shipwright-io/build/cmd/mutate-image
+            - name: BUNDLE_CONTAINER_IMAGE
+              value: ko://github.com/shipwright-io/build/cmd/bundle
           ports:
             - containerPort: 8383
               name: metrics-port

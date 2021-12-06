@@ -24,13 +24,13 @@ If your `Build`'s `outputImage` is to be pushed to the OpenShift internal regist
 `pipeline` service account has the required role:
 
 ```sh
-oc policy add-role-to-user registry-editor pipeline
+oc policy add-role-to-user registry-editor -z pipeline
 ```
 
 Or
 
 ```sh
-oc policy add-role-to-user  system:image-builder  pipeline
+oc policy add-role-to-user  system:image-builder -z pipeline
 ```
 
 In the near future, the above would be setup by the controller.
@@ -41,10 +41,9 @@ In the near future, the above would be setup by the controller.
 make clean && make build
 ```
 
-* This project uses Golang 1.15+ and controller-gen v0.4.1.
+* This project uses Golang 1.17+ and controller-gen v0.5.0.
 * The controllers create/watch Tekton objects.
 
 # Testing
 
-Please refer to the [testing docs](/docs/development/testing.md) for more information about our test levels.
-
+Please refer to the [testing docs](docs/development/testing.md) for more information about our test levels.

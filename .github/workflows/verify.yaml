@@ -1,0 +1,43 @@
+name: Verify
+
+on:
+  push:
+    tags-ignore:
+      - '**'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17.x
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        path: go/src/github.com/shipwright-io/build
+
+    - name: Install Tools
+      run: |
+        go install github.com/gordonklaus/ineffassign@latest
+        go install golang.org/x/lint/golint@latest
+        go install github.com/client9/misspell/cmd/misspell@latest
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+        go install github.com/maxbrunsfeld/counterfeiter/v6@latest
+        go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+    - name: Checks
+      env:
+        GOPATH: "/home/runner/work/build/build/go"
+      run: |
+        make -C $GOPATH/src/github.com/shipwright-io/build \
+          sanity-check \
+          verify-generate

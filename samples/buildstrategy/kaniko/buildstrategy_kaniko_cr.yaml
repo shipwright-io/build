@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.6.0
+      image: gcr.io/kaniko-project/executor:v1.7.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -20,6 +20,8 @@ spec:
             - SETFCAP
             - KILL
       env:
+        - name: HOME
+          value: /tekton/home
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
         - name: AWS_ACCESS_KEY_ID
@@ -33,7 +35,7 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
+        - --oci-layout-path=/kaniko/oci-image-layout
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -43,3 +45,31 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+      volumeMounts:
+        - name: layout
+          mountPath: /kaniko/oci-image-layout
+    - name: results
+      image: registry.access.redhat.com/ubi8/ubi-minimal
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+          
+          # Store the image digest
+          grep digest /kaniko/oci-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
+
+          # Store the image size
+          du -b -c /kaniko/oci-image-layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > "$(results.shp-image-size.path)"
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      volumeMounts:
+        - name: layout
+          mountPath: /kaniko/oci-image-layout
+

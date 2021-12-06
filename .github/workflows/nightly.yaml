@@ -2,7 +2,6 @@ name: Nightly Release
 
 on:
   workflow_dispatch:  # Manual trigger
-
   schedule:
   - cron: '0 5 * * *' # 5 AM UTC = Midnight EST
 
@@ -10,58 +9,69 @@ jobs:
   nightly:
     if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # To be able to get OIDC ID token to sign images.
+      contents: write  # To be able to update releases.
+      packages: write  # To be able to push images and signatures.
+
+    env:
+      IMAGE_HOST: ghcr.io
+      IMAGE_NAMESPACE: ${{ github.repository }}
+
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.17.x
+
+    # Install tools
+    - uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
+    - uses: imjasonh/setup-crane@01d26682810dcd47bfc8eb1efe791558123a9373
+    - uses: sigstore/cosign-installer@v1.2.0
 
     - name: Get current date
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d-%s')"
 
-    - name: Get latest nightly release upload_url
-      id: get_release
-      run: |
-        UPLOAD_URL=$(curl https://api.github.com/repos/${GITHUB_REPOSITORY}/releases | jq -r '.[] | select(.name | startswith("Nightly Releases")).upload_url' | tail -n 1 | cut -d"{" -f1)
-        echo "Latest nightly release upload URL is ${UPLOAD_URL}"
-        echo "::set-output name=upload_url::${UPLOAD_URL}"
-
-    - name: Install Go
-      uses: actions/setup-go@v2
-    - name: Install Ko
-      run: |
-        echo '::group:: install ko'
-        curl -L https://github.com/google/ko/releases/download/v0.8.2/ko_0.8.2_Linux_x86_64.tar.gz | tar xzf - ko
-        chmod +x ./ko
-        sudo mv ko /usr/local/bin
-        echo '::endgroup::'
-
-    - name: Ko resolve nightly.yaml
+    - name: Generate and upload release YAMLs
       env:
-        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-        IMAGE_HOST: quay.io
-        IMAGE: shipwright/shipwright-operator
+        REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        REGISTRY_USERNAME: ${{ github.repository_owner }}
+        TAG: "nightly-${{ steps.date.outputs.date }}"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        TAG="nightly-${{ steps.date.outputs.date }}" make release
+        make release
+
         mv release.yaml nightly-${{ steps.date.outputs.date }}.yaml
-        mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
+        gh release upload nightly nightly-${{ steps.date.outputs.date }}.yaml
 
-    - name: Upload Release Asset
-      id: upload_release_asset 
-      uses: actions/upload-release-asset@v1
+        mv release-debug.yaml nightly-${{ steps.date.outputs.date }}-debug.yaml
+        gh release upload nightly nightly-${{ steps.date.outputs.date }}-debug.yaml
+
+        mv sample-strategies.yaml nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
+        gh release upload nightly nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
+
+    - name: Update latest tag of supporting images
+      working-directory: ./cmd
+      run: |
+        for command in *
+        do
+          crane copy "${IMAGE_HOST}/${IMAGE_NAMESPACE}/${command}:nightly-${{ steps.date.outputs.date }}" "${IMAGE_HOST}/${IMAGE_NAMESPACE}/${command}:latest"
+        done
+
+    - name: Sign released images
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_release.outputs.upload_url }}?name=nightly-${{ steps.date.outputs.date }}.yaml
-        asset_path: ./nightly-${{ steps.date.outputs.date }}.yaml
-        asset_name: nightly-${{ steps.date.outputs.date}}.yaml
-        asset_content_type: application/x-yaml
-    - name: Upload Release Asset
-      id: upload_release_asset-debug
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_release.outputs.upload_url }}?name=nightly-${{ steps.date.outputs.date }}-debug.yaml
-        asset_path: ./nightly-${{ steps.date.outputs.date }}-debug.yaml
-        asset_name: nightly-${{ steps.date.outputs.date}}-debug.yaml
-        asset_content_type: application/x-yaml
+        # This enables keyless mode
+        # (https://github.com/sigstore/cosign/blob/main/KEYLESS.md) which signs
+        # images using an ephemeral key tied to the GitHub Actions identity via
+        # OIDC.
+        COSIGN_EXPERIMENTAL: "true"
+      run: |
+        for f in \
+          nightly-${{ steps.date.outputs.date }}.yaml \
+          nightly-${{ steps.date.outputs.date }}-debug.yaml; do
+          grep -o "ghcr.io[^\"]*" $f | xargs cosign sign \
+              -a sha=${{ github.sha }} \
+              -a run_id=${{ github.run_id }} \
+              -a run_attempt=${{ github.run_attempt }}
+        done

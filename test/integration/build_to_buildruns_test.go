@@ -89,7 +89,6 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.Reason).To(ContainSubstring("failed to finish within"))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
@@ -114,7 +113,6 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.Reason).To(ContainSubstring("failed to finish within \"1s\""))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
@@ -142,7 +140,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			tr, err := tb.GetTaskRunFromBuildRun(buildRun.Name)
 			Expect(err).To(BeNil())
 
-			Expect(tr.Spec.Resources.Outputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("foobar.registry.com"))
+			Expect(tr.Spec.Params[0].Value.StringVal).To(Equal("foobar.registry.com"))
 
 		})
 	})
@@ -167,7 +165,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			//Delete Build
+			// Delete Build
 			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
 
 			// Wait for deletion of BuildRun
@@ -207,7 +205,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 				// BuildRun reason can be ExceededNodeResources
 				// if the Tekton TaskRun Pod is queued due to
 				// insufficient cluster resources.
-				Or(Equal("Pending"), Equal("ExceededNodeResources")))
+				Or(Equal("Pending"), Equal("ExceededNodeResources"), Equal("Running")))
 		})
 	})
 
@@ -232,7 +230,6 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			br, err := tb.GetBR(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("build.shipwright.io \"%s\" not found", BUILD+tb.Namespace)))
 			Expect(br.Status.StartTime).To(BeNil())
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
@@ -260,7 +257,6 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("the Build is not registered correctly, build: %s, registered status: False, reason: SpecOutputSecretRefNotFound", BUILD+tb.Namespace)))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRegistrationFailed"))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("Build is not registered correctly"))
@@ -293,7 +289,6 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).ToNot(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
-			Expect(br.Status.Reason).To(Equal(fmt.Sprintf("build.shipwright.io \"%s\" not found", BUILD+tb.Namespace+"foobar")))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
@@ -338,11 +333,11 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			tr01, err := tb.GetTaskRunFromBuildRun(buildRun01.Name)
 			Expect(err).To(BeNil())
-			Expect(tr01.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/shipwright-io/sample-go"))
+			Expect(tr01.Spec.TaskSpec.Steps[0].Args[1]).To(Equal("https://github.com/shipwright-io/sample-go"))
 
 			tr02, err := tb.GetTaskRunFromBuildRun(buildRun02.Name)
 			Expect(err).To(BeNil())
-			Expect(tr02.Spec.Resources.Inputs[0].PipelineResourceBinding.ResourceSpec.Params[0].Value).To(Equal("https://github.com/shipwright-io/sample-go"))
+			Expect(tr02.Spec.TaskSpec.Steps[0].Args[1]).To(Equal("https://github.com/shipwright-io/sample-go"))
 
 		})
 	})
@@ -503,6 +498,51 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			buildIsDeleted, err := tb.GetBRTillDeletion(BUILDRUN + tb.Namespace)
 			Expect(err).To(BeNil())
 			Expect(buildIsDeleted).To(Equal(true))
+		})
+	})
+
+	Context("when a build name is invalid", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSMinimal)
+		})
+
+		It("fails the build with a proper error in Reason", func() {
+			// Set build name more than 63 characters
+			buildObject.Name = strings.Repeat("s", 64)
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.BuildNameInvalid))
+			Expect(buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
+		})
+	})
+	Context("when a build generateName is provided but none name", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildCBSMinimal)
+		})
+
+		It("automatically sanitize the name and never fail the Build", func() {
+			// Set build name more than 63 characters
+			// Kubernetes will sanitize the name of the object by shrinking the
+			// provided generateName in combination with random chars in a way that
+			// they do not exceed 63 chars.
+			buildObject.Name = ""
+			buildObject.GenerateName = strings.Repeat("s", 70)
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildList, err := tb.ListBuilds(tb.Namespace)
+			Expect(err).To(BeNil())
+
+			// We assume there is always a single build in the namespace, therefore we get index 0
+			buildObject, err = tb.GetBuildTillValidation(buildList.Items[0].Name)
+			Expect(err).To(BeNil())
+
+			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+			Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 		})
 	})
 })

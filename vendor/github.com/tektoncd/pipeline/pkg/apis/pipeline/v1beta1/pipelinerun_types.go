@@ -31,12 +31,6 @@ import (
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
-var groupVersionKind = schema.GroupVersionKind{
-	Group:   SchemeGroupVersion.Group,
-	Version: SchemeGroupVersion.Version,
-	Kind:    pipeline.PipelineRunControllerName,
-}
-
 // +genclient
 // +genreconciler:krshapedlogic=false
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -68,9 +62,9 @@ func (pr *PipelineRun) GetStatusCondition() apis.ConditionAccessor {
 	return &pr.Status
 }
 
-// GetOwnerReference gets the pipeline run as owner reference for any related objects
-func (pr *PipelineRun) GetOwnerReference() metav1.OwnerReference {
-	return *metav1.NewControllerRef(pr, groupVersionKind)
+// GetGroupVersionKind implements kmeta.OwnerRefable.
+func (*PipelineRun) GetGroupVersionKind() schema.GroupVersionKind {
+	return SchemeGroupVersion.WithKind(pipeline.PipelineRunControllerName)
 }
 
 // IsDone returns true if the PipelineRun's status indicates that it is done.
@@ -85,16 +79,31 @@ func (pr *PipelineRun) HasStarted() bool {
 
 // IsCancelled returns true if the PipelineRun's spec status is set to Cancelled state
 func (pr *PipelineRun) IsCancelled() bool {
-	return pr.Spec.Status == PipelineRunSpecStatusCancelled
+	return pr.Spec.Status == PipelineRunSpecStatusCancelled || pr.Spec.Status == PipelineRunSpecStatusCancelledDeprecated
+}
+
+// IsGracefullyCancelled returns true if the PipelineRun's spec status is set to CancelledRunFinally state
+func (pr *PipelineRun) IsGracefullyCancelled() bool {
+	return pr.Spec.Status == PipelineRunSpecStatusCancelledRunFinally
+}
+
+// IsGracefullyStopped returns true if the PipelineRun's spec status is set to StoppedRunFinally state
+func (pr *PipelineRun) IsGracefullyStopped() bool {
+	return pr.Spec.Status == PipelineRunSpecStatusStoppedRunFinally
 }
 
 func (pr *PipelineRun) GetTimeout(ctx context.Context) time.Duration {
-	// Use the platform default is no timeout is set
-	if pr.Spec.Timeout == nil {
+	// Use the platform default if no timeout is set
+	if pr.Spec.Timeout == nil && pr.Spec.Timeouts == nil {
 		defaultTimeout := time.Duration(config.FromContextOrDefaults(ctx).Defaults.DefaultTimeoutMinutes)
 		return defaultTimeout * time.Minute
 	}
-	return pr.Spec.Timeout.Duration
+
+	if pr.Spec.Timeout != nil {
+		return pr.Spec.Timeout.Duration
+	}
+
+	return pr.Spec.Timeouts.Pipeline.Duration
 }
 
 // IsPending returns true if the PipelineRun's spec status is set to Pending state
@@ -174,6 +183,15 @@ type PipelineRunSpec struct {
 	// Used for cancelling a pipelinerun (and maybe more later on)
 	// +optional
 	Status PipelineRunSpecStatus `json:"status,omitempty"`
+	// This is an alpha field. You must set the "enable-api-fields" feature flag to "alpha"
+	// for this field to be supported.
+	//
+	// Time after which the Pipeline times out.
+	// Currently three keys are accepted in the map
+	// pipeline, tasks and finally
+	// with Timeouts.pipeline >= Timeouts.tasks + Timeouts.finally
+	// +optional
+	Timeouts *TimeoutFields `json:"timeouts,omitempty"`
 	// Time after which the Pipeline times out. Defaults to never.
 	// Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration
 	// +optional
@@ -189,13 +207,35 @@ type PipelineRunSpec struct {
 	TaskRunSpecs []PipelineTaskRunSpec `json:"taskRunSpecs,omitempty"`
 }
 
+type TimeoutFields struct {
+	// Pipeline sets the maximum allowed duration for execution of the entire pipeline. The sum of individual timeouts for tasks and finally must not exceed this value.
+	Pipeline *metav1.Duration `json:"pipeline,omitempty"`
+	// Tasks sets the maximum allowed duration of this pipeline's tasks
+	Tasks *metav1.Duration `json:"tasks,omitempty"`
+	// Finally sets the maximum allowed duration of this pipeline's finally
+	Finally *metav1.Duration `json:"finally,omitempty"`
+}
+
 // PipelineRunSpecStatus defines the pipelinerun spec status the user can provide
 type PipelineRunSpecStatus string
 
 const (
+	// Deprecated: "PipelineRunCancelled" indicates that the user wants to cancel the task,
+	// if not already cancelled or terminated (replaced by "Cancelled")
+	PipelineRunSpecStatusCancelledDeprecated = "PipelineRunCancelled"
+
 	// PipelineRunSpecStatusCancelled indicates that the user wants to cancel the task,
 	// if not already cancelled or terminated
-	PipelineRunSpecStatusCancelled = "PipelineRunCancelled"
+	PipelineRunSpecStatusCancelled = "Cancelled"
+
+	// PipelineRunSpecStatusCancelledRunFinally indicates that the user wants to cancel the pipeline run,
+	// if not already cancelled or terminated, but ensure finally is run normally
+	PipelineRunSpecStatusCancelledRunFinally = "CancelledRunFinally"
+
+	// PipelineRunSpecStatusStoppedRunFinally indicates that the user wants to stop the pipeline run,
+	// wait for already running tasks to be completed and run finally
+	// if not already cancelled or terminated
+	PipelineRunSpecStatusStoppedRunFinally = "StoppedRunFinally"
 
 	// PipelineRunSpecStatusPending indicates that the user wants to postpone starting a PipelineRun
 	// until some condition is met
@@ -248,6 +288,12 @@ const (
 	// PipelineRunReasonStopping indicates that no new Tasks will be scheduled by the controller, and the
 	// pipeline will stop once all running tasks complete their work
 	PipelineRunReasonStopping PipelineRunReason = "PipelineRunStopping"
+	// PipelineRunReasonCancelledRunningFinally indicates that pipeline has been gracefully cancelled
+	// and no new Tasks will be scheduled by the controller, but final tasks are now running
+	PipelineRunReasonCancelledRunningFinally PipelineRunReason = "CancelledRunningFinally"
+	// PipelineRunReasonStoppedRunningFinally indicates that pipeline has been gracefully stopped
+	// and no new Tasks will be scheduled by the controller, but final tasks are now running
+	PipelineRunReasonStoppedRunningFinally PipelineRunReason = "StoppedRunningFinally"
 )
 
 func (t PipelineRunReason) String() string {

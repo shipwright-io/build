@@ -1,96 +1,76 @@
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: shipwright-build-controller
+  namespace: shipwright-build
+rules:
+- apiGroups: ['']
+  resources: ['configmaps']
+  verbs:     ['get', 'create', 'update']
+
+- apiGroups: ['']
+  resources: ['events']
+  verbs:     ['create']
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: shipwright-build-controller
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - services
-  - services/finalizers
-  - endpoints
-  - persistentvolumeclaims
-  - events
-  - configmaps
-  - secrets
-  - serviceaccounts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - daemonsets
-  - replicasets
-  - statefulsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  verbs:
-  - get
-  - create
-- apiGroups:
-  - apps
-  resourceNames:
-  - shipwright-build
-  resources:
-  - deployments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-- apiGroups:
-  - apps
-  resources:
-  - replicasets
-  - deployments
-  verbs:
-  - get
-- apiGroups:
-  - shipwright.io
-  resources:
-  - '*'
-  - buildstrategies
-  - clusterbuildstrategies
-  - buildruns
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - tekton.dev
-  resources:
-  - tasks
-  - taskruns
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+- apiGroups: ['shipwright.io']
+  resources: ['buildruns']
+  # The build-run-deletion annotation sets an owner ref on BuildRun objects.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "delete" permission on objects that they set owner references on.
+  verbs:     ['get', 'list', 'watch', 'update', 'delete']
+
+- apiGroups: ['shipwright.io']
+  # BuildRuns are set as the owners of Tekton TaskRuns.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "update" permission on the finalizer of the parent object in the owner reference.
+  resources: ['buildruns/finalizers']
+  verbs:     ['update']
+
+- apiGroups: ['shipwright.io']
+  resources: ['buildruns/status']
+  verbs:     ['update']
+
+- apiGroups: ['shipwright.io']
+  resources: ['builds']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['shipwright.io']
+  # The build-run-deletion annotation makes Builds an owner of BuildRun objects.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "update" permission on the finalizer of the parent object in the owner reference.
+  resources: ['builds/finalizers']
+  verbs:     ['update']
+
+- apiGroups: ['shipwright.io']
+  resources: ['builds/status']
+  verbs:     ['update']
+
+- apiGroups: ['shipwright.io']
+  resources: ['buildstrategies']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['shipwright.io']
+  resources: ['clusterbuildstrategies']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['tekton.dev']
+  resources: ['taskruns']
+  # BuildRuns are set as the owners of Tekton TaskRuns.
+  # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "delete" permission on objects that they set owner references on.
+  verbs:     ['get', 'list', 'watch', 'create', 'delete', 'patch']
+
+- apiGroups: ['']
+  resources: ['pods']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['']
+  resources: ['secrets']
+  verbs:     ['get', 'list', 'watch']
+
+- apiGroups: ['']
+  resources: ['serviceaccounts']
+  verbs:     ['get', 'list', 'watch', 'create', 'update', 'delete']

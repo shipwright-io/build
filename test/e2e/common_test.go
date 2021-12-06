@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	. "github.com/onsi/gomega"
 	knativeapis "knative.dev/pkg/apis"
@@ -39,13 +40,31 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 
 	amendBuild(identifier, build)
 
-	err = testBuild.CreateBuild(build)
-	Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
-	Logf("Build %s created", identifier)
+	// For Builds that use a namespaces build strategy, there is a race condition: we just created the
+	// build strategy and it might be that the build controller does not yet have this in his cache
+	// and therefore marks the build as not registered with reason BuildStrategyNotFound
+	Eventually(func() buildv1alpha1.BuildReason {
+		// cleanup the build of the previous try
+		if build.Status.Registered != "" {
+			err = testBuild.DeleteBuild(build.Name)
+			Expect(err).ToNot(HaveOccurred())
 
-	build, err = testBuild.GetBuildTillValidation(build.Name)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(build.Status.Reason).To(Equal(buildv1alpha1.SucceedStatus))
+			// create a fresh object
+			build, err = buildTestData(testBuild.Namespace, identifier, filePath)
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving build test data")
+
+			amendBuild(identifier, build)
+		}
+
+		err = testBuild.CreateBuild(build)
+		Expect(err).ToNot(HaveOccurred(), "Unable to create build %s", identifier)
+		Logf("Build %s created", identifier)
+
+		build, err = testBuild.GetBuildTillValidation(build.Name)
+		Expect(err).ToNot(HaveOccurred())
+
+		return build.Status.Reason
+	}, time.Duration(10*time.Second), time.Second).Should(Equal(buildv1alpha1.SucceedStatus))
 
 	return build
 }
@@ -91,10 +110,11 @@ func amendSourceURL(b *buildv1alpha1.Build, sourceURL string) {
 
 // amendBuild make changes on build object.
 func amendBuild(identifier string, b *buildv1alpha1.Build) {
-	amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 	if strings.Contains(identifier, "github") {
+		amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGithub))
 	} else if strings.Contains(identifier, "gitlab") {
+		amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGitlab))
 	}
 
@@ -106,7 +126,7 @@ func amendBuild(identifier string, b *buildv1alpha1.Build) {
 func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1alpha1.Build, *buildv1alpha1.BuildRun, error) {
 	buildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
-		Logf("Failed to get BuildRun %s: %s", buildRunName, err)
+		Logf("Failed to get BuildRun %q: %s", buildRunName, err)
 		return nil, nil, err
 	}
 
@@ -127,7 +147,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 
 	build, buildRun, err := retrieveBuildAndBuildRun(testBuild, namespace, buildRunName)
 	if err != nil {
-		Logf("Failed to retrieve build and buildrun logs: %w", err)
+		Logf("Failed to retrieve build and buildrun logs: %v", err)
 	}
 
 	if build != nil {

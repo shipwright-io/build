@@ -6,17 +6,21 @@ package buildrun
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -74,24 +78,53 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	ctxlog.Debug(ctx, "starting reconciling request from a BuildRun or TaskRun event", namespace, request.Namespace, name, request.Name)
 
+	// with build run cancel, it is now possible for a build run update to stem from something other than a task run update,
+	// so we can no longer assume that a build run event will not come in after the build run has a task run ref in its status
 	buildRun = &buildv1alpha1.BuildRun{}
+	getBuildRunErr := r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
 	lastTaskRun := &v1beta1.TaskRun{}
+	getTaskRunErr := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun)
+
+	if getBuildRunErr != nil && getTaskRunErr != nil {
+		if !apierrors.IsNotFound(getBuildRunErr) {
+			return reconcile.Result{}, getBuildRunErr
+		}
+		if !apierrors.IsNotFound(getTaskRunErr) {
+			return reconcile.Result{}, getTaskRunErr
+		}
+		// If the BuildRun and TaskRun are not found, it might mean that we are running a Reconcile after a TaskRun was deleted. If this is the case, we need
+		// to identify from the request the BuildRun name associate to it and update the BuildRun Status.
+		r.VerifyRequestName(ctx, request, buildRun)
+		return reconcile.Result{}, nil
+	}
+
+	// Validating buildrun name is a valid label value
+	if errs := validation.IsValidLabelValue(buildRun.Name); len(errs) > 0 {
+		// stop reconciling and mark the BuildRun as Failed
+		if updateErr := resources.UpdateConditionWithFalseStatus(
+			ctx,
+			r.client,
+			buildRun,
+			strings.Join(errs, ", "),
+			resources.BuildRunNameInvalid,
+		); updateErr != nil {
+			return reconcile.Result{}, updateErr
+		}
+
+		return reconcile.Result{}, nil
+	}
+
+	// if this is a build run event after we've set the task run ref, get the task run using the task run name stored in the build run
+	if getBuildRunErr == nil && apierrors.IsNotFound(getTaskRunErr) && buildRun.Status.LatestTaskRunRef != nil {
+		getTaskRunErr = r.client.Get(ctx, types.NamespacedName{Name: *buildRun.Status.LatestTaskRunRef, Namespace: request.Namespace}, lastTaskRun)
+	}
 
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
-	if err := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun); err != nil {
-		if apierrors.IsNotFound(err) {
-			err = r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
-			if err != nil && !apierrors.IsNotFound(err) {
-				return reconcile.Result{}, err
-			} else if apierrors.IsNotFound(err) {
-				// If the BuildRun and TaskRun are not found, it might mean that we are running a Reconcile after a TaskRun was deleted. If this is the case, we need
-				// to identify from the request the BuildRun name associate to it and update the BuildRun Status.
-				r.VerifyRequestName(ctx, request, buildRun)
-				return reconcile.Result{}, nil
-			}
+	if getTaskRunErr != nil {
+		if apierrors.IsNotFound(getTaskRunErr) {
 
 			build = &buildv1alpha1.Build{}
-			err = resources.GetBuildObject(ctx, r.client, buildRun, build)
+			err := resources.GetBuildObject(ctx, r.client, buildRun, build)
 			if err != nil {
 				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
 					return reconcile.Result{}, nil
@@ -121,6 +154,14 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			// Ensure the build-related labels on the BuildRun
 			if buildRun.GetLabels() == nil {
 				buildRun.Labels = make(map[string]string)
+			}
+
+			// make sure the BuildRun has not already been cancelled
+			if buildRun.IsCanceled() {
+				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, "the BuildRun is marked canceled.", buildv1alpha1.BuildRunStateCancel); updateErr != nil {
+					return reconcile.Result{}, updateErr
+				}
+				return reconcile.Result{}, nil
 			}
 
 			// Set OwnerReference for Build and BuildRun only when build.shipwright.io/build-run-deletion is set "true"
@@ -220,16 +261,31 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 				generatedTaskRun.CreationTimestamp.Time.Sub(buildRun.CreationTimestamp.Time),
 			)
 		} else {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, getTaskRunErr
 		}
 	} else {
 		ctxlog.Info(ctx, "taskRun already exists", namespace, request.Namespace, name, request.Name)
 
-		err = r.GetBuildRunObject(ctx, lastTaskRun.Labels[buildv1alpha1.LabelBuildRun], request.Namespace, buildRun)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return reconcile.Result{}, err
-		} else if apierrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
+		if getBuildRunErr != nil && !apierrors.IsNotFound(getBuildRunErr) {
+			return reconcile.Result{}, getBuildRunErr
+		} else if apierrors.IsNotFound(getBuildRunErr) {
+			// this is a TR event, try getting the br from the label on the tr
+			err := r.GetBuildRunObject(ctx, lastTaskRun.Labels[buildv1alpha1.LabelBuildRun], request.Namespace, buildRun)
+			if err != nil && !apierrors.IsNotFound(err) {
+				return reconcile.Result{}, err
+			}
+			if err != nil && apierrors.IsNotFound(err) {
+				return reconcile.Result{}, nil
+			}
+		}
+
+		if buildRun.IsCanceled() && !lastTaskRun.IsCancelled() {
+			ctxlog.Info(ctx, "buildRun marked for cancellation, patching task run", namespace, request.Namespace, name, request.Name)
+			// patch tekton taskrun a la tkn to start tekton's cancelling logic
+			trueParam := true
+			if err := r.patchTaskRun(ctx, lastTaskRun, "replace", "/spec/status", v1beta1.TaskRunSpecStatusCancelled, metav1.PatchOptions{Force: &trueParam}); err != nil {
+				return reconcile.Result{}, err
+			}
 		}
 
 		// Check if the BuildRun is already finished, this happens if the build controller is restarted.
@@ -241,6 +297,11 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, nil
 		}
 
+		if len(lastTaskRun.Status.TaskRunResults) > 0 {
+			ctxlog.Info(ctx, "surfacing taskRun results to BuildRun status", namespace, request.Namespace, name, request.Name)
+			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, lastTaskRun.Status.TaskRunResults, request)
+		}
+
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
 		if trCondition != nil {
 			if err := resources.UpdateBuildRunUsingTaskRunCondition(ctx, r.client, buildRun, lastTaskRun, trCondition); err != nil {
@@ -249,27 +310,12 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 
 			taskRunStatus := trCondition.Status
 
-			// check if we should delete the generated service account by checking the build run spec and that the task run is csomplete
-			if resources.IsGeneratedServiceAccountUsed(buildRun) && (taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse) {
-				serviceAccount := &corev1.ServiceAccount{}
-				serviceAccount.Name = resources.GetGeneratedServiceAccountName(buildRun)
-				serviceAccount.Namespace = buildRun.Namespace
-
-				ctxlog.Info(ctx, "deleting service account", namespace, request.Namespace, name, request.Name)
-				if err = r.client.Delete(ctx, serviceAccount); err != nil && !apierrors.IsNotFound(err) {
+			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
+			if taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse {
+				if err := resources.DeleteServiceAccount(ctx, r.client, buildRun); err != nil {
 					ctxlog.Error(ctx, err, "Error during deletion of generated service account.")
 					return reconcile.Result{}, err
 				}
-			}
-
-			//lint:ignore SA1019 should be set until removed
-			buildRun.Status.Succeeded = taskRunStatus
-			if taskRunStatus == corev1.ConditionFalse {
-				//lint:ignore SA1019 should be set until removed
-				buildRun.Status.Reason = trCondition.Message
-			} else {
-				//lint:ignore SA1019 should be set until removed
-				buildRun.Status.Reason = trCondition.Reason
 			}
 
 			buildRun.Status.LatestTaskRunRef = &lastTaskRun.Name
@@ -331,7 +377,7 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 			}
 
 			ctxlog.Info(ctx, "updating buildRun status", namespace, request.Namespace, name, request.Name)
-			if err = r.client.Status().Update(ctx, buildRun); err != nil {
+			if err := r.client.Status().Update(ctx, buildRun); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
@@ -441,4 +487,25 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, serviceAccount *c
 	}
 
 	return generatedTaskRun, nil
+}
+
+type patchStringValue struct {
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value string `json:"value"`
+}
+
+func (r *ReconcileBuildRun) patchTaskRun(ctx context.Context, tr *v1beta1.TaskRun, op, path, value string, opts metav1.PatchOptions) error {
+	payload := []patchStringValue{{
+		Op:    op,
+		Path:  path,
+		Value: value,
+	}}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	patch := client.RawPatch(types.JSONPatchType, data)
+	patchOpt := client.PatchOptions{Raw: &opts}
+	return r.client.Patch(ctx, tr, patch, &patchOpt)
 }

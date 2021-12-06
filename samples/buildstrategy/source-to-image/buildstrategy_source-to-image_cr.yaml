@@ -7,11 +7,12 @@ spec:
     - command:
         - /usr/local/bin/s2i
         - build
-        - .
+        - $(params.shp-source-context)
         - $(build.builder.image)
         - '--as-dockerfile'
         - /gen-source/Dockerfile.gen
-      image: 'quay.io/openshift-pipeline/s2i:nightly'
+      image: quay.io/openshift-pipeline/s2i:nightly
+      imagePullPolicy: Always
       name: s2i-build-as-dockerfile
       volumeMounts:
         - mountPath: /gen-source
@@ -22,7 +23,7 @@ spec:
         - '--dockerfile=/gen-source/Dockerfile.gen'
         - '--context=/gen-source'
         - '--destination=$(params.shp-output-image)'
-        - '--oci-layout-path=/workspace/output/image'
+        - '--oci-layout-path=/kaniko/oci-image-layout'
         - '--snapshotMode=redo'
         - '--push-retry=3'
       command:
@@ -30,11 +31,13 @@ spec:
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
+        - name: HOME
+          value: /tekton/home
         - name: AWS_ACCESS_KEY_ID
           value: NOT_SET
         - name: AWS_SECRET_KEY
           value: NOT_SET
-      image: gcr.io/kaniko-project/executor:v1.6.0
+      image: gcr.io/kaniko-project/executor:v1.7.0
       name: build-and-push
       securityContext:
         runAsUser: 0
@@ -51,4 +54,30 @@ spec:
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
+        - name: layout
+          mountPath: /kaniko/oci-image-layout
       workingDir: /gen-source
+    - name: results
+      image: registry.access.redhat.com/ubi8/ubi-minimal
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+          
+          # Store the image digest
+          grep digest /kaniko/oci-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
+
+          # Store the image size
+          du -b -c /kaniko/oci-image-layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > "$(results.shp-image-size.path)"
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      volumeMounts:
+        - name: layout
+          mountPath: /kaniko/oci-image-layout

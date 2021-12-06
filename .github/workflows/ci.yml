@@ -1,21 +1,24 @@
 on: 
     pull_request:
-      branches: [ master ]
+      branches:
+      - main
+      - master
     push:
-      branches: [ master ]
+      paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      branches: 
+      - main
+      - master
 name: Unit, Integration, and E2E Tests
 jobs:
     unit:
-        strategy:
-          matrix:
-            go-version: [1.15.x]
-            os: [ubuntu-latest]
-        runs-on: ${{ matrix.os }}
+        runs-on: ubuntu-latest
         steps:
         - name: Install Go
           uses: actions/setup-go@v2
           with:
-            go-version: ${{ matrix.go-version }}
+            go-version: 1.17.x
         - name: Check out code
           uses: actions/checkout@v2
         - name: Build
@@ -26,21 +29,21 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            go-version: [1.15.x]
-            os: [ubuntu-latest]
             kubernetes:
-              # Only v1.18 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
+              # Only v1.20 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
               #- v1.17.17
-              #- v1.18.15
-              #- v1.19.7
-              - v1.20.2
+              #- v1.18.19
+              #- v1.19.11
+              - v1.20.7
           max-parallel: 1
-        runs-on: ${{ matrix.os }}
+        runs-on: ubuntu-latest
         steps:
         - name: Install Go
           uses: actions/setup-go@v2
           with:
-            go-version: ${{ matrix.go-version }}
+            go-version: 1.17.x
+        - name: Install Ko
+          uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
         - name: Check out code
           uses: actions/checkout@v2
         - name: Install kubectl
@@ -48,9 +51,9 @@ jobs:
           with:
             version: ${{ matrix.kubernetes }}
         - name: Create kind cluster
-          uses: helm/kind-action@v1.1.0
+          uses: helm/kind-action@v1.2.0
           with:
-            version: v0.10.0
+            version: v0.11.1
             node_image: kindest/node:${{ matrix.kubernetes }}
             cluster_name: kind
             wait: 120s
@@ -60,30 +63,45 @@ jobs:
             kubectl config use-context "kind-kind"
             echo "# KinD nodes:"
             kubectl get nodes
+
+            NODE_STATUS=$(kubectl get node kind-control-plane -o json | jq -r .'status.conditions[] | select(.type == "Ready") | .status')
+            if [ "${NODE_STATUS}" != "True" ]; then
+              echo "# Node is not ready:"
+              kubectl describe node kind-control-plane
+
+              echo "# Pods:"
+              kubectl get pod -A
+              echo "# Events:"
+              kubectl get events -A
+
+              exit 1
+            fi
         - name: Install Tekton
           run: |
             make kind-tekton
+            kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
+            kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
         - name: Test
-          run: make test-integration
+          run: |
+            export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
+            make test-integration
     e2e:
         strategy:
           fail-fast: false
           matrix:
-            go-version: [1.15.x]
-            os: [ubuntu-latest]
             kubernetes:
-              # Only v1.18 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
+              # Only v1.20 is currently enabled because of the flakiness in the tests, specifically API calls failing with "etcdserver: request timed out"
               #- v1.17.17
-              #- v1.18.15
-              #- v1.19.7
-              - v1.20.2
+              #- v1.18.19
+              #- v1.19.11
+              - v1.20.7
           max-parallel: 2
-        runs-on: ${{ matrix.os }}
+        runs-on: ubuntu-latest
         steps:
         - name: Install Go
           uses: actions/setup-go@v2
           with:
-            go-version: ${{ matrix.go-version }}
+            go-version: 1.17.x
         - name: Check out code
           uses: actions/checkout@v2
         - name: Install kubectl
@@ -91,11 +109,12 @@ jobs:
           with:
             version: ${{ matrix.kubernetes }}
         - name: Create kind cluster
-          uses: helm/kind-action@v1.1.0
+          uses: helm/kind-action@v1.2.0
           with:
-            version: v0.10.0
+            version: v0.11.1
             node_image: kindest/node:${{ matrix.kubernetes }}
             cluster_name: kind
+            config: test/kind/config.yaml
             wait: 120s
         - name: Verify kind cluster
           run: |
@@ -103,6 +122,19 @@ jobs:
             kubectl config use-context "kind-kind"
             echo "# KinD nodes:"
             kubectl get nodes
+
+            NODE_STATUS=$(kubectl get node kind-control-plane -o json | jq -r .'status.conditions[] | select(.type == "Ready") | .status')
+            if [ "${NODE_STATUS}" != "True" ]; then
+              echo "# Node is not ready:"
+              kubectl describe node kind-control-plane
+
+              echo "# Pods:"
+              kubectl get pod -A
+              echo "# Events:"
+              kubectl get events -A
+
+              exit 1
+            fi
         - name: Install Tekton
           run: |
             make kind-tekton
@@ -112,8 +144,8 @@ jobs:
           run: |
             kubectl apply -f test/data/registry.yaml
             kubectl -n registry rollout status deployment registry --timeout=1m
-        - name: Install ko
-          run: curl -fsL https://github.com/google/ko/releases/download/v0.8.2/ko_0.8.2_Linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin ko
+        - name: Install Ko
+          uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
         - name: Install Shipwright Build
           run: |
             make install-controller-kind

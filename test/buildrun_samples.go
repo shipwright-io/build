@@ -4,6 +4,47 @@
 
 package test
 
+// MinimalBuildahBuildRunWithEnvVars defines a simple
+// BuildRun with a referenced Build and env vars
+const MinimalBuildahBuildRunWithEnvVars = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildah-run
+spec:
+  buildRef:
+    name: buildah
+  env:
+    - name: MY_VAR_2
+      value: "my-var-2-buildrun-value"
+    - name: MY_VAR_3
+      valueFrom:
+        fieldRef:
+          fieldPath: "my-fieldpath"
+`
+
+// BuildahBuildRunWithOutputImageLabelsAndAnnotations defines a BuildRun
+// with a output image labels and annotation
+const BuildahBuildRunWithOutputImageLabelsAndAnnotations = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildah-run
+  namespace: build-test
+spec:
+  buildRef:
+    name: buildah
+  serviceAccount:
+    name: buildpacks-v3-serviceaccount
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2
+	labels:
+	  "maintainer": "new-team@my-company.com"
+	  "foo": "bar"
+	annotations:
+	  "org.opencontainers.owner": "my-company"
+`
+
 // MinimalBuildahBuildRun defines a simple
 // BuildRun with a referenced Build
 const MinimalBuildahBuildRun = `
@@ -86,6 +127,29 @@ const MinimalBuildRun = `
 apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 spec:
+  buildRef:
+    name: foobar
+`
+
+// MinimalBuildRunWithParams defines a param override
+const MinimalBuildRunWithParams = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+spec:
+  paramValues:
+  - name: sleep-time
+    value: 15
+  buildRef:
+    name: foobar
+`
+
+const MinimalBuildRunWithReservedParams = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+spec:
+  paramValues:
+  - name: shp-sleep-time
+    value: 15
   buildRef:
     name: foobar
 `

@@ -7,7 +7,6 @@ package resources
 import (
 	"context"
 	"fmt"
-
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,19 +32,41 @@ const (
 	ConditionServiceAccountNotFound  string = "ServiceAccountNotFound"
 	ConditionBuildRegistrationFailed string = "BuildRegistrationFailed"
 	ConditionBuildNotFound           string = "BuildNotFound"
+	BuildRunNameInvalid              string = "BuildRunNameInvalid"
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition
 func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, taskRun *v1beta1.TaskRun, trCondition *apis.Condition) error {
 	var reason, message string = trCondition.Reason, trCondition.Message
+	status := trCondition.Status
 
 	switch v1beta1.TaskRunReason(reason) {
+	case v1beta1.TaskRunReasonStarted:
+		fallthrough
+	case v1beta1.TaskRunReasonRunning:
+		if buildRun.IsCanceled() {
+			status = corev1.ConditionUnknown // in practice the taskrun status is already unknown in this case, but we are making sure here
+			reason = buildv1alpha1.BuildRunStateCancel
+			message = "The user requested the BuildRun to be canceled.  This BuildRun controller has requested the TaskRun be canceled.  That request has not been process by Tekton's TaskRun controller yet."
+		}
+	case v1beta1.TaskRunReasonCancelled:
+		if buildRun.IsCanceled() {
+			status = corev1.ConditionFalse // in practice the taskrun status is already false in this case, bue we are making sure here
+			reason = buildv1alpha1.BuildRunStateCancel
+			message = "The BuildRun and underlying TaskRun were canceled successfully."
+		}
+
 	case v1beta1.TaskRunReasonTimedOut:
 		reason = "BuildRunTimeout"
 		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
 			buildRun.Name,
 			taskRun.Spec.Timeout.Duration,
 		)
+
+	case v1beta1.TaskRunReasonSuccessful:
+		if buildRun.IsCanceled() {
+			message = "The TaskRun completed before the request to cancel the TaskRun could be processed."
+		}
 
 	case v1beta1.TaskRunReasonFailed:
 		if taskRun.Status.CompletionTime != nil {
@@ -83,12 +104,16 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 
 			if failedContainer != nil {
 				buildRun.Status.FailedAt.Container = failedContainer.Name
-				message = fmt.Sprintf("buildrun step failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
+				message = fmt.Sprintf("buildrun step %s failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
+					failedContainer.Name,
 					pod.Name,
 					pod.Namespace,
 					pod.Name,
 					failedContainer.Name,
 				)
+			} else if pod.Status.Reason == "Evicted" {
+				message = pod.Status.Message
+				reason = buildv1alpha1.BuildRunStatePodEvicted
 			} else {
 				message = fmt.Sprintf("buildrun failed due to an unexpected error in pod %s: for detailed information: kubectl --namespace %s logs %s --all-containers",
 					pod.Name,
@@ -102,7 +127,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
 		LastTransitionTime: metav1.Now(),
 		Type:               buildv1alpha1.Succeeded,
-		Status:             trCondition.Status,
+		Status:             status,
 		Reason:             reason,
 		Message:            message,
 	})
@@ -114,12 +139,6 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 // the condition as Status False. It also updates the object in the cluster by
 // calling client Status Update
 func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, errorMessage string, reason string) error {
-	// these two fields are deprecated and will be removed soon
-	//lint:ignore SA1019 should be set until removed
-	buildRun.Status.Succeeded = corev1.ConditionFalse
-	//lint:ignore SA1019 should be set until removed
-	buildRun.Status.Reason = errorMessage
-
 	now := metav1.Now()
 	buildRun.Status.CompletionTime = &now
 	buildRun.Status.SetCondition(&buildv1alpha1.Condition{

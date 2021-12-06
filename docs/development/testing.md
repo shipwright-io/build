@@ -67,7 +67,7 @@ Unit tests are designed based on the following:
 - Unit tests must pass in different OS distributions( e.g. linux, macOS ).
 - Unit tests should be run in parallel.
 
-Because we use Ginkgo for this, each controller [package](https://github.com/shipwright-io/build/tree/master/pkg/reconciler) requires a `suite_test.go` file and a relative controller test file. You can generate a suite by running `ginkgo bootstrap` under the package directory. For testing an specific controller class, you can generate the testing class by running `ginkgo generate` under the package directory.
+Because we use Ginkgo for this, each controller [package](https://github.com/shipwright-io/build/tree/main/pkg/reconciler) requires a `suite_test.go` file and a relative controller test file. You can generate a suite by running `ginkgo bootstrap` under the package directory. For testing an specific controller class, you can generate the testing class by running `ginkgo generate` under the package directory.
 
 When building unit-tests, try to follow:
 
@@ -96,8 +96,8 @@ Integration tests are designed based on the following:
 
 Before running these tests, ensure you have:
 
-- A running cluster. You can use Kind, see [installation](https://github.com/shipwright-io/build/blob/master/hack/install-kind.sh)
-- Tekton controllers installed, see [installation](https://github.com/shipwright-io/build/blob/master/hack/install-tekton.sh)
+- A running cluster. You can use Kind, see [installation](https://github.com/shipwright-io/build/blob/main/hack/install-kind.sh)
+- Tekton controllers installed, see [installation](https://github.com/shipwright-io/build/blob/main/hack/install-tekton.sh)
 
 ```sh
 make test-integration
@@ -131,7 +131,7 @@ The following table contains a list of environment variables that will override 
 | `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                             |
 | `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`            |
 
-The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io](quay.io) using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The JSON payload is for example:
+The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io](https://quay.io) using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The JSON payload is for example:
 
 ```json
 { "auths": { "quay.io": { "auth": "<secret-credentials>" } } }
@@ -158,7 +158,7 @@ End-to-end tests can also be executed with the context of private Git repositori
 | `TEST_PRIVATE_GITLAB` | `spec.source.url`              | Private URL, like `git@gitlab.com`    |
 | `TEST_SOURCE_SECRET`  | `spec.source.credentials.name` | Private repository credentials        |
 
-On using `TEST_SOURCE_SECRET`, the environment variable must contain the name of the Kubernetes Secret containing SSH private key, for given private Git repository. See the [docs](/docs/development/authentication.md) for more information about authentication methods in the Build.
+On using `TEST_SOURCE_SECRET`, the environment variable must contain the name of the Kubernetes Secret containing SSH private key, for given private Git repository. See the [docs](authentication.md) for more information about authentication methods in the Build.
 
 The secret definition must define the following annotations:
 

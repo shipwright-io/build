@@ -30,10 +30,20 @@ const (
 	SpecBuilderSecretRefNotFound BuildReason = "SpecBuilderSecretRefNotFound"
 	// MultipleSecretRefNotFound indicates that multiple secrets are missing
 	MultipleSecretRefNotFound BuildReason = "MultipleSecretRefNotFound"
+	// SpecEnvNameCanNotBeBlank indicates that the name for an environment variable is blank
+	SpecEnvNameCanNotBeBlank BuildReason = "SpecEnvNameCanNotBeBlank"
+	// SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified indicates that both value and valueFrom were specified
+	SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified BuildReason = "SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified"
 	// RuntimePathsCanNotBeEmpty indicates that the spec.runtime feature is used but the paths were not specified
 	RuntimePathsCanNotBeEmpty BuildReason = "RuntimePathsCanNotBeEmpty"
+	// RestrictedParametersInUse indicates the definition of reserved shipwright parameters
+	RestrictedParametersInUse BuildReason = "RestrictedParametersInUse"
+	// UndefinedParameter indicates the definition of param that was not defined in the strategy parameters
+	UndefinedParameter BuildReason = "UndefinedParameter"
 	// RemoteRepositoryUnreachable indicates the referenced repository is unreachable
 	RemoteRepositoryUnreachable BuildReason = "RemoteRepositoryUnreachable"
+	// BuildNameInvalid indicates the build name is invalid
+	BuildNameInvalid BuildReason = "BuildNameInvalid"
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
 )
@@ -90,16 +100,10 @@ type BuildSpec struct {
 	// +optional
 	Dockerfile *string `json:"dockerfile,omitempty"`
 
-	// Parameters contains name-value that could be used to loosely
-	// type parameters in the BuildStrategy.
-	//
+	// Params is a list of key/value that could be used
+	// to set strategy parameters
 	// +optional
-	Parameters *[]Parameter `json:"parameters,omitempty"`
-
-	// Runtime represents the runtime-image.
-	//
-	// +optional
-	Runtime *Runtime `json:"runtime,omitempty"`
+	ParamValues []ParamValue `json:"paramValues,omitempty"`
 
 	// Output refers to the location where the built image would be pushed.
 	Output Image `json:"output"`
@@ -109,6 +113,10 @@ type BuildSpec struct {
 	// +optional
 	// +kubebuilder:validation:Format=duration
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
+
+	// Env contains additional environment variables that should be passed to the build container
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // StrategyName returns the name of the configured strategy, or 'undefined' in
@@ -135,51 +143,16 @@ type Image struct {
 	//
 	// +optional
 	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
-}
 
-// Runtime represents the runtime-image, created using parts of builder-image, and a different
-// base-image than originally.
-type Runtime struct {
-	// Base runtime base image.
+	// Annotations references the additional annotations to be applied on the image
+	//
 	// +optional
-	Base Image `json:"base,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// Env environment variables for runtime.
-	// +optional
-	Env map[string]string `json:"env,omitempty"`
-
-	// Labels map of additional labels to be applied on image.
+	// Labels references the additional labels to be applied on the image
+	//
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
-
-	// WorkDir runtime image working directory `WORKDIR`.
-	// +optional
-	WorkDir string `json:"workDir,omitempty"`
-
-	// Run arbitrary commands to run before copying data into runtime-image.
-	// +optional
-	Run []string `json:"run,omitempty"`
-
-	// Paths list of directories/files to be copied into runtime-image, using colon ":" to split up source and destination paths.
-	// +optional
-	Paths []string `json:"paths,omitempty"`
-
-	// User definitions of user and group for runtime-image.
-	User *User `json:"user,omitempty"`
-
-	// Entrypoint runtime-image entrypoint.
-	// +optional
-	Entrypoint []string `json:"entrypoint,omitempty"`
-}
-
-// User holds the user name and group information for runtime-image.
-type User struct {
-	// Name user name to be employed in runtime-image.
-	Name string `json:"name"`
-
-	// Group group name or GID employed in runtime-image.
-	// +optional
-	Group string `json:"group,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build

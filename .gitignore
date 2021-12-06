@@ -1,6 +1,10 @@
 # Temporary Build Files
+.DS_Store
+git
+shipwright-build-controller
 build/_output
 build/_test
+hub-linux-*
 # Created by https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 ### Emacs ###
 # -*- mode: gitignore; -*-

@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tektoncd/pipeline/pkg/substitution"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -48,25 +47,12 @@ func (we *WhenExpression) validateWhenExpressionFields() *apis.FieldError {
 	if equality.Semantic.DeepEqual(we, &WhenExpression{}) || we == nil {
 		return apis.ErrMissingField(apis.CurrentField)
 	}
-	if !sets.NewString(validWhenOperators...).Has(string(we.GetOperator())) {
-		message := fmt.Sprintf("operator %q is not recognized. valid operators: %s", we.GetOperator(), strings.Join(validWhenOperators, ","))
+	if !sets.NewString(validWhenOperators...).Has(string(we.Operator)) {
+		message := fmt.Sprintf("operator %q is not recognized. valid operators: %s", we.Operator, strings.Join(validWhenOperators, ","))
 		return apis.ErrInvalidValue(message, apis.CurrentField)
 	}
-	if len(we.GetValues()) == 0 {
+	if len(we.Values) == 0 {
 		return apis.ErrInvalidValue("expecting non-empty values field", apis.CurrentField)
-	}
-	return we.validateWhenExpressionsDuplicateFields()
-}
-
-func (we *WhenExpression) validateWhenExpressionsDuplicateFields() *apis.FieldError {
-	if we.Input != "" && we.DeprecatedInput != "" {
-		return apis.ErrMultipleOneOf("input", "Input")
-	}
-	if we.Operator != "" && we.DeprecatedOperator != "" {
-		return apis.ErrMultipleOneOf("operator", "Operator")
-	}
-	if we.Values != nil && we.DeprecatedValues != nil {
-		return apis.ErrMultipleOneOf("values", "Values")
 	}
 	return nil
 }
@@ -90,14 +76,17 @@ func (wes WhenExpressions) validateTaskResultsVariables() *apis.FieldError {
 
 func (wes WhenExpressions) validatePipelineParametersVariables(prefix string, paramNames sets.String, arrayParamNames sets.String) (errs *apis.FieldError) {
 	for idx, we := range wes {
-		errs = errs.Also(validateStringVariable(we.GetInput(), prefix, paramNames, arrayParamNames).ViaField("input").ViaFieldIndex("when", idx))
-		for _, val := range we.GetValues() {
-			errs = errs.Also(validateStringVariable(val, prefix, paramNames, arrayParamNames).ViaField("values").ViaFieldIndex("when", idx))
+		errs = errs.Also(validateStringVariable(we.Input, prefix, paramNames, arrayParamNames).ViaField("input").ViaFieldIndex("when", idx))
+		for _, val := range we.Values {
+			// one of the values could be a reference to an array param, such as, $(params.foo[*])
+			// extract the variable name from the pattern $(params.foo[*]), if the variable name matches with one of the array params
+			// validate the param as an array variable otherwise, validate it as a string variable
+			if arrayParamNames.Has(ArrayReference(val)) {
+				errs = errs.Also(validateArrayVariable(val, prefix, paramNames, arrayParamNames).ViaField("values").ViaFieldIndex("when", idx))
+			} else {
+				errs = errs.Also(validateStringVariable(val, prefix, paramNames, arrayParamNames).ViaField("values").ViaFieldIndex("when", idx))
+			}
 		}
 	}
 	return errs
-}
-func validateStringVariable(value, prefix string, stringVars sets.String, arrayVars sets.String) *apis.FieldError {
-	errs := substitution.ValidateVariableP(value, prefix, stringVars)
-	return errs.Also(substitution.ValidateVariableProhibitedP(value, prefix, arrayVars))
 }

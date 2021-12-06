@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/errors"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
@@ -54,11 +55,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			)
 		})
 
-		It("successfully runs a build", func() {
+		It("successfully runs a build and surface results to BuildRun", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
 		})
 	})
 
@@ -124,11 +126,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			)
 		})
 
-		It("successfully runs a build", func() {
+		It("successfully runs a build and surface results to BuildRun", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
 		})
 
 		AfterEach(func() {
@@ -150,11 +153,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			)
 		})
 
-		It("successfully runs a build", func() {
+		It("successfully runs a build and surface results to BuildRun", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
 		})
 	})
 
@@ -254,6 +258,62 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Buildpacks v3 build is defined for a golang runtime with `BP_GO_TARGETS` env", func() {
+		BeforeEach(func() {
+			testID = generateTestID("buildpacks-v3-golang")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/build_buildpacks-v3_golang_cr_env.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+
+			validateBuildRunToSucceed(testBuild, buildRun)
+		})
+	})
+
+	Context("when a build uses the build-run-deletion annotation", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildpacks-v3-golang")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/build_buildpacks-v3_golang_delete_cr.yaml",
+			)
+		})
+
+		It("successfully deletes the BuildRun after the Build is deleted", func() {
+			By("running a build and expecting it to succeed")
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+
+			validateBuildRunToSucceed(testBuild, buildRun)
+
+			By("deleting the parent Build object")
+			err = testBuild.DeleteBuild(build.Name)
+			Expect(err).NotTo(HaveOccurred(), "error deleting the parent Build")
+			Eventually(func() bool {
+				_, err = testBuild.GetBR(buildRun.Name)
+				if err == nil {
+					return false
+				}
+				if !errors.IsNotFound(err) {
+					return false
+				}
+				return true
+			}).Should(BeTrue())
+		})
+	})
+
 	Context("when a Buildpacks v3 build is defined for a java runtime", func() {
 
 		BeforeEach(func() {
@@ -275,26 +335,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a buildpacks-v3 build is defined for a nodejs app with runtime-image", func() {
-
-		BeforeEach(func() {
-			testID = generateTestID("buildpacks-v3-nodejs-ex-runtime")
-
-			build = createBuild(
-				testBuild,
-				testID,
-				"test/data/build_buildpacks-v3_nodejs_runtime-image_cr.yaml",
-			)
-		})
-
-		It("successfully runs a build", func() {
-			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_nodejs_runtime-image_cr.yaml")
-			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
-
-			validateBuildRunToSucceed(testBuild, buildRun)
-		})
-	})
-
 	Context("when a Kaniko build is defined to use public GitHub", func() {
 
 		BeforeEach(func() {
@@ -308,11 +348,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			)
 		})
 
-		It("successfully runs a build", func() {
+		It("successfully runs a build and surface results to BuildRun", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
 		})
 	})
 
@@ -358,6 +399,49 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Kaniko+Trivy build is defined to use an image with no critical CVEs", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("kaniko-trivy-good")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"samples/build/build_kaniko-trivy-good_cr.yaml",
+			)
+		})
+
+		It("successfully runs a build and surface results to BuildRun", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko-trivy-good_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
+		})
+	})
+
+	Context("when a Kaniko+Trivy build is defined to use an image with a critical CVE", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("kaniko-trivy-bad")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"samples/build/build_kaniko-trivy-bad_cr.yaml",
+			)
+		})
+
+		It("fails to run a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko-trivy-bad_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			validateBuildRunToFail(testBuild, buildRun)
+		})
+	})
+
 	Context("when a Buildkit build with a contextDir and a path to a Dockerfile is defined", func() {
 
 		BeforeEach(func() {
@@ -371,11 +455,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			)
 		})
 
-		It("successfully runs a build", func() {
+		It("successfully runs a build and surface results to BuildRun", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildkit_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
 			validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
 		})
 	})
 
@@ -392,11 +477,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			)
 		})
 
-		It("successfully runs a build", func() {
+		It("successfully runs a build and surface results to BuildRun", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
 		})
 	})
 

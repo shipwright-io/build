@@ -5,12 +5,15 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -19,11 +22,24 @@ const (
 	// E.g. if 5 seconds is wanted, the CTX_TIMEOUT=5
 	contextTimeoutEnvVar = "CTX_TIMEOUT"
 
-	kanikoDefaultImage = "gcr.io/kaniko-project/executor:v1.6.0"
-	kanikoImageEnvVar  = "KANIKO_CONTAINER_IMAGE"
-
 	remoteArtifactsDefaultImage = "quay.io/quay/busybox:latest"
 	remoteArtifactsEnvVar       = "REMOTE_ARTIFACTS_CONTAINER_IMAGE"
+
+	// the Git image is built using ko which can replace environment variable values in the deployment, so once we decide to move
+	// from environment variables to a ConfigMap, then we should move the container template, but retain the environment variable
+	// (or make it an argument like Tekton)
+	gitDefaultImage            = "ghcr.io/shipwright-io/build/git:latest"
+	gitImageEnvVar             = "GIT_CONTAINER_IMAGE"
+	gitContainerTemplateEnvVar = "GIT_CONTAINER_TEMPLATE"
+
+	mutateImageDefaultImage            = "ghcr.io/shipwright-io/build/mutate-image:latest"
+	mutateImageEnvVar                  = "MUTATE_IMAGE_CONTAINER_IMAGE"
+	mutateImageContainerTemplateEnvVar = "MUTATE_IMAGE_CONTAINER_TEMPLATE"
+
+	// Analog to the Git image, the bundle image is also created by ko
+	bundleDefaultImage            = "ghcr.io/shipwright-io/build/bundle:latest"
+	bundleImageEnvVar             = "BUNDLE_CONTAINER_IMAGE"
+	bundleContainerTemplateEnvVar = "BUNDLE_CONTAINER_TEMPLATE"
 
 	// environment variable to override the buckets
 	metricBuildRunCompletionDurationBucketsEnvVar = "PROMETHEUS_BR_COMP_DUR_BUCKETS"
@@ -49,6 +65,12 @@ const (
 	// environment variables for the kube API
 	kubeAPIBurst = "KUBE_API_BURST"
 	kubeAPIQPS   = "KUBE_API_QPS"
+
+	terminationLogPathDefault = "/dev/termination-log"
+	terminationLogPathEnvVar  = "TERMINATION_LOG_PATH"
+
+	// environment variable for the Git rewrite setting
+	useGitRewriteRule = "GIT_ENABLE_REWRITE_RULE"
 )
 
 var (
@@ -56,18 +78,25 @@ var (
 	metricBuildRunCompletionDurationBuckets = prometheus.LinearBuckets(50, 50, 10)
 	metricBuildRunEstablishDurationBuckets  = []float64{0, 1, 2, 3, 5, 7, 10, 15, 20, 30}
 	metricBuildRunRampUpDurationBuckets     = prometheus.LinearBuckets(0, 1, 10)
+
+	root    = pointer.Int64Ptr(0)
+	nonRoot = pointer.Int64Ptr(1000)
 )
 
 // Config hosts different parameters that
 // can be set to use on the Build controllers
 type Config struct {
-	CtxTimeOut                    time.Duration
-	KanikoContainerImage          string
+	CtxTimeOut time.Duration
+	GitContainerTemplate,
+	MutateImageContainerTemplate corev1.Container
+	BundleContainerTemplate       corev1.Container
 	RemoteArtifactsContainerImage string
+	TerminationLogPath            string
 	Prometheus                    PrometheusConfig
 	ManagerOptions                ManagerOptions
 	Controllers                   Controllers
 	KubeAPIOptions                KubeAPIOptions
+	GitRewriteRule                bool
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -99,7 +128,7 @@ type ControllerOptions struct {
 	MaxConcurrentReconciles int
 }
 
-// KubeAPIOptions contains configrable options for the kube API client
+// KubeAPIOptions contains configurable options for the kube API client
 type KubeAPIOptions struct {
 	QPS   int
 	Burst int
@@ -108,9 +137,55 @@ type KubeAPIOptions struct {
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
 func NewDefaultConfig() *Config {
 	return &Config{
-		CtxTimeOut:                    contextTimeout,
-		KanikoContainerImage:          kanikoDefaultImage,
+		CtxTimeOut: contextTimeout,
+		GitContainerTemplate: corev1.Container{
+			Image: gitDefaultImage,
+			Command: []string{
+				"/ko-app/git",
+			},
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
+			},
+		},
+		BundleContainerTemplate: corev1.Container{
+			Image: bundleDefaultImage,
+			Command: []string{
+				"/ko-app/bundle",
+			},
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
+			},
+		},
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
+		MutateImageContainerTemplate: corev1.Container{
+			Image: mutateImageDefaultImage,
+			Command: []string{
+				"/ko-app/mutate-image",
+			},
+			// We explicitly define HOME=/tekton/home because this was always set in the
+			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			Env: []corev1.EnvVar{
+				{
+					Name:  "HOME",
+					Value: "/tekton/home",
+				},
+			},
+			// The mutate image step runs after the build strategy steps where an arbitrary
+			// user could have been used to write the result files for the image digest. The
+			// mutate image step will overwrite the image digest file. To be able to do this
+			// in all possible scenarios, we run this step as root with DAC_OVERRIDE
+			// capability.
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser: root,
+				Capabilities: &corev1.Capabilities{
+					Add: []corev1.Capability{
+						"DAC_OVERRIDE",
+					},
+				},
+			},
+		},
 		Prometheus: PrometheusConfig{
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
@@ -137,6 +212,8 @@ func NewDefaultConfig() *Config {
 			QPS:   0,
 			Burst: 0,
 		},
+		TerminationLogPath: terminationLogPathDefault,
+		GitRewriteRule:     false,
 	}
 }
 
@@ -150,8 +227,55 @@ func (c *Config) SetConfigFromEnv() error {
 		c.CtxTimeOut = time.Duration(i) * time.Second
 	}
 
-	if kanikoImage := os.Getenv(kanikoImageEnvVar); kanikoImage != "" {
-		c.KanikoContainerImage = kanikoImage
+	if gitContainerTemplate := os.Getenv(gitContainerTemplateEnvVar); gitContainerTemplate != "" {
+		c.GitContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(gitContainerTemplate), &c.GitContainerTemplate); err != nil {
+			return err
+		}
+		if c.GitContainerTemplate.Image == "" {
+			c.GitContainerTemplate.Image = gitDefaultImage
+		}
+	}
+
+	// the dedicated environment variable for the image overwrites what is defined in the git container template
+	if gitImage := os.Getenv(gitImageEnvVar); gitImage != "" {
+		c.GitContainerTemplate.Image = gitImage
+	}
+
+	if mutateImageContainerTemplate := os.Getenv(mutateImageContainerTemplateEnvVar); mutateImageContainerTemplate != "" {
+		c.GitContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(mutateImageContainerTemplate), &c.MutateImageContainerTemplate); err != nil {
+			return err
+		}
+		if c.MutateImageContainerTemplate.Image == "" {
+			c.MutateImageContainerTemplate.Image = mutateImageDefaultImage
+		}
+	}
+
+	// the dedicated environment variable for the image overwrites
+	// what is defined in the mutate image container template
+	if mutateImage := os.Getenv(mutateImageEnvVar); mutateImage != "" {
+		c.MutateImageContainerTemplate.Image = mutateImage
+	}
+
+	// Mark that the Git wrapper is suppose to use Git rewrite rule
+	if useGitRewriteRule := os.Getenv(useGitRewriteRule); useGitRewriteRule != "" {
+		c.GitRewriteRule = strings.ToLower(useGitRewriteRule) == "true"
+	}
+
+	if bundleContainerTemplate := os.Getenv(bundleContainerTemplateEnvVar); bundleContainerTemplate != "" {
+		c.BundleContainerTemplate = corev1.Container{}
+		if err := json.Unmarshal([]byte(bundleContainerTemplate), &c.BundleContainerTemplate); err != nil {
+			return err
+		}
+		if c.BundleContainerTemplate.Image == "" {
+			c.BundleContainerTemplate.Image = bundleDefaultImage
+		}
+	}
+
+	// the dedicated environment variable for the image overwrites what is defined in the bundle container template
+	if bundleImage := os.Getenv(bundleImageEnvVar); bundleImage != "" {
+		c.BundleContainerTemplate.Image = bundleImage
 	}
 
 	if remoteArtifactsImage := os.Getenv(remoteArtifactsEnvVar); remoteArtifactsImage != "" {
@@ -208,6 +332,10 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 	if err := updateIntOption(&c.KubeAPIOptions.QPS, kubeAPIQPS); err != nil {
 		return err
+	}
+
+	if terminationLogPath := os.Getenv(terminationLogPathEnvVar); terminationLogPath != "" {
+		c.TerminationLogPath = terminationLogPath
 	}
 
 	return nil

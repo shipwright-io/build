@@ -7,6 +7,7 @@ package utils
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,6 +24,16 @@ func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	_, err := brInterface.Create(context.TODO(), buildRun, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateBR updates a BuildRun on the current test namespace
+func (t *TestBuild) UpdateBR(buildRun *v1alpha1.BuildRun) error {
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
+	_, err := brInterface.Update(context.TODO(), buildRun, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -58,7 +69,11 @@ func (t *TestBuild) GetBRReason(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return br.Status.Reason, nil
+	cond := br.Status.GetCondition(v1alpha1.Succeeded)
+	if cond == nil {
+		return "", errors.New("BuildRun had no Succeeded condition")
+	}
+	return cond.Reason, nil
 }
 
 // GetBRTillCompletion returns a BuildRun that have a CompletionTime set.

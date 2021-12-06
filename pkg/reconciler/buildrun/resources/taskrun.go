@@ -11,30 +11,30 @@ import (
 	"strings"
 
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/env"
 )
 
 const (
-	prefixParamsResults = "shp-"
+	prefixParamsResultsVolumes = "shp"
 
 	paramOutputImage   = "output-image"
 	paramSourceRoot    = "source-root"
 	paramSourceContext = "source-context"
 
-	inputSourceResourceName = "source"
-	inputGitSourceURL       = "url"
-	inputGitSourceRevision  = "revision"
-	inputParamBuilder       = "BUILDER_IMAGE"
-	inputParamDockerfile    = "DOCKERFILE"
-	inputParamContextDir    = "CONTEXT_DIR"
-	outputImageResourceName = "image"
-	outputImageResourceURL  = "url"
+	workspaceSource = "source"
+
+	inputParamBuilder    = "BUILDER_IMAGE"
+	inputParamDockerfile = "DOCKERFILE"
+	inputParamContextDir = "CONTEXT_DIR"
+
+	imageMutateContainerName = "mutate-image"
 )
 
 // getStringTransformations gets us MANDATORY replacements using
@@ -43,7 +43,7 @@ func getStringTransformations(fullText string) string {
 
 	stringTransformations := map[string]string{
 		// this will be removed, build strategy author should use $(params.shp-output-image) directly
-		"$(build.output.image)": fmt.Sprintf("$(params.%s%s)", prefixParamsResults, paramOutputImage),
+		"$(build.output.image)": fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
 
 		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilder),
 		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
@@ -66,27 +66,10 @@ func GenerateTaskSpec(
 	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
 	buildSteps []buildv1alpha1.BuildStep,
+	strategyParams []buildv1alpha1.Parameter,
 ) (*v1beta1.TaskSpec, error) {
 
 	generatedTaskSpec := v1beta1.TaskSpec{
-		Resources: &v1beta1.TaskResources{
-			Inputs: []v1beta1.TaskResource{
-				{
-					ResourceDeclaration: taskv1.ResourceDeclaration{
-						Name: inputSourceResourceName,
-						Type: taskv1.PipelineResourceTypeGit,
-					},
-				},
-			},
-			Outputs: []v1beta1.TaskResource{
-				{
-					ResourceDeclaration: taskv1.ResourceDeclaration{
-						Name: outputImageResourceName, // mapped from {{ .Build.OutputImage }}
-						Type: taskv1.PipelineResourceTypeImage,
-					},
-				},
-			},
-		},
 		Params: []v1beta1.ParamSpec{
 			{
 				Description: "Path to the Dockerfile",
@@ -107,23 +90,30 @@ func GenerateTaskSpec(
 				},
 			},
 			{
-				Name:        prefixParamsResults + paramOutputImage,
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 				Description: "The URL of the image that the build produces",
 				Type:        taskv1.ParamTypeString,
 			},
 			{
-				Name:        prefixParamsResults + paramSourceContext,
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 				Description: "The context directory inside the source directory",
 				Type:        taskv1.ParamTypeString,
 			},
 			{
-				Name:        prefixParamsResults + paramSourceRoot,
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
 				Description: "The source directory",
 				Type:        taskv1.ParamTypeString,
 			},
 		},
-		Steps: []v1beta1.Step{},
+		Workspaces: []v1beta1.WorkspaceDeclaration{
+			// workspace for the source files
+			{
+				Name: workspaceSource,
+			},
+		},
 	}
+
+	generatedTaskSpec.Results = getTaskSpecResults()
 
 	if build.Spec.Builder != nil {
 		InputBuilder := v1beta1.ParamSpec{
@@ -137,8 +127,38 @@ func GenerateTaskSpec(
 		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilder)
 	}
 
-	var vols []corev1.Volume
+	// define results, steps and volumes for sources
+	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build)
 
+	// Add the strategy defined parameters into the Task spec
+	for _, p := range strategyParams {
+
+		param := v1beta1.ParamSpec{
+			Name:        p.Name,
+			Description: p.Description,
+		}
+
+		// verify if the paramSpec Default requires a default
+		// value or not
+		if p.Default != nil {
+			param.Default = &v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: *p.Default,
+			}
+		}
+
+		generatedTaskSpec.Params = append(generatedTaskSpec.Params, param)
+
+	}
+
+	// Combine the environment variables specified in the Build object and the BuildRun object
+	// env vars in the BuildRun supercede those in the Build, overwriting them
+	combinedEnvs, err := env.MergeEnvVars(buildRun.Spec.Env, build.Spec.Env, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// define the steps coming from the build strategy
 	for _, containerValue := range buildSteps {
 
 		var taskCommand []string
@@ -153,9 +173,17 @@ func GenerateTaskSpec(
 
 		taskImage := getStringTransformations(containerValue.Image)
 
+		// Any collision between the env vars in the Container step and those in the Build/BuildRun
+		// will result in an error and cause a failed TaskRun
+		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
+		if err != nil {
+			return &generatedTaskSpec, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
+		}
+
 		step := v1beta1.Step{
 			Container: corev1.Container{
 				Image:           taskImage,
+				ImagePullPolicy: containerValue.ImagePullPolicy,
 				Name:            containerValue.Name,
 				VolumeMounts:    containerValue.VolumeMounts,
 				Command:         taskCommand,
@@ -163,7 +191,7 @@ func GenerateTaskSpec(
 				SecurityContext: containerValue.SecurityContext,
 				WorkingDir:      containerValue.WorkingDir,
 				Resources:       containerValue.Resources,
-				Env:             containerValue.Env,
+				Env:             stepEnv,
 			},
 		}
 
@@ -172,33 +200,29 @@ func GenerateTaskSpec(
 		// Get volumeMounts added to Task's spec.Volumes
 		for _, volumeInBuildStrategy := range containerValue.VolumeMounts {
 			newVolume := true
-			for _, volumeInTask := range vols {
+			for _, volumeInTask := range generatedTaskSpec.Volumes {
 				if volumeInTask.Name == volumeInBuildStrategy.Name {
 					newVolume = false
 				}
 			}
 			if newVolume {
-				vols = append(vols, corev1.Volume{
+				generatedTaskSpec.Volumes = append(generatedTaskSpec.Volumes, corev1.Volume{
 					Name: volumeInBuildStrategy.Name,
 				})
 			}
-
 		}
 	}
 
-	generatedTaskSpec.Volumes = vols
-
-	// checking for runtime-image settings, and appending more steps to the strategy
-	if IsRuntimeDefined(build) {
-		if err := AmendTaskSpecWithRuntimeImage(cfg, &generatedTaskSpec, build); err != nil {
-			return nil, err
-		}
+	buildRunOutput := buildRun.Spec.Output
+	if buildRunOutput == nil {
+		buildRunOutput = &buildv1alpha1.Image{}
 	}
 
-	// when sources is defined on `spec.build` it will prepend the step to handle remote artifacts,
-	// before all other steps
-	if IsSourcesDefined(build) {
-		AmendTaskSpecWithRemoteArtifacts(cfg, &generatedTaskSpec, build)
+	// Amending task spec with image mutate step if annotations or labels are
+	// specified in build manifest or buildRun manifest
+	if len(build.Spec.Output.Annotations) > 0 || len(build.Spec.Output.Labels) > 0 ||
+		len(buildRunOutput.Annotations) > 0 || len(buildRunOutput.Labels) > 0 {
+		amendTaskSpecWithImageMutate(cfg, &generatedTaskSpec, build.Spec.Output, *buildRunOutput)
 	}
 
 	return &generatedTaskSpec, nil
@@ -213,14 +237,6 @@ func GenerateTaskRun(
 	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
 
-	// Set revision to empty if the field is not specified in the Build.
-	// This will force Tekton Controller to do a git symbolic-link to HEAD
-	// giving back the default branch of the repository
-	revision := ""
-	if build.Spec.Source.Revision != nil {
-		revision = *build.Spec.Source.Revision
-	}
-
 	// retrieve expected imageURL form build or buildRun
 	var image string
 	if buildRun.Spec.Output != nil {
@@ -229,7 +245,13 @@ func GenerateTaskRun(
 		image = build.Spec.Output.Image
 	}
 
-	taskSpec, err := GenerateTaskSpec(cfg, build, buildRun, strategy.GetBuildSteps())
+	taskSpec, err := GenerateTaskSpec(
+		cfg,
+		build,
+		buildRun,
+		strategy.GetBuildSteps(),
+		strategy.GetParameters(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -248,42 +270,11 @@ func GenerateTaskRun(
 		Spec: v1beta1.TaskRunSpec{
 			ServiceAccountName: serviceAccountName,
 			TaskSpec:           taskSpec,
-			Resources: &v1beta1.TaskRunResources{
-				Inputs: []v1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-							Name: inputSourceResourceName,
-							ResourceSpec: &taskv1.PipelineResourceSpec{
-								Type: taskv1.PipelineResourceTypeGit,
-								Params: []taskv1.ResourceParam{
-									{
-										Name:  inputGitSourceURL,
-										Value: build.Spec.Source.URL,
-									},
-									{
-										Name:  inputGitSourceRevision,
-										Value: revision,
-									},
-								},
-							},
-						},
-					},
-				},
-				Outputs: []v1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: v1beta1.PipelineResourceBinding{
-							Name: outputImageResourceName,
-							ResourceSpec: &taskv1.PipelineResourceSpec{
-								Type: taskv1.PipelineResourceTypeImage,
-								Params: []taskv1.ResourceParam{
-									{
-										Name:  outputImageResourceURL,
-										Value: image,
-									},
-								},
-							},
-						},
-					},
+			Workspaces: []v1beta1.WorkspaceBinding{
+				// workspace for the source files
+				{
+					Name:     workspaceSource,
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -309,14 +300,14 @@ func GenerateTaskRun(
 	params := []v1beta1.Param{
 		{
 			// shp-output-image
-			Name: prefixParamsResults + paramOutputImage,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: image,
 			},
 		},
 		{
-			Name: prefixParamsResults + paramSourceRoot,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: "/workspace/source",
@@ -350,7 +341,7 @@ func GenerateTaskRun(
 			},
 		})
 		params = append(params, v1beta1.Param{
-			Name: prefixParamsResults + paramSourceContext,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: path.Join("/workspace/source", *build.Spec.Source.ContextDir),
@@ -358,7 +349,7 @@ func GenerateTaskRun(
 		})
 	} else {
 		params = append(params, v1beta1.Param{
-			Name: prefixParamsResults + paramSourceContext,
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: "/workspace/source",
@@ -367,6 +358,57 @@ func GenerateTaskRun(
 	}
 
 	expectedTaskRun.Spec.Params = params
+
+	// Ensure a proper override of params between Build and BuildRun
+	// A BuildRun can override a param as long as it was defined in the Build
+	buildUserParams := overrideParams(build.Spec.ParamValues, buildRun.Spec.ParamValues)
+
+	// list of params that collide with reserved system strategy parameters
+	undesiredParams := []string{}
+
+	// Append params to the TaskRun spec definition
+	for _, p := range buildUserParams {
+
+		if isReserved := IsSystemReservedParameter(p.Name); isReserved {
+			undesiredParams = append(undesiredParams, p.Name)
+		}
+
+		buildParam := v1beta1.Param{
+			Name: p.Name,
+			Value: v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: p.Value,
+			},
+		}
+		expectedTaskRun.Spec.Params = append(expectedTaskRun.Spec.Params, buildParam)
+	}
+	// if system parameters names are being use, fail the taskRun creation and update the condition message
+	// with a custom error
+	if len(undesiredParams) > 0 {
+		return nil, fmt.Errorf("restricted parameters in use: %s", strings.Join(undesiredParams, ","))
+	}
+
+	// check if there are parameters from strategies where a value was never set, if this is the case,
+	// then throw a custom error message.
+	paramsWithoutValues := []string{}
+
+StrategyParametersLoop:
+	for _, strategyParam := range strategy.GetParameters() {
+		if strategyParam.Default == nil {
+			for _, p := range buildUserParams {
+				if strategyParam.Name == p.Name {
+					// go back to the outer loop
+					continue StrategyParametersLoop
+				}
+			}
+			paramsWithoutValues = append(paramsWithoutValues, strategyParam.Name)
+		}
+	}
+
+	if len(paramsWithoutValues) > 0 {
+		return nil, fmt.Errorf("parameters without a value definition: %s", strings.Join(paramsWithoutValues, ","))
+	}
+
 	return expectedTaskRun, nil
 }
 

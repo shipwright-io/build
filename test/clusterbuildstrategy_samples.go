@@ -15,7 +15,7 @@ metadata:
 spec:
   buildSteps:
     - name: buildah-bud
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -37,7 +37,7 @@ spec:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       securityContext:
         privileged: true
       command:
@@ -69,7 +69,7 @@ metadata:
 spec:
   buildSteps:
     - name: buildah-bud
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -91,7 +91,7 @@ spec:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       securityContext:
         privileged: true
       command:
@@ -123,7 +123,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v1.6.0
+      image: gcr.io/kaniko-project/executor:v1.7.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -150,7 +150,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -173,7 +172,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v1.6.0
+      image: gcr.io/kaniko-project/executor:v1.7.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -200,7 +199,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -288,7 +286,7 @@ metadata:
 spec:
   buildSteps:
     - name: step-build-and-push
-      image: gcr.io/kaniko-project/executor:v1.6.0
+      image: gcr.io/kaniko-project/executor:v1.7.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -315,7 +313,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-root)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -325,4 +322,25 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+`
+
+// ClusterBuildStrategyWithParameters is a strategy that uses a
+// sleep command with a value for its spec.parameters
+const ClusterBuildStrategyWithParameters = `
+apiVersion: build.dev/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: strategy-with-param
+spec:
+  parameters:
+  - name: sleep-time
+    description: "time in seconds for sleeping"
+    default: "1"
+  buildSteps:
+  - name: sleep30
+    image: alpine:latest
+    command:
+    - sleep
+    args:
+    - $(params.sleep-time)
 `

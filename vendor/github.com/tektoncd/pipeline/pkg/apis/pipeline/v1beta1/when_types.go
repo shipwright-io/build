@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+
 	"github.com/tektoncd/pipeline/pkg/substitution"
 	"k8s.io/apimachinery/pkg/selection"
 )
@@ -27,60 +29,17 @@ type WhenExpression struct {
 	// Input is the string for guard checking which can be a static input or an output from a parent Task
 	Input string `json:"input"`
 
-	// DeprecatedInput for backwards compatibility with <v0.17
-	// it is the string for guard checking which can be a static input or an output from a parent Task
-	// +optional
-	DeprecatedInput string `json:"Input,omitempty"`
-
 	// Operator that represents an Input's relationship to the values
 	Operator selection.Operator `json:"operator"`
-
-	// DeprecatedOperator for backwards compatibility with <v0.17
-	// it represents a DeprecatedInput's relationship to the DeprecatedValues
-	// +optional
-	DeprecatedOperator selection.Operator `json:"Operator,omitempty"`
 
 	// Values is an array of strings, which is compared against the input, for guard checking
 	// It must be non-empty
 	Values []string `json:"values"`
-
-	// DeprecatedValues for backwards compatibility with <v0.17
-	// it represents a DeprecatedInput's relationship to the DeprecatedValues
-	// +optional
-	DeprecatedValues []string `json:"Values,omitempty"`
-}
-
-// GetInput returns the input string for guard checking
-// based on DeprecatedInput (<v0.17) and Input
-func (we *WhenExpression) GetInput() string {
-	if we.Input == "" {
-		return we.DeprecatedInput
-	}
-	return we.Input
-}
-
-// GetOperator returns the relationship between input and values
-// based on DeprecatedOperator (<v0.17) and Operator
-func (we *WhenExpression) GetOperator() selection.Operator {
-	if we.Operator == "" {
-		return we.DeprecatedOperator
-	}
-	return we.Operator
-}
-
-// GetValues returns an array of strings which is compared against the input
-// based on DeprecatedValues (<v0.17) and Values
-func (we *WhenExpression) GetValues() []string {
-	if we.Values == nil {
-		return we.DeprecatedValues
-	}
-	return we.Values
 }
 
 func (we *WhenExpression) isInputInValues() bool {
-	values := we.GetValues()
-	for i := range values {
-		if values[i] == we.GetInput() {
+	for i := range we.Values {
+		if we.Values[i] == we.Input {
 			return true
 		}
 	}
@@ -88,7 +47,7 @@ func (we *WhenExpression) isInputInValues() bool {
 }
 
 func (we *WhenExpression) isTrue() bool {
-	if we.GetOperator() == selection.In {
+	if we.Operator == selection.In {
 		return we.isInputInValues()
 	}
 	// selection.NotIn
@@ -102,22 +61,29 @@ func (we *WhenExpression) hasVariable() bool {
 	return false
 }
 
-func (we *WhenExpression) applyReplacements(replacements map[string]string) WhenExpression {
-	replacedInput := substitution.ApplyReplacements(we.GetInput(), replacements)
+func (we *WhenExpression) applyReplacements(replacements map[string]string, arrayReplacements map[string][]string) WhenExpression {
+	replacedInput := substitution.ApplyReplacements(we.Input, replacements)
 
 	var replacedValues []string
-	for _, val := range we.GetValues() {
-		replacedValues = append(replacedValues, substitution.ApplyReplacements(val, replacements))
+	for _, val := range we.Values {
+		// arrayReplacements holds a list of array parameters with a pattern - params.arrayParam1
+		// array params are referenced using $(params.arrayParam1[*])
+		// check if the param exist in the arrayReplacements to replace it with a list of values
+		if _, ok := arrayReplacements[fmt.Sprintf("%s.%s", ParamsPrefix, ArrayReference(val))]; ok {
+			replacedValues = append(replacedValues, substitution.ApplyArrayReplacements(val, replacements, arrayReplacements)...)
+		} else {
+			replacedValues = append(replacedValues, substitution.ApplyReplacements(val, replacements))
+		}
 	}
 
-	return WhenExpression{Input: replacedInput, Operator: we.GetOperator(), Values: replacedValues}
+	return WhenExpression{Input: replacedInput, Operator: we.Operator, Values: replacedValues}
 }
 
 // GetVarSubstitutionExpressions extracts all the values between "$(" and ")" in a When Expression
 func (we *WhenExpression) GetVarSubstitutionExpressions() ([]string, bool) {
 	var allExpressions []string
-	allExpressions = append(allExpressions, validateString(we.GetInput())...)
-	for _, value := range we.GetValues() {
+	allExpressions = append(allExpressions, validateString(we.Input)...)
+	for _, value := range we.Values {
 		allExpressions = append(allExpressions, validateString(value)...)
 	}
 	return allExpressions, len(allExpressions) != 0
@@ -152,10 +118,10 @@ func (wes WhenExpressions) HaveVariables() bool {
 
 // ReplaceWhenExpressionsVariables interpolates variables, such as Parameters and Results, in
 // the Input and Values.
-func (wes WhenExpressions) ReplaceWhenExpressionsVariables(replacements map[string]string) WhenExpressions {
+func (wes WhenExpressions) ReplaceWhenExpressionsVariables(replacements map[string]string, arrayReplacements map[string][]string) WhenExpressions {
 	replaced := wes
 	for i := range wes {
-		replaced[i] = wes[i].applyReplacements(replacements)
+		replaced[i] = wes[i].applyReplacements(replacements, arrayReplacements)
 	}
 	return replaced
 }

@@ -28,14 +28,14 @@ func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 	if s.Build.Spec.Source.Credentials == nil {
 		switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
 		case "true":
-			err := git.ValidateGitURLExists(s.Build.Spec.Source.URL)
-			if err != nil {
+			if err := git.ValidateGitURLExists(ctx, s.Build.Spec.Source.URL); err != nil {
 				s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, err.Error())
+				return err
 			}
-			return err
+
 		case "", "false":
 			ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository]), namespace, s.Build.Namespace, name, s.Build.Name)
-			return nil
+
 		default:
 			var annoErr = fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)
 			ctxlog.Error(ctx, annoErr, namespace, s.Build.Namespace, name, s.Build.Name)
@@ -43,6 +43,7 @@ func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 			return annoErr
 		}
 	}
+
 	return nil
 }
 

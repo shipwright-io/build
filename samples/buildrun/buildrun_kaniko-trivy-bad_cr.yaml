@@ -1,0 +1,10 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: kaniko-trivy-bad-buildrun
+spec:
+  buildRef:
+    name: kaniko-trivy-bad-build
+  serviceAccount:
+    generate: true

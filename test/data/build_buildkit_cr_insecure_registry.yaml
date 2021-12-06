@@ -11,10 +11,11 @@ spec:
     contextDir: docker-build/
   # Note: This needs to be a path to where the Dockerfile is located, it cannot contain the file name
   dockerfile: docker-build/
+  paramValues:
+  - name: insecure-registry
+    value: "true"
   strategy:
-    # Use the insecure strategy to push to an insecure HTTP registry
-    name: buildkit-insecure
+    name: buildkit
     kind: ClusterBuildStrategy
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
-

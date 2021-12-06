@@ -43,23 +43,34 @@ const (
 // Otherwise it will create the service account. No error occurs if the service account already exists.
 func createPipelineServiceAccount(testBuild *utils.TestBuild) {
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
-
 	if serviceAccountName == "generated" {
 		Logf("Skipping creation of service account, generated one will be used per build run.")
-	} else {
-		serviceAccount := &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testBuild.Namespace,
-				Name:      serviceAccountName,
-			},
-		}
-
-		Logf("Creating '%s' service-account", serviceAccountName)
-		_, err := testBuild.Clientset.CoreV1().ServiceAccounts(testBuild.Namespace).Create(testBuild.Context, serviceAccount, metav1.CreateOptions{})
-		if err != nil && !apierrors.IsAlreadyExists(err) {
-			Expect(err).ToNot(HaveOccurred(), "Error creating service account")
-		}
+		return
 	}
+
+	if _, err := testBuild.LookupServiceAccount(types.NamespacedName{Namespace: testBuild.Namespace, Name: serviceAccountName}); err == nil {
+		Logf("Skipping creation of service account, reusing existing one.")
+		return
+	}
+
+	Logf("Creating '%s' service-account", serviceAccountName)
+	_, err := testBuild.Clientset.CoreV1().
+		ServiceAccounts(testBuild.Namespace).
+		Create(testBuild.Context,
+			&corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testBuild.Namespace,
+					Name:      serviceAccountName,
+				}},
+			metav1.CreateOptions{})
+
+	// Due to concurrency, it could be that some other routine already finished creating the service-account
+	if err != nil && apierrors.IsAlreadyExists(err) {
+		Logf("Creation failed, because service-account %q is already in the system.", serviceAccountName)
+		return
+	}
+
+	Expect(err).ToNot(HaveOccurred(), "Error creating service account")
 }
 
 // createContainerRegistrySecret use environment variables to check for container registry
@@ -101,13 +112,15 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	falseCondition := corev1.ConditionFalse
 
 	// Ensure the BuildRun has been created
-	err := testBuild.CreateBR(testBuildRun)
-	Expect(err).ToNot(HaveOccurred(), "Failed to create BuildRun")
+	if _, err := testBuild.GetBR(testBuildRun.Name); err != nil {
+		Expect(testBuild.CreateBR(testBuildRun)).
+			ToNot(HaveOccurred(), "Failed to create BuildRun")
+	}
 
 	// Ensure a BuildRun eventually moves to a succeeded TRUE status
 	nextStatusLog := time.Now().Add(60 * time.Second)
 	Eventually(func() corev1.ConditionStatus {
-		testBuildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
+		testBuildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
 		if testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded) == nil {
@@ -125,6 +138,101 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 		return testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded).Status
 
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
+
+	// Verify that the BuildSpec is still available in the status
+	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")
+
+	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
+}
+
+func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) {
+	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
+
+	// Only run the TaskRun checks if Tekton objects can be accessed
+	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, result := range tr.Status.TaskRunResults {
+			switch result.Name {
+			case "shp-source-default-commit-sha":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitSha))
+			case "shp-source-default-commit-author":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitAuthor))
+			case "shp-source-default-branch-name":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.BranchName))
+			case "shp-image-digest":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
+			case "shp-image-size":
+				size, err := strconv.ParseInt(result.Value, 10, 64)
+				Expect(err).To(BeNil())
+				Expect(size).To(Equal(testBuildRun.Status.Output.Size))
+			}
+		}
+	}
+}
+
+func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1alpha1.BuildRun) {
+	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
+
+	// Only run the TaskRun checks if Tekton objects can be accessed
+	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, result := range tr.Status.TaskRunResults {
+			switch result.Name {
+			case "shp-source-default-image-digest":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Bundle.Digest))
+			case "shp-image-digest":
+				Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
+			case "shp-image-size":
+				size, err := strconv.ParseInt(result.Value, 10, 64)
+				Expect(err).To(BeNil())
+				Expect(size).To(Equal(testBuildRun.Status.Output.Size))
+			}
+		}
+	}
+}
+
+// validateBuildRunToFail creates the build run and watches its flow until it fails.
+func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1alpha1.BuildRun) {
+	trueCondition := corev1.ConditionTrue
+	falseCondition := corev1.ConditionFalse
+
+	// Ensure the BuildRun has been created
+	err := testBuild.CreateBR(testBuildRun)
+	Expect(err).ToNot(HaveOccurred(), "Failed to create BuildRun")
+
+	// Ensure a BuildRun eventually moves to a succeeded FALSE status
+	nextStatusLog := time.Now().Add(60 * time.Second)
+	Eventually(func() corev1.ConditionStatus {
+		testBuildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
+		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
+
+		if testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded) == nil {
+			return corev1.ConditionUnknown
+		}
+
+		Expect(testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded).Status).NotTo(Equal(trueCondition), "BuildRun status moves to Succeeded")
+
+		now := time.Now()
+		if now.After(nextStatusLog) {
+			Logf("Still waiting for build run '%s' to fail.", testBuildRun.Name)
+			nextStatusLog = time.Now().Add(60 * time.Second)
+		}
+
+		return testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded).Status
+
+	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not succeed")
 
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")
@@ -149,7 +257,7 @@ func validateServiceAccountDeletion(buildRun *buildv1alpha1.BuildRun, namespace 
 	}
 
 	saNamespacedName := types.NamespacedName{
-		Name:      buildRun.Name + "-sa",
+		Name:      buildRun.Name,
 		Namespace: namespace,
 	}
 

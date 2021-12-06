@@ -36,30 +36,99 @@ type BuildRunSpec struct {
 	// +kubebuilder:validation:Format=duration
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 
+	// Params is a list of key/value that could be used
+	// to set strategy parameters
+	// +optional
+	ParamValues []ParamValue `json:"paramValues,omitempty"`
+
 	// Output refers to the location where the generated
 	// image would be pushed to. It will overwrite the output image in build spec
 	// +optional
 	Output *Image `json:"output,omitempty"`
+
+	// State is used for canceling a buildrun (and maybe more later on).
+	// +optional
+	State BuildRunRequestedState `json:"state,omitempty"`
+
+	// Env contains additional environment variables that should be passed to the build container
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+}
+
+// BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.
+type BuildRunRequestedState string
+
+const (
+	// BuildRunStateCancel indicates that the user wants to cancel the BuildRun,
+	// if not already canceled or terminated
+	BuildRunStateCancel = "BuildRunCanceled"
+
+	// BuildRunStatePodEvicted indicates that if the pods got evicted
+	// due to some reason. (Probably ran out of ephemeral storage)
+	BuildRunStatePodEvicted = "PodEvicted"
+)
+
+// SourceResult holds the results emitted from the different sources
+type SourceResult struct {
+	// Name is the name of source
+	Name string `json:"name"`
+
+	// Git holds the results emitted from from the
+	// step definition of a git source
+	//
+	// +optional
+	Git *GitSourceResult `json:"git,omitempty"`
+
+	// Bundle holds the results emitted from from the
+	// step definition of bundle source
+	//
+	// +optional
+	Bundle *BundleSourceResult `json:"bundle,omitempty"`
+}
+
+// BundleSourceResult holds the results emitted from the bundle source
+type BundleSourceResult struct {
+	// Digest hold the image digest result
+	Digest string `json:"digest,omitempty"`
+}
+
+// GitSourceResult holds the results emitted from the git source
+type GitSourceResult struct {
+	// CommitSha holds the commit sha of git source
+	CommitSha string `json:"commitSha,omitempty"`
+
+	// CommitAuthor holds the commit author of a git source
+	CommitAuthor string `json:"commitAuthor,omitempty"`
+
+	// BranchName holds the default branch name of the git source
+	// this will be set only when revision is not specified in Build object
+	BranchName string `json:"branchName,omitempty"`
+}
+
+// Output holds the results emitted from the output step (build-and-push)
+type Output struct {
+	// Digest holds the digest of output image
+	Digest string `json:"digest,omitempty"`
+
+	// Size holds the compressed size of output image
+	Size int64 `json:"size,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun
 type BuildRunStatus struct {
+	// Sources holds the results emitted from the step definition
+	// of different sources
+	//
+	// +optional
+	Sources []SourceResult `json:"sources"`
+
+	// Output holds the results emitted from step definition of an output
+	//
+	// +optional
+	Output *Output `json:"output"`
+
 	// Conditions holds the latest available observations of a resource's current state.
 	Conditions Conditions `json:"conditions,omitempty"`
-
-	// The Succeeded status of the TaskRun
-	//
-	// Deprecated: Use Conditions instead. This will be removed in a future release.
-	//
-	// +optional
-	Succeeded corev1.ConditionStatus `json:"succeeded,omitempty"`
-
-	// The Succeeded reason of the TaskRun
-	//
-	// Deprecated: Use Conditions instead. This will be removed in a future release.
-	//
-	// +optional
-	Reason string `json:"reason,omitempty"`
 
 	// LatestTaskRunRef is the name of the TaskRun responsible for executing this BuildRun.
 	//
@@ -135,6 +204,28 @@ type BuildRunList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BuildRun `json:"items"`
+}
+
+// IsDone returns true if the BuildRun's status indicates that it is done.
+func (br *BuildRun) IsDone() bool {
+	c := br.Status.GetCondition(Succeeded)
+	return c != nil && c.GetStatus() != corev1.ConditionUnknown
+}
+
+// HasStarted returns true if the BuildRun has a valid start time set in its status.
+func (br *BuildRun) HasStarted() bool {
+	return br.Status.StartTime != nil && !br.Status.StartTime.IsZero()
+}
+
+// IsSuccessful returns true if the BuildRun's status indicates that it is done.
+func (br *BuildRun) IsSuccessful() bool {
+	c := br.Status.GetCondition(Succeeded)
+	return c != nil && c.GetStatus() == corev1.ConditionTrue
+}
+
+// IsCanceled returns true if the BuildRun's spec status is set to BuildRunCanceled state.
+func (br *BuildRun) IsCanceled() bool {
+	return br.Spec.State == BuildRunStateCancel
 }
 
 // Conditions defines a list of Condition

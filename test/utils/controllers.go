@@ -17,6 +17,9 @@ import (
 func (t *TestBuild) StartBuildControllers() (chan struct{}, error) {
 	c := buildconfig.NewDefaultConfig()
 
+	// read configuration from environment variables, especially the GIT_CONTAINER_IMAGE
+	c.SetConfigFromEnv()
+
 	mgr, err := controller.NewManager(t.Context, c, t.KubeConfig, manager.Options{
 		Namespace:          t.Namespace,
 		LeaderElection:     false,

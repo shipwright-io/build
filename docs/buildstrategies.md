@@ -15,15 +15,22 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing Buildpacks v3 Strategy](#installing-buildpacks-v3-strategy)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
+  - [Scanning with Trivy](#scanning-with-trivy)
 - [BuildKit](#buildkit)
   - [Cache Exporters](#cache-exporters)
   - [Known Limitations](#known-limitations)
+  - [Usage in Clusters with Pod Security Standards](#usage-in-clusters-with-pod-security-standards)
   - [Installing BuildKit Strategy](#installing-buildkit-strategy)
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
+  - [Parameters](#parameters)
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
+- [Strategy parameters](#strategy-parameters)
+- [System parameters](#system-parameters)
+- [System parameters vs Strategy Parameters Comparison](#system-parameters-vs-strategy-parameters-comparison)
+- [System results](#system-results)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
   - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
@@ -103,7 +110,7 @@ kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3
 
 ## Kaniko
 
-The `kaniko` ClusterBuildStrategy is composed by Kaniko's `executor` [kaniko], with the objective of building a container-image, out of a `Dockerfile` and context directory.
+The `kaniko` ClusterBuildStrategy is composed by Kaniko's `executor` [kaniko], with the objective of building a container-image, out of a `Dockerfile` and context directory. The `kaniko-trivy` ClusterBuildStrategy adds [trivy](https://github.com/aquasecurity/trivy) scanning and refuses to push images with critical vulnerabilities.
 
 ### Installing Kaniko Strategy
 
@@ -113,13 +120,23 @@ To install the cluster scope strategy, use:
 kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 ```
 
+#### Scanning with Trivy
+
+You can also incorporate scanning into the ClusterBuildStrategy. The `kaniko-trivy` ClusterBuildStrategy builds the image with `kaniko`, then scans with [trivy](https://github.com/aquasecurity/trivy). The BuildRun will then exit with an error if there is a critical vulnerability, instead of pushing the vulnerable image into the container registry.
+
+To install the cluster scope strategy, use:
+
+```sh
+kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
+```
+
+*Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Frameworks/strategies such as build-packs or source-to-image (which avoid directly building a Dockerfile) should be considered if you need guardrails around the code you want to build.*
+
 ---
 
 ## BuildKit
 
-[BuildKit](https://github.com/moby/buildkit) is composed of the `buildctl` client and the `buildkitd` daemon. For the `buildkit` ClusterBuildStrategy, it runs on a [daemonless](https://github.com/moby/buildkit#daemonless) mode, where both client and ephemeral daemon run in a single container. In addition, it runs without privileges ( _[rootless](https://github.com/moby/buildkit/blob/master/docs/rootless.md)_ ).
-
-The `buildkit-insecure` ClusterBuildStrategy exists to support users pushing to an insecure HTTP registry. We use this strategy at the moment only for testing purposes against a local in-cluster registry. In the future, this strategy will be removed in favor of a single one where users can parameterize the secure/insecure behaviour.
+[BuildKit](https://github.com/moby/buildkit) is composed of the `buildctl` client and the `buildkitd` daemon. For the `buildkit` ClusterBuildStrategy, it runs on a [daemonless](https://github.com/moby/buildkit#daemonless) mode, where both client and ephemeral daemon run in a single container. In addition, it runs without privileges (_[rootless](https://github.com/moby/buildkit/blob/master/docs/rootless.md)_).
 
 ### Cache Exporters
 
@@ -130,8 +147,20 @@ By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the
 The `buildkit` ClusterBuildStrategy currently locks the following parameters:
 
 - A `Dockerfile` name needs to be `Dockerfile`, this is currently not configurable.
-- Exporter caches are enable by default, this is currently not configurable.
+- Exporter caches are enabled by default, this is currently not configurable.
 - To allow running rootless, it requires both [AppArmor](https://kubernetes.io/docs/tutorials/clusters/apparmor/) as well as [SecComp](https://kubernetes.io/docs/tutorials/clusters/seccomp/) to be disabled using the `unconfined` profile.
+
+### Usage in Clusters with Pod Security Standards
+
+The BuildKit strategy contains fields with regards to security settings. It therefore depends on the respective cluster setup and administrative configuration. These settings are:
+
+- Defining the `unconfined` profile for both AppArmor and seccomp as required by the underlying `rootlesskit`.
+- The `allowPrivilegeEscalation` settings is set to `true` to be able to use binaries that have the `setuid` bit set in order to run with "root" level privileges. In case of BuildKit, this is required by `rootlesskit` in order to set the user namespace mapping file `/proc/<pid>/uid_map`.
+- Use of non-root user with UID 1000/GID 1000 as the `runAsUser`.
+
+These settings have no effect in case Pod Security Standards are not used.
+
+_Please note:_ At this point in time, there is no way to run `rootlesskit` to start the BuildKit daemon without the `allowPrivilegeEscalation` flag set to `true`. Clusters with the `Restricted` security standard in place will not be able to use this build strategy.
 
 ### Installing BuildKit Strategy
 
@@ -155,9 +184,17 @@ To install the cluster scope strategy, use:
 kubectl apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
 ```
 
-**Note**: The build strategy currently uses the `spec.contextDir` of the Build in a different way than this property is designed for: the Git repository must be a Go module with the go.mod file at the root. The `contextDir` specifies the path to the main package. You can check the [example](../samples/build/build_ko_cr.yaml) which is set up to build the Shipwright Build controller. This behavior will eventually be corrected once [Exhaustive list of generalized Build API/CRD attributes #184](https://github.com/shipwright-io/build/issues/184) / [Custom attributes from the Build CR could be used as parameters while defining a BuildStrategy #537](https://github.com/shipwright-io/build/issues/537) are done.
+### Parameters
 
-**Note**: The build strategy is setup to build for the platform that your Kubernetes cluster is running. Exposing the platform configuration to the Build requires the same features mentioned on the previous note.
+The build strategy provides the following parameters that you can set in a Build or BuildRun to control its behavior:
+
+| Parameter | Description | Default |
+| -- | -- | -- |
+| `go-flags` | Value for the GOFLAGS environment variable. | Empty |
+| `go-version` | Version of Go, must match a tag from [the golang image](https://hub.docker.com/_/golang?tab=tags) | `1.16` |
+| `ko-version` | Version of ko, must be either `latest` for the newest release, or a [ko release name](https://github.com/google/ko/releases) | `latest` |
+| `package-directory` | The directory inside the context directory containing the main package. | `.` |
+| `target-platform` | Target platform to be built. For example: `linux/arm64`. Multiple platforms can be provided separated by comma, for example: `linux/arm64,linux/amd64`. The value `all` will build all platforms supported by the base image. The value `current` will build the platform on which the build runs. | `current` |
 
 ## Source to Image
 
@@ -187,15 +224,81 @@ kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-i
 [s2i]: https://github.com/openshift/source-to-image
 [buildah]: https://github.com/containers/buildah
 
+## Strategy parameters
+
+Strategy parameters allow users to parameterize their strategy definition, by allowing users to control the _parameters_ values via the `Build` or `BuildRun` resources.
+
+Users defining _parameters_ under their strategies require to understand the following:
+
+- **Definition**: A list of parameters should be defined under `spec.parameters`. Each list item should consist of a _name_, a _description_ and a reasonable _default_ value (_type string_). Note that a default value is not mandatory.
+- **Usage**: In order to use a parameter in the strategy steps, users should follow the following syntax: `$(params.your-parameter-name)`
+- **Parameterize**: Any `Build` or `BuildRun` referencing your strategy, can set a value for _your-parameter-name_ parameter if needed.
+
+The following is an example of a strategy that defines and uses the `sleep-time` parameter:
+
+```yaml
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: sleepy-strategy
+spec:
+  parameters:
+  - name: sleep-time
+    description: "time in seconds for sleeping"
+    default: "1"
+  buildSteps:
+  - name: a-strategy-step
+    image: alpine:latest
+    command:
+    - sleep
+    args:
+    - $(params.sleep-time)
+```
+
+See more information on how to use this parameter in a `Build` or `BuildRun` in the related [docs](./build.md#defining-paramvalues).
+
 ## System parameters
 
-You can use parameters when defining the steps of a build strategy to access system information as well as information provided by the user in his Build or BuildRun. The following parameters are available:
+Contrary to the strategy `spec.parameters`, you can use system parameters and their values defined at runtime when defining the steps of a build strategy to access system information as well as information provided by the user in their Build or BuildRun. The following parameters are available:
 
 | Parameter                      | Description |
 | ------------------------------ | ----------- |
 | `$(params.shp-source-root)`    | The absolute path to the directory that contains the user's sources. |
-| `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in his Build, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
+| `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in their `Build`, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
 | `$(params.shp-output-image)`      | The URL of the image that the user wants to push as specified in the Build's `spec.output.image`, or the override from the BuildRun's `spec.output.image`. |
+
+## System parameters vs Strategy Parameters Comparison
+
+| Parameter Type     | User Configurable | Definition    |
+| ------------------ | ------------ | ------------- |
+| System Parameter   |    No        |  At run-time, by the `BuildRun` controller.  |
+| Strategy Parameter |    Yes       |  At build-time, during the `BuildStrategy` creation. |
+
+## System results
+
+You can optionally store the size and digest of the image your build strategy created to a set of files.
+
+| Result file                        | Description                                     |
+| ---------------------------------- | ----------------------------------------------- |
+| `$(results.shp-image-digest.path)` | File to store the digest of the image.          |
+| `$(results.shp-image-size.path)`   | File to store the compressed size of the image. |
+
+You can look at sample build strategies, such as [Kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml), or [Buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml), to see how they fill some or all of the results files.
+
+This information will be available in the `.status.output` field of the BuildRun.
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+# [...]
+status:
+ # [...]
+  output:
+    digest: sha256:07626e3c7fdd28d5328a8d6df8d29cd3da760c7f5e2070b534f9b880ed093a53
+    size: "1989004"
+  # [...]
+```
 
 ## Steps Resource Definition
 
@@ -214,7 +317,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.6.0
+      image: gcr.io/kaniko-project/executor:v1.7.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -241,7 +344,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -259,7 +361,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.6.0
+      image: gcr.io/kaniko-project/executor:v1.7.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -286,7 +388,6 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --oci-layout-path=/workspace/output/image
         - --snapshotMode=redo
         - --push-retry=3
       resources:
@@ -334,8 +435,8 @@ For a more concrete example, let´s take a look on the following scenarios:
 
 If we will apply the following resources:
 
-- [buildahBuild](../samples/build/buildah/build_buildah_cr.yaml)
-- [buildahBuildRun](../samples/buildrun/buildah/buildrun_buildah_cr.yaml)
+- [buildahBuild](../samples/build/build_buildah_cr.yaml)
+- [buildahBuildRun](../samples/buildrun/buildrun_buildah_cr.yaml)
 - [buildahClusterBuildStrategy](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
 
 We will see some differences between the `TaskRun` definition and the `pod` definition.
@@ -406,13 +507,13 @@ In this scenario, only one container can have the `spec.resources.requests` defi
 
 If we will apply the following resources:
 
-- [buildahBuild](../samples/build/buildah/build_buildah_cr.yaml)
-- [buildahBuildRun](../samples/buildrun/buildah/buildrun_buildah_cr.yaml)
+- [buildahBuild](../samples/build/build_buildah_cr.yaml)
+- [buildahBuildRun](../samples/buildrun/buildrun_buildah_cr.yaml)
 - We will use a modified buildah strategy, with the following steps resources:
 
   ```yaml
     - name: buildah-bud
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -434,7 +535,7 @@ If we will apply the following resources:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/buildah/stable:latest
+      image: quay.io/containers/buildah:v1.20.1
       securityContext:
         privileged: true
       command:
@@ -533,3 +634,12 @@ The following annotations are not propagated:
 - `buildrun.shipwright.io/*`
 
 A Kubernetes administrator can further restrict the usage of annotations by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).
+
+## Volumes and VolumeMounts
+
+Build steps can declare a `volumeMount`, which allows data in the provided path to be shared across build steps.
+When a `volumeMount` is declared, Shipwright will create an `emptyDir` volume with the corresponding name.
+Build steps whose volume mounts share the same name will share the same underlying `emtpyDir` volume.
+
+In a future release, build strategy authors will be able to use other volume types for the volume mounts.
+When this feature is introduced, the volume and volume type will need to be explicitly declared.

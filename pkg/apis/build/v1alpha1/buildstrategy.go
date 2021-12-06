@@ -19,10 +19,33 @@ const (
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
 	BuildSteps []BuildStep `json:"buildSteps,omitempty"`
+	Parameters []Parameter `json:"parameters,omitempty"`
 }
 
-// BuildStep defines a partial step that needs to run in container for
-// building the image.
+// Parameter holds a name-description with a default value
+// that allows strategy steps to be parameterize.
+// Build users can set a value for parameter via the Build
+// or BuildRun spec.paramValues object.
+// +optional
+type Parameter struct {
+	// Name of the parameter
+	// +required
+	Name string `json:"name"`
+
+	// Description on the parameter purpose
+	// +required
+	Description string `json:"description"`
+
+	// Reasonable default value for the parameter
+	// +optional
+	Default *string `json:"default"`
+}
+
+// BuildStep defines a partial step that needs to run in container for building the image.
+// If the build step declares a volumeMount, Shipwright will create an emptyDir volume mount for the named volume.
+// Build steps which share the same named volume in the volumeMount will share the same underlying emptyDir volume.
+// This behavior is deprecated, and will be removed when full volume support is added to build strategies as specified
+// in SHIP-0022. 
 type BuildStep struct {
 	corev1.Container `json:",inline"`
 }
@@ -55,4 +78,5 @@ type BuilderStrategy interface {
 	GetGeneration() int64
 	GetResourceLabels() map[string]string
 	GetBuildSteps() []BuildStep
+	GetParameters() []Parameter
 }

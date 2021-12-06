@@ -10,6 +10,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/pointer"
 
 	. "github.com/shipwright-io/build/pkg/config"
 )
@@ -25,13 +28,6 @@ var _ = Describe("Config", func() {
 			var overrides = map[string]string{"CTX_TIMEOUT": "600"}
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
 				Expect(config.CtxTimeOut).To(Equal(600 * time.Second))
-			})
-		})
-
-		It("should allow for an override of the default Kaniko project image using an environment variable", func() {
-			var overrides = map[string]string{"KANIKO_CONTAINER_IMAGE": "gcr.io/kaniko-project/executor:v1.0.1"}
-			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.KanikoContainerImage).To(Equal("gcr.io/kaniko-project/executor:v1.0.1"))
 			})
 		})
 
@@ -102,6 +98,63 @@ var _ = Describe("Config", func() {
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
 				Expect(config.KubeAPIOptions.Burst).To(Equal(200))
 				Expect(config.KubeAPIOptions.QPS).To(Equal(300))
+			})
+		})
+
+		It("should allow for an override of the Git container template", func() {
+			var overrides = map[string]string{
+				"GIT_CONTAINER_TEMPLATE": "{\"image\":\"myregistry/custom/git-image\",\"resources\":{\"requests\":{\"cpu\":\"0.5\",\"memory\":\"128Mi\"}}}",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.GitContainerTemplate).To(Equal(corev1.Container{
+					Image: "myregistry/custom/git-image",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("0.5"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+				}))
+			})
+		})
+
+		It("should allow for an override of the Git container image", func() {
+			var overrides = map[string]string{
+				"GIT_CONTAINER_IMAGE": "myregistry/custom/git-image",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				nonRoot := pointer.Int64Ptr(1000)
+				Expect(config.GitContainerTemplate).To(Equal(corev1.Container{
+					Image: "myregistry/custom/git-image",
+					Command: []string{
+						"/ko-app/git",
+					},
+					SecurityContext: &corev1.SecurityContext{
+						RunAsUser:  nonRoot,
+						RunAsGroup: nonRoot,
+					},
+				}))
+			})
+		})
+
+		It("should allow for an override of the Git container template and image", func() {
+			var overrides = map[string]string{
+				"GIT_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/git-image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
+				"GIT_CONTAINER_IMAGE":    "myregistry/custom/git-image:override",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.GitContainerTemplate).To(Equal(corev1.Container{
+					Image: "myregistry/custom/git-image:override",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("0.5"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+				}))
 			})
 		})
 	})

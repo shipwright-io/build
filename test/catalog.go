@@ -304,11 +304,9 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
-			if !tolerateEmptyStatus || object.Status.Succeeded != "" {
+			if !tolerateEmptyStatus {
 				Expect(object.Status.GetCondition(build.Succeeded).Status).To(Equal(condition.Status))
 				Expect(object.Status.GetCondition(build.Succeeded).Reason).To(Equal(condition.Reason))
-				Expect(object.Status.Succeeded).To(Equal(status))
-				Expect(object.Status.Reason).To(Equal(reason))
 				Expect(object.Status.LatestTaskRunRef).To(Equal(name))
 			}
 			if object.Status.BuildSpec != nil {
@@ -436,6 +434,35 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 				bs.DeepCopyInto(object)
 				return nil
 			}
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
+}
+
+func (c *Catalog) StubBuildCRDs(
+	b *build.Build,
+	br *build.BuildRun,
+	sa *corev1.ServiceAccount,
+	cb *build.ClusterBuildStrategy,
+	bs *build.BuildStrategy,
+) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *build.BuildRun:
+			br.DeepCopyInto(object)
+			return nil
+		case *corev1.ServiceAccount:
+			sa.DeepCopyInto(object)
+			return nil
+		case *build.ClusterBuildStrategy:
+			cb.DeepCopyInto(object)
+			return nil
+		case *build.BuildStrategy:
+			bs.DeepCopyInto(object)
+			return nil
 		}
 		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
 	}

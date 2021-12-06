@@ -1,0 +1,28 @@
+name: Mirror pre-requisite images for Shipwright samples
+
+on:
+  schedule:
+  - cron: '0 0 * * *'
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  build:
+    if: ${{ github.repository == 'shipwright-io/build' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: imjasonh/setup-crane@01d26682810dcd47bfc8eb1efe791558123a9373
+
+      - name: Mirror images
+        env:
+          REPO: ghcr.io/${{ github.repository_owner }}/shipwright-samples
+        run: |
+          for IMAGE in \
+            library/golang:1.16 \
+            library/maven:3-jdk-8-openj9 \
+            library/node:12 \
+            library/python:3.8 \
+            openliberty/open-liberty:kernel-java8-openj9-ubi \
+            ; do
+            crane cp "${IMAGE}" "${REPO}/$(cut -d/ -f2 <<<"${IMAGE}")"
+          done
