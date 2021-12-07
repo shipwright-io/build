@@ -19,7 +19,7 @@ spec:
 
           echo "Creating registries config file..."
 
-          formate(){
+          format(){
               array=(`echo $1 | tr ',' ' '`)
               str=""
               for m in "${array[@]}"; do
@@ -29,17 +29,17 @@ spec:
               echo ${str%??}
           }
 
-          path="/tmp/registries.conf"
-          registry_search="$(formate "$(params.registry-search)")"
-          registry_insecure="$(formate "$(params.registry-insecure)")"
-          registry_block="$(formate "$(params.registry-block)")"
+          cat <<EOF >/tmp/registries.conf
+          [registries.search]
+          registries = [$(format "$(params.registry-search)")]
 
-          echo -e "[registries.search]" >> "$path"
-          echo -e "registries = [${registry_search}]\n" >> "$path"
-          echo -e "[registries.insecure]" >> "$path"
-          echo -e "registries = [${registry_insecure}]\n" >> "$path"
-          echo -e "[registries.block]" >> "$path"
-          echo -e "registries = [${registry_block}]\n" >> "$path"
+          [registries.insecure]
+          registries = [$(format "$(params.registry-insecure)")]
+
+          [registries.block]
+          registries = [$(format "$(params.registry-block)")]
+
+          EOF
 
           # Building the image
           echo '[INFO] Building image $(params.shp-output-image)'
