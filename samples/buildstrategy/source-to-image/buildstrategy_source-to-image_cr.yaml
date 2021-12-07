@@ -33,6 +33,10 @@ spec:
           value: /tekton/home/.docker
         - name: HOME
           value: /tekton/home
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
       image: gcr.io/kaniko-project/executor:v1.7.0
       name: build-and-push
       securityContext:
