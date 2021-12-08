@@ -133,7 +133,6 @@ var _ = Describe("Operating service accounts", func() {
 
 		It("should provide a generated sa name", func() {
 			Expect(resources.GetGeneratedServiceAccountName(buildRunSample)).To(Equal(buildRunSample.Name))
-			Expect(resources.GetHeritageGeneratedServiceAccountName(buildRunSample)).To(Equal(buildRunSample.Name + "-sa"))
 		})
 
 		It("should return a generated sa with a label, ownerreference and a ref secret if it does not exists", func() {
