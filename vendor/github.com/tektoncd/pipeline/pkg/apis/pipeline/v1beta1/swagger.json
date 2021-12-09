@@ -287,24 +287,6 @@
         }
       }
     },
-    "v1beta1.CannotConvertError": {
-      "description": "CannotConvertError is returned when a field cannot be converted.",
-      "type": "object",
-      "required": [
-        "Message",
-        "Field"
-      ],
-      "properties": {
-        "Field": {
-          "type": "string",
-          "default": ""
-        },
-        "Message": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
     "v1beta1.CloudEventDelivery": {
       "description": "CloudEventDelivery is the target of a cloud event along with the state of delivery.",
       "type": "object",
@@ -503,6 +485,7 @@
       }
     },
     "v1beta1.EmbeddedTask": {
+      "description": "EmbeddedTask is used to define a Task inline within a Pipeline's PipelineTasks.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -803,7 +786,8 @@
           "$ref": "#/definitions/v1beta1.PipelineResourceRef"
         },
         "type": {
-          "type": "string"
+          "type": "integer",
+          "format": "int32"
         },
         "value": {
           "type": "string",
@@ -1362,6 +1346,7 @@
       }
     },
     "v1beta1.PipelineTaskMetadata": {
+      "description": "PipelineTaskMetadata contains the labels or annotations for an EmbeddedTask",
       "type": "object",
       "properties": {
         "annotations": {
@@ -1586,7 +1571,7 @@
           "$ref": "#/definitions/v1.Probe"
         },
         "resources": {
-          "description": "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
+          "description": "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
         },
@@ -1791,7 +1776,7 @@
           "$ref": "#/definitions/v1.Probe"
         },
         "resources": {
-          "description": "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
+          "description": "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
         },
@@ -2494,6 +2479,7 @@
       }
     },
     "v1beta1.TimeoutFields": {
+      "description": "TimeoutFields allows granular specification of pipeline, task, and finally timeouts",
       "type": "object",
       "properties": {
         "finally": {

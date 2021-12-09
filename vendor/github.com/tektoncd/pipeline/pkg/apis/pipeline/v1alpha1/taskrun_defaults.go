@@ -21,16 +21,16 @@ import (
 	"time"
 
 	"github.com/tektoncd/pipeline/pkg/apis/config"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	"github.com/tektoncd/pipeline/pkg/contexts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 )
 
 var _ apis.Defaultable = (*TaskRun)(nil)
 
+// ManagedByLabelKey is the label key used to mark what is managing this resource
 const ManagedByLabelKey = "app.kubernetes.io/managed-by"
 
+// SetDefaults implements apis.Defaultable
 func (tr *TaskRun) SetDefaults(ctx context.Context) {
 	ctx = apis.WithinParent(ctx, tr.ObjectMeta)
 	tr.Spec.SetDefaults(apis.WithinSpec(ctx))
@@ -46,17 +46,8 @@ func (tr *TaskRun) SetDefaults(ctx context.Context) {
 	}
 }
 
+// SetDefaults implements apis.Defaultable
 func (trs *TaskRunSpec) SetDefaults(ctx context.Context) {
-	if contexts.IsUpgradeViaDefaulting(ctx) {
-		v := v1beta1.TaskRunSpec{}
-		if trs.ConvertTo(ctx, &v) == nil {
-			alpha := TaskRunSpec{}
-			if alpha.ConvertFrom(ctx, &v) == nil {
-				*trs = alpha
-			}
-		}
-	}
-
 	cfg := config.FromContextOrDefaults(ctx)
 	if trs.TaskRef != nil && trs.TaskRef.Kind == "" {
 		trs.TaskRef.Kind = NamespacedTaskKind

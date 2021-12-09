@@ -59,6 +59,10 @@ type RunSpec struct {
 	// +optional
 	Status RunSpecStatus `json:"status,omitempty"`
 
+	// Used for propagating retries count to custom tasks
+	// +optional
+	Retries int `json:"retries,omitempty"`
+
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName"`
 
@@ -89,6 +93,7 @@ const (
 	RunSpecStatusCancelled RunSpecStatus = "RunCancelled"
 )
 
+// GetParam gets the Param from the RunSpec with the given name
 // TODO(jasonhall): Move this to a Params type so other code can use it?
 func (rs RunSpec) GetParam(name string) *v1beta1.Param {
 	for _, p := range rs.Params {
@@ -217,6 +222,7 @@ func (r *Run) HasTimedOut() bool {
 	return runtime > timeout
 }
 
+// GetTimeout returns the timeout for this run, or the default if not configured
 func (r *Run) GetTimeout() time.Duration {
 	// Use the platform default if no timeout is set
 	if r.Spec.Timeout == nil {

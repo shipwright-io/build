@@ -224,6 +224,7 @@ func (tr *TaskRun) HasTimedOut() bool {
 	return runtime > timeout
 }
 
+// GetTimeout returns the timeout for the TaskRun, or the default if not specified
 func (tr *TaskRun) GetTimeout() time.Duration {
 	// Use the platform default is no timeout is set
 	if tr.Spec.Timeout == nil {
@@ -245,8 +246,8 @@ func (tr *TaskRun) IsPartOfPipeline() (bool, string, string) {
 		return false, "", ""
 	}
 
-	if pl, ok := tr.Labels[pipeline.GroupName+pipeline.PipelineLabelKey]; ok {
-		return true, pl, tr.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
+	if pl, ok := tr.Labels[pipeline.PipelineLabelKey]; ok {
+		return true, pl, tr.Labels[pipeline.PipelineRunLabelKey]
 	}
 
 	return false, "", ""

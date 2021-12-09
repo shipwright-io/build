@@ -26,11 +26,6 @@ const (
 	// resources when they cannot be converted to warn of a forthcoming
 	// breakage.
 	ConditionTypeConvertible apis.ConditionType = v1beta1.ConditionTypeConvertible
-	// Conversion Error message for a field not available in v1alpha1
+	// ConversionErrorFieldNotAvailableMsg Conversion Error message for a field not available in v1alpha1
 	ConversionErrorFieldNotAvailableMsg = "the specified field/section is not available in v1alpha1"
 )
-
-// CannotConvertError is returned when a field cannot be converted.
-type CannotConvertError = v1beta1.CannotConvertError
-
-var _ error = (*CannotConvertError)(nil)

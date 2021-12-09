@@ -34,6 +34,8 @@ type Images struct {
 	KubeconfigWriterImage string
 	// ShellImage is the container image containing bash shell.
 	ShellImage string
+	// ShellImageWin is the container image containing powershell.
+	ShellImageWin string
 	// GsutilImage is the container image containing gsutil.
 	GsutilImage string
 	// PRImage is the container image that we use to implement the PR source step.
@@ -50,14 +52,15 @@ func (i Images) Validate() error {
 	for _, f := range []struct {
 		v, name string
 	}{
-		{i.EntrypointImage, "entrypoint"},
-		{i.NopImage, "nop"},
-		{i.GitImage, "git"},
-		{i.KubeconfigWriterImage, "kubeconfig-writer"},
-		{i.ShellImage, "shell"},
-		{i.GsutilImage, "gsutil"},
-		{i.PRImage, "pr"},
-		{i.ImageDigestExporterImage, "imagedigest-exporter"},
+		{i.EntrypointImage, "entrypoint-image"},
+		{i.NopImage, "nop-image"},
+		{i.GitImage, "git-image"},
+		{i.KubeconfigWriterImage, "kubeconfig-writer-image"},
+		{i.ShellImage, "shell-image"},
+		{i.ShellImageWin, "shell-image-win"},
+		{i.GsutilImage, "gsutil-image"},
+		{i.PRImage, "pr-image"},
+		{i.ImageDigestExporterImage, "imagedigest-exporter-image"},
 	} {
 		if f.v == "" {
 			unset = append(unset, f.name)

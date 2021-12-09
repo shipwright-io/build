@@ -31,7 +31,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	return map[string]common.OpenAPIDefinition{
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template":                              schema_pkg_apis_pipeline_pod_Template(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ArrayOrString":                     schema_pkg_apis_pipeline_v1beta1_ArrayOrString(ref),
-		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CannotConvertError":                schema_pkg_apis_pipeline_v1beta1_CannotConvertError(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDelivery":                schema_pkg_apis_pipeline_v1beta1_CloudEventDelivery(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDeliveryState":           schema_pkg_apis_pipeline_v1beta1_CloudEventDeliveryState(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ClusterTask":                       schema_pkg_apis_pipeline_v1beta1_ClusterTask(ref),
@@ -310,34 +309,6 @@ func schema_pkg_apis_pipeline_v1beta1_ArrayOrString(ref common.ReferenceCallback
 					},
 				},
 				Required: []string{"type", "stringVal", "arrayVal"},
-			},
-		},
-	}
-}
-
-func schema_pkg_apis_pipeline_v1beta1_CannotConvertError(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "CannotConvertError is returned when a field cannot be converted.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"Message": {
-						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
-						},
-					},
-					"Field": {
-						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
-						},
-					},
-				},
-				Required: []string{"Message", "Field"},
 			},
 		},
 	}
@@ -687,7 +658,8 @@ func schema_pkg_apis_pipeline_v1beta1_EmbeddedTask(ref common.ReferenceCallback)
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "EmbeddedTask is used to define a Task inline within a Pipeline's PipelineTasks.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
@@ -1211,8 +1183,8 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineResourceResult(ref common.Referenc
 					},
 					"type": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Type:   []string{"integer"},
+							Format: "int32",
 						},
 					},
 				},
@@ -2216,7 +2188,8 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineTaskMetadata(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "PipelineTaskMetadata contains the labels or annotations for an EmbeddedTask",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"labels": {
 						SchemaProps: spec.SchemaProps{
@@ -2590,7 +2563,7 @@ func schema_pkg_apis_pipeline_v1beta1_Sidecar(ref common.ReferenceCallback) comm
 					},
 					"resources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
+							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
@@ -2946,7 +2919,7 @@ func schema_pkg_apis_pipeline_v1beta1_Step(ref common.ReferenceCallback) common.
 					},
 					"resources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
+							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
@@ -4233,7 +4206,8 @@ func schema_pkg_apis_pipeline_v1beta1_TimeoutFields(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "TimeoutFields allows granular specification of pipeline, task, and finally timeouts",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pipeline": {
 						SchemaProps: spec.SchemaProps{
