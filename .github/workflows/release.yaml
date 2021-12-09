@@ -14,6 +14,10 @@ jobs:
   release:
     if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # To be able to get OIDC ID token to sign images.
+      contents: write  # To be able to update releases.
+      packages: write  # To be able to push images and signatures.
     env:
       IMAGE_HOST: ghcr.io
       IMAGE_NAMESPACE: ${{ github.repository }}
@@ -29,6 +33,7 @@ jobs:
 
     # Install tools
     - uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
+    - uses: sigstore/cosign-installer@v1.2.0
 
     - name: Build Release Changelog
       env:
@@ -62,6 +67,19 @@ jobs:
         make release
         gh release upload ${TAG} release.yaml
         gh release upload ${TAG} sample-strategies.yaml
+
+    - name: Sign released images
+      env:
+        # This enables keyless mode
+        # (https://github.com/sigstore/cosign/blob/main/KEYLESS.md) which signs
+        # images using an ephemeral key tied to the GitHub Actions identity via
+        # OIDC.
+        COSIGN_EXPERIMENTAL: "true"
+      run: |
+        grep -o "ghcr.io[^\"]*" release.yaml | xargs cosign sign \
+            -a sha=${{ github.sha }} \
+            -a run_id=${{ github.run_id }} \
+            -a run_attempt=${{ github.run_attempt }}
 
     - name: Update docs after release creation
       env:
