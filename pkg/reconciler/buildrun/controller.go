@@ -6,12 +6,14 @@ package buildrun
 
 import (
 	"context"
+
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -32,7 +34,7 @@ type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Sch
 // and Start it when the Manager is Started.
 func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "buildrun-controller")
-	return add(ctx, mgr, NewReconciler(ctx, c, mgr, controllerutil.SetControllerReference), c.Controllers.BuildRun.MaxConcurrentReconciles)
+	return add(ctx, mgr, NewReconciler(c, mgr, controllerutil.SetControllerReference), c.Controllers.BuildRun.MaxConcurrentReconciles)
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -77,7 +79,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 				return false
 			}
 
-			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+			return o.GetGeneration() != n.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Never reconcile on deletion, there is nothing we have to do
@@ -119,24 +121,21 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 
 	// enqueue Reconciles requests only for events where a TaskRun already exists and that is related
 	// to a BuildRun
-	return c.Watch(&source.Kind{Type: &v1beta1.TaskRun{}}, &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+	return c.Watch(&source.Kind{Type: &v1beta1.TaskRun{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+		taskRun := o.(*v1beta1.TaskRun)
 
-			taskRun := o.Object.(*v1beta1.TaskRun)
+		// check if TaskRun is related to BuildRun
+		if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1alpha1.LabelBuildRun] == "" {
+			return []reconcile.Request{}
+		}
 
-			// check if TaskRun is related to BuildRun
-			if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1alpha1.LabelBuildRun] == "" {
-				return []reconcile.Request{}
-			}
-
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Name:      taskRun.Name,
-						Namespace: taskRun.Namespace,
-					},
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Name:      taskRun.Name,
+					Namespace: taskRun.Namespace,
 				},
-			}
-		}),
-	}, predTaskRun)
+			},
+		}
+	}), predTaskRun)
 }

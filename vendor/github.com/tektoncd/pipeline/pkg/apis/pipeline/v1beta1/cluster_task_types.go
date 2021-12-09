@@ -17,12 +17,16 @@ limitations under the License.
 package v1beta1
 
 import (
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"knative.dev/pkg/kmeta"
 )
 
 // +genclient
 // +genclient:noStatus
 // +genclient:nonNamespaced
+// +genreconciler:krshapedlogic=false
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterTask is a Task with a cluster scope. ClusterTasks are used to
@@ -38,6 +42,8 @@ type ClusterTask struct {
 	Spec TaskSpec `json:"spec,omitempty"`
 }
 
+var _ kmeta.OwnerRefable = (*ClusterTask)(nil)
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterTaskList contains a list of ClusterTask
@@ -48,14 +54,22 @@ type ClusterTaskList struct {
 	Items           []ClusterTask `json:"items"`
 }
 
+// TaskSpec returns the ClusterTask's Spec
 func (t *ClusterTask) TaskSpec() TaskSpec {
 	return t.Spec
 }
 
+// TaskMetadata returns the ObjectMeta for the ClusterTask
 func (t *ClusterTask) TaskMetadata() metav1.ObjectMeta {
 	return t.ObjectMeta
 }
 
+// Copy returns a DeepCopy of the ClusterTask
 func (t *ClusterTask) Copy() TaskObject {
 	return t.DeepCopy()
+}
+
+// GetGroupVersionKind implements kmeta.OwnerRefable.
+func (*ClusterTask) GetGroupVersionKind() schema.GroupVersionKind {
+	return SchemeGroupVersion.WithKind(pipeline.ClusterTaskControllerName)
 }

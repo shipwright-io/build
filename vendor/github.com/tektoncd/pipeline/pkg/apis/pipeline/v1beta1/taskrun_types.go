@@ -138,18 +138,6 @@ func (trs *TaskRunStatus) GetRunningReason() string {
 	return TaskRunReasonRunning.String()
 }
 
-// MarkResourceNotConvertible adds a Warning-severity condition to the resource noting
-// that it cannot be converted to a higher version.
-func (trs *TaskRunStatus) MarkResourceNotConvertible(err *CannotConvertError) {
-	taskRunCondSet.Manage(trs).SetCondition(apis.Condition{
-		Type:     ConditionTypeConvertible,
-		Status:   corev1.ConditionFalse,
-		Severity: apis.ConditionSeverityWarning,
-		Reason:   err.Field,
-		Message:  err.Message,
-	})
-}
-
 // MarkResourceOngoing sets the ConditionSucceeded condition to ConditionUnknown
 // with the reason and message.
 func (trs *TaskRunStatus) MarkResourceOngoing(reason TaskRunReason, message string) {
@@ -409,6 +397,7 @@ func (tr *TaskRun) HasTimedOut(ctx context.Context) bool {
 	return runtime > timeout
 }
 
+// GetTimeout returns the timeout for the TaskRun, or the default if not specified
 func (tr *TaskRun) GetTimeout(ctx context.Context) time.Duration {
 	// Use the platform default is no timeout is set
 	if tr.Spec.Timeout == nil {
@@ -430,8 +419,8 @@ func (tr *TaskRun) IsPartOfPipeline() (bool, string, string) {
 		return false, "", ""
 	}
 
-	if pl, ok := tr.Labels[pipeline.GroupName+pipeline.PipelineLabelKey]; ok {
-		return true, pl, tr.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
+	if pl, ok := tr.Labels[pipeline.PipelineLabelKey]; ok {
+		return true, pl, tr.Labels[pipeline.PipelineRunLabelKey]
 	}
 
 	return false, "", ""

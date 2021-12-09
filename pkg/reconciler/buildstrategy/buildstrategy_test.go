@@ -15,7 +15,6 @@ import (
 
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/reconciler/buildstrategy"
 )
 
@@ -38,14 +37,13 @@ var _ = Describe("Reconcile BuildStrategy", func() {
 
 	JustBeforeEach(func() {
 		// Reconcile
-		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildstrategy.NewReconciler(testCtx, config.NewDefaultConfig(), manager)
+		reconciler = buildstrategy.NewReconciler(config.NewDefaultConfig(), manager)
 	})
 
 	Describe("Reconcile", func() {
 		Context("when request a new BuildStrategy", func() {
 			It("succeed without any error", func() {
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})

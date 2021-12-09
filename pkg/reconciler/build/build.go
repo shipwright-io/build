@@ -25,7 +25,6 @@ import (
 type ReconcileBuild struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	ctx                   context.Context
 	config                *config.Config
 	client                client.Client
 	scheme                *runtime.Scheme
@@ -33,9 +32,8 @@ type ReconcileBuild struct {
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
+func NewReconciler(c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
 	return &ReconcileBuild{
-		ctx:                   ctx,
 		config:                c,
 		client:                mgr.GetClient(),
 		scheme:                mgr.GetScheme(),
@@ -45,9 +43,9 @@ func NewReconciler(ctx context.Context, c *config.Config, mgr manager.Manager, o
 
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
-func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	// Set the ctx to be Background, as the top-level context for incoming requests.
-	ctx, cancel := context.WithTimeout(r.ctx, r.config.CtxTimeOut)
+	ctx, cancel := context.WithTimeout(ctx, r.config.CtxTimeOut)
 	defer cancel()
 
 	ctxlog.Debug(ctx, "start reconciling Build", namespace, request.Namespace, name, request.Name)

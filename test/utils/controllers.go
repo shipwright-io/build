@@ -14,7 +14,7 @@ import (
 // StartBuildControllers initialize an operator as if being call from main,
 // but it disables the prometheus metrics and leader election. This intended
 // to for testing.
-func (t *TestBuild) StartBuildControllers() (chan struct{}, error) {
+func (t *TestBuild) StartBuildControllers() error {
 	c := buildconfig.NewDefaultConfig()
 
 	// read configuration from environment variables, especially the GIT_CONTAINER_IMAGE
@@ -25,19 +25,17 @@ func (t *TestBuild) StartBuildControllers() (chan struct{}, error) {
 		LeaderElection:     false,
 		MetricsBindAddress: "0",
 	})
-
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	stopChan := make(chan struct{})
 	go func() {
 		// set stopChan with the channel for future closing
-		err := mgr.Start(stopChan)
+		err := mgr.Start(t.Context)
 		if err != nil {
 			panic(err)
 		}
 	}()
 
-	return stopChan, err
+	return nil
 }

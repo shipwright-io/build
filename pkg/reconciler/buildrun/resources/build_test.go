@@ -16,9 +16,9 @@ import (
 	"github.com/shipwright-io/build/test"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Build Resource", func() {
@@ -51,7 +51,7 @@ var _ = Describe("Build Resource", func() {
 			buildSample := ctl.DefaultBuild(buildName, "foostrategy", build.ClusterBuildStrategyKind)
 
 			// stub a GET API call with buildSample contents
-			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object := object.(type) {
 				case *build.Build:
 					buildSample.DeepCopyInto(object)
@@ -68,7 +68,7 @@ var _ = Describe("Build Resource", func() {
 		})
 		It("should not retrieve a missing build object when missing", func() {
 			// stub a GET API call with buildSample contents that returns "not found"
-			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object.(type) {
 				case *build.Build:
 					return errors.New("not found")

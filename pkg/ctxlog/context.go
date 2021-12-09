@@ -44,7 +44,10 @@ func NewContext(ctx context.Context, name string) context.Context {
 func ExtractLogger(ctx context.Context) logr.Logger {
 	log, ok := ctx.Value(loggerKey).(logr.Logger)
 	if !ok || log == nil {
-		return logf.NullLogger{}
+		log = logr.FromContext(ctx)
+		if log == nil {
+			return logf.NullLogger{}
+		}
 	}
 	return log
 }

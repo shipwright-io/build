@@ -19,11 +19,13 @@ package v1beta1
 import (
 	"context"
 
+	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"knative.dev/pkg/apis"
 )
 
 var _ apis.Defaultable = (*Task)(nil)
 
+// SetDefaults implements apis.Defaultable
 func (t *Task) SetDefaults(ctx context.Context) {
 	t.Spec.SetDefaults(ctx)
 }
@@ -32,5 +34,9 @@ func (t *Task) SetDefaults(ctx context.Context) {
 func (ts *TaskSpec) SetDefaults(ctx context.Context) {
 	for i := range ts.Params {
 		ts.Params[i].SetDefaults(ctx)
+	}
+	if config.FromContextOrDefaults(ctx).FeatureFlags.EnableAPIFields == "alpha" {
+		ctx = addContextParamSpec(ctx, ts.Params)
+		ts.Params = getContextParamSpecs(ctx)
 	}
 }

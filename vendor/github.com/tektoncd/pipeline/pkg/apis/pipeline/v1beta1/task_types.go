@@ -17,23 +17,27 @@ limitations under the License.
 package v1beta1
 
 import (
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"knative.dev/pkg/kmeta"
 )
 
 const (
 	// TaskRunResultType default task run result value
-	TaskRunResultType ResultType = "TaskRunResult"
+	TaskRunResultType ResultType = 1
 	// PipelineResourceResultType default pipeline result value
-	PipelineResourceResultType ResultType = "PipelineResourceResult"
+	PipelineResourceResultType = 2
 	// InternalTektonResultType default internal tekton result value
-	InternalTektonResultType ResultType = "InternalTektonResult"
+	InternalTektonResultType = 3
 	// UnknownResultType default unknown result type value
-	UnknownResultType ResultType = ""
+	UnknownResultType = 10
 )
 
 // +genclient
 // +genclient:noStatus
+// +genreconciler:krshapedlogic=false
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Task represents a collection of sequential steps that are run as part of a
@@ -52,16 +56,26 @@ type Task struct {
 	Spec TaskSpec `json:"spec"`
 }
 
+var _ kmeta.OwnerRefable = (*Task)(nil)
+
+// TaskSpec returns the task's spec
 func (t *Task) TaskSpec() TaskSpec {
 	return t.Spec
 }
 
+// TaskMetadata returns the task's ObjectMeta
 func (t *Task) TaskMetadata() metav1.ObjectMeta {
 	return t.ObjectMeta
 }
 
+// Copy returns a deep copy of the task
 func (t *Task) Copy() TaskObject {
 	return t.DeepCopy()
+}
+
+// GetGroupVersionKind implements kmeta.OwnerRefable.
+func (*Task) GetGroupVersionKind() schema.GroupVersionKind {
+	return SchemeGroupVersion.WithKind(pipeline.TaskControllerName)
 }
 
 // TaskSpec defines the desired state of Task.
@@ -170,8 +184,8 @@ type Sidecar struct {
 	Workspaces []WorkspaceUsage `json:"workspaces,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // TaskList contains a list of Task
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TaskList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -195,6 +209,7 @@ type TaskRef struct {
 }
 
 // Check that Pipeline may be validated and defaulted.
+
 // TaskKind defines the type of Task used by the pipeline.
 type TaskKind string
 

@@ -18,9 +18,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -202,8 +202,8 @@ func (c *Catalog) FakeClusterBuildStrategyNotFound(name string) error {
 // StubFunc is used to simulate the status of the Build
 // after a .Status().Update() call in the controller. This
 // receives a parameter to return an specific status state
-func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(object.Status.Registered).To(Equal(status))
@@ -216,8 +216,8 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReas
 
 // StubBuildUpdateOwnerReferences simulates and assert an updated
 // BuildRun object ownerreferences
-func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName string, isOwnerController *bool, blockOwnerDeletion *bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName string, isOwnerController *bool, blockOwnerDeletion *bool) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			Expect(object.OwnerReferences[0].Kind).To(Equal(ownerKind))
@@ -234,8 +234,8 @@ func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName str
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
 	b *build.BuildRun,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			b.DeepCopyInto(object)
@@ -250,8 +250,8 @@ func (c *Catalog) StubBuildRun(
 func (c *Catalog) StubBuildRunAndTaskRun(
 	b *build.BuildRun,
 	tr *v1beta1.TaskRun,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			b.DeepCopyInto(object)
@@ -269,8 +269,8 @@ func (c *Catalog) StubBuildRunAndTaskRun(
 func (c *Catalog) StubBuildAndTaskRun(
 	b *build.Build,
 	tr *v1beta1.TaskRun,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -284,8 +284,8 @@ func (c *Catalog) StubBuildAndTaskRun(
 }
 
 // StubBuildStatusReason asserts Status fields on a Build resource
-func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			if object.Status.Message != "" {
@@ -300,8 +300,8 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			if !tolerateEmptyStatus {
@@ -318,8 +318,8 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 }
 
 // StubBuildRunLabel asserts Label fields on a BuildRun resource
-func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
-	return func(context context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...crc.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			Expect(object.Labels[build.LabelBuild]).To(Equal(buildSample.Name))
@@ -334,8 +334,8 @@ func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context conte
 func (c *Catalog) StubBuildRunGetWithoutSA(
 	b *build.Build,
 	br *build.BuildRun,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -355,8 +355,8 @@ func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
 	br *build.BuildRun,
 	tr *v1beta1.TaskRun,
 	sa *corev1.ServiceAccount,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -381,8 +381,8 @@ func (c *Catalog) StubBuildRunGetWithSA(
 	b *build.Build,
 	br *build.BuildRun,
 	sa *corev1.ServiceAccount,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -406,8 +406,8 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	sa *corev1.ServiceAccount,
 	cb *build.ClusterBuildStrategy,
 	bs *build.BuildStrategy,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			if b != nil {
@@ -445,8 +445,8 @@ func (c *Catalog) StubBuildCRDs(
 	sa *corev1.ServiceAccount,
 	cb *build.ClusterBuildStrategy,
 	bs *build.BuildStrategy,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -478,8 +478,8 @@ func (c *Catalog) StubBuildCRDsPodAndTaskRun(
 	bs *build.BuildStrategy,
 	tr *v1beta1.TaskRun,
 	pod *corev1.Pod,
-) func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
