@@ -37,22 +37,13 @@ var _ = BeforeEach(func() {
 		fmt.Printf("fail to create namespace: %v, with error: %v", tb.Namespace, err)
 	}
 
-	// We store a channel for each Build controller instance we start,
-	// so that we can nuke the instance later inside the AfterEach Ginkgo
-	// block
-	tb.StopBuildControllers, err = tb.StartBuildControllers()
+	err = tb.StartBuildControllers()
 	if err != nil {
 		fmt.Println("fail to start the powerful Build controllers", err)
 	}
 })
 
 var _ = AfterEach(func() {
-	// Close the channel, meaning we nuke an instance of the Build
-	// operator
-	if tb.StopBuildControllers != nil {
-		close(tb.StopBuildControllers)
-	}
-
 	// Cleanup the namespace
 	if err := tb.DeleteNamespace(); err != nil {
 		fmt.Printf("failed to delete namespace: %v, with error: %v", tb.Namespace, err)
@@ -63,4 +54,7 @@ var _ = AfterEach(func() {
 		fmt.Println("\nLogs of the operator:")
 		fmt.Printf("%v\n", tb.BuildControllerLogBuffer)
 	}
+
+	// Cancel the context, this will stop the controllers
+	tb.StopBuildControllers()
 })

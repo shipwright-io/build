@@ -30,7 +30,6 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildrunctl "github.com/shipwright-io/build/pkg/reconciler/buildrun"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/shipwright-io/build/test"
@@ -62,7 +61,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 	// Basic stubs that simulate the output of all client calls in the Reconciler logic.
 	// This applies only for a Build and BuildRun client get.
-	getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+	getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			buildSample.DeepCopyInto(object)
@@ -111,10 +110,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 	// this ensures that overrides on the BuildRun resource can happen under each
 	// Context() BeforeEach() block
 	JustBeforeEach(func() {
-		// l := ctxlog.NewLogger("buildrun-controller-test")
-		// testCtx := ctxlog.NewParentContext(l)
-		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
+		reconciler = buildrunctl.NewReconciler(config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
 	})
 
 	Describe("Reconciling", func() {
@@ -137,7 +133,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// a TaskRun via the getClientStub, therefore we
 				// expect the Reconcile to Succeed because all resources
 				// exist
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
@@ -149,7 +145,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				stubGetCalls := ctl.StubBuildAndTaskRun(buildSample, taskRunSample)
 				client.GetCalls(stubGetCalls)
 
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(3))
@@ -161,7 +157,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				stubGetCalls := ctl.StubBuildRunAndTaskRun(buildRunSample, taskRunSample)
 				client.GetCalls(stubGetCalls)
 
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
@@ -187,7 +183,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Assert for none errors while we exit the Reconcile
 				// after updating the BuildRun status with the existing
 				// TaskRun one
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
@@ -203,7 +199,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				client.GetCalls(ctl.StubBuildRunAndTaskRun(buildRunSample, taskRunSample))
 
 				// Call the reconciler
-				_, err := reconciler.Reconcile(taskRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 
 				// Expect no error
 				Expect(err).ToNot(HaveOccurred())
@@ -232,7 +228,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Call the reconciler
-				_, err := reconciler.Reconcile(taskRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 
 				// Expect no error
 				Expect(err).ToNot(HaveOccurred())
@@ -253,7 +249,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// controller should not panic.
 				buildRunSample.Status.BuildSpec.Strategy = nil
 				Expect(func() {
-					result, err := reconciler.Reconcile(taskRunRequest)
+					result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).ToNot(BeNil())
 				}).ShouldNot(Panic())
@@ -296,7 +292,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Assert for none errors while we exit the Reconcile
 				// after updating the BuildRun status with the existing
 				// TaskRun one
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
@@ -323,7 +319,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
@@ -350,7 +346,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 				Expect(client.GetCallCount()).To(Equal(2))
@@ -379,7 +375,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				cancelPatchCalled := false
 				cancelUpdateCalled := false
 				// override the updateClientStub so we can see the update on the BuildRun condition
-				stubUpdateCalls := func(context context.Context, object runtime.Object, opts ...crc.UpdateOption) error {
+				stubUpdateCalls := func(context context.Context, object crc.Object, opts ...crc.UpdateOption) error {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
@@ -391,7 +387,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					return nil
 				}
 				statusWriter.UpdateCalls(stubUpdateCalls)
-				stubPatchCalls := func(context context.Context, object runtime.Object, patch crc.Patch, opts ...crc.PatchOption) error {
+				stubPatchCalls := func(context context.Context, object crc.Object, patch crc.Patch, opts ...crc.PatchOption) error {
 					switch v := object.(type) {
 					case *v1beta1.TaskRun:
 						if v.Name == taskRunSample.Name {
@@ -402,7 +398,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				}
 				client.PatchCalls(stubPatchCalls)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
 				Expect(cancelPatchCalled).To(BeTrue())
@@ -418,7 +414,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					},
 				}
 
-				_, err = reconciler.Reconcile(buildRunRequest)
+				_, err = reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
 				Expect(cancelUpdateCalled).To(BeTrue())
@@ -445,7 +441,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
@@ -467,7 +463,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.PodWithInitContainerStatus("foobar", "init-foobar")),
 				)
 
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 
@@ -527,7 +523,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// fail with a panic due to a nil pointer dereference:
 				// The pod has no container details and therefore the
 				// look-up logic will find no container (result is nil).
-				result, err := reconciler.Reconcile(taskRunRequest)
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 			})
@@ -564,7 +560,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				cancelUpdateCalled := false
 				// override the updateClientStub so we can see the update on the BuildRun condition
-				stubUpdateCalls := func(context context.Context, object runtime.Object, opts ...crc.UpdateOption) error {
+				stubUpdateCalls := func(context context.Context, object crc.Object, opts ...crc.UpdateOption) error {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
@@ -577,7 +573,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				}
 				statusWriter.UpdateCalls(stubUpdateCalls)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
 
@@ -589,7 +585,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Buildrun
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -601,7 +597,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				}
 				client.GetCalls(stubGetCalls)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(resources.IsClientStatusUpdateError(err)).To(BeFalse())
 			})
@@ -611,7 +607,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a BuildRun
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -623,7 +619,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				}
 				client.GetCalls(stubGetCalls)
 
-				statusWriter.UpdateCalls(func(_ context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.UpdateOption) error {
 					switch buildRun := object.(type) {
 					case *build.BuildRun:
 						if buildRun.Status.IsFailed(build.Succeeded) {
@@ -633,7 +629,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					return nil
 				})
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(BeNil())
 				Expect(resources.IsClientStatusUpdateError(err)).To(BeTrue())
 			})
@@ -642,7 +638,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Build and Buildrun, none TaskRun
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -673,7 +669,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				// we mark the BuildRun as Failed and do not reconcile again
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(client.GetCallCount()).To(Equal(4))
 				Expect(client.StatusCallCount()).To(Equal(2))
@@ -683,7 +679,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Build, BuildRun and a random error when
 				// retrieving a service account
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -700,7 +696,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				client.GetCalls(stubGetCalls)
 
 				// we reconcile again on system call errors
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("something wrong happen"))
 				Expect(client.GetCallCount()).To(Equal(4))
@@ -736,7 +732,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				// we mark the BuildRun as Failed and do not reconcile again
 				Expect(err).ToNot(HaveOccurred())
 			})
@@ -747,7 +743,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// stub get calls so that on namespaced strategy retrieval, we throw a random error
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -768,7 +764,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// but none BuildStrategy
 				client.GetCalls(stubGetCalls)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				// we reconcile again
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("something wrong happen"))
@@ -804,7 +800,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				// we mark the BuildRun as Failed and do not reconcile again
 				Expect(err).ToNot(HaveOccurred())
 			})
@@ -815,7 +811,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// stub get calls so that on cluster strategy retrieval, we throw a random error
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -834,7 +830,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				client.GetCalls(stubGetCalls)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				// we reconcile again
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("something wrong happen"))
@@ -870,7 +866,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				// we mark the BuildRun as Failed and do not reconcile again
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(client.GetCallCount()).To(Equal(4))
 				Expect(client.StatusCallCount()).To(Equal(2))
@@ -891,7 +887,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// We do not expect an error because all resources are in place
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(client.GetCallCount()).To(Equal(5))
 				Expect(client.StatusCallCount()).To(Equal(2))
@@ -928,7 +924,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// We do not expect an error because we fail the BuildRun,
 				// update its Status.Condition and stop reconciling
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(client.GetCallCount()).To(Equal(5))
 				Expect(client.StatusCallCount()).To(Equal(2))
@@ -964,14 +960,13 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-				reconciler = buildrunctl.NewReconciler(testCtx, config.NewDefaultConfig(), manager,
+				reconciler = buildrunctl.NewReconciler(config.NewDefaultConfig(), manager,
 					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
 						return fmt.Errorf("foobar error")
 					})
 
 				// we mark the BuildRun as Failed and do not reconcile again
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(client.StatusCallCount()).To(Equal(2))
 			})
@@ -991,7 +986,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Stub the create calls for a TaskRun
-				client.CreateCalls(func(context context.Context, object runtime.Object, _ ...crc.CreateOption) error {
+				client.CreateCalls(func(context context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
 					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
@@ -999,7 +994,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					return nil
 				})
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(client.CreateCallCount()).To(Equal(1))
@@ -1020,7 +1015,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Stub the create calls for a TaskRun
-				client.CreateCalls(func(context context.Context, object runtime.Object, _ ...crc.CreateOption) error {
+				client.CreateCalls(func(context context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
 					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
@@ -1028,13 +1023,13 @@ var _ = Describe("Reconcile BuildRun", func() {
 					return nil
 				})
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 			})
 			It("stops creation when a FALSE registered status of the build occurs", func() {
 				// Init the Build with registered status false
 				buildSample = ctl.DefaultBuildWithFalseRegistered(buildName, strategyName, build.ClusterBuildStrategyKind)
-				getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -1065,7 +1060,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				// we mark the BuildRun as Failed and do not reconcile again
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(client.StatusCallCount()).To(Equal(1))
 			})
@@ -1077,7 +1072,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(fmt.Sprintf("the Build is not yet validated, build: %s", buildName)))
 				Expect(client.StatusCallCount()).To(Equal(0))
@@ -1102,7 +1097,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Stub the create calls for a TaskRun
-				client.CreateCalls(func(context context.Context, object runtime.Object, _ ...crc.CreateOption) error {
+				client.CreateCalls(func(context context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
 					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
@@ -1110,7 +1105,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					return nil
 				})
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(client.CreateCallCount()).To(Equal(1))
@@ -1142,7 +1137,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(client.CreateCallCount()).To(Equal(1))
@@ -1171,7 +1166,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(client.CreateCallCount()).To(Equal(1))
@@ -1202,7 +1197,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 				client.UpdateCalls(clientUpdateCalls)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -1218,7 +1213,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultServiceAccount(saName)),
 				)
 
-				statusWriter.UpdateCalls(func(_ context.Context, object runtime.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.UpdateOption) error {
 					switch buildRun := object.(type) {
 					case *build.BuildRun:
 						if buildRun.Status.IsFailed(build.Succeeded) {
@@ -1228,7 +1223,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					return nil
 				})
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				// we expect an error because a Client.Status Update failed and we expect another reconciliation
 				// to take place
 				Expect(err).ToNot(BeNil())
@@ -1248,7 +1243,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvNameCanNotBeBlank, "name for environment variable must not be blank")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -1268,7 +1263,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvNameCanNotBeBlank, "name for environment variable must not be blank")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -1289,7 +1284,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified, "only one of value or valueFrom must be specified")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -1305,7 +1300,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.BuildReason(build.Succeeded), "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -1325,7 +1320,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.BuildReason(build.Succeeded), "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(buildRunRequest)
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 

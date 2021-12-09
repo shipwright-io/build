@@ -43,7 +43,7 @@ type TestBuild struct {
 	KubeConfig               *rest.Config
 	Clientset                *kubernetes.Clientset
 	Namespace                string
-	StopBuildControllers     chan struct{}
+	StopBuildControllers     context.CancelFunc
 	BuildClientSet           *buildClient.Clientset
 	PipelineClientSet        *tektonClient.Clientset
 	Catalog                  test.Catalog
@@ -78,6 +78,8 @@ func NewTestBuild() (*TestBuild, error) {
 		return nil, err
 	}
 
+	ctx, cancelFn := context.WithCancel(ctx)
+
 	return &TestBuild{
 		// TODO: interval and timeout can be configured via ENV vars
 		Interval:                 time.Second * 3,
@@ -89,6 +91,7 @@ func NewTestBuild() (*TestBuild, error) {
 		PipelineClientSet:        pipelineClientSet,
 		Context:                  ctx,
 		BuildControllerLogBuffer: logBuffer,
+		StopBuildControllers:     cancelFn,
 	}, nil
 }
 

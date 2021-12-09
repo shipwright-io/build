@@ -5,15 +5,18 @@
 package fakes
 
 import (
+	"context"
 	"net/http"
 	"sync"
 
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -117,6 +120,16 @@ type FakeManager struct {
 	getConfigReturnsOnCall map[int]struct {
 		result1 *rest.Config
 	}
+	GetControllerOptionsStub        func() v1alpha1.ControllerConfigurationSpec
+	getControllerOptionsMutex       sync.RWMutex
+	getControllerOptionsArgsForCall []struct {
+	}
+	getControllerOptionsReturns struct {
+		result1 v1alpha1.ControllerConfigurationSpec
+	}
+	getControllerOptionsReturnsOnCall map[int]struct {
+		result1 v1alpha1.ControllerConfigurationSpec
+	}
 	GetEventRecorderForStub        func(string) record.EventRecorder
 	getEventRecorderForMutex       sync.RWMutex
 	getEventRecorderForArgsForCall []struct {
@@ -137,6 +150,16 @@ type FakeManager struct {
 	}
 	getFieldIndexerReturnsOnCall map[int]struct {
 		result1 client.FieldIndexer
+	}
+	GetLoggerStub        func() logr.Logger
+	getLoggerMutex       sync.RWMutex
+	getLoggerArgsForCall []struct {
+	}
+	getLoggerReturns struct {
+		result1 logr.Logger
+	}
+	getLoggerReturnsOnCall map[int]struct {
+		result1 logr.Logger
 	}
 	GetRESTMapperStub        func() meta.RESTMapper
 	getRESTMapperMutex       sync.RWMutex
@@ -179,10 +202,10 @@ type FakeManager struct {
 	setFieldsReturnsOnCall map[int]struct {
 		result1 error
 	}
-	StartStub        func(<-chan struct{}) error
+	StartStub        func(context.Context) error
 	startMutex       sync.RWMutex
 	startArgsForCall []struct {
-		arg1 <-chan struct{}
+		arg1 context.Context
 	}
 	startReturns struct {
 		result1 error
@@ -706,6 +729,59 @@ func (fake *FakeManager) GetConfigReturnsOnCall(i int, result1 *rest.Config) {
 	}{result1}
 }
 
+func (fake *FakeManager) GetControllerOptions() v1alpha1.ControllerConfigurationSpec {
+	fake.getControllerOptionsMutex.Lock()
+	ret, specificReturn := fake.getControllerOptionsReturnsOnCall[len(fake.getControllerOptionsArgsForCall)]
+	fake.getControllerOptionsArgsForCall = append(fake.getControllerOptionsArgsForCall, struct {
+	}{})
+	stub := fake.GetControllerOptionsStub
+	fakeReturns := fake.getControllerOptionsReturns
+	fake.recordInvocation("GetControllerOptions", []interface{}{})
+	fake.getControllerOptionsMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeManager) GetControllerOptionsCallCount() int {
+	fake.getControllerOptionsMutex.RLock()
+	defer fake.getControllerOptionsMutex.RUnlock()
+	return len(fake.getControllerOptionsArgsForCall)
+}
+
+func (fake *FakeManager) GetControllerOptionsCalls(stub func() v1alpha1.ControllerConfigurationSpec) {
+	fake.getControllerOptionsMutex.Lock()
+	defer fake.getControllerOptionsMutex.Unlock()
+	fake.GetControllerOptionsStub = stub
+}
+
+func (fake *FakeManager) GetControllerOptionsReturns(result1 v1alpha1.ControllerConfigurationSpec) {
+	fake.getControllerOptionsMutex.Lock()
+	defer fake.getControllerOptionsMutex.Unlock()
+	fake.GetControllerOptionsStub = nil
+	fake.getControllerOptionsReturns = struct {
+		result1 v1alpha1.ControllerConfigurationSpec
+	}{result1}
+}
+
+func (fake *FakeManager) GetControllerOptionsReturnsOnCall(i int, result1 v1alpha1.ControllerConfigurationSpec) {
+	fake.getControllerOptionsMutex.Lock()
+	defer fake.getControllerOptionsMutex.Unlock()
+	fake.GetControllerOptionsStub = nil
+	if fake.getControllerOptionsReturnsOnCall == nil {
+		fake.getControllerOptionsReturnsOnCall = make(map[int]struct {
+			result1 v1alpha1.ControllerConfigurationSpec
+		})
+	}
+	fake.getControllerOptionsReturnsOnCall[i] = struct {
+		result1 v1alpha1.ControllerConfigurationSpec
+	}{result1}
+}
+
 func (fake *FakeManager) GetEventRecorderFor(arg1 string) record.EventRecorder {
 	fake.getEventRecorderForMutex.Lock()
 	ret, specificReturn := fake.getEventRecorderForReturnsOnCall[len(fake.getEventRecorderForArgsForCall)]
@@ -817,6 +893,59 @@ func (fake *FakeManager) GetFieldIndexerReturnsOnCall(i int, result1 client.Fiel
 	}
 	fake.getFieldIndexerReturnsOnCall[i] = struct {
 		result1 client.FieldIndexer
+	}{result1}
+}
+
+func (fake *FakeManager) GetLogger() logr.Logger {
+	fake.getLoggerMutex.Lock()
+	ret, specificReturn := fake.getLoggerReturnsOnCall[len(fake.getLoggerArgsForCall)]
+	fake.getLoggerArgsForCall = append(fake.getLoggerArgsForCall, struct {
+	}{})
+	stub := fake.GetLoggerStub
+	fakeReturns := fake.getLoggerReturns
+	fake.recordInvocation("GetLogger", []interface{}{})
+	fake.getLoggerMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeManager) GetLoggerCallCount() int {
+	fake.getLoggerMutex.RLock()
+	defer fake.getLoggerMutex.RUnlock()
+	return len(fake.getLoggerArgsForCall)
+}
+
+func (fake *FakeManager) GetLoggerCalls(stub func() logr.Logger) {
+	fake.getLoggerMutex.Lock()
+	defer fake.getLoggerMutex.Unlock()
+	fake.GetLoggerStub = stub
+}
+
+func (fake *FakeManager) GetLoggerReturns(result1 logr.Logger) {
+	fake.getLoggerMutex.Lock()
+	defer fake.getLoggerMutex.Unlock()
+	fake.GetLoggerStub = nil
+	fake.getLoggerReturns = struct {
+		result1 logr.Logger
+	}{result1}
+}
+
+func (fake *FakeManager) GetLoggerReturnsOnCall(i int, result1 logr.Logger) {
+	fake.getLoggerMutex.Lock()
+	defer fake.getLoggerMutex.Unlock()
+	fake.GetLoggerStub = nil
+	if fake.getLoggerReturnsOnCall == nil {
+		fake.getLoggerReturnsOnCall = make(map[int]struct {
+			result1 logr.Logger
+		})
+	}
+	fake.getLoggerReturnsOnCall[i] = struct {
+		result1 logr.Logger
 	}{result1}
 }
 
@@ -1040,11 +1169,11 @@ func (fake *FakeManager) SetFieldsReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeManager) Start(arg1 <-chan struct{}) error {
+func (fake *FakeManager) Start(arg1 context.Context) error {
 	fake.startMutex.Lock()
 	ret, specificReturn := fake.startReturnsOnCall[len(fake.startArgsForCall)]
 	fake.startArgsForCall = append(fake.startArgsForCall, struct {
-		arg1 <-chan struct{}
+		arg1 context.Context
 	}{arg1})
 	stub := fake.StartStub
 	fakeReturns := fake.startReturns
@@ -1065,13 +1194,13 @@ func (fake *FakeManager) StartCallCount() int {
 	return len(fake.startArgsForCall)
 }
 
-func (fake *FakeManager) StartCalls(stub func(<-chan struct{}) error) {
+func (fake *FakeManager) StartCalls(stub func(context.Context) error) {
 	fake.startMutex.Lock()
 	defer fake.startMutex.Unlock()
 	fake.StartStub = stub
 }
 
-func (fake *FakeManager) StartArgsForCall(i int) <-chan struct{} {
+func (fake *FakeManager) StartArgsForCall(i int) context.Context {
 	fake.startMutex.RLock()
 	defer fake.startMutex.RUnlock()
 	argsForCall := fake.startArgsForCall[i]
@@ -1122,10 +1251,14 @@ func (fake *FakeManager) Invocations() map[string][][]interface{} {
 	defer fake.getClientMutex.RUnlock()
 	fake.getConfigMutex.RLock()
 	defer fake.getConfigMutex.RUnlock()
+	fake.getControllerOptionsMutex.RLock()
+	defer fake.getControllerOptionsMutex.RUnlock()
 	fake.getEventRecorderForMutex.RLock()
 	defer fake.getEventRecorderForMutex.RUnlock()
 	fake.getFieldIndexerMutex.RLock()
 	defer fake.getFieldIndexerMutex.RUnlock()
+	fake.getLoggerMutex.RLock()
+	defer fake.getLoggerMutex.RUnlock()
 	fake.getRESTMapperMutex.RLock()
 	defer fake.getRESTMapperMutex.RUnlock()
 	fake.getSchemeMutex.RLock()

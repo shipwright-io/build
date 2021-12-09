@@ -12,7 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +21,6 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildController "github.com/shipwright-io/build/pkg/reconciler/build"
 	"github.com/shipwright-io/build/test"
 )
@@ -56,7 +54,7 @@ var _ = Describe("Reconcile Build", func() {
 		// Fake the client GET calls when reconciling,
 		// in order to get our Build CRD instance
 		client = &fakes.FakeClient{}
-		client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+		client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 			switch object := object.(type) {
 			case *build.Build:
 				buildSample.DeepCopyInto(object)
@@ -77,8 +75,7 @@ var _ = Describe("Reconcile Build", func() {
 		buildSample = ctl.BuildWithClusterBuildStrategy(buildName, namespace, buildStrategyName, registrySecret)
 		clusterBuildStrategySample = ctl.ClusterBuildStrategy(buildStrategyName)
 		// Reconcile
-		testCtx := ctxlog.NewContext(context.TODO(), "fake-logger")
-		reconciler = buildController.NewReconciler(testCtx, config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
+		reconciler = buildController.NewReconciler(config.NewDefaultConfig(), manager, controllerutil.SetControllerReference)
 	})
 
 	Describe("Reconcile", func() {
@@ -92,7 +89,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecSourceSecretRefNotFound, "referenced secret non-existing not found")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
@@ -105,7 +102,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -121,7 +118,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -141,7 +138,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecBuilderSecretRefNotFound, "referenced secret non-existing not found")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
@@ -157,7 +154,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -173,7 +170,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -186,14 +183,14 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecOutputSecretRefNotFound, fmt.Sprintf("referenced secret %s not found", registrySecret))
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
 			It("succeed when the secret exists", func() {
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -209,7 +206,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -228,7 +225,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.MultipleSecretRefNotFound, "missing secrets are non-existing-output,non-existing-source")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
@@ -239,7 +236,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -255,7 +252,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.ClusterBuildStrategyNotFound, fmt.Sprintf("clusterBuildStrategy %s does not exist", buildStrategyName))
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
@@ -263,7 +260,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -279,7 +276,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -299,7 +296,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildStrategyNotFound, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
@@ -307,7 +304,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -321,7 +318,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -340,7 +337,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildStrategyNotFound, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -348,7 +345,7 @@ var _ = Describe("Reconcile Build", func() {
 			It("default to BuildStrategy and succeed if the strategy exists", func() {
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -362,7 +359,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -379,7 +376,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.RemoteRepositoryUnreachable, "invalid source url")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
@@ -394,7 +391,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.RemoteRepositoryUnreachable, "remote repository unreachable")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
@@ -405,7 +402,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -418,7 +415,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, build.AllValidationsSucceeded)
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -430,7 +427,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -443,7 +440,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, build.AllValidationsSucceeded)
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -457,7 +454,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -471,7 +468,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, build.AllValidationsSucceeded)
 				statusWriter.UpdateCalls(statusCall)
 
-				result, err := reconciler.Reconcile(request)
+				result, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
@@ -487,7 +484,7 @@ var _ = Describe("Reconcile Build", func() {
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
-				client.GetCalls(func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+				client.GetCalls(func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -511,7 +508,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvNameCanNotBeBlank, "name for environment variable must not be blank")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -531,7 +528,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvNameCanNotBeBlank, "name for environment variable must not be blank")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -552,7 +549,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified, "only one of value or valueFrom must be specified")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -568,7 +565,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.BuildReason(build.Succeeded), "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 
@@ -588,7 +585,7 @@ var _ = Describe("Reconcile Build", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.BuildReason(build.Succeeded), "all validations succeeded")
 				statusWriter.UpdateCalls(statusCall)
 
-				_, err := reconciler.Reconcile(request)
+				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 

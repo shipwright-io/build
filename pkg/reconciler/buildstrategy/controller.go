@@ -22,7 +22,7 @@ import (
 // and Start it when the Manager is Started.
 func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
 	ctx = ctxlog.NewContext(ctx, "buildstrategy-controller")
-	return add(ctx, mgr, NewReconciler(ctx, c, mgr), c.Controllers.BuildStrategy.MaxConcurrentReconciles)
+	return add(ctx, mgr, NewReconciler(c, mgr), c.Controllers.BuildStrategy.MaxConcurrentReconciles)
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler

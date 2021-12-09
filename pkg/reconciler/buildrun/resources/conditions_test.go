@@ -17,10 +17,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis"
+	crc "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Conditions", func() {
@@ -145,7 +145,7 @@ var _ = Describe("Conditions", func() {
 		It("updates BuildRun condition when TaskRun fails and pod not found", func() {
 
 			// stub a GET API call that fails with not found
-			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object.(type) {
 				case *corev1.Pod:
 					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -202,7 +202,7 @@ var _ = Describe("Conditions", func() {
 			}
 
 			// stub a GET API call with taskRunGeneratedPod
-			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object := object.(type) {
 				case *corev1.Pod:
 					taskRunGeneratedPod.DeepCopyInto(object)
@@ -248,7 +248,7 @@ var _ = Describe("Conditions", func() {
 			}
 
 			// stub a GET API call with to pass the created pod
-			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object := object.(type) {
 				case *corev1.Pod:
 					failedTaskRunEvictedPod.DeepCopyInto(object)
@@ -291,7 +291,7 @@ var _ = Describe("Conditions", func() {
 			}
 
 			// stub a GET API call with the above taskRunGeneratedPod spec
-			getClientStub := func(context context.Context, nn types.NamespacedName, object runtime.Object) error {
+			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object := object.(type) {
 				case *corev1.Pod:
 					taskRunGeneratedPod.DeepCopyInto(object)
