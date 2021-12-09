@@ -13,6 +13,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining ParamValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
 - [Canceling a `BuildRun`](#canceling-a-buildrun)
+  - [Specifying Environment Variables](#specifying-environment-variables)
 - [BuildRun Status](#buildrun-status)
   - [Understanding the state of a BuildRun](#understanding-the-state-of-a-buildrun)
   - [Understanding failed BuildRuns](#understanding-failed-buildruns)
@@ -132,9 +133,9 @@ spec:
     name: pipeline
 ```
 
-You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you.
+You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you. The name of the generated service account is the name of the BuildRun.
 
-_**Note**_: When the SA is not defined, the `BuildRun` will default to the `default` SA in the namespace.
+_**Note**_: When the service account is not defined, the `BuildRun` will use the `pipeline` service account if it exists in the namespace, and fall back to the `default` service account.
 
 ## Canceling a `BuildRun`
 
