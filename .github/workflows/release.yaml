@@ -18,6 +18,7 @@ jobs:
       id-token: write  # To be able to get OIDC ID token to sign images.
       contents: write  # To be able to update releases.
       packages: write  # To be able to push images and signatures.
+      pull-requests: write # To be able to create pull requests
     env:
       IMAGE_HOST: ghcr.io
       IMAGE_NAMESPACE: ${{ github.repository }}
