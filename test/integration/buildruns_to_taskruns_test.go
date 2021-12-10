@@ -5,7 +5,6 @@
 package integration_test
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -18,9 +17,7 @@ import (
 	"github.com/shipwright-io/build/test"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
@@ -32,15 +29,12 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		buildRunSample []byte
 	)
 
-	var setupBuildAndBuildRun = func(buildDef []byte, buildRunDef []byte, strategy ...string) (watch.Interface, *v1alpha1.Build, *v1alpha1.BuildRun) {
+	var setupBuildAndBuildRun = func(buildDef []byte, buildRunDef []byte, strategy ...string) (*v1alpha1.Build, *v1alpha1.BuildRun) {
 
 		var strategyName = STRATEGY + tb.Namespace
 		if len(strategy) > 0 {
 			strategyName = strategy[0]
 		}
-
-		buildRunWitcher, err := tb.BuildClientSet.ShipwrightV1alpha1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{})
-		Expect(err).To(BeNil())
 
 		buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(BUILD+tb.Namespace, strategyName, buildDef)
 		Expect(err).To(BeNil())
@@ -54,7 +48,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 		//TODO: consider how to deal with buildObject or buildRunObject
-		return buildRunWitcher, buildObject, buildRunObject
+		return buildObject, buildRunObject
 	}
 
 	var WithCustomClusterBuildStrategy = func(data []byte, f func()) {
@@ -103,122 +97,87 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 	Context("when buildrun uses conditions", func() {
 		Context("when condition status unknown", func() {
-			It("reflects a change from pending to running reason", func() {
-				buildRunWitcher, _, _ := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun))
-
-				// use a fakeTime to simplify tests
-				fakeTime := time.Date(1989, 05, 15, 00, 01, 01, 651387237, time.UTC)
-
-				var timeout = time.After(tb.TimeOut)
-				go func() {
-					<-timeout
-					buildRunWitcher.Stop()
-				}()
-
-				var seq = []*v1alpha1.Condition{}
-				for event := range buildRunWitcher.ResultChan() {
-					condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
-					if condition != nil {
-						condition.LastTransitionTime = metav1.Time{Time: fakeTime}
-						seq = append(seq, condition)
+			It("eventually reports Running as the reason", func() {
+				_, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun))
+				fmt.Fprintf(GinkgoWriter, "Waiting for BuildRun to have success status %s and reason %s", corev1.ConditionUnknown, "Running")
+				err := wait.PollImmediate(tb.Interval, tb.TimeOut, func() (bool, error) {
+					updated, err := tb.GetBR(buildRun.Name)
+					if err != nil {
+						return false, err
 					}
-
-					// Pending -> Running
-					if condition != nil && condition.Reason == "Running" {
-						buildRunWitcher.Stop()
+					succeeded := updated.Status.GetCondition(v1alpha1.Succeeded)
+					if succeeded == nil {
+						return false, nil
 					}
-				}
-				// consider a longer sequence, for events where the cluster have
-				// insufficient resources, where the Reason will be ExceededNodeResources.
-				Expect(len(seq) >= 2).To(Equal(true))
-
-				// ensure the conditions move eventually from unknown into running
-				Expect(seq).Should(ContainElement(&v1alpha1.Condition{
-					Type:               v1alpha1.Succeeded,
-					Status:             corev1.ConditionUnknown,
-					LastTransitionTime: metav1.Time{Time: fakeTime},
-					Reason:             "Pending",
-					Message:            "Pending",
-				}))
-				Expect(seq).Should(ContainElement(&v1alpha1.Condition{
-					Type:               v1alpha1.Succeeded,
-					Status:             corev1.ConditionUnknown,
-					LastTransitionTime: metav1.Time{Time: fakeTime},
-					Reason:             "Running",
-					Message:            "Not all Steps in the Task have finished executing",
-				}))
+					if succeeded.Status != corev1.ConditionUnknown {
+						fmt.Fprintf(GinkgoWriter, "BuildRun success status is %s", succeeded.Status)
+						return true, nil
+					}
+					if succeeded.Reason != "Running" {
+						fmt.Fprintf(GinkgoWriter, "BuildRun success reason is %s", succeeded.Reason)
+						return false, nil
+					}
+					return true, nil
+				})
+				// Error will either be a failure, or a timeout waiting for the "Running" reason to appear
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
 		Context("when condition status is false", func() {
 			It("reflects a timeout", func() {
-				buildRunWitcher, build, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSWithShortTimeOut), []byte(test.MinimalBuildRun))
-
-				var timeout = time.After(tb.TimeOut)
-				go func() {
-					<-timeout
-					buildRunWitcher.Stop()
-				}()
-
-				var seq = []*v1alpha1.Condition{}
-				for event := range buildRunWitcher.ResultChan() {
-					condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
-					if condition != nil {
-						seq = append(seq, condition)
+				_, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSWithShortTimeOut), []byte(test.MinimalBuildRun))
+				fmt.Fprintf(GinkgoWriter, "Waiting for BuildRun to have success status %s", corev1.ConditionFalse)
+				err := wait.PollImmediate(tb.Interval, tb.TimeOut, func() (bool, error) {
+					buildRun, err := tb.GetBR(buildRun.Name)
+					if err != nil {
+						return false, err
 					}
-
-					// Pending -> Running
-					if condition != nil && condition.Status == corev1.ConditionFalse {
-						buildRunWitcher.Stop()
+					succeeded := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+					if succeeded == nil {
+						return false, nil
 					}
-				}
+					fmt.Fprintf(GinkgoWriter, "BuildRun success status is %s", succeeded.Status)
+					return succeeded.Status == corev1.ConditionFalse, nil
+				})
 
-				lastIdx := len(seq) - 1
-				Expect(lastIdx).To(BeNumerically(">", 0))
-				Expect(seq[lastIdx].Type).To(Equal(v1alpha1.Succeeded))
-				Expect(seq[lastIdx].Status).To(Equal(corev1.ConditionFalse))
-				Expect(seq[lastIdx].Reason).To(Equal("BuildRunTimeout"))
-				Expect(seq[lastIdx].Message).To(Equal(fmt.Sprintf("BuildRun %s failed to finish within %v", buildRun.Name, build.Spec.Timeout.Duration)))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(buildRun).NotTo(BeNil())
+				Expect(buildRun.Status.GetCondition(v1alpha1.Succeeded)).NotTo(BeNil())
+				Expect(buildRun.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+				Expect(buildRun.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
 			})
 
 			It("reflects a failed reason", func() {
 				WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategySingleStepKanikoError), func() {
-					buildRunWitcher, _, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
-
-					var timeout = time.After(tb.TimeOut)
-					go func() {
-						<-timeout
-						buildRunWitcher.Stop()
-					}()
-
-					var seq = []*v1alpha1.Condition{}
-					for event := range buildRunWitcher.ResultChan() {
-						condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
-						if condition != nil {
-							seq = append(seq, condition)
+					_, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+					fmt.Fprintf(GinkgoWriter, "Waiting for BuildRun to have success status %s", corev1.ConditionFalse)
+					err := wait.PollImmediate(tb.Interval, tb.TimeOut, func() (bool, error) {
+						buildRun, err := tb.GetBR(buildRun.Name)
+						if err != nil {
+							return false, err
 						}
-
-						if condition != nil && condition.Status == corev1.ConditionFalse {
-							buildRunWitcher.Stop()
+						succeeded := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+						if succeeded == nil {
+							return false, nil
 						}
-					}
-
-					buildRun, err = tb.GetBR(buildRun.Name)
-					Expect(err).ToNot(HaveOccurred())
+						fmt.Fprintf(GinkgoWriter, "BuildRun success status is %s", succeeded.Status)
+						return succeeded.Status == corev1.ConditionFalse, nil
+					})
+					Expect(err).NotTo(HaveOccurred())
 					Expect(buildRun.Status.CompletionTime).ToNot(BeNil())
 
 					taskRun, err := tb.GetTaskRunFromBuildRun(buildRun.Name)
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					Expect(buildRun.Status.FailedAt.Pod).To(Equal(taskRun.Status.PodName))
 					Expect(buildRun.Status.FailedAt.Container).To(Equal("step-" + "step-build-and-push"))
 
-					lastIdx := len(seq) - 1
-					Expect(lastIdx).To(BeNumerically(">", 0))
-					Expect(seq[lastIdx].Type).To(Equal(v1alpha1.Succeeded))
-					Expect(seq[lastIdx].Status).To(Equal(corev1.ConditionFalse))
-					Expect(seq[lastIdx].Reason).To(Equal("Failed"))
-					Expect(seq[lastIdx].Message).To(ContainSubstring("buildrun step %s failed in pod %s", "step-step-build-and-push", taskRun.Status.PodName))
+					succeeded := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+					Expect(succeeded).NotTo(BeNil())
+					Expect(succeeded.Status).To(Equal(corev1.ConditionFalse))
+					Expect(succeeded.Reason).To(Equal("Failed"))
+					Expect(succeeded.Message).To(ContainSubstring("buildrun step %s failed in pod %s", "step-step-build-and-push", taskRun.Status.PodName))
 				})
 			})
 		})
@@ -226,32 +185,25 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		Context("when condition status true", func() {
 			It("should reflect the taskrun succeeded reason in the buildrun condition", func() {
 				WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategyNoOp), func() {
-					buildRunWitcher, _, _ := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
-
-					var timeout = time.After(tb.TimeOut)
-					go func() {
-						<-timeout
-						buildRunWitcher.Stop()
-					}()
-
-					var seq = []*v1alpha1.Condition{}
-					for event := range buildRunWitcher.ResultChan() {
-						condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
-						if condition != nil {
-							seq = append(seq, condition)
+					_, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+					fmt.Fprintf(GinkgoWriter, "Waiting for BuildRun to have success status %s", corev1.ConditionTrue)
+					err := wait.PollImmediate(tb.Interval, tb.TimeOut, func() (bool, error) {
+						buildRun, err := tb.GetBR(buildRun.Name)
+						if err != nil {
+							return false, err
 						}
-
-						if condition != nil && condition.Status == corev1.ConditionTrue {
-							buildRunWitcher.Stop()
+						succeeded := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+						if succeeded == nil {
+							return false, nil
 						}
-					}
-
-					lastIdx := len(seq) - 1
-					Expect(lastIdx).To(BeNumerically(">", 0))
-					Expect(seq[lastIdx].Type).To(Equal(v1alpha1.Succeeded))
-					Expect(seq[lastIdx].Status).To(Equal(corev1.ConditionTrue))
-					Expect(seq[lastIdx].Reason).To(Equal("Succeeded"))
-					Expect(seq[lastIdx].Message).To(ContainSubstring("All Steps have completed executing"))
+						return succeeded.Status == corev1.ConditionTrue, nil
+					})
+					Expect(err).NotTo(HaveOccurred())
+					succeeded := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+					Expect(succeeded).NotTo(BeNil())
+					Expect(succeeded.Status).To(Equal(corev1.ConditionTrue))
+					Expect(succeeded.Reason).To(Equal("Succeeded"))
+					Expect(succeeded.Message).To(ContainSubstring("All Steps have completed executing"))
 				})
 			})
 		})
@@ -261,7 +213,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		It("should reflect a Pending and Running reason", func() {
 			// use a custom strategy here that just sleeps 30 seconds to prevent it from completing too fast so that we do not get the Running state
 			WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategySleep30s), func() {
-				_, _, buildRunObject := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+				_, buildRunObject := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
 
 				_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 				Expect(err).To(BeNil())
@@ -471,7 +423,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 		It("should reflect a Success reason", func() {
 			WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategyNoOp), func() {
-				_, _, buildRunObject := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+				_, buildRunObject := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
 
 				_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 				Expect(err).To(BeNil())
