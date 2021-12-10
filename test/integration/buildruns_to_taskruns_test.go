@@ -117,6 +117,9 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 				var seq = []*v1alpha1.Condition{}
 				for event := range buildRunWitcher.ResultChan() {
+					if event.Type == watch.Error {
+						Fail(fmt.Sprintf("Unexpected error event: %v.", event.Object))
+					}
 					condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
 					if condition != nil {
 						condition.LastTransitionTime = metav1.Time{Time: fakeTime}
@@ -152,58 +155,22 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 		Context("when condition status is false", func() {
 			It("reflects a timeout", func() {
-				buildRunWitcher, build, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSWithShortTimeOut), []byte(test.MinimalBuildRun))
+				_, build, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSWithShortTimeOut), []byte(test.MinimalBuildRun))
 
-				var timeout = time.After(tb.TimeOut)
-				go func() {
-					<-timeout
-					buildRunWitcher.Stop()
-				}()
+				buildRun, err := tb.GetBRTillCompletion(buildRun.Name)
+				Expect(err).ToNot(HaveOccurred())
 
-				var seq = []*v1alpha1.Condition{}
-				for event := range buildRunWitcher.ResultChan() {
-					condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
-					if condition != nil {
-						seq = append(seq, condition)
-					}
-
-					// Pending -> Running
-					if condition != nil && condition.Status == corev1.ConditionFalse {
-						buildRunWitcher.Stop()
-					}
-				}
-
-				lastIdx := len(seq) - 1
-				Expect(lastIdx).To(BeNumerically(">", 0))
-				Expect(seq[lastIdx].Type).To(Equal(v1alpha1.Succeeded))
-				Expect(seq[lastIdx].Status).To(Equal(corev1.ConditionFalse))
-				Expect(seq[lastIdx].Reason).To(Equal("BuildRunTimeout"))
-				Expect(seq[lastIdx].Message).To(Equal(fmt.Sprintf("BuildRun %s failed to finish within %v", buildRun.Name, build.Spec.Timeout.Duration)))
+				condition := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal("BuildRunTimeout"))
+				Expect(condition.Message).To(Equal(fmt.Sprintf("BuildRun %s failed to finish within %v", buildRun.Name, build.Spec.Timeout.Duration)))
 			})
 
 			It("reflects a failed reason", func() {
 				WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategySingleStepKanikoError), func() {
-					buildRunWitcher, _, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+					_, _, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
 
-					var timeout = time.After(tb.TimeOut)
-					go func() {
-						<-timeout
-						buildRunWitcher.Stop()
-					}()
-
-					var seq = []*v1alpha1.Condition{}
-					for event := range buildRunWitcher.ResultChan() {
-						condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
-						if condition != nil {
-							seq = append(seq, condition)
-						}
-
-						if condition != nil && condition.Status == corev1.ConditionFalse {
-							buildRunWitcher.Stop()
-						}
-					}
-
-					buildRun, err = tb.GetBR(buildRun.Name)
+					buildRun, err := tb.GetBRTillCompletion(buildRun.Name)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(buildRun.Status.CompletionTime).ToNot(BeNil())
 
@@ -211,14 +178,12 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(buildRun.Status.FailedAt.Pod).To(Equal(taskRun.Status.PodName))
-					Expect(buildRun.Status.FailedAt.Container).To(Equal("step-" + "step-build-and-push"))
+					Expect(buildRun.Status.FailedAt.Container).To(Equal("step-step-build-and-push"))
 
-					lastIdx := len(seq) - 1
-					Expect(lastIdx).To(BeNumerically(">", 0))
-					Expect(seq[lastIdx].Type).To(Equal(v1alpha1.Succeeded))
-					Expect(seq[lastIdx].Status).To(Equal(corev1.ConditionFalse))
-					Expect(seq[lastIdx].Reason).To(Equal("Failed"))
-					Expect(seq[lastIdx].Message).To(ContainSubstring("buildrun step %s failed in pod %s", "step-step-build-and-push", taskRun.Status.PodName))
+					condition := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+					Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+					Expect(condition.Reason).To(Equal("Failed"))
+					Expect(condition.Message).To(ContainSubstring("buildrun step %s failed in pod %s", "step-step-build-and-push", taskRun.Status.PodName))
 				})
 			})
 		})
@@ -226,32 +191,15 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		Context("when condition status true", func() {
 			It("should reflect the taskrun succeeded reason in the buildrun condition", func() {
 				WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategyNoOp), func() {
-					buildRunWitcher, _, _ := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+					_, _, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
 
-					var timeout = time.After(tb.TimeOut)
-					go func() {
-						<-timeout
-						buildRunWitcher.Stop()
-					}()
+					buildRun, err := tb.GetBRTillCompletion(buildRun.Name)
+					Expect(err).ToNot(HaveOccurred())
 
-					var seq = []*v1alpha1.Condition{}
-					for event := range buildRunWitcher.ResultChan() {
-						condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
-						if condition != nil {
-							seq = append(seq, condition)
-						}
-
-						if condition != nil && condition.Status == corev1.ConditionTrue {
-							buildRunWitcher.Stop()
-						}
-					}
-
-					lastIdx := len(seq) - 1
-					Expect(lastIdx).To(BeNumerically(">", 0))
-					Expect(seq[lastIdx].Type).To(Equal(v1alpha1.Succeeded))
-					Expect(seq[lastIdx].Status).To(Equal(corev1.ConditionTrue))
-					Expect(seq[lastIdx].Reason).To(Equal("Succeeded"))
-					Expect(seq[lastIdx].Message).To(ContainSubstring("All Steps have completed executing"))
+					condition := buildRun.Status.GetCondition(v1alpha1.Succeeded)
+					Expect(condition.Status).To(Equal(corev1.ConditionTrue))
+					Expect(condition.Reason).To(Equal("Succeeded"))
+					Expect(condition.Message).To(ContainSubstring("All Steps have completed executing"))
 				})
 			})
 		})
