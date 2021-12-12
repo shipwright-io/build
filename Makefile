@@ -148,44 +148,10 @@ endif
 install-counterfeiter:
 	hack/install-counterfeiter.sh
 
-.PHONY: govet
-govet:
-	@echo "Checking go vet"
-	@go vet ./...
-
-# Install it via: go install github.com/gordonklaus/ineffassign@latest
-.PHONY: ineffassign
-ineffassign:
-	@echo "Checking ineffassign"
-	@ineffassign ./...
-
-# Install it via: go install golang.org/x/lint/golint@latest
-# See https://github.com/golang/lint/issues/320 for details regarding the grep
-.PHONY: golint
-golint:
-	@echo "Checking golint"
-	@go list ./... | grep -v -e /vendor -e /test | xargs -L1 golint -set_exit_status
-
-# Install it via: go install github.com/securego/gosec/v2/cmd/gosec@latest
-.PHONY: gosec
-gosec:
-	@echo "Checking gosec"
-	gosec -confidence medium -severity high ./...
-
-# Install it via: go install github.com/client9/misspell/cmd/misspell@latest
-.PHONY: misspell
-misspell:
-	@echo "Checking misspell"
-	@find . -type f -not -path './vendor/*' -not -path './.git/*' -not -path './build/*' -print0 | xargs -0 misspell -source=text -error
-
-# Install it via: go install honnef.co/go/tools/cmd/staticcheck@latest
-.PHONY: staticcheck
-staticcheck:
-	@echo "Checking staticcheck"
-	@go list ./... | grep -v /test | xargs staticcheck
-
+# Install golangci-lint via: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 .PHONY: sanity-check
-sanity-check: ineffassign golint gosec govet misspell staticcheck
+sanity-check:
+	golangci-lint run
 
 # https://github.com/shipwright-io/build/issues/123
 test: test-unit
