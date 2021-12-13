@@ -82,3 +82,5 @@ tags
 # JetBrains IDE config
 .idea
 **/*coverprofile*
+# kubeconfig file generated while triggering the smoke test
+build/kubeconfig

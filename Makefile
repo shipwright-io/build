@@ -301,3 +301,7 @@ kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
 
+.PHONY: smoke
+smoke:
+	@echo "Starting test for Shipwright - a framework for building container images on Kubernetes"
+	@./hack/smoke-test.sh
