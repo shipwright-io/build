@@ -12,7 +12,9 @@ import (
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -38,11 +40,32 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRu
 	return &trList.Items[0], nil
 }
 
-// UpdateTaskRun applies changes to a provided taskRun object
-func (t *TestBuild) UpdateTaskRun(tr *v1beta1.TaskRun) (*v1beta1.TaskRun, error) {
-	trInterface := t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace)
+// UpdateTaskRun applies changes to a TaskRun object
+func (t *TestBuild) UpdateTaskRun(name string, apply func(tr *v1beta1.TaskRun)) (*v1beta1.TaskRun, error) {
+	var tr *v1beta1.TaskRun
+	var err error
+	for i := 0; i < 5; i++ {
+		tr, err = t.LookupTaskRun(types.NamespacedName{
+			Namespace: t.Namespace,
+			Name:      name,
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	return trInterface.Update(context.TODO(), tr, metav1.UpdateOptions{})
+		apply(tr)
+
+		tr, err = t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace).Update(context.TODO(), tr, metav1.UpdateOptions{})
+		if err == nil {
+			return tr, nil
+		}
+		// retry the famous ""Operation cannot be fulfilled on taskruns.tekton.dev \"buildrun-test-build-225-xkw6k\": the object has been modified; please apply your changes to the latest version and try again" error
+		if !apierrors.IsConflict(err) {
+			return nil, err
+		}
+	}
+
+	return nil, err
 }
 
 // GetTRReason returns the Reason of the Succeeded condition
