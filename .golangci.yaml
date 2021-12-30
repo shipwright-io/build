@@ -1,0 +1,24 @@
+linters:
+  enable:
+    - ineffassign
+    - revive
+    - gosec
+    - govet
+    - misspell
+    - staticcheck
+  disable:
+    - errcheck
+
+linters-settings:
+  gosec:
+    excludes:
+      - G101 # Look for hard coded credentials
+      - G305 # File traversal when extracting zip/tar archive
+      - G306 # Poor file permissions used when writing to a new file
+      - G601 # Implicit memory aliasing of items from a range statement
+
+issues:
+  exclude-rules:
+    - path: test
+      linters:
+        - revive
