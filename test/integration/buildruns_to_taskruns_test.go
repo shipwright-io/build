@@ -177,8 +177,8 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					taskRun, err := tb.GetTaskRunFromBuildRun(buildRun.Name)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(buildRun.Status.FailedAt.Pod).To(Equal(taskRun.Status.PodName))
-					Expect(buildRun.Status.FailedAt.Container).To(Equal("step-step-build-and-push"))
+					Expect(buildRun.Status.FailureDetails.Location.Pod).To(Equal(taskRun.Status.PodName))
+					Expect(buildRun.Status.FailureDetails.Location.Container).To(Equal("step-step-build-and-push"))
 
 					condition := buildRun.Status.GetCondition(v1alpha1.Succeeded)
 					Expect(condition.Status).To(Equal(corev1.ConditionFalse))

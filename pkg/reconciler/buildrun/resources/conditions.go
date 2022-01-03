@@ -82,11 +82,11 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 				return err
 			}
 
-			//lint:ignore SA1019 we want to give users some time to adopt to failureDetails
+			//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
 			buildRun.Status.FailedAt = &buildv1alpha1.FailedAt{Pod: pod.Name}
 
 			if failedContainer != nil {
-			  	//lint:ignore SA1019 we want to give users some time to adopt to failureDetails
+				//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
 				buildRun.Status.FailedAt.Container = failedContainer.Name
 				message = fmt.Sprintf("buildrun step %s failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
 					failedContainer.Name,
