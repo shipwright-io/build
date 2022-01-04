@@ -14,6 +14,12 @@ import (
 	"github.com/shipwright-io/build/test/utils"
 )
 
+const (
+	BUILD    = "build-"
+	BUILDRUN = "buildrun-"
+	STRATEGY = "strategy-"
+)
+
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Integration Suite")
