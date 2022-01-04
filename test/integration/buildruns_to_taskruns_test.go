@@ -40,7 +40,8 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			strategyName = strategy[0]
 		}
 
-		buildRunWitcher, err := tb.BuildClientSet.ShipwrightV1alpha1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{})
+		timeout := int64(tb.TimeOut.Seconds())
+		buildRunWatcher, err := tb.BuildClientSet.ShipwrightV1alpha1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{TimeoutSeconds: &timeout})
 		Expect(err).To(BeNil())
 
 		buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(BUILD+tb.Namespace, strategyName, buildDef)
@@ -55,7 +56,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
 		//TODO: consider how to deal with buildObject or buildRunObject
-		return buildRunWitcher, buildObject, buildRunObject
+		return buildRunWatcher, buildObject, buildRunObject
 	}
 
 	var WithCustomClusterBuildStrategy = func(data []byte, f func()) {
@@ -105,22 +106,18 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	Context("when buildrun uses conditions", func() {
 		Context("when condition status unknown", func() {
 			It("reflects a change from pending to running reason", func() {
-				buildRunWitcher, _, _ := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun))
+				buildRunWatcher, _, _ := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun))
 
 				// use a fakeTime to simplify tests
 				fakeTime := time.Date(1989, 05, 15, 00, 01, 01, 651387237, time.UTC)
 
-				var timeout = time.After(tb.TimeOut)
-				go func() {
-					<-timeout
-					buildRunWitcher.Stop()
-				}()
-
 				var seq = []*v1alpha1.Condition{}
-				for event := range buildRunWitcher.ResultChan() {
+				for event := range buildRunWatcher.ResultChan() {
 					if event.Type == watch.Error {
-						Fail(fmt.Sprintf("Unexpected error event: %v.", event.Object))
+						GinkgoWriter.Write([]byte(fmt.Sprintf("Unexpected error event in watch: %v", event.Object)))
+						continue
 					}
+
 					condition := event.Object.(*v1alpha1.BuildRun).Status.GetCondition(v1alpha1.Succeeded)
 					if condition != nil {
 						condition.LastTransitionTime = metav1.Time{Time: fakeTime}
@@ -129,7 +126,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 					// Pending -> Running
 					if condition != nil && condition.Reason == "Running" {
-						buildRunWitcher.Stop()
+						buildRunWatcher.Stop()
 					}
 				}
 				// consider a longer sequence, for events where the cluster have

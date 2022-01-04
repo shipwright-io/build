@@ -20,12 +20,6 @@ import (
 	"github.com/shipwright-io/build/test"
 )
 
-const (
-	BUILD    = "build-"
-	BUILDRUN = "buildrun-"
-	STRATEGY = "strategy-"
-)
-
 var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 	var (
