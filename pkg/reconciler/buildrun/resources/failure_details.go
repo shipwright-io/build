@@ -34,8 +34,12 @@ func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, 
 	}
 }
 
-func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason string, errorMessage string, hasReasonAndMessage bool) {
+func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason string, errorMessage string) {
 	for _, step := range taskRun.Status.Steps {
+		if step.Terminated == nil || step.Terminated.ExitCode != 0 {
+			continue
+		}
+
 		message := step.Terminated.Message
 		var taskRunResults []v1beta1.PipelineResourceResult
 
@@ -54,7 +58,7 @@ func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason strin
 		}
 	}
 
-	return errorReason, errorMessage, true
+	return errorReason, errorMessage
 }
 
 func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (*v1.Pod, *v1.Container, error) {
@@ -85,13 +89,10 @@ func extractFailedPodAndContainer(ctx context.Context, client client.Client, tas
 
 func extractFailureDetails(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (failure *buildv1alpha1.FailureDetails) {
 	failure = &buildv1alpha1.FailureDetails{}
+
+	failure.Reason, failure.Message = extractFailureReasonAndMessage(taskRun)
+
 	failure.Location = &buildv1alpha1.FailedAt{Pod: taskRun.Status.PodName}
-
-	if reason, message, hasReasonAndMessage := extractFailureReasonAndMessage(taskRun); hasReasonAndMessage {
-		failure.Reason = reason
-		failure.Message = message
-	}
-
 	pod, container, _ := extractFailedPodAndContainer(ctx, client, taskRun)
 
 	if pod != nil && container != nil {

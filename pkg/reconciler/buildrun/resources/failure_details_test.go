@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 
-
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	buildfakes "github.com/shipwright-io/build/pkg/controller/fakes"
 )
@@ -43,8 +42,9 @@ var _ = Describe("Surfacing errors", func() {
 			message, _ := json.Marshal([]pipelinev1beta1.PipelineResourceResult{errorReason, errorMessage, unrelated})
 
 			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message)}
+			followUpStep := pipelinev1beta1.StepState{}
 
-			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep)
+			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep, followUpStep)
 			redBuild := buildv1alpha1.BuildRun{}
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &redBuild, &redTaskRun)
@@ -77,7 +77,7 @@ var _ = Describe("Surfacing errors", func() {
 		It("does not surface error results if the container terminated without failure", func() {
 			greenTaskRun := pipelinev1beta1.TaskRun{}
 			greenTaskRun.Status.Conditions = append(greenTaskRun.Status.Conditions,
-				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelinev1beta1. TaskRunReasonSuccessful.String()})
+				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelinev1beta1.TaskRunReasonSuccessful.String()})
 			failedStep := pipelinev1beta1.StepState{}
 
 			errorReasonValue := "PullBaseImageFailed"
