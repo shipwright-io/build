@@ -390,6 +390,46 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			Expect(br.Status.GetCondition(v1alpha1.Succeeded).GetMessage()).To(Equal("parameters without a value definition: sleep-time"))
 
 		})
+		Context("when a taskrun fails with an error result", func() {
+			It("surfaces the result to the buildrun", func() {
+				// Create a BuildStrategy that guarantees a failure 
+				cbsObject, err := tb.Catalog.LoadBuildStrategyFromBytes(
+					[]byte(test.BuildStrategyWithErrorResult),
+				)
+				Expect(err).To(BeNil())
 
+				err = tb.CreateBuildStrategy(cbsObject)
+				Expect(err).To(BeNil())
+
+				buildObject, err := tb.Catalog.LoadBuildWithNameAndStrategy(
+					BUILD+tb.Namespace,
+					cbsObject.Name,
+					[]byte(test.BuildBSMinimal),
+				)
+				Expect(err).To(BeNil())
+
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				_, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				buildRunObject, err := tb.Catalog.LoadBRWithNameAndRef(
+					BUILDRUN+tb.Namespace,
+					BUILD+tb.Namespace,
+					[]byte(test.MinimalBuildRun),
+				)
+				Expect(err).To(BeNil())
+
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				buildRun, err := tb.GetBRTillCompletion(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				Expect(buildRun.Status.FailureDetails).ToNot(BeNil())
+				Expect(buildRun.Status.FailureDetails.Location.Container).To(Equal("step-fail-with-error-result"))
+				Expect(buildRun.Status.FailureDetails.Message).To(Equal("integration test error message"))
+				Expect(buildRun.Status.FailureDetails.Reason).To(Equal("integration test error reason"))
+			})
+		})
 	})
 })
