@@ -44,12 +44,27 @@ spec:
 
           envs=($(env))
 
+          # Denying the creation of non required files from system environments.
+          # The creation of a file named PATH (corresponding to PATH system environment)
+          # caused failure for python source during pip install (https://github.com/Azure-Samples/python-docs-hello-world)
+          block_list=("PATH" "HOSTNAME" "PWD" "_" "SHLVL" "HOME" "")
+
           for env in "${envs[@]}"; do
-              IFS='=' read -r key value string <<< "$env"
-              if [[ "$key" != "" ]]; then
-                  path="${ENV_DIR}/${key}"
-                  echo -n "$value" > "$path"
+            blocked=false
+
+            IFS='=' read -r key value string <<< "$env"
+
+            for str in "${block_list[@]}"; do
+              if [[ "$key" == "$str" ]]; then
+                blocked=true
+                break
               fi
+            done
+
+            if [ "$blocked" == "false" ]; then
+              path="${ENV_DIR}/${key}"
+              echo -n "$value" > "$path"
+            fi
           done
 
           /cnb/lifecycle/creator \
