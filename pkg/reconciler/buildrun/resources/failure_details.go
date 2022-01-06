@@ -36,7 +36,7 @@ func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, 
 
 func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason string, errorMessage string) {
 	for _, step := range taskRun.Status.Steps {
-		if step.Terminated == nil || step.Terminated.ExitCode != 0 {
+		if step.Terminated == nil || step.Terminated.ExitCode == 0 {
 			continue
 		}
 

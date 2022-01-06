@@ -41,7 +41,7 @@ var _ = Describe("Surfacing errors", func() {
 
 			message, _ := json.Marshal([]pipelinev1beta1.PipelineResourceResult{errorReason, errorMessage, unrelated})
 
-			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message)}
+			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message), ExitCode: 1}
 			followUpStep := pipelinev1beta1.StepState{}
 
 			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep, followUpStep)

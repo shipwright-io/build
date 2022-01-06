@@ -236,3 +236,24 @@ spec:
     args:
     - $(params.sleep-time)
 `
+
+// BuildStrategyWithErrorResult is a strategy that always fails
+// and surfaces and error reason and message to the user
+const BuildStrategyWithErrorResult = `
+apiVersion: build.dev/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: strategy-with-error-results
+spec:
+  buildSteps:
+  - name: fail-with-error-result
+    image: alpine:latest
+    command:
+    - sh
+    args:
+    - -c
+    - |
+      printf "integration test error reason" > $(results.shp-error-reason.path);
+      printf "integration test error message" > $(results.shp-error-message.path);
+      return 1
+`
