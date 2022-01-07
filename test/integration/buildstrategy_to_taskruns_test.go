@@ -392,7 +392,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 		})
 		Context("when a taskrun fails with an error result", func() {
 			It("surfaces the result to the buildrun", func() {
-				// Create a BuildStrategy that guarantees a failure 
+				// Create a BuildStrategy that guarantees a failure
 				cbsObject, err := tb.Catalog.LoadBuildStrategyFromBytes(
 					[]byte(test.BuildStrategyWithErrorResult),
 				)
@@ -401,7 +401,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 				err = tb.CreateBuildStrategy(cbsObject)
 				Expect(err).To(BeNil())
 
-				buildObject, err := tb.Catalog.LoadBuildWithNameAndStrategy(
+				buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(
 					BUILD+tb.Namespace,
 					cbsObject.Name,
 					[]byte(test.BuildBSMinimal),
@@ -410,10 +410,10 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 
 				Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
-				_, err = tb.GetBuildTillValidation(buildObject.Name)
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
 
-				buildRunObject, err := tb.Catalog.LoadBRWithNameAndRef(
+				buildRunObject, err = tb.Catalog.LoadBRWithNameAndRef(
 					BUILDRUN+tb.Namespace,
 					BUILD+tb.Namespace,
 					[]byte(test.MinimalBuildRun),
