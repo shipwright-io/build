@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: quay.io/containers/buildah:v1.20.1
+      image: quay.io/containers/buildah:v1.23.1
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -17,9 +17,34 @@ spec:
         - |
           set -euo pipefail
 
+          echo "Creating registries config file..."
+
+          format(){
+              array=(`echo $1 | tr ',' ' '`)
+              str=""
+              for m in "${array[@]}"; do
+                  str=$str"'${m}', "
+              done
+
+              echo ${str%??}
+          }
+
+          cat <<EOF >/tmp/registries.conf
+          [registries.search]
+          registries = [$(format "$(params.registry-search)")]
+
+          [registries.insecure]
+          registries = [$(format "$(params.registry-insecure)")]
+
+          [registries.block]
+          registries = [$(format "$(params.registry-block)")]
+
+          EOF
+
           # Building the image
           echo '[INFO] Building image $(params.shp-output-image)'
           buildah bud \
+            --registries-conf='/tmp/registries.conf' \
             --tag='$(params.shp-output-image)' \
             --file='$(build.dockerfile)' \
             '$(params.shp-source-context)'
@@ -37,8 +62,18 @@ spec:
             '$(params.shp-output-image)' | tr -d "\n" > '$(results.shp-image-digest.path)'
       resources:
         limits:
-          cpu: 500m
-          memory: 1Gi
+          cpu: "1"
+          memory: 2Gi
         requests:
           cpu: 250m
           memory: 65Mi
+  parameters:
+    - description: The registries for searching short name images such as `golang:latest`, separated by commas.
+      name: registry-search
+      default: docker.io,quay.io
+    - description: The fully-qualified name of insecure registries. An insecure registry is one that does not have a valid SSL certificate or only does HTTP.
+      name: registry-insecure
+      default: ""
+    - description: The registries that need to block pull access.
+      name: registry-block
+      default: ""
