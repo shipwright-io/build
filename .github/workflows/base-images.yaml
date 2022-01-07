@@ -27,8 +27,14 @@ jobs:
           REGISTRY_USERNAME: ${{ github.repository_owner }}
         run: echo "${REGISTRY_PASSWORD}" | docker login -u "${REGISTRY_USERNAME}" --password-stdin ghcr.io
 
-      - name: Build Git
+      - name: Build Git Base Image
         run: |
           pushd images/git
             IMAGE=ghcr.io/${{ github.repository_owner }}/base-git docker buildx bake --push -f ../docker-bake.hcl
+          popd
+
+      - name: Build Waiter Base Image
+        run: |
+          pushd images/waiter
+            IMAGE=ghcr.io/${{ github.repository_owner }}/base-waiter docker buildx bake --push -f ../docker-bake.hcl
           popd
