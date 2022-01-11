@@ -57,6 +57,10 @@ func AppendGitStep(
 		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitAuthorResult),
 		"--result-file-branch-name",
 		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, branchName),
+		"--result-file-error-message",
+		fmt.Sprintf("$(results.%s-error-message.path)", prefixParamsResultsVolumes),
+		"--result-file-error-reason",
+		fmt.Sprintf("$(results.%s-error-reason.path)", prefixParamsResultsVolumes),
 	}
 
 	// Check if a revision is defined

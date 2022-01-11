@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"strings"
 
+	shpgit "github.com/shipwright-io/build/pkg/git"
 	"github.com/spf13/pflag"
 )
 
@@ -36,6 +37,7 @@ type ExitError struct {
 	Code    int
 	Message string
 	Cause   error
+	Reason  shpgit.ErrorClass
 }
 
 func (e ExitError) Error() string {
@@ -54,6 +56,8 @@ type settings struct {
 	secretPath             string
 	skipValidation         bool
 	gitURLRewrite          bool
+	resultFileErrorMessage string
+	resultFileErrorReason  string
 }
 
 var flagValues settings
@@ -78,6 +82,10 @@ func init() {
 	pflag.StringVar(&flagValues.resultFileBranchName, "result-file-branch-name", "", "A file to write the branch name to.")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
 
+	// Flags with paths for writing error related information
+	pflag.StringVar(&flagValues.resultFileErrorMessage, "result-file-error-message", "", "A file to write the error message to.")
+	pflag.StringVar(&flagValues.resultFileErrorReason, "result-file-error-reason", "", "A file to write the error reason to.")
+
 	// Optional flag to be able to override the default shallow clone depth,
 	// which should be fine for almost all use cases we use the Git source step
 	// for (in the context of Shipwright build).
@@ -94,6 +102,10 @@ func main() {
 		switch err := err.(type) {
 		case *ExitError:
 			exitcode = err.Code
+		}
+
+		if err := writeErrorResults(shpgit.NewErrorResultFromMessage(err.Error())); err != nil {
+			log.Printf("Could not write error results: %s", err.Error())
 		}
 
 		log.Print(err.Error())
@@ -459,10 +471,18 @@ func checkCredentials() (credentialType, error) {
 		return typePrivateKey, nil
 
 	case hasPrivateKey && !isSSHGitURL:
-		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL"}
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthUnexpectedSSH.ToMessage(),
+			Reason:  shpgit.AuthUnexpectedSSH,
+		}
 
 	case !hasPrivateKey && isSSHGitURL:
-		return typeUndef, &ExitError{Code: 110, Message: "Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL"}
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthExpectedSSH.ToMessage(),
+			Reason:  shpgit.AuthExpectedSSH,
+		}
 	}
 
 	// Checking whether mounted secret is of type `kubernetes.io/basic-auth`
@@ -475,9 +495,39 @@ func checkCredentials() (credentialType, error) {
 		return typeUsernamePassword, nil
 
 	case hasUsername && !hasPassword || !hasUsername && hasPassword:
-		return typeUndef, &ExitError{Code: 110, Message: "Basic Auth incomplete: Both username and password need to be configured"}
-
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthBasicIncomplete.ToMessage(),
+			Reason:  shpgit.AuthBasicIncomplete,
+		}
 	}
 
-	return typeUndef, &ExitError{Code: 110, Message: "Unsupported type of credentials provided, either SSH private key or username/password is supported"}
+	return typeUndef, &ExitError{
+		Code:    110,
+		Message: "Unsupported type of credentials provided, either SSH private key or username/password is supported",
+		Reason:  shpgit.Unknown,
+	}
+}
+
+func writeErrorResults(failure *shpgit.ErrorResult) (err error) {
+	if flagValues.resultFileErrorReason == "" || flagValues.resultFileErrorMessage == "" {
+		return nil
+	}
+
+	messageToWrite := failure.Message
+	messageLengthThreshold := 300
+
+	if len(messageToWrite) > messageLengthThreshold {
+		messageToWrite = messageToWrite[:messageLengthThreshold-3] + "..."
+	}
+
+	if err = os.WriteFile(flagValues.resultFileErrorMessage, []byte(strings.TrimSpace(messageToWrite)), 0666); err != nil {
+		return err
+	}
+
+	if err = os.WriteFile(flagValues.resultFileErrorReason, []byte(failure.Reason.String()), 0666); err != nil {
+		return err
+	}
+
+	return nil
 }
