@@ -55,11 +55,13 @@ func AmendTaskSpecWithSources(
 		}
 	}
 
-	// create the step for spec.sources, this will eventually change into different steps depending on the type of the source
 	if build.Spec.Sources != nil {
+		// inspecting .spec.sources looking for "http" typed sources to generate the TaskSpec items
+		// in order to handle remote artifacts
 		for _, source := range *build.Spec.Sources {
-			// today, we only have HTTP sources
-			sources.AppendHTTPStep(cfg, taskSpec, source)
+			if source.Type == buildv1alpha1.HTTP {
+				sources.AppendHTTPStep(cfg, taskSpec, source)
+			}
 		}
 	}
 }

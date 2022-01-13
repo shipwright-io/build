@@ -11,8 +11,13 @@ import (
 // BuildSourceType enumerates build source type names.
 type BuildSourceType string
 
-// LocalCopy defines a source type that waits for user input, as in a local copy into a POD.
+// LocalCopy represents a alternative build workflow that instead of `git clone` the repository, it
+// employs the data uploaded by the user, streamed directly into the POD.
 const LocalCopy BuildSourceType = "LocalCopy"
+
+// HTTP defines a (HTTP) remote artifact, which will be downloaded into the build POD, right before
+// the build process starts. Represents a remote dependency.
+const HTTP BuildSourceType = "HTTP"
 
 // BuildSource remote artifact definition, also known as "sources". Simple "name" and "url" pairs,
 // initially without "credentials" (authentication) support yet.

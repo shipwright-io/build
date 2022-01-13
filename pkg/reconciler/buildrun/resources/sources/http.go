@@ -13,6 +13,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// RemoteArtifactsContainerName name for the container dealing with remote artifacts download.
+const RemoteArtifactsContainerName = "sources-http"
+
 // AppendHTTPStep appends the step for a HTTP source to the TaskSpec
 func AppendHTTPStep(
 	cfg *config.Config,
@@ -26,7 +29,7 @@ func AppendHTTPStep(
 	} else {
 		httpStep := tektonv1beta1.Step{
 			Container: corev1.Container{
-				Name:       "sources-http",
+				Name:       RemoteArtifactsContainerName,
 				Image:      cfg.RemoteArtifactsContainerImage,
 				WorkingDir: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
 				Command: []string{
@@ -48,10 +51,9 @@ func AppendHTTPStep(
 
 func findExistingHTTPSourcesStep(taskSpec *tektonv1beta1.TaskSpec) *tektonv1beta1.Step {
 	for _, candidateStep := range taskSpec.Steps {
-		if candidateStep.Name == "sources-http" {
+		if candidateStep.Name == RemoteArtifactsContainerName {
 			return &candidateStep
 		}
 	}
-
 	return nil
 }
