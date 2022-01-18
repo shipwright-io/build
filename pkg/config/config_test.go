@@ -157,6 +157,43 @@ var _ = Describe("Config", func() {
 				}))
 			})
 		})
+
+		It("should allow for an override of the Mutate-Image container template", func() {
+			overrides := map[string]string{
+				"MUTATE_IMAGE_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/mutate-image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.MutateImageContainerTemplate).To(Equal(corev1.Container{
+					Image: "myregistry/custom/mutate-image",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("0.5"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+				}))
+			})
+		})
+
+		It("should allow for an override of the Mutate-Image container template and image", func() {
+			overrides := map[string]string{
+				"MUTATE_IMAGE_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/mutate-image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
+				"MUTATE_IMAGE_CONTAINER_IMAGE":    "myregistry/custom/mutate-image:override",
+			}
+
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.MutateImageContainerTemplate).To(Equal(corev1.Container{
+					Image: "myregistry/custom/mutate-image:override",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("0.5"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+				}))
+			})
+		})
 	})
 })
 
