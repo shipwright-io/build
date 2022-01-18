@@ -243,7 +243,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if mutateImageContainerTemplate := os.Getenv(mutateImageContainerTemplateEnvVar); mutateImageContainerTemplate != "" {
-		c.GitContainerTemplate = corev1.Container{}
+		c.MutateImageContainerTemplate = corev1.Container{}
 		if err := json.Unmarshal([]byte(mutateImageContainerTemplate), &c.MutateImageContainerTemplate); err != nil {
 			return err
 		}
