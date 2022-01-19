@@ -61,8 +61,7 @@ metadata:
 spec:
   source:
     url: https://github.com/shipwright-io/sample-go
-    contextDir: docker-build/
-  dockerfile: docker-build/
+    contextDir: docker-build
   strategy:
     name: buildkit
     kind: ClusterBuildStrategy
@@ -72,8 +71,6 @@ spec:
       name: tutorial-secret
 EOF
 ```
-
-_Note_: Pay attention to the definition under `spec.source.dockerfile`. The `buildkit` expects a path to where your `Dockerfile` is located.
 
 Verify that the `go-tutorial` Build was created successfully:
 

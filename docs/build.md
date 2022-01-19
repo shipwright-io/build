@@ -80,7 +80,7 @@ The `Build` definition supports the following fields:
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
 - Optional:
-  - `spec.paramValues` - Refers to a list of `key/value` that could be used to loosely type `parameters` in the `BuildStrategy`.
+  - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
   - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into project context, before the actual build process starts.
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
@@ -240,60 +240,167 @@ spec:
 
 ### Defining ParamValues
 
-A `Build` resource can specify _params_, these allow users to modify the behaviour of the referenced `BuildStrategy` steps.
+A `Build` resource can specify _paramValues_ for parameters that are defined in the referenced `BuildStrategy`. This allows one to control how the steps of the build strategy behave. Values can be overwritten in the `BuildRun` resource. See the related [documentation](./buildrun.md#defining-params) for more information.
 
-When using _params_, users should avoid:
+The build strategy author can define a parameter to be either a simple string, or an array. Depending on that, you must specify the value accordingly. The build strategy parameter can be specified with a default value. For parameters without a default, a value must be specified in the `Build` or `BuildRun`.
+
+You can either specify values directly, or reference keys from [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/). **Note**: the usage of ConfigMaps and Secrets is limited by the usage of the parameter in the build strategy steps. You can only use them if the parameter is used in the command, arguments, or as environment variable values.
+
+When using _paramValues_, users should avoid:
 
 - Defining a `spec.paramValues` name that doesn't match one of the `spec.parameters` defined in the `BuildStrategy`.
-- Defining a `spec.paramValues` name that collides with the Shipwright reserved parameters. These are _BUILDER_IMAGE_,_DOCKERFILE_,_CONTEXT_DIR_ and any name starting with _shp-_.
+- Defining a `spec.paramValues` name that collides with the Shipwright reserved parameters. These are _BUILDER\_IMAGE_, _DOCKERFILE_, _CONTEXT\_DIR_ and any name starting with _shp-_.
 
-In general, _params_ are tighly bound to Strategy _parameters_, please make sure you understand the contents of your strategy of choice, before defining _params_ in the _Build_. `BuildRun` resources allow users to override `Build` _params_, see the related [docs](./buildrun.md#defining-params) for more information.
+In general, _paramValues_ are tightly bound to Strategy _parameters_, please make sure you understand the contents of your strategy of choice, before defining _paramValues_ in the _Build_.
 
 #### Example
 
-The following `BuildStrategy` contains a single step ( _a-strategy-step_ ) with a command and arguments. The strategy defines a parameter( _sleep-time_ ) with a reasonable default, that is used in the step arguments, see _$(params.sleep-time)_.
+The [BuildKit sample `BuildStrategy`](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) contains various parameters. Two of them are outlined here:
 
 ```yaml
----
 apiVersion: shipwright.io/v1alpha1
-kind: BuildStrategy
+kind: ClusterBuildStrategy
 metadata:
-  name: sleepy-strategy
+  name: buildkit
+  ...
 spec:
   parameters:
-  - name: sleep-time
-    description: "time in seconds for sleeping"
-    default: "1"
+  - name: build-args
+    description: "The values for the ARGs in the Dockerfile. Values must be in the format KEY=VALUE."
+    type: array
+    defaults: []
+  - name: cache
+    description: "Configure BuildKit's cache usage. Allowed values are 'disabled' and 'registry'. The default is 'registry'."
+    type: string
+    default: registry
+  ...
   buildSteps:
-  - name: a-strategy-step
-    image: alpine:latest
-    command:
-    - sleep
-    args:
-    - $(params.sleep-time)
+  ...
 ```
 
-If users would like the above strategy to change its behaviour, e.g. _allow the step to trigger a sleep cmd longer than 1 second_, then users can modify the default behaviour, via their `Build` `spec.paramValues` definition. For example:
+The `cache` parameter is a simple string. You can provide it like this in your Build:
 
 ```yaml
----
 apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
   name: a-build
+  namespace: a-namespace
 spec:
-  source:
-    url: https://github.com/shipwright-io/sample-go
-    contextDir: docker-build/
   paramValues:
-  - name: sleep-time
-    value: "60"
+  - name: cache
+    value: disabled
   strategy:
-    name: sleepy-strategy
-    kind: BuildStrategy
+    name: buildkit
+    kind: ClusterBuildStrategy
+  source:
+  ...
+  output:
+  ...
 ```
 
-The above `Build` definition uses _sleep-time_ param, a well-defined _parameter_ under its referenced `BuildStrategy`. By doing this, the user signalizes to the referenced sleepy-strategy, the usage of a different value for its _sleep-time_ parameter.
+If you have multiple Builds and want to centrally control this parameter, then you can create a ConfigMap:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: buildkit-configuration
+  namespace: a-namespace
+data:
+  cache: disabled
+```
+
+You reference the ConfigMap as a parameter value like this:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: a-build
+  namespace: a-namespace
+spec:
+  paramValues:
+  - name: cache
+    configMapValue:
+      name: buildkit-configuration
+      key: cache
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  source:
+  ...
+  output:
+  ...
+```
+
+The `build-args` parameter is defined as an array. In the BuildKit strategy, it is used to set the values of [`ARG`s in the Dockerfile](https://docs.docker.com/engine/reference/builder/#arg), specified as key-value pairs separated by an equals sign, for example `NODE_VERSION=16`. Your Build then looks like this (the value for `cache` is retained to outline how multiple _paramValue_ can be set):
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: a-build
+  namespace: a-namespace
+spec:
+  paramValues:
+  - name: cache
+    configMapValue:
+      name: buildkit-configuration
+      key: cache
+  - name: build-args
+    values:
+    - value: NODE_VERSION=16
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  source:
+  ...
+  output:
+  ...
+```
+
+Similar to simple values, you can also reference ConfigMaps and Secrets for every item in the array. Example:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: a-build
+  namespace: a-namespace
+spec:
+  paramValues:
+  - name: cache
+    configMapValue:
+      name: buildkit-configuration
+      key: cache
+  - name: build-args
+    values:
+    - configMapValue:
+        name: project-configuration
+        key: node-version
+        format: NODE_VERSION=${CONFIGMAP_VALUE}
+    - value: DEBUG_MODE=true
+    - secretValue:
+        name: npm-registry-access
+        key: npm-auth-token
+        format: NPM_AUTH_TOKEN=${SECRET_VALUE}
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  source:
+  ...
+  output:
+  ...
+```
+
+Here, we pass three items in the `build-args` array:
+
+1. The first item references a ConfigMap. As the ConfigMap just contains the value (for example `"16"`) as the data of the `node-version` key, the `format` setting is used to prepend `NODE_VERSION=` to make it a complete key-value pair.
+2. The second item is just a hard-coded value.
+3. The third item references a Secret. This works in the same way as with ConfigMaps.
+
+**NOTE**: the logging output of BuildKit contains expanded `ARG`s in `RUN` commands. Also, such information ends up in the final container image if you use such args in the [final stage of your Dockerfile](https://docs.docker.com/develop/develop-images/multistage-build/). An alternative approach to pass secrets is using [secret mounts](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The BuildKit sample strategy supports them using the `secrets` parameter.
 
 ### Defining the Builder or Dockerfile
 

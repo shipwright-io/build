@@ -140,13 +140,16 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
 
 ### Cache Exporters
 
-By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the build times. When pushing an image to a registry, it will use the `inline` export cache, which pushes the image and cache together. Please refer to [export-cache docs](https://github.com/moby/buildkit#export-cache) for more information.
+By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the build times. When pushing an image to a registry, it will use the inline export cache, which appends cache information to the image that is built. Please refer to [export-cache docs](https://github.com/moby/buildkit#export-cache) for more information. Caching can be disabled by setting the `cache` parameter to disabled. See [Defining ParamValues](build.md#defining-paramvalues) for more information.
+
+### Build-args and secrets
+
+The sample build strategy contains array parameters to set values for [`ARG`s in your Dockerfile](https://docs.docker.com/engine/reference/builder/#arg), and for [mounts with type=secret](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The parameter names are `build-args` and `secrets`. [Defining ParamValues](build.md#defining-paramvalues) contains example usage.
 
 ### Known Limitations
 
 The `buildkit` ClusterBuildStrategy currently locks the following parameters:
 
-- A `Dockerfile` name needs to be `Dockerfile`, this is currently not configurable.
 - Exporter caches are enabled by default, this is currently not configurable.
 - To allow running rootless, it requires both [AppArmor](https://kubernetes.io/docs/tutorials/clusters/apparmor/) as well as [SecComp](https://kubernetes.io/docs/tutorials/clusters/seccomp/) to be disabled using the `unconfined` profile.
 
@@ -230,33 +233,161 @@ Strategy parameters allow users to parameterize their strategy definition, by al
 
 Users defining _parameters_ under their strategies require to understand the following:
 
-- **Definition**: A list of parameters should be defined under `spec.parameters`. Each list item should consist of a _name_, a _description_ and a reasonable _default_ value (_type string_). Note that a default value is not mandatory.
-- **Usage**: In order to use a parameter in the strategy steps, users should follow the following syntax: `$(params.your-parameter-name)`
+- **Definition**: A list of parameters should be defined under `spec.parameters`. Each list item should consist of a _name_, a _description_, a _type_ (either `"array"` or `"string"`) and optionally a _default_ value (for type=string), or _defaults_ values (for type=array). If no default(s) are provided, then the user must define a value in the Build or BuildRun.
+- **Usage**: In order to use a parameter in the strategy steps, use the following syntax for type=string: `$(params.your-parameter-name)`. String parameters can be used in all places in the `buildSteps`. Some example scenarios are:
+  - `image`: to use a custom tag, for example `golang:$(params.go-version)` as it is done in the [ko sample build strategy](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml))
+  - `args`: to pass data into your builder command
+  - `env`: to force a user to provide a value for an environment variable.
+  
+  Arrays are referenced using `$(params.your-array-parameter-name[*])`, and can only be used in as the value for `args` or `command` because the defined as arrays by Kubernetes. For every item in the array, an arg will be set. For example, if you specify this in your build strategy step:
+
+  ```yaml
+  spec:
+    parameteres:
+      - name: tool-args
+        description: Parameters for the tool
+        type: array
+    buildSteps:
+      - name: a-step
+        command:
+          - some-tool
+        args:
+          - $(params.tool-args[*])
+  ```
+
+  If the build user sets the value of tool-args to ["--some-arg", "some-value"], then the Pod will contain these args:
+
+  ```yaml
+  spec:
+    containers:
+      - name: a-step
+        args:
+        ...
+          - --some-arg
+          - some-value
+  ```
+
 - **Parameterize**: Any `Build` or `BuildRun` referencing your strategy, can set a value for _your-parameter-name_ parameter if needed.
 
-The following is an example of a strategy that defines and uses the `sleep-time` parameter:
+**Note**: Users can provide parameter values as simple strings or as references to keys in [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/). If they use a ConfigMap or Secret, then the value can only be used if the parameter is used in the `command`, `args`, or `env` section of the `buildSteps`. For example, the above mentioned scenario to set a step's `image` to `golang:$(params.go-version)` does not allow the usage of ConfigMaps or Secrets.
+
+The following example is from the [BuildKit sample build strategy](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml). It defines and uses several parameters:
 
 ```yaml
 ---
 apiVersion: shipwright.io/v1alpha1
-kind: BuildStrategy
+kind: ClusterBuildStrategy
 metadata:
-  name: sleepy-strategy
+  name: buildkit
+  ...
 spec:
   parameters:
-  - name: sleep-time
-    description: "time in seconds for sleeping"
-    default: "1"
+  - name: build-args
+    description: "The values for the ARGs in the Dockerfile. Values must be in the format KEY=VALUE."
+    type: array
+    defaults: []
+  - name: cache
+    description: "Configure BuildKit's cache usage. Allowed values are 'disabled' and 'registry'. The default is 'registry'."
+    type: string
+    default: registry
+  - name: insecure-registry
+    type: string
+    description: "enables the push to an insecure registry"
+    default: "false"
+  - name: secrets
+    description: "The secrets to pass to the build. Values must be in the format ID=FILE_CONTENT."
+    type: array
+    defaults: []
   buildSteps:
-  - name: a-strategy-step
-    image: alpine:latest
-    command:
-    - sleep
-    args:
-    - $(params.sleep-time)
+    ...
+    - name: build-and-push
+      image: moby/buildkit:nightly-rootless
+      imagePullPolicy: Always
+      workingDir: $(params.shp-source-root)
+      ...
+      command:
+        - /bin/ash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          # Prepare the file arguments
+          DOCKERFILE_PATH='$(params.shp-source-context)/$(build.dockerfile)'
+          DOCKERFILE_DIR="$(dirname "${DOCKERFILE_PATH}")"
+          DOCKERFILE_NAME="$(basename "${DOCKERFILE_PATH}")"
+
+          # We only have ash here and therefore no bash arrays to help add dynamic arguments (the build-args) to the build command.
+
+          echo "#!/bin/ash" > /tmp/run.sh
+          echo "set -euo pipefail" >> /tmp/run.sh
+          echo "buildctl-daemonless.sh \\" >> /tmp/run.sh
+          echo "build \\" >> /tmp/run.sh
+          echo "--progress=plain \\" >> /tmp/run.sh
+          echo "--frontend=dockerfile.v0 \\" >> /tmp/run.sh
+          echo "--opt=filename=\"${DOCKERFILE_NAME}\" \\" >> /tmp/run.sh
+          echo "--local=context='$(params.shp-source-context)' \\" >> /tmp/run.sh
+          echo "--local=dockerfile=\"${DOCKERFILE_DIR}\" \\" >> /tmp/run.sh
+          echo "--output=type=image,name='$(params.shp-output-image)',push=true,registry.insecure=$(params.insecure-registry) \\" >> /tmp/run.sh
+          if [ "$(params.cache)" == "registry" ]; then
+            echo "--export-cache=type=inline \\" >> /tmp/run.sh
+            echo "--import-cache=type=registry,ref='$(params.shp-output-image)' \\" >> /tmp/run.sh
+          elif [ "$(params.cache)" == "disabled" ]; then
+            echo "--no-cache \\" >> /tmp/run.sh
+          else
+            echo -e "An invalid value for the parameter 'cache' has been provided: '$(params.cache)'. Allowed values are 'disabled' and 'registry'."
+            echo -n "InvalidParameterValue" > '$(results.shp-error-reason.path)'
+            echo -n "An invalid value for the parameter 'cache' has been provided: '$(params.cache)'. Allowed values are 'disabled' and 'registry'." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+
+          stage=""
+          for a in "$@"
+          do
+            if [ "${a}" == "--build-args" ]; then
+              stage=build-args
+            elif [ "${a}" == "--secrets" ]; then
+              stage=secrets
+            elif [ "${stage}" == "build-args" ]; then
+              echo "--opt=\"build-arg:${a}\" \\" >> /tmp/run.sh
+            elif [ "${stage}" == "secrets" ]; then
+              # Split ID=FILE_CONTENT into variables id and data
+
+              # using head because the data could be multiline
+              id="$(echo "${a}" | head -1 | sed 's/=.*//')"
+
+              # This is hacky, we remove the suffix ${id}= from all lines of the data.
+              # If the data would be multiple lines and a line would start with ${id}=
+              # then we would remove it. We could force users to give us the secret
+              # base64 encoded. But ultimately, the best solution might be if the user
+              # mounts the secret and just gives us the path here.
+              data="$(echo "${a}" | sed "s/^${id}=//")"
+
+              # Write the secret data into a temporary file, once we have volume support
+              # in the build strategy, we should use a memory based emptyDir for this.
+              echo -n "${data}" > "/tmp/secret_${id}"
+
+              # Add the secret argument
+              echo "--secret id=${id},src="/tmp/secret_${id}" \\" >> /tmp/run.sh
+            fi
+          done
+
+          echo "--metadata-file /tmp/image-metadata.json" >> /tmp/run.sh
+
+          chmod +x /tmp/run.sh
+          /tmp/run.sh
+
+          # Store the image digest
+          sed -E 's/.*containerimage.digest":"([^"]*).*/\1/' < /tmp/image-metadata.json > '$(results.shp-image-digest.path)'
+        # That's the separator between the shell script and its args
+        - --
+        - --build-args
+        - $(params.build-args[*])
+        - --secrets
+        - $(params.secrets[*])
 ```
 
-See more information on how to use this parameter in a `Build` or `BuildRun` in the related [docs](./build.md#defining-paramvalues).
+See more information on how to use these parameters in a `Build` or `BuildRun` in the related [documentation](./build.md#defining-paramvalues).
 
 ## System parameters
 
