@@ -211,13 +211,98 @@ spec:
                   description: ParamValue is a key/value that populates a strategy
                     parameter used in the execution of the strategy steps
                   properties:
+                    configMapValue:
+                      description: The ConfigMap value of the parameter
+                      properties:
+                        format:
+                          description: An optional format to add pre- or suffix to
+                            the object value. For example 'KEY=${SECRET_VALUE}' or
+                            'KEY=${CONFIGMAP_VALUE}' depending on the context.
+                          type: string
+                        key:
+                          description: Key inside the object
+                          type: string
+                        name:
+                          description: Name of the object
+                          type: string
+                      required:
+                      - key
+                      - name
+                      type: object
                     name:
+                      description: Name of the parameter
                       type: string
+                    secretValue:
+                      description: The secret value of the parameter
+                      properties:
+                        format:
+                          description: An optional format to add pre- or suffix to
+                            the object value. For example 'KEY=${SECRET_VALUE}' or
+                            'KEY=${CONFIGMAP_VALUE}' depending on the context.
+                          type: string
+                        key:
+                          description: Key inside the object
+                          type: string
+                        name:
+                          description: Name of the object
+                          type: string
+                      required:
+                      - key
+                      - name
+                      type: object
                     value:
+                      description: The value of the parameter
                       type: string
+                    values:
+                      description: Values of an array parameter
+                      items:
+                        description: The value type contains the properties for a
+                          value, this allows for an easy extension in the future to
+                          support more kinds
+                        properties:
+                          configMapValue:
+                            description: The ConfigMap value of the parameter
+                            properties:
+                              format:
+                                description: An optional format to add pre- or suffix
+                                  to the object value. For example 'KEY=${SECRET_VALUE}'
+                                  or 'KEY=${CONFIGMAP_VALUE}' depending on the context.
+                                type: string
+                              key:
+                                description: Key inside the object
+                                type: string
+                              name:
+                                description: Name of the object
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                          secretValue:
+                            description: The secret value of the parameter
+                            properties:
+                              format:
+                                description: An optional format to add pre- or suffix
+                                  to the object value. For example 'KEY=${SECRET_VALUE}'
+                                  or 'KEY=${CONFIGMAP_VALUE}' depending on the context.
+                                type: string
+                              key:
+                                description: Key inside the object
+                                type: string
+                              name:
+                                description: Name of the object
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                          value:
+                            description: The value of the parameter
+                            type: string
+                        type: object
+                      type: array
                   required:
                   - name
-                  - value
                   type: object
                 type: array
               serviceAccount:
@@ -459,13 +544,100 @@ spec:
                       description: ParamValue is a key/value that populates a strategy
                         parameter used in the execution of the strategy steps
                       properties:
+                        configMapValue:
+                          description: The ConfigMap value of the parameter
+                          properties:
+                            format:
+                              description: An optional format to add pre- or suffix
+                                to the object value. For example 'KEY=${SECRET_VALUE}'
+                                or 'KEY=${CONFIGMAP_VALUE}' depending on the context.
+                              type: string
+                            key:
+                              description: Key inside the object
+                              type: string
+                            name:
+                              description: Name of the object
+                              type: string
+                          required:
+                          - key
+                          - name
+                          type: object
                         name:
+                          description: Name of the parameter
                           type: string
+                        secretValue:
+                          description: The secret value of the parameter
+                          properties:
+                            format:
+                              description: An optional format to add pre- or suffix
+                                to the object value. For example 'KEY=${SECRET_VALUE}'
+                                or 'KEY=${CONFIGMAP_VALUE}' depending on the context.
+                              type: string
+                            key:
+                              description: Key inside the object
+                              type: string
+                            name:
+                              description: Name of the object
+                              type: string
+                          required:
+                          - key
+                          - name
+                          type: object
                         value:
+                          description: The value of the parameter
                           type: string
+                        values:
+                          description: Values of an array parameter
+                          items:
+                            description: The value type contains the properties for
+                              a value, this allows for an easy extension in the future
+                              to support more kinds
+                            properties:
+                              configMapValue:
+                                description: The ConfigMap value of the parameter
+                                properties:
+                                  format:
+                                    description: An optional format to add pre- or
+                                      suffix to the object value. For example 'KEY=${SECRET_VALUE}'
+                                      or 'KEY=${CONFIGMAP_VALUE}' depending on the
+                                      context.
+                                    type: string
+                                  key:
+                                    description: Key inside the object
+                                    type: string
+                                  name:
+                                    description: Name of the object
+                                    type: string
+                                required:
+                                - key
+                                - name
+                                type: object
+                              secretValue:
+                                description: The secret value of the parameter
+                                properties:
+                                  format:
+                                    description: An optional format to add pre- or
+                                      suffix to the object value. For example 'KEY=${SECRET_VALUE}'
+                                      or 'KEY=${CONFIGMAP_VALUE}' depending on the
+                                      context.
+                                    type: string
+                                  key:
+                                    description: Key inside the object
+                                    type: string
+                                  name:
+                                    description: Name of the object
+                                    type: string
+                                required:
+                                - key
+                                - name
+                                type: object
+                              value:
+                                description: The value of the parameter
+                                type: string
+                            type: object
+                          type: array
                       required:
                       - name
-                      - value
                       type: object
                     type: array
                   source:

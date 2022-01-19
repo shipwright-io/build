@@ -38,8 +38,18 @@ const (
 	RuntimePathsCanNotBeEmpty BuildReason = "RuntimePathsCanNotBeEmpty"
 	// RestrictedParametersInUse indicates the definition of reserved shipwright parameters
 	RestrictedParametersInUse BuildReason = "RestrictedParametersInUse"
+	// WrongParameterValueType indicates that a single value was provided for an array parameter, or vice-versa
+	WrongParameterValueType BuildReason = "WrongParameterValueType"
 	// UndefinedParameter indicates the definition of param that was not defined in the strategy parameters
 	UndefinedParameter BuildReason = "UndefinedParameter"
+	// InconsistentParameterValues indicates that parameter values have more than one of configMapValue, secretValue, or value set
+	InconsistentParameterValues BuildReason = "InconsistentParameterValues"
+	// EmptyArrayItemParameterValues indicates that array parameters contain an item where none of configMapValue, secretValue, or value is set
+	EmptyArrayItemParameterValues BuildReason = "EmptyArrayItemParameterValues"
+	// IncompleteConfigMapValueParameterValues indicates that a configMapValue is specified where the name or the key is empty
+	IncompleteConfigMapValueParameterValues BuildReason = "IncompleteConfigMapValueParameterValues"
+	// IncompleteSecretValueParameterValues indicates that a secretValue is specified where the name or the key is empty
+	IncompleteSecretValueParameterValues BuildReason = "IncompleteSecretValueParameterValues"
 	// RemoteRepositoryUnreachable indicates the referenced repository is unreachable
 	RemoteRepositoryUnreachable BuildReason = "RemoteRepositoryUnreachable"
 	// BuildNameInvalid indicates the build name is invalid

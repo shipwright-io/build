@@ -7,6 +7,7 @@ package resources
 import (
 	"context"
 	"fmt"
+
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,17 +22,25 @@ import (
 
 // Common condition strings for reason, kind, etc.
 const (
-	ConditionUnknownStrategyKind     string = "UnknownStrategyKind"
-	ClusterBuildStrategyNotFound     string = "ClusterBuildStrategyNotFound"
-	BuildStrategyNotFound            string = "BuildStrategyNotFound"
-	ConditionSetOwnerReferenceFailed string = "SetOwnerReferenceFailed"
-	ConditionFailed                  string = "Failed"
-	ConditionTaskRunIsMissing        string = "TaskRunIsMissing"
-	ConditionTaskRunGenerationFailed string = "TaskRunGenerationFailed"
-	ConditionServiceAccountNotFound  string = "ServiceAccountNotFound"
-	ConditionBuildRegistrationFailed string = "BuildRegistrationFailed"
-	ConditionBuildNotFound           string = "BuildNotFound"
-	BuildRunNameInvalid              string = "BuildRunNameInvalid"
+	ConditionUnknownStrategyKind                     string = "UnknownStrategyKind"
+	ClusterBuildStrategyNotFound                     string = "ClusterBuildStrategyNotFound"
+	BuildStrategyNotFound                            string = "BuildStrategyNotFound"
+	ConditionSetOwnerReferenceFailed                 string = "SetOwnerReferenceFailed"
+	ConditionFailed                                  string = "Failed"
+	ConditionTaskRunIsMissing                        string = "TaskRunIsMissing"
+	ConditionTaskRunGenerationFailed                 string = "TaskRunGenerationFailed"
+	ConditionServiceAccountNotFound                  string = "ServiceAccountNotFound"
+	ConditionBuildRegistrationFailed                 string = "BuildRegistrationFailed"
+	ConditionBuildNotFound                           string = "BuildNotFound"
+	ConditionMissingParameterValues                  string = "MissingParameterValues"
+	ConditionRestrictedParametersInUse               string = "RestrictedParametersInUse"
+	ConditionUndefinedParameter                      string = "UndefinedParameter"
+	ConditionWrongParameterValueType                 string = "WrongParameterValueType"
+	ConditionInconsistentParameterValues             string = "InconsistentParameterValues"
+	ConditionEmptyArrayItemParameterValues           string = "EmptyArrayItemParameterValues"
+	ConditionIncompleteConfigMapValueParameterValues string = "IncompleteConfigMapValueParameterValues"
+	ConditionIncompleteSecretValueParameterValues    string = "IncompleteSecretValueParameterValues"
+	BuildRunNameInvalid                              string = "BuildRunNameInvalid"
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition

@@ -22,6 +22,15 @@ type BuildStrategySpec struct {
 	Parameters []Parameter `json:"parameters,omitempty"`
 }
 
+// ParameterType indicates the type of a parameter
+type ParameterType string
+
+// Valid ParamTypes:
+const (
+	ParameterTypeString ParameterType = "string"
+	ParameterTypeArray  ParameterType = "array"
+)
+
 // Parameter holds a name-description with a default value
 // that allows strategy steps to be parameterize.
 // Build users can set a value for parameter via the Build
@@ -36,9 +45,18 @@ type Parameter struct {
 	// +required
 	Description string `json:"description"`
 
-	// Reasonable default value for the parameter
+	// Type of the parameter. The possible types are "string" and "array",
+	// and "string" is the default.
+	// +optional
+	Type ParameterType `json:"type,omitempty"`
+
+	// Default value for a string parameter
 	// +optional
 	Default *string `json:"default"`
+
+	// Default values for an array parameter
+	// +optional
+	Defaults *[]string `json:"defaults"`
 }
 
 // BuildStep defines a partial step that needs to run in container for building the image.
