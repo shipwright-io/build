@@ -47,12 +47,27 @@ func (b *buildPrototype) Namespace(namespace string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) BuildStrategy(name string) *buildPrototype {
+	var bs = buildv1alpha1.NamespacedBuildStrategyKind
+	b.build.Spec.Strategy = &buildv1alpha1.Strategy{
+		Kind: &bs,
+		Name: name,
+	}
+	return b
+}
+
 func (b *buildPrototype) ClusterBuildStrategy(name string) *buildPrototype {
 	var cbs = buildv1alpha1.ClusterBuildStrategyKind
 	b.build.Spec.Strategy = &buildv1alpha1.Strategy{
 		Kind: &cbs,
 		Name: name,
 	}
+	return b
+}
+
+func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
+	b.build.Spec.Source.URL = repository
+	b.build.Spec.Source.BundleContainer = nil
 	return b
 }
 
@@ -76,6 +91,104 @@ func (b *buildPrototype) Dockerfile(dockerfile string) *buildPrototype {
 
 func (b *buildPrototype) OutputImage(image string) *buildPrototype {
 	b.build.Spec.Output.Image = image
+	return b
+}
+
+func (b *buildPrototype) determineParameterIndex(name string) int {
+	index := -1
+	for i, paramValue := range b.build.Spec.ParamValues {
+		if paramValue.Name == name {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		index = len(b.build.Spec.ParamValues)
+		b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+			Name: name,
+		})
+	}
+
+	return index
+}
+
+// ArrayParamValue adds an item to an array parameter, if the parameter is not yet present, it is being added
+func (b *buildPrototype) ArrayParamValue(name string, value string) *buildPrototype {
+	index := b.determineParameterIndex(name)
+	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+		Value: &value,
+	})
+
+	return b
+}
+
+// ArrayParamValueFromConfigMap adds an item to an array parameter, if the parameter is not yet present, it is being added
+func (b *buildPrototype) ArrayParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildPrototype {
+	index := b.determineParameterIndex(name)
+	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+		ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+			Name:   configMapName,
+			Key:    configMapKey,
+			Format: format,
+		},
+	})
+
+	return b
+}
+
+// ArrayParamValueFromSecret adds an item to an array parameter, if the parameter is not yet present, it is being added
+func (b *buildPrototype) ArrayParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildPrototype {
+	index := b.determineParameterIndex(name)
+	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+		SecretValue: &buildv1alpha1.ObjectKeyRef{
+			Name:   secretName,
+			Key:    secretKey,
+			Format: format,
+		},
+	})
+
+	return b
+}
+
+func (b *buildPrototype) StringParamValue(name string, value string) *buildPrototype {
+	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+		Name: name,
+		SingleValue: &buildv1alpha1.SingleValue{
+			Value: &value,
+		},
+	})
+
+	return b
+}
+
+func (b *buildPrototype) StringParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildPrototype {
+	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+		Name: name,
+		SingleValue: &buildv1alpha1.SingleValue{
+			ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+				Name:   configMapName,
+				Key:    configMapKey,
+				Format: format,
+			},
+		},
+	})
+
+	return b
+}
+
+func (b *buildPrototype) StringParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildPrototype {
+	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+		Name: name,
+		SingleValue: &buildv1alpha1.SingleValue{
+			SecretValue: &buildv1alpha1.ObjectKeyRef{
+				Name:   secretName,
+				Key:    secretKey,
+				Format: format,
+			},
+		},
+	})
+
 	return b
 }
 
@@ -132,6 +245,104 @@ func (b *buildRunPrototype) GenerateServiceAccount() *buildRunPrototype {
 		b.buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{}
 	}
 	b.buildRun.Spec.ServiceAccount.Generate = true
+	return b
+}
+
+func (b *buildRunPrototype) determineParameterIndex(name string) int {
+	index := -1
+	for i, paramValue := range b.buildRun.Spec.ParamValues {
+		if paramValue.Name == name {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		index = len(b.buildRun.Spec.ParamValues)
+		b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+			Name: name,
+		})
+	}
+
+	return index
+}
+
+// ArrayParamValue adds an item to an array parameter, if the parameter is not yet present, it is being added
+func (b *buildRunPrototype) ArrayParamValue(name string, value string) *buildRunPrototype {
+	index := b.determineParameterIndex(name)
+	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+		Value: &value,
+	})
+
+	return b
+}
+
+// ArrayParamValueFromConfigMap adds an item to an array parameter, if the parameter is not yet present, it is being added
+func (b *buildRunPrototype) ArrayParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildRunPrototype {
+	index := b.determineParameterIndex(name)
+	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+		ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+			Name:   configMapName,
+			Key:    configMapKey,
+			Format: format,
+		},
+	})
+
+	return b
+}
+
+// ArrayParamValueFromSecret adds an item to an array parameter, if the parameter is not yet present, it is being added
+func (b *buildRunPrototype) ArrayParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildRunPrototype {
+	index := b.determineParameterIndex(name)
+	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+		SecretValue: &buildv1alpha1.ObjectKeyRef{
+			Name:   secretName,
+			Key:    secretKey,
+			Format: format,
+		},
+	})
+
+	return b
+}
+
+func (b *buildRunPrototype) StringParamValue(name string, value string) *buildRunPrototype {
+	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+		Name: name,
+		SingleValue: &buildv1alpha1.SingleValue{
+			Value: &value,
+		},
+	})
+
+	return b
+}
+
+func (b *buildRunPrototype) StringParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildRunPrototype {
+	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+		Name: name,
+		SingleValue: &buildv1alpha1.SingleValue{
+			ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+				Name:   configMapName,
+				Key:    configMapKey,
+				Format: format,
+			},
+		},
+	})
+
+	return b
+}
+
+func (b *buildRunPrototype) StringParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildRunPrototype {
+	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+		Name: name,
+		SingleValue: &buildv1alpha1.SingleValue{
+			SecretValue: &buildv1alpha1.ObjectKeyRef{
+				Name:   secretName,
+				Key:    secretKey,
+				Format: format,
+			},
+		},
+	})
+
 	return b
 }
 

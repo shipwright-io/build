@@ -198,7 +198,7 @@ spec:
 // BuildStrategyWithParameters is a strategy that uses a
 // sleep command with a value for its spec.parameters
 const BuildStrategyWithParameters = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildStrategy
 metadata:
   name: strategy-with-param
@@ -207,6 +207,10 @@ spec:
   - name: sleep-time
     description: "time in seconds for sleeping"
     default: "1"
+  - name: array-param
+    descripion: "An arbitrary array"
+    type: array
+    defaults: []
   buildSteps:
   - name: sleep30
     image: alpine:latest
@@ -214,13 +218,32 @@ spec:
     - sleep
     args:
     - $(params.sleep-time)
+  - name: echo-array-sum
+    image: alpine:latest
+    command:
+    - /bin/bash
+    args:
+    - -c
+    - |
+      set -euo pipefail
+
+      sum=0
+
+      for var in "$@"
+      do
+          sum=$((sum+var))
+      done
+
+      echo "Sum: ${sum}"
+    - --
+    - $(params.array-param[*])
 `
 
 // BuildStrategyWithoutDefaultInParameter is a strategy that uses a
 // sleep command with a value from its spec.parameters, where the parameter
 // have no default
 const BuildStrategyWithoutDefaultInParameter = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildStrategy
 metadata:
   name: strategy-with-param-and-no-default
@@ -240,7 +263,7 @@ spec:
 // BuildStrategyWithErrorResult is a strategy that always fails
 // and surfaces and error reason and message to the user
 const BuildStrategyWithErrorResult = `
-apiVersion: build.dev/v1alpha1
+apiVersion: shipwright.io/v1alpha1
 kind: BuildStrategy
 metadata:
   name: strategy-with-error-results
@@ -256,4 +279,61 @@ spec:
       printf "integration test error reason" > $(results.shp-error-reason.path);
       printf "integration test error message" > $(results.shp-error-message.path);
       return 1
+`
+
+// BuildStrategyWithParameterVerification is a strategy that verifies that parameters can be used at all expected places
+const BuildStrategyWithParameterVerification = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: strategy-with-parameter-verification
+spec:
+  parameters:
+  - name: env1
+    description: "This parameter will be used in the env of the build step"
+    type: string
+  - name: env2
+    description: "This parameter will be used in the env of the build step"
+    type: string
+  - name: env3
+    description: "This parameter will be used in the env of the build step"
+    type: string
+  - name: image
+    description: "This parameter will be used as the image of the build step"
+    type: string
+  - name: commands
+    description: "This parameter will be used as the command of the build step"
+    type: array
+  - name: args
+    description: "This parameter will be used as the args of the build step"
+    type: array
+  buildSteps:
+  - name: calculate-sum
+    image: $(params.image)
+    env:
+    - name: ENV_FROM_PARAMETER1
+      value: $(params.env1)
+    - name: ENV_FROM_PARAMETER2
+      value: $(params.env2)
+    - name: ENV_FROM_PARAMETER3
+      value: $(params.env3)
+    command:
+    - $(params.commands[*])
+    args:
+    - |
+      set -euo pipefail
+
+      sum=$((ENV_FROM_PARAMETER1 + ENV_FROM_PARAMETER2 + ENV_FROM_PARAMETER3))
+
+      for var in "$@"
+      do
+          sum=$((sum+var))
+      done
+
+      echo "Sum: ${sum}"
+      # Once we have strategy-defined results, then those would be better suitable
+      # Until then, just store it as image size :-)
+      echo -n "${sum}" > '$(results.shp-image-size.path)'
+    - --
+    - $(params.args[*])
 `
