@@ -8,9 +8,7 @@ metadata:
 spec:
   source:
     url: https://github.com/shipwright-io/sample-go
-    contextDir: docker-build/
-  # Note: This needs to be a path to where the Dockerfile is located, it cannot contain the file name
-  dockerfile: docker-build/
+    contextDir: docker-build
   strategy:
     name: buildkit
     kind: ClusterBuildStrategy

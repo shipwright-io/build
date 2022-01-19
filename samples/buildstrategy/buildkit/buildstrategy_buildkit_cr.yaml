@@ -11,9 +11,22 @@ metadata:
     container.seccomp.security.alpha.kubernetes.io/step-build-and-push: unconfined
 spec:
   parameters:
+  - name: build-args
+    description: "The values for the ARGs in the Dockerfile. Values must be in the format KEY=VALUE."
+    type: array
+    defaults: []
+  - name: cache
+    description: "Configure BuildKit's cache usage. Allowed values are 'disabled' and 'registry'. The default is 'registry'."
+    type: string
+    default: registry
   - name: insecure-registry
+    type: string
     description: "enables the push to an insecure registry"
     default: "false"
+  - name: secrets
+    description: "The secrets to pass to the build. Values must be in the format ID=FILE_CONTENT."
+    type: array
+    defaults: []
   buildSteps:
     - name: prepare
       image: alpine:latest
@@ -22,6 +35,7 @@ spec:
         capabilities:
           add:
             - CHOWN
+            - DAC_OVERRIDE
       command:
         - /bin/chown
       args:
@@ -33,6 +47,10 @@ spec:
       imagePullPolicy: Always
       securityContext:
         allowPrivilegeEscalation: true
+        capabilities:
+          add:
+            - SETGID
+            - SETUID
         runAsUser: 1000
         runAsGroup: 1000
       workingDir: $(params.shp-source-root)
@@ -51,15 +69,76 @@ spec:
         - |
           set -euo pipefail
 
-          buildctl-daemonless.sh build \
-            --progress=plain \
-            --frontend=dockerfile.v0 \
-            --local=context='$(params.shp-source-context)' \
-            --local=dockerfile='$(params.shp-source-root)/$(build.dockerfile)' \
-            --output=type=image,name='$(params.shp-output-image)',push=true,registry.insecure=$(params.insecure-registry) \
-            --export-cache=type=inline \
-            --import-cache=type=registry,ref='$(params.shp-output-image)' \
-            --metadata-file /tmp/image-metadata.json
-          
+          # Prepare the file arguments
+          DOCKERFILE_PATH='$(params.shp-source-context)/$(build.dockerfile)'
+          DOCKERFILE_DIR="$(dirname "${DOCKERFILE_PATH}")"
+          DOCKERFILE_NAME="$(basename "${DOCKERFILE_PATH}")"
+
+          # We only have ash here and therefore no bash arrays to help add dynamic arguments (the build-args) to the build command.
+
+          echo "#!/bin/ash" > /tmp/run.sh
+          echo "set -euo pipefail" >> /tmp/run.sh
+          echo "buildctl-daemonless.sh \\" >> /tmp/run.sh
+          echo "build \\" >> /tmp/run.sh
+          echo "--progress=plain \\" >> /tmp/run.sh
+          echo "--frontend=dockerfile.v0 \\" >> /tmp/run.sh
+          echo "--opt=filename=\"${DOCKERFILE_NAME}\" \\" >> /tmp/run.sh
+          echo "--local=context='$(params.shp-source-context)' \\" >> /tmp/run.sh
+          echo "--local=dockerfile=\"${DOCKERFILE_DIR}\" \\" >> /tmp/run.sh
+          echo "--output=type=image,name='$(params.shp-output-image)',push=true,registry.insecure=$(params.insecure-registry) \\" >> /tmp/run.sh
+          if [ "$(params.cache)" == "registry" ]; then
+            echo "--export-cache=type=inline \\" >> /tmp/run.sh
+            echo "--import-cache=type=registry,ref='$(params.shp-output-image)' \\" >> /tmp/run.sh
+          elif [ "$(params.cache)" == "disabled" ]; then
+            echo "--no-cache \\" >> /tmp/run.sh
+          else
+            echo -e "An invalid value for the parameter 'cache' has been provided: '$(params.cache)'. Allowed values are 'disabled' and 'registry'."
+            echo -n "InvalidParameterValue" > '$(results.shp-error-reason.path)'
+            echo -n "An invalid value for the parameter 'cache' has been provided: '$(params.cache)'. Allowed values are 'disabled' and 'registry'." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+
+          stage=""
+          for a in "$@"
+          do
+            if [ "${a}" == "--build-args" ]; then
+              stage=build-args
+            elif [ "${a}" == "--secrets" ]; then
+              stage=secrets
+            elif [ "${stage}" == "build-args" ]; then
+              echo "--opt=\"build-arg:${a}\" \\" >> /tmp/run.sh
+            elif [ "${stage}" == "secrets" ]; then
+              # Split ID=FILE_CONTENT into variables id and data
+
+              # using head because the data could be multiline
+              id="$(echo "${a}" | head -1 | sed 's/=.*//')"
+
+              # This is hacky, we remove the suffix ${id}= from all lines of the data.
+              # If the data would be multiple lines and a line would start with ${id}=
+              # then we would remove it. We could force users to give us the secret
+              # base64 encoded. But ultimately, the best solution might be if the user
+              # mounts the secret and just gives us the path here.
+              data="$(echo "${a}" | sed "s/^${id}=//")"
+
+              # Write the secret data into a temporary file, once we have volume support
+              # in the build strategy, we should use a memory based emptyDir for this.
+              echo -n "${data}" > "/tmp/secret_${id}"
+
+              # Add the secret argument
+              echo "--secret id=${id},src="/tmp/secret_${id}" \\" >> /tmp/run.sh
+            fi
+          done
+
+          echo "--metadata-file /tmp/image-metadata.json" >> /tmp/run.sh
+
+          chmod +x /tmp/run.sh
+          /tmp/run.sh
+
           # Store the image digest
           sed -E 's/.*containerimage.digest":"([^"]*).*/\1/' < /tmp/image-metadata.json > '$(results.shp-image-digest.path)'
+        # That's the separator between the shell script and its args
+        - --
+        - --build-args
+        - $(params.build-args[*])
+        - --secrets
+        - $(params.secrets[*])
