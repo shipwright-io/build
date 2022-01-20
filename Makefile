@@ -180,7 +180,6 @@ test-unit-ginkgo: ginkgo
 		-randomizeAllSpecs \
 		-randomizeSuites \
 		-failOnPending \
-		-p \
 		-compilers=2 \
 		-slowSpecThreshold=240 \
 		-race \
