@@ -35,7 +35,7 @@ var _ = Describe("HTTP", func() {
 			})
 
 			Expect(len(taskSpec.Steps)).To(Equal(1))
-			Expect(taskSpec.Steps[0].Name).To(Equal("sources-http"))
+			Expect(taskSpec.Steps[0].Name).To(Equal(sources.RemoteArtifactsContainerName))
 			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.RemoteArtifactsContainerImage))
 			Expect(taskSpec.Steps[0].WorkingDir).To(Equal("$(params.shp-source-root)"))
 			Expect(taskSpec.Steps[0].Args[3]).To(Equal("wget \"https://shipwright.io/icons/logo.svg\""))
@@ -51,7 +51,7 @@ var _ = Describe("HTTP", func() {
 				Steps: []tektonv1beta1.Step{
 					{
 						Container: corev1.Container{
-							Name:       "sources-http",
+							Name:       sources.RemoteArtifactsContainerName,
 							Image:      cfg.RemoteArtifactsContainerImage,
 							WorkingDir: "$(params.shp-source-root)",
 							Command: []string{
@@ -76,7 +76,7 @@ var _ = Describe("HTTP", func() {
 			})
 
 			Expect(len(taskSpec.Steps)).To(Equal(1))
-			Expect(taskSpec.Steps[0].Name).To(Equal("sources-http"))
+			Expect(taskSpec.Steps[0].Name).To(Equal(sources.RemoteArtifactsContainerName))
 			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.RemoteArtifactsContainerImage))
 			Expect(taskSpec.Steps[0].WorkingDir).To(Equal("$(params.shp-source-root)"))
 			Expect(taskSpec.Steps[0].Args[3]).To(Equal("wget \"https://tekton.dev/images/tekton-horizontal-color.png\" ; wget \"https://shipwright.io/icons/logo.svg\""))
@@ -106,7 +106,7 @@ var _ = Describe("HTTP", func() {
 			})
 
 			Expect(len(taskSpec.Steps)).To(Equal(2))
-			Expect(taskSpec.Steps[1].Name).To(Equal("sources-http"))
+			Expect(taskSpec.Steps[1].Name).To(Equal(sources.RemoteArtifactsContainerName))
 			Expect(taskSpec.Steps[1].Image).To(Equal(cfg.RemoteArtifactsContainerImage))
 			Expect(taskSpec.Steps[1].WorkingDir).To(Equal("$(params.shp-source-root)"))
 			Expect(taskSpec.Steps[1].Args[3]).To(Equal("wget \"https://shipwright.io/icons/logo.svg\""))

@@ -2,3 +2,4 @@ defaultBaseImage: registry.access.redhat.com/ubi8/ubi-minimal
 
 baseImageOverrides:
   github.com/shipwright-io/build/cmd/git: ghcr.io/shipwright-io/base-git:latest
+  github.com/shipwright-io/build/cmd/waiter: ghcr.io/shipwright-io/base-waiter:latest

@@ -25,6 +25,12 @@ type BuildRunSpec struct {
 	// BuildRef refers to the Build
 	BuildRef *BuildRef `json:"buildRef"`
 
+	// Sources slice of BuildSource, defining external build artifacts complementary to VCS
+	// (`.spec.source`) data.
+	//
+	// +optional
+	Sources *[]BuildSource `json:"sources,omitempty"`
+
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.
 	// Default serviceaccount will be set if it is empty

@@ -289,12 +289,19 @@ spec:
                     name:
                       description: Name instance entry.
                       type: string
+                    timeout:
+                      description: Timeout how long the BuildSource execution must
+                        take.
+                      type: string
+                    type:
+                      description: Type is the BuildSource qualifier, the type of
+                        the data-source.
+                      type: string
                     url:
                       description: URL remote artifact location.
                       type: string
                   required:
                   - name
-                  - url
                   type: object
                 type: array
               strategy:
