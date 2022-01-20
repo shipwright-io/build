@@ -18,7 +18,7 @@ spec:
         - name: s2i
           mountPath: /s2i
     - name: buildah
-      image: quay.io/containers/buildah:v1.20.1
+      image: quay.io/containers/buildah:v1.23.1
       workingDir: /s2i
       securityContext:
         privileged: true
@@ -29,9 +29,35 @@ spec:
         - |
           set -euo pipefail
 
+          echo "Creating registries config file..."
+
+          format(){
+              array=(`echo $1 | tr ',' ' '`)
+              str=""
+              for m in "${array[@]}"; do
+                  str=$str"'${m}', "
+              done
+
+              echo ${str%??}
+          }
+
+          cat <<EOF >/tmp/registries.conf
+          [registries.search]
+          registries = [$(format "$(params.registry-search)")]
+
+          [registries.insecure]
+          registries = [$(format "$(params.registry-insecure)")]
+
+          [registries.block]
+          registries = [$(format "$(params.registry-block)")]
+
+          EOF
+
           # Building the image
           echo '[INFO] Building image $(params.shp-output-image)'
-          buildah bud --tag='$(params.shp-output-image)'
+          buildah bud \
+            --registries-conf='/tmp/registries.conf' \
+            --tag='$(params.shp-output-image)'
 
           # Push the image
           echo '[INFO] Pushing image $(params.shp-output-image)'
@@ -46,3 +72,13 @@ spec:
       volumeMounts:
         - name: s2i
           mountPath: /s2i
+  parameters:
+    - description: The registries for searching short name images such as `golang:latest`, separated by commas.
+      name: registry-search
+      default: docker.io,quay.io
+    - description: The fully-qualified name of insecure registries. An insecure registry is one that does not have a valid SSL certificate or only does HTTP.
+      name: registry-insecure
+      default: ""
+    - description: The registries that need to block pull access.
+      name: registry-block
+      default: ""
