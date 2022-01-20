@@ -76,14 +76,10 @@ CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
 default: build
 
-.PHONY: vendor
-vendor: go.mod go.sum
-	go mod vendor
-
-.PHONY: build
 build: $(CONTROLLER)
 
-$(CONTROLLER): vendor
+.PHONY: $(CONTROLLER)
+$(CONTROLLER):
 	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/shipwright-build-controller/main.go
 
 .PHONY: build-plain
@@ -239,11 +235,11 @@ install-controller-kind: install-apis
 install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
 
-local: vendor install-strategies
+local: install-strategies
 	CONTROLLER_NAME=shipwright-build-controller \
 	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
-local-plain: vendor
+local-plain:
 	CONTROLLER_NAME=shipwright-build-controller \
 	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
@@ -265,4 +261,3 @@ kind-tekton:
 kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
-
