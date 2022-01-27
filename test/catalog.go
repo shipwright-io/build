@@ -51,6 +51,28 @@ func (c *Catalog) SecretWithoutAnnotation(name string, ns string) *corev1.Secret
 	}
 }
 
+// SecretWithStringData creates a Secret with stringData (not base64 encoded)
+func (c *Catalog) SecretWithStringData(name string, ns string, stringData map[string]string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		StringData: stringData,
+	}
+}
+
+// ConfigMapWithData creates a ConfigMap with data
+func (c *Catalog) ConfigMapWithData(name string, ns string, data map[string]string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Data: data,
+	}
+}
+
 // BuildWithClusterBuildStrategyAndFalseSourceAnnotation gives you an specific Build CRD
 func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name string, ns string, strategyName string) *build.Build {
 	buildStrategy := build.ClusterBuildStrategyKind

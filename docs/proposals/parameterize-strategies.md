@@ -315,7 +315,7 @@ spec:
   output: #Content omitted for this example
   paramValues:
   - name: INSECURE_REGISTRY
-    value: false
+    value: "false"
 ```
 
 ```yaml
@@ -328,7 +328,7 @@ spec:
     name: a-build
   paramValues:
   - name: INSECURE_REGISTRY
-    value: true
+    value: "true"
 ```
 
 The above allows a user to opt-in for pushing to an insecure registry, although the referenced Build disables this behaviour.

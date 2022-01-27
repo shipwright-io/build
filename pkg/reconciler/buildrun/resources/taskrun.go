@@ -10,8 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,7 +65,7 @@ func GenerateTaskSpec(
 	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
 	buildSteps []buildv1alpha1.BuildStep,
-	strategyParams []buildv1alpha1.Parameter,
+	parameterDefinitions []buildv1alpha1.Parameter,
 ) (*v1beta1.TaskSpec, error) {
 
 	generatedTaskSpec := v1beta1.TaskSpec{
@@ -92,17 +91,17 @@ func GenerateTaskSpec(
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 				Description: "The URL of the image that the build produces",
-				Type:        taskv1.ParamTypeString,
+				Type:        v1beta1.ParamTypeString,
 			},
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 				Description: "The context directory inside the source directory",
-				Type:        taskv1.ParamTypeString,
+				Type:        v1beta1.ParamTypeString,
 			},
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
 				Description: "The source directory",
-				Type:        taskv1.ParamTypeString,
+				Type:        v1beta1.ParamTypeString,
 			},
 		},
 		Workspaces: []v1beta1.WorkspaceDeclaration{
@@ -131,19 +130,32 @@ func GenerateTaskSpec(
 	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build, buildRun)
 
 	// Add the strategy defined parameters into the Task spec
-	for _, p := range strategyParams {
+	for _, parameterDefinition := range parameterDefinitions {
 
 		param := v1beta1.ParamSpec{
-			Name:        p.Name,
-			Description: p.Description,
+			Name:        parameterDefinition.Name,
+			Description: parameterDefinition.Description,
 		}
 
-		// verify if the paramSpec Default requires a default
-		// value or not
-		if p.Default != nil {
-			param.Default = &v1beta1.ArrayOrString{
-				Type:      v1beta1.ParamTypeString,
-				StringVal: *p.Default,
+		switch parameterDefinition.Type {
+		case "": // string is default
+			fallthrough
+		case buildv1alpha1.ParameterTypeString:
+			param.Type = v1beta1.ParamTypeString
+			if parameterDefinition.Default != nil {
+				param.Default = &v1beta1.ArrayOrString{
+					Type:      v1beta1.ParamTypeString,
+					StringVal: *parameterDefinition.Default,
+				}
+			}
+
+		case buildv1alpha1.ParameterTypeArray:
+			param.Type = v1beta1.ParamTypeArray
+			if parameterDefinition.Defaults != nil {
+				param.Default = &v1beta1.ArrayOrString{
+					Type:     v1beta1.ParamTypeArray,
+					ArrayVal: *parameterDefinition.Defaults,
+				}
 			}
 		}
 
@@ -360,52 +372,19 @@ func GenerateTaskRun(
 
 	// Ensure a proper override of params between Build and BuildRun
 	// A BuildRun can override a param as long as it was defined in the Build
-	buildUserParams := overrideParams(build.Spec.ParamValues, buildRun.Spec.ParamValues)
-
-	// list of params that collide with reserved system strategy parameters
-	undesiredParams := []string{}
+	paramValues := overrideParams(build.Spec.ParamValues, buildRun.Spec.ParamValues)
 
 	// Append params to the TaskRun spec definition
-	for _, p := range buildUserParams {
-
-		if isReserved := IsSystemReservedParameter(p.Name); isReserved {
-			undesiredParams = append(undesiredParams, p.Name)
+	for _, paramValue := range paramValues {
+		parameterDefinition := FindParameterByName(strategy.GetParameters(), paramValue.Name)
+		if parameterDefinition == nil {
+			// this error should never happen because we validate this upfront in ValidateBuildRunParameters
+			return nil, fmt.Errorf("the parameter %q is not defined in the build strategy %q", paramValue.Name, strategy.GetName())
 		}
 
-		buildParam := v1beta1.Param{
-			Name: p.Name,
-			Value: v1beta1.ArrayOrString{
-				Type:      v1beta1.ParamTypeString,
-				StringVal: p.Value,
-			},
+		if err := HandleTaskRunParam(expectedTaskRun, parameterDefinition, paramValue); err != nil {
+			return nil, err
 		}
-		expectedTaskRun.Spec.Params = append(expectedTaskRun.Spec.Params, buildParam)
-	}
-	// if system parameters names are being use, fail the taskRun creation and update the condition message
-	// with a custom error
-	if len(undesiredParams) > 0 {
-		return nil, fmt.Errorf("restricted parameters in use: %s", strings.Join(undesiredParams, ","))
-	}
-
-	// check if there are parameters from strategies where a value was never set, if this is the case,
-	// then throw a custom error message.
-	paramsWithoutValues := []string{}
-
-StrategyParametersLoop:
-	for _, strategyParam := range strategy.GetParameters() {
-		if strategyParam.Default == nil {
-			for _, p := range buildUserParams {
-				if strategyParam.Name == p.Name {
-					// go back to the outer loop
-					continue StrategyParametersLoop
-				}
-			}
-			paramsWithoutValues = append(paramsWithoutValues, strategyParam.Name)
-		}
-	}
-
-	if len(paramsWithoutValues) > 0 {
-		return nil, fmt.Errorf("parameters without a value definition: %s", strings.Join(paramsWithoutValues, ","))
 	}
 
 	return expectedTaskRun, nil

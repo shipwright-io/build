@@ -372,7 +372,50 @@ spec:
     url: "https://github.com/shipwright-io/sample-go"
   paramValues:
   - name: sleep-time
-    value: 30
+    value: "30"
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithArrayParam defines a Build with an array parameter
+const BuildWithArrayParam = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: array-param
+    values:
+    - value: "3"
+    - value: "-1"
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithConfigMapSecretParams defines a Build with parameter values referencing a ConfigMap and Secret
+const BuildWithConfigMapSecretParams = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  paramValues:
+  - name: array-param
+    values:
+    - value: "3"
+    - configMapValue:
+        name: a-configmap
+        key: a-cm-key
+    - value: "-1"
+  - name: sleep-time
+    secretValue:
+      name: a-secret
+      key: a-secret-key
   strategy:
     kind: BuildStrategy
   output:
@@ -389,9 +432,9 @@ spec:
     url: "https://github.com/shipwright-io/sample-go"
   paramValues:
   - name: shp-something
-    value: 30
+    value: "30"
   - name: DOCKERFILE
-    value: 30
+    value: "30"
   strategy:
     kind: BuildStrategy
   output:
@@ -408,7 +451,7 @@ spec:
     url: "https://github.com/shipwright-io/sample-go"
   paramValues:
   - name: sleep-not
-    value: 30
+    value: "30"
   strategy:
     kind: BuildStrategy
   output:
@@ -441,7 +484,7 @@ spec:
     url: "https://github.com/shipwright-io/sample-go"
   paramValues:
   - name: sleep-not
-    value: 30
+    value: "30"
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -457,7 +500,7 @@ spec:
     url: "https://github.com/shipwright-io/sample-go"
   paramValues:
   - name: sleep-time
-    value: 30
+    value: "30"
   strategy:
     kind: ClusterBuildStrategy
   output:

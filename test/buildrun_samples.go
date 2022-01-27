@@ -138,7 +138,7 @@ kind: BuildRun
 spec:
   paramValues:
   - name: sleep-time
-    value: 15
+    value: "15"
   buildRef:
     name: foobar
 `
@@ -149,7 +149,7 @@ kind: BuildRun
 spec:
   paramValues:
   - name: shp-sleep-time
-    value: 15
+    value: "15"
   buildRef:
     name: foobar
 `
