@@ -42,10 +42,10 @@ echo "COMMON_ANCESTOR is ${COMMON_ANCESTOR}"
 
 # use of 'hub', which is an extension of the 'git' CLI, allows for pulling of PRs, though we can't search based on commits
 # associated with those PRs, so we grab a super big number, 300, which should guarantee grabbing all the PRs back to
-# github.events.inputs.tags; we use grep -v to filter out release-note-none and release-note-action-required.
+# github.events.inputs.tags; we use grep -v to filter out release-note-none.
 # NOTE: investigated using the new 'gh' cli command, but its 'gh pr list' does not currently support the -f option so
 # staying with 'hub' for now.
-hub pr list --state merged -L 300 -f "%sm;%au;%i;%t;%L%n" | grep -E ", release-note|release-note," | grep -v release-note-none | grep -v release-note-action-required > last-300-prs-with-release-note.txt
+hub pr list --state merged -L 300 -f "%sm;%au;%i;%t;%L%n" | grep -E ", release-note|release-note," | grep -v release-note-none > last-300-prs-with-release-note.txt
 # this is for debug while we sort out env differences between Gabe's fedora and GitHub Actions' ubuntu
 echo "start dump last-300-prs-with-release-note.txt for potential debug"
 cat last-300-prs-with-release-note.txt
@@ -87,14 +87,14 @@ while IFS= read -r pr; do
       continue
    fi
    PR_BODY_FILTER_ONE=$(echo $PR_BODY | grep -oPz '(?s)(?<=```release-note..)(.+?)(?=```)')
-   echo $PR_BODY_FILTER_ONE | grep -avP '\W*(Your release note here|action required: your release note here|NONE)\W*' > /dev/null 2>&1
+   echo $PR_BODY_FILTER_ONE | grep -avP '\W*(Your release note here|NONE)\W*' > /dev/null 2>&1
    rc=$?
    if [ ${rc} -eq 1 ]; then
       echo "Second validation:  the release-note field for PR ${PR_NUM} was not properly formatted.  Until it is fixed, it will be skipped for release note inclusion."
       echo "See the PR template at https://raw.githubusercontent.com/shipwright-io/build/master/.github/pull_request_template.md for verification steps"
       continue
    fi
-   PR_RELEASE_NOTE=$(echo $PR_BODY_FILTER_ONE | grep -avP '\W*(Your release note here|action required: your release note here|NONE)\W*')
+   PR_RELEASE_NOTE=$(echo $PR_BODY_FILTER_ONE | grep -avP '\W*(Your release note here|NONE)\W*')
    PR_RELEASE_NOTE_NO_NEWLINES=$(echo $PR_RELEASE_NOTE | sed 's/\\n//g' | sed 's/\\r//g')
    MISC=yes
    echo $pr | grep 'kind/bug'
