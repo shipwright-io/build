@@ -237,15 +237,15 @@ The above allows users to get an overview of the building mechanism state.
 
 ### Understanding the state of a BuildRun
 
-A `BuildRun` resource stores the relevant information regarding the state of the object under `Status.Conditions`.
+A `BuildRun` resource stores the relevant information regarding the state of the object under `status.conditions`.
 
 [Conditions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties) allow users to easily understand the resource state, without needing to understand resource-specific details.
 
 For the `BuildRun` we use a Condition of the type `Succeeded`, which is a well-known type for resources that run to completion.
 
-The `Status.Conditions` hosts different fields, like `Status`, `Reason` and `Message`. Users can expect this fields to be populated with relevant information.
+The `status.conditions` hosts different fields, like `status`, `reason` and `message`. Users can expect this fields to be populated with relevant information.
 
-The following table illustrates the different states a BuildRun can have under its `Status.Conditions`:
+The following table illustrates the different states a BuildRun can have under its `status.conditions`:
 
 | Status | Reason | CompletionTime is set | Description |
 | --- | --- | --- | --- |
@@ -281,12 +281,12 @@ _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/te
 
 ### Understanding failed BuildRuns
 
-[DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer from the `Status.FailedAt` field, the pod and container where the failure took place.
+[DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer from the `status.failedAt` field, the pod and container where the failure took place.
 
-In addition, the `Status.Conditions` will host under the `Message` field a compacted message containing the `kubectl` command to trigger, in order to retrieve the logs.
+In addition, the `status.conditions` will host under the `message` field a compacted message containing the `kubectl` command to trigger, in order to retrieve the logs.
 
-Lastly, users can check `Status.FailureDetails` field, which includes the same information available in the `Status.FailedAt` field,
-as well as a humanly-readable error message and reason.
+Lastly, users can check `status.failureDetails` field, which includes the same information available in the `status.failedAt` field,
+as well as a human-readable error message and reason.
 The message and reason are only included if the build strategy provides them.
 
 Example of failed BuildRun:
@@ -306,7 +306,7 @@ status:
 
 #### Understanding failed git-source step
 
-All git related operations support error reporting via `Status.FailureDetails`. The following table explains the possible
+All git related operations support error reporting via `status.failureDetails`. The following table explains the possible
 error reasons:
 
 | Reason |  Description |
@@ -314,7 +314,7 @@ error reasons:
 | `GitAuthInvalidUserOrPass` | Basic authentication has failed. Check your username or password. Note: GitHub requires a personal access token instead of your regular password. |
 | `GitAuthInvalidKey` | The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
 | `GitRevisionNotFound` | The remote revision does not exist. Check the revision specified in your Build. |
-| `GitRemoteRepositoryNotFound`| The source repository does not exist, or you have insufficient permission to access it. |
+| `GitRemoteRepositoryNotFound`| The source repository does not exist, or you have insufficient permissions to access it. |
 | `GitRemoteRepositoryPrivate` | You are trying to access a non existing or private repository without having sufficient permissions to access it via HTTPS. |
 | `GitBasicAuthIncomplete`| Basic Auth incomplete: Both username and password need to be configured. |
 | `GitSSHAuthUnexpected`| Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL. |
@@ -365,7 +365,7 @@ status:
 
 ### Build Snapshot
 
-For every BuildRun controller reconciliation, the `buildSpec` in the Status of the `BuildRun` is updated if an existing owned `TaskRun` is present. During this update, a `Build` resource snapshot is generated and embedded into the `status.buildSpec` path of the `BuildRun`. A `buildSpec` is just a copy of the original `Build` spec, from where the `BuildRun` executed a particular image build. The snapshot approach allows developers to see the original `Build` configuration.
+For every BuildRun controller reconciliation, the `buildSpec` in the status of the `BuildRun` is updated if an existing owned `TaskRun` is present. During this update, a `Build` resource snapshot is generated and embedded into the `status.buildSpec` path of the `BuildRun`. A `buildSpec` is just a copy of the original `Build` spec, from where the `BuildRun` executed a particular image build. The snapshot approach allows developers to see the original `Build` configuration.
 
 ## Relationship with Tekton Tasks
 

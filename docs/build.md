@@ -6,16 +6,16 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build
 
-  - [Overview](#overview)
-  - [Build Controller](#build-controller)
-  - [Build Validations](#build-validations)
-  - [Configuring a Build](#configuring-a-build)
-    - [Defining the Source](#defining-the-source)
-    - [Defining the Strategy](#defining-the-strategy)
-    - [Defining ParamValues](#defining-paramvalues)
-    - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
-    - [Defining the Output](#defining-the-output)
-  - [BuildRun deletion](#BuildRun-deletion)
+- [Overview](#overview)
+- [Build Controller](#build-controller)
+- [Build Validations](#build-validations)
+- [Configuring a Build](#configuring-a-build)
+  - [Defining the Source](#defining-the-source)
+  - [Defining the Strategy](#defining-the-strategy)
+  - [Defining ParamValues](#defining-paramvalues)
+  - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
+  - [Defining the Output](#defining-the-output)
+- [BuildRun deletion](#BuildRun-deletion)
 
 ## Overview
 
@@ -47,7 +47,7 @@ When the controller reconciles it:
 
 ## Build Validations
 
-In order to prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `Status.Reason`, however if any of the validations failed, users can rely on the `Status.Reason` and `Status.Message` fields, in order to understand the root cause.
+In order to prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `status.reason`, however if any of the validations failed, users can rely on the `status.reason` and `status.message` fields, in order to understand the root cause.
 
 | Status.Reason | Description |
 | --- | --- |

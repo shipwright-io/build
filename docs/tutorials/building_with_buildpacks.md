@@ -112,7 +112,7 @@ NAME                     SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
 ruby-tutorial-buildrun   True        Succeeded   115s        51s
 ```
 
-To know more about the state of the BuildRun, the `.Status.Conditions` fields provide more data:
+To know more about the state of the BuildRun, the `.status.conditions` fields provide more data:
 
 ```sh
 $ kubectl get buildrun ruby-tutorial-buildrun -o json | jq '.status.conditions[]'
