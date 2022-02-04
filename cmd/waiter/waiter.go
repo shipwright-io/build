@@ -39,18 +39,27 @@ func (w *Waiter) read() (int, error) {
 	return pid, nil
 }
 
-// retry re-execute the informed function waiting for 100ms per attempt.
-func retry(timeout time.Duration, fn func() bool) error {
-	attempts := int(int(timeout.Milliseconds()) / 100)
-	log.Printf("Will retry '%d' times (sleep 100ms)...\n", attempts)
-	for i := attempts; i > 0; i-- {
-		if fn() {
-			log.Printf("Done! Condition has been reached on '%d' attempt\n", attempts-i)
-			return nil
+// validate that a lock file not longer exists, otherwise timeout if needed
+func (w *Waiter) retry() error {
+	timer := time.NewTimer(w.flagValues.timeout)
+	defer timer.Stop()
+
+	// Verify on file existence every 100ms
+	ticker := time.Tick(100 * time.Millisecond)
+
+	for {
+		select {
+		case <-timer.C:
+			return fmt.Errorf("%w: elapsed %v seconds", ErrTimeout, w.flagValues.timeout.Seconds())
+		case <-ticker:
+			if _, err := os.Stat(w.flagValues.lockFile); err != nil && os.IsNotExist(err) {
+				log.Printf("Done! Condition has been reached\n")
+				return nil
+			}
+			// do nothing and continue the ticker
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
-	return fmt.Errorf("%w: elapsed %v seconds", ErrTimeout, timeout.Seconds())
+
 }
 
 // Wait wait for the lock-file to be removed, or timeout.
@@ -61,10 +70,7 @@ func (w *Waiter) Wait() error {
 	}
 
 	// waiting for the lock-file removal...
-	err := retry(w.flagValues.timeout, func() bool {
-		_, err := os.Stat(w.flagValues.lockFile)
-		return err != nil && os.IsNotExist(err)
-	})
+	err := w.retry()
 	if err != nil {
 		_ = os.RemoveAll(w.flagValues.lockFile)
 	}
