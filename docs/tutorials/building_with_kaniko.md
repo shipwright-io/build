@@ -104,7 +104,7 @@ NAME                         SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
 go-tutorial-buildrun         True        Succeeded   2m45s       35s
 ```
 
-To know more about the state of the BuildRun, the `.Status.Conditions` fields provide more data:
+To know more about the state of the BuildRun, the `.status.conditions` fields provide more data:
 
 ```sh
 kubectl get buildrun go-tutorial-buildrun -o json | jq '.status.conditions[]'

@@ -106,7 +106,7 @@ NAME                  SUCCEEDED   REASON    STARTTIME   COMPLETIONTIME
 a-buildkit-buildrun   Unknown     Pending   4s
 ```
 
-To know more about the state of the BuildRun, the `.Status.Conditions` fields provide more data:
+To know more about the state of the BuildRun, the `.status.conditions` fields provide more data:
 
 ```sh
 $ kubectl get buildrun a-buildkit-buildrun -o json | jq '.status.conditions[]'

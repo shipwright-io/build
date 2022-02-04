@@ -243,7 +243,7 @@ Users defining _parameters_ under their strategies require to understand the fol
 
   ```yaml
   spec:
-    parameteres:
+    parameters:
       - name: tool-args
         description: Parameters for the tool
         type: array
@@ -438,11 +438,11 @@ Additionally, you can store error details for debugging purposes when a BuildRun
 | `$(results.shp-error-reason.path)` | File to store the error reason.          |
 | `$(results.shp-error-message.path)` | File to store the error message. |
 
-Reason is intended to be a one-word, CamelCase classification of the error source, with the first letter capitalized.
+Reason is intended to be a one-word CamelCase classification of the error source, with the first letter capitalized.
 Error details are only propagated if the build container terminates with a non-zero exit code.
-This information will be available in the `.status.failureDetails` field of the BuildRun. 
+This information will be available in the `.status.failureDetails` field of the BuildRun.
 
-```yaml 
+```yaml
 apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 # [...]
