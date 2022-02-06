@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -339,6 +340,21 @@ func buildRunTestData(ns string, identifier string, filePath string) (*buildv1al
 	}
 
 	return buildRun, nil
+}
+
+func appendRegistryInsecureParamValue(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) {
+	if strings.Contains(build.Spec.Output.Image, "cluster.local") {
+		parts := strings.Split(build.Spec.Output.Image, "/")
+		host := parts[0]
+		buildRun.Spec.ParamValues = append(buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+			Name: "registries-insecure",
+			Values: []buildv1alpha1.SingleValue{
+				{
+					Value: &host,
+				},
+			},
+		})
+	}
 }
 
 func getTimeoutMultiplier() int64 {
