@@ -60,6 +60,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		It("successfully runs a build and surface results to BuildRun", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			appendRegistryInsecureParamValue(build, buildRun)
 
 			validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
@@ -82,6 +83,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		It("successfully runs a build", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildah_cr_custom_context+dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			appendRegistryInsecureParamValue(build, buildRun)
 
 			validateBuildRunToSucceed(testBuild, buildRun)
 		})

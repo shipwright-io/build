@@ -22,6 +22,7 @@ import (
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
 	var (
+		err      error
 		testID   string
 		build    *buildv1alpha1.Build
 		buildRun *buildv1alpha1.BuildRun
@@ -59,11 +60,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		It("should mutate an image with annotation and label", func() {
-			buildRun, err := buildRunTestData(
+			buildRun, err = buildRunTestData(
 				testBuild.Namespace, testID,
 				"test/data/buildrun_buildah_cr_mutate.yaml",
 			)
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			appendRegistryInsecureParamValue(build, buildRun)
 
 			validateBuildRunToSucceed(testBuild, buildRun)
 

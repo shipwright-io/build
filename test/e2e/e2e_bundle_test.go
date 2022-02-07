@@ -7,6 +7,7 @@ package e2e_test
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -104,7 +105,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		It("should work with Buildah build strategy", func() {
-			build, err = NewBuildPrototype().
+			buildPrototype := NewBuildPrototype().
 				ClusterBuildStrategy("buildah").
 				Name(testID).
 				Namespace(testBuild.Namespace).
@@ -112,8 +113,15 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				SourceContextDir("docker-build").
 				Dockerfile("Dockerfile").
 				OutputImage(outputImage).
-				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
-				Create()
+				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret))
+
+			if strings.Contains(outputImage, "cluster.local") {
+				parts := strings.Split(outputImage, "/")
+				host := parts[0]
+				buildPrototype.ArrayParamValue("registries-insecure", host)
+			}
+
+			build, err = buildPrototype.Create()
 			Expect(err).ToNot(HaveOccurred())
 
 			buildRun, err = NewBuildRunPrototype().
