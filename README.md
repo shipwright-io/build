@@ -49,7 +49,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 * Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.7.0/sample-strategies.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.8.0/sample-strategies.yaml
   ```
 
 * Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):
