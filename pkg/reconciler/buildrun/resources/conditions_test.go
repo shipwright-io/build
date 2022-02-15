@@ -68,7 +68,6 @@ var _ = Describe("Conditions", func() {
 
 		It("should be able to set a condition based on a type", func() {
 			br := ctl.DefaultBuildRun("foo", "bar")
-
 			// generate a condition of the type Succeeded
 			tmpCond := &build.Condition{
 				Type:               build.Succeeded,

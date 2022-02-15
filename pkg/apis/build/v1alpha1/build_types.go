@@ -58,6 +58,16 @@ const (
 	AllValidationsSucceeded = "all validations succeeded"
 )
 
+// BuildReasonPtr returns a pointer to the passed BuildReason.
+func BuildReasonPtr(s BuildReason) *BuildReason {
+	return &s
+}
+
+// ConditionStatusPtr returns a pointer to the passed ConditionStatus.
+func ConditionStatusPtr(s corev1.ConditionStatus) *corev1.ConditionStatus {
+	return &s
+}
+
 const (
 	// BuildDomain is the domain used for all labels and annotations for this resource
 	BuildDomain = "build.shipwright.io"
@@ -91,11 +101,11 @@ type BuildSpec struct {
 	// (`.spec.source`) data.
 	//
 	// +optional
-	Sources *[]BuildSource `json:"sources,omitempty"`
+	Sources []BuildSource `json:"sources,omitempty"`
 
 	// Strategy references the BuildStrategy to use to build the container
 	// image.
-	Strategy *Strategy `json:"strategy"`
+	Strategy Strategy `json:"strategy"`
 
 	// Builder refers to the image containing the build tools inside which
 	// the source code would be built.
@@ -137,10 +147,6 @@ func (buildSpec *BuildSpec) StrategyName() string {
 		return "undefined (nil buildSpec)"
 	}
 
-	if buildSpec.Strategy == nil {
-		return "undefined (nil strategy)"
-	}
-
 	return buildSpec.Strategy.Name
 }
 
@@ -170,15 +176,15 @@ type Image struct {
 type BuildStatus struct {
 	// The Register status of the Build
 	// +optional
-	Registered corev1.ConditionStatus `json:"registered,omitempty"`
+	Registered *corev1.ConditionStatus `json:"registered,omitempty"`
 
 	// The reason of the registered Build, it's an one-word camelcase
 	// +optional
-	Reason BuildReason `json:"reason,omitempty"`
+	Reason *BuildReason `json:"reason,omitempty"`
 
 	// The message of the registered Build, either an error or succeed message
 	// +optional
-	Message string `json:"message,omitempty"`
+	Message *string `json:"message,omitempty"`
 }
 
 // +genclient
@@ -196,7 +202,7 @@ type Build struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BuildSpec   `json:"spec,omitempty"`
+	Spec   BuildSpec   `json:"spec"`
 	Status BuildStatus `json:"status,omitempty"`
 }
 

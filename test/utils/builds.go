@@ -74,7 +74,7 @@ func (t *TestBuild) GetBuildTillValidation(name string) (build *v1alpha1.Build, 
 		}
 
 		// TODO: we might improve the conditional here
-		if build.Status.Registered != "" {
+		if build.Status.Registered != nil && *build.Status.Registered != "" {
 			return true, nil
 		}
 
@@ -99,7 +99,7 @@ func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.Condi
 				return false, err
 			}
 			// TODO: we might improve the conditional here
-			if buildRun.Status.Registered == condition {
+			if buildRun.Status.Registered != nil && *buildRun.Status.Registered == condition {
 				return true, nil
 			}
 
@@ -131,7 +131,7 @@ func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMess
 				return false, err
 			}
 
-			if strings.Contains(buildRun.Status.Message, partOfMessage) {
+			if strings.Contains(*buildRun.Status.Message, partOfMessage) {
 				return true, nil
 			}
 

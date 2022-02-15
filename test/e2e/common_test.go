@@ -45,7 +45,7 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 	// and therefore marks the build as not registered with reason BuildStrategyNotFound
 	Eventually(func() buildv1alpha1.BuildReason {
 		// cleanup the build of the previous try
-		if build.Status.Registered != "" {
+		if build.Status.Registered != nil && *build.Status.Registered != "" {
 			err = testBuild.DeleteBuild(build.Name)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -63,7 +63,7 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 		build, err = testBuild.GetBuildTillValidation(build.Name)
 		Expect(err).ToNot(HaveOccurred())
 
-		return build.Status.Reason
+		return *build.Status.Reason
 	}, time.Duration(10*time.Second), time.Second).Should(Equal(buildv1alpha1.SucceedStatus))
 
 	return build
@@ -105,7 +105,7 @@ func amendSourceURL(b *buildv1alpha1.Build, sourceURL string) {
 	if sourceURL == "" {
 		return
 	}
-	b.Spec.Source.URL = sourceURL
+	b.Spec.Source.URL = &sourceURL
 }
 
 // amendBuild make changes on build object.
@@ -151,7 +151,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 	}
 
 	if build != nil {
-		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, build.Status.Registered, build.Status.Reason)
+		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, *build.Status.Registered, *build.Status.Reason)
 		if buildJSON, err := json.Marshal(build); err == nil {
 			Logf("The full Build: %s", string(buildJSON))
 		}

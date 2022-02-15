@@ -334,7 +334,7 @@ func GenerateTaskRun(
 			},
 		})
 	}
-	if build.Spec.Dockerfile != nil {
+	if build.Spec.Dockerfile != nil && *build.Spec.Dockerfile != "" {
 		params = append(params, v1beta1.Param{
 			Name: inputParamDockerfile,
 			Value: v1beta1.ArrayOrString{

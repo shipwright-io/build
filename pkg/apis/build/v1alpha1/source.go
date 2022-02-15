@@ -19,12 +19,12 @@ type Source struct {
 	// URL describes the URL of the Git repository.
 	//
 	// +optional
-	URL string `json:"url,omitempty"`
+	URL *string `json:"url,omitempty"`
 
 	// BundleContainer
 	//
 	// +optional
-	BundleContainer *BundleContainer `json:"bundleContainer"`
+	BundleContainer *BundleContainer `json:"bundleContainer,omitempty"`
 
 	// Revision describes the Git revision (e.g., branch, tag, commit SHA,
 	// etc.) to fetch.

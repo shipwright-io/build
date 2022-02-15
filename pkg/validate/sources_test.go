@@ -22,20 +22,20 @@ func TestSourcesRef_ValidatePath(t *testing.T) {
 	}, {
 		description: "name is not informed",
 		expectError: true,
-		b: &build.Build{Spec: build.BuildSpec{Sources: &[]build.BuildSource{{
+		b: &build.Build{Spec: build.BuildSpec{Sources: []build.BuildSource{{
 			Name: "",
 		}}}},
 	}, {
 		description: "URL is not informed",
 		expectError: true,
-		b: &build.Build{Spec: build.BuildSpec{Sources: &[]build.BuildSource{{
+		b: &build.Build{Spec: build.BuildSpec{Sources: []build.BuildSource{{
 			Name: "name",
 			URL:  "",
 		}}}},
 	}, {
 		description: "invalid URL",
 		expectError: true,
-		b: &build.Build{Spec: build.BuildSpec{Sources: &[]build.BuildSource{{
+		b: &build.Build{Spec: build.BuildSpec{Sources: []build.BuildSource{{
 			Name: "name",
 			URL:  "invalid URL",
 		}}}},

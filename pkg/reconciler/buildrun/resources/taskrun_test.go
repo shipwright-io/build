@@ -85,7 +85,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Steps[0].Command[0]).To(Equal("/ko-app/git"))
 				Expect(got.Steps[0].Args).To(Equal([]string{
 					"--url",
-					build.Spec.Source.URL,
+					*build.Spec.Source.URL,
 					"--target",
 					"$(params.shp-source-root)",
 					"--result-file-commit-sha",

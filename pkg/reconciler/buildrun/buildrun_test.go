@@ -241,19 +241,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(serviceAccount.Name).To(Equal(buildRunSample.Name))
 				Expect(serviceAccount.Namespace).To(Equal(buildRunSample.Namespace))
 			})
-
-			It("should not panic in case the build spec strategy is nil", func() {
-				// As long as the Strategy is a pointer, it can happen that the
-				// field is nil. During processing, the BuildSpec is copied
-				// from the respective Build. In case Strategy is nil, the
-				// controller should not panic.
-				buildRunSample.Status.BuildSpec.Strategy = nil
-				Expect(func() {
-					result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(result).ToNot(BeNil())
-				}).ShouldNot(Panic())
-			})
 		})
 
 		Context("from an existing TaskRun with Conditions", func() {
@@ -356,7 +343,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			It("should recognize the BuildRun is canceled", func() {
 				// set cancel
 				buildRunSampleCopy := buildRunSample.DeepCopy()
-				buildRunSampleCopy.Spec.State = build.BuildRunStateCancel
+				buildRunSampleCopy.Spec.State = build.BuildRunRequestedStatePtr(build.BuildRunStateCancel)
 
 				taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionUnknown, "Running")
 
@@ -548,7 +535,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			It("should recognize the BuildRun is canceled even with TaskRun missing", func() {
 				// set cancel
 				buildRunSampleCopy := buildRunSample.DeepCopy()
-				buildRunSampleCopy.Spec.State = build.BuildRunStateCancel
+				buildRunSampleCopy.Spec.State = build.BuildRunRequestedStatePtr(build.BuildRunStateCancel)
 
 				client.GetCalls(ctl.StubBuildCRDs(
 					buildSample,
@@ -1067,8 +1054,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 			It("delays creation if the registered status of the build is not yet set", func() {
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
-				buildSample.Status.Registered = ""
-				buildSample.Status.Reason = ""
+				buildSample.Status.Registered = build.ConditionStatusPtr("")
+				buildSample.Status.Reason = build.BuildReasonPtr("")
 
 				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
 
@@ -1192,8 +1179,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// in the build
 				clientUpdateCalls := ctl.StubBuildUpdateOwnerReferences("Build",
 					buildName,
-					pointer.BoolPtr(true),
-					pointer.BoolPtr(true),
+					pointer.Bool(true),
+					pointer.Bool(true),
 				)
 				client.UpdateCalls(clientUpdateCalls)
 

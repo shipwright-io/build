@@ -11,6 +11,7 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/git"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,10 +26,10 @@ type SourceURLRef struct {
 // that the spec.source.url exists. This validation only applies
 // to endpoints that do not require authentication.
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
-	if s.Build.Spec.Source.Credentials == nil {
+	if s.Build.Spec.Source.Credentials == nil && s.Build.Spec.Source.URL != nil {
 		switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
 		case "true":
-			if err := git.ValidateGitURLExists(ctx, s.Build.Spec.Source.URL); err != nil {
+			if err := git.ValidateGitURLExists(ctx, *s.Build.Spec.Source.URL); err != nil {
 				s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, err.Error())
 				return err
 			}
@@ -48,7 +49,7 @@ func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 }
 
 // MarkBuildStatus updates a Build Status fields
-func (s SourceURLRef) MarkBuildStatus(build *build.Build, reason build.BuildReason, msg string) {
-	build.Status.Reason = reason
-	build.Status.Message = msg
+func (s SourceURLRef) MarkBuildStatus(b *build.Build, reason build.BuildReason, msg string) {
+	b.Status.Reason = build.BuildReasonPtr(reason)
+	b.Status.Message = pointer.String(msg)
 }

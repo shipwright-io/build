@@ -508,9 +508,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.BuildNameInvalid))
-			Expect(buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
+			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
+			Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.BuildNameInvalid))
+			Expect(*buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
 		})
 	})
 	Context("when a build generateName is provided but none name", func() {
@@ -534,9 +534,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			buildObject, err = tb.GetBuildTillValidation(buildList.Items[0].Name)
 			Expect(err).To(BeNil())
 
-			Expect(buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-			Expect(buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+			Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
 		})
 	})
 })

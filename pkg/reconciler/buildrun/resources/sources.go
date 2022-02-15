@@ -21,12 +21,10 @@ func isLocalCopyBuildSource(
 	buildRun *buildv1alpha1.BuildRun,
 ) *buildv1alpha1.BuildSource {
 	sources := []buildv1alpha1.BuildSource{}
-	if build.Spec.Sources != nil {
-		sources = append(sources, *build.Spec.Sources...)
-	}
-	if buildRun.Spec.Sources != nil {
-		sources = append(sources, *buildRun.Spec.Sources...)
-	}
+
+	sources = append(sources, build.Spec.Sources...)
+	sources = append(sources, buildRun.Spec.Sources...)
+
 	for _, source := range sources {
 		if source.Type == buildv1alpha1.LocalCopy {
 			return &source
@@ -50,18 +48,16 @@ func AmendTaskSpecWithSources(
 		switch {
 		case build.Spec.Source.BundleContainer != nil:
 			sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source, defaultSourceName)
-		case build.Spec.Source.URL != "":
+		case build.Spec.Source.URL != nil:
 			sources.AppendGitStep(cfg, taskSpec, build.Spec.Source, defaultSourceName)
 		}
 	}
 
-	if build.Spec.Sources != nil {
-		// inspecting .spec.sources looking for "http" typed sources to generate the TaskSpec items
-		// in order to handle remote artifacts
-		for _, source := range *build.Spec.Sources {
-			if source.Type == buildv1alpha1.HTTP {
-				sources.AppendHTTPStep(cfg, taskSpec, source)
-			}
+	// inspecting .spec.sources looking for "http" typed sources to generate the TaskSpec items
+	// in order to handle remote artifacts
+	for _, source := range build.Spec.Sources {
+		if source.Type == buildv1alpha1.HTTP {
+			sources.AppendHTTPStep(cfg, taskSpec, source)
 		}
 	}
 }
@@ -73,7 +69,7 @@ func updateBuildRunStatusWithSourceResult(buildrun *buildv1alpha1.BuildRun, resu
 	case buildSpec.Source.BundleContainer != nil:
 		sources.AppendBundleResult(buildrun, defaultSourceName, results)
 
-	case buildSpec.Source.URL != "":
+	case buildSpec.Source.URL != nil:
 		sources.AppendGitResult(buildrun, defaultSourceName, results)
 	}
 

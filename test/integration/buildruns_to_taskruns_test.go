@@ -290,9 +290,9 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			b, err := tb.GetBuildTillRegistration(buildObject.Name, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
-			Expect(b.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(b.Status.Reason).To(Equal(v1alpha1.RemoteRepositoryUnreachable))
-			Expect(b.Status.Message).To(ContainSubstring("no such host"))
+			Expect(*b.Status.Registered).To(Equal(corev1.ConditionFalse))
+			Expect(*b.Status.Reason).To(Equal(v1alpha1.RemoteRepositoryUnreachable))
+			Expect(*b.Status.Message).To(ContainSubstring("no such host"))
 
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
@@ -365,7 +365,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					return false, nil
 				}
 
-				bro.Spec.State = v1alpha1.BuildRunStateCancel
+				bro.Spec.State = v1alpha1.BuildRunRequestedStatePtr(v1alpha1.BuildRunStateCancel)
 				err = tb.UpdateBR(bro)
 				if err != nil {
 					GinkgoT().Logf("error on br update: %s\n", err.Error())

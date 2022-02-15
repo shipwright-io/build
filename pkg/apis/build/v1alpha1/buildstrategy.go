@@ -52,7 +52,7 @@ type Parameter struct {
 
 	// Default value for a string parameter
 	// +optional
-	Default *string `json:"default"`
+	Default *string `json:"default,omitempty"`
 
 	// Default values for an array parameter
 	// +optional
@@ -63,7 +63,7 @@ type Parameter struct {
 // If the build step declares a volumeMount, Shipwright will create an emptyDir volume mount for the named volume.
 // Build steps which share the same named volume in the volumeMount will share the same underlying emptyDir volume.
 // This behavior is deprecated, and will be removed when full volume support is added to build strategies as specified
-// in SHIP-0022. 
+// in SHIP-0022.
 type BuildStep struct {
 	corev1.Container `json:",inline"`
 }
@@ -86,7 +86,7 @@ type Strategy struct {
 
 	// API version of the referent
 	// +optional
-	APIVersion string `json:"apiVersion,omitempty"`
+	APIVersion *string `json:"apiVersion,omitempty"`
 }
 
 // BuilderStrategy defines the common elements of build strategies
