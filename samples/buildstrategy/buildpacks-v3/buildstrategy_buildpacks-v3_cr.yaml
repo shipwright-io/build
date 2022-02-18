@@ -4,6 +4,10 @@ kind: ClusterBuildStrategy
 metadata:
   name: buildpacks-v3
 spec:
+  parameters:
+    - name: platform-api-version
+      description: The referenced version is the minimum version that all relevant buildpack implementations support.
+      default: "0.4"
   buildSteps:
     - name: prepare
       image: docker.io/paketobuildpacks/builder:full
@@ -32,6 +36,9 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
+      env: 
+        - name: CNB_PLATFORM_API
+          value: $(params.platform-api-version)
       command:
         - /bin/bash
       args:
@@ -67,14 +74,32 @@ spec:
             fi
           done
 
-          mkdir /tmp/cache /tmp/layers
+          LAYERS_DIR=/tmp/layers
+          CACHE_DIR=/tmp/cache
 
-          /cnb/lifecycle/creator \
-            '-app=$(params.shp-source-context)' \
-            -cache-dir=/tmp/cache \
-            -layers=/tmp/layers \
-            -report=/tmp/report.toml \
-            '$(params.shp-output-image)'
+          mkdir "$CACHE_DIR" "$LAYERS_DIR"
+
+          function anounce_phase {
+            printf "===> %s\n" "$1" 
+          }
+
+          anounce_phase "DETECTING"
+          /cnb/lifecycle/detector -app="$(params.shp-source-context)" -layers="$LAYERS_DIR"
+
+          anounce_phase "ANALYZING"
+          /cnb/lifecycle/analyzer -layers="$LAYERS_DIR" -cache-dir="$CACHE_DIR" "$(params.shp-output-image)"
+
+          anounce_phase "RESTORING"
+          /cnb/lifecycle/restorer -cache-dir="$CACHE_DIR"
+
+          anounce_phase "BUILDING"
+          /cnb/lifecycle/builder -app="$(params.shp-source-context)" -layers="$LAYERS_DIR"
+
+          exporter_args=( -layers="$LAYERS_DIR" -report=/tmp/report.toml -cache-dir="$CACHE_DIR" -app="$(params.shp-source-context)")
+          grep -q "buildpack-default-process-type" "$LAYERS_DIR/config/metadata.toml" || exporter_args+=( -process-type web ) 
+
+          anounce_phase "EXPORTING"
+          /cnb/lifecycle/exporter "${exporter_args[@]}" "$(params.shp-output-image)" 
 
           # Store the image digest
           grep digest /tmp/report.toml | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
