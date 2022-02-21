@@ -175,7 +175,7 @@ Our sample build strategies are all functional on linux/amd64. Their support on 
 
 We host weekly meetings for users, contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 1pm UTC.
 
-* Meeting [minutes](https://github.com/shipwright-io/community/issues?q=is%3Aopen+is%3Aissue+label%3Acommunity+label%3Ameeting)
+* Meeting [minutes](https://github.com/shipwright-io/community/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting)
 * Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
 
 ### Want to contribute
