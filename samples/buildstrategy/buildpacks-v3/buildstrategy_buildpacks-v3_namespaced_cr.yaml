@@ -39,6 +39,10 @@ spec:
       env: 
         - name: CNB_PLATFORM_API
           value: $(params.platform-api-version)
+        - name: PARAM_SOURCE_CONTEXT
+          value: $(params.shp-source-context)
+        - name: PARAM_OUTPUT_IMAGE
+          value: $(params.shp-output-image)
       command:
         - /bin/bash
       args:
@@ -84,22 +88,22 @@ spec:
           }
 
           anounce_phase "DETECTING"
-          /cnb/lifecycle/detector -app="$(params.shp-source-context)" -layers="$LAYERS_DIR"
+          /cnb/lifecycle/detector -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
 
           anounce_phase "ANALYZING"
-          /cnb/lifecycle/analyzer -layers="$LAYERS_DIR" -cache-dir="$CACHE_DIR" "$(params.shp-output-image)"
+          /cnb/lifecycle/analyzer -layers="$LAYERS_DIR" -cache-dir="$CACHE_DIR" "${PARAM_OUTPUT_IMAGE}"
 
           anounce_phase "RESTORING"
           /cnb/lifecycle/restorer -cache-dir="$CACHE_DIR"
 
           anounce_phase "BUILDING"
-          /cnb/lifecycle/builder -app="$(params.shp-source-context)" -layers="$LAYERS_DIR"
+          /cnb/lifecycle/builder -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
 
-          exporter_args=( -layers="$LAYERS_DIR" -report=/tmp/report.toml -cache-dir="$CACHE_DIR" -app="$(params.shp-source-context)")
+          exporter_args=( -layers="$LAYERS_DIR" -report=/tmp/report.toml -cache-dir="$CACHE_DIR" -app="${PARAM_SOURCE_CONTEXT}")
           grep -q "buildpack-default-process-type" "$LAYERS_DIR/config/metadata.toml" || exporter_args+=( -process-type web ) 
 
           anounce_phase "EXPORTING"
-          /cnb/lifecycle/exporter "${exporter_args[@]}" "$(params.shp-output-image)" 
+          /cnb/lifecycle/exporter "${exporter_args[@]}" "${PARAM_OUTPUT_IMAGE}"
 
           # Store the image digest
           grep digest /tmp/report.toml | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"

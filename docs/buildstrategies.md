@@ -32,6 +32,7 @@ SPDX-License-Identifier: Apache-2.0
 - [Strategy parameters](#strategy-parameters)
 - [System parameters](#system-parameters)
 - [System parameters vs Strategy Parameters Comparison](#system-parameters-vs-strategy-parameters-comparison)
+- [Securely referencing string parameters](#securely-referencing-string-parameters)
 - [System results](#system-results)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
@@ -200,7 +201,7 @@ The build strategy provides the following parameters that you can set in a Build
 | Parameter | Description | Default |
 | -- | -- | -- |
 | `go-flags` | Value for the GOFLAGS environment variable. | Empty |
-| `go-version` | Version of Go, must match a tag from [the golang image](https://hub.docker.com/_/golang?tab=tags) | `1.16` |
+| `go-version` | Version of Go, must match a tag from [the golang image](https://hub.docker.com/_/golang?tab=tags) | `1.17` |
 | `ko-version` | Version of ko, must be either `latest` for the newest release, or a [ko release name](https://github.com/google/ko/releases) | `latest` |
 | `package-directory` | The directory inside the context directory containing the main package. | `.` |
 | `target-platform` | Target platform to be built. For example: `linux/arm64`. Multiple platforms can be provided separated by comma, for example: `linux/arm64,linux/amd64`. The value `all` will build all platforms supported by the base image. The value `current` will build the platform on which the build runs. | `current` |
@@ -411,6 +412,86 @@ Contrary to the strategy `spec.parameters`, you can use system parameters and th
 | ------------------ | ------------ | ------------- |
 | System Parameter   |    No        |  At run-time, by the `BuildRun` controller.  |
 | Strategy Parameter |    Yes       |  At build-time, during the `BuildStrategy` creation. |
+
+## Securely referencing string parameters
+
+In build strategy steps, string parameters are referenced using `$(params.PARAM_NAME)`. This applies to system parameters, and those parameters defined in the build strategy. You can reference those parameters at many locations in the build steps, such as environment variables values, arguments, image, and more. In the Pod, all `$(params.PARAM_NAME)` tokens will be replaced by simple string replaces. This is safe in most locations but requires your attention when you define an inline script using an argument. For example:
+
+```yaml
+spec:
+  parameters:
+    - name: sample-parameter
+      description: A sample parameter
+      type: string
+  buildSteps:
+    - name: sample-step
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          some-tool --sample-argument "$(params.sample-parameter)"
+```
+
+This opens the door to script injection, for example if the user sets the `sample-parameter` to `argument-value" && malicious-command && echo "`, the resulting pod argument will look like this:
+
+```yaml
+        - |
+          set -euo pipefail
+
+          some-tool --sample-argument "argument-value" && malicious-command && echo ""
+```
+
+To securely pass a parameter value into a script-style argument, you can chose between these two approaches:
+
+1. Using environment variables. This is used in some of our sample strategies, for example [ko](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml), or [buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml). Basically, instead of directly using the parameter inside the script, you pass it via environment variable. Using quoting, shells ensure that no command injection is possible:
+
+   ```yaml
+   spec:
+     parameters:
+       - name: sample-parameter
+         description: A sample parameter
+         type: string
+     buildSteps:
+       - name: sample-step
+         env:
+           - name: PARAM_SAMPLE_PARAMETER
+             value: $(params.sample-parameter)
+         command:
+           - /bin/bash
+         args:
+           - -c
+           - |
+             set -euo pipefail
+
+             some-tool --sample-argument "${PARAM_SAMPLE_PARAMETER}"
+   ```
+
+2. Using arguments. This is used in some of our sample build strategies, for example [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml). Here, you use arguments to your own inline script. Appropriate shell quoting guards against command injection.
+
+   ```yaml
+   spec:
+     parameters:
+       - name: sample-parameter
+         description: A sample parameter
+         type: string
+     buildSteps:
+       - name: sample-step
+         command:
+           - /bin/bash
+         args:
+           - -c
+           - |
+             set -euo pipefail
+
+             SAMPLE_PARAMETER="$1"
+
+             some-tool --sample-argument "${SAMPLE_PARAMETER}"
+           - --
+           - $(params.sample-parameter)
+   ```
 
 ## System results
 
