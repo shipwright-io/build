@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	gomegaConfig "github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/v2"
 	tektonClient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 
 	"k8s.io/client-go/kubernetes"
@@ -53,7 +53,7 @@ type TestBuild struct {
 
 // NewTestBuild returns an initialized instance of TestBuild
 func NewTestBuild() (*TestBuild, error) {
-	namespaceID := gomegaConfig.GinkgoConfig.ParallelNode*200 + int(atomic.AddInt32(&namespaceCounter, 1))
+	namespaceID := ginkgo.GinkgoParallelProcess()*200 + int(atomic.AddInt32(&namespaceCounter, 1))
 	testNamespace := "test-build-" + strconv.Itoa(namespaceID)
 
 	logBuffer := &bytes.Buffer{}

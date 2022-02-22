@@ -7,7 +7,7 @@ package resources_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -17,8 +17,7 @@ import (
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
-var _ = Describe("Credentials", func() {
-
+var _ = Describe("Credentials", func() {	
 	var (
 		build                       *buildv1alpha1.Build
 		buildRun                    *buildv1alpha1.BuildRun
@@ -34,8 +33,7 @@ var _ = Describe("Credentials", func() {
 		}
 	})
 
-	Context("when secrets were not present in the service account", func() {
-
+	Context("when secrets were not present in the service account", func() {	
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
@@ -91,8 +89,7 @@ var _ = Describe("Credentials", func() {
 		})
 	})
 
-	Context("when secrets were already in the service account", func() {
-
+	Context("when secrets were already in the service account", func() {	
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
@@ -129,8 +126,7 @@ var _ = Describe("Credentials", func() {
 		})
 	})
 
-	Context("when build does not reference any secret", func() {
-
+	Context("when build does not reference any secret", func() {	
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{

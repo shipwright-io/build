@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
@@ -26,8 +26,7 @@ import (
 	"github.com/shipwright-io/build/test/utils"
 )
 
-var _ = Describe("GenerateTaskrun", func() {
-
+var _ = Describe("GenerateTaskrun", func() {	
 	var (
 		build                  *buildv1alpha1.Build
 		buildWithEnvs          *buildv1alpha1.Build
@@ -576,8 +575,7 @@ var _ = Describe("GenerateTaskrun", func() {
 		})
 
 		Context("when the build and buildrun both contain an output imageURL", func() {
-			BeforeEach(func() {
-
+			BeforeEach(func() {	
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
 				Expect(err).To(BeNil())
 
