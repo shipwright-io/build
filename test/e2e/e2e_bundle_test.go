@@ -49,7 +49,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		BeforeEach(func() {
 			testID = generateTestID("bundle")
 
-			inputImage = "quay.io/shipwright/source-bundle:latest"
+			inputImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
 			outputImage = fmt.Sprintf("%s/%s:%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
