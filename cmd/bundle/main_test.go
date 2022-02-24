@@ -90,7 +90,7 @@ var _ = Describe("Bundle Loader", func() {
 	})
 
 	Context("Pulling image anonymously", func() {
-		const exampleImage = "quay.io/shipwright/source-bundle:latest"
+		const exampleImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
 
 		It("should pull and unbundle an image from a public registry", func() {
 			withTempDir(func(target string) {
