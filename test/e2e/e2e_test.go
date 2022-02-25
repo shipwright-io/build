@@ -7,6 +7,7 @@ package e2e_test
 import (
 	"os"
 
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -465,6 +466,16 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 			validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
+			validateImagePlatformsExist(build, []v1.Platform{
+				{
+					Architecture: "amd64",
+					OS:           "linux",
+				},
+				{
+					Architecture: "arm64",
+					OS:           "linux",
+				},
+			})
 		})
 	})
 
