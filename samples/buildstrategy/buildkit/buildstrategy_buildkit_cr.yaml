@@ -21,8 +21,12 @@ spec:
     default: registry
   - name: insecure-registry
     type: string
-    description: "enables the push to an insecure registry"
+    description: "Enables the push to an insecure registry"
     default: "false"
+  - name: platforms
+    description: "Build the image for different platforms. By default, the image is built for the platform used by the FROM image. If that is present for multiple platforms, then it is built for the environment's platform."
+    type: array
+    defaults: []
   - name: secrets
     description: "The secrets to pass to the build. Values must be in the format ID=FILE_CONTENT."
     type: array
@@ -99,14 +103,23 @@ spec:
           fi
 
           stage=""
+          platforms=""
           for a in "$@"
           do
             if [ "${a}" == "--build-args" ]; then
               stage=build-args
+            elif [ "${a}" == "--platforms" ]; then
+              stage=platforms
             elif [ "${a}" == "--secrets" ]; then
               stage=secrets
             elif [ "${stage}" == "build-args" ]; then
               echo "--opt=\"build-arg:${a}\" \\" >> /tmp/run.sh
+            elif [ "${stage}" == "platforms" ]; then
+              if [ "${platforms}" == "" ]; then
+                platforms="${a}"
+              else
+                platforms="${platforms},${a}"
+              fi
             elif [ "${stage}" == "secrets" ]; then
               # Split ID=FILE_CONTENT into variables id and data
 
@@ -129,6 +142,10 @@ spec:
             fi
           done
 
+          if [ "${platforms}" != "" ]; then
+            echo "--opt=\"platform=${platforms}\" \\" >> /tmp/run.sh
+          fi
+
           echo "--metadata-file /tmp/image-metadata.json" >> /tmp/run.sh
 
           chmod +x /tmp/run.sh
@@ -140,5 +157,7 @@ spec:
         - --
         - --build-args
         - $(params.build-args[*])
+        - --platforms
+        - $(params.platforms[*])
         - --secrets
         - $(params.secrets[*])

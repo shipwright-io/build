@@ -12,6 +12,10 @@ spec:
   paramValues:
   - name: insecure-registry
     value: "true"
+  - name: platforms
+    values:
+    - value: linux/amd64
+    - value: linux/arm64
   strategy:
     name: buildkit
     kind: ClusterBuildStrategy

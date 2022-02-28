@@ -15,9 +15,11 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing Buildpacks v3 Strategy](#installing-buildpacks-v3-strategy)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
-  - [Scanning with Trivy](#scanning-with-trivy)
+    - [Scanning with Trivy](#scanning-with-trivy)
 - [BuildKit](#buildkit)
   - [Cache Exporters](#cache-exporters)
+  - [Build-args and secrets](#build-args-and-secrets)
+  - [Multi-platform builds](#multi-platform-builds)
   - [Known Limitations](#known-limitations)
   - [Usage in Clusters with Pod Security Standards](#usage-in-clusters-with-pod-security-standards)
   - [Installing BuildKit Strategy](#installing-buildkit-strategy)
@@ -36,6 +38,7 @@ SPDX-License-Identifier: Apache-2.0
   - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
   - [Examples of Tekton resources management](#examples-of-tekton-resources-management)
 - [Annotations](#annotations)
+- [Volumes and VolumeMounts](#volumes-and-volumemounts)
 
 ## Overview
 
@@ -140,17 +143,20 @@ kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
 
 ### Cache Exporters
 
-By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the build times. When pushing an image to a registry, it will use the inline export cache, which appends cache information to the image that is built. Please refer to [export-cache docs](https://github.com/moby/buildkit#export-cache) for more information. Caching can be disabled by setting the `cache` parameter to disabled. See [Defining ParamValues](build.md#defining-paramvalues) for more information.
+By default, the `buildkit` ClusterBuildStrategy will use caching to optimize the build times. When pushing an image to a registry, it will use the inline export cache, which appends cache information to the image that is built. Please refer to [export-cache docs](https://github.com/moby/buildkit#export-cache) for more information. Caching can be disabled by setting the `cache` parameter to `"disabled"`. See [Defining ParamValues](build.md#defining-paramvalues) for more information.
 
 ### Build-args and secrets
 
 The sample build strategy contains array parameters to set values for [`ARG`s in your Dockerfile](https://docs.docker.com/engine/reference/builder/#arg), and for [mounts with type=secret](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The parameter names are `build-args` and `secrets`. [Defining ParamValues](build.md#defining-paramvalues) contains example usage.
 
+### Multi-platform builds
+
+The sample build strategy contains a `platforms` array parameter that you can set to leverage [BuildKit's support to build multi-platform images](https://github.com/moby/buildkit/blob/master/docs/multi-platform.md). If you do not set this value, the image is built for the platform that is supported by the `FROM` image. If that image supports multiple platforms, then the image will be built for the platform of your Kubernetes node.
+
 ### Known Limitations
 
 The `buildkit` ClusterBuildStrategy currently locks the following parameters:
 
-- Exporter caches are enabled by default, this is currently not configurable.
 - To allow running rootless, it requires both [AppArmor](https://kubernetes.io/docs/tutorials/clusters/apparmor/) as well as [SecComp](https://kubernetes.io/docs/tutorials/clusters/seccomp/) to be disabled using the `unconfined` profile.
 
 ### Usage in Clusters with Pod Security Standards
