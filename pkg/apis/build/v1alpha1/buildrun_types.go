@@ -22,8 +22,15 @@ const (
 
 // BuildRunSpec defines the desired state of BuildRun
 type BuildRunSpec struct {
+	// BuildSpec refers to an embedded build specification
+	//
+	// +optional
+	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
+
 	// BuildRef refers to the Build
-	BuildRef BuildRef `json:"buildRef"`
+	//
+	// +optional
+	BuildRef *BuildRef `json:"buildRef,omitempty"`
 
 	// Sources slice of BuildSource, defining external build artifacts complementary to VCS
 	// (`.spec.source`) data.
@@ -34,29 +41,35 @@ type BuildRunSpec struct {
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.
 	// Default serviceaccount will be set if it is empty
+	//
 	// +optional
 	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
 
 	// Timeout defines the maximum run time of this BuildRun.
+	//
 	// +optional
 	// +kubebuilder:validation:Format=duration
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 
 	// Params is a list of key/value that could be used
 	// to set strategy parameters
+	//
 	// +optional
 	ParamValues []ParamValue `json:"paramValues,omitempty"`
 
 	// Output refers to the location where the generated
 	// image would be pushed to. It will overwrite the output image in build spec
+	//
 	// +optional
 	Output *Image `json:"output,omitempty"`
 
 	// State is used for canceling a buildrun (and maybe more later on).
+	//
 	// +optional
 	State *BuildRunRequestedState `json:"state,omitempty"`
 
 	// Env contains additional environment variables that should be passed to the build container
+	//
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
@@ -350,4 +363,15 @@ func (brs *BuildRunStatus) SetCondition(condition *Condition) {
 	} else {
 		brs.Conditions = append(brs.Conditions, *condition)
 	}
+}
+
+// BuildName returns the name of the associated build, which can be a referened
+// build resource or an embedded build specification
+func (buildrunSpec *BuildRunSpec) BuildName() string {
+	if buildrunSpec.BuildRef != nil {
+		return buildrunSpec.BuildRef.Name
+	}
+
+	// Only BuildRuns with a BuildRef can actually return a proper Build name
+	return ""
 }

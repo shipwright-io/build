@@ -23,6 +23,10 @@ type SourceURLRef struct {
 	Client client.Client
 }
 
+func NewSourceURL(client client.Client, build *build.Build) *SourceURLRef {
+	return &SourceURLRef{build, client}
+}
+
 // ValidatePath implements BuildPath interface and validates
 // that the spec.source.url exists. This validation only applies
 // to endpoints that do not require authentication.

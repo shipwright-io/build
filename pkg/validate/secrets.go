@@ -26,6 +26,10 @@ type Credentials struct {
 	Client client.Client
 }
 
+func NewCredentials(client client.Client, build *build.Build) *Credentials {
+	return &Credentials{build, client}
+}
+
 // ValidatePath implements BuildPath interface and validates
 // that all referenced secrets under spec exists
 func (s Credentials) ValidatePath(ctx context.Context) error {

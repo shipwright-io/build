@@ -8,17 +8,20 @@ import (
 	"context"
 	"fmt"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // GetBuildObject retrieves an existing Build based on a name and namespace
 func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, build *buildv1alpha1.Build) error {
-	err := client.Get(ctx, types.NamespacedName{Name: buildRun.Spec.BuildRef.Name, Namespace: buildRun.Namespace}, build)
-	if err != nil {
+	// Option #1: BuildRef is specified
+	// An actual Build resource is specified by name and needs to be looked up in the cluster.
+	if buildRun.Spec.BuildRef != nil {
+		err := client.Get(ctx, types.NamespacedName{Name: buildRun.Spec.BuildName(), Namespace: buildRun.Namespace}, build)
 		if apierrors.IsNotFound(err) {
 			// stop reconciling and mark the BuildRun as Failed
 			// we only reconcile again if the status.Update call fails
@@ -26,9 +29,22 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 				return HandleError("build object not found", err, updateErr)
 			}
 		}
+
+		return err
 	}
 
-	return err
+	// Option #2: BuildSpec is specified
+	// The build specification is embedded in the BuildRun itself, create a transient Build resource.
+	if buildRun.Spec.BuildSpec != nil {
+		build.Name = ""
+		build.Namespace = buildRun.Namespace
+		build.Status = buildv1alpha1.BuildStatus{}
+		buildRun.Spec.BuildSpec.DeepCopyInto(&build.Spec)
+		return nil
+	}
+
+	// Bail out hard in case of an invalid state
+	return fmt.Errorf("invalid BuildRun resource that neither has a BuildRef nor an embedded BuildSpec")
 }
 
 // IsOwnedByBuild checks if the controllerReferences contains a well known owner Kind

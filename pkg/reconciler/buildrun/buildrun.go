@@ -66,7 +66,6 @@ func NewReconciler(c *config.Config, mgr manager.Manager, ownerRef setOwnerRefer
 // Reconcile reads that state of the cluster for a Build object and makes changes based on the state read
 // and what is in the Build.Spec
 func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	var buildRun *buildv1alpha1.BuildRun
 	var build *buildv1alpha1.Build
 
@@ -98,20 +97,30 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, nil
 	}
 
-	// Validating buildrun name is a valid label value
-	if errs := validation.IsValidLabelValue(buildRun.Name); len(errs) > 0 {
-		// stop reconciling and mark the BuildRun as Failed
-		if updateErr := resources.UpdateConditionWithFalseStatus(
-			ctx,
-			r.client,
-			buildRun,
-			strings.Join(errs, ", "),
-			resources.BuildRunNameInvalid,
-		); updateErr != nil {
-			return reconcile.Result{}, updateErr
+	// Skip validation in case buildrun could not be found, otherwise validate it
+	if getBuildRunErr == nil {
+		// Validating buildrun name is a valid label value
+		if errs := validation.IsValidLabelValue(buildRun.Name); len(errs) > 0 {
+			// stop reconciling and mark the BuildRun as Failed
+			return reconcile.Result{}, resources.UpdateConditionWithFalseStatus(
+				ctx,
+				r.client,
+				buildRun,
+				strings.Join(errs, ", "),
+				resources.BuildRunNameInvalid,
+			)
 		}
 
-		return reconcile.Result{}, nil
+		// Validate BuildRun for disallowed field combinations (could technically be also done in a validating webhook)
+		if reason, message := validate.BuildRunFields(buildRun); reason != "" {
+			return reconcile.Result{}, resources.UpdateConditionWithFalseStatus(
+				ctx,
+				r.client,
+				buildRun,
+				message,
+				reason,
+			)
+		}
 	}
 
 	// if this is a build run event after we've set the task run ref, get the task run using the task run name stored in the build run
@@ -122,10 +131,8 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
 	if getTaskRunErr != nil {
 		if apierrors.IsNotFound(getTaskRunErr) {
-
 			build = &buildv1alpha1.Build{}
-			err := resources.GetBuildObject(ctx, r.client, buildRun, build)
-			if err != nil {
+			if err := resources.GetBuildObject(ctx, r.client, buildRun, build); err != nil {
 				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1alpha1.Succeeded) {
 					return reconcile.Result{}, nil
 				}
@@ -135,9 +142,48 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 			// Validate if the Build was successfully registered
 			if build.Status.Registered == nil || *build.Status.Registered == "" {
-				err := fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
+				switch {
+				// When the build is referenced by name, it means the build is
+				// an actual resource in the cluster and _should_ have been
+				// validated and registered by now ...
 				// reconcile again until it gets a registration value
-				return reconcile.Result{}, err
+				case buildRun.Spec.BuildRef != nil:
+					return reconcile.Result{}, fmt.Errorf("the Build is not yet validated, build: %s", build.Name)
+
+				// When the build(spec) is embedded in the buildrun, the now
+				// transient/volatile build resource needs to be validated first
+				case buildRun.Spec.BuildSpec != nil:
+					err := validate.All(ctx,
+						validate.NewSourceURL(r.client, build),
+						validate.NewCredentials(r.client, build),
+						validate.NewStrategies(r.client, build),
+						validate.NewSourcesRef(build),
+						validate.NewBuildName(build),
+						validate.NewEnv(build),
+					)
+
+					// an internal/technical error during validation happened
+					if err != nil {
+						return reconcile.Result{}, err
+					}
+
+					// one or more of the validations failed
+					if build.Status.Reason != nil {
+						return reconcile.Result{},
+							resources.UpdateConditionWithFalseStatus(
+								ctx,
+								r.client,
+								buildRun,
+								*build.Status.Message,
+								resources.ConditionBuildRegistrationFailed,
+							)
+					}
+
+					// mark transient build as "registered" and validated
+					build.Status.Registered = buildv1alpha1.ConditionStatusPtr(corev1.ConditionTrue)
+					build.Status.Reason = buildv1alpha1.BuildReasonPtr(buildv1alpha1.SucceedStatus)
+					build.Status.Message = pointer.String(buildv1alpha1.AllValidationsSucceeded)
+				}
 			}
 
 			if *build.Status.Registered != corev1.ConditionTrue {
@@ -183,16 +229,19 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				updateBuildRunRequired = true
 			}
 
-			buildGeneration := strconv.FormatInt(build.Generation, 10)
-			if buildRun.GetLabels()[buildv1alpha1.LabelBuild] != build.Name || buildRun.GetLabels()[buildv1alpha1.LabelBuildGeneration] != buildGeneration {
-				buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
-				buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = buildGeneration
-				ctxlog.Info(ctx, "updating BuildRun labels", namespace, request.Namespace, name, request.Name)
-				updateBuildRunRequired = true
+			// Add missing build name and generation labels to BuildRun (unless it is an embedded build)
+			if build.Name != "" && build.Generation != 0 {
+				buildGeneration := strconv.FormatInt(build.Generation, 10)
+				if buildRun.GetLabels()[buildv1alpha1.LabelBuild] != build.Name || buildRun.GetLabels()[buildv1alpha1.LabelBuildGeneration] != buildGeneration {
+					buildRun.Labels[buildv1alpha1.LabelBuild] = build.Name
+					buildRun.Labels[buildv1alpha1.LabelBuildGeneration] = buildGeneration
+					ctxlog.Info(ctx, "updating BuildRun labels", namespace, request.Namespace, name, request.Name)
+					updateBuildRunRequired = true
+				}
 			}
 
 			if updateBuildRunRequired {
-				if err = r.client.Update(ctx, buildRun); err != nil {
+				if err := r.client.Update(ctx, buildRun); err != nil {
 					return reconcile.Result{}, err
 				}
 				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, request.Namespace, name, request.Name)
@@ -201,7 +250,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			// Set the Build spec in the BuildRun status
 			buildRun.Status.BuildSpec = &build.Spec
 			ctxlog.Info(ctx, "updating BuildRun status", namespace, request.Namespace, name, request.Name)
-			if err = r.client.Status().Update(ctx, buildRun); err != nil {
+			if err := r.client.Status().Update(ctx, buildRun); err != nil {
 				return reconcile.Result{}, err
 			}
 
@@ -263,7 +312,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			buildmetrics.BuildRunCountInc(
 				buildRun.Status.BuildSpec.StrategyName(),
 				buildRun.Namespace,
-				buildRun.Spec.BuildRef.Name,
+				buildRun.Spec.BuildName(),
 				buildRun.Name,
 			)
 
@@ -271,7 +320,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			buildmetrics.BuildRunRampUpDurationObserve(
 				buildRun.Status.BuildSpec.StrategyName(),
 				buildRun.Namespace,
-				buildRun.Spec.BuildRef.Name,
+				buildRun.Spec.BuildName(),
 				buildRun.Name,
 				generatedTaskRun.CreationTimestamp.Time.Sub(buildRun.CreationTimestamp.Time),
 			)
@@ -343,7 +392,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				buildmetrics.BuildRunEstablishObserve(
 					buildRun.Status.BuildSpec.StrategyName(),
 					buildRun.Namespace,
-					buildRun.Spec.BuildRef.Name,
+					buildRun.Spec.BuildName(),
 					buildRun.Name,
 					buildRun.Status.StartTime.Time.Sub(buildRun.CreationTimestamp.Time),
 				)
@@ -356,7 +405,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				buildmetrics.BuildRunCompletionObserve(
 					buildRun.Status.BuildSpec.StrategyName(),
 					buildRun.Namespace,
-					buildRun.Spec.BuildRef.Name,
+					buildRun.Spec.BuildName(),
 					buildRun.Name,
 					buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time),
 				)
@@ -374,7 +423,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 							buildmetrics.TaskRunPodRampUpDurationObserve(
 								buildRun.Status.BuildSpec.StrategyName(),
 								buildRun.Namespace,
-								buildRun.Spec.BuildRef.Name,
+								buildRun.Spec.BuildName(),
 								buildRun.Name,
 								lastInitPod.State.Terminated.FinishedAt.Sub(pod.CreationTimestamp.Time),
 							)
@@ -385,7 +434,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					buildmetrics.TaskRunRampUpDurationObserve(
 						buildRun.Status.BuildSpec.StrategyName(),
 						buildRun.Namespace,
-						buildRun.Spec.BuildRef.Name,
+						buildRun.Spec.BuildName(),
 						buildRun.Name,
 						pod.CreationTimestamp.Time.Sub(lastTaskRun.CreationTimestamp.Time),
 					)
@@ -406,10 +455,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 // GetBuildRunObject retrieves an existing BuildRun based on a name and namespace
 func (r *ReconcileBuildRun) GetBuildRunObject(ctx context.Context, objectName string, objectNS string, buildRun *buildv1alpha1.BuildRun) error {
-	if err := r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, buildRun); err != nil {
-		return err
-	}
-	return nil
+	return r.client.Get(ctx, types.NamespacedName{Name: objectName, Namespace: objectNS}, buildRun)
 }
 
 // VerifyRequestName parse a Reconcile request name and looks for an associated BuildRun name

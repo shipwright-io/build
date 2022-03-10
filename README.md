@@ -32,27 +32,27 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 ## Try It!
 
-* We assume you already have a Kubernetes cluster (v1.21+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
+- We assume you already have a Kubernetes cluster (v1.21+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
 
-* We also require a Tekton installation (v0.30+). To install the newest supported version, run:
+- We also require a Tekton installation (v0.30+). To install the newest supported version, run:
 
   ```bash
   kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.34.1/release.yaml
   ```
 
-* Install the Shipwright deployment. To install the latest version, run:
+- Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
   kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.8.0/release.yaml
   ```
 
-* Install the Shipwright strategies. To install the latest version, run:
+- Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
   kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.8.0/sample-strategies.yaml
   ```
 
-* Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):
+- Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):
 
   ```bash
   REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
@@ -63,7 +63,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
       --docker-email=<your_email>
   ```
 
-* Create a *Build* object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
+- Create a *Build* object, replacing `<REGISTRY_ORG>` with the registry username your `push-secret` secret have access to:
 
   ```bash
   REGISTRY_ORG=<your_registry_org>
@@ -86,15 +86,16 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   EOF
   ```
 
-To view the *Build* which you just created:
+  To view the *Build* which you just created:
 
-  ```
- $ kubectl get builds
+  ```bash
+  $ kubectl get builds
  
   NAME                     REGISTERED   REASON      BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
   buildpack-nodejs-build   True         Succeeded   ClusterBuildStrategy   buildpacks-v3       68s
   ```  
-* Submit your *BuildRun*:
+
+- Submit your *BuildRun*:
 
   ```bash
   cat <<EOF | kubectl create -f -
@@ -108,9 +109,9 @@ To view the *Build* which you just created:
   EOF
   ```
 
-* Wait until your *BuildRun* is completed and then you can view it as follows:
+- Wait until your *BuildRun* is completed and then you can view it as follows:
 
-  ```
+  ```bash
   $ kubectl get buildruns
   
   NAME                              SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
@@ -123,7 +124,7 @@ To view the *Build* which you just created:
   kubectl get buildrun --output name | xargs kubectl wait --for=condition=Succeeded --timeout=180s
   ```
 
-* After your *BuildRun* is completed, check your container registry, you will find the new generated image uploaded there.
+- After your *BuildRun* is completed, check your container registry, you will find the new generated image uploaded there.
 
 ## Please tell us more!
 
@@ -175,16 +176,16 @@ Our sample build strategies are all functional on linux/amd64. Their support on 
 
 We host weekly meetings for users, contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 1pm UTC.
 
-* Meeting [minutes](https://github.com/shipwright-io/community/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting)
-* Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
+- Meeting [minutes](https://github.com/shipwright-io/community/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting)
+- Public calendar [invite](https://calendar.google.com/calendar/u/1?cid=Y19iMWVndjc3anUyczJkbWNkM2R1ZnAxazhuNEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t)
 
 ### Want to contribute
 
 We are so excited to have you!
 
-* See [CONTRIBUTING.md](CONTRIBUTING.md) for an overview of our processes
-* See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
-* See [HACK.md](HACK.md) for how to build, test & run
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for an overview of our processes
+- See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
+- See [HACK.md](HACK.md) for how to build, test & run
   (advanced reading material)
 - Look at our
   [good first issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)

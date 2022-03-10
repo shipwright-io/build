@@ -35,7 +35,8 @@ var (
 		Expect(err).ToNot(HaveOccurred())
 
 		testBuild.Namespace, ok = os.LookupEnv("TEST_NAMESPACE")
-		Expect(ok).To(BeTrue())
+		Expect(ok).To(BeTrue(), "TEST_NAMESPACE should be set")
+		Expect(testBuild.Namespace).ToNot(BeEmpty())
 
 		// create the pipeline service account
 		Logf("Creating the pipeline service account")

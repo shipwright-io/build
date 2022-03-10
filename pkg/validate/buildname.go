@@ -20,6 +20,10 @@ type BuildNameRef struct {
 	Build *build.Build // build instance for analysis
 }
 
+func NewBuildName(build *build.Build) *BuildNameRef {
+	return &BuildNameRef{build}
+}
+
 // ValidatePath implements BuildPath interface and validates
 // that build name is a valid label value
 func (b *BuildNameRef) ValidatePath(_ context.Context) error {

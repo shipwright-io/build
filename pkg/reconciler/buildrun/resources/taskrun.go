@@ -267,16 +267,23 @@ func GenerateTaskRun(
 		return nil, err
 	}
 
+	// Add BuildRun name reference to the TaskRun labels
+	taskRunLabels := map[string]string{
+		buildv1alpha1.LabelBuildRun:           buildRun.Name,
+		buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+	}
+
+	// Add Build name reference unless it is an embedded Build (empty build name)
+	if build.Name != "" {
+		taskRunLabels[buildv1alpha1.LabelBuild] = build.Name
+		taskRunLabels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+	}
+
 	expectedTaskRun := &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: buildRun.Name + "-",
 			Namespace:    buildRun.Namespace,
-			Labels: map[string]string{
-				buildv1alpha1.LabelBuild:              build.Name,
-				buildv1alpha1.LabelBuildGeneration:    strconv.FormatInt(build.Generation, 10),
-				buildv1alpha1.LabelBuildRun:           buildRun.Name,
-				buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
-			},
+			Labels:       taskRunLabels,
 		},
 		Spec: v1beta1.TaskRunSpec{
 			ServiceAccountName: serviceAccountName,

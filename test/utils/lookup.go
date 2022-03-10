@@ -88,7 +88,6 @@ func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1alpha1.BuildRun)
 			List(t.Context, metav1.ListOptions{
 				LabelSelector: labels.SelectorFromSet(
 					map[string]string{
-						buildv1alpha1.LabelBuild:    buildRun.Spec.BuildRef.Name,
 						buildv1alpha1.LabelBuildRun: buildRun.Name,
 					}).String(),
 			})

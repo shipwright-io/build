@@ -22,6 +22,17 @@ import (
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
+// build a list of current validation types
+var validationTypes = [...]string{
+	validate.OwnerReferences,
+	validate.SourceURL,
+	validate.Secrets,
+	validate.Strategies,
+	validate.Sources,
+	validate.BuildName,
+	validate.Envs,
+}
+
 // ReconcileBuild reconciles a Build object
 type ReconcileBuild struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -52,28 +63,18 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	ctxlog.Debug(ctx, "start reconciling Build", namespace, request.Namespace, name, request.Name)
 
 	b := &build.Build{}
-	err := r.client.Get(ctx, request.NamespacedName, b)
-	if err != nil && !apierrors.IsNotFound(err) {
+	if err := r.client.Get(ctx, request.NamespacedName, b); err != nil {
+		if apierrors.IsNotFound(err) {
+			ctxlog.Debug(ctx, "finish reconciling build. build was not found", namespace, request.Namespace, name, request.Name)
+			return reconcile.Result{}, nil
+		}
+
 		return reconcile.Result{}, err
-	} else if apierrors.IsNotFound(err) {
-		ctxlog.Debug(ctx, "finish reconciling build. build was not found", namespace, request.Namespace, name, request.Name)
-		return reconcile.Result{}, nil
 	}
 
 	// Populate the status struct with default values
 	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionFalse)
 	b.Status.Reason = build.BuildReasonPtr(build.SucceedStatus)
-
-	// build a list of current validation types
-	validationTypes := []string{
-		validate.OwnerReferences,
-		validate.SourceURL,
-		validate.Secrets,
-		validate.Strategies,
-		validate.Sources,
-		validate.BuildName,
-		validate.Envs,
-	}
 
 	// trigger all current validations
 	for _, validationType := range validationTypes {
@@ -89,22 +90,30 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 			if validationType == validate.Secrets || validationType == validate.Strategies {
 				return reconcile.Result{}, err
 			}
+
 			if validationType == validate.OwnerReferences {
 				// we do not want to bail out here if the owerreference validation fails, we ignore this error on purpose
 				// In case we just created the Build, we want the Build reconcile logic to continue, in order to
 				// validate the Build references ( e.g secrets, strategies )
-				ctxlog.Info(ctx, "unexpected error during ownership reference validation", namespace, request.Namespace, name, request.Name, "error", err)
+				ctxlog.Info(ctx, "unexpected error during ownership reference validation",
+					namespace, b.Namespace,
+					name, b.Name,
+					"error", err)
 			}
 		}
+
 		if b.Status.Reason == nil || *b.Status.Reason != build.SucceedStatus {
-			return r.UpdateBuildStatusAndRetreat(ctx, b)
+			if err := r.client.Status().Update(ctx, b); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			return reconcile.Result{}, nil
 		}
 	}
 
 	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionTrue)
 	b.Status.Message = pointer.String(build.AllValidationsSucceeded)
-	err = r.client.Status().Update(ctx, b)
-	if err != nil {
+	if err := r.client.Status().Update(ctx, b); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -112,15 +121,5 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	buildmetrics.BuildCountInc(b.Spec.Strategy.Name, b.Namespace, b.Name)
 
 	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
-	return reconcile.Result{}, nil
-}
-
-// UpdateBuildStatusAndRetreat returns an error if an update fails, this should force
-// a new reconcile until the API call succeeds. If return is nil, no further reconciliations
-// will take place
-func (r *ReconcileBuild) UpdateBuildStatusAndRetreat(ctx context.Context, b *build.Build) (reconcile.Result, error) {
-	if err := r.client.Status().Update(ctx, b); err != nil {
-		return reconcile.Result{}, err
-	}
 	return reconcile.Result{}, nil
 }

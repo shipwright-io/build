@@ -20,6 +20,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	buildClient "github.com/shipwright-io/build/pkg/client/clientset/versioned"
 	"github.com/shipwright-io/build/pkg/ctxlog"
@@ -46,6 +47,7 @@ type TestBuild struct {
 	StopBuildControllers     context.CancelFunc
 	BuildClientSet           *buildClient.Clientset
 	PipelineClientSet        *tektonClient.Clientset
+	ControllerRuntimeClient  client.Client
 	Catalog                  test.Catalog
 	Context                  context.Context
 	BuildControllerLogBuffer *bytes.Buffer
@@ -78,6 +80,11 @@ func NewTestBuild() (*TestBuild, error) {
 		return nil, err
 	}
 
+	controllerRuntimeClient, err := client.New(restConfig, client.Options{})
+	if err != nil {
+		return nil, err
+	}
+
 	ctx, cancelFn := context.WithCancel(ctx)
 
 	return &TestBuild{
@@ -89,6 +96,7 @@ func NewTestBuild() (*TestBuild, error) {
 		Namespace:                testNamespace,
 		BuildClientSet:           buildClientSet,
 		PipelineClientSet:        pipelineClientSet,
+		ControllerRuntimeClient:  controllerRuntimeClient,
 		Context:                  ctx,
 		BuildControllerLogBuffer: logBuffer,
 		StopBuildControllers:     cancelFn,

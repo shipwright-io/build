@@ -22,7 +22,7 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
-var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
+var _ = Describe("Test local source code (bundle) functionality", func() {
 	var (
 		testID string
 		err    error
