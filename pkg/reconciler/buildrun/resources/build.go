@@ -22,7 +22,7 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 		if apierrors.IsNotFound(err) {
 			// stop reconciling and mark the BuildRun as Failed
 			// we only reconcile again if the status.Update call fails
-			if updateErr := UpdateConditionWithFalseStatus(ctx, client, buildRun, fmt.Sprintf("build.shipwright.io \"%s\" not found", buildRun.Spec.BuildRef.Name), ConditionBuildNotFound); updateErr != nil {
+			if updateErr := UpdateConditionWithFalseStatus(ctx, client, buildRun, fmt.Sprintf("build.shipwright.io %q not found", buildRun.Spec.BuildRef.Name), ConditionBuildNotFound); updateErr != nil {
 				return HandleError("build object not found", err, updateErr)
 			}
 		}
