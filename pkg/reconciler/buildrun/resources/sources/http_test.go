@@ -5,7 +5,7 @@
 package sources_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -20,8 +20,7 @@ var _ = Describe("HTTP", func() {
 
 	cfg := config.NewDefaultConfig()
 
-	Context("when a TaskSpec does not contain an step", func() {
-
+	Context("when a TaskSpec does not contain an step", func() {	
 		var taskSpec *tektonv1beta1.TaskSpec
 
 		BeforeEach(func() {
@@ -42,8 +41,7 @@ var _ = Describe("HTTP", func() {
 		})
 	})
 
-	Context("when a TaskSpec already contains the http step", func() {
-
+	Context("when a TaskSpec already contains the http step", func() {	
 		var taskSpec *tektonv1beta1.TaskSpec
 
 		BeforeEach(func() {
@@ -83,8 +81,7 @@ var _ = Describe("HTTP", func() {
 		})
 	})
 
-	Context("when a TaskSpec already another source step step", func() {
-
+	Context("when a TaskSpec already another source step step", func() {	
 		var taskSpec *tektonv1beta1.TaskSpec
 
 		BeforeEach(func() {

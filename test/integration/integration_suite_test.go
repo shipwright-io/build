@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/shipwright-io/build/test/utils"
@@ -55,7 +55,7 @@ var _ = AfterEach(func() {
 		fmt.Printf("failed to delete namespace: %v, with error: %v", tb.Namespace, err)
 	}
 
-	if CurrentGinkgoTestDescription().Failed && tb.BuildControllerLogBuffer != nil {
+	if CurrentSpecReport().Failed() && tb.BuildControllerLogBuffer != nil {
 		// print operator logs
 		fmt.Println("\nLogs of the operator:")
 		fmt.Printf("%v\n", tb.BuildControllerLogBuffer)

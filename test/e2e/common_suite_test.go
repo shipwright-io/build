@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	core "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"

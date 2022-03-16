@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	. "github.com/shipwright-io/build/cmd/bundle"
@@ -43,7 +43,7 @@ var _ = Describe("Bundle Loader", func() {
 		f(path)
 	}
 
-	var withTempFile = func(pattern string, f func(filename string)) {
+	withTempFile := func(pattern string, f func(filename string)) {
 		file, err := ioutil.TempFile(os.TempDir(), pattern)
 		Expect(err).ToNot(HaveOccurred())
 		defer os.Remove(file.Name())
@@ -51,13 +51,13 @@ var _ = Describe("Bundle Loader", func() {
 		f(file.Name())
 	}
 
-	var filecontent = func(path string) string {
+	filecontent := func(path string) string {
 		data, err := ioutil.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
 	}
 
-	var getImage = func(tag name.Tag) containerreg.Image {
+	getImage := func(tag name.Tag) containerreg.Image {
 		ref, err := name.ParseReference(tag.String())
 		Expect(err).To(BeNil())
 
@@ -70,7 +70,7 @@ var _ = Describe("Bundle Loader", func() {
 		return img
 	}
 
-	var getImageDigest = func(tag name.Tag) containerreg.Hash {
+	getImageDigest := func(tag name.Tag) containerreg.Hash {
 		digest, err := getImage(tag).Digest()
 		Expect(err).To(BeNil())
 

@@ -7,10 +7,9 @@ package e2e_test
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -76,7 +75,6 @@ func validateWaiterBuildRun(testBuild *utils.TestBuild, testBuildRun *buildv1alp
 	err := testBuild.CreateBR(testBuildRun)
 	Expect(err).ToNot(HaveOccurred(), "Failed to create BuildRun")
 
-	unknownCondition := corev1.ConditionUnknown
 	buildRunName := types.NamespacedName{
 		Namespace: testBuild.Namespace,
 		Name:      testBuildRun.Name,
@@ -84,15 +82,15 @@ func validateWaiterBuildRun(testBuild *utils.TestBuild, testBuildRun *buildv1alp
 
 	// making sure the taskrun is schedule and becomes a pod, since the build controller will transit
 	// the object status from empty to unknown, when the actual build starts being executed
-	Eventually(func() *corev1.ConditionStatus {
+	Eventually(func() bool {
 		condition := getBuildRunStatusCondition(buildRunName)
 		if condition == nil {
-			return nil
+			return false
 		}
 		Logf("BuildRun %q status %q...", buildRunName, condition.Status)
-		return &condition.Status
+		return condition.Reason == "Running"
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).
-		Should(Equal(&unknownCondition), "BuildRun should reach unknown condition")
+		Should(BeTrue(), "BuildRun should start running")
 
 	// asserting the waiter step will end up in timeout, in other words, the build is terminated with
 	// the reason "failed"

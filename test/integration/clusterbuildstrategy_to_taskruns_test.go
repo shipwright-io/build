@@ -5,7 +5,7 @@
 package integration_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -32,7 +32,6 @@ var _ = Describe("Integration tests ClusterBuildStrategies and TaskRuns", func()
 
 	// Delete the BuildStrategies after each test case
 	AfterEach(func() {
-
 		_, err = tb.GetBuild(buildObject.Name)
 		if err == nil {
 			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
@@ -56,15 +55,13 @@ var _ = Describe("Integration tests ClusterBuildStrategies and TaskRuns", func()
 		}
 	})
 
-	Context("when a buildrun is created", func() {
-
+	Context("when a buildrun is created", func() {	
 		BeforeEach(func() {
 			buildSample = []byte(test.BuildCBSMinimal)
 			buildRunSample = []byte(test.MinimalBuildRun)
 		})
 
-		It("should create a taskrun with the correct annotations", func() {
-
+		It("should create a taskrun with the correct annotations", func() {	
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)

@@ -8,7 +8,7 @@ import (
 	"os"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,7 +27,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	)
 
 	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			printTestFailureDebugInfo(testBuild, testBuild.Namespace, testID)
 
 		} else if buildRun != nil {

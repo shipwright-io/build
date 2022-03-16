@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -25,9 +25,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	)
 
 	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			printTestFailureDebugInfo(testBuild, testBuild.Namespace, testID)
-
 		} else if buildRun != nil {
 			validateServiceAccountDeletion(buildRun, testBuild.Namespace)
 		}

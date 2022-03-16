@@ -13,14 +13,22 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/types"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Waiter", func() {
-	// executable path to the waiter executable file.
-	var executable string
+// executable path to the waiter executable file.
+var executable string
 
+// building the command-line application before starting the test suite, it will populate the
+// global variable with the path to the waiter binary compiled.
+var _ = BeforeSuite(func() {
+	var err error
+	executable, err = gexec.Build("github.com/shipwright-io/build/cmd/waiter")
+	Expect(err).ToNot(HaveOccurred())
+})
+
+var _ = Describe("Waiter", func() {
 	// run creates a exec.Command instance using the arguments informed.
 	var run = func(args ...string) *gexec.Session {
 		cmd := exec.Command(executable)
@@ -53,19 +61,6 @@ var _ = Describe("Waiter", func() {
 		Eventually(session, defaultTimeout).Should(matcher)
 		close(doneCh)
 	}
-
-	// building the command-line application before starting the test suite, it will populate the
-	// global variable with the path to the waiter binary compiled.
-	BeforeSuite(func() {
-		var err error
-		executable, err = gexec.Build("github.com/shipwright-io/build/cmd/waiter")
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	AfterSuite(func() {
-		gexec.CleanupBuildArtifacts()
-		_ = os.RemoveAll(defaultLockFile)
-	})
 
 	When("--help is passed", func() {
 		var session *gexec.Session
@@ -131,4 +126,9 @@ var _ = Describe("Waiter", func() {
 			Eventually(startCh, defaultTimeout).Should(BeClosed())
 		})
 	})
+})
+
+var _ = AfterSuite(func() {
+	gexec.CleanupBuildArtifacts()
+	_ = os.RemoveAll(defaultLockFile)
 })

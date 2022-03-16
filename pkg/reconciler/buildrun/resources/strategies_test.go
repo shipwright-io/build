@@ -7,7 +7,7 @@ package resources_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
@@ -29,8 +29,7 @@ var _ = Describe("Operating Build strategies", func() {
 		client = &fakes.FakeClient{}
 		buildSample := ctl.BuildWithBuildStrategy("foobuild", "foostrategy", "foostrategy")
 
-		It("should return a cluster buildstrategy", func() {
-
+		It("should return a cluster buildstrategy", func() {			
 			// stub a GET API call with a cluster strategy
 			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object := object.(type) {
@@ -48,8 +47,7 @@ var _ = Describe("Operating Build strategies", func() {
 			Expect(cbs.Name).To(Equal("foobar"))
 		})
 
-		It("should return a namespaced buildstrategy", func() {
-
+		It("should return a namespaced buildstrategy", func() {			
 			// stub a GET API call with a namespace strategy
 			getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
 				switch object := object.(type) {

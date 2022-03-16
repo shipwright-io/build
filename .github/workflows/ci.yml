@@ -148,6 +148,7 @@ jobs:
           run: |
             export TEST_NAMESPACE=shipwright-build
             export TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
+            export TEST_E2E_TIMEOUT_MULTIPLIER=2
             make test-e2e
         - name: Build controller logs
           if: ${{ failure() }}
