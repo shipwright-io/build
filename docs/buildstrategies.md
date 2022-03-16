@@ -52,7 +52,7 @@ Well-known strategies can be bootstrapped from [here](../samples/buildstrategy).
 
 | Name | Supported platforms |
 | ---- | ------------------- |
-| [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml) | linux/amd64 only |
+| [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml) | all |
 | [BuildKit](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) | all |
 | [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
 | [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
