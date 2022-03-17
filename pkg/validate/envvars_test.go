@@ -2,100 +2,107 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package validate
+package validate_test
 
 import (
 	"context"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/pointer"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/validate"
 )
 
-func TestEnv_ValidatePath(t *testing.T) {
-	tests := []struct {
-		name       string
-		env        []corev1.EnvVar
-		wantErr    bool
-		errReason  string
-		errMessage string
-	}{
-		{
-			name: "empty env var name should fail",
-			env: []corev1.EnvVar{
-				{
-					Name:  "",
-					Value: "some-value",
-				},
-			},
-			wantErr:    true,
-			errReason:  string(build.SpecEnvNameCanNotBeBlank),
-			errMessage: "name for environment variable must not be blank",
-		},
-		{
-			name: "specifying both value and valueFrom should fail",
-			env: []corev1.EnvVar{
-				{
-					Name:  "some-name",
-					Value: "some-value",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "my-field-path",
-						},
-					},
-				},
-			},
-			wantErr:    true,
-			errReason:  string(build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified),
-			errMessage: "only one of value or valueFrom must be specified",
-		},
-		{
-			name: "compliant env var should pass",
-			env: []corev1.EnvVar{
-				{
-					Name:  "some-name",
-					Value: "some-value",
-				},
-			},
-			wantErr:    false,
-			errReason:  "",
-			errMessage: "",
-		},
-		{
-			name: "compliant env var using valueFrom should pass",
-			env: []corev1.EnvVar{
-				{
-					Name: "some-name",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "my-field-path",
-						},
-					},
-				},
-			},
-			wantErr:    false,
-			errReason:  "",
-			errMessage: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+var _ = Describe("Env", func() {
+	Context("ValidatePath", func() {
+		It("should fail in case of empty env var name", func() {
 			b := &build.Build{
 				Spec: build.BuildSpec{
-					Env: tt.env,
+					Env: []corev1.EnvVar{
+						{
+							Name:  "",
+							Value: "some-value",
+						},
+					},
 				},
 			}
-			e := NewEnv(b)
-			if err := e.ValidatePath(context.Background()); (err != nil) != tt.wantErr {
-				t.Errorf("Env.ValidatePath() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if b.Status.Reason != nil && *b.Status.Reason != build.BuildReason(tt.errReason) {
-				t.Errorf("Build.Status.Reason = %v, wanted: %v", *b.Status.Reason, tt.errReason)
-			}
-			if b.Status.Message != nil && *b.Status.Message != tt.errMessage {
-				t.Errorf("Build.Status.Message = %v, wanted: %v", *b.Status.Message, tt.errMessage)
-			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(HaveOccurred())
+			Expect(b.Status.Reason).To(Equal(build.BuildReasonPtr(build.SpecEnvNameCanNotBeBlank)))
+			Expect(b.Status.Message).To(Equal(pointer.StringPtr("name for environment variable must not be blank")))
 		})
-	}
-}
+
+		It("should fail in case of specifying both value and valueFrom", func() {
+			b := &build.Build{
+				Spec: build.BuildSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "some-name",
+							Value: "some-value",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "my-field-path",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(HaveOccurred())
+			Expect(b.Status.Reason).To(Equal(build.BuildReasonPtr(build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)))
+			Expect(b.Status.Message).To(Equal(pointer.StringPtr("only one of value or valueFrom must be specified")))
+		})
+
+		It("should pass in case no env var are set", func() {
+			b := &build.Build{
+				Spec: build.BuildSpec{},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(BeNil())
+		})
+
+		It("should pass in case of compliant env var", func() {
+			b := &build.Build{
+				Spec: build.BuildSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "some-name",
+							Value: "some-value",
+						},
+					},
+				},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(BeNil())
+		})
+
+		It("should pass in case of compliant env var using valueFrom", func() {
+			b := &build.Build{
+				Spec: build.BuildSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name: "some-name",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "my-field-path",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(BeNil())
+		})
+	})
+})
