@@ -372,7 +372,7 @@ func GenerateTaskRun(
 
 	// Ensure a proper override of params between Build and BuildRun
 	// A BuildRun can override a param as long as it was defined in the Build
-	paramValues := overrideParams(build.Spec.ParamValues, buildRun.Spec.ParamValues)
+	paramValues := OverrideParams(build.Spec.ParamValues, buildRun.Spec.ParamValues)
 
 	// Append params to the TaskRun spec definition
 	for _, paramValue := range paramValues {

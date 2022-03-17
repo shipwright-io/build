@@ -8,10 +8,10 @@ import (
 	"context"
 	"strings"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/pointer"
+
+	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // BuildNameRef contains all required fields

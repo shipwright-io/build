@@ -31,6 +31,7 @@ import (
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
+	"github.com/shipwright-io/build/pkg/validate"
 )
 
 const (
@@ -223,7 +224,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			}
 
 			// Validate the parameters
-			valid, reason, message := resources.ValidateBuildRunParameters(strategy.GetParameters(), build.Spec.ParamValues, buildRun.Spec.ParamValues)
+			valid, reason, message := validate.BuildRunParameters(strategy.GetParameters(), build.Spec.ParamValues, buildRun.Spec.ParamValues)
 			if !valid {
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
