@@ -26,6 +26,9 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# GINKGO is the path to the ginkgo cli
+GINKGO ?= $(shell which ginkgo)
+
 # configure zap based logr
 ZAP_FLAGS ?= --zap-log-level=debug --zap-encoder=console
 
@@ -83,7 +86,7 @@ $(CONTROLLER):
 	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/shipwright-build-controller/main.go
 
 .PHONY: build-plain
-build-plain: 
+build-plain:
 	go build -trimpath $(GO_FLAGS) -o $(CONTROLLER) cmd/shipwright-build-controller/main.go
 
 .PHONY: build-image
@@ -111,18 +114,16 @@ verify-generate: generate
 	@hack/verify-generate.sh
 
 ginkgo:
-ifeq (, $(shell which ginkgo))
+ifeq (, $(GINKGO))
+  ifeq (, $(shell which ginkgo))
 	@{ \
 	set -e ;\
-	GINKGO_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$GINKGO_GEN_TMP_DIR ;\
-	go mod init tmp ;\
 	go install github.com/onsi/ginkgo/v2/ginkgo@latest ;\
-	rm -rf $$GINKGO_GEN_TMP_DIR ;\
 	}
-GINKGO=$(GOBIN)/ginkgo
-else
-GINKGO=$(shell which ginkgo)
+  override GINKGO=$(GOBIN)/ginkgo
+  else
+  override GINKGO=$(shell which ginkgo)
+  endif
 endif
 
 gocov:
