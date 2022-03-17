@@ -508,7 +508,7 @@ golang.org/x/oauth2/jwt
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20220209214540-3681064d5158
+# golang.org/x/sys v0.0.0-20220317061510-51cd9980dadf
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
