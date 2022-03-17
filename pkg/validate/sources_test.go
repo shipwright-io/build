@@ -1,53 +1,73 @@
 // Copyright The Shipwright Contributors
 //
 // SPDX-License-Identifier: Apache-2.0
-package validate
+
+package validate_test
 
 import (
 	"context"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/validate"
 )
 
-func TestSourcesRef_ValidatePath(t *testing.T) {
-	testCases := []struct {
-		description string
-		expectError bool
-		b           *build.Build
-	}{{
-		description: "empty sources slice",
-		expectError: false,
-		b:           &build.Build{},
-	}, {
-		description: "name is not informed",
-		expectError: true,
-		b: &build.Build{Spec: build.BuildSpec{Sources: []build.BuildSource{{
-			Name: "",
-		}}}},
-	}, {
-		description: "URL is not informed",
-		expectError: true,
-		b: &build.Build{Spec: build.BuildSpec{Sources: []build.BuildSource{{
-			Name: "name",
-			URL:  "",
-		}}}},
-	}, {
-		description: "invalid URL",
-		expectError: true,
-		b: &build.Build{Spec: build.BuildSpec{Sources: []build.BuildSource{{
-			Name: "name",
-			URL:  "invalid URL",
-		}}}},
-	}}
+var _ = Describe("SourcesRef", func() {
+	Context("ValidatePath", func() {
+		It("should successfully validate an empty sources slice", func() {
+			srcRef := validate.NewSourcesRef(&build.Build{})
 
-	for _, tc := range testCases {
-		s := &SourcesRef{Build: tc.b}
-		ctx := context.TODO()
-		err := s.ValidatePath(ctx)
+			Expect(srcRef.ValidatePath(context.TODO())).To(BeNil())
+		})
 
-		if (tc.expectError && err == nil) || (!tc.expectError && err != nil) {
-			t.Fatalf("%s: expectError='%v', err='%v'", tc.description, tc.expectError, err)
-		}
-	}
-}
+		It("should successfully validate a build with a valid URL", func() {
+			srcRef := validate.NewSourcesRef(&build.Build{
+				Spec: build.BuildSpec{
+					Sources: []build.BuildSource{
+						{Name: "name", URL: "https://github.com/shipwright-io/build"},
+					},
+				},
+			})
+
+			Expect(srcRef.ValidatePath(context.TODO())).To(BeNil())
+		})
+
+		It("should fail to validate if the name is not informed", func() {
+			srcRef := validate.NewSourcesRef(&build.Build{
+				Spec: build.BuildSpec{
+					Sources: []build.BuildSource{
+						{Name: ""},
+					},
+				},
+			})
+
+			Expect(srcRef.ValidatePath(context.TODO())).To(HaveOccurred())
+		})
+
+		It("should fail to validate if the URL is not informed", func() {
+			srcRef := validate.NewSourcesRef(&build.Build{
+				Spec: build.BuildSpec{
+					Sources: []build.BuildSource{
+						{Name: "name", URL: ""},
+					},
+				},
+			})
+
+			Expect(srcRef.ValidatePath(context.TODO())).To(HaveOccurred())
+		})
+
+		It("should fail to validate a build with an invalid URL", func() {
+			srcRef := validate.NewSourcesRef(&build.Build{
+				Spec: build.BuildSpec{
+					Sources: []build.BuildSource{
+						{Name: "name", URL: "invalid URL"},
+					},
+				},
+			})
+
+			Expect(srcRef.ValidatePath(context.TODO())).To(HaveOccurred())
+		})
+	})
+})

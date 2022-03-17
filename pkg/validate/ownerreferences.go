@@ -8,14 +8,15 @@ import (
 	"context"
 	"fmt"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // OwnerRef contains all required fields

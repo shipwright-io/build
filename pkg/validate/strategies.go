@@ -8,13 +8,13 @@ import (
 	"context"
 	"fmt"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // Strategy contains all required fields
@@ -88,7 +88,7 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 }
 
 func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
-	valid, reason, message := resources.ValidateBuildParameters(parameterDefinitions, s.Build.Spec.ParamValues)
+	valid, reason, message := BuildParameters(parameterDefinitions, s.Build.Spec.ParamValues)
 
 	if !valid {
 		s.Build.Status.Reason = build.BuildReasonPtr(reason)

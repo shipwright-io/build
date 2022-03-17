@@ -8,11 +8,12 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/git"
-	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // SourceURLRef contains all required fields
