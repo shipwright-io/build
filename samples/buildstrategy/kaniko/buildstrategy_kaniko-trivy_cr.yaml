@@ -9,7 +9,7 @@ metadata:
 spec:
   buildSteps:
     - name: kaniko-build
-      image: gcr.io/kaniko-project/executor:v1.7.0
+      image: gcr.io/kaniko-project/executor:v1.8.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -54,13 +54,14 @@ spec:
           cpu: 250m
           memory: 65Mi
     - name: trivy-scan
-      image: docker.io/aquasec/trivy:0.22.0
+      image: docker.io/aquasec/trivy:0.24.4
       volumeMounts:
       - mountPath: /image/
         name: tar
       command:
         - trivy
       args:
+        - image
         - --exit-code=1
         - --severity=CRITICAL
         - --input
