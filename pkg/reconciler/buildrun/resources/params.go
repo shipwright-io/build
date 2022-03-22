@@ -350,7 +350,7 @@ func isStepReferencingParameter(step *pipeline.Step, paramName string) bool {
 		// Tekton reference: https://github.com/tektoncd/pipeline/blob/main/docs/tasks.md#using-variable-substitution
 		fmt.Sprintf("$(params.%s", paramName),
 		fmt.Sprintf("$(params['%s']", paramName),
-		fmt.Sprintf("$(params[\"%s\"]", paramName),
+		fmt.Sprintf("$(params[%q]", paramName),
 	}
 
 	for _, command := range step.Command {

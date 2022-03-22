@@ -706,7 +706,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
 				statusCall := ctl.StubBuildRunStatus(
-					fmt.Sprintf(" \"%s\" not found", strategyName),
+					fmt.Sprintf(" %q not found", strategyName),
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
@@ -774,7 +774,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub that asserts the BuildRun status fields when
 				// Status updates for a BuildRun take place
 				statusCall := ctl.StubBuildRunStatus(
-					fmt.Sprintf(" \"%s\" not found", strategyName),
+					fmt.Sprintf(" %q not found", strategyName),
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,

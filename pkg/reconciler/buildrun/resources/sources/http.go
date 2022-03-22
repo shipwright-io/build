@@ -25,7 +25,7 @@ func AppendHTTPStep(
 	// HTTP is done currently all in a single step, see if there is already one
 	httpStep := findExistingHTTPSourcesStep(taskSpec)
 	if httpStep != nil {
-		httpStep.Container.Args[3] = fmt.Sprintf("%s ; wget \"%s\"", httpStep.Container.Args[3], source.URL)
+		httpStep.Container.Args[3] = fmt.Sprintf("%s ; wget %q", httpStep.Container.Args[3], source.URL)
 	} else {
 		httpStep := tektonv1beta1.Step{
 			Container: corev1.Container{
@@ -39,7 +39,7 @@ func AppendHTTPStep(
 					"-e",
 					"-x",
 					"-c",
-					fmt.Sprintf("wget \"%s\"", source.URL),
+					fmt.Sprintf("wget %q", source.URL),
 				},
 			},
 		}
