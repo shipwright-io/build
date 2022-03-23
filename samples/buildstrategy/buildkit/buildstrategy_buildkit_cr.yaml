@@ -66,6 +66,16 @@ spec:
       # See https://github.com/moby/buildkit/blob/master/docs/rootless.md#about---oci-worker-no-process-sandbox for more information
       - name: BUILDKITD_FLAGS
         value: --oci-worker-no-process-sandbox
+      - name: PARAM_SOURCE_CONTEXT
+        value: $(params.shp-source-context)
+      - name: PARAM_DOCKERFILE
+        value: $(params.DOCKERFILE)
+      - name: PARAM_OUTPUT_IMAGE
+        value: $(params.shp-output-image)
+      - name: PARAM_INSECURE_REGISTRY
+        value: $(params.insecure-registry)
+      - name: PARAM_CACHE
+        value: $(params.cache)
       command:
         - /bin/ash
       args:
@@ -73,10 +83,26 @@ spec:
         - |
           set -euo pipefail
 
+          # Verify the existence of the context directory
+          if [ ! -d "${PARAM_SOURCE_CONTEXT}" ]; then
+            echo -e "The context directory '${PARAM_SOURCE_CONTEXT}' does not exist."
+            echo -n "ContextDirNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The context directory '${PARAM_SOURCE_CONTEXT}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+
           # Prepare the file arguments
-          DOCKERFILE_PATH='$(params.shp-source-context)/$(build.dockerfile)'
+          DOCKERFILE_PATH="${PARAM_SOURCE_CONTEXT}/${PARAM_DOCKERFILE}"
           DOCKERFILE_DIR="$(dirname "${DOCKERFILE_PATH}")"
           DOCKERFILE_NAME="$(basename "${DOCKERFILE_PATH}")"
+
+          # Verify the existence of the Dockerfile
+          if [ ! -f "${DOCKERFILE_PATH}" ]; then
+            echo -e "The Dockerfile '${DOCKERFILE_PATH}' does not exist."
+            echo -n "DockerfileNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The Dockerfile '${DOCKERFILE_PATH}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
 
           # We only have ash here and therefore no bash arrays to help add dynamic arguments (the build-args) to the build command.
 
@@ -87,18 +113,18 @@ spec:
           echo "--progress=plain \\" >> /tmp/run.sh
           echo "--frontend=dockerfile.v0 \\" >> /tmp/run.sh
           echo "--opt=filename=\"${DOCKERFILE_NAME}\" \\" >> /tmp/run.sh
-          echo "--local=context='$(params.shp-source-context)' \\" >> /tmp/run.sh
+          echo "--local=context=\"${PARAM_SOURCE_CONTEXT}\" \\" >> /tmp/run.sh
           echo "--local=dockerfile=\"${DOCKERFILE_DIR}\" \\" >> /tmp/run.sh
-          echo "--output=type=image,name='$(params.shp-output-image)',push=true,registry.insecure=$(params.insecure-registry) \\" >> /tmp/run.sh
-          if [ "$(params.cache)" == "registry" ]; then
+          echo "--output=type=image,name=\"${PARAM_OUTPUT_IMAGE}\",push=true,registry.insecure=\"${PARAM_INSECURE_REGISTRY}\" \\" >> /tmp/run.sh
+          if [ "${PARAM_CACHE}" == "registry" ]; then
             echo "--export-cache=type=inline \\" >> /tmp/run.sh
-            echo "--import-cache=type=registry,ref='$(params.shp-output-image)' \\" >> /tmp/run.sh
-          elif [ "$(params.cache)" == "disabled" ]; then
+            echo "--import-cache=type=registry,ref=\"${PARAM_OUTPUT_IMAGE}\" \\" >> /tmp/run.sh
+          elif [ "${PARAM_CACHE}" == "disabled" ]; then
             echo "--no-cache \\" >> /tmp/run.sh
           else
-            echo -e "An invalid value for the parameter 'cache' has been provided: '$(params.cache)'. Allowed values are 'disabled' and 'registry'."
+            echo -e "An invalid value for the parameter 'cache' has been provided: '${PARAM_CACHE}'. Allowed values are 'disabled' and 'registry'."
             echo -n "InvalidParameterValue" > '$(results.shp-error-reason.path)'
-            echo -n "An invalid value for the parameter 'cache' has been provided: '$(params.cache)'. Allowed values are 'disabled' and 'registry'." > '$(results.shp-error-message.path)'
+            echo -n "An invalid value for the parameter 'cache' has been provided: '${PARAM_CACHE}'. Allowed values are 'disabled' and 'registry'." > '$(results.shp-error-message.path)'
             exit 1
           fi
 

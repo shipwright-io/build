@@ -56,6 +56,16 @@ spec:
           value: /tekton/home
         - name: GOFLAGS
           value: $(params.go-flags)
+        - name: PARAM_OUTPUT_IMAGE
+          value: $(params.shp-output-image)
+        - name: PARAM_SOURCE_CONTEXT
+          value: $(params.shp-source-context)
+        - name: PARAM_TARGET_PLATFORM
+          value: $(params.target-platform)
+        - name: PARAM_PACKAGE_DIRECTORY
+          value: $(params.package-directory)
+        - name: PARAM_KO_VERSION
+          value: $(params.ko-version)
       command:
         - /bin/bash
       args:
@@ -69,12 +79,10 @@ spec:
           # - a URL with a tag but without a port: registry/image:tag
           # - a URL with both a tag and a port: registry:port/image:tag
 
-          IMAGE=$(params.shp-output-image)
-
           REPO=
           TAG=
 
-          IFS=':' read -ra PARTS <<< "${IMAGE}"
+          IFS=':' read -ra PARTS <<< "${PARAM_OUTPUT_IMAGE}"
           for PART in "${PARTS[@]}"; do
             if [ "${REPO}" == "" ]; then
               REPO="${PART}"
@@ -89,7 +97,7 @@ spec:
           done
 
           # Determine the ko version
-          KO_VERSION='$(params.ko-version)'
+          KO_VERSION="${PARAM_KO_VERSION}"
           if [ "${KO_VERSION}" == "latest" ]; then
             KO_VERSION=$(curl --silent "https://api.github.com/repos/google/ko/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           fi
@@ -107,7 +115,7 @@ spec:
           curl -f -s -L "https://github.com/google/ko/releases/download/${KO_VERSION_WITH_V}/ko_${KO_VERSION_WITHOUT_V}_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz" | tar xzf - -C /tmp ko
 
           # Determine the platform
-          PLATFORM='$(params.target-platform)'
+          PLATFORM="${PARAM_TARGET_PLATFORM}"
           if [ "${PLATFORM}" == "current" ]; then
             PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')/$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
           fi
@@ -118,14 +126,14 @@ spec:
 
           # Run ko
 
-          export GOROOT=$(go env GOROOT)
+          export GOROOT="$(go env GOROOT)"
           export KO_DOCKER_REPO="${REPO}"
 
-          pushd '$(params.shp-source-context)' > /dev/null
+          pushd "${PARAM_SOURCE_CONTEXT}" > /dev/null
             if [ "${TAG}" == "" ]; then
-              /tmp/ko publish '$(params.package-directory)' --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}"
+              /tmp/ko publish "${PARAM_PACKAGE_DIRECTORY}" --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}"
             else
-              /tmp/ko publish '$(params.package-directory)' --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}" --tags="${TAG}"
+              /tmp/ko publish "${PARAM_PACKAGE_DIRECTORY}" --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}" --tags="${TAG}"
             fi
           popd > /dev/null
 
