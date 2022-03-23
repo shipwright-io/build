@@ -61,6 +61,11 @@ func AppendBundleStep(
 		)
 	}
 
+	// add prune flag in when prune after pull is configured
+	if source.BundleContainer.Prune != nil && *source.BundleContainer.Prune == build.PruneAfterPull {
+		bundleStep.Container.Args = append(bundleStep.Container.Args, "--prune")
+	}
+
 	taskSpec.Steps = append(taskSpec.Steps, bundleStep)
 }
 

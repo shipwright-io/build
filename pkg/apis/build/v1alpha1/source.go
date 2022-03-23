@@ -8,10 +8,30 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// PruneOption defines the supported options for image pruning
+type PruneOption string
+
+const (
+	// Do not delete image after it was pulled
+	PruneNever PruneOption = "Never"
+
+	// Delete image after it was successfully pulled
+	PruneAfterPull PruneOption = "AfterPull"
+)
+
 // BundleContainer describes the source code bundle container to pull
 type BundleContainer struct {
 	// Image reference, i.e. quay.io/org/image:tag
 	Image string `json:"image"`
+
+	// Prune specifies whether the image is suppose to be deleted. Allowed
+	// values are 'Never' (no deletion) and `AfterPull` (removal after the
+	// image was successfully pulled from the registry).
+	//
+	// If not defined, it defaults to 'Never'.
+	//
+	// +optional
+	Prune *PruneOption `json:"prune,omitempty"`
 }
 
 // Source describes the Git source repository to fetch.

@@ -339,6 +339,13 @@ spec:
                       image:
                         description: Image reference, i.e. quay.io/org/image:tag
                         type: string
+                      prune:
+                        description: "Prune specifies whether the image is suppose
+                          to be deleted. Allowed values are 'Never' (no deletion)
+                          and `AfterPull` (removal after the image was successfully
+                          pulled from the registry). \n If not defined, it defaults
+                          to 'Never'."
+                        type: string
                     required:
                     - image
                     type: object

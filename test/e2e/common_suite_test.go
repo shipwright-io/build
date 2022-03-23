@@ -65,6 +65,14 @@ func (b *buildPrototype) ClusterBuildStrategy(name string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) SourceCredentials(name string) *buildPrototype {
+	if name != "" {
+		b.build.Spec.Source.Credentials = &v1.LocalObjectReference{Name: name}
+	}
+
+	return b
+}
+
 func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
 	b.build.Spec.Source.URL = pointer.String(repository)
 	b.build.Spec.Source.BundleContainer = nil
@@ -76,6 +84,14 @@ func (b *buildPrototype) SourceBundle(image string) *buildPrototype {
 		b.build.Spec.Source.BundleContainer = &buildv1alpha1.BundleContainer{}
 	}
 	b.build.Spec.Source.BundleContainer.Image = image
+	return b
+}
+
+func (b *buildPrototype) SourceBundlePrune(prune buildv1alpha1.PruneOption) *buildPrototype {
+	if b.build.Spec.Source.BundleContainer == nil {
+		b.build.Spec.Source.BundleContainer = &buildv1alpha1.BundleContainer{}
+	}
+	b.build.Spec.Source.BundleContainer.Prune = &prune
 	return b
 }
 
