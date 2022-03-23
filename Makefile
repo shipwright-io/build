@@ -154,8 +154,8 @@ test: test-unit
 
 .PHONY: test-unit
 test-unit:
-	rm -rf build/coverage
-	mkdir build/coverage
+	@rm -rf build/coverage
+	@mkdir build/coverage
 	go test \
 		./cmd/... \
 		./pkg/... \
@@ -172,7 +172,7 @@ test-unit-coverage: test-unit gocov
 
 .PHONY: test-unit-ginkgo
 test-unit-ginkgo: ginkgo
-	GO111MODULE=on $(GINKGO) \
+	$(GINKGO) \
 		--randomize-all \
 		--randomize-suites \
 		--fail-on-pending \
@@ -186,7 +186,7 @@ test-unit-ginkgo: ginkgo
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
 .PHONY: test-integration
 test-integration: install-apis ginkgo
-	GO111MODULE=on $(GINKGO) \
+	$(GINKGO) \
 		--randomize-all \
 		--randomize-suites \
 		--fail-on-pending \
@@ -200,7 +200,6 @@ test-e2e: install-strategies test-e2e-plain
 
 .PHONY: test-e2e-plain
 test-e2e-plain: ginkgo
-	GO111MODULE=on \
 	TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
