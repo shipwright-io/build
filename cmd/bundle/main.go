@@ -287,6 +287,7 @@ func dockerHubLogin(username string, password string) (string, error) {
 		return "", err
 	}
 
+	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
