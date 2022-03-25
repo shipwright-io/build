@@ -120,7 +120,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 						Create()
 					Expect(err).ToNot(HaveOccurred())
 
-					validateBuildRunToSucceed(testBuild, buildRun)
+					buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 
 					// we verify the image digest here which is mis-used by the strategy to store a calculated sum
 					// 13 (env1) + 21 (env2 = 2${a-configmap:number1}) + 2 (env3 = ${a-secret:number2}) + 39 (args[0] = ${a-secret:number3}9) + 47 (args[1]) = 122

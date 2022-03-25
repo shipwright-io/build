@@ -23,9 +23,6 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/utils/pointer"
 
-	"github.com/google/go-containerregistry/pkg/name"
-	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/shipwright-io/build/pkg/apis"
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test/utils"
@@ -112,7 +109,7 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 }
 
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
-func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1alpha1.BuildRun) {
+func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1alpha1.BuildRun) *buildv1alpha1.BuildRun {
 	trueCondition := corev1.ConditionTrue
 	falseCondition := corev1.ConditionFalse
 
@@ -150,6 +147,8 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")
 
 	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
+
+	return testBuildRun
 }
 
 func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) {
@@ -370,25 +369,4 @@ func getTimeoutMultiplier() int64 {
 	intValue, err := strconv.ParseInt(value, 10, 64)
 	Expect(err).ToNot(HaveOccurred(), "Failed to parse EnvVarTimeoutMultiplier to integer")
 	return intValue
-}
-
-func validateImagePlatformsExist(build *buildv1alpha1.Build, expectedPlatforms []gcrv1.Platform) {
-	// In the GitHub action, we are using a registry inside the cluster to
-	// push the image created by `buildRun`. The registry inside the cluster
-	// is not directly accessible from the local, so that we have mapped
-	// the cluster registry port to the local system
-	// by providing `test/kind/config.yaml` config to the kind
-	image := strings.Replace(
-		build.Spec.Output.Image,
-		"registry.registry.svc.cluster.local",
-		"localhost", 1,
-	)
-
-	ref, err := name.ParseReference(image)
-	Expect(err).ToNot(HaveOccurred())
-
-	for _, expectedPlatform := range expectedPlatforms {
-		_, err := remote.Image(ref, remote.WithAuth(getRegistryAuthentication(build, ref)), remote.WithPlatform(expectedPlatform))
-		Expect(err).ToNot(HaveOccurred(), fmt.Sprintf("Failed to validate %s/%s", expectedPlatform.OS, expectedPlatform.Architecture))
-	}
 }

@@ -63,8 +63,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 			appendRegistryInsecureParamValue(build, buildRun)
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -86,7 +87,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 			appendRegistryInsecureParamValue(build, buildRun)
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -107,7 +109,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -135,8 +138,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3-heroku_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 
 		AfterEach(func() {
@@ -162,8 +166,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -191,7 +196,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildpacks-v3_namespaced_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 
 		AfterEach(func() {
@@ -217,7 +223,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_php_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -238,7 +245,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_ruby_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -259,7 +267,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -279,7 +288,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -301,7 +311,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_golang_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 
 			By("deleting the parent Build object")
 			err = testBuild.DeleteBuild(build.Name)
@@ -336,7 +347,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_buildpacks-v3_java_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -357,8 +369,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -379,7 +392,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_kaniko_cr_advanced_dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -400,7 +414,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/buildrun_kaniko_cr_custom_context+dockerfile.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -421,8 +436,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko-trivy-good_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -464,9 +480,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildkit_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
-			validateImagePlatformsExist(build, []v1.Platform{
+			testBuild.ValidateImagePlatformsExist(buildRun, []v1.Platform{
 				{
 					Architecture: "amd64",
 					OS:           "linux",
@@ -496,8 +512,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromGitSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
@@ -526,7 +543,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-				validateBuildRunToSucceed(testBuild, buildRun)
+				buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+				testBuild.ValidateImageDigest(buildRun)
 			})
 		})
 
@@ -547,7 +565,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateBuildRunToSucceed(testBuild, buildRun)
+				buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+				testBuild.ValidateImageDigest(buildRun)
 			})
 		})
 
@@ -568,7 +587,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-				validateBuildRunToSucceed(testBuild, buildRun)
+				buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+				testBuild.ValidateImageDigest(buildRun)
 			})
 		})
 
@@ -589,7 +609,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_kaniko_cr.yaml")
 				Expect(err).ToNot(HaveOccurred())
 
-				validateBuildRunToSucceed(testBuild, buildRun)
+				buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+				testBuild.ValidateImageDigest(buildRun)
 			})
 		})
 
@@ -610,7 +631,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_source-to-image_cr.yaml")
 				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
-				validateBuildRunToSucceed(testBuild, buildRun)
+				buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+				testBuild.ValidateImageDigest(buildRun)
 			})
 		})
 	})
