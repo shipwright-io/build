@@ -40,7 +40,10 @@ jobs:
           with:
             go-version: 1.17.x
         - name: Install Ko
-          uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
+          # This sha corresponds to v0.4
+          uses: imjasonh/setup-ko@2c3450ca27f6e6f2b02e72a40f2163c281a1f675
+          with:
+            version: v0.11.2
         - name: Check out code
           uses: actions/checkout@v2
         - name: Install kubectl
@@ -139,7 +142,10 @@ jobs:
             kubectl apply -f test/data/registry.yaml
             kubectl -n registry rollout status deployment registry --timeout=1m
         - name: Install Ko
-          uses: imjasonh/setup-ko@20b7695b536c640edfafdd378d96c760460f29d6
+          # This sha corresponds to v0.4
+          uses: imjasonh/setup-ko@2c3450ca27f6e6f2b02e72a40f2163c281a1f675
+          with:
+            version: v0.11.2
         - name: Install Shipwright Build
           run: |
             make install-controller-kind
