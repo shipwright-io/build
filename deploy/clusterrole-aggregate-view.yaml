@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  name: shipwright-build-aggregate-view
+rules:
+- apiGroups: ['shipwright.io']
+  resources: ['clusterbuildstrategies']
+  verbs: ['get', 'list', 'watch']
+- apiGroups: ['shipwright.io']
+  resources: ['buildstrategies']
+  verbs: ['get', 'list', 'watch']
+- apiGroups: ['shipwright.io']
+  resources: ['builds']
+  verbs: ['get', 'list', 'watch']
+- apiGroups: ['shipwright.io']
+  resources: ['buildruns']
+  verbs: ['get', 'list', 'watch']
