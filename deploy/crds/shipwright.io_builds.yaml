@@ -331,6 +331,30 @@ spec:
                   - name
                   type: object
                 type: array
+              retention:
+                description: Contains information about retention params
+                properties:
+                  failedLimit:
+                    description: FailedLimit defines the maximum number of failed
+                      buildruns that should exist.
+                    minimum: 1
+                    type: integer
+                  succeededLimit:
+                    description: SucceededLimit defines the maximum number of succeeded
+                      buildruns that should exist.
+                    minimum: 1
+                    type: integer
+                  ttlAfterFailed:
+                    description: TtlAfterFailed defines the maximum duration of time
+                      the failed buildrun should exist.
+                    format: duration
+                    type: string
+                  ttlAfterSucceeded:
+                    description: TtlAfterFailed defines the maximum duration of time
+                      the succeeded buildrun should exist.
+                    format: duration
+                    type: string
+                type: object
               source:
                 description: Source refers to the Git repository containing the source
                   code to be built.

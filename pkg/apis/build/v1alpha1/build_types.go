@@ -138,6 +138,11 @@ type BuildSpec struct {
 	// Env contains additional environment variables that should be passed to the build container
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Contains information about retention params
+	//
+	// +optional
+	Retention *BuildRetention `json:"retention,omitempty"`
 }
 
 // StrategyName returns the name of the configured strategy, or 'undefined' in
@@ -213,6 +218,30 @@ type BuildList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Build `json:"items"`
+}
+
+// Retention struct for buildrun cleanup
+type BuildRetention struct {
+	// FailedLimit defines the maximum number of failed buildruns that should exist.
+	//
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	FailedLimit *uint `json:"failedLimit,omitempty"`
+	// SucceededLimit defines the maximum number of succeeded buildruns that should exist.
+	//
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	SucceededLimit *uint `json:"succeededLimit,omitempty"`
+	// TtlAfterFailed defines the maximum duration of time the failed buildrun should exist.
+	//
+	// +optional
+	// +kubebuilder:validation:Format=duration
+	TtlAfterFailed *metav1.Duration `json:"ttlAfterFailed,omitempty"`
+	// TtlAfterFailed defines the maximum duration of time the succeeded buildrun should exist.
+	//
+	// +optional
+	// +kubebuilder:validation:Format=duration
+	TtlAfterSucceeded *metav1.Duration `json:"ttlAfterSucceeded,omitempty"`
 }
 
 func init() {

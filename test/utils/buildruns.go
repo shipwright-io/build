@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,6 +102,31 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillCompletion)
+	if err != nil {
+		return nil, err
+	}
+
+	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+}
+
+// GetBRTillNotFound waits for the buildrun to get deleted. It returns an error if BuildRun is not found
+func (t *TestBuild) GetBRTillNotFound(name string, interval time.Duration, timeout time.Duration) (*v1alpha1.BuildRun, error) {
+
+	var (
+		GetBRTillNotFound = func() (bool, error) {
+
+			bInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
+			_, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil && apierrors.IsNotFound(err) {
+				return true, err
+			}
+			return false, nil
+		}
+	)
+
+	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
+
+	err := wait.PollImmediate(interval, timeout, GetBRTillNotFound)
 	if err != nil {
 		return nil, err
 	}

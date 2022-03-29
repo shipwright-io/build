@@ -506,3 +506,63 @@ spec:
   output:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
+
+// MinimalBuildWithRetentionTTLFive defines a simple
+// Build with a source, a strategy and ttl
+const MinimalBuildWithRetentionTTLFive = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: build-retention-ttl
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+    contextDir: docker-build
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  retention:
+    ttlAfterFailed: 5s
+    ttlAfterSucceeded: 5s
+`
+
+// MinimalBuildWithRetentionLimitOne defines a simple
+// Build with a source, a strategy and limits set as 1
+const MinimalBuildWithRetentionLimitOne = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: build-retention-limit
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+    contextDir: docker-build
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  retention:
+    failedLimit: 1
+    succeededLimit: 1
+`
+
+// MinimalBuildWithRetentionLimitDiff defines a simple Build with a source,
+// a strategy and different failed and succeeded limits
+const MinimalBuildWithRetentionLimitDiff = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: build-retention-limit
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+    contextDir: docker-build
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  retention:
+    failedLimit: 1
+    succeededLimit: 2
+`

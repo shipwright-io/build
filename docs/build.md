@@ -15,6 +15,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining ParamValues](#defining-paramvalues)
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining the Output](#defining-the-output)
+  - [Defining Retention Parameters](#defining-retention-parameters)
 - [BuildRun deletion](#BuildRun-deletion)
 
 ## Overview
@@ -29,6 +30,7 @@ A `Build` resource allows the user to define:
 - dockerfile
 - output
 - env
+- retention
 
 A `Build` is available within a namespace.
 
@@ -87,7 +89,11 @@ The `Build` definition supports the following fields:
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
   - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
   - `spec.output.labels` - Refers to a list of `key/value` that could be used to label the output image.
-  - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool used by the chosen build strategy.
+  - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
+  - `spec.retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
+  - `spec.retention.ttlAfterSucceeded` - Specifies the duration for which a successful buildrun can exist.
+  - `spec.retention.failedLimit` - Specifies the number of failed buildrun that can exist.
+  - `spec.retention.succeededLimit` - Specifies the number of successful buildrun can exist.
 
 ### Defining the Source
 
@@ -529,6 +535,54 @@ You can verify which labels were added to the output image that is available on 
 ```sh
   docker inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".[].Config.Labels"
 ```
+
+### Defining Retention Parameters
+
+A `Build` resource can specify how long a completed BuildRun can exist and the number of buildruns that have failed or succeeded that should exist. Instead of manually cleaning up old BuildRuns, retention parameters provide an alternate method for cleaning up BuildRuns automatically.
+
+As part of the retention parameters, we have the following fields:
+
+- `retention.succeededLimit` - Defines number of succeeded BuildRuns for a Build that can exist.
+- `retention.failedLimit` - Defines number of failed BuildRuns for a Build that can exist.
+- `retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
+- `retention.ttlAfterSucceeded` - Specifies the duration for which a successful buildrun can exist.
+
+An example of a user using both TTL and Limit retention fields. In case of such a configuration, BuildRun will get deleted once the first criteria is met.
+
+```yaml
+  apiVersion: shipwright.io/v1alpha1
+  kind: Build
+  metadata:
+    name: build-retention-ttl
+  spec:
+    source:
+      url: "https://github.com/shipwright-io/sample-go"
+      contextDir: docker-build
+    strategy:
+      kind: ClusterBuildStrategy
+    output:
+    ...
+    retention:
+      ttlAfterFailed: 30m
+      ttlAfterSucceeded: 1h
+      failedLimit: 10
+      succeededLimit: 20
+```
+
+**NOTE**: When changes are made to `retention.failedLimit` and `retention.succeededLimit` values, they come into effect as soon as the build is applied, thereby enforcing the new limits. On the other hand, changing the `retention.ttlAfterFailed` and `retention.ttlAfterSucceeded` values will only affect new buildruns. Old buildruns will adhere to the old TTL retention values.
+
+#### Build_limit_cleanup controller
+
+Builds are watched by the build_limit_cleanup controller for the following preconditions:
+
+- Update on `Build` resource if either `retention.failedLimit` or `retention.succeeded` are set
+- Create on `Build` resource if either `retention.failedLimit` or `retention.succeeded` are set
+
+build_limit_cleanup also watches buildruns for the following precondition:
+
+- Update on `BuildRun` resource if either `retention.failedLimit` or `retention.succeeded` are set and the Buildrun has just completed execution.
+
+If these conditions are met, the reconciler calculates the number of buildruns that exists and deletes the oldest ones till the limit is satisfied.
 
 ### Sources
 

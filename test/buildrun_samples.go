@@ -200,3 +200,15 @@ spec:
   buildRef:
     name: foobar
 `
+
+// MinimalBuildRunRetention defines a minimal BuildRun
+// with a reference used to test retention fields
+const MinimalBuildRunRetention = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buidrun-retention-ttl
+spec:
+  buildRef:
+    name: build-retention-ttl
+`
