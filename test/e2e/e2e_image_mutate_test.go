@@ -5,17 +5,9 @@
 package e2e_test
 
 import (
-	"encoding/json"
-	"log"
-	"strings"
-
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
@@ -66,75 +58,21 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 			appendRegistryInsecureParamValue(build, buildRun)
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
+
+			image := testBuild.GetImage(buildRun)
 
 			Expect(
-				getImageAnnotation(getImage(build), "org.opencontainers.image.url"),
+				getImageAnnotation(image, "org.opencontainers.image.url"),
 			).To(Equal("https://my-company.com/images"))
 
 			Expect(
-				getImageLabel(getImage(build), "maintainer"),
+				getImageLabel(image, "maintainer"),
 			).To(Equal("team@my-company.com"))
 		})
 	})
 })
-
-func getRegistryAuthentication(
-	build *buildv1alpha1.Build,
-	ref name.Reference,
-) authn.Authenticator {
-	// In case no secret is mounted, use anonymous
-	if build.Spec.Output.Credentials == nil || build.Spec.Output.Credentials.Name == "" {
-		log.Printf("No access credentials provided, using anonymous mode")
-		return authn.Anonymous
-	}
-
-	secret, err := testBuild.LookupSecret(
-		types.NamespacedName{
-			Namespace: build.Namespace,
-			Name:      build.Spec.Output.Credentials.Name,
-		},
-	)
-	Expect(err).ToNot(HaveOccurred(), "Error retrieving registry secret")
-
-	type auth struct {
-		Auths map[string]authn.AuthConfig `json:"auths,omitempty"`
-	}
-
-	var authConfig auth
-
-	Expect(json.Unmarshal(secret.Data[".dockerconfigjson"], &authConfig)).
-		ToNot(HaveOccurred())
-
-	// Look-up the respective registry server inside the credentials
-	registryName := ref.Context().RegistryStr()
-	if registryName == name.DefaultRegistry {
-		registryName = authn.DefaultAuthKey
-	}
-
-	return authn.FromConfig(authConfig.Auths[registryName])
-}
-
-func getImage(build *buildv1alpha1.Build) containerreg.Image {
-	// In the GitHub action, we are using a registry inside the cluster to
-	// push the image created by `buildRun`. The registry inside the cluster
-	// is not directly accessible from the local, so that we have mapped
-	// the cluster registry port to the local system
-	// by providing `test/kind/config.yaml` config to the kind
-	image := strings.Replace(
-		build.Spec.Output.Image,
-		"registry.registry.svc.cluster.local",
-		"localhost", 1,
-	)
-
-	ref, err := name.ParseReference(image)
-	Expect(err).To(BeNil())
-
-	img, err := remote.Image(ref, remote.WithAuth(getRegistryAuthentication(build, ref)))
-	Expect(err).To(BeNil())
-
-	return img
-}
 
 func getImageAnnotation(img containerreg.Image, annotation string) string {
 	manifest, err := img.Manifest()

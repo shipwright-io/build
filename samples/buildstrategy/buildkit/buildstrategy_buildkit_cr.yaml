@@ -178,7 +178,7 @@ spec:
           /tmp/run.sh
 
           # Store the image digest
-          sed -E 's/.*containerimage.digest":"([^"]*).*/\1/' < /tmp/image-metadata.json > '$(results.shp-image-digest.path)'
+          grep containerimage.digest /tmp/image-metadata.json | sed -E 's/.*containerimage.digest":\s*"([^"]*).*/\1/' | tr -d '\n' > '$(results.shp-image-digest.path)'
         # That's the separator between the shell script and its args
         - --
         - --build-args

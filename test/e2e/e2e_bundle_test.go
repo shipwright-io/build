@@ -76,8 +76,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromBundleSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 
 		It("should work with Buildpacks build strategy", func() {
@@ -99,8 +100,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromBundleSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 
 		It("should work with Buildah build strategy", func() {
@@ -130,8 +132,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
-			validateBuildRunToSucceed(testBuild, buildRun)
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 			validateBuildRunResultsFromBundleSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 })

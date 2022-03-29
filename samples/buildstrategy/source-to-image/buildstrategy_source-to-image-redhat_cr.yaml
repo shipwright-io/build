@@ -109,12 +109,21 @@ spec:
           # Push the image
           echo "[INFO] Pushing image ${image}"
           buildah push \
+            --tls-verify="${tlsVerify}" \
             "docker://${image}"
           
-          # Store the digest result
-          buildah images \
-            --format='{{.Digest}}' \
-            "${image}" | tr -d "\n" > '$(results.shp-image-digest.path)'
+          # Store the digest result. This is more complex than expected. BuildAh locally calculates a wrong digest.
+          # We therefore tag the image to a dummy name so that the layers are still present. Then we remove the local
+          # tag. Then we pull again. Then the local digest is correct.
+          # This should be validated again with a newer BuildAh version.
+          # https://github.com/containers/buildah/issues/3866
+          buildah tag "${image}" dummy
+          buildah rmi "${image}"
+          buildah pull --tls-verify="${tlsVerify}" "${image}"
+          buildah inspect \
+            --type=image \
+            --format='{{.FromImageDigest}}' \
+            "${image}" > '$(results.shp-image-digest.path)'
         # That's the separator between the shell script and its args
         - --
         - --image
