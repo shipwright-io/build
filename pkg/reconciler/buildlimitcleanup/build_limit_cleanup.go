@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package build_limit_cleanup
+package buildlimitcleanup
 
 import (
 	"context"
@@ -14,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -22,25 +21,21 @@ import (
 
 // ReconcileBuild reconciles a Build object
 type ReconcileBuild struct {
-	/* This client, initialized using mgr.Client() above, is a split client
-	   that reads objects from the cache and writes to the apiserver */
-	config                *config.Config
-	client                client.Client
-	scheme                *runtime.Scheme
-	setOwnerReferenceFunc setOwnerReferenceFunc
+	// This client, initialized using mgr.Client() above, is a split client
+	// that reads objects from the cache and writes to the apiserver */
+	config *config.Config
+	client client.Client
 }
 
-func NewReconciler(c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
+func NewReconciler(c *config.Config, mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileBuild{
-		config:                c,
-		client:                mgr.GetClient(),
-		scheme:                mgr.GetScheme(),
-		setOwnerReferenceFunc: ownerRef,
+		config: c,
+		client: mgr.GetClient(),
 	}
 }
 
-/* Reconciler finds retentions fields in builds and makes sure the
-   number of corresponding buildruns adhere to these limits */
+// Reconciler finds retentions fields in builds and makes sure the
+// number of corresponding buildruns adhere to these limits
 func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	// Set the ctx to be Background, as the top-level context for incoming requests.
 	ctx, cancel := context.WithTimeout(ctx, r.config.CtxTimeOut)
@@ -59,6 +54,16 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, err
 	}
 
+	// early exit if there is no retention section
+	if b.Spec.Retention == nil {
+		return reconcile.Result{}, nil
+	}
+
+	// early exit if retention section has no limit
+	if b.Spec.Retention.SucceededLimit == nil && b.Spec.Retention.FailedLimit == nil {
+		return reconcile.Result{}, nil
+	}
+
 	lbls := map[string]string{
 		build.LabelBuild: b.Name,
 	}
@@ -67,7 +72,12 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 		LabelSelector: labels.SelectorFromSet(lbls),
 	}
 	allBuildRuns := &build.BuildRunList{}
-	r.client.List(ctx, allBuildRuns, &opts)
+
+	err = r.client.List(ctx, allBuildRuns, &opts)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	if len(allBuildRuns.Items) == 0 {
 		return reconcile.Result{}, nil
 	}
@@ -90,19 +100,20 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	// Check limits and delete oldest buildruns if limit is reached.
 	if b.Spec.Retention.SucceededLimit != nil {
 		if len(buildRunSucceeded) > int(*b.Spec.Retention.SucceededLimit) {
+			// Sort buildruns with oldest one at the beginning
 			sort.Slice(buildRunSucceeded, func(i, j int) bool {
-				return buildRunSucceeded[i].Status.CompletionTime.Before(buildRunSucceeded[j].Status.CompletionTime)
+				return buildRunSucceeded[i].ObjectMeta.CreationTimestamp.Before(&buildRunSucceeded[j].ObjectMeta.CreationTimestamp)
 			})
 			lenOfList := len(buildRunSucceeded)
-			for i := 0; lenOfList-i > int(*b.Spec.Retention.SucceededLimit); i += 1 {
+			for i := 0; i < lenOfList-int(*b.Spec.Retention.SucceededLimit); i++ {
 				ctxlog.Info(ctx, "Deleting succeeded buildrun as cleanup limit has been reached.", namespace, request.Namespace, name, buildRunSucceeded[i].Name)
-				deleteBuildRunErr := r.client.Delete(ctx, &buildRunSucceeded[i], &client.DeleteOptions{})
-				if deleteBuildRunErr != nil {
-					if apierrors.IsNotFound(deleteBuildRunErr) {
-						return reconcile.Result{}, nil
+				err := r.client.Delete(ctx, &buildRunSucceeded[i], &client.DeleteOptions{})
+				if err != nil {
+					if !apierrors.IsNotFound(err) {
+						ctxlog.Debug(ctx, "Error deleting buildRun.", namespace, request.Namespace, name, &buildRunSucceeded[i].Name, "error", err)
+						return reconcile.Result{}, err
 					}
-					ctxlog.Debug(ctx, "Error deleting buildRun.", namespace, request.Namespace, name, &buildRunSucceeded[i].Name, deleteError, deleteBuildRunErr)
-					return reconcile.Result{}, nil
+					ctxlog.Debug(ctx, "Error deleting buildRun. It has already been deleted.", namespace, request.Namespace, name, &buildRunSucceeded[i].Name)
 				}
 			}
 		}
@@ -110,19 +121,20 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 
 	if b.Spec.Retention.FailedLimit != nil {
 		if len(buildRunFailed) > int(*b.Spec.Retention.FailedLimit) {
+			// Sort buildruns with oldest one at the beginning
 			sort.Slice(buildRunFailed, func(i, j int) bool {
-				return buildRunFailed[i].Status.CompletionTime.Before(buildRunFailed[j].Status.CompletionTime)
+				return buildRunFailed[i].ObjectMeta.CreationTimestamp.Before(&buildRunFailed[j].ObjectMeta.CreationTimestamp)
 			})
 			lenOfList := len(buildRunFailed)
-			for i := 0; lenOfList-i > int(*b.Spec.Retention.FailedLimit); i += 1 {
+			for i := 0; i < lenOfList-int(*b.Spec.Retention.FailedLimit); i++ {
 				ctxlog.Info(ctx, "Deleting failed buildrun as cleanup limit has been reached.", namespace, request.Namespace, name, buildRunFailed[i].Name)
-				deleteBuildRunErr := r.client.Delete(ctx, &buildRunFailed[i], &client.DeleteOptions{})
-				if deleteBuildRunErr != nil {
-					if apierrors.IsNotFound(deleteBuildRunErr) {
-						return reconcile.Result{}, nil
+				err := r.client.Delete(ctx, &buildRunFailed[i], &client.DeleteOptions{})
+				if err != nil {
+					if !apierrors.IsNotFound(err) {
+						ctxlog.Debug(ctx, "Error deleting buildRun.", namespace, request.Namespace, name, &buildRunFailed[i].Name, "error", err)
+						return reconcile.Result{}, err
 					}
-					ctxlog.Debug(ctx, "Error deleting buildRun.", namespace, request.Namespace, name, buildRunFailed[i].Name, deleteError, deleteBuildRunErr)
-					return reconcile.Result{}, nil
+					ctxlog.Debug(ctx, "Error deleting buildRun. It has already been deleted.", namespace, request.Namespace, name, &buildRunFailed[i].Name)
 				}
 			}
 		}

@@ -217,6 +217,10 @@ kind: ClusterBuildStrategy
 metadata:
   name: noop
 spec:
+  parameters:
+  - name: exit-command
+    description: "Exit command for the pod"
+    default: "true"
   buildSteps:
   - name: step-no-and-op
     image: alpine:latest
@@ -240,7 +244,7 @@ spec:
     - name: AWS_SECRET_KEY
       value: NOT_SET
     command:
-    - "true"
+    - $(params.exit-command)
     resources:
       limits:
         cpu: 250m
@@ -343,36 +347,4 @@ spec:
     - sleep
     args:
     - $(params.sleep-time)
-`
-
-// Use a simple strategy that does not push the image
-const ClusterBuildStrategySingleStepNoPush = `
-apiVersion: shipwright.io/v1alpha1
-kind: ClusterBuildStrategy
-metadata:
-  name: buildah
-spec:
-  buildSteps:
-    - name: buildah-bud
-      image: quay.io/containers/buildah:v1.20.1
-      workingDir: $(params.shp-source-root)
-      securityContext:
-        privileged: true
-      command:
-        - /usr/bin/buildah
-      args:
-        - bud
-        - --tag=$(params.shp-output-image)
-        - --file=$(build.dockerfile)
-        - $(params.shp-source-context)
-      resources:
-        limits:
-          cpu: 500m
-          memory: 1Gi
-        requests:
-          cpu: 250m
-          memory: 65Mi
-      volumeMounts:
-        - name: buildah-images
-          mountPath: /var/lib/containers/storage
 `

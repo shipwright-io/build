@@ -212,3 +212,31 @@ spec:
   buildRef:
     name: build-retention-ttl
 `
+
+// MinimalBuildRunRetention defines a minimal BuildRun
+// with a reference used to test retention fields
+const MinimalBuildRunRetentionTTLFive = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buidrun-retention-ttl
+spec:
+  buildRef:
+    name: build-retention-ttl
+  retention:
+    ttlAfterFailed: 5s
+    ttlAfterSucceeded: 5s
+`
+
+const MinimalBuildahBuildRunWithExitCode = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildah-run
+spec:
+  paramValues:
+  - name: exit-command
+    value: "true"
+  buildRef:
+    name: buildah
+`

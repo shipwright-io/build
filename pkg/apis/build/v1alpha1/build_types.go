@@ -220,7 +220,7 @@ type BuildList struct {
 	Items           []Build `json:"items"`
 }
 
-// Retention struct for buildrun cleanup
+// BuildRetention struct for buildrun cleanup
 type BuildRetention struct {
 	// FailedLimit defines the maximum number of failed buildruns that should exist.
 	//
@@ -232,16 +232,16 @@ type BuildRetention struct {
 	// +optional
 	// +kubebuilder:validation:Minimum=1
 	SucceededLimit *uint `json:"succeededLimit,omitempty"`
-	// TtlAfterFailed defines the maximum duration of time the failed buildrun should exist.
+	// TTLAfterFailed defines the maximum duration of time the failed buildrun should exist.
 	//
 	// +optional
 	// +kubebuilder:validation:Format=duration
-	TtlAfterFailed *metav1.Duration `json:"ttlAfterFailed,omitempty"`
-	// TtlAfterFailed defines the maximum duration of time the succeeded buildrun should exist.
+	TTLAfterFailed *metav1.Duration `json:"ttlAfterFailed,omitempty"`
+	// TTLAfterSucceeded defines the maximum duration of time the succeeded buildrun should exist.
 	//
 	// +optional
 	// +kubebuilder:validation:Format=duration
-	TtlAfterSucceeded *metav1.Duration `json:"ttlAfterSucceeded,omitempty"`
+	TTLAfterSucceeded *metav1.Duration `json:"ttlAfterSucceeded,omitempty"`
 }
 
 func init() {

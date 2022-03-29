@@ -345,13 +345,13 @@ spec:
                     minimum: 1
                     type: integer
                   ttlAfterFailed:
-                    description: TtlAfterFailed defines the maximum duration of time
+                    description: TTLAfterFailed defines the maximum duration of time
                       the failed buildrun should exist.
                     format: duration
                     type: string
                   ttlAfterSucceeded:
-                    description: TtlAfterFailed defines the maximum duration of time
-                      the succeeded buildrun should exist.
+                    description: TTLAfterSucceeded defines the maximum duration of
+                      time the succeeded buildrun should exist.
                     format: duration
                     type: string
                 type: object

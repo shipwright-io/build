@@ -569,20 +569,7 @@ An example of a user using both TTL and Limit retention fields. In case of such 
       succeededLimit: 20
 ```
 
-**NOTE**: When changes are made to `retention.failedLimit` and `retention.succeededLimit` values, they come into effect as soon as the build is applied, thereby enforcing the new limits. On the other hand, changing the `retention.ttlAfterFailed` and `retention.ttlAfterSucceeded` values will only affect new buildruns. Old buildruns will adhere to the old TTL retention values.
-
-#### Build_limit_cleanup controller
-
-Builds are watched by the build_limit_cleanup controller for the following preconditions:
-
-- Update on `Build` resource if either `retention.failedLimit` or `retention.succeeded` are set
-- Create on `Build` resource if either `retention.failedLimit` or `retention.succeeded` are set
-
-build_limit_cleanup also watches buildruns for the following precondition:
-
-- Update on `BuildRun` resource if either `retention.failedLimit` or `retention.succeeded` are set and the Buildrun has just completed execution.
-
-If these conditions are met, the reconciler calculates the number of buildruns that exists and deletes the oldest ones till the limit is satisfied.
+**NOTE**: When changes are made to `retention.failedLimit` and `retention.succeededLimit` values, they come into effect as soon as the build is applied, thereby enforcing the new limits. On the other hand, changing the `retention.ttlAfterFailed` and `retention.ttlAfterSucceeded` values will only affect new buildruns. Old buildruns will adhere to the old TTL retention values. In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
 
 ### Sources
 
