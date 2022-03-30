@@ -80,6 +80,11 @@ func (s ClusterBuildStrategy) GetParameters() []Parameter {
 	return s.Spec.Parameters
 }
 
+// GetVolumes returns the volumes defined by the build strategy
+func (s ClusterBuildStrategy) GetVolumes() []BuildStrategyVolume {
+	return s.Spec.Volumes
+}
+
 func init() {
 	SchemeBuilder.Register(&ClusterBuildStrategy{}, &ClusterBuildStrategyList{})
 }

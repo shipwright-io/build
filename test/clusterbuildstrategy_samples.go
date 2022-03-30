@@ -13,6 +13,10 @@ kind: BuildStrategy
 metadata:
   name: buildah
 spec:
+  volumes:
+    - name: buildah-images
+      volumeSource:
+        emptyDir: {}
   buildSteps:
     - name: buildah-bud
       image: quay.io/containers/buildah:v1.20.1
@@ -67,6 +71,10 @@ kind: ClusterBuildStrategy
 metadata:
   name: buildah
 spec:
+  volumes:
+    - name: buildah-images
+      volumeSource:
+        emptyDir: {}
   buildSteps:
     - name: buildah-bud
       image: quay.io/containers/buildah:v1.20.1

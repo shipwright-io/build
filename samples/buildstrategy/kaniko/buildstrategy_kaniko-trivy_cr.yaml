@@ -7,6 +7,11 @@ kind: ClusterBuildStrategy
 metadata:
   name: kaniko-trivy
 spec:
+  volumes:
+    - name: layout
+      emptyDir: {}
+    - name: tar
+      emptyDir: {}
   buildSteps:
     - name: kaniko-build
       image: gcr.io/kaniko-project/executor:v1.8.1

@@ -54,6 +54,12 @@ const (
 	RemoteRepositoryUnreachable BuildReason = "RemoteRepositoryUnreachable"
 	// BuildNameInvalid indicates the build name is invalid
 	BuildNameInvalid BuildReason = "BuildNameInvalid"
+	// VolumeDoesNotExist indicates that volume referenced by the Build does not exist, therefore Build cannot be run
+	VolumeDoesNotExist BuildReason = "VolumeDoesNotExist"
+	// VolumeNotOverridable indicates that volume defined by build is not set as overridable in the strategy
+	VolumeNotOverridable BuildReason = "VolumeNotOverridable"
+	// UndefinedVolume indicates that volume defined by build is not found in the strategy
+	UndefinedVolume BuildReason = "UndefinedVolume"
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
 )
@@ -143,6 +149,26 @@ type BuildSpec struct {
 	//
 	// +optional
 	Retention *BuildRetention `json:"retention,omitempty"`
+
+	// Volumes contains volume Overrides of the BuildStrategy volumes in case those are allowed
+	// to be overridden. Must only contain volumes that exist in the corresponding BuildStrategy
+	// +optional
+	Volumes []BuildVolume `json:"volumes,omitempty"`
+}
+
+// BuildVolume is a volume that will be mounted in build pod during build step
+type BuildVolume struct {
+	// Name of the Build Volume
+	// +required
+	Name string `json:"name"`
+
+	// Description of the Build Volume
+	// +optional
+	Description *string `json:"description,omitempty"`
+
+	// Represents the source of a volume to mount
+	// +required
+	corev1.VolumeSource `json:",inline"`
 }
 
 // StrategyName returns the name of the configured strategy, or 'undefined' in

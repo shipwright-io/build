@@ -4,6 +4,9 @@ kind: ClusterBuildStrategy
 metadata:
   name: kaniko
 spec:
+  volumes:
+    - name: layout
+      emptyDir: {}
   buildSteps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.8.1

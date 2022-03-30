@@ -4,6 +4,9 @@ kind: ClusterBuildStrategy
 metadata:
   name: buildpacks-v3
 spec:
+  volumes:
+    - name: platform-env
+      emptyDir: {}
   parameters:
     - name: platform-api-version
       description: The referenced version is the minimum version that all relevant buildpack implementations support.

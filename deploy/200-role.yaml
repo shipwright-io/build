@@ -76,5 +76,9 @@ rules:
   verbs:     ['get', 'list', 'watch']
 
 - apiGroups: ['']
+  resources: ['configmaps']
+  verbs:     ['list']
+
+- apiGroups: ['']
   resources: ['serviceaccounts']
   verbs:     ['get', 'list', 'watch', 'create', 'update', 'delete']

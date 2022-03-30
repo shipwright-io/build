@@ -64,6 +64,7 @@ func (s Strategy) ValidatePath(ctx context.Context) error {
 
 	if strategyExists {
 		s.validateBuildParams(builderStrategy.GetParameters())
+		s.validateBuildVolumes(builderStrategy.GetVolumes())
 	}
 
 	return nil
@@ -93,6 +94,15 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 
 func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
 	valid, reason, message := BuildParameters(parameterDefinitions, s.Build.Spec.ParamValues)
+
+	if !valid {
+		s.Build.Status.Reason = build.BuildReasonPtr(reason)
+		s.Build.Status.Message = pointer.String(message)
+	}
+}
+
+func (s Strategy) validateBuildVolumes(strategyVolumes []build.BuildStrategyVolume) {
+	valid, reason, message := BuildVolumes(strategyVolumes, s.Build.Spec.Volumes)
 
 	if !valid {
 		s.Build.Status.Reason = build.BuildReasonPtr(reason)
