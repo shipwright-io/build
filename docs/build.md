@@ -73,7 +73,7 @@ The `Build` definition supports the following fields:
   - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1alpha1`.
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `Build`.
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `Build`.
-  - `spec.source.URL` - Refers to the Git repository containing the source code.
+  - `spec.source` - Refers to the location of the source code, for example a Git repository or source bundle image.
   - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/buildstrategy)
   - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies, this is just required for `source-to-image` buildStrategy_)
   - `spec.output`- Refers to the location where the generated image would be pushed.
@@ -91,10 +91,13 @@ The `Build` definition supports the following fields:
 
 ### Defining the Source
 
-A `Build` resource can specify a Git source, together with other parameters like:
+A `Build` resource can specify a Git repository or bundle image source, together with other parameters like:
 
-- `source.credentials.name` - For private repositories, the name is a reference to an existing secret on the same namespace containing the `ssh` data.
-- `source.revision` - An specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fallback to the git repository default branch.
+- `source.url` - Specify the source location using a Git repository.
+- `source.bundleContainer.image` - Specify a source bundle container image to be used as the source.
+- `source.bundleContainer.prune` - Configure whether the source bundle image should be deleted after the source was obtained (defaults to `Never`, other option is `AfterPull` to delete the image after a successful image pull).
+- `source.credentials.name` - For private repositories/registries, the name is a reference to an existing secret on the same namespace containing the SSH private key, or Docker access credentials, respectively.
+- `source.revision` - An specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fallback to the Git repository default branch.
 - `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here.
 
 By default, the Build controller won't validate that the Git repository exists. If the validation is desired, users can define the `build.shipwright.io/verify.repository` annotation with `true` explicitly. For example:
