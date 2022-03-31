@@ -30,10 +30,6 @@ const (
 	StableAPIFields = "stable"
 	// AlphaAPIFields is the value used for "enable-api-fields" when alpha APIs should be usable as well.
 	AlphaAPIFields = "alpha"
-	// DefaultDisableHomeEnvOverwrite is the default value for "disable-home-env-overwrite".
-	DefaultDisableHomeEnvOverwrite = true
-	// DefaultDisableWorkingDirOverwrite is the default value for "disable-working-directory-overwrite".
-	DefaultDisableWorkingDirOverwrite = true
 	// DefaultDisableAffinityAssistant is the default value for "disable-affinity-assistant".
 	DefaultDisableAffinityAssistant = false
 	// DefaultDisableCredsInit is the default value for "disable-creds-init".
@@ -47,12 +43,12 @@ const (
 	// DefaultEnableCustomTasks is the default value for "enable-custom-tasks".
 	DefaultEnableCustomTasks = false
 	// DefaultScopeWhenExpressionsToTask is the default value for "scope-when-expressions-to-task".
-	DefaultScopeWhenExpressionsToTask = false
+	DefaultScopeWhenExpressionsToTask = true
 	// DefaultEnableAPIFields is the default value for "enable-api-fields".
 	DefaultEnableAPIFields = StableAPIFields
+	// DefaultSendCloudEventsForRuns is the default value for "send-cloudevents-for-runs".
+	DefaultSendCloudEventsForRuns = false
 
-	disableHomeEnvOverwriteKey          = "disable-home-env-overwrite"
-	disableWorkingDirOverwriteKey       = "disable-working-directory-overwrite"
 	disableAffinityAssistantKey         = "disable-affinity-assistant"
 	disableCredsInitKey                 = "disable-creds-init"
 	runningInEnvWithInjectedSidecarsKey = "running-in-environment-with-injected-sidecars"
@@ -61,13 +57,12 @@ const (
 	enableCustomTasks                   = "enable-custom-tasks"
 	enableAPIFields                     = "enable-api-fields"
 	scopeWhenExpressionsToTask          = "scope-when-expressions-to-task"
+	sendCloudEventsForRuns              = "send-cloudevents-for-runs"
 )
 
 // FeatureFlags holds the features configurations
 // +k8s:deepcopy-gen=true
 type FeatureFlags struct {
-	DisableHomeEnvOverwrite          bool
-	DisableWorkingDirOverwrite       bool
 	DisableAffinityAssistant         bool
 	DisableCredsInit                 bool
 	RunningInEnvWithInjectedSidecars bool
@@ -76,6 +71,7 @@ type FeatureFlags struct {
 	EnableCustomTasks                bool
 	ScopeWhenExpressionsToTask       bool
 	EnableAPIFields                  string
+	SendCloudEventsForRuns           bool
 }
 
 // GetFeatureFlagsConfigName returns the name of the configmap containing all
@@ -103,12 +99,6 @@ func NewFeatureFlagsFromMap(cfgMap map[string]string) (*FeatureFlags, error) {
 	}
 
 	tc := FeatureFlags{}
-	if err := setFeature(disableHomeEnvOverwriteKey, DefaultDisableHomeEnvOverwrite, &tc.DisableHomeEnvOverwrite); err != nil {
-		return nil, err
-	}
-	if err := setFeature(disableWorkingDirOverwriteKey, DefaultDisableWorkingDirOverwrite, &tc.DisableWorkingDirOverwrite); err != nil {
-		return nil, err
-	}
 	if err := setFeature(disableAffinityAssistantKey, DefaultDisableAffinityAssistant, &tc.DisableAffinityAssistant); err != nil {
 		return nil, err
 	}
@@ -125,6 +115,9 @@ func NewFeatureFlagsFromMap(cfgMap map[string]string) (*FeatureFlags, error) {
 		return nil, err
 	}
 	if err := setEnabledAPIFields(cfgMap, DefaultEnableAPIFields, &tc.EnableAPIFields); err != nil {
+		return nil, err
+	}
+	if err := setFeature(sendCloudEventsForRuns, DefaultSendCloudEventsForRuns, &tc.SendCloudEventsForRuns); err != nil {
 		return nil, err
 	}
 

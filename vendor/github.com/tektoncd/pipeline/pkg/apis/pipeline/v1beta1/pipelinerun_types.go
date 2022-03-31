@@ -21,11 +21,13 @@ import (
 	"time"
 
 	"github.com/tektoncd/pipeline/pkg/apis/config"
+	apisconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	runv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/run/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/clock"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -92,19 +94,53 @@ func (pr *PipelineRun) IsGracefullyStopped() bool {
 	return pr.Spec.Status == PipelineRunSpecStatusStoppedRunFinally
 }
 
-// GetTimeout returns the the applicable timeout for the PipelineRun
-func (pr *PipelineRun) GetTimeout(ctx context.Context) time.Duration {
-	// Use the platform default if no timeout is set
-	if pr.Spec.Timeout == nil && pr.Spec.Timeouts == nil {
-		defaultTimeout := time.Duration(config.FromContextOrDefaults(ctx).Defaults.DefaultTimeoutMinutes)
-		return defaultTimeout * time.Minute
-	}
-
+// PipelineTimeout returns the the applicable timeout for the PipelineRun
+func (pr *PipelineRun) PipelineTimeout(ctx context.Context) time.Duration {
 	if pr.Spec.Timeout != nil {
 		return pr.Spec.Timeout.Duration
 	}
+	if pr.Spec.Timeouts != nil && pr.Spec.Timeouts.Pipeline != nil {
+		return pr.Spec.Timeouts.Pipeline.Duration
+	}
+	return time.Duration(config.FromContextOrDefaults(ctx).Defaults.DefaultTimeoutMinutes) * time.Minute
+}
 
-	return pr.Spec.Timeouts.Pipeline.Duration
+// TasksTimeout returns the the tasks timeout for the PipelineRun, if set,
+// or the tasks timeout computed from the Pipeline and Finally timeouts, if those are set.
+func (pr *PipelineRun) TasksTimeout() *metav1.Duration {
+	t := pr.Spec.Timeouts
+	if t == nil {
+		return nil
+	}
+	if t.Tasks != nil {
+		return t.Tasks
+	}
+	if t.Pipeline != nil && t.Finally != nil {
+		if t.Pipeline.Duration == apisconfig.NoTimeoutDuration || t.Finally.Duration == apisconfig.NoTimeoutDuration {
+			return nil
+		}
+		return &metav1.Duration{Duration: (t.Pipeline.Duration - t.Finally.Duration)}
+	}
+	return nil
+}
+
+// FinallyTimeout returns the the finally timeout for the PipelineRun, if set,
+// or the finally timeout computed from the Pipeline and Tasks timeouts, if those are set.
+func (pr *PipelineRun) FinallyTimeout() *metav1.Duration {
+	t := pr.Spec.Timeouts
+	if t == nil {
+		return nil
+	}
+	if t.Finally != nil {
+		return t.Finally
+	}
+	if t.Pipeline != nil && t.Tasks != nil {
+		if t.Pipeline.Duration == apisconfig.NoTimeoutDuration || t.Tasks.Duration == apisconfig.NoTimeoutDuration {
+			return nil
+		}
+		return &metav1.Duration{Duration: (t.Pipeline.Duration - t.Tasks.Duration)}
+	}
+	return nil
 }
 
 // IsPending returns true if the PipelineRun's spec status is set to Pending state
@@ -117,22 +153,16 @@ func (pr *PipelineRun) GetNamespacedName() types.NamespacedName {
 	return types.NamespacedName{Namespace: pr.Namespace, Name: pr.Name}
 }
 
-// IsTimedOut returns true if a pipelinerun has exceeded its spec.Timeout based on its status.Timeout
-func (pr *PipelineRun) IsTimedOut() bool {
-	return pr.HasTimedOut()
-}
-
 // HasTimedOut returns true if a pipelinerun has exceeded its spec.Timeout based on its status.Timeout
-func (pr *PipelineRun) HasTimedOut() bool {
-	pipelineTimeout := pr.Spec.Timeout
+func (pr *PipelineRun) HasTimedOut(ctx context.Context, c clock.PassiveClock) bool {
+	timeout := pr.PipelineTimeout(ctx)
 	startTime := pr.Status.StartTime
 
-	if !startTime.IsZero() && pipelineTimeout != nil {
-		timeout := pipelineTimeout.Duration
+	if !startTime.IsZero() {
 		if timeout == config.NoTimeoutDuration {
 			return false
 		}
-		runtime := time.Since(startTime.Time)
+		runtime := c.Since(startTime.Time)
 		if runtime > timeout {
 			return true
 		}
@@ -255,6 +285,12 @@ type PipelineRef struct {
 	// Bundle url reference to a Tekton Bundle.
 	// +optional
 	Bundle string `json:"bundle,omitempty"`
+
+	// ResolverRef allows referencing a Pipeline in a remote location
+	// like a git repo. This field is only supported when the alpha
+	// feature gate is enabled.
+	// +optional
+	ResolverRef `json:",omitempty"`
 }
 
 // PipelineRunStatus defines the observed state of PipelineRun
@@ -311,7 +347,7 @@ func (pr *PipelineRunStatus) GetCondition(t apis.ConditionType) *apis.Condition 
 
 // InitializeConditions will set all conditions in pipelineRunCondSet to unknown for the PipelineRun
 // and set the started time to the current time
-func (pr *PipelineRunStatus) InitializeConditions() {
+func (pr *PipelineRunStatus) InitializeConditions(c clock.PassiveClock) {
 	started := false
 	if pr.TaskRuns == nil {
 		pr.TaskRuns = make(map[string]*PipelineRunTaskRunStatus)
@@ -320,7 +356,7 @@ func (pr *PipelineRunStatus) InitializeConditions() {
 		pr.Runs = make(map[string]*PipelineRunRunStatus)
 	}
 	if pr.StartTime.IsZero() {
-		pr.StartTime = &metav1.Time{Time: time.Now()}
+		pr.StartTime = &metav1.Time{Time: c.Now()}
 		started = true
 	}
 	conditionManager := pipelineRunCondSet.Manage(pr)
@@ -475,9 +511,11 @@ type PipelineTaskRun struct {
 // PipelineTaskRunSpec  can be used to configure specific
 // specs for a concrete Task
 type PipelineTaskRunSpec struct {
-	PipelineTaskName       string       `json:"pipelineTaskName,omitempty"`
-	TaskServiceAccountName string       `json:"taskServiceAccountName,omitempty"`
-	TaskPodTemplate        *PodTemplate `json:"taskPodTemplate,omitempty"`
+	PipelineTaskName       string                   `json:"pipelineTaskName,omitempty"`
+	TaskServiceAccountName string                   `json:"taskServiceAccountName,omitempty"`
+	TaskPodTemplate        *PodTemplate             `json:"taskPodTemplate,omitempty"`
+	StepOverrides          []TaskRunStepOverride    `json:"stepOverrides,omitempty"`
+	SidecarOverrides       []TaskRunSidecarOverride `json:"sidecarOverrides,omitempty"`
 }
 
 // GetTaskRunSpec returns the task specific spec for a given
@@ -496,6 +534,8 @@ func (pr *PipelineRun) GetTaskRunSpec(pipelineTaskName string) PipelineTaskRunSp
 			if task.TaskServiceAccountName != "" {
 				s.TaskServiceAccountName = task.TaskServiceAccountName
 			}
+			s.StepOverrides = task.StepOverrides
+			s.SidecarOverrides = task.SidecarOverrides
 		}
 	}
 	return s

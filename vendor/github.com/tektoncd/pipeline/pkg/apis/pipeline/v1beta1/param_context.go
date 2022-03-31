@@ -17,14 +17,18 @@ package v1beta1
 import (
 	"context"
 	"fmt"
-
-	"github.com/tektoncd/pipeline/pkg/apis/config"
 )
 
-// paramCtxKey is the unique identifier for referencing param information from
+// paramCtxKey is the unique type for referencing param information from
 // a context.Context. See [context.Context.Value](https://pkg.go.dev/context#Context)
 // for more details.
-var paramCtxKey struct{}
+//
+// +k8s:openapi-gen=false
+type paramCtxKeyType struct{}
+
+var (
+	paramCtxKey = paramCtxKeyType{}
+)
 
 // paramCtxVal is the data type stored in the param context.
 // This maps param names -> ParamSpec.
@@ -34,10 +38,6 @@ type paramCtxVal map[string]ParamSpec
 // preserves the fields included in ParamSpec - Name and Type.
 func addContextParams(ctx context.Context, in []Param) context.Context {
 	if in == nil {
-		return ctx
-	}
-
-	if config.FromContextOrDefaults(ctx).FeatureFlags.EnableAPIFields != "alpha" {
 		return ctx
 	}
 
@@ -70,10 +70,6 @@ func addContextParams(ctx context.Context, in []Param) context.Context {
 // addContextParamSpec adds the given ParamSpecs to the param context.
 func addContextParamSpec(ctx context.Context, in []ParamSpec) context.Context {
 	if in == nil {
-		return ctx
-	}
-
-	if config.FromContextOrDefaults(ctx).FeatureFlags.EnableAPIFields != "alpha" {
 		return ctx
 	}
 

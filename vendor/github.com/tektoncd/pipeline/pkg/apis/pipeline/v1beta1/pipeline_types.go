@@ -188,9 +188,14 @@ type PipelineTask struct {
 	// outputs.
 	// +optional
 	Resources *PipelineTaskResources `json:"resources,omitempty"`
+
 	// Parameters declares parameters passed to this task.
 	// +optional
 	Params []Param `json:"params,omitempty"`
+
+	// Matrix declares parameters used to fan out this task.
+	// +optional
+	Matrix []Param `json:"matrix,omitempty"`
 
 	// Workspaces maps workspaces from the pipeline spec to the workspaces
 	// declared in the Task.
@@ -277,6 +282,103 @@ func (pt PipelineTask) validateTask(ctx context.Context) (errs *apis.FieldError)
 		// fail if bundle is present when EnableTektonOCIBundles feature flag is off (as it won't be allowed nor used)
 		if pt.TaskRef.Bundle != "" {
 			errs = errs.Also(apis.ErrDisallowedFields("taskref.bundle"))
+		}
+	}
+	return errs
+}
+
+func (pt *PipelineTask) validateMatrix(ctx context.Context) (errs *apis.FieldError) {
+	if len(pt.Matrix) != 0 {
+		// This is an alpha feature and will fail validation if it's used in a pipeline spec
+		// when the enable-api-fields feature gate is anything but "alpha".
+		errs = errs.Also(ValidateEnabledAPIFields(ctx, "matrix", config.AlphaAPIFields))
+	}
+	return errs
+}
+
+func (pt *PipelineTask) validateExecutionStatusVariablesDisallowed() (errs *apis.FieldError) {
+	for _, param := range pt.Params {
+		if expressions, ok := GetVarSubstitutionExpressionsForParam(param); ok {
+			errs = errs.Also(validateContainsExecutionStatusVariablesDisallowed(expressions, "value").
+				ViaFieldKey("params", param.Name))
+		}
+	}
+	for i, we := range pt.WhenExpressions {
+		if expressions, ok := we.GetVarSubstitutionExpressions(); ok {
+			errs = errs.Also(validateContainsExecutionStatusVariablesDisallowed(expressions, "").
+				ViaFieldIndex("when", i))
+		}
+	}
+	return errs
+}
+
+func (pt *PipelineTask) validateExecutionStatusVariablesAllowed(ptNames sets.String) (errs *apis.FieldError) {
+	for _, param := range pt.Params {
+		if expressions, ok := GetVarSubstitutionExpressionsForParam(param); ok {
+			errs = errs.Also(validateExecutionStatusVariablesExpressions(expressions, ptNames, "value").
+				ViaFieldKey("params", param.Name))
+		}
+	}
+	for i, we := range pt.WhenExpressions {
+		if expressions, ok := we.GetVarSubstitutionExpressions(); ok {
+			errs = errs.Also(validateExecutionStatusVariablesExpressions(expressions, ptNames, "").
+				ViaFieldIndex("when", i))
+		}
+	}
+	return errs
+}
+
+func validateContainsExecutionStatusVariablesDisallowed(expressions []string, path string) (errs *apis.FieldError) {
+	if containsExecutionStatusReferences(expressions) {
+		errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("pipeline tasks can not refer to execution status"+
+			" of any other pipeline task or aggregate status of tasks"), path))
+	}
+	return errs
+}
+
+func containsExecutionStatusReferences(expressions []string) bool {
+	// validate tasks.pipelineTask.status/tasks.status if this expression is not a result reference
+	if !LooksLikeContainsResultRefs(expressions) {
+		for _, e := range expressions {
+			// check if it contains context variable accessing execution status - $(tasks.taskname.status)
+			// or an aggregate status - $(tasks.status)
+			if containsExecutionStatusRef(e) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func validateExecutionStatusVariablesExpressions(expressions []string, ptNames sets.String, fieldPath string) (errs *apis.FieldError) {
+	// validate tasks.pipelineTask.status if this expression is not a result reference
+	if !LooksLikeContainsResultRefs(expressions) {
+		for _, expression := range expressions {
+			// its a reference to aggregate status of dag tasks - $(tasks.status)
+			if expression == PipelineTasksAggregateStatus {
+				continue
+			}
+			// check if it contains context variable accessing execution status - $(tasks.taskname.status)
+			if containsExecutionStatusRef(expression) {
+				// strip tasks. and .status from tasks.taskname.status to further verify task name
+				pt := strings.TrimSuffix(strings.TrimPrefix(expression, "tasks."), ".status")
+				// report an error if the task name does not exist in the list of dag tasks
+				if !ptNames.Has(pt) {
+					errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("pipeline task %s is not defined in the pipeline", pt), fieldPath))
+				}
+			}
+		}
+	}
+	return errs
+}
+
+func (pt *PipelineTask) validateWorkspaces(workspaceNames sets.String) (errs *apis.FieldError) {
+	for i, ws := range pt.Workspaces {
+		if !workspaceNames.Has(ws.Workspace) {
+			errs = errs.Also(apis.ErrInvalidValue(
+				fmt.Sprintf("pipeline task %q expects workspace with name %q but none exists in pipeline spec", pt.Name, ws.Workspace),
+				"",
+			).ViaFieldIndex("workspaces", i))
 		}
 	}
 	return errs

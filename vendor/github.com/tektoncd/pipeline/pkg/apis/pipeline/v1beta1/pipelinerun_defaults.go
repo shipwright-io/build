@@ -52,9 +52,9 @@ func (prs *PipelineRunSpec) SetDefaults(ctx context.Context) {
 	prs.PodTemplate = mergePodTemplateWithDefault(prs.PodTemplate, defaultPodTemplate)
 
 	if prs.PipelineSpec != nil {
-		if config.FromContextOrDefaults(ctx).FeatureFlags.EnableAPIFields == "alpha" {
-			ctx = addContextParams(ctx, prs.Params)
-		}
 		prs.PipelineSpec.SetDefaults(ctx)
+		if config.FromContextOrDefaults(ctx).FeatureFlags.EnableAPIFields == "alpha" {
+			prs.PipelineSpec.applyImplicitParams(addContextParams(ctx, prs.Params))
+		}
 	}
 }
