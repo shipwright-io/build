@@ -62,7 +62,10 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
 }
 
-var _ clientset.Interface = &Clientset{}
+var (
+	_ clientset.Interface = &Clientset{}
+	_ testing.FakeClient  = &Clientset{}
+)
 
 // ShipwrightV1alpha1 retrieves the ShipwrightV1alpha1Client
 func (c *Clientset) ShipwrightV1alpha1() shipwrightv1alpha1.ShipwrightV1alpha1Interface {
