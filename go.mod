@@ -6,7 +6,6 @@ require (
 	github.com/docker/cli v20.10.13+incompatible
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-logr/logr v1.2.2
-	github.com/go-openapi/spec v0.20.4
 	github.com/google/go-containerregistry v0.8.1-0.20220216220642-00c59d91847c
 	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.18.1
@@ -20,7 +19,6 @@ require (
 	k8s.io/apimachinery v0.23.4
 	k8s.io/client-go v1.5.2
 	k8s.io/code-generator v0.23.0
-	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf
 	k8s.io/kubectl v0.21.7
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	knative.dev/pkg v0.0.0-20220131144930-f4b57aef0006
@@ -126,6 +124,7 @@ require (
 	k8s.io/component-base v0.23.0 // indirect
 	k8s.io/gengo v0.0.0-20220307231824-4627b89bbf1b // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
