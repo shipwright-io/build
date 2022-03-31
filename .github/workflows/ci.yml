@@ -59,6 +59,7 @@ jobs:
             wait: 120s
         - name: Verify kind cluster
           run: |
+            git version
             echo "# Using KinD context..."
             kubectl config use-context "kind-kind"
             echo "# KinD nodes:"
