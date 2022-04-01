@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/clock"
 	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
 )
@@ -78,10 +79,6 @@ type RunSpec struct {
 	// Workspaces is a list of WorkspaceBindings from volumes to workspaces.
 	// +optional
 	Workspaces []v1beta1.WorkspaceBinding `json:"workspaces,omitempty"`
-
-	// TODO(https://github.com/tektoncd/community/pull/128)
-	// - timeout
-	// - inline task spec
 }
 
 // RunSpecStatus defines the taskrun spec status the user can provide
@@ -166,6 +163,11 @@ type RunList struct {
 	Items           []Run `json:"items"`
 }
 
+// GetStatusCondition returns the task run status as a ConditionAccessor
+func (r *Run) GetStatusCondition() apis.ConditionAccessor {
+	return &r.Status
+}
+
 // GetGroupVersionKind implements kmeta.OwnerRefable.
 func (*Run) GetGroupVersionKind() schema.GroupVersionKind {
 	return SchemeGroupVersion.WithKind(pipeline.RunControllerName)
@@ -209,7 +211,7 @@ func (r *Run) GetRunKey() string {
 }
 
 // HasTimedOut returns true if the Run's running time is beyond the allowed timeout
-func (r *Run) HasTimedOut() bool {
+func (r *Run) HasTimedOut(c clock.PassiveClock) bool {
 	if r.Status.StartTime == nil || r.Status.StartTime.IsZero() {
 		return false
 	}
@@ -218,7 +220,7 @@ func (r *Run) HasTimedOut() bool {
 	if timeout == apisconfig.NoTimeoutDuration {
 		return false
 	}
-	runtime := time.Since(r.Status.StartTime.Time)
+	runtime := c.Since(r.Status.StartTime.Time)
 	return runtime > timeout
 }
 

@@ -36,6 +36,10 @@ func PackAndPush(ref name.Reference, directory string, options ...remote.Option)
 		return name.Digest{}, err
 	}
 
+	// nolint:staticcheck
+	// tarball.LayerFromReader is deprecated, but we need to continue to use it because
+	// Pack do some custom work for us like ignoring files, dereferencing all symlinks and
+	// there is no support for doing this in the new recommended method.
 	bundleLayer, err := tarball.LayerFromReader(r)
 	if err != nil {
 		return name.Digest{}, err

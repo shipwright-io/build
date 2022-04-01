@@ -98,7 +98,7 @@ func (c *FakeClusterBuildStrategies) UpdateStatus(ctx context.Context, clusterBu
 // Delete takes name of the clusterBuildStrategy and deletes it. Returns an error if one occurs.
 func (c *FakeClusterBuildStrategies) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(clusterbuildstrategiesResource, name), &v1alpha1.ClusterBuildStrategy{})
+		Invokes(testing.NewRootDeleteActionWithOptions(clusterbuildstrategiesResource, name, opts), &v1alpha1.ClusterBuildStrategy{})
 	return err
 }
 

@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/tektoncd/pipeline/pkg/apis/config"
+	apisconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/validate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -47,8 +47,6 @@ func (pr *PipelineRun) Validate(ctx context.Context) *apis.FieldError {
 
 // Validate pipelinerun spec
 func (ps *PipelineRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
-	cfg := config.FromContextOrDefaults(ctx)
-
 	// Must have exactly one of pipelineRef and pipelineSpec.
 	if ps.PipelineRef == nil && ps.PipelineSpec == nil {
 		errs = errs.Also(apis.ErrMissingOneOf("pipelineRef", "pipelineSpec"))
@@ -57,26 +55,9 @@ func (ps *PipelineRunSpec) Validate(ctx context.Context) (errs *apis.FieldError)
 		errs = errs.Also(apis.ErrMultipleOneOf("pipelineRef", "pipelineSpec"))
 	}
 
-	// Validate that a pipelineRef has a name; this may be refactored elsewhere later.
-	if ps.PipelineRef != nil && ps.PipelineRef.Name == "" {
-		errs = errs.Also(apis.ErrMissingField("pipelineRef.name"))
-	}
-
-	// If EnableTektonOCIBundles feature flag is on validate it.
-	// Otherwise, fail if it is present (as it won't be allowed nor used)
-	if cfg.FeatureFlags.EnableTektonOCIBundles {
-		// Check that if a pipelineRef.bundle is specified, that a pipelineRef.name is specified as well.
-		if ps.PipelineRef != nil && ps.PipelineRef.Bundle != "" && ps.PipelineRef.Name == "" {
-			errs = errs.Also(apis.ErrMissingField("pipelineRef.name"))
-		}
-		// If a bundle url is specified, ensure it is parseable.
-		if ps.PipelineRef != nil && ps.PipelineRef.Bundle != "" {
-			if _, err := name.ParseReference(ps.PipelineRef.Bundle); err != nil {
-				errs = errs.Also(apis.ErrInvalidValue("invalid bundle reference", "pipelineRef.bundle", err.Error()))
-			}
-		}
-	} else if ps.PipelineRef != nil && ps.PipelineRef.Bundle != "" {
-		errs = errs.Also(apis.ErrDisallowedFields("pipelineRef.bundle"))
+	// Validate PipelineRef if it's present
+	if ps.PipelineRef != nil {
+		errs = errs.Also(ps.PipelineRef.Validate(ctx).ViaField("pipelineRef"))
 	}
 
 	// Validate PipelineSpec if it's present
@@ -131,6 +112,10 @@ func (ps *PipelineRunSpec) Validate(ctx context.Context) (errs *apis.FieldError)
 		}
 	}
 
+	for idx, trs := range ps.TaskRunSpecs {
+		errs = errs.Also(validateTaskRunSpec(ctx, trs).ViaIndex(idx).ViaField("taskRunSpecs"))
+	}
+
 	return errs
 }
 
@@ -169,18 +154,60 @@ func validateTimeoutDuration(field string, d *metav1.Duration) (errs *apis.Field
 }
 
 func (ps *PipelineRunSpec) validatePipelineTimeout(timeout time.Duration, errorMsg string) (errs *apis.FieldError) {
-	if ps.Timeouts.Tasks != nil && ps.Timeouts.Tasks.Duration > timeout {
-		errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s %s", ps.Timeouts.Tasks.Duration.String(), errorMsg), "timeouts.tasks"))
+	if ps.Timeouts.Tasks != nil {
+		tasksTimeoutErr := false
+		tasksTimeoutStr := ps.Timeouts.Tasks.Duration.String()
+		if ps.Timeouts.Tasks.Duration > timeout {
+			tasksTimeoutErr = true
+		}
+		if ps.Timeouts.Tasks.Duration == apisconfig.NoTimeoutDuration && timeout != apisconfig.NoTimeoutDuration {
+			tasksTimeoutErr = true
+			tasksTimeoutStr += " (no timeout)"
+		}
+		if tasksTimeoutErr {
+			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s %s", tasksTimeoutStr, errorMsg), "timeouts.tasks"))
+		}
 	}
 
-	if ps.Timeouts.Finally != nil && ps.Timeouts.Finally.Duration > timeout {
-		errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s %s", ps.Timeouts.Finally.Duration.String(), errorMsg), "timeouts.finally"))
+	if ps.Timeouts.Finally != nil {
+		finallyTimeoutErr := false
+		finallyTimeoutStr := ps.Timeouts.Finally.Duration.String()
+		if ps.Timeouts.Finally.Duration > timeout {
+			finallyTimeoutErr = true
+		}
+		if ps.Timeouts.Finally.Duration == apisconfig.NoTimeoutDuration && timeout != apisconfig.NoTimeoutDuration {
+			finallyTimeoutErr = true
+			finallyTimeoutStr += " (no timeout)"
+		}
+		if finallyTimeoutErr {
+			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s %s", finallyTimeoutStr, errorMsg), "timeouts.finally"))
+		}
 	}
 
 	if ps.Timeouts.Tasks != nil && ps.Timeouts.Finally != nil {
 		if ps.Timeouts.Tasks.Duration+ps.Timeouts.Finally.Duration > timeout {
 			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s + %s %s", ps.Timeouts.Tasks.Duration.String(), ps.Timeouts.Finally.Duration.String(), errorMsg), "timeouts.tasks"))
 			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s + %s %s", ps.Timeouts.Tasks.Duration.String(), ps.Timeouts.Finally.Duration.String(), errorMsg), "timeouts.finally"))
+		}
+	}
+	return errs
+}
+
+func validateTaskRunSpec(ctx context.Context, trs PipelineTaskRunSpec) (errs *apis.FieldError) {
+	cfg := config.FromContextOrDefaults(ctx)
+	if cfg.FeatureFlags.EnableAPIFields == config.AlphaAPIFields {
+		if trs.StepOverrides != nil {
+			errs = errs.Also(validateStepOverrides(trs.StepOverrides).ViaField("stepOverrides"))
+		}
+		if trs.SidecarOverrides != nil {
+			errs = errs.Also(validateSidecarOverrides(trs.SidecarOverrides).ViaField("sidecarOverrides"))
+		}
+	} else {
+		if trs.StepOverrides != nil {
+			errs = errs.Also(apis.ErrDisallowedFields("stepOverrides"))
+		}
+		if trs.SidecarOverrides != nil {
+			errs = errs.Also(apis.ErrDisallowedFields("sidecarOverrides"))
 		}
 	}
 	return errs

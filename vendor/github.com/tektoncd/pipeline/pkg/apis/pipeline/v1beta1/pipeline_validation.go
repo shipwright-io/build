@@ -65,12 +65,16 @@ func (ps *PipelineSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	errs = errs.Also(validatePipelineContextVariables(ps.Finally).ViaField("finally"))
 	errs = errs.Also(validateExecutionStatusVariables(ps.Tasks, ps.Finally))
 	// Validate the pipeline's workspaces.
-	errs = errs.Also(validatePipelineWorkspaces(ps.Workspaces, ps.Tasks, ps.Finally))
+	errs = errs.Also(validatePipelineWorkspacesDeclarations(ps.Workspaces))
+	errs = errs.Also(validatePipelineWorkspacesUsage(ps.Workspaces, ps.Tasks).ViaField("tasks"))
+	errs = errs.Also(validatePipelineWorkspacesUsage(ps.Workspaces, ps.Finally).ViaField("finally"))
 	// Validate the pipeline's results
 	errs = errs.Also(validatePipelineResults(ps.Results))
 	errs = errs.Also(validateTasksAndFinallySection(ps))
 	errs = errs.Also(validateFinalTasks(ps.Tasks, ps.Finally))
 	errs = errs.Also(validateWhenExpressions(ps.Tasks, ps.Finally))
+	errs = errs.Also(validateMatrix(ctx, ps.Tasks).ViaField("tasks"))
+	errs = errs.Also(validateMatrix(ctx, ps.Finally).ViaField("finally"))
 	return errs
 }
 
@@ -84,9 +88,9 @@ func ValidatePipelineTasks(ctx context.Context, tasks []PipelineTask, finalTasks
 	return errs
 }
 
-// validatePipelineWorkspaces validates the specified workspaces, ensuring having unique name without any empty string,
-// and validates that all the referenced workspaces (by pipeline tasks) are specified in the pipeline
-func validatePipelineWorkspaces(wss []PipelineWorkspaceDeclaration, pts []PipelineTask, finalTasks []PipelineTask) (errs *apis.FieldError) {
+// validatePipelineWorkspacesDeclarations validates the specified workspaces, ensuring having unique name without any
+// empty string,
+func validatePipelineWorkspacesDeclarations(wss []PipelineWorkspaceDeclaration) (errs *apis.FieldError) {
 	// Workspace names must be non-empty and unique.
 	wsTable := sets.NewString()
 	for i, ws := range wss {
@@ -100,28 +104,19 @@ func validatePipelineWorkspaces(wss []PipelineWorkspaceDeclaration, pts []Pipeli
 		}
 		wsTable.Insert(ws.Name)
 	}
+	return errs
+}
 
-	// Any workspaces used in PipelineTasks should have their name declared in the Pipeline's
-	// Workspaces list.
-	for i, pt := range pts {
-		for j, ws := range pt.Workspaces {
-			if !wsTable.Has(ws.Workspace) {
-				errs = errs.Also(apis.ErrInvalidValue(
-					fmt.Sprintf("pipeline task %q expects workspace with name %q but none exists in pipeline spec", pt.Name, ws.Workspace),
-					"",
-				).ViaFieldIndex("workspaces", j).ViaFieldIndex("tasks", i))
-			}
-		}
+// validatePipelineWorkspacesUsage validates that all the referenced workspaces (by pipeline tasks) are specified in
+// the pipeline
+func validatePipelineWorkspacesUsage(wss []PipelineWorkspaceDeclaration, pts []PipelineTask) (errs *apis.FieldError) {
+	workspaceNames := sets.NewString()
+	for _, ws := range wss {
+		workspaceNames.Insert(ws.Name)
 	}
-	for i, t := range finalTasks {
-		for j, ws := range t.Workspaces {
-			if !wsTable.Has(ws.Workspace) {
-				errs = errs.Also(apis.ErrInvalidValue(
-					fmt.Sprintf("pipeline task %q expects workspace with name %q but none exists in pipeline spec", t.Name, ws.Workspace),
-					"",
-				).ViaFieldIndex("workspaces", j).ViaFieldIndex("finally", i))
-			}
-		}
+	// Any workspaces used in PipelineTasks should have their name declared in the Pipeline's Workspaces list.
+	for i, pt := range pts {
+		errs = errs.Also(pt.validateWorkspaces(workspaceNames).ViaIndex(i))
 	}
 	return errs
 }
@@ -181,15 +176,20 @@ func validatePipelineContextVariables(tasks []PipelineTask) *apis.FieldError {
 	pipelineContextNames := sets.NewString().Insert(
 		"name",
 	)
+	pipelineTaskContextNames := sets.NewString().Insert(
+		"retries",
+	)
 	var paramValues []string
 	for _, task := range tasks {
-		for _, param := range task.Params {
+		for _, param := range append(task.Params, task.Matrix...) {
 			paramValues = append(paramValues, param.Value.StringVal)
 			paramValues = append(paramValues, param.Value.ArrayVal...)
 		}
 	}
-	errs := validatePipelineContextVariablesInParamValues(paramValues, "context\\.pipelineRun", pipelineRunContextNames)
-	return errs.Also(validatePipelineContextVariablesInParamValues(paramValues, "context\\.pipeline", pipelineContextNames))
+	errs := validatePipelineContextVariablesInParamValues(paramValues, "context\\.pipelineRun", pipelineRunContextNames).
+		Also(validatePipelineContextVariablesInParamValues(paramValues, "context\\.pipeline", pipelineContextNames)).
+		Also(validatePipelineContextVariablesInParamValues(paramValues, "context\\.pipelineTask", pipelineTaskContextNames))
+	return errs
 }
 
 func containsExecutionStatusRef(p string) bool {
@@ -203,89 +203,23 @@ func containsExecutionStatusRef(p string) bool {
 // dag tasks cannot have param value as $(tasks.pipelineTask.status)
 func validateExecutionStatusVariablesInTasks(tasks []PipelineTask) (errs *apis.FieldError) {
 	for idx, t := range tasks {
-		for _, param := range t.Params {
-			// retrieve a list of substitution expression from a param
-			if ps, ok := GetVarSubstitutionExpressionsForParam(param); ok {
-				// validate tasks.pipelineTask.status/tasks.status if this expression is not a result reference
-				if !LooksLikeContainsResultRefs(ps) {
-					for _, p := range ps {
-						// check if it contains context variable accessing execution status - $(tasks.taskname.status)
-						// or an aggregate status - $(tasks.status)
-						if containsExecutionStatusRef(p) {
-							errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("pipeline tasks can not refer to execution status of any other pipeline task"+
-								" or aggregate status of tasks"), "value").ViaFieldKey("params", param.Name).ViaFieldIndex("tasks", idx))
-						}
-					}
-				}
-			}
-		}
-		for i, we := range t.WhenExpressions {
-			// retrieve a list of substitution expression from a when expression
-			if expressions, ok := we.GetVarSubstitutionExpressions(); ok {
-				// validate tasks.pipelineTask.status/tasks.status if this expression is not a result reference
-				if !LooksLikeContainsResultRefs(expressions) {
-					for _, e := range expressions {
-						// check if it contains context variable accessing execution status - $(tasks.taskname.status)
-						// or an aggregate status - $(tasks.status)
-						if containsExecutionStatusRef(e) {
-							errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("when expressions in pipeline tasks can not refer to execution status of any other pipeline task"+
-								" or aggregate status of tasks"), "").ViaFieldIndex("when", i).ViaFieldIndex("tasks", idx))
-						}
-					}
-				}
-			}
-		}
+		errs = errs.Also(t.validateExecutionStatusVariablesDisallowed()).ViaIndex(idx)
 	}
 	return errs
 }
 
 // validate finally tasks accessing execution status of a dag task specified in the pipeline
 // $(tasks.pipelineTask.status) is invalid if pipelineTask is not defined as a dag task
-func validateExecutionStatusVariablesInFinally(tasks []PipelineTask, finally []PipelineTask) (errs *apis.FieldError) {
-	// creating a list of pipelineTask names to validate tasks.<name>.status
-	ptNames := PipelineTaskList(tasks).Names()
+func validateExecutionStatusVariablesInFinally(tasksNames sets.String, finally []PipelineTask) (errs *apis.FieldError) {
 	for idx, t := range finally {
-		for _, param := range t.Params {
-			if expressions, ok := GetVarSubstitutionExpressionsForParam(param); ok {
-				errs = errs.Also(validateExecutionStatusVariablesExpressions(expressions, ptNames, "value").ViaFieldKey(
-					"params", param.Name).ViaFieldIndex("finally", idx))
-			}
-		}
-		for i, we := range t.WhenExpressions {
-			if expressions, ok := we.GetVarSubstitutionExpressions(); ok {
-				errs = errs.Also(validateExecutionStatusVariablesExpressions(expressions, ptNames, "").ViaFieldIndex(
-					"when", i).ViaFieldIndex("finally", idx))
-			}
-		}
-	}
-	return errs
-}
-
-func validateExecutionStatusVariablesExpressions(expressions []string, ptNames sets.String, fieldPath string) (errs *apis.FieldError) {
-	// validate tasks.pipelineTask.status if this expression is not a result reference
-	if !LooksLikeContainsResultRefs(expressions) {
-		for _, expression := range expressions {
-			// its a reference to aggregate status of dag tasks - $(tasks.status)
-			if expression == PipelineTasksAggregateStatus {
-				continue
-			}
-			// check if it contains context variable accessing execution status - $(tasks.taskname.status)
-			if containsExecutionStatusRef(expression) {
-				// strip tasks. and .status from tasks.taskname.status to further verify task name
-				pt := strings.TrimSuffix(strings.TrimPrefix(expression, "tasks."), ".status")
-				// report an error if the task name does not exist in the list of dag tasks
-				if !ptNames.Has(pt) {
-					errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("pipeline task %s is not defined in the pipeline", pt), fieldPath))
-				}
-			}
-		}
+		errs = errs.Also(t.validateExecutionStatusVariablesAllowed(tasksNames).ViaIndex(idx))
 	}
 	return errs
 }
 
 func validateExecutionStatusVariables(tasks []PipelineTask, finallyTasks []PipelineTask) (errs *apis.FieldError) {
-	errs = errs.Also(validateExecutionStatusVariablesInTasks(tasks))
-	errs = errs.Also(validateExecutionStatusVariablesInFinally(tasks, finallyTasks))
+	errs = errs.Also(validateExecutionStatusVariablesInTasks(tasks).ViaField("tasks"))
+	errs = errs.Also(validateExecutionStatusVariablesInFinally(PipelineTaskList(tasks).Names(), finallyTasks).ViaField("finally"))
 	return errs
 }
 
@@ -545,4 +479,11 @@ func validateGraph(tasks []PipelineTask) *apis.FieldError {
 		return apis.ErrInvalidValue(err.Error(), "tasks")
 	}
 	return nil
+}
+
+func validateMatrix(ctx context.Context, tasks []PipelineTask) (errs *apis.FieldError) {
+	for idx, task := range tasks {
+		errs = errs.Also(task.validateMatrix(ctx).ViaIndex(idx))
+	}
+	return errs
 }
