@@ -7,10 +7,12 @@ package buildrun_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -61,7 +63,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 	// Basic stubs that simulate the output of all client calls in the Reconciler logic.
 	// This applies only for a Build and BuildRun client get.
-	getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+	getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 		switch object := object.(type) {
 		case *build.Build:
 			buildSample.DeepCopyInto(object)
@@ -362,7 +364,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				cancelPatchCalled := false
 				cancelUpdateCalled := false
 				// override the updateClientStub so we can see the update on the BuildRun condition
-				stubUpdateCalls := func(context context.Context, object crc.Object, opts ...crc.UpdateOption) error {
+				stubUpdateCalls := func(_ context.Context, object crc.Object, opts ...crc.UpdateOption) error {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
@@ -374,7 +376,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					return nil
 				}
 				statusWriter.UpdateCalls(stubUpdateCalls)
-				stubPatchCalls := func(context context.Context, object crc.Object, patch crc.Patch, opts ...crc.PatchOption) error {
+				stubPatchCalls := func(_ context.Context, object crc.Object, patch crc.Patch, opts ...crc.PatchOption) error {
 					switch v := object.(type) {
 					case *v1beta1.TaskRun:
 						if v.Name == taskRunSample.Name {
@@ -547,7 +549,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				cancelUpdateCalled := false
 				// override the updateClientStub so we can see the update on the BuildRun condition
-				stubUpdateCalls := func(context context.Context, object crc.Object, opts ...crc.UpdateOption) error {
+				stubUpdateCalls := func(_ context.Context, object crc.Object, opts ...crc.UpdateOption) error {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
@@ -572,7 +574,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Buildrun
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -594,7 +596,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a BuildRun
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -622,10 +624,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("fails on a TaskRun creation due to service account not found", func() {
-
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Build and Buildrun, none TaskRun
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -661,12 +662,12 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.GetCallCount()).To(Equal(4))
 				Expect(client.StatusCallCount()).To(Equal(2))
 			})
-			It("fails on a TaskRun creation due to issues when retrieving the service account", func() {
 
+			It("fails on a TaskRun creation due to issues when retrieving the service account", func() {
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Build, BuildRun and a random error when
 				// retrieving a service account
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -691,7 +692,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("fails on a TaskRun creation due to namespaced buildstrategy not found", func() {
-
 				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
@@ -725,12 +725,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("fails on a TaskRun creation due to issues when retrieving the buildstrategy", func() {
-
 				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// stub get calls so that on namespaced strategy retrieval, we throw a random error
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -793,12 +792,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("fails on a TaskRun creation due to issues when retrieving the clusterbuildstrategy", func() {
-
 				// override the Build to use a namespaced BuildStrategy
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// stub get calls so that on cluster strategy retrieval, we throw a random error
-				stubGetCalls := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -973,7 +971,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Stub the create calls for a TaskRun
-				client.CreateCalls(func(context context.Context, object crc.Object, _ ...crc.CreateOption) error {
+				client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
 					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
@@ -1002,7 +1000,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Stub the create calls for a TaskRun
-				client.CreateCalls(func(context context.Context, object crc.Object, _ ...crc.CreateOption) error {
+				client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
 					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
@@ -1013,10 +1011,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
 			})
+
 			It("stops creation when a FALSE registered status of the build occurs", func() {
 				// Init the Build with registered status false
 				buildSample = ctl.DefaultBuildWithFalseRegistered(buildName, strategyName, build.ClusterBuildStrategyKind)
-				getClientStub := func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+				getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -1084,7 +1083,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Stub the create calls for a TaskRun
-				client.CreateCalls(func(context context.Context, object crc.Object, _ ...crc.CreateOption) error {
+				client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
 					case *v1beta1.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
@@ -1099,7 +1098,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 			})
 
 			It("updates Build with error when BuildRun is already owned", func() {
-
 				fakeOwnerName := "fakeOwner"
 
 				// Set the build spec
@@ -1216,6 +1214,274 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(resources.IsClientStatusUpdateError(err)).To(BeTrue())
 			})
+
+			It("should mark buildrun succeeded false when BuildRun name is too long", func() {
+				buildRunSample = ctl.BuildRunWithoutSA("f"+strings.Repeat("o", 63)+"bar", buildName)
+
+				client.GetCalls(ctl.StubBuildRun(buildRunSample))
+				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+					Expect(o).To(BeAssignableToTypeOf(&build.BuildRun{}))
+					switch buildRun := o.(type) {
+					case *build.BuildRun:
+						condition := buildRun.Status.GetCondition(build.Succeeded)
+						Expect(condition.Reason).To(Equal(resources.BuildRunNameInvalid))
+						Expect(condition.Message).To(Equal("must be no more than 63 characters"))
+					}
+
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+
+			It("should mark buildrun succeeded false when BuildRun name contains illegal runes", func() {
+				buildRunSample = ctl.BuildRunWithoutSA("fööbar", buildName)
+
+				client.GetCalls(ctl.StubBuildRun(buildRunSample))
+				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+					Expect(o).To(BeAssignableToTypeOf(&build.BuildRun{}))
+					switch buildRun := o.(type) {
+					case *build.BuildRun:
+						condition := buildRun.Status.GetCondition(build.Succeeded)
+						Expect(condition.Reason).To(Equal(resources.BuildRunNameInvalid))
+						Expect(condition.Message).To(ContainSubstring("a valid label must be an empty string or consist of alphanumeric characters"))
+					}
+
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+
+			It("should fail the reconcile if an update call failed during a validation error", func() {
+				buildRunSample = ctl.BuildRunWithoutSA("fööbar", buildName)
+
+				client.GetCalls(ctl.StubBuildRun(buildRunSample))
+				statusWriter.UpdateCalls(func(_ context.Context, _ crc.Object, _ ...crc.UpdateOption) error {
+					return k8serrors.NewInternalError(fmt.Errorf("something bad happened"))
+				})
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(HaveOccurred())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+		})
+
+		Context("from an existing BuildRun resource with embedded BuildSpec", func() {
+			var clusterBuildStrategy = build.ClusterBuildStrategyKind
+
+			BeforeEach(func() {
+				buildRunRequest = newReconcileRequest(buildRunName, ns)
+			})
+
+			Context("invalid BuildRun resource", func() {
+				simpleReconcileRunWithCustomUpdateCall := func(f func(*build.Condition)) {
+					client.GetCalls(ctl.StubBuildRun(buildRunSample))
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+						Expect(o).To(BeAssignableToTypeOf(&build.BuildRun{}))
+						switch buildRun := o.(type) {
+						case *build.BuildRun:
+							f(buildRun.Status.GetCondition(build.Succeeded))
+						}
+
+						return nil
+					})
+
+					var taskRunCreates int
+					client.CreateCalls(func(_ context.Context, o crc.Object, _ ...crc.CreateOption) error {
+						switch o.(type) {
+						case *v1beta1.TaskRun:
+							taskRunCreates++
+						}
+
+						return nil
+					})
+
+					// Reconcile should run through without an error
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).To(BeNil())
+
+					// But, make sure no TaskRun is created based upon an invalid BuildRun
+					Expect(taskRunCreates).To(Equal(0))
+				}
+
+				It("should mark BuildRun as invalid if both BuildRef and BuildSpec are unspecified", func() {
+					buildRunSample = &build.BuildRun{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: buildRunName,
+						},
+						Spec: build.BuildRunSpec{},
+					}
+
+					simpleReconcileRunWithCustomUpdateCall(func(condition *build.Condition) {
+						Expect(condition.Reason).To(Equal(resources.BuildRunNoRefOrSpec))
+						Expect(condition.Message).To(Equal("no build referenced or specified, either 'buildRef' or 'buildSpec' has to be set"))
+					})
+				})
+
+				It("should mark BuildRun as invalid if BuildRef and BuildSpec are used", func() {
+					buildRunSample = &build.BuildRun{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: buildRunName,
+						},
+						Spec: build.BuildRunSpec{
+							BuildRef:  &build.BuildRef{},
+							BuildSpec: &build.BuildSpec{},
+						},
+					}
+
+					simpleReconcileRunWithCustomUpdateCall(func(condition *build.Condition) {
+						Expect(condition.Reason).To(Equal(resources.BuildRunAmbiguousBuild))
+						Expect(condition.Message).To(Equal("fields 'buildRef' and 'buildSpec' are mutually exclusive"))
+					})
+				})
+
+				It("should mark BuildRun as invalid if Output and BuildSpec are used", func() {
+					buildRunSample = &build.BuildRun{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: buildRunName,
+						},
+						Spec: build.BuildRunSpec{
+							Output:    &build.Image{Image: "foo:bar"},
+							BuildSpec: &build.BuildSpec{},
+						},
+					}
+
+					simpleReconcileRunWithCustomUpdateCall(func(condition *build.Condition) {
+						Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+						Expect(condition.Message).To(Equal("cannot use 'output' override and 'buildSpec' simultaneously"))
+					})
+				})
+
+				It("should mark BuildRun as invalid if ParamValues and BuildSpec are used", func() {
+					buildRunSample = &build.BuildRun{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: buildRunName,
+						},
+						Spec: build.BuildRunSpec{
+							ParamValues: []build.ParamValue{{
+								Name:        "foo",
+								SingleValue: &build.SingleValue{Value: pointer.String("bar")},
+							}},
+							BuildSpec: &build.BuildSpec{},
+						},
+					}
+
+					simpleReconcileRunWithCustomUpdateCall(func(condition *build.Condition) {
+						Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+						Expect(condition.Message).To(Equal("cannot use 'paramValues' override and 'buildSpec' simultaneously"))
+					})
+				})
+
+				It("should mark BuildRun as invalid if Env and BuildSpec are used", func() {
+					buildRunSample = &build.BuildRun{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: buildRunName,
+						},
+						Spec: build.BuildRunSpec{
+							Env:       []corev1.EnvVar{{Name: "foo", Value: "bar"}},
+							BuildSpec: &build.BuildSpec{},
+						},
+					}
+
+					simpleReconcileRunWithCustomUpdateCall(func(condition *build.Condition) {
+						Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+						Expect(condition.Message).To(Equal("cannot use 'env' override and 'buildSpec' simultaneously"))
+					})
+				})
+
+				It("should mark BuildRun as invalid if Timeout and BuildSpec are used", func() {
+					buildRunSample = &build.BuildRun{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: buildRunName,
+						},
+						Spec: build.BuildRunSpec{
+							Timeout:   &metav1.Duration{Duration: time.Second},
+							BuildSpec: &build.BuildSpec{},
+						},
+					}
+
+					simpleReconcileRunWithCustomUpdateCall(func(condition *build.Condition) {
+						Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+						Expect(condition.Message).To(Equal("cannot use 'timeout' override and 'buildSpec' simultaneously"))
+					})
+				})
+			})
+
+			Context("valid BuildRun resource", func() {
+				It("should reconcile a BuildRun with an embedded BuildSpec", func() {
+					buildRunSample = &build.BuildRun{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: buildRunName,
+						},
+						Spec: build.BuildRunSpec{
+							BuildSpec: &build.BuildSpec{
+								Source: build.Source{
+									URL:        pointer.String("https://github.com/shipwright-io/sample-go.git"),
+									ContextDir: pointer.String("source-build"),
+								},
+								Strategy: build.Strategy{
+									Kind: &clusterBuildStrategy,
+									Name: strategyName,
+								},
+								Output: build.Image{
+									Image: "foo/bar:latest",
+								},
+							},
+							ServiceAccount: &build.ServiceAccount{
+								Generate: pointer.Bool(true),
+							},
+						},
+					}
+
+					client.GetCalls(func(_ context.Context, nn types.NamespacedName, o crc.Object) error {
+						switch object := o.(type) {
+						case *build.BuildRun:
+							buildRunSample.DeepCopyInto(object)
+							return nil
+
+						case *build.ClusterBuildStrategy:
+							ctl.ClusterBuildStrategy(strategyName).DeepCopyInto(object)
+							return nil
+						}
+
+						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+					})
+
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+						switch buildRun := o.(type) {
+						case *build.BuildRun:
+							Expect(buildRun.Labels).ToNot(HaveKey(build.LabelBuild), "no build name label is suppose to be set")
+							Expect(buildRun.Labels).ToNot(HaveKey(build.LabelBuildGeneration), "no build generation label is suppose to be set")
+							return nil
+						}
+
+						return nil
+					})
+
+					var taskRunCreates int
+					client.CreateCalls(func(_ context.Context, o crc.Object, _ ...crc.CreateOption) error {
+						switch taskRun := o.(type) {
+						case *v1beta1.TaskRun:
+							taskRunCreates++
+
+							Expect(taskRun.Labels).ToNot(HaveKey(build.LabelBuild), "no build name label is suppose to be set")
+							Expect(taskRun.Labels).ToNot(HaveKey(build.LabelBuildGeneration), "no build generation label is suppose to be set")
+						}
+
+						return nil
+					})
+
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(statusWriter.UpdateCallCount()).To(Equal(2))
+					Expect(taskRunCreates).To(Equal(1))
+				})
+			})
 		})
 
 		Context("when environment variables are specified", func() {
@@ -1233,8 +1499,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-
 			})
+
 			It("fails when the name is blank using valueFrom", func() {
 				buildRunSample.Spec.Env = []corev1.EnvVar{
 					{
@@ -1253,8 +1519,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-
 			})
+
 			It("fails when both value and valueFrom are specified", func() {
 				buildRunSample.Spec.Env = []corev1.EnvVar{
 					{
@@ -1274,8 +1540,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-
 			})
+
 			It("succeeds with compliant env var using Value", func() {
 				buildRunSample.Spec.Env = []corev1.EnvVar{
 					{
@@ -1290,8 +1556,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-
 			})
+
 			It("succeeds with compliant env var using ValueFrom", func() {
 				buildRunSample.Spec.Env = []corev1.EnvVar{
 					{
@@ -1310,7 +1576,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-
 			})
 		})
 	})

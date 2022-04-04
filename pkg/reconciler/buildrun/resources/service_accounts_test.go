@@ -39,7 +39,7 @@ var _ = Describe("Operating service accounts", func() {
 
 	// stub client GET calls and return a initialized sa when asking for a sa
 	var generateGetSAStub = func(saName string) func(context context.Context, nn types.NamespacedName, object crc.Object) error {
-		return func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+		return func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 			switch object := object.(type) {
 			case *corev1.ServiceAccount:
 				ctl.DefaultServiceAccount(saName).DeepCopyInto(object)
@@ -51,7 +51,7 @@ var _ = Describe("Operating service accounts", func() {
 
 	// stub client GET calls and return an error when asking for a service account
 	var generateGetSAStubWithError = func(customError error) func(context context.Context, nn types.NamespacedName, object crc.Object) error {
-		return func(context context.Context, nn types.NamespacedName, object crc.Object) error {
+		return func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
 			switch object.(type) {
 			case *corev1.ServiceAccount:
 				return customError
@@ -111,7 +111,7 @@ var _ = Describe("Operating service accounts", func() {
 
 			client.StatusCalls(func() crc.StatusWriter {
 				statusWriter := &fakes.FakeStatusWriter{}
-				statusWriter.UpdateCalls(func(ctx context.Context, object crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.UpdateOption) error {
 					switch object.(type) {
 					case *buildv1alpha1.BuildRun:
 						return fmt.Errorf("failed")
@@ -142,7 +142,7 @@ var _ = Describe("Operating service accounts", func() {
 
 			mountTokenVal := false
 
-			client.CreateCalls(func(context context.Context, object crc.Object, _ ...crc.CreateOption) error {
+			client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
 				switch object := object.(type) {
 				case *corev1.ServiceAccount:
 					Expect(len(object.Secrets)).To(Equal(1))

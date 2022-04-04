@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/shipwright-io/build/test/utils"
 )
 
@@ -130,15 +131,13 @@ func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buil
 		return nil, nil, err
 	}
 
-	buildName := buildRun.Spec.BuildRef.Name
-
-	build, err := testBuild.LookupBuild(types.NamespacedName{Name: buildName, Namespace: namespace})
-	if err != nil {
-		Logf("Failed to get Build %s: %s", buildName, err)
+	var build buildv1alpha1.Build
+	if err := resources.GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, buildRun, &build); err != nil {
+		Logf("Failed to get Build from BuildRun %s: %s", buildRunName, err)
 		return nil, buildRun, err
 	}
 
-	return build, buildRun, nil
+	return &build, buildRun, nil
 }
 
 // printTestFailureDebugInfo will output the status of Build, BuildRun, TaskRun and Pod, also print logs of Pod

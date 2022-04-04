@@ -15,7 +15,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 
 	core "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
@@ -67,7 +66,7 @@ func (b *buildPrototype) ClusterBuildStrategy(name string) *buildPrototype {
 
 func (b *buildPrototype) SourceCredentials(name string) *buildPrototype {
 	if name != "" {
-		b.build.Spec.Source.Credentials = &v1.LocalObjectReference{Name: name}
+		b.build.Spec.Source.Credentials = &core.LocalObjectReference{Name: name}
 	}
 
 	return b
@@ -235,10 +234,15 @@ func (b buildPrototype) Create() (build *buildv1alpha1.Build, err error) {
 			return false, err
 		}
 
-		return build.Status.Registered != nil && *build.Status.Registered == v1.ConditionTrue, nil
+		return build.Status.Registered != nil && *build.Status.Registered == core.ConditionTrue, nil
 	})
 
 	return
+}
+
+// BuildSpec returns the BuildSpec of this Build (no cluster resource is created)
+func (b buildPrototype) BuildSpec() (build *buildv1alpha1.BuildSpec) {
+	return &b.build.Spec
 }
 
 func NewBuildRunPrototype() *buildRunPrototype {
@@ -250,9 +254,19 @@ func (b *buildRunPrototype) Name(name string) *buildRunPrototype {
 	return b
 }
 
+func (b *buildRunPrototype) Namespace(namespace string) *buildRunPrototype {
+	b.buildRun.Namespace = namespace
+	return b
+}
+
 func (b *buildRunPrototype) ForBuild(build *buildv1alpha1.Build) *buildRunPrototype {
-	b.buildRun.Spec.BuildRef = buildv1alpha1.BuildRef{Name: build.Name}
+	b.buildRun.Spec.BuildRef = &buildv1alpha1.BuildRef{Name: build.Name}
 	b.buildRun.ObjectMeta.Namespace = build.Namespace
+	return b
+}
+
+func (b *buildRunPrototype) WithBuildSpec(buildSpec *buildv1alpha1.BuildSpec) *buildRunPrototype {
+	b.buildRun.Spec.BuildSpec = buildSpec
 	return b
 }
 

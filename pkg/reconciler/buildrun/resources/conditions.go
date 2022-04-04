@@ -41,6 +41,9 @@ const (
 	ConditionIncompleteConfigMapValueParameterValues string = "IncompleteConfigMapValueParameterValues"
 	ConditionIncompleteSecretValueParameterValues    string = "IncompleteSecretValueParameterValues"
 	BuildRunNameInvalid                              string = "BuildRunNameInvalid"
+	BuildRunNoRefOrSpec                              string = "BuildRunNoRefOrSpec"
+	BuildRunAmbiguousBuild                           string = "BuildRunAmbiguousBuild"
+	BuildRunBuildFieldOverrideForbidden              string = "BuildRunBuildFieldOverrideForbidden"
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition

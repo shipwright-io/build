@@ -10,6 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 - [BuildRun Controller](#buildrun-controller)
 - [Configuring a BuildRun](#configuring-a-buildrun)
   - [Defining the BuildRef](#defining-the-buildref)
+  - [Defining the BuildSpec](#defining-the-buildspec)
   - [Defining ParamValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
 - [Canceling a `BuildRun`](#canceling-a-buildrun)
@@ -56,15 +57,18 @@ The `BuildRun` definition supports the following fields:
   - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1alpha1`.
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `BuildRun`.
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `BuildRun`.
-  - `spec.buildRef` - Specifies an existing `Build` resource instance to use.
 
 - Optional:
+  - `spec.buildRef` - Specifies an existing `Build` resource instance to use. Cannot be used together with `buildSpec`.
+  - `spec.buildSpec` - Specified an embedded (transient) Build resource to use. Cannot be used together with `buildRef`.
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The value overwrites the value that is defined in the `Build`.
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`. This overwrites values defined with the same name in the Build.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value which is defined in `Build`. ( Note: other properties of the output, for example, the credentials cannot be specified in the buildRun spec. )
   - `spec.output.credentials.name` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool that is being used by the chosen build strategy.
+
+_Note:_ The `BuildRef` and `BuildSpec` are mutually exclusive. Futhermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be used in combination with `buildRef`, but **not** with `buildSpec`.
 
 ### Defining the BuildRef
 
@@ -78,6 +82,27 @@ metadata:
 spec:
   buildRef:
     name: buildpack-nodejs-build-namespaced
+```
+
+### Defining the BuildSpec
+
+Alternatively to `BuildRef`, a complete `BuildSpec` can be embedded into the `BuildRun` to be used for the build.
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: standalone-buildrun
+spec:
+  buildSpec:
+    source:
+      url: https://github.com/shipwright-io/sample-go.git
+      contextDir: source-build
+    strategy:
+      kind: ClusterBuildStrategy
+      name: buildpacks-v3
+    output:
+      image: foo/bar:latest
 ```
 
 ### Defining ParamValues
@@ -247,13 +272,13 @@ The `status.conditions` hosts different fields, like `status`, `reason` and `mes
 
 The following table illustrates the different states a BuildRun can have under its `status.conditions`:
 
-| Status | Reason | CompletionTime is set | Description |
-| --- | --- | --- | --- |
-| Unknown | Pending                                  | No  | The BuildRun is waiting on a Pod in status Pending. |
-| Unknown | Running                                  | No  | The BuildRun has been validate and started to perform its work. |l
-| Unknown | Running                                  | No  | The BuildRun has been validate and started to perform its work. |
-| Unknown | BuildRunCanceled                         | No  | The user requested the BuildRun to be canceled.  This results in the BuildRun controller requesting the TaskRun be canceled.  Cancellation has not been done yet. |
-| True    | Succeeded                                | Yes | The BuildRun Pod is done. |
+| Status   | Reason                                  | CompletionTime is set | Description |
+| ---      | ---                                     | --- | --- |
+| Unknown  | Pending                                 | No  | The BuildRun is waiting on a Pod in status Pending. |
+| Unknown  | Running                                 | No  | The BuildRun has been validate and started to perform its work. |
+| Unknown  | Running                                 | No  | The BuildRun has been validate and started to perform its work. |
+| Unknown  | BuildRunCanceled                        | No  | The user requested the BuildRun to be canceled.  This results in the BuildRun controller requesting the TaskRun be canceled.  Cancellation has not been done yet. |
+| True     | Succeeded                               | Yes | The BuildRun Pod is done. |
 | False    | Failed                                  | Yes | The BuildRun failed in one of the steps. |
 | False    | BuildRunTimeout                         | Yes | The BuildRun timed out. |
 | False    | UnknownStrategyKind                     | Yes | The Build specified strategy Kind is unknown. (_options: ClusterBuildStrategy or BuildStrategy_) |
@@ -275,6 +300,9 @@ The following table illustrates the different states a BuildRun can have under i
 | False    | BuildNotFound                           | Yes | The related Build in the BuildRun was not found. |
 | False    | BuildRunCanceled                        | Yes | The BuildRun and underlying TaskRun were canceled successfully. |
 | False    | BuildRunNameInvalid                     | Yes | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
+| False    | BuildRunNoRefOrSpec                     | Yes | BuildRun does not have either `BuildRef` or `BuildSpec` defined. There is no connection to a Build specification. |
+| False    | BuildRunAmbiguousBuild                  | Yes | The defined `BuildRun` uses both `BuildRef` and `BuildSpec`. Only one of them is allowed at the same time.|
+| False    | BuildRunBuildFieldOverrideForbidden     | Yes | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, or `env`) in combination with `BuildSpec`, which is not allowed. Use the `BuildSpec` to directly specify the respective value. |
 | False    | PodEvicted                              | Yes | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
 
 _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.

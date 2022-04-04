@@ -758,7 +758,7 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: build.BuildRef{
+			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -803,7 +803,7 @@ func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName strin
 			},
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: build.BuildRef{
+			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -828,7 +828,7 @@ func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, build
 			OwnerReferences: []metav1.OwnerReference{fakeOwnerRef},
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: build.BuildRef{
+			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -844,7 +844,7 @@ func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName strin
 			Namespace: "foobarns",
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: build.BuildRef{
+			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
 		},
@@ -933,7 +933,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: build.BuildRef{
+			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
@@ -952,7 +952,7 @@ func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *buil
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: build.BuildRef{
+			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
@@ -970,7 +970,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			Name: buildRunName,
 		},
 		Spec: build.BuildRunSpec{
-			BuildRef: build.BuildRef{
+			BuildRef: &build.BuildRef{
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
@@ -1028,14 +1028,14 @@ func (c *Catalog) LoadBuildRunFromBytes(d []byte) (*build.BuildRun, error) {
 }
 
 // LoadBRWithNameAndRef returns a populated BuildRun with a name and a referenced Build
-func (c *Catalog) LoadBRWithNameAndRef(name string, buildRef string, d []byte) (*build.BuildRun, error) {
+func (c *Catalog) LoadBRWithNameAndRef(name string, buildName string, d []byte) (*build.BuildRun, error) {
 	b := &build.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
 	}
 	b.Name = name
-	b.Spec.BuildRef.Name = buildRef
+	b.Spec.BuildRef = &build.BuildRef{Name: buildName}
 	return b, nil
 }
 

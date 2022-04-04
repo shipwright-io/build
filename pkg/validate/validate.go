@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
 const (
@@ -66,4 +67,53 @@ func NewValidation(
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}
+}
+
+// All runs all given validations and exists at the first technical error
+func All(ctx context.Context, validations ...BuildPath) error {
+	for _, validatation := range validations {
+		if err := validatation.ValidatePath(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// BuildRunFields runs field validations against a BuildRun to detect
+// disallowed field combinations
+func BuildRunFields(buildRun *build.BuildRun) (string, string) {
+	if buildRun.Spec.BuildSpec == nil && buildRun.Spec.BuildRef == nil {
+		return resources.BuildRunNoRefOrSpec,
+			"no build referenced or specified, either 'buildRef' or 'buildSpec' has to be set"
+	}
+
+	if buildRun.Spec.BuildSpec != nil {
+		if buildRun.Spec.BuildRef != nil {
+			return resources.BuildRunAmbiguousBuild,
+				"fields 'buildRef' and 'buildSpec' are mutually exclusive"
+		}
+
+		if buildRun.Spec.Output != nil {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'output' override and 'buildSpec' simultaneously"
+		}
+
+		if len(buildRun.Spec.ParamValues) > 0 {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'paramValues' override and 'buildSpec' simultaneously"
+		}
+
+		if len(buildRun.Spec.Env) > 0 {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'env' override and 'buildSpec' simultaneously"
+		}
+
+		if buildRun.Spec.Timeout != nil {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'timeout' override and 'buildSpec' simultaneously"
+		}
+	}
+
+	return "", ""
 }

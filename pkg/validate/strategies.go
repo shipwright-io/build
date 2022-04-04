@@ -24,6 +24,10 @@ type Strategy struct {
 	Client client.Client
 }
 
+func NewStrategies(client client.Client, build *build.Build) *Strategy {
+	return &Strategy{build, client}
+}
+
 // ValidatePath implements BuildPath interface and validates
 // that the referenced strategy exists. This applies to both
 // namespaced or cluster scoped strategies

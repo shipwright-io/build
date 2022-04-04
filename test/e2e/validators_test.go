@@ -44,7 +44,10 @@ const (
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
 // Otherwise it will create the service account. No error occurs if the service account already exists.
 func createPipelineServiceAccount(testBuild *utils.TestBuild) {
-	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
+	serviceAccountName, ok := os.LookupEnv(EnvVarServiceAccountName)
+	Expect(ok).To(BeTrue(), "environment variable "+EnvVarServiceAccountName+" is not set")
+	Expect(serviceAccountName).ToNot(BeEmpty())
+
 	if serviceAccountName == "generated" {
 		Logf("Skipping creation of service account, generated one will be used per build run.")
 		return
@@ -329,7 +332,7 @@ func buildRunTestData(ns string, identifier string, filePath string) (*buildv1al
 
 	buildRun.SetNamespace(ns)
 	buildRun.SetName(identifier)
-	buildRun.Spec.BuildRef.Name = identifier
+	buildRun.Spec.BuildRef = &buildv1alpha1.BuildRef{Name: identifier}
 
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 	if serviceAccountName == "generated" {
