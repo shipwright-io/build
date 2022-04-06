@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+  name: shipwright-build-aggregate-edit
+rules:
+- apiGroups: ['shipwright.io']
+  resources: ['clusterbuildstrategies']
+  verbs: ['get', 'list', 'watch']
+- apiGroups: ['shipwright.io']
+  resources: ['buildstrategies']
+  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
+- apiGroups: ['shipwright.io']
+  resources: ['builds']
+  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']
+- apiGroups: ['shipwright.io']
+  resources: ['buildruns']
+  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete']

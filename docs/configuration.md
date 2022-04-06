@@ -6,6 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # Configuration
 
+## Controller Settings
+
 The controller is installed into Kubernetes with reasonable defaults. However, there are some settings that can be overridden using environment variables in [`controller.yaml`](../deploy/500-controller.yaml).
 
 The following environment variables are available:
@@ -30,3 +32,19 @@ The following environment variables are available:
 | `KUBE_API_QPS` | QPS to use for the Kubernetes API client. See [Config.QPS](https://pkg.go.dev/k8s.io/client-go/rest#Config.QPS). A value of 0 or lower will use the default from client-go, which currently is 5. Default is 0. |
 | `TERMINATION_LOG_PATH` | Path of the termination log. This is where controller application will write the reason of its termination. Default value is `/dev/termination-log`. |
 | `GIT_ENABLE_REWRITE_RULE` | Enable Git wrapper to setup a URL `insteadOf` Git config rewrite rule for the respective source URL hostname. Default is `false`. |
+
+## Role-based Access Control
+
+The release deployment YAML file includes two cluster-wide roles for using Shipwright Build objects.
+The following roles are installed:
+
+- `shpwright-build-aggregate-view`: this role grants read access (get, list, watch) to most Shipwright Build objects.
+  This includes `BuildStrategy`, `ClusterBuildStrategy`, `Build`, and `BuildRun` objects.
+  This role is aggregated to the [Kubernetes "view" role](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#default-roles-and-role-bindings).
+- `shipwright-build-aggregate-edit`: this role grants write access (create, update, patch, delete) to Shipwright objects that are namespace-scoped.
+  This includes `BuildStrategy`, `Builds`, and `BuildRuns`.
+  Read access is granted to all `ClusterBuildStrategy` objects.
+  This role is aggregated to the [Kubernetes "edit" and "admin" roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#default-roles-and-role-bindings).
+
+Only cluster administrators are granted write access to `ClusterBuildStrategy` objects.
+This can be changed by creating a separate [Kubernetes `ClusterRole`](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole) with these permissions and binding the role to appropriate users.
