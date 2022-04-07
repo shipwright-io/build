@@ -41,29 +41,29 @@ The controller watches for:
 When the controller reconciles it:
 
 - Validates if the referenced `StrategyRef` exists.
-- Validates if the specified `params` exists on the referenced strategy parameters. It also validates if the `params` names collide with the Shipwright reserved names.
+- Validates if the specified `params` exist on the referenced strategy parameters. It also validates if the `params` names collide with the Shipwright reserved names.
 - Validates if the container `registry` output secret exists.
 - Validates if the referenced `spec.source.url` endpoint exists.
 
 ## Build Validations
 
-In order to prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `status.reason`, however if any of the validations failed, users can rely on the `status.reason` and `status.message` fields, in order to understand the root cause.
+To prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `status.reason`. However, if any validations fail, users can rely on the `status.reason` and `status.message` fields to understand the root cause.
 
 | Status.Reason | Description |
 | --- | --- |
 | BuildStrategyNotFound   | The referenced namespace-scope strategy doesn't exist. |
 | ClusterBuildStrategyNotFound   | The referenced cluster-scope strategy doesn't exist. |
-| SetOwnerReferenceFailed   | Setting ownerreferences between a Build and a BuildRun failed. This is triggered when making use of the `build.shipwright.io/build-run-deletion` annotation in a Build. |
+| SetOwnerReferenceFailed   | Setting ownerreferences between a Build and a BuildRun failed. This status is triggered when using the `build.shipwright.io/build-run-deletion` annotation in a Build. |
 | SpecSourceSecretRefNotFound | The secret used to authenticate to git doesn't exist. |
 | SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist. |
-| SpecBuilderSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist.|
+| SpecBuilderSecretRefNotFound | The secret used to authenticate the container registry doesn't exist.|
 | MultipleSecretRefNotFound | More than one secret is missing. At the moment, only three paths on a Build can specify a secret. |
 | RestrictedParametersInUse | One or many defined `params` are colliding with Shipwright reserved parameters. See [Defining Params](#defining-params) for more information. |
 | UndefinedParameter | One or many defined `params` are not defined in the referenced strategy. Please ensure that the strategy defines them under its `spec.parameters` list. |
-| RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only take place for http/https protocols. |
+| RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only takes place for HTTP/HTTPS protocols. |
 | BuildNameInvalid | The defined `Build` name (`metadata.name`) is invalid. The `Build` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
-| SpecEnvNameCanNotBeBlank | Indicates that the name for a user provided environment variable is blank. |
-| SpecEnvValueCanNotBeBlank | Indicates that the value for a user provided environment variable is blank. |
+| SpecEnvNameCanNotBeBlank | Indicates that the name for a user-provided environment variable is blank. |
+| SpecEnvValueCanNotBeBlank | Indicates that the value for a user-provided environment variable is blank. |
 
 ## Configuring a Build
 
@@ -82,12 +82,12 @@ The `Build` definition supports the following fields:
 - Optional:
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
-  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into project context, before the actual build process starts.
-  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
+  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts.
+  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The default is ten minutes. You can overwrite the value in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
   - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
   - `spec.output.labels` - Refers to a list of `key/value` that could be used to label the output image.
-  - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
+  - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool used by the chosen build strategy.
 
 ### Defining the Source
 
@@ -96,13 +96,13 @@ A `Build` resource can specify a Git repository or bundle image source, together
 - `source.url` - Specify the source location using a Git repository.
 - `source.bundleContainer.image` - Specify a source bundle container image to be used as the source.
 - `source.bundleContainer.prune` - Configure whether the source bundle image should be deleted after the source was obtained (defaults to `Never`, other option is `AfterPull` to delete the image after a successful image pull).
-- `source.credentials.name` - For private repositories/registries, the name is a reference to an existing secret on the same namespace containing the SSH private key, or Docker access credentials, respectively.
-- `source.revision` - An specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fallback to the Git repository default branch.
+- `source.credentials.name` - For private repositories or registries, the name references a secret in the namespace that contains the SSH private key or Docker access credentials, respectively.
+- `source.revision` - A specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fallback to the Git repository default branch.
 - `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here.
 
-By default, the Build controller won't validate that the Git repository exists. If the validation is desired, users can define the `build.shipwright.io/verify.repository` annotation with `true` explicitly. For example:
+By default, the Build controller does not validate that the Git repository exists. If the validation is desired, users can explicitly define the `build.shipwright.io/verify.repository` annotation with `true`. For example:
 
-Example of a `Build` with the **build.shipwright.io/verify.repository** annotation, in order to enable the `spec.source.url` validation.
+Example of a `Build` with the **build.shipwright.io/verify.repository** annotation to enable the `spec.source.url` validation.
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -117,7 +117,7 @@ spec:
     contextDir: docker-build
 ```
 
-_Note_: The Build controller only validates two scenarios. The first one where the endpoint uses an `http/https` protocol, the second one when a `ssh` protocol (_e.g. `git@`_) is defined and none referenced secret was provided(_e.g. source.credentials.name_).
+_Note_: The Build controller only validates two scenarios. The first one is when the endpoint uses an `http/https` protocol. The second one is when an `ssh` protocol such as `git@` has been defined but a referenced secret, such as `source.credentials.name`, has not been provided.
 
 Example of a `Build` with a source with **credentials** defined by the user.
 
@@ -133,7 +133,7 @@ spec:
       name: source-repository-credentials
 ```
 
-Example of a `Build` with a source that specifies an specific subfolder on the repository.
+Example of a `Build` with a source that specifies a specific subfolder on the repository.
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -228,7 +228,7 @@ A `Build` resource can specify the `BuildStrategy` to use, these are:
 - [ko](buildstrategies.md#ko)
 - [Source-to-Image](buildstrategies.md#source-to-image)
 
-Defining the strategy is straightforward, you need to define the `name` and the `kind`. For example:
+Defining the strategy is straightforward. You define the `name` and the `kind`. For example:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -243,18 +243,18 @@ spec:
 
 ### Defining ParamValues
 
-A `Build` resource can specify _paramValues_ for parameters that are defined in the referenced `BuildStrategy`. This allows one to control how the steps of the build strategy behave. Values can be overwritten in the `BuildRun` resource. See the related [documentation](./buildrun.md#defining-params) for more information.
+A `Build` resource can specify _paramValues_ for parameters that are defined in the referenced `BuildStrategy`. You specify these parameter values to control how the steps of the build strategy behave. You can overwrite values in the `BuildRun` resource. See the related [documentation](./buildrun.md#defining-params) for more information.
 
-The build strategy author can define a parameter to be either a simple string, or an array. Depending on that, you must specify the value accordingly. The build strategy parameter can be specified with a default value. For parameters without a default, a value must be specified in the `Build` or `BuildRun`.
+The build strategy author can define a parameter as either a simple string or an array. Depending on that, you must specify the value accordingly. The build strategy parameter can be specified with a default value. You must specify a value in the `Build` or `BuildRun` for parameters without a default.
 
-You can either specify values directly, or reference keys from [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/). **Note**: the usage of ConfigMaps and Secrets is limited by the usage of the parameter in the build strategy steps. You can only use them if the parameter is used in the command, arguments, or as environment variable values.
+You can either specify values directly or reference keys from [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/). **Note**: the usage of ConfigMaps and Secrets is limited by the usage of the parameter in the build strategy steps. You can only use them if the parameter is used in the command, arguments, or environment variable values.
 
 When using _paramValues_, users should avoid:
 
 - Defining a `spec.paramValues` name that doesn't match one of the `spec.parameters` defined in the `BuildStrategy`.
-- Defining a `spec.paramValues` name that collides with the Shipwright reserved parameters. These are _BUILDER\_IMAGE_, _DOCKERFILE_, _CONTEXT\_DIR_ and any name starting with _shp-_.
+- Defining a `spec.paramValues` name that collides with the Shipwright reserved parameters. These are _BUILDER\_IMAGE_, _DOCKERFILE_, _CONTEXT\_DIR_, and any name starting with _shp-_.
 
-In general, _paramValues_ are tightly bound to Strategy _parameters_, please make sure you understand the contents of your strategy of choice, before defining _paramValues_ in the _Build_.
+In general, _paramValues_ are tightly bound to Strategy _parameters_. Please make sure you understand the contents of your strategy of choice before defining _paramValues_ in the _Build_.
 
 #### Example
 
@@ -269,7 +269,7 @@ metadata:
 spec:
   parameters:
   - name: build-args
-    description: "The values for the ARGs in the Dockerfile. Values must be in the format KEY=VALUE."
+    description: "The ARG values in the Dockerfile. Values must be in the format KEY=VALUE."
     type: array
     defaults: []
   - name: cache
@@ -302,7 +302,7 @@ spec:
   ...
 ```
 
-If you have multiple Builds and want to centrally control this parameter, then you can create a ConfigMap:
+If you have multiple Builds and want to control this parameter centrally, then you can create a ConfigMap:
 
 ```yaml
 apiVersion: v1
@@ -337,7 +337,7 @@ spec:
   ...
 ```
 
-The `build-args` parameter is defined as an array. In the BuildKit strategy, it is used to set the values of [`ARG`s in the Dockerfile](https://docs.docker.com/engine/reference/builder/#arg), specified as key-value pairs separated by an equals sign, for example `NODE_VERSION=16`. Your Build then looks like this (the value for `cache` is retained to outline how multiple _paramValue_ can be set):
+The `build-args` parameter is defined as an array. In the BuildKit strategy, you use `build-args` to set the [`ARG` values in the Dockerfile](https://docs.docker.com/engine/reference/builder/#arg), specified as key-value pairs separated by an equals sign, for example, `NODE_VERSION=16`. Your Build then looks like this (the value for `cache` is retained to outline how multiple _paramValue_ can be set):
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -363,7 +363,7 @@ spec:
   ...
 ```
 
-Similar to simple values, you can also reference ConfigMaps and Secrets for every item in the array. Example:
+Like simple values, you can also reference ConfigMaps and Secrets for every item in the array. Example:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -399,15 +399,15 @@ spec:
 
 Here, we pass three items in the `build-args` array:
 
-1. The first item references a ConfigMap. As the ConfigMap just contains the value (for example `"16"`) as the data of the `node-version` key, the `format` setting is used to prepend `NODE_VERSION=` to make it a complete key-value pair.
+1. The first item references a ConfigMap. Because the ConfigMap just contains the value (for example `"16"`) as the data of the `node-version` key, the `format` setting is used to prepend `NODE_VERSION=` to make it a complete key-value pair.
 2. The second item is just a hard-coded value.
-3. The third item references a Secret. This works in the same way as with ConfigMaps.
+3. The third item references a Secret, the same as with ConfigMaps.
 
-**NOTE**: the logging output of BuildKit contains expanded `ARG`s in `RUN` commands. Also, such information ends up in the final container image if you use such args in the [final stage of your Dockerfile](https://docs.docker.com/develop/develop-images/multistage-build/). An alternative approach to pass secrets is using [secret mounts](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The BuildKit sample strategy supports them using the `secrets` parameter.
+**NOTE**: The logging output of BuildKit contains expanded `ARG`s in `RUN` commands. Also, such information ends up in the final container image if you use such args in the [final stage of your Dockerfile](https://docs.docker.com/develop/develop-images/multistage-build/). An alternative approach to pass secrets is using [secret mounts](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The BuildKit sample strategy supports them using the `secrets` parameter.
 
 ### Defining the Builder or Dockerfile
 
-A `Build` resource can specify an image containing the tools to build the final image. Users can do this via the `spec.builder` or the `spec.dockerfile`. For example, the user choose  the `Dockerfile` file under the source repository.
+In the `Build` resource, you use the `spec.builder` or `spec.dockerfile` parameters to specify the image that contains the tools to build the final image. For example, the following Build definition specifies a `Dockerfile` image.
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -424,7 +424,7 @@ spec:
   dockerfile: Dockerfile
 ```
 
-Another example, when the user chooses to use a `builder` image ( This is required for `source-to-image` buildStrategy, because for different code languages, they have different builders. ):
+Another example is when the user chooses the `builder` image for a specific language as part of the `source-to-image` buildStrategy:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -444,11 +444,11 @@ spec:
 
 ### Defining the Output
 
-A `Build` resource can specify the output where the image should be pushed. For external private registries it is recommended to specify a secret with the related data to access it. There is an option available to specify the annotation and labels for the output image (annotations and labels mentioned here are specific to the container image and do not have any relation with the `Build` annotations).
+A `Build` resource can specify the output where it should push the image. For external private registries, it is recommended to specify a secret with the related data to access it. An option is available to specify the annotation and labels for the output image. The annotations and labels mentioned here are specific to the container image and do not relate to the `Build` annotations.
 
-**NOTE**: When you specify annotations or labels, the output image will get pushed twice. The first push comes from the build strategy. A follow-on update will then change the image configuration to add the annotations and labels. If you have automation in place based on push events in your container registry, be aware of this behavior.
+**NOTE**: When you specify annotations or labels, the output image will get pushed twice. The first push comes from the build strategy. Then, a follow-on update changes the image configuration to add the annotations and labels. If you have automation based on push events in your container registry, be aware of this behavior.
 
-For example, the user specify a public registry:
+For example, the user specifies a public registry:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -468,7 +468,7 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex
 ```
 
-Another example, is when the user specifies a private registry:
+Another example is when the user specifies a private registry:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -524,7 +524,7 @@ Annotations added to the output image can be verified by running the command:
   docker manifest inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".annotations"
 ```
 
-Labels added to the output image can be verified by running the command (image should be available in host machine):
+You can verify which labels were added to the output image that is available on the host machine by running the command:
 
 ```sh
   docker inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".[].Config.Labels"
@@ -532,7 +532,7 @@ Labels added to the output image can be verified by running the command (image s
 
 ### Sources
 
-Represents remote artifacts, as in external entities that will be added to the build context before the actual build starts. Therefore, you may employ `.spec.sources` to download artifacts from external repositories.
+Sources represent remote artifacts, as in external entities added to the build context before the actual Build starts. Therefore, you may employ `.spec.sources` to download artifacts from external repositories.
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -545,20 +545,20 @@ spec:
       url: https://gist.github.com/project/image.png
 ```
 
-Under `.spec.sources` we have the following attributes:
+Under `.spec.sources` are the following attributes:
 
-- `.name`: represents the name of resource, required attribute.
+- `.name`: represents the name of the resource, required attribute.
 - `.url`: universal resource location (URL), required attribute.
 
-When downloading artifacts the process is executed in the same directory where the application source-code is located, by default `/workspace/source`.
+When downloading artifacts, the process is executed in the same directory where the application source-code is located, by default `/workspace/source`.
 
-Additionally, we have plan to keep evolving `.spec.sources` by adding more types of remote data declaration, this API field works as an extension point to support external and internal resource locations.
+Additionally, we plan to keep evolving `.spec.sources` by adding more types of remote data declaration. This API field works as an extension point to support external and internal resource locations.
 
-At this initial stage, authentication is not supported therefore you can only download from sources without this mechanism in place.
+At this initial stage, authentication is not supported; therefore, you can only download from sources without this mechanism in place.
 
 ## BuildRun deletion
 
-A `Build` can automatically delete a related `BuildRun`. To enable this feature set the  `build.shipwright.io/build-run-deletion` annotation to `true` in the `Build` instance. By default the annotation is never present in a `Build` definition. See an example of how to define this annotation:
+A `Build` can automatically delete a related `BuildRun`. To enable this feature set the  `build.shipwright.io/build-run-deletion` annotation to `true` in the `Build` instance. This annotation is not present in a `Build` definition by default. See an example of how to define this annotation:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1

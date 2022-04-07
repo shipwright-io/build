@@ -25,13 +25,13 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-The resource `BuildRun` (`buildruns.shipwright.io/v1alpha1`) is the build process of a `Build` resource definition which is executed in Kubernetes.
+The resource `BuildRun` (`buildruns.shipwright.io/v1alpha1`) is the build process of a `Build` resource definition executed in Kubernetes.
 
 A `BuildRun` resource allows the user to define:
 
 - The `BuildRun` name, through which the user can monitor the status of the image construction.
 - A referenced `Build` instance to use during the build construction.
-- A service account for hosting all related secrets in order to build the image.
+- A service account for hosting all related secrets to build the image.
 
 A `BuildRun` is available within a namespace.
 
@@ -44,10 +44,10 @@ The controller watches for:
 
 When the controller reconciles it:
 
-- Looks for any existing owned `TaskRuns` and update its parent `BuildRun` status.
+- Looks for any existing owned `TaskRuns` and updates its parent `BuildRun` status.
 - Retrieves the specified `SA` and sets this with the specify output secret on the `Build` resource.
-- Generates a new tekton `TaskRun` if it does not exist, and set a reference to this resource(_as a child of the controller_).
-- On any subsequent updates on the `TaskRun`, the parent `BuildRun` resource instance will be updated.
+- If one does not exist, it generates a new tekton `TaskRun` and sets a reference to this resource(_as a child of the controller_).
+- On any subsequent updates on the `TaskRun`, the controller will update the parent `BuildRun` resource instance.
 
 ## Configuring a BuildRun
 
@@ -59,16 +59,16 @@ The `BuildRun` definition supports the following fields:
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `BuildRun`.
 
 - Optional:
-  - `spec.buildRef` - Specifies an existing `Build` resource instance to use. Cannot be used together with `buildSpec`.
-  - `spec.buildSpec` - Specified an embedded (transient) Build resource to use. Cannot be used together with `buildRef`.
+  - `spec.buildRef` - Specifies an existing `Build` resource instance to use. It cannot be used together with `buildSpec`.
+  - `spec.buildSpec` - Specifies an embedded (transient) Build resource to use. It cannot be used together with `buildRef`.
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
-  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The value overwrites the value that is defined in the `Build`.
-  - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`. This overwrites values defined with the same name in the Build.
-  - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value which is defined in `Build`. ( Note: other properties of the output, for example, the credentials cannot be specified in the buildRun spec. )
+  - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The value overwrites the value that is defined in the `Build`.
+  - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`. This value overwrites values defined with the same name in the Build.
+  - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value defined in `Build`. ( Note: other properties of the output, for example, the credentials, cannot be specified in the buildRun spec. )
   - `spec.output.credentials.name` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
-  - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool that is being used by the chosen build strategy.
+  - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
 
-_Note:_ The `BuildRef` and `BuildSpec` are mutually exclusive. Futhermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be used in combination with `buildRef`, but **not** with `buildSpec`.
+_Note:_ The `BuildRef` and `BuildSpec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `buildRef`, but **not** with `buildSpec`.
 
 ### Defining the BuildRef
 
@@ -86,7 +86,7 @@ spec:
 
 ### Defining the BuildSpec
 
-Alternatively to `BuildRef`, a complete `BuildSpec` can be embedded into the `BuildRun` to be used for the build.
+Alternatively to `BuildRef`, a complete `BuildSpec` can be embedded into the `BuildRun` for the build.
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -109,7 +109,7 @@ spec:
 
 A `BuildRun` resource can define _paramValues_ for parameters specified in the build strategy. If a value has been provided for a parameter with the same name in the `Build` already, then the value from the `BuildRun` will have precedence.
 
-For example, the following `BuildRun` overrides the value for _sleep-time_ param, that is defined in the _a-build_ `Build` resource.
+For example, the following `BuildRun` overrides the value for _sleep-time_ param, which is defined in the _a-build_ `Build` resource.
 
 ```yaml
 ---
@@ -164,7 +164,7 @@ spec:
 
 You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you. The name of the generated service account is the name of the BuildRun.
 
-_**Note**_: When the service account is not defined, the `BuildRun` will use the `pipeline` service account if it exists in the namespace, and fall back to the `default` service account.
+_**Note**_: When the service account is not defined, the `BuildRun` uses the `pipeline` service account if it exists in the namespace, and falls back to the `default` service account.
 
 ## Canceling a `BuildRun`
 
@@ -262,21 +262,21 @@ The above allows users to get an overview of the building mechanism state.
 
 ### Understanding the state of a BuildRun
 
-A `BuildRun` resource stores the relevant information regarding the state of the object under `status.conditions`.
+A `BuildRun` resource stores the relevant information regarding the object's state under `status.conditions`.
 
-[Conditions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties) allow users to easily understand the resource state, without needing to understand resource-specific details.
+[Conditions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties) allow users to quickly understand the resource state without needing to understand resource-specific details.
 
-For the `BuildRun` we use a Condition of the type `Succeeded`, which is a well-known type for resources that run to completion.
+For the `BuildRun`, we use a Condition of the type `Succeeded`, which is a well-known type for resources that run to completion.
 
-The `status.conditions` hosts different fields, like `status`, `reason` and `message`. Users can expect this fields to be populated with relevant information.
+The `status.conditions` hosts different fields, like `status`, `reason` and `message`. Users can expect these fields to be populated with relevant information.
 
 The following table illustrates the different states a BuildRun can have under its `status.conditions`:
 
 | Status   | Reason                                  | CompletionTime is set | Description |
 | ---      | ---                                     | --- | --- |
 | Unknown  | Pending                                 | No  | The BuildRun is waiting on a Pod in status Pending. |
-| Unknown  | Running                                 | No  | The BuildRun has been validate and started to perform its work. |
-| Unknown  | Running                                 | No  | The BuildRun has been validate and started to perform its work. |
+| Unknown  | Running                                 | No  | The BuildRun has been validated and started to perform its work. |
+| Unknown  | Running                                 | No  | The BuildRun has been validated and started to perform its work. |
 | Unknown  | BuildRunCanceled                        | No  | The user requested the BuildRun to be canceled.  This results in the BuildRun controller requesting the TaskRun be canceled.  Cancellation has not been done yet. |
 | True     | Succeeded                               | Yes | The BuildRun Pod is done. |
 | False    | Failed                                  | Yes | The BuildRun failed in one of the steps. |
@@ -290,13 +290,13 @@ The following table illustrates the different states a BuildRun can have under i
 | False    | MissingParameterValues                  | Yes | No value has been provided for some parameters that are defined in the build strategy without any default. Values for those parameters must be provided through the Build or the BuildRun. |
 | False    | RestrictedParametersInUse               | Yes | A value for a system parameter was provided. This is not allowed. |
 | False    | UndefinedParameter                      | Yes | A value for a parameter was provided that is not defined in the build strategy. |
-| False    | WrongParameterValueType                 | Yes | A value was provided for a build strategy parameter using the wrong type. The parameter is defined as `array` or `string` in the build strategy. Depending on that you must provide `values` or a direct value. |
+| False    | WrongParameterValueType                 | Yes | A value was provided for a build strategy parameter using the wrong type. The parameter is defined as `array` or `string` in the build strategy. Depending on that, you must provide `values` or a direct value. |
 | False    | InconsistentParameterValues             | Yes | A value for a parameter contained more than one of `value`, `configMapValue`, and `secretValue`. Any values including array items must only provide one of them. |
 | False    | EmptyArrayItemParameterValues           | Yes | An item inside the `values` of an array parameter contained none of `value`, `configMapValue`, and `secretValue`. Exactly one of them must be provided. Null array items are not allowed. |
 | False    | IncompleteConfigMapValueParameterValues | Yes | A value for a parameter contained a `configMapValue` where the `name` or the `value` were empty. You must specify them to point to an existing ConfigMap key in your namespace. |
 | False    | IncompleteSecretValueParameterValues    | Yes | A value for a parameter contained a `secretValue` where the `name` or the `value` were empty. You must specify them to point to an existing Secret key in your namespace. |
 | False    | ServiceAccountNotFound                  | Yes | The referenced service account was not found in the cluster. |
-| False    | BuildRegistrationFailed                 | Yes | The related Build in the BuildRun is on a Failed state. |
+| False    | BuildRegistrationFailed                 | Yes | The related Build in the BuildRun is in a Failed state. |
 | False    | BuildNotFound                           | Yes | The related Build in the BuildRun was not found. |
 | False    | BuildRunCanceled                        | Yes | The BuildRun and underlying TaskRun were canceled successfully. |
 | False    | BuildRunNameInvalid                     | Yes | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
@@ -309,11 +309,11 @@ _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/te
 
 ### Understanding failed BuildRuns
 
-[DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer from the `status.failedAt` field, the pod and container where the failure took place.
+[DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer the pod and container where the failure took place from the `status.failedAt` field.
 
-In addition, the `status.conditions` will host under the `message` field a compacted message containing the `kubectl` command to trigger, in order to retrieve the logs.
+In addition, the `status.conditions` hosts a compacted message under the' message' field that contains the `kubectl` command to trigger and retrieve the logs.
 
-Lastly, users can check `status.failureDetails` field, which includes the same information available in the `status.failedAt` field,
+Lastly, users can check the `status.failureDetails` field, which includes the same information available in the `status.failedAt` field,
 as well as a human-readable error message and reason.
 The message and reason are only included if the build strategy provides them.
 
@@ -334,7 +334,7 @@ status:
 
 #### Understanding failed git-source step
 
-All git related operations support error reporting via `status.failureDetails`. The following table explains the possible
+All git-related operations support error reporting via `status.failureDetails`. The following table explains the possible
 error reasons:
 
 | Reason |  Description |
@@ -343,16 +343,16 @@ error reasons:
 | `GitAuthInvalidKey` | The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
 | `GitRevisionNotFound` | The remote revision does not exist. Check the revision specified in your Build. |
 | `GitRemoteRepositoryNotFound`| The source repository does not exist, or you have insufficient permissions to access it. |
-| `GitRemoteRepositoryPrivate` | You are trying to access a non existing or private repository without having sufficient permissions to access it via HTTPS. |
-| `GitBasicAuthIncomplete`| Basic Auth incomplete: Both username and password need to be configured. |
-| `GitSSHAuthUnexpected`| Credential/URL inconsistency: SSH credentials provided, but URL is not a SSH Git URL. |
-| `GitSSHAuthExpected`| Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL. |
+| `GitRemoteRepositoryPrivate` | You are trying to access a non-existing or private repository without having sufficient permissions to access it via HTTPS. |
+| `GitBasicAuthIncomplete`| Basic Auth incomplete: Both username and password must be configured. |
+| `GitSSHAuthUnexpected`| Credential/URL inconsistency: SSH credentials were provided, but the URL is not an SSH Git URL. |
+| `GitSSHAuthExpected`| Credential/URL inconsistency: No SSH credentials provided, but the URL is an SSH Git URL. |
 | `GitError` | The specific error reason is unknown. Check the error message for more information. |
 
 ### Step Results in BuildRun Status
 
-After the successful completion of a `BuildRun`, the `.status` field contains the results (`.status.taskResults`) emitted from the `TaskRun` steps generate by the `BuildRun` controller as part of processing the `BuildRun`. These results contain valuable metadata for users, like the _image digest_ or the _commit sha_ of the source code used for building.
-The results from the source step will be surfaced to the `.status.sources` and the results from
+After completing a `BuildRun`, the `.status` field contains the results (`.status.taskResults`) emitted from the `TaskRun` steps generated by the `BuildRun` controller as part of processing the `BuildRun`. These results contain valuable metadata for users, like the _image digest_ or the _commit sha_ of the source code used for building.
+The results from the source step will be surfaced to the `.status.sources`, and the results from
 the [output step](buildstrategies.md#system-results) will be surfaced to the `.status.output` field of a `BuildRun`.
 
 Example of a `BuildRun` with surfaced results for `git` source (note that the `branchName` is only included if the Build does not specify any `revision`):
@@ -399,4 +399,4 @@ For every BuildRun controller reconciliation, the `buildSpec` in the status of t
 
 The `BuildRun` resource abstracts the image construction by delegating this work to the Tekton Pipeline [TaskRun](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md). Compared to a Tekton Pipeline [Task](https://github.com/tektoncd/pipeline/blob/main/docs/tasks.md), a `TaskRun` runs all `steps` until completion of the `Task` or until a failure occurs in the `Task`.
 
-The `BuildRun` controller during the Reconcile will generate a new `TaskRun`. During the execution, the controller will embed in the `TaskRun` `Task` definition the requires `steps` to execute. These `steps` are define in the strategy defined in the `Build` resource, either a `ClusterBuildStrategy` or a `BuildStrategy`.
+During the Reconcile, the `BuildRun` controller will generate a new `TaskRun`. The controller will embed in the `TaskRun` `Task` definition the requires `steps` to execute during the execution. These `steps` are defined in the strategy defined in the `Build` resource, either a `ClusterBuildStrategy` or a `BuildStrategy`.
