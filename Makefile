@@ -66,6 +66,9 @@ TEST_PRIVATE_GITLAB ?=
 # private repository authentication secret
 TEST_SOURCE_SECRET ?=
 
+# default timeout for kubectl and other interactions with external systems
+TIMEOUT ?= 30s
+
 # Image settings for building and pushing images
 IMAGE_HOST ?= ghcr.io
 IMAGE_NAMESPACE ?= shipwright-io/build
@@ -221,8 +224,11 @@ install-with-pprof:
 
 install-apis:
 	kubectl apply -f deploy/crds/
-	# Wait for the CRD type to be established; this can take a second or two.
-	kubectl wait --timeout=10s --for condition=established crd/clusterbuildstrategies.shipwright.io
+	for i in 1 2 3 ; do \
+		kubectl wait --timeout=$(TIMEOUT) --for="condition=something" crd/clusterbuildstrategies.shipwright.io && \
+		break ; \
+		sleep 15 ; \
+	done
 
 install-controller: install-apis
 	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
