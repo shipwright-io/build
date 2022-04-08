@@ -217,6 +217,10 @@ kind: ClusterBuildStrategy
 metadata:
   name: noop
 spec:
+  parameters:
+  - name: exit-command
+    description: "Exit command for the pod"
+    default: "true"
   buildSteps:
   - name: step-no-and-op
     image: alpine:latest
@@ -240,7 +244,7 @@ spec:
     - name: AWS_SECRET_KEY
       value: NOT_SET
     command:
-    - "true"
+    - $(params.exit-command)
     resources:
       limits:
         cpu: 250m

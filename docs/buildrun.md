@@ -13,7 +13,9 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining the BuildSpec](#defining-the-buildspec)
   - [Defining ParamValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
+  - [Defining Retention Parameters](#defining-retention-parameters)
 - [Canceling a `BuildRun`](#canceling-a-buildrun)
+- [Automatic `BuildRun` deletion](#automatic-buildrun-deletion)
 - [Specifying Environment Variables](#specifying-environment-variables)
 - [BuildRun Status](#buildrun-status)
   - [Understanding the state of a BuildRun](#understanding-the-state-of-a-buildrun)
@@ -166,6 +168,32 @@ You can also use set the `spec.serviceAccount.generate` path to `true`. This wil
 
 _**Note**_: When the service account is not defined, the `BuildRun` uses the `pipeline` service account if it exists in the namespace, and falls back to the `default` service account.
 
+### Defining Retention Parameters
+
+A `Buildrun` resource can specify how long a completed BuildRun can exist. Instead of manually cleaning up old BuildRuns, retention parameters provide an alternate method for cleaning up BuildRuns automatically.
+
+As part of the buildrun retention parameters, we have the following fields:
+
+- `retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
+- `retention.ttlAfterSucceeded` - Specifies the duration for which a successful buildrun can exist.
+
+An example of a user using buildrun TTL parameters.
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buidrun-retention-ttl
+spec:
+  buildRef:
+    name: build-retention-ttl
+  retention:
+    ttlAfterFailed: 10m
+    ttlAfterSucceeded: 10m
+```
+
+**NOTE** In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
+
 ## Canceling a `BuildRun`
 
 To cancel a `BuildRun` that's currently executing, update its status to mark it as canceled.
@@ -183,6 +211,20 @@ spec:
   # [...]
   state: "BuildRunCanceled"
 ```
+
+## Automatic `BuildRun` deletion
+
+We have two controllers that ensure that buildruns can be deleted automatically if required. This is ensured by adding `retention` parameters in either the build specifications or the buildrun specifications.
+
+- Buildrun TTL parameters: These are used to make sure that buildruns exist for a fixed duration of time after completiion.
+  - `buildrun.spec.retention.ttlAfterFailed`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has failed.
+  - `buildrun.spec.retention.ttlAfterSucceeded`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has succeeded.
+- Build TTL parameters: These are used to make sure that related buildruns exist for a fixed duration of time after completiion.
+  - `build.spec.retention.ttlAfterFailed`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has failed.
+  - `build.spec.retention.ttlAfterSucceeded`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has succeeded.
+- Build Limit parameters: These are used to make sure that related buildruns exist for a fixed duration of time after completiion.
+  - `build.spec.retention.succeededLimit` - Defines number of succeeded BuildRuns for a Build that can exist.
+  - `build.spec.retention.failedLimit` - Defines number of failed BuildRuns for a Build that can exist.
 
 ## Specifying Environment Variables
 

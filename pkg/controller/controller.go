@@ -16,7 +16,9 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/reconciler/build"
+	"github.com/shipwright-io/build/pkg/reconciler/buildlimitcleanup"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrunttlcleanup"
 	"github.com/shipwright-io/build/pkg/reconciler/buildstrategy"
 	"github.com/shipwright-io/build/pkg/reconciler/clusterbuildstrategy"
 )
@@ -60,6 +62,14 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 	}
 
 	if err := clusterbuildstrategy.Add(ctx, config, mgr); err != nil {
+		return nil, err
+	}
+
+	if err := buildlimitcleanup.Add(ctx, config, mgr); err != nil {
+		return nil, err
+	}
+
+	if err := buildrunttlcleanup.Add(ctx, config, mgr); err != nil {
 		return nil, err
 	}
 

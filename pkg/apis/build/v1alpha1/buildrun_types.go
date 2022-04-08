@@ -72,6 +72,10 @@ type BuildRunSpec struct {
 	//
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Contains information about retention params
+	// +optional
+	Retention *BuildRunRetention `json:"retention,omitempty"`
 }
 
 // BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.
@@ -294,6 +298,20 @@ type Condition struct {
 
 	// A human readable message indicating details about the transition.
 	Message string `json:"message" description:"human-readable message indicating details about last transition"`
+}
+
+// BuildRunRetention struct for buildrun cleanup
+type BuildRunRetention struct {
+	// TTLAfterFailed defines the maximum duration of time the failed buildrun should exist.
+	//
+	// +optional
+	// +kubebuilder:validation:Format=duration
+	TTLAfterFailed *metav1.Duration `json:"ttlAfterFailed,omitempty"`
+	// TTLAfterSucceeded defines the maximum duration of time the succeeded buildrun should exist.
+	//
+	// +optional
+	// +kubebuilder:validation:Format=duration
+	TTLAfterSucceeded *metav1.Duration `json:"ttlAfterSucceeded,omitempty"`
 }
 
 func init() {
