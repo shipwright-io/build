@@ -339,32 +339,6 @@ var _ = Describe("Git Resource", func() {
 		})
 	})
 
-	Context("cloning repositories with Git Large File Storage", func() {
-		const exampleRepo = "https://github.com/shipwright-io/sample-lfs"
-
-		BeforeEach(func() {
-			if _, err := exec.LookPath("git-lfs"); err != nil {
-				Skip("Skipping Git Large File Storage test as `git-lfs` binary is not in the PATH")
-			}
-		})
-
-		It("should Git clone a repository to the specified target directory", func() {
-			withTempDir(func(target string) {
-				Expect(run(
-					"--url", exampleRepo,
-					"--target", target,
-				)).ToNot(HaveOccurred())
-
-				lfsFile := filepath.Join(target, "assets", "shipwright-logo-lightbg-512.png")
-				Expect(lfsFile).To(BeAnExistingFile())
-
-				data, err := ioutil.ReadFile(lfsFile)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(http.DetectContentType(data)).To(Equal("image/png"))
-			})
-		})
-	})
-
 	Context("cloning repositories with submodules", func() {
 		const exampleRepo = "https://github.com/shipwright-io/website"
 
@@ -431,136 +405,187 @@ var _ = Describe("Git Resource", func() {
 		})
 	})
 
-	Context("failure diagnostics", func() {
-		const (
-			exampleSSHGithubRepo         = "git@github.com:shipwright-io/sample-go.git"
-			nonExistingSSHGithubRepo     = "git@github.com:shipwright-io/sample-go-nonexistent.git"
-			exampleHTTPGithubNonExistent = "https://github.com/shipwright-io/sample-go-nonexistent.git"
-			githubHTTPRepo               = "https://github.com/shipwright-io/sample-go.git"
+	Context("Some tests mutate or depend on git configurations. They must run sequentially to avoid race-conditions.", Ordered, func() {
 
-			exampleSSHGitlabRepo         = "git@gitlab.com:gitlab-org/gitlab-runner.git"
-			exampleHTTPGitlabNonExistent = "https://gitlab.com/gitlab-org/gitlab-runner-nonexistent.git"
-			gitlabHTTPRepo               = "https://gitlab.com/gitlab-org/gitlab-runner.git"
-		)
+		Context("Test that require git configurations", func() {
 
-		It("should detect invalid basic auth credentials", func() {
-			testForRepo := func(repo string) {
-				withTempDir(func(secret string) {
-					file(filepath.Join(secret, "username"), 0400, []byte("ship"))
-					file(filepath.Join(secret, "password"), 0400, []byte("ghp_sFhFsSHhTzMDreGRLjmks4Tzuzgthdvfsrta"))
+			Context("cloning repositories with Git Large File Storage", func() {
+				const exampleRepo = "https://github.com/shipwright-io/sample-lfs"
 
+				BeforeEach(func() {
+					if _, err := exec.LookPath("git-lfs"); err != nil {
+						Skip("Skipping Git Large File Storage test as `git-lfs` binary is not in the PATH")
+					}
+				})
+
+				It("should Git clone a repository to the specified target directory", func() {
 					withTempDir(func(target string) {
-						err := run(
-							"--url", repo,
-							"--secret-path", secret,
+						Expect(run(
+							"--url", exampleRepo,
 							"--target", target,
-						)
+						)).ToNot(HaveOccurred())
 
-						Expect(err).ToNot(BeNil())
+						lfsFile := filepath.Join(target, "assets", "shipwright-logo-lightbg-512.png")
+						Expect(lfsFile).To(BeAnExistingFile())
 
-						errorResult := shpgit.NewErrorResultFromMessage(err.Error())
-
-						Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthInvalidUserOrPass.String()))
+						data, err := ioutil.ReadFile(lfsFile)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(http.DetectContentType(data)).To(Equal("image/png"))
 					})
 				})
-			}
-
-			testForRepo(exampleHTTPGitlabNonExistent)
-			testForRepo(exampleHTTPGithubNonExistent)
+			})
 		})
 
-		It("should detect invalid ssh credentials", func() {
-			testForRepo := func(repo string) {
-				withTempDir(func(target string) {
-					withTempDir(func(secret string) {
-						file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte("invalid"))
-						err := run(
-							"--url", repo,
-							"--target", target,
-							"--secret-path", secret,
-						)
+		Context("tests that require no prior configuration", Ordered, func() {
+			BeforeAll(func() {
+				git_config := os.Getenv("GIT_CONFIG")
+				git_global_config := os.Getenv("GIT_CONFIG_GLOBAL")
+				git_config_nosystem := os.Getenv("GIT_CONFIG_NOSYSTEM")
 
-						Expect(err).ToNot(BeNil())
+				// unset all pre-existing git configurations to avoid credential helpers and authentication
+				os.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+				os.Setenv("GIT_CONFIG", "/dev/null")
+				os.Setenv("GIT_CONFIG_GLOBAL", "/dev/null")
 
-						errorResult := shpgit.NewErrorResultFromMessage(err.Error())
-
-						Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthInvalidKey.String()))
-					})
+				DeferCleanup(func() {
+					os.Setenv("GIT_CONFIG_NOSYSTEM", git_config_nosystem)
+					os.Setenv("GIT_CONFIG", git_config)
+					os.Setenv("GIT_CONFIG_GLOBAL", git_global_config)
 				})
-			}
-			testForRepo(exampleSSHGithubRepo)
-			testForRepo(exampleSSHGitlabRepo)
-		})
+			})
 
-		It("should prompt auth for non-existing or private repo", func() {
-			testForRepo := func(repo string) {
-				withTempDir(func(target string) {
-					err := run(
-						"--url", repo,
-						"--target", target,
-					)
+			Context("failure diagnostics", func() {
+				const (
+					exampleSSHGithubRepo         = "git@github.com:shipwright-io/sample-go.git"
+					nonExistingSSHGithubRepo     = "git@github.com:shipwright-io/sample-go-nonexistent.git"
+					exampleHTTPGithubNonExistent = "https://github.com/shipwright-io/sample-go-nonexistent.git"
+					githubHTTPRepo               = "https://github.com/shipwright-io/sample-go.git"
 
-					Expect(err).ToNot(BeNil())
+					exampleSSHGitlabRepo         = "git@gitlab.com:gitlab-org/gitlab-runner.git"
+					exampleHTTPGitlabNonExistent = "https://gitlab.com/gitlab-org/gitlab-runner-nonexistent.git"
+					gitlabHTTPRepo               = "https://gitlab.com/gitlab-org/gitlab-runner.git"
+				)
 
-					errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+				It("should detect invalid basic auth credentials", func() {
+					testForRepo := func(repo string) {
+						withTempDir(func(secret string) {
+							file(filepath.Join(secret, "username"), 0400, []byte("ship"))
+							file(filepath.Join(secret, "password"), 0400, []byte("ghp_sFhFsSHhTzMDreGRLjmks4Tzuzgthdvfsrta"))
 
-					Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthPrompted.String()))
+							withTempDir(func(target string) {
+								err := run(
+									"--url", repo,
+									"--secret-path", secret,
+									"--target", target,
+								)
+
+								Expect(err).ToNot(BeNil())
+
+								errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+
+								Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthInvalidUserOrPass.String()))
+							})
+						})
+					}
+
+					testForRepo(exampleHTTPGitlabNonExistent)
+					testForRepo(exampleHTTPGithubNonExistent)
 				})
-			}
 
-			testForRepo(exampleHTTPGithubNonExistent)
-			testForRepo(exampleHTTPGitlabNonExistent)
-		})
+				It("should detect invalid ssh credentials", func() {
+					testForRepo := func(repo string) {
+						withTempDir(func(target string) {
+							withTempDir(func(secret string) {
+								file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte("invalid"))
+								err := run(
+									"--url", repo,
+									"--target", target,
+									"--secret-path", secret,
+								)
 
-		It("should detect non-existing revision", func() {
-			testRepo := func(repo string) {
-				withTempDir(func(target string) {
-					err := run(
-						"--url", repo,
-						"--target", target,
-						"--revision", "non-existent",
-					)
+								Expect(err).ToNot(BeNil())
 
-					Expect(err).ToNot(BeNil())
+								errorResult := shpgit.NewErrorResultFromMessage(err.Error())
 
-					errorResult := shpgit.NewErrorResultFromMessage(err.Error())
-					Expect(errorResult.Reason.String()).To(Equal(shpgit.RevisionNotFound.String()))
+								Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthInvalidKey.String()))
+							})
+						})
+					}
+					testForRepo(exampleSSHGithubRepo)
+					testForRepo(exampleSSHGitlabRepo)
 				})
-			}
 
-			testRepo(githubHTTPRepo)
-			testRepo(gitlabHTTPRepo)
-		})
+				It("should prompt auth for non-existing or private repo", func() {
+					testForRepo := func(repo string) {
+						withTempDir(func(target string) {
+							err := run(
+								"--url", repo,
+								"--target", target,
+							)
 
-		It("should detect non-existing repo given ssh authentication", func() {
-			sshPrivateKey := os.Getenv("TEST_GIT_PRIVATE_SSH_KEY")
-			if sshPrivateKey == "" {
-				Skip("Skipping private repository tests since TEST_GIT_PRIVATE_SSH_KEY environment variable is not set")
-			}
+							Expect(err).ToNot(BeNil())
 
-			testRepo := func(repo string) {
-				withTempDir(func(target string) {
-					withTempDir(func(secret string) {
-						// Mock the filesystem state of `kubernetes.io/ssh-auth` type secret volume mount
-						GinkgoWriter.Write([]byte(sshPrivateKey))
-						file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte(sshPrivateKey))
+							errorResult := shpgit.NewErrorResultFromMessage(err.Error())
 
-						err := run(
-							"--url", repo,
-							"--target", target,
-							"--secret-path", secret,
-						)
+							Expect(errorResult.Reason.String()).To(Equal(shpgit.AuthPrompted.String()))
+						})
+					}
 
-						Expect(err).ToNot(BeNil())
-
-						errorResult := shpgit.NewErrorResultFromMessage(err.Error())
-						Expect(errorResult.Reason.String()).To(Equal(shpgit.RepositoryNotFound.String()))
-					})
+					testForRepo(exampleHTTPGithubNonExistent)
+					testForRepo(exampleHTTPGitlabNonExistent)
 				})
-			}
 
-			testRepo(nonExistingSSHGithubRepo)
-			//TODO: once gitlab credentials are available: testRepo(nonExistingSSHGitlabRepo)
+				It("should detect non-existing revision", func() {
+					testRepo := func(repo string) {
+						withTempDir(func(target string) {
+							err := run(
+								"--url", repo,
+								"--target", target,
+								"--revision", "non-existent",
+							)
+
+							Expect(err).ToNot(BeNil())
+
+							errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+							Expect(errorResult.Reason.String()).To(Equal(shpgit.RevisionNotFound.String()))
+						})
+					}
+
+					testRepo(githubHTTPRepo)
+					testRepo(gitlabHTTPRepo)
+				})
+
+				It("should detect non-existing repo given ssh authentication", func() {
+					sshPrivateKey := os.Getenv("TEST_GIT_PRIVATE_SSH_KEY")
+					if sshPrivateKey == "" {
+						Skip("Skipping private repository tests since TEST_GIT_PRIVATE_SSH_KEY environment variable is not set")
+					}
+
+					testRepo := func(repo string) {
+						withTempDir(func(target string) {
+							withTempDir(func(secret string) {
+								// Mock the filesystem state of `kubernetes.io/ssh-auth` type secret volume mount
+								GinkgoWriter.Write([]byte(sshPrivateKey))
+								file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte(sshPrivateKey))
+
+								err := run(
+									"--url", repo,
+									"--target", target,
+									"--secret-path", secret,
+								)
+
+								Expect(err).ToNot(BeNil())
+
+								errorResult := shpgit.NewErrorResultFromMessage(err.Error())
+								Expect(errorResult.Reason.String()).To(Equal(shpgit.RepositoryNotFound.String()))
+							})
+						})
+					}
+
+					testRepo(nonExistingSSHGithubRepo)
+					//TODO: once gitlab credentials are available: testRepo(nonExistingSSHGitlabRepo)
+				})
+			})
 		})
 	})
 })
