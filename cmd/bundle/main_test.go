@@ -201,6 +201,7 @@ var _ = Describe("Bundle Loader", func() {
 			withTempDir(func(target string) {
 				Expect(run(
 					"--image", testImage,
+					"--secret-path", dockerConfigFile,
 					"--target", target,
 				)).To(Succeed())
 
