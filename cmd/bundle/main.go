@@ -279,12 +279,7 @@ func Prune(ctx context.Context, ref name.Reference, auth authn.Authenticator) er
 			return err
 		}
 
-		// IBM Container Registry API calls will only work in case an API key is available
-		if authr.Username != "iamapikey" {
-			return fmt.Errorf("unable to delete image %q, the provided access credentials do not contain an IBM API key", ref.String())
-		}
-
-		token, accountID, err := icrLogin(authr.Password)
+		token, accountID, err := icrLogin(ref.Context().RegistryStr(), authr.Username, authr.Password)
 		if err != nil {
 			return err
 		}
@@ -388,13 +383,23 @@ func dockerHubRepoDelete(token string, ref name.Reference) error {
 	}
 }
 
-func icrLogin(apikey string) (string, string, error) {
+func icrLogin(registry, username, apikey string) (string, string, error) {
+	// IBM Container Registry API calls will only work in case an API key is available
+	if username != "iamapikey" {
+		return "", "", fmt.Errorf("provided access credentials for %q do not contain an IBM API key", registry)
+	}
+
+	iamEndpoint := "https://iam.cloud.ibm.com/identity/token"
+	if strings.Contains(registry, "stg.icr.io") {
+		iamEndpoint = "https://iam.test.cloud.ibm.com/identity/token"
+	}
+
 	data := fmt.Sprintf("grant_type=%s&apikey=%s",
 		url.QueryEscape("urn:ibm:params:oauth:grant-type:apikey"),
 		apikey,
 	)
 
-	req, err := http.NewRequest("POST", "https://iam.cloud.ibm.com/identity/token", strings.NewReader(data))
+	req, err := http.NewRequest("POST", iamEndpoint, strings.NewReader(data))
 	if err != nil {
 		return "", "", err
 	}
