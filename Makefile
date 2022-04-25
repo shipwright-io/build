@@ -225,7 +225,7 @@ install-with-pprof:
 install-apis:
 	kubectl apply -f deploy/crds/
 	for i in 1 2 3 ; do \
-		kubectl wait --timeout=$(TIMEOUT) --for="condition=something" crd/clusterbuildstrategies.shipwright.io && \
+		kubectl wait --timeout=$(TIMEOUT) --for="condition=Established" crd/clusterbuildstrategies.shipwright.io && \
 		break ; \
 		sleep 15 ; \
 	done
