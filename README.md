@@ -37,7 +37,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - We also require a Tekton installation (v0.30+). To install the newest supported version, run:
 
   ```bash
-  kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.34.1/release.yaml
+  kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.35.1/release.yaml
   ```
 
 - Install the Shipwright deployment. To install the latest version, run:
@@ -156,7 +156,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Dependency                           | Supported versions           |
 | -------------------------------------| ---------------------------- |
 | [Kubernetes](https://kubernetes.io/) | v1.21.\*, v1.22.\* |
-| [Tekton](https://tekton.dev)         | v0.30.\*, v0.31.\*, v0.32.\*, v0.33.\*, v0.34.\* |
+| [Tekton](https://tekton.dev)         | v0.30.\*, v0.31.\*, v0.32.\*, v0.33.\*, v0.34.\*,  v0.35.\* |
 
 ### Platform support
 
