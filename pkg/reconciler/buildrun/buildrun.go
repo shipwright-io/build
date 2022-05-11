@@ -281,6 +281,15 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				return reconcile.Result{}, nil
 			}
 
+			// Validate the volumes
+			valid, reason, message = validate.BuildRunVolumes(strategy.GetVolumes(), buildRun.Spec.Volumes)
+			if !valid {
+				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, nil
+			}
+
 			// Create the TaskRun, this needs to be the last step in this block to be idempotent
 			generatedTaskRun, err := r.createTaskRun(ctx, svcAccount, strategy, build, buildRun)
 			if err != nil {
@@ -289,6 +298,22 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					return reconcile.Result{}, nil
 				}
 				// system call failure, reconcile again
+				return reconcile.Result{}, err
+			}
+
+			err = resources.CheckTaskRunVolumesExist(ctx, r.client, generatedTaskRun)
+			// if resource is not found, fais the build run
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), string(buildv1alpha1.VolumeDoesNotExist)); err != nil {
+						return reconcile.Result{}, err
+					}
+
+					// end of reconciliation
+					return reconcile.Result{}, nil
+				}
+
+				// some other error might have happened, return it and reconcile again
 				return reconcile.Result{}, err
 			}
 

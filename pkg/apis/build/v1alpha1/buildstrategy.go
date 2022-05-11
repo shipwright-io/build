@@ -18,8 +18,9 @@ const (
 
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
-	BuildSteps []BuildStep `json:"buildSteps,omitempty"`
-	Parameters []Parameter `json:"parameters,omitempty"`
+	BuildSteps []BuildStep           `json:"buildSteps,omitempty"`
+	Parameters []Parameter           `json:"parameters,omitempty"`
+	Volumes    []BuildStrategyVolume `json:"volumes,omitempty"`
 }
 
 // ParameterType indicates the type of a parameter
@@ -57,6 +58,19 @@ type Parameter struct {
 	// Default values for an array parameter
 	// +optional
 	Defaults *[]string `json:"defaults"`
+}
+
+// BuildStrategyVolume is a volume that will be mounted in build pod during build step
+// of the Build Strategy
+type BuildStrategyVolume struct {
+	// Indicates that this Volume can be overridden in a Build or BuildRun.
+	// Defaults to false
+	// +optional
+	Overridable *bool `json:"overridable,omitempty"`
+
+	// Inline BuildVolume object, same as Build's Volume
+	// +required
+	BuildVolume `json:",inline"`
 }
 
 // BuildStep defines a partial step that needs to run in container for building the image.
@@ -97,4 +111,5 @@ type BuilderStrategy interface {
 	GetResourceLabels() map[string]string
 	GetBuildSteps() []BuildStep
 	GetParameters() []Parameter
+	GetVolumes() []BuildStrategyVolume
 }

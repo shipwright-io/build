@@ -26,7 +26,7 @@ import (
 	"github.com/shipwright-io/build/test/utils"
 )
 
-var _ = Describe("GenerateTaskrun", func() {	
+var _ = Describe("GenerateTaskrun", func() {
 	var (
 		build                  *buildv1alpha1.Build
 		buildWithEnvs          *buildv1alpha1.Build
@@ -75,7 +75,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 			})
 
@@ -171,7 +171,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithMultipleAnnotationAndLabel))
 				Expect(err).To(BeNil())
 
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 
 				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
@@ -226,7 +226,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should contain env vars specified in Build in every BuildStrategy step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 
 				combinedEnvs, err := env.MergeEnvVars(buildRun.Spec.Env, buildWithEnvs.Spec.Env, true)
@@ -243,7 +243,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should contain env vars specified in BuildRun in every step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 
 				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, build.Spec.Env, true)
@@ -260,7 +260,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should override Build env vars with BuildRun env vars in every step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 
 				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, buildWithEnvs.Spec.Env, true)
@@ -278,7 +278,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should fail attempting to override an env var in a BuildStrategy", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategyWithEnvs.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategyWithEnvs.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(Equal("error(s) occurred merging environment variables into BuildStrategy \"buildah\" steps: [environment variable \"MY_VAR_1\" already exists, environment variable \"MY_VAR_2\" already exists]"))
 			})
@@ -301,7 +301,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				}
 
 				JustBeforeEach(func() {
-					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 					Expect(err).To(BeNil())
 				})
 
@@ -342,7 +342,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				}
 
 				JustBeforeEach(func() {
-					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{})
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
 					Expect(err).To(BeNil())
 				})
 
@@ -575,7 +575,7 @@ var _ = Describe("GenerateTaskrun", func() {
 		})
 
 		Context("when the build and buildrun both contain an output imageURL", func() {
-			BeforeEach(func() {	
+			BeforeEach(func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
 				Expect(err).To(BeNil())
 

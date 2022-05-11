@@ -16,6 +16,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining the Output](#defining-the-output)
   - [Defining Retention Parameters](#defining-retention-parameters)
+  - [Defining Volumes](#defining-volumes)
 - [BuildRun deletion](#BuildRun-deletion)
 
 ## Overview
@@ -570,6 +571,36 @@ An example of a user using both TTL and Limit retention fields. In case of such 
 ```
 
 **NOTE**: When changes are made to `retention.failedLimit` and `retention.succeededLimit` values, they come into effect as soon as the build is applied, thereby enforcing the new limits. On the other hand, changing the `retention.ttlAfterFailed` and `retention.ttlAfterSucceeded` values will only affect new buildruns. Old buildruns will adhere to the old TTL retention values. In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
+
+### Defining Volumes
+
+`Builds` can declare `volumes`. They must override `volumes` defined by the according `BuildStrategy`. If a `volume`
+is not `overridable` then the `BuildRun` will eventually fail.
+
+`Volumes` follow the declaration of [Pod Volumes](https://kubernetes.io/docs/concepts/storage/volumes/), so 
+all the usual `volumeSource` types are supported.
+
+Here is an example of `Build` object that overrides `volumes`:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: build-name
+spec:
+  source:
+    url: https://github.com/example/url
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile
+  output:
+    image: registry/namespace/image:latest
+  volumes:
+    - name: volume-name
+      configMap:
+        name: test-config
+```
 
 ### Sources
 

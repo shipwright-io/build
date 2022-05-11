@@ -18,6 +18,7 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/env"
+	"github.com/shipwright-io/build/pkg/volumes"
 )
 
 const (
@@ -66,6 +67,7 @@ func GenerateTaskSpec(
 	buildRun *buildv1alpha1.BuildRun,
 	buildSteps []buildv1alpha1.BuildStep,
 	parameterDefinitions []buildv1alpha1.Parameter,
+	buildStrategyVolumes []buildv1alpha1.BuildStrategyVolume,
 ) (*v1beta1.TaskSpec, error) {
 
 	generatedTaskSpec := v1beta1.TaskSpec{
@@ -169,6 +171,11 @@ func GenerateTaskSpec(
 		return nil, err
 	}
 
+	// This map will contain mapping from all volume mount names that build steps contain
+	// to their readonly status in order to later quickly check whether mount is correct
+	volumeMounts := make(map[string]bool)
+	buildStrategyVolumesMap := toVolumeMap(buildStrategyVolumes)
+
 	// define the steps coming from the build strategy
 	for _, containerValue := range buildSteps {
 
@@ -208,21 +215,22 @@ func GenerateTaskSpec(
 
 		generatedTaskSpec.Steps = append(generatedTaskSpec.Steps, step)
 
-		// Get volumeMounts added to Task's spec.Volumes
-		for _, volumeInBuildStrategy := range containerValue.VolumeMounts {
-			newVolume := true
-			for _, volumeInTask := range generatedTaskSpec.Volumes {
-				if volumeInTask.Name == volumeInBuildStrategy.Name {
-					newVolume = false
-				}
+		for _, vm := range containerValue.VolumeMounts {
+			// here we should check that volume actually exists for this mount
+			// and in case it does not, exit early with an error
+			if _, ok := buildStrategyVolumesMap[vm.Name]; !ok {
+				return nil, fmt.Errorf("Volume for the Volume Mount %q is not found", vm.Name)
 			}
-			if newVolume {
-				generatedTaskSpec.Volumes = append(generatedTaskSpec.Volumes, corev1.Volume{
-					Name: volumeInBuildStrategy.Name,
-				})
-			}
+			volumeMounts[vm.Name] = vm.ReadOnly
 		}
 	}
+
+	// Add volumes from the strategy to generated task spec
+	volumes, err := volumes.TaskSpecVolumes(volumeMounts, buildStrategyVolumes, build.Spec.Volumes, buildRun.Spec.Volumes)
+	if err != nil {
+		return nil, err
+	}
+	generatedTaskSpec.Volumes = append(generatedTaskSpec.Volumes, volumes...)
 
 	buildRunOutput := buildRun.Spec.Output
 	if buildRunOutput == nil {
@@ -262,6 +270,7 @@ func GenerateTaskRun(
 		buildRun,
 		strategy.GetBuildSteps(),
 		strategy.GetParameters(),
+		strategy.GetVolumes(),
 	)
 	if err != nil {
 		return nil, err
@@ -416,4 +425,12 @@ func isPropagatableAnnotation(key string) bool {
 		!strings.HasPrefix(key, buildv1alpha1.BuildStrategyDomain+"/") &&
 		!strings.HasPrefix(key, buildv1alpha1.BuildDomain+"/") &&
 		!strings.HasPrefix(key, buildv1alpha1.BuildRunDomain+"/")
+}
+
+func toVolumeMap(strategyVolumes []buildv1alpha1.BuildStrategyVolume) map[string]bool {
+	res := make(map[string]bool)
+	for _, v := range strategyVolumes {
+		res[v.Name] = true
+	}
+	return res
 }

@@ -881,9 +881,42 @@ A Kubernetes administrator can further restrict the usage of annotations by usin
 
 ## Volumes and VolumeMounts
 
-Build steps can declare a `volumeMount`, which allows data in the provided path to be shared across build steps.
-When a `volumeMount` is declared, Shipwright will create an `emptyDir` volume with the corresponding name.
-Build steps whose volume mounts share the same name will share the same underlying `emtpyDir` volume.
+Build Strategies can declare `volumes`. These `volumes` can be referred to by the build steps using `volumeMount`.
+Volumes in Build Strategy follow the declaration of [Pod Volumes](https://kubernetes.io/docs/concepts/storage/volumes/), so 
+all the usual `volumeSource` types are supported.
 
-In a future release, build strategy authors will be able to use other volume types for the volume mounts.
-When this feature is introduced, the volume and volume type will need to be explicitly declared.
+Volumes can be overridden by `Build`s and `BuildRun`s, so Build Strategies' volumes support an `overridable` flag, which
+is a boolean, and is `false` by default. In case volume is not overridable, `Build` or `BuildRun` that tries to override it,
+will fail.
+
+Build steps can declare a `volumeMount`, which allows them to access volumes defined by `BuildStrategy`, `Build` or `BuildRun`.
+
+Here is an example of `BuildStrategy` object that defines `volumes` and `volumeMount`s:
+```
+apiVersion: shipwright.io/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: buildah
+spec:
+  buildSteps:
+    - name: build
+      image: quay.io/containers/buildah:v1.23.1
+      workingDir: $(params.shp-source-root)
+      command:
+        - buildah
+        - bud
+        - --tls-verify=false
+        - --layers
+        - -f
+        - $(build.dockerfile)
+        - -t
+        - $(params.shp-output-image)
+        - $(params.shp-source-context)
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+  volumes:
+    - name: varlibcontainers
+      overridable: true
+      emptyDir: {}
+```

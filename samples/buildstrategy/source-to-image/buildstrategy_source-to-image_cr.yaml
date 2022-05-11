@@ -3,6 +3,11 @@ kind: ClusterBuildStrategy
 metadata:
   name: source-to-image
 spec:
+  volumes:
+    - name: gen-source
+      emptyDir: {}
+    - name: layout
+      emptyDir: {}
   buildSteps:
     - command:
         - /usr/local/bin/s2i

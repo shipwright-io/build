@@ -76,6 +76,11 @@ type BuildRunSpec struct {
 	// Contains information about retention params
 	// +optional
 	Retention *BuildRunRetention `json:"retention,omitempty"`
+
+	// Volumes contains volume Overrides of the BuildStrategy volumes in case those are allowed
+	// to be overridden. Must only contain volumes that exist in the corresponding BuildStrategy
+	// +optional
+	Volumes []BuildVolume `json:"volumes,omitempty"`
 }
 
 // BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.

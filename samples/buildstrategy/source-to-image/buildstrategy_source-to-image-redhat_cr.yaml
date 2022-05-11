@@ -4,6 +4,9 @@ kind: ClusterBuildStrategy
 metadata:
   name: source-to-image-redhat
 spec:
+  volumes:
+    - name: s2i
+      emptyDir: {}
   buildSteps:
     - name: s2i-generate
       image: registry.redhat.io/ocp-tools-43-tech-preview/source-to-image-rhel8:latest

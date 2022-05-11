@@ -14,6 +14,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining ParamValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
   - [Defining Retention Parameters](#defining-retention-parameters)
+  - [Defining Volumes](#defining-volumes)
 - [Canceling a `BuildRun`](#canceling-a-buildrun)
 - [Automatic `BuildRun` deletion](#automatic-buildrun-deletion)
 - [Specifying Environment Variables](#specifying-environment-variables)
@@ -193,6 +194,33 @@ spec:
 ```
 
 **NOTE** In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
+
+### Defining Volumes
+
+`BuildRuns` can declare `volumes`. They must override `volumes` defined by the according `BuildStrategy`. If a `volume`
+is not `overridable` then the `BuildRun` will eventually fail.
+
+In case `Build` and `BuildRun` that refers to this `Build` override the same `volume`, one that is defined in the `BuildRun`
+is the one used eventually.
+
+`Volumes` follow the declaration of [Pod Volumes](https://kubernetes.io/docs/concepts/storage/volumes/), so 
+all the usual `volumeSource` types are supported.
+
+Here is an example of `BuildRun` object that overrides `volumes`:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildrun-name
+spec:
+  buildRef:
+    name: build-name
+  volumes:
+    - name: volume-name
+      configMap:
+        name: test-config
+```
 
 ## Canceling a `BuildRun`
 
