@@ -33,7 +33,7 @@ echo "# Creating a new Kubernetes cluster..."
 kind create cluster --name="${KIND_CLUSTER_NAME}" --image="kindest/node:${KIND_CLUSTER_VERSION}" --wait=120s --config="${DIR}/../test/kind/config.yaml"
 
 echo "# Using KinD context..."
-kubectl config use-context "kind-kind"
+kubectl config use-context "kind-${KIND_CLUSTER_NAME}"
 
 echo "# KinD nodes:"
 kubectl get nodes

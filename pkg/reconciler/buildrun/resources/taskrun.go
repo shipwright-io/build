@@ -40,7 +40,6 @@ const (
 // getStringTransformations gets us MANDATORY replacements using
 // a poor man's templating mechanism - TODO: Use golang templating
 func getStringTransformations(fullText string) string {
-
 	stringTransformations := map[string]string{
 		// this will be removed, build strategy author should use $(params.shp-output-image) directly
 		"$(build.output.image)": fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
@@ -69,7 +68,6 @@ func GenerateTaskSpec(
 	parameterDefinitions []buildv1alpha1.Parameter,
 	buildStrategyVolumes []buildv1alpha1.BuildStrategyVolume,
 ) (*v1beta1.TaskSpec, error) {
-
 	generatedTaskSpec := v1beta1.TaskSpec{
 		Params: []v1beta1.ParamSpec{
 			{
@@ -255,7 +253,6 @@ func GenerateTaskRun(
 	serviceAccountName string,
 	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
-
 	// retrieve expected imageURL form build or buildRun
 	var image string
 	if buildRun.Spec.Output != nil {
@@ -320,6 +317,13 @@ func GenerateTaskRun(
 
 	for label, value := range strategy.GetResourceLabels() {
 		expectedTaskRun.Labels[label] = value
+	}
+
+	// WIP
+	for key, value := range build.GetLabels() {
+		if isPropagatableLabel(key) {
+			expectedTaskRun.Labels[key] = value
+		}
 	}
 
 	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
@@ -409,7 +413,6 @@ func GenerateTaskRun(
 func effectiveTimeout(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) *metav1.Duration {
 	if buildRun.Spec.Timeout != nil {
 		return buildRun.Spec.Timeout
-
 	} else if build.Spec.Timeout != nil {
 		return build.Spec.Timeout
 	}
@@ -433,4 +436,10 @@ func toVolumeMap(strategyVolumes []buildv1alpha1.BuildStrategyVolume) map[string
 		res[v.Name] = true
 	}
 	return res
+}
+
+// isPropagatableLabel filters out reserved label prefixes
+func isPropagatableLabel(key string) bool {
+	// WIP
+	return true
 }

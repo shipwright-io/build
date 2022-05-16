@@ -273,3 +273,8 @@ type BuildRetention struct {
 func init() {
 	SchemeBuilder.Register(&Build{}, &BuildList{})
 }
+
+// GetLabels returns the labels of the Build
+func (b Build) GetLabels() map[string]string {
+	return b.Labels
+}
