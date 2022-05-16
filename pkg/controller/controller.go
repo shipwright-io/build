@@ -7,6 +7,7 @@ package controller
 import (
 	"context"
 
+	pipelinev1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	"k8s.io/client-go/rest"
@@ -21,6 +22,7 @@ import (
 	"github.com/shipwright-io/build/pkg/reconciler/buildrunttlcleanup"
 	"github.com/shipwright-io/build/pkg/reconciler/buildstrategy"
 	"github.com/shipwright-io/build/pkg/reconciler/clusterbuildstrategy"
+	"github.com/shipwright-io/build/pkg/reconciler/tektonrun"
 )
 
 // NewManager add all the controllers to the manager and register the required schemes
@@ -40,6 +42,10 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 	ctxlog.Info(ctx, "Registering Components.")
 
 	if err := pipelinev1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		return nil, err
+	}
+
+	if err := pipelinev1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, err
 	}
 
@@ -70,6 +76,10 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 	}
 
 	if err := buildrunttlcleanup.Add(ctx, config, mgr); err != nil {
+		return nil, err
+	}
+
+	if err := tektonrun.Add(ctx, config, mgr); err != nil {
 		return nil, err
 	}
 
