@@ -10,7 +10,7 @@ require (
 	github.com/google/go-containerregistry v0.8.1-0.20220216220642-00c59d91847c
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.19.0
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
