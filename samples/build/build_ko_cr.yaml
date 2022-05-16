@@ -10,7 +10,7 @@ spec:
     - name: go-flags
       value: "-v -mod=vendor -ldflags=-w"
     - name: go-version
-      value: "1.17"
+      value: "1.18"
     - name: package-directory
       value: ./cmd/shipwright-build-controller
   source:
