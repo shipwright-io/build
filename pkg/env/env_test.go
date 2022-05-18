@@ -1,12 +1,13 @@
 // Copyright The Shipwright Contributors
 //
 // SPDX-License-Identifier: Apache-2.0
-package env
+package env_test
 
 import (
 	"reflect"
 	"testing"
 
+	"github.com/shipwright-io/build/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -283,7 +284,7 @@ func TestMergeEnvVars(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MergeEnvVars(tt.args.new, tt.args.into, tt.args.overwriteValues)
+			got, err := env.MergeEnvVars(tt.args.new, tt.args.into, tt.args.overwriteValues)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MergeEnvVars() error = %v, wantErr %v", err, tt.wantErr)
 				return
