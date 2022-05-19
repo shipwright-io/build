@@ -349,3 +349,19 @@ spec:
     - --
     - $(params.args[*])
 `
+
+const BuildStrategyWithCustomLabels = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: strategy-with-labels
+  labels:
+    domain/foo: strategy
+    domain/bar: baz
+spec:
+  buildSteps:
+  - name: sleep30
+    image: alpine:latest
+    command:
+    - sleep 30
+`

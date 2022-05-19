@@ -586,3 +586,20 @@ spec:
     ttlAfterFailed: 1m
     ttlAfterSucceeded: 1m
 `
+
+const MinimalBuildahBuildWithCustomLabels = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildah
+  labels:
+    domain/foo: build
+    domain/bar: baz
+spec:
+  source:
+    url: "https://github.com/shipwright-io/sample-go"
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  dockerfile: Dockerfile
+`

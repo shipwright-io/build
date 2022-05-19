@@ -240,3 +240,17 @@ spec:
   buildRef:
     name: buildah
 `
+
+const BuildahBuildRunWithCustomLabels = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildah-run
+  namespace: build-test
+  labels:
+    domain/foo: buildrun
+    domain/bar: baz
+spec:
+  buildRef:
+    name: buildah
+`

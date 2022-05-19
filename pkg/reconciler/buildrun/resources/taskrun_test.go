@@ -607,5 +607,87 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(paramOutputImageFound).To(BeTrue())
 			})
 		})
+
+		Context("when the taskrun is generated and strategy has custom labels", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithSAAndOutput))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithCustomLabels))
+				Expect(err).To(BeNil())
+			})
+
+			JustBeforeEach(func() {
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				Expect(err).To(BeNil())
+			})
+
+			It("should propagate custom labels to the TaskRun", func() {
+				Expect(got.Labels["domain/bar"]).To(Equal("baz"))
+			})
+
+			It("shouldn't override custom labels set by the strategy", func() {
+				Expect(got.Labels["domain/foo"]).To(Equal("strategy"))
+			})
+		})
+
+		Context("when the taskrun is generated and build has custom labels", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuildWithCustomLabels))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithSAAndOutput))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithCustomLabels))
+				Expect(err).To(BeNil())
+			})
+
+			JustBeforeEach(func() {
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				Expect(err).To(BeNil())
+			})
+
+			It("should propagate custom labels to the TaskRun", func() {
+				Expect(got.Labels["domain/bar"]).To(Equal("baz"))
+			})
+
+			It("should override custom labels defined by strategy", func() {
+				Expect(got.Labels["domain/foo"]).ToNot(Equal("strategy"))
+				Expect(got.Labels["domain/foo"]).To(Equal("build"))
+			})
+		})
+
+		Context("when the taskrun is generated and buildrun has custom labels", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuildWithCustomLabels))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithCustomLabels))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithCustomLabels))
+				Expect(err).To(BeNil())
+			})
+
+			JustBeforeEach(func() {
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				Expect(err).To(BeNil())
+			})
+
+			It("should propagate custom labels to the TaskRun", func() {
+				Expect(got.Labels["domain/foo"]).To(Equal("buildrun"))
+				Expect(got.Labels["domain/bar"]).To(Equal("baz"))
+			})
+
+			It("should override custom labels defined by strategy or build", func() {
+				Expect(got.Labels["domain/foo"]).ToNot(Equal("strategy"))
+				Expect(got.Labels["domain/foo"]).ToNot(Equal("build"))
+				Expect(got.Labels["domain/foo"]).To(Equal("buildrun"))
+			})
+		})
 	})
 })
