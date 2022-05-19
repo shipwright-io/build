@@ -175,10 +175,14 @@ test-unit-coverage: test-unit gocov
 
 .PHONY: test-unit-ginkgo
 test-unit-ginkgo: ginkgo
+	rm -f build/coverage/*unit.coverprofile
 	$(GINKGO) \
+		--coverprofile=unit.coverprofile \
+		--output-dir=build/coverage \
 		--randomize-all \
 		--randomize-suites \
 		--fail-on-pending \
+		--keep-going \
 		--slow-spec-threshold=4m \
 		-compilers=2 \
 		-race \

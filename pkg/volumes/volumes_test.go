@@ -1,7 +1,7 @@
 // Copyright The Shipwright Contributors
 //
 // SPDX-License-Identifier: Apache-2.0
-package volumes
+package volumes_test
 
 import (
 	"encoding/json"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/volumes"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -274,7 +275,7 @@ func TestMergeVolumes(t *testing.T) {
 
 	for _, td := range testingData {
 		t.Run(td.name, func(t *testing.T) {
-			res, err := MergeBuildVolumes(td.into, td.mergers)
+			res, err := volumes.MergeBuildVolumes(td.into, td.mergers)
 
 			if (err != nil) != td.expectErr {
 				t.Errorf("%s: expected error %v, got %v", td.name, td.expectErr, err)
