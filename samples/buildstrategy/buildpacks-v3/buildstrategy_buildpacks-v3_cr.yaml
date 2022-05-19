@@ -3,6 +3,8 @@ apiVersion: shipwright.io/v1alpha1
 kind: ClusterBuildStrategy
 metadata:
   name: buildpacks-v3
+  labels:
+    cloudgaap.io/strategy: value
 spec:
   volumes:
     - name: platform-env

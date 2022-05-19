@@ -84,6 +84,11 @@ func (s BuildStrategy) GetVolumes() []BuildStrategyVolume {
 	return s.Spec.Volumes
 }
 
+// GetLabels returns the labels the build strategy
+func (s BuildStrategy) GetLabels() map[string]string {
+	return s.Labels
+}
+
 func init() {
 	SchemeBuilder.Register(&BuildStrategy{}, &BuildStrategyList{})
 }

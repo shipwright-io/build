@@ -3,7 +3,7 @@ kind: Build
 metadata:
   name: buildpack-nodejs-build
   labels:
-    cloudgaap.io/test: value
+    cloudgaap.io/build: value
 spec:
   source:
     url: https://github.com/shipwright-io/sample-nodejs
@@ -12,12 +12,14 @@ spec:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
   output:
-    image: 172.18.0.3:5000/sample-nodejs:latest
+    image: 172.24.0.3:5000/sample-nodejs:latest
 ---
 apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-001
+  labels:
+    cloudgaap.io/buildrun: value
 spec:
   buildRef:
     name: buildpack-nodejs-build

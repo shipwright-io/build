@@ -83,8 +83,7 @@ type BuildStep struct {
 }
 
 // BuildStrategyStatus defines the observed state of BuildStrategy
-type BuildStrategyStatus struct {
-}
+type BuildStrategyStatus struct{}
 
 // BuildStrategyKind defines the type of BuildStrategy used by the build.
 type BuildStrategyKind string
@@ -112,4 +111,5 @@ type BuilderStrategy interface {
 	GetBuildSteps() []BuildStep
 	GetParameters() []Parameter
 	GetVolumes() []BuildStrategyVolume
+	GetLabels() map[string]string
 }

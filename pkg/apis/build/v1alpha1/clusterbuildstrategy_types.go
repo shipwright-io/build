@@ -85,6 +85,11 @@ func (s ClusterBuildStrategy) GetVolumes() []BuildStrategyVolume {
 	return s.Spec.Volumes
 }
 
+// GetLabels returns the labels of the build strategy
+func (s ClusterBuildStrategy) GetLabels() map[string]string {
+	return s.Labels
+}
+
 func init() {
 	SchemeBuilder.Register(&ClusterBuildStrategy{}, &ClusterBuildStrategyList{})
 }

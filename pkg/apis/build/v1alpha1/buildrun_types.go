@@ -272,6 +272,11 @@ func (br *BuildRun) IsCanceled() bool {
 	return br.Spec.State != nil && *br.Spec.State == BuildRunStateCancel
 }
 
+// GetLabels returns the labels of the BuildRun
+func (br *BuildRun) GetLabels() map[string]string {
+	return br.Labels
+}
+
 // Conditions defines a list of Condition
 type Conditions []Condition
 

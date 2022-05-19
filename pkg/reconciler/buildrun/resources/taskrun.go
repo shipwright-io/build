@@ -319,8 +319,22 @@ func GenerateTaskRun(
 		expectedTaskRun.Labels[label] = value
 	}
 
-	// WIP
+	// assign labels from the buil strategy, filter out those that should not be propagated
+	for key, value := range strategy.GetLabels() {
+		if isPropagatableLabel(key) {
+			expectedTaskRun.Labels[key] = value
+		}
+	}
+
+	// assign labels from the build, filter out those that should not be propagated
 	for key, value := range build.GetLabels() {
+		if isPropagatableLabel(key) {
+			expectedTaskRun.Labels[key] = value
+		}
+	}
+
+	// assign labels from the buildrun, filter out those that should not be propagated
+	for key, value := range buildRun.GetLabels() {
 		if isPropagatableLabel(key) {
 			expectedTaskRun.Labels[key] = value
 		}
