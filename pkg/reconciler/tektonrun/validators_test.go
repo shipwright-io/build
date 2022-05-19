@@ -102,18 +102,4 @@ var _ = Describe("Validate Tekton Run", func() {
 		Expect(err.Error()).To(ContainSubstring("retries are not supported"))
 
 	})
-
-	It("is invalid if the Run has parameters specified", func() {
-		tektonRun.Spec = tektonv1alpha1.RunSpec{
-			Params: []tektonv1beta1.Param{
-				{
-					Name:  "abrbitrary-apram",
-					Value: *tektonv1beta1.NewArrayOrString("arbitrary-value"),
-				},
-			},
-		}
-		err := tektonrun.ValidateTektonRun(tektonRun)
-		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("parameters are not supported"))
-	})
 })

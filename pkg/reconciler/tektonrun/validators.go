@@ -33,7 +33,7 @@ func ValidateTektonRun(tektonRun *tektonv1alpha1.Run) error {
 	}
 
 	if err := validateRunParameters(tektonRun.Spec.Params, path.Child("params")); err != nil {
-		allErrs = append(allErrs, err)
+		allErrs = append(allErrs, err...)
 	}
 
 	if len(allErrs) == 0 {
@@ -112,9 +112,7 @@ func validateRunRetires(retries int, path *field.Path) *field.Error {
 	return nil
 }
 
-func validateRunParameters(params []tektonv1beta1.Param, path *field.Path) *field.Error {
-	if len(params) > 0 {
-		return field.Invalid(path, "[]array", "parameters are not supported")
-	}
+func validateRunParameters(params []tektonv1beta1.Param, path *field.Path) field.ErrorList {
+	// Tekton alpha APIs introduce implicit parameters, which need to be passed through
 	return nil
 }
