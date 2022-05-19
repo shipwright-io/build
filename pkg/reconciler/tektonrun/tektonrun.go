@@ -184,5 +184,5 @@ func (r *ReconcileTektonRun) updateRunStatus(ctx context.Context, tektonRun *tek
 		return reconcile.Result{Requeue: true}, err
 	}
 	ctxlog.Debug(ctx, "updated run status")
-	return reconcile.Result{Requeue: false}, nil
+	return reconcile.Result{Requeue: true}, nil
 }
