@@ -688,6 +688,25 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Labels["domain/foo"]).ToNot(Equal("build"))
 				Expect(got.Labels["domain/foo"]).To(Equal("buildrun"))
 			})
+
+			It("should avoid reserved label to be set by the strategy", func() {
+				_, isSet := got.Labels["kubernetes.io"]
+				Expect(isSet).To(BeFalse())
+				_, isSet = got.Labels["foo.kubernetes.io"]
+				Expect(isSet).To(BeFalse())
+				_, isSet = got.Labels["k8s.io"]
+				Expect(isSet).To(BeFalse())
+				_, isSet = got.Labels["foo.k8s.io"]
+				Expect(isSet).To(BeFalse())
+				_, isSet = got.Labels["tekton.dev"]
+				Expect(isSet).To(BeFalse())
+				_, isSet = got.Labels["foo.tekton.dev"]
+				Expect(isSet).To(BeFalse())
+				_, isSet = got.Labels["shipwright.io"]
+				Expect(isSet).To(BeFalse())
+				_, isSet = got.Labels["foo.shipwright.io"]
+				Expect(isSet).To(BeFalse())
+			})
 		})
 	})
 })

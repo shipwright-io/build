@@ -358,6 +358,14 @@ metadata:
   labels:
     domain/foo: strategy
     domain/bar: baz
+    kubernetes.io/foo: bar
+    foo.kubernetes.io/bar: baz
+    k8s.io/foo: bar
+    foo.k8s.io/bar: baz
+    tekton.dev/foo: bar
+    foo.tekton.dev/bar: baz
+    shipwright.io/foo: bar
+    foo.shipwright.io/bar: baz
 spec:
   buildSteps:
   - name: sleep30

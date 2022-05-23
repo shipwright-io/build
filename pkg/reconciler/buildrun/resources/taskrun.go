@@ -7,6 +7,7 @@ package resources
 import (
 	"fmt"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -35,6 +36,8 @@ const (
 	inputParamContextDir = "CONTEXT_DIR"
 
 	imageMutateContainerName = "mutate-image"
+
+	reservedLabels = `([a-z0-9]+\.)*(kubernetes.io|k8s.io|tekton.dev|shipwright.io)`
 )
 
 // getStringTransformations gets us MANDATORY replacements using
@@ -319,23 +322,28 @@ func GenerateTaskRun(
 		expectedTaskRun.Labels[label] = value
 	}
 
+	reserved, err := regexp.Compile(reservedLabels)
+	if err != nil {
+		return nil, err
+	}
+
 	// assign labels from the buil strategy, filter out those that should not be propagated
 	for key, value := range strategy.GetLabels() {
-		if isPropagatableLabel(key) {
+		if !reserved.MatchString(value) {
 			expectedTaskRun.Labels[key] = value
 		}
 	}
 
 	// assign labels from the build, filter out those that should not be propagated
 	for key, value := range build.GetLabels() {
-		if isPropagatableLabel(key) {
+		if !reserved.MatchString(value) {
 			expectedTaskRun.Labels[key] = value
 		}
 	}
 
 	// assign labels from the buildrun, filter out those that should not be propagated
 	for key, value := range buildRun.GetLabels() {
-		if isPropagatableLabel(key) {
+		if !reserved.MatchString(value) {
 			expectedTaskRun.Labels[key] = value
 		}
 	}
@@ -450,10 +458,4 @@ func toVolumeMap(strategyVolumes []buildv1alpha1.BuildStrategyVolume) map[string
 		res[v.Name] = true
 	}
 	return res
-}
-
-// isPropagatableLabel filters out reserved label prefixes
-func isPropagatableLabel(key string) bool {
-	// WIP
-	return true
 }
