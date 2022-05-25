@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining Retention Parameters](#defining-retention-parameters)
   - [Defining Volumes](#defining-volumes)
 - [BuildRun deletion](#BuildRun-deletion)
+- [Labels](#labels)
 
 ## Overview
 
@@ -640,3 +641,18 @@ metadata:
   annotations:
     build.shipwright.io/build-run-deletion: "true"
 ```
+
+## Labels
+
+Labels can be defined for a Build as for any other Kubernetes object. Labels are propagated to the TaskRun and from there, Tekton propagates them to the Pod. A common use case for this is being able to filter resources, e.g. when fetching logs.
+
+Since you can define labels for all of BuildStrategy/ClusterBuildStrategy, Build and BuildRun resources, if you define the same label key for different resources in the same build "pipeline", only the value in the last definition stage will be used (e.g. if you define `someproj.io/label: value01` in a Build and `someproj.io/label: value02` in a BuildRun that references such Build, `value02` will be used).
+
+The following labels are not propagated:
+
+- `*kubernetes.io/*`
+- `*k8s.io/*`
+- `*shipwright.io/*`
+- `*tekton.dev/*`
+
+A Kubernetes administrator can further restrict the usage of labels by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).

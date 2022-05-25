@@ -38,7 +38,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Strategies with different resources](#strategies-with-different-resources)
   - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
   - [Examples of Tekton resources management](#examples-of-tekton-resources-management)
-- [Annotations](#annotations)
+- [Labels and Annotations](#labels-and-annotations)
 - [Volumes and VolumeMounts](#volumes-and-volumemounts)
 
 ## Overview
@@ -862,12 +862,24 @@ In the above scenario, we can see how the maximum numbers for resource requests 
 
 When a `LimitRange` exists on the namespace, `Tekton Pipeline` controller will do the same approach as stated in the above two scenarios. The difference is that for the containers that have lower values, instead of zero, they will get the `minimum values of the LimitRange`.
 
-## Annotations
+## Labels and Annotations
 
-Annotations can be defined for a BuildStrategy/ClusterBuildStrategy as for any other Kubernetes object. Annotations are propagated to the TaskRun and from there, Tekton propagates them to the Pod. Use cases for this are for example:
+Labels and annotations can be defined for a BuildStrategy/ClusterBuildStrategy as for any other Kubernetes object. Labels and annotations are propagated to the TaskRun and from there, Tekton propagates them to the Pod. Use cases for this are for example:
 
-- The Kubernetes [Network Traffic Shaping](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/#support-traffic-shaping) feature looks for the `kubernetes.io/ingress-bandwidth` and `kubernetes.io/egress-bandwidth` annotations to limit the network bandwidth the `Pod` is allowed to use.
-- The [AppArmor profile of a container](https://kubernetes.io/docs/tutorials/clusters/apparmor/) is defined using the `container.apparmor.security.beta.kubernetes.io/<container_name>` annotation.
+- Labels
+  - Being able to filter resources, e.g. when fetching logs.
+- Annotations
+  - The Kubernetes [Network Traffic Shaping](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/#support-traffic-shaping) feature looks for the `kubernetes.io/ingress-bandwidth` and `kubernetes.io/egress-bandwidth` annotations to limit the network bandwidth the `Pod` is allowed to use.
+  - The [AppArmor profile of a container](https://kubernetes.io/docs/tutorials/clusters/apparmor/) is defined using the `container.apparmor.security.beta.kubernetes.io/<container_name>` annotation.
+
+Since you can define labels for all of BuildStrategy/ClusterBuildStrategy, Build and BuildRun resources, if you define the same label key for different resources in the same build "pipeline", only the value in the last definition stage will be used (e.g. if you define `someproj.io/label: value01` in a Build and `someproj.io/label: value02` in a BuildRun that references such Build, `value02` will be used).
+
+The following labels are not propagated:
+
+- `*kubernetes.io/*`
+- `*k8s.io/*`
+- `*shipwright.io/*`
+- `*tekton.dev/*`
 
 The following annotations are not propagated:
 
@@ -877,7 +889,7 @@ The following annotations are not propagated:
 - `build.shipwright.io/*`
 - `buildrun.shipwright.io/*`
 
-A Kubernetes administrator can further restrict the usage of annotations by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).
+A Kubernetes administrator can further restrict the usage of labels and annotations by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).
 
 ## Volumes and VolumeMounts
 

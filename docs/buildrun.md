@@ -25,6 +25,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Step Results in BuildRun Status](#step-results-in-buildrun-status)
   - [Build Snapshot](#build-snapshot)
 - [Relationship with Tekton Tasks](#relationship-with-tekton-tasks)
+- [Labels](#labels)
 
 ## Overview
 
@@ -470,3 +471,18 @@ For every BuildRun controller reconciliation, the `buildSpec` in the status of t
 The `BuildRun` resource abstracts the image construction by delegating this work to the Tekton Pipeline [TaskRun](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md). Compared to a Tekton Pipeline [Task](https://github.com/tektoncd/pipeline/blob/main/docs/tasks.md), a `TaskRun` runs all `steps` until completion of the `Task` or until a failure occurs in the `Task`.
 
 During the Reconcile, the `BuildRun` controller will generate a new `TaskRun`. The controller will embed in the `TaskRun` `Task` definition the requires `steps` to execute during the execution. These `steps` are defined in the strategy defined in the `Build` resource, either a `ClusterBuildStrategy` or a `BuildStrategy`.
+
+## Labels
+
+Labels can be defined for a BuildRun as for any other Kubernetes object. Labels are propagated to the TaskRun and from there, Tekton propagates them to the Pod. A common use case for this is being able to filter resources, e.g. when fetching logs.
+
+Since you can define labels for all of BuildStrategy/ClusterBuildStrategy, Build and BuildRun resources, if you define the same label key for different resources in the same build "pipeline", only the value in the last definition stage will be used (e.g. if you define `someproj.io/label: value01` in a Build and `someproj.io/label: value02` in a BuildRun that references such Build, `value02` will be used).
+
+The following labels are not propagated:
+
+- `*kubernetes.io/*`
+- `*k8s.io/*`
+- `*shipwright.io/*`
+- `*tekton.dev/*`
+
+A Kubernetes administrator can further restrict the usage of labels by using policy engines like [Open Policy Agent](https://www.openpolicyagent.org/).
