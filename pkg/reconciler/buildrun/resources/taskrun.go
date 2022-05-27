@@ -327,7 +327,7 @@ func GenerateTaskRun(
 		return nil, err
 	}
 
-	// assign labels from the buil strategy, filter out those that should not be propagated
+	// assign labels from the build strategy, filter out those that should not be propagated
 	for key, value := range strategy.GetLabels() {
 		if !reserved.MatchString(value) {
 			expectedTaskRun.Labels[key] = value
