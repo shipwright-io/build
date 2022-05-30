@@ -206,6 +206,12 @@ The build strategy provides the following parameters that you can set in a Build
 | `package-directory` | The directory inside the context directory containing the main package. | `.` |
 | `target-platform` | Target platform to be built. For example: `linux/arm64`. Multiple platforms can be provided separated by comma, for example: `linux/arm64,linux/amd64`. The value `all` will build all platforms supported by the base image. The value `current` will build the platform on which the build runs. | `current` |
 
+### Volumes
+
+| Volume  | Description |
+| ------- | ----------- |
+| gocache | Volume to contain the GOCACHE. Can be set to a persistent volume to optimize compilation performance for rebuilds. The default is an emptyDir volume which means that the cached data is discarded at the end of a BuildRun. |
+
 ## Source to Image
 
 This BuildStrategy is composed by [`source-to-image`][s2i] and [`kaniko`][kaniko] in order to generate a `Dockerfile` and prepare the application to be built later on with a builder.

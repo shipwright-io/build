@@ -4,7 +4,7 @@ kind: Build
 metadata:
   name: ko-build
   annotations:
-    build.build.dev/build-run-deletion: "false"
+    build.shipwright.io/build-run-deletion: "false"
 spec:
   paramValues:
     - name: go-flags

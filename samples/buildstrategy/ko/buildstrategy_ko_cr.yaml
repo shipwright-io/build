@@ -20,6 +20,11 @@ spec:
     - name: target-platform
       description: "Target platform to be built. For example: 'linux/arm64'. Multiple platforms can be provided separated by comma, for example: 'linux/arm64,linux/amd64'. The value 'all' will build all platforms supported by the base image. The value 'current' will build the platform on which the build runs."
       default: current
+  volumes:
+    - name: gocache
+      description: "Volume to contain the GOCACHE. Can be set to a persistent volume to optimize compilation performance for rebuilds."
+      overridable: true
+      emptyDir: {}
   buildSteps:
     - name: prepare
       image: golang:$(params.go-version)
@@ -49,6 +54,10 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
+      volumeMounts:
+        - mountPath: /gocache
+          name: gocache
+          readOnly: false
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
@@ -56,6 +65,8 @@ spec:
           value: /tekton/home
         - name: GOFLAGS
           value: $(params.go-flags)
+        - name: GOCACHE
+          value: /gocache
         - name: PARAM_OUTPUT_IMAGE
           value: $(params.shp-output-image)
         - name: PARAM_SOURCE_CONTEXT
