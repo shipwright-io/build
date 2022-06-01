@@ -43,13 +43,13 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.9.0/release.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.10.0/release.yaml
   ```
 
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.9.0/sample-strategies.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.10.0/sample-strategies.yaml
   ```
 
 - Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):
@@ -139,6 +139,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version | Docs                           | Examples                    |
 | ------- | ------------------------------ | --------------------------- |
 | HEAD    | [Docs @ HEAD](docs/README.md) | [Examples @ HEAD](samples) |
+| [v0.10.0](https://github.com/shipwright-io/build/releases/tag/v0.10.0)    | [Docs @ v0.10.0](https://github.com/shipwright-io/build/tree/v0.10.0/docs) | [Examples @ v0.10.0](https://github.com/shipwright-io/build/tree/v0.10.0/samples) |
 | [v0.9.0](https://github.com/shipwright-io/build/releases/tag/v0.9.0)    | [Docs @ v0.9.0](https://github.com/shipwright-io/build/tree/v0.9.0/docs) | [Examples @ v0.9.0](https://github.com/shipwright-io/build/tree/v0.9.0/samples) |
 | [v0.8.0](https://github.com/shipwright-io/build/releases/tag/v0.8.0)    | [Docs @ v0.8.0](https://github.com/shipwright-io/build/tree/v0.8.0/docs) | [Examples @ v0.8.0](https://github.com/shipwright-io/build/tree/v0.8.0/samples) |
 | [v0.7.0](https://github.com/shipwright-io/build/releases/tag/v0.7.0)    | [Docs @ v0.7.0](https://github.com/shipwright-io/build/tree/v0.7.0/docs) | [Examples @ v0.7.0](https://github.com/shipwright-io/build/tree/v0.7.0/samples) |
