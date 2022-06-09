@@ -466,6 +466,87 @@ spec:
                       should take to execute.
                     format: duration
                     type: string
+                  trigger:
+                    description: Trigger defines the scenarios where a new build should
+                      be triggered.
+                    properties:
+                      secretRef:
+                        description: SecretRef points to a local object carrying the
+                          secret token to validate webhook request.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                      when:
+                        description: When the list of scenarios when a new build should
+                          take place.
+                        items:
+                          description: TriggerWhen a given scenario where the webhook
+                            trigger is applicable.
+                          properties:
+                            github:
+                              description: GitHub describes how to trigger builds
+                                based on GitHub (SCM) events.
+                              properties:
+                                branches:
+                                  description: Branches slice of branch names where
+                                    the event applies.
+                                  items:
+                                    type: string
+                                  type: array
+                                events:
+                                  description: Events GitHub event names.
+                                  items:
+                                    description: GitHubEventName set of WhenGitHub
+                                      valid event names.
+                                    type: string
+                                  minItems: 1
+                                  type: array
+                              type: object
+                            image:
+                              description: Image slice of image names where the event
+                                applies.
+                              properties:
+                                names:
+                                  description: Names fully qualified image names.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            name:
+                              description: Name name or the short description of the
+                                trigger condition.
+                              type: string
+                            objectRef:
+                              description: ObjectRef describes how to match a foreign
+                                resource, either using the name or the label selector,
+                                plus the current resource status.
+                              properties:
+                                name:
+                                  description: Name target object name.
+                                  type: string
+                                selector:
+                                  additionalProperties:
+                                    type: string
+                                  description: Selector label selector.
+                                  type: object
+                                status:
+                                  description: Status object status.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            type:
+                              description: Type the event type
+                              type: string
+                          required:
+                          - name
+                          - type
+                          type: object
+                        type: array
+                    type: object
                   volumes:
                     description: Volumes contains volume Overrides of the BuildStrategy
                       volumes in case those are allowed to be overridden. Must only
@@ -4190,6 +4271,87 @@ spec:
                       should take to execute.
                     format: duration
                     type: string
+                  trigger:
+                    description: Trigger defines the scenarios where a new build should
+                      be triggered.
+                    properties:
+                      secretRef:
+                        description: SecretRef points to a local object carrying the
+                          secret token to validate webhook request.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                        type: object
+                      when:
+                        description: When the list of scenarios when a new build should
+                          take place.
+                        items:
+                          description: TriggerWhen a given scenario where the webhook
+                            trigger is applicable.
+                          properties:
+                            github:
+                              description: GitHub describes how to trigger builds
+                                based on GitHub (SCM) events.
+                              properties:
+                                branches:
+                                  description: Branches slice of branch names where
+                                    the event applies.
+                                  items:
+                                    type: string
+                                  type: array
+                                events:
+                                  description: Events GitHub event names.
+                                  items:
+                                    description: GitHubEventName set of WhenGitHub
+                                      valid event names.
+                                    type: string
+                                  minItems: 1
+                                  type: array
+                              type: object
+                            image:
+                              description: Image slice of image names where the event
+                                applies.
+                              properties:
+                                names:
+                                  description: Names fully qualified image names.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            name:
+                              description: Name name or the short description of the
+                                trigger condition.
+                              type: string
+                            objectRef:
+                              description: ObjectRef describes how to match a foreign
+                                resource, either using the name or the label selector,
+                                plus the current resource status.
+                              properties:
+                                name:
+                                  description: Name target object name.
+                                  type: string
+                                selector:
+                                  additionalProperties:
+                                    type: string
+                                  description: Selector label selector.
+                                  type: object
+                                status:
+                                  description: Status object status.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            type:
+                              description: Type the event type
+                              type: string
+                          required:
+                          - name
+                          - type
+                          type: object
+                        type: array
+                    type: object
                   volumes:
                     description: Volumes contains volume Overrides of the BuildStrategy
                       volumes in case those are allowed to be overridden. Must only
