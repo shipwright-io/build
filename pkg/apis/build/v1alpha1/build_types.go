@@ -60,6 +60,17 @@ const (
 	VolumeNotOverridable BuildReason = "VolumeNotOverridable"
 	// UndefinedVolume indicates that volume defined by build is not found in the strategy
 	UndefinedVolume BuildReason = "UndefinedVolume"
+	// TriggerNameCanNotBeBlank indicates the trigger condition does not have a name
+	TriggerNameCanNotBeBlank BuildReason = "TriggerNameCanNotBeBlank"
+	// TriggerInvalidType indicates the trigger type is invalid
+	TriggerInvalidType BuildReason = "TriggerInvalidType"
+	// TriggerInvalidGitHubWebHook indicates the trigger type GitHub is invalid
+	TriggerInvalidGitHubWebHook BuildReason = "TriggerInvalidGitHubWebHook"
+	// TriggerInvalidImage indicates the trigger type Image is invalid
+	TriggerInvalidImage BuildReason = "TriggerInvalidImage"
+	// TriggerInvalidPipeline indicates the trigger type Pipeline is invalid
+	TriggerInvalidPipeline BuildReason = "TriggerInvalidPipeline"
+
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
 )
@@ -108,6 +119,11 @@ type BuildSpec struct {
 	//
 	// +optional
 	Sources []BuildSource `json:"sources,omitempty"`
+
+	// Trigger defines the scenarios where a new build should be triggered.
+	//
+	// +optional
+	Trigger *Trigger `json:"trigger,omitempty"`
 
 	// Strategy references the BuildStrategy to use to build the container
 	// image.
