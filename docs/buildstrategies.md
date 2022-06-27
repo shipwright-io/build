@@ -906,7 +906,7 @@ metadata:
 spec:
   buildSteps:
     - name: build
-      image: quay.io/containers/buildah:v1.23.3
+      image: quay.io/containers/buildah:v1.26.0
       workingDir: $(params.shp-source-root)
       command:
         - buildah
