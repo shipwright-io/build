@@ -17,6 +17,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining the Output](#defining-the-output)
   - [Defining Retention Parameters](#defining-retention-parameters)
   - [Defining Volumes](#defining-volumes)
+  - [Defining Triggers](#defining-triggers)
 - [BuildRun deletion](#BuildRun-deletion)
 
 ## Overview
@@ -600,6 +601,109 @@ spec:
     - name: volume-name
       configMap:
         name: test-config
+```
+
+### Defining Triggers
+
+Using the triggers, you can submit `BuildRun` instances when certain events happen. The idea is to be able to trigger Shipwright builds in an event driven fashion, for that purpose you can watch certain types of events.
+
+**Note**: triggers rely on the [Shipwright Triggers](https://github.com/shipwright-io/triggers) project to be deployed and configured in the same Kubernetes cluster where you run Shipwright Build. If it is not set up, the triggers defined in a Build are ignored.
+
+The types of events under watch are defined on the `.spec.trigger` attribute, please consider the following example:
+
+```yaml
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+    credentials:
+      name: webhook-secret
+  trigger:
+    when: []
+```
+
+Certain types of events will use attributes defined on `.spec.source` to complete the information needed in order to dispatch events.
+
+#### GitHub
+
+The GitHub type is meant to react upon events coming from GitHub WebHook interface, the events are compared against the existing `Build` resources, and therefore it can identify the `Build` objects based on `.spec.source.url` combined with the attributes on `.spec.trigger.when[].github`.
+
+To identify a given `Build` object, the first criteria is the repository URL, and then the branch name listed on the GitHub event payload must also match. Following the criteria:
+
+- First, the branch name is checked against the `.spec.trigger.when[].github.branches` entries
+- If the `.spec.trigger.when[].github.branches` is empty, the branch name is compared against `.spec.source.revision`
+- If `spec.source.revision` is empty, the default revision name is used ("main")
+
+The following snippet shows a configuration machting `Push` and `PullRequest` events on the `main` branch, for example:
+
+```yaml
+# [...]
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+  trigger:
+    when:
+      - name: push and pull-request on the main branch
+        type: GitHub
+        github:
+          events:
+            - Push
+            - PullRequest
+          branches:
+            - main
+```
+
+#### Image
+
+In order to watch over images, in combination with the [Image](https://github.com/shipwright-io/image) controller, you can trigger new builds when those container image names change.
+
+For instance, lets imagine the image named `ghcr.io/some/base-image` is used as input for the Build process and every time it changes we would like to trigger a new build. Please consider the following snippet:
+
+```yaml
+# [...]
+spec:
+  trigger:
+    when:
+      - name: watching for the base-image changes
+        type: Image
+        image:
+          names:
+            - ghcr.io/some/base-image:latest
+```
+
+#### Tekton Pipeline
+
+Shipwright can also be used in combination with [Tekton Pipeline](https://github.com/tektoncd/pipeline), you can configure the Build to watch for `Pipeline` resources in Kubernetes reacting when the object reaches the desired status (`.objectRef.status`), and is identified either by its name (`.objectRef.name`) or a label selector (`.objectRef.selector`). The example below uses the label selector approach:
+
+```yaml
+# [...]
+spec:
+  trigger:
+    when:
+      - name: watching over for the Tekton Pipeline
+        type: Pipeline
+        objectRef:
+          status:
+            - Succeeded
+          selector:
+            label: value
+```
+
+While the next snippet uses the object name for identification:
+
+```yaml
+# [...]
+spec:
+  trigger:
+    when:
+      - name: watching over for the Tekton Pipeline
+        type: Pipeline
+        objectRef:
+          status:
+            - Succeeded
+          name: tekton-pipeline-name
 ```
 
 ### Sources

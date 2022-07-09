@@ -31,6 +31,7 @@ var validationTypes = [...]string{
 	validate.Sources,
 	validate.BuildName,
 	validate.Envs,
+	validate.Triggers,
 }
 
 // ReconcileBuild reconciles a Build object

@@ -31,8 +31,13 @@ const (
 	// OwnerReferences for validating the ownerreferences between a Build
 	// and BuildRun objects
 	OwnerReferences = "ownerreferences"
-	namespace       = "namespace"
-	name            = "name"
+	// Triggers for validating the `.spec.triggers` entries
+	Triggers = "triggers"
+)
+
+const (
+	namespace = "namespace"
+	name      = "name"
 )
 
 // BuildPath is an interface that holds a ValidatePath() function
@@ -64,6 +69,8 @@ func NewValidation(
 		return &BuildNameRef{Build: build}, nil
 	case Envs:
 		return &Env{Build: build}, nil
+	case Triggers:
+		return &Trigger{build: build}, nil
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}
@@ -112,6 +119,11 @@ func BuildRunFields(buildRun *build.BuildRun) (string, string) {
 		if buildRun.Spec.Timeout != nil {
 			return resources.BuildRunBuildFieldOverrideForbidden,
 				"cannot use 'timeout' override and 'buildSpec' simultaneously"
+		}
+
+		if buildRun.Spec.BuildSpec.Trigger != nil {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'triggers' override in the 'BuildRun', only allowed in the 'Build'"
 		}
 	}
 
