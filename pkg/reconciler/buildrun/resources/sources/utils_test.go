@@ -13,8 +13,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ = Describe("Utils", func() {	
-	Context("for different candidate volume names", func() {	
+var _ = Describe("Utils", func() {
+	Context("for different candidate volume names", func() {
 		It("adds only the prefix if the name is okay", func() {
 			Expect(sources.SanitizeVolumeNameForSecretName("okay-name")).To(Equal("shp-okay-name"))
 		})
@@ -26,9 +26,14 @@ var _ = Describe("Utils", func() {
 		It("adds the prefix and reduces the length if needed", func() {
 			Expect(sources.SanitizeVolumeNameForSecretName("long-name-long-name-long-name-long-name-long-name-long-name-long-name-")).To(Equal("shp-long-name-long-name-long-name-long-name-long-name-long-name"))
 		})
+
+		It("ensures that the volume name ends with an alpha-numeric character", func() {
+			// "shp-" + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcd-efgh" reduced to 63 characters would be "shp-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcd-"
+			Expect(sources.SanitizeVolumeNameForSecretName("abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcd-efgh")).To(Equal("shp-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcd"))
+		})
 	})
 
-	Context("when a TaskSpec does not contain any volume", func() {	
+	Context("when a TaskSpec does not contain any volume", func() {
 		var taskSpec *tektonv1beta1.TaskSpec
 
 		BeforeEach(func() {
@@ -45,7 +50,7 @@ var _ = Describe("Utils", func() {
 		})
 	})
 
-	Context("when a TaskSpec already contains a volume secret", func() {		
+	Context("when a TaskSpec already contains a volume secret", func() {
 		var taskSpec *tektonv1beta1.TaskSpec
 
 		BeforeEach(func() {
