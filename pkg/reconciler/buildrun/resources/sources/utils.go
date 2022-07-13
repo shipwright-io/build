@@ -7,6 +7,7 @@ package sources
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -61,6 +62,9 @@ func SanitizeVolumeNameForSecretName(secretName string) string {
 	if len(sanitizedName) > 63 {
 		sanitizedName = sanitizedName[:63]
 	}
+
+	// trim trailing dashes because the last character must be alphanumeric
+	sanitizedName = strings.TrimSuffix(sanitizedName, "-")
 
 	return sanitizedName
 }
