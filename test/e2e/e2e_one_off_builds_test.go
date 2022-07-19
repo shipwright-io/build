@@ -51,24 +51,6 @@ var _ = Describe("Using One-Off Builds", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should build an image using Buildpacks and a Git source", func() {
-			buildRun, err = NewBuildRunPrototype().
-				Namespace(testBuild.Namespace).
-				Name(testID).
-				WithBuildSpec(NewBuildPrototype().
-					ClusterBuildStrategy("buildpacks-v3").
-					Namespace(testBuild.Namespace).
-					Name(testID).
-					SourceGit("https://github.com/shipwright-io/sample-go.git").
-					SourceContextDir("source-build").
-					OutputImage(outputImage.String()).
-					OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
-					BuildSpec()).
-				Create()
-			Expect(err).ToNot(HaveOccurred())
-			validateBuildRunToSucceed(testBuild, buildRun)
-		})
-
 		It("should build an image using Buildah and a Git source", func() {
 			buildRun, err = NewBuildRunPrototype().
 				Namespace(testBuild.Namespace).

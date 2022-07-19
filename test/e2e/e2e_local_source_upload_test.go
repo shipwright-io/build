@@ -19,6 +19,7 @@ import (
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
 	var (
 		testID   string
+		err      error
 		build    *buildv1alpha1.Build
 		buildRun *buildv1alpha1.BuildRun
 	)
@@ -35,24 +36,43 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 	})
 
-	Context("when LocalCopy BuildSource is defined", func() {
+	Context("when LocalCopy BuildSource is defined", func() { // build_buildah_cr_local_source_upload.yaml
 		BeforeEach(func() {
 			testID = generateTestID("local-copy")
-			build = createBuild(
-				testBuild,
-				testID,
-				"test/data/build_buildah_cr_local_source_upload.yaml",
-			)
+			/*
+				build = createBuild(
+					testBuild,
+					testID,
+					"test/data/build_buildah_cr_local_source_upload.yaml",
+				)*/
+
+			build, err = NewBuildPrototype().
+				ClusterBuildStrategy("buildah").
+				Name(testID).
+				Namespace(testBuild.Namespace).
+				SourceGit("https://github.com/shipwright-io/sample-go.git").
+				SourceContextDir("docker-build").
+				Dockerfile("Dockerfile").
+				OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app").
+				Create()
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should generate LocalCopy TaskRun, using the waiter", func() {
-			var err error
-			buildRun, err = buildRunTestData(
-				testBuild.Namespace,
-				testID,
-				"test/data/buildrun_buildah_cr_local_source_upload.yaml",
-			)
-			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			//var err error
+			/*
+				buildRun, err = buildRunTestData(
+					testBuild.Namespace,
+					testID,
+					"test/data/buildrun_buildah_cr_local_source_upload.yaml",
+				)
+				Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")*/
+			buildRun, err = NewBuildRunPrototype().
+				Name(testID).
+				Namespace(testBuild.Namespace).
+				ForBuild(build).
+				Create()
+			Expect(err).ToNot(HaveOccurred())
 
 			validateWaiterBuildRun(testBuild, buildRun)
 		})

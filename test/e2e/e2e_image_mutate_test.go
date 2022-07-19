@@ -38,24 +38,44 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 	})
 
-	Context("when a Buildah build with label and annotation is defined", func() {
+	Context("when a Buildah build with label and annotation is defined", func() { // build_buildah_cr_mutate.yaml
 		BeforeEach(func() {
 			testID = generateTestID("buildah-mutate")
 
-			// create the build definition
-			build = createBuild(
-				testBuild,
-				testID,
-				"test/data/build_buildah_cr_mutate.yaml",
-			)
+			/*
+				// create the build definition
+				build = createBuild(
+					testBuild,
+					testID,
+					"test/data/build_buildah_cr_mutate.yaml",
+				)*/
+
+			build, err = NewBuildPrototype().
+				ClusterBuildStrategy("buildah").
+				Name(testID).
+				Namespace(testBuild.Namespace).
+				SourceGit("https://github.com/shipwright-io/sample-go.git").
+				SourceContextDir("docker-build").
+				Dockerfile("Dockerfile").
+				OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app").
+				Create()
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should mutate an image with annotation and label", func() {
-			buildRun, err = buildRunTestData(
+			/*buildRun, err = buildRunTestData(
 				testBuild.Namespace, testID,
 				"test/data/buildrun_buildah_cr_mutate.yaml",
 			)
-			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")*/
+
+			buildRun, err = NewBuildRunPrototype().
+				Name(testID).
+				Namespace(testBuild.Namespace).
+				ForBuild(build).
+				Create()
+			Expect(err).ToNot(HaveOccurred())
+
 			appendRegistryInsecureParamValue(build, buildRun)
 
 			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
