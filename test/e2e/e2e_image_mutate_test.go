@@ -58,6 +58,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				SourceContextDir("docker-build").
 				Dockerfile("Dockerfile").
 				OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app").
+				OutputAnnotations(map[string]string{"org.opencontainers.image.url": "https://my-company.com/images"}).
+				OutputLabels(map[string]string{"maintainer": "team@my-company.com"}).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -74,7 +76,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Namespace(testBuild.Namespace).
 				ForBuild(build).
 				Create()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			appendRegistryInsecureParamValue(build, buildRun)
 

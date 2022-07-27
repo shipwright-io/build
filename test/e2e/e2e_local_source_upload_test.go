@@ -71,8 +71,10 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Name(testID).
 				Namespace(testBuild.Namespace).
 				ForBuild(build).
+				StringParamValue("name", "local-copy").
+				StringParamValue("type", "LocalCopy").
 				Create()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			validateWaiterBuildRun(testBuild, buildRun)
 		})

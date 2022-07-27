@@ -102,7 +102,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Namespace(testBuild.Namespace).
 				ForBuild(build).
 				Create()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
 
 			appendRegistryInsecureParamValue(build, buildRun)
 
@@ -362,6 +362,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Namespace(testBuild.Namespace).
 				SourceGit("https://github.com/shipwright-io/sample-go.git").
 				SourceContextDir("source-build-with-package").
+				StringParamValue("name", "BP_GO_TARGETS").
+				StringParamValue("value", "\"main-package\"").
 				OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app").
 				Create()
 			Expect(err).ToNot(HaveOccurred())
@@ -398,6 +400,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				ClusterBuildStrategy("buildpacks-v3").
 				Name(testID).
 				Namespace(testBuild.Namespace).
+				Annotations(map[string]string{"build.shipwright.io/build-run-deletion": "\"true\""}).
 				SourceGit("https://github.com/shipwright-io/sample-go.git").
 				SourceContextDir("source-build").
 				OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app").
@@ -515,6 +518,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				ClusterBuildStrategy("kaniko").
 				Name(testID).
 				Namespace(testBuild.Namespace).
+				Annotations(map[string]string{"build.shipwright.io/build-run-deletion": "\"false\""}).
 				SourceGit("https://github.com/shipwright-io/sample-java.git").
 				SourceContextDir("docker-build").
 				Dockerfile("Dockerfile").
@@ -637,11 +641,15 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				ClusterBuildStrategy("buildkit").
 				Name(testID).
 				Namespace(testBuild.Namespace).
+				Annotations(map[string]string{"build.build.dev/build-run-deletion": "\"true'"}).
 				SourceGit("https://github.com/shipwright-io/sample-go.git").
 				SourceContextDir("docker-build").
+				ArrayParamValue("insecure-registry", "\"true\"").
+				ArrayParamValue("platforms", "linux/amd64").
+				ArrayParamValue("platforms", "linux/arm64").
 				OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app").
 				Create()
-			Expect(err).ToNot(HaveOccurred()) // not sure about the yaml to code conversion here - Aryaman Das
+			Expect(err).ToNot(HaveOccurred())
 
 		})
 
@@ -879,9 +887,10 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					Name(testID).
 					Namespace(testBuild.Namespace).
 					SourceGit("git@github.com:shipwright-io/sample-nodejs-private.git").
+					BuilderImage("docker.io/centos/nodejs-10-centos7").
 					OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex").
 					Create()
-				Expect(err).ToNot(HaveOccurred()) // // not sure about the yaml to code conversion here - Aryaman Das
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("successfully runs a build", func() {

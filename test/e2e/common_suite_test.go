@@ -41,6 +41,13 @@ func (b *buildPrototype) Name(name string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) Annotations(annotations map[string]string) *buildPrototype {
+	for k, v := range annotations {
+		b.build.ObjectMeta.Annotations[k] = v
+	}
+	return b
+}
+
 func (b *buildPrototype) Namespace(namespace string) *buildPrototype {
 	b.build.ObjectMeta.Namespace = namespace
 	return b
@@ -96,6 +103,11 @@ func (b *buildPrototype) SourceBundlePrune(prune buildv1alpha1.PruneOption) *bui
 
 func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
 	b.build.Spec.Source.ContextDir = pointer.String(contextDir)
+	return b
+}
+
+func (b *buildPrototype) BuilderImage(image string) *buildPrototype {
+	b.build.Spec.Builder.Image = image
 	return b
 }
 
@@ -212,6 +224,20 @@ func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
 		b.build.Spec.Output.Credentials = &core.LocalObjectReference{Name: name}
 	}
 
+	return b
+}
+
+func (b *buildPrototype) OutputAnnotations(annotations map[string]string) *buildPrototype {
+	for k, v := range annotations {
+		b.build.Spec.Output.Annotations[k] = v
+	}
+	return b
+}
+
+func (b *buildPrototype) OutputLabels(labels map[string]string) *buildPrototype {
+	for k, v := range labels {
+		b.build.Spec.Output.Labels[k] = v
+	}
 	return b
 }
 
