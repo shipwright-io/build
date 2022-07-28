@@ -362,8 +362,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				Namespace(testBuild.Namespace).
 				SourceGit("https://github.com/shipwright-io/sample-go.git").
 				SourceContextDir("source-build-with-package").
-				StringParamValue("name", "BP_GO_TARGETS").
-				StringParamValue("value", "\"main-package\"").
+				ArrayParamValue("BP_GO_TARGETS", "\"main-package\""). // name is BP_GO_TARGETS", value is "main-package"
 				OutputImage("image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app").
 				Create()
 			Expect(err).ToNot(HaveOccurred())

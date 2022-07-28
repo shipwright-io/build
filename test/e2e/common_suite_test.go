@@ -41,7 +41,7 @@ func (b *buildPrototype) Name(name string) *buildPrototype {
 	return b
 }
 
-func (b *buildPrototype) Annotations(annotations map[string]string) *buildPrototype {
+func (b *buildPrototype) Annotations(annotations map[string]string) *buildPrototype { // annotations for a Build's metdata
 	for k, v := range annotations {
 		b.build.ObjectMeta.Annotations[k] = v
 	}
@@ -106,7 +106,7 @@ func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
 	return b
 }
 
-func (b *buildPrototype) BuilderImage(image string) *buildPrototype {
+func (b *buildPrototype) BuilderImage(image string) *buildPrototype { // adding additional feature to the Build spec
 	b.build.Spec.Builder.Image = image
 	return b
 }
@@ -227,14 +227,14 @@ func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
 	return b
 }
 
-func (b *buildPrototype) OutputAnnotations(annotations map[string]string) *buildPrototype {
+func (b *buildPrototype) OutputAnnotations(annotations map[string]string) *buildPrototype { // adding additional specs to specify Build output
 	for k, v := range annotations {
 		b.build.Spec.Output.Annotations[k] = v
 	}
 	return b
 }
 
-func (b *buildPrototype) OutputLabels(labels map[string]string) *buildPrototype {
+func (b *buildPrototype) OutputLabels(labels map[string]string) *buildPrototype { // adding additional specs to specify Build output
 	for k, v := range labels {
 		b.build.Spec.Output.Labels[k] = v
 	}
