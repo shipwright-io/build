@@ -1,4 +1,4 @@
-defaultBaseImage: registry.access.redhat.com/ubi8/ubi-minimal
+defaultBaseImage: registry.access.redhat.com/ubi9/ubi-minimal
 
 baseImageOverrides:
   github.com/shipwright-io/build/cmd/git: ghcr.io/shipwright-io/base-git:latest
