@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -156,7 +155,7 @@ func runGitClone(ctx context.Context) error {
 			return err
 		}
 
-		if err := ioutil.WriteFile(flagValues.resultFileCommitSha, []byte(output), 0644); err != nil {
+		if err := os.WriteFile(flagValues.resultFileCommitSha, []byte(output), 0644); err != nil {
 			return err
 		}
 	}
@@ -167,7 +166,7 @@ func runGitClone(ctx context.Context) error {
 			return err
 		}
 
-		if err = ioutil.WriteFile(flagValues.resultFileCommitAuthor, []byte(output), 0644); err != nil {
+		if err = os.WriteFile(flagValues.resultFileCommitAuthor, []byte(output), 0644); err != nil {
 			return err
 		}
 	}
@@ -178,7 +177,7 @@ func runGitClone(ctx context.Context) error {
 			return err
 		}
 
-		if err := ioutil.WriteFile(flagValues.resultFileBranchName, []byte(output), 0644); err != nil {
+		if err := os.WriteFile(flagValues.resultFileBranchName, []byte(output), 0644); err != nil {
 			return err
 		}
 	}
@@ -269,19 +268,19 @@ func clone(ctx context.Context) error {
 			// permissions, it will end up failing due to SSH sanity checks.
 			// Therefore, create a temporary replacement with the right
 			// file permissions.
-			data, err := ioutil.ReadFile(filepath.Join(flagValues.secretPath, "ssh-privatekey"))
+			data, err := os.ReadFile(filepath.Join(flagValues.secretPath, "ssh-privatekey"))
 			if err != nil {
 				return err
 			}
 
-			sshPrivateKeyFile, err := ioutil.TempFile(os.TempDir(), "ssh-private-key")
+			sshPrivateKeyFile, err := os.CreateTemp(os.TempDir(), "ssh-private-key")
 			if err != nil {
 				return err
 			}
 
 			defer os.Remove(sshPrivateKeyFile.Name())
 
-			if err := ioutil.WriteFile(sshPrivateKeyFile.Name(), data, 0400); err != nil {
+			if err := os.WriteFile(sshPrivateKeyFile.Name(), data, 0400); err != nil {
 				return err
 			}
 
@@ -346,26 +345,26 @@ func clone(ctx context.Context) error {
 				return err
 			}
 
-			username, err := ioutil.ReadFile(filepath.Join(flagValues.secretPath, "username"))
+			username, err := os.ReadFile(filepath.Join(flagValues.secretPath, "username"))
 			if err != nil {
 				return err
 			}
 
-			password, err := ioutil.ReadFile(filepath.Join(flagValues.secretPath, "password"))
+			password, err := os.ReadFile(filepath.Join(flagValues.secretPath, "password"))
 			if err != nil {
 				return err
 			}
 
 			repoURL.User = url.UserPassword(string(username), string(password))
 
-			credHelperFile, err := ioutil.TempFile(os.TempDir(), "cred-helper-file")
+			credHelperFile, err := os.CreateTemp(os.TempDir(), "cred-helper-file")
 			if err != nil {
 				return err
 			}
 
 			defer os.Remove(credHelperFile.Name())
 
-			if err := ioutil.WriteFile(credHelperFile.Name(), []byte(repoURL.String()), 0400); err != nil {
+			if err := os.WriteFile(credHelperFile.Name(), []byte(repoURL.String()), 0400); err != nil {
 				return err
 			}
 

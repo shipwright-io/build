@@ -6,7 +6,7 @@ package main_test
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -23,7 +23,7 @@ import (
 var _ = Describe("Git Resource", func() {
 	var run = func(args ...string) error {
 		// discard log output
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 
 		// discard stderr output
 		var tmp = os.Stderr
@@ -35,7 +35,7 @@ var _ = Describe("Git Resource", func() {
 	}
 
 	var withTempDir = func(f func(target string)) {
-		path, err := ioutil.TempDir(os.TempDir(), "git")
+		path, err := os.MkdirTemp(os.TempDir(), "git")
 		Expect(err).ToNot(HaveOccurred())
 		defer os.RemoveAll(path)
 
@@ -43,7 +43,7 @@ var _ = Describe("Git Resource", func() {
 	}
 
 	var withTempFile = func(pattern string, f func(filename string)) {
-		file, err := ioutil.TempFile(os.TempDir(), pattern)
+		file, err := os.CreateTemp(os.TempDir(), pattern)
 		Expect(err).ToNot(HaveOccurred())
 		defer os.Remove(file.Name())
 
@@ -51,13 +51,13 @@ var _ = Describe("Git Resource", func() {
 	}
 
 	var filecontent = func(path string) string {
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
 	}
 
 	var file = func(path string, mode os.FileMode, data []byte) {
-		Expect(ioutil.WriteFile(path, data, mode)).ToNot(HaveOccurred())
+		Expect(os.WriteFile(path, data, mode)).ToNot(HaveOccurred())
 	}
 
 	Context("validations and error cases", func() {
@@ -428,7 +428,7 @@ var _ = Describe("Git Resource", func() {
 						lfsFile := filepath.Join(target, "assets", "shipwright-logo-lightbg-512.png")
 						Expect(lfsFile).To(BeAnExistingFile())
 
-						data, err := ioutil.ReadFile(lfsFile)
+						data, err := os.ReadFile(lfsFile)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(http.DetectContentType(data)).To(Equal("image/png"))
 					})

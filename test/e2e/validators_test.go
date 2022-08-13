@@ -6,7 +6,6 @@ package e2e_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -280,7 +279,7 @@ func readAndDecode(filePath string) (runtime.Object, error) {
 		return nil, err
 	}
 
-	payload, err := ioutil.ReadFile(filepath.Join("..", "..", filePath))
+	payload, err := os.ReadFile(filepath.Join("..", "..", filePath))
 	if err != nil {
 		return nil, err
 	}

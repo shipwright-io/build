@@ -9,7 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -101,7 +101,7 @@ func Do(ctx context.Context) error {
 	}
 
 	if flagValues.resultFileImageDigest != "" {
-		if err = ioutil.WriteFile(flagValues.resultFileImageDigest, []byte(digest.String()), 0644); err != nil {
+		if err = os.WriteFile(flagValues.resultFileImageDigest, []byte(digest.String()), 0644); err != nil {
 			return err
 		}
 	}
@@ -327,7 +327,7 @@ func dockerHubLogin(username string, password string) (string, error) {
 
 	defer resp.Body.Close()
 
-	bodyData, err := ioutil.ReadAll(resp.Body)
+	bodyData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -365,7 +365,7 @@ func dockerHubRepoDelete(token string, ref name.Reference) error {
 
 	defer resp.Body.Close()
 
-	respData, err := ioutil.ReadAll(resp.Body)
+	respData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -413,7 +413,7 @@ func icrLogin(registry, username, apikey string) (string, string, error) {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", err
 	}
@@ -498,7 +498,7 @@ func icrDelete(token string, accountID string, ref name.Reference) error {
 
 	defer resp.Body.Close()
 
-	respData, err := ioutil.ReadAll(resp.Body)
+	respData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,6 @@
 package bundle_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -22,7 +21,7 @@ var _ = Describe("Bundle", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(r).ToNot(BeNil())
 
-			tempDir, err := ioutil.TempDir("", "bundle")
+			tempDir, err := os.MkdirTemp("", "bundle")
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(tempDir)
 

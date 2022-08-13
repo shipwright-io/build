@@ -7,7 +7,7 @@ package main_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -26,7 +26,7 @@ import (
 
 var _ = Describe("Image Mutate Resource", func() {
 	run := func(args ...string) error {
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 
 		// `pflag.Parse()` parses the command-line flags from os.Args[1:]
 		// appending `tool`(can be anything) at beginning of args array
@@ -117,7 +117,7 @@ var _ = Describe("Image Mutate Resource", func() {
 	}
 
 	withTempFile := func(pattern string, f func(filename string)) {
-		file, err := ioutil.TempFile(os.TempDir(), pattern)
+		file, err := os.CreateTemp(os.TempDir(), pattern)
 		Expect(err).ToNot(HaveOccurred())
 		defer os.Remove(file.Name())
 
@@ -125,7 +125,7 @@ var _ = Describe("Image Mutate Resource", func() {
 	}
 
 	filecontent := func(path string) string {
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
 	}

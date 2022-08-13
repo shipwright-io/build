@@ -36,7 +36,7 @@ jobs:
         args: --timeout=10m
     - name: Install Counterfeiter
       run: |
-        go install github.com/maxbrunsfeld/counterfeiter/v6@latest
+        make -C go/src/github.com/shipwright-io/build install-counterfeiter
     - name: Run verify-generate
       run: |
         export GOPATH="${GITHUB_WORKSPACE}"/go
