@@ -28,6 +28,8 @@ spec:
         - '--dockerfile=/gen-source/Dockerfile.gen'
         - '--context=/gen-source'
         - '--destination=$(params.shp-output-image)'
+        # https://github.com/GoogleContainerTools/kaniko/issues/2164
+        - --ignore-path=/product_uuid
         - '--oci-layout-path=/kaniko/oci-image-layout'
         - '--snapshotMode=redo'
         - '--push-retry=3'
