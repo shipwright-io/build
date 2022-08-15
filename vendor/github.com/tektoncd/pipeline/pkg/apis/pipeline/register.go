@@ -40,12 +40,6 @@ const (
 	// PipelineTaskLabelKey is used as the label identifier for a PipelineTask
 	PipelineTaskLabelKey = GroupName + "/pipelineTask"
 
-	// ConditionCheckKey is used as the label identifier for a ConditionCheck
-	ConditionCheckKey = GroupName + "/conditionCheck"
-
-	// ConditionNameKey is used as the label identifier for a Condition
-	ConditionNameKey = GroupName + "/conditionName"
-
 	// RunKey is used as the label identifier for a Run
 	RunKey = GroupName + "/run"
 
@@ -90,10 +84,5 @@ var (
 	PipelineResourceResource = schema.GroupResource{
 		Group:    GroupName,
 		Resource: "pipelineresources",
-	}
-	// ConditionResource represents a Tekton Condition
-	ConditionResource = schema.GroupResource{
-		Group:    GroupName,
-		Resource: "conditions",
 	}
 )

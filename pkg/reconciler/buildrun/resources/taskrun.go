@@ -199,18 +199,16 @@ func GenerateTaskSpec(
 		}
 
 		step := v1beta1.Step{
-			Container: corev1.Container{
-				Image:           taskImage,
-				ImagePullPolicy: containerValue.ImagePullPolicy,
-				Name:            containerValue.Name,
-				VolumeMounts:    containerValue.VolumeMounts,
-				Command:         taskCommand,
-				Args:            taskArgs,
-				SecurityContext: containerValue.SecurityContext,
-				WorkingDir:      containerValue.WorkingDir,
-				Resources:       containerValue.Resources,
-				Env:             stepEnv,
-			},
+			Image:           taskImage,
+			ImagePullPolicy: containerValue.ImagePullPolicy,
+			Name:            containerValue.Name,
+			VolumeMounts:    containerValue.VolumeMounts,
+			Command:         taskCommand,
+			Args:            taskArgs,
+			SecurityContext: containerValue.SecurityContext,
+			WorkingDir:      containerValue.WorkingDir,
+			Resources:       containerValue.Resources,
+			Env:             stepEnv,
 		}
 
 		generatedTaskSpec.Steps = append(generatedTaskSpec.Steps, step)

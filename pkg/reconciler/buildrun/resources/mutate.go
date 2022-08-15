@@ -21,17 +21,15 @@ func amendTaskSpecWithImageMutate(
 	buildOutput, buildRunOutput buildv1alpha1.Image,
 ) {
 	// initialize the step from the template
-	mutateStep := tektonv1beta1.Step{
-		Container: *cfg.MutateImageContainerTemplate.DeepCopy(),
-	}
+	mutateStep := *cfg.MutateImageContainerTemplate.DeepCopy()
 
-	mutateStep.Container.Name = imageMutateContainerName
+	mutateStep.Name = imageMutateContainerName
 
 	// if labels or annotations are specified in buildRun then merge them with build's
 	labels := mergeMaps(buildOutput.Labels, buildRunOutput.Labels)
 	annotations := mergeMaps(buildOutput.Annotations, buildRunOutput.Annotations)
 
-	mutateStep.Container.Args = mutateArgs(annotations, labels)
+	mutateStep.Args = mutateArgs(annotations, labels)
 
 	// append the mutate step
 	taskSpec.Steps = append(taskSpec.Steps, mutateStep)

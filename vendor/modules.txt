@@ -389,18 +389,21 @@ github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 ## explicit; go 1.12
 github.com/spf13/pflag
-# github.com/tektoncd/pipeline v0.35.1
+# github.com/tektoncd/pipeline v0.38.3
 ## explicit; go 1.17
 github.com/tektoncd/pipeline/pkg/apis/config
 github.com/tektoncd/pipeline/pkg/apis/pipeline
 github.com/tektoncd/pipeline/pkg/apis/pipeline/pod
+github.com/tektoncd/pipeline/pkg/apis/pipeline/v1
 github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1
 github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1
 github.com/tektoncd/pipeline/pkg/apis/resource/v1alpha1
 github.com/tektoncd/pipeline/pkg/apis/run/v1alpha1
 github.com/tektoncd/pipeline/pkg/apis/validate
+github.com/tektoncd/pipeline/pkg/apis/version
 github.com/tektoncd/pipeline/pkg/client/clientset/versioned
 github.com/tektoncd/pipeline/pkg/client/clientset/versioned/scheme
+github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1
 github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1
 github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1beta1
 github.com/tektoncd/pipeline/pkg/list

@@ -30,13 +30,11 @@ func AppendBundleStep(
 	})
 
 	// initialize the step from the template
-	bundleStep := pipeline.Step{
-		Container: *cfg.BundleContainerTemplate.DeepCopy(),
-	}
+	bundleStep := *cfg.BundleContainerTemplate.DeepCopy()
 
 	// add the build-specific details
-	bundleStep.Container.Name = fmt.Sprintf("source-%s", name)
-	bundleStep.Container.Args = []string{
+	bundleStep.Name = fmt.Sprintf("source-%s", name)
+	bundleStep.Args = []string{
 		"--image", source.BundleContainer.Image,
 		"--target", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
 		"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", prefixParamsResultsVolumes, name),
@@ -56,14 +54,14 @@ func AppendBundleStep(
 		})
 
 		// append the argument
-		bundleStep.Container.Args = append(bundleStep.Container.Args,
+		bundleStep.Args = append(bundleStep.Args,
 			"--secret-path", secretMountPath,
 		)
 	}
 
 	// add prune flag in when prune after pull is configured
 	if source.BundleContainer.Prune != nil && *source.BundleContainer.Prune == build.PruneAfterPull {
-		bundleStep.Container.Args = append(bundleStep.Container.Args, "--prune")
+		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
 
 	taskSpec.Steps = append(taskSpec.Steps, bundleStep)

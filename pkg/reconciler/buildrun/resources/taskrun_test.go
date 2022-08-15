@@ -110,27 +110,27 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure IMAGE is replaced by builder image when needed.", func() {
-				Expect(got.Steps[1].Container.Image).To(Equal("quay.io/containers/buildah:v1.20.1"))
+				Expect(got.Steps[1].Image).To(Equal("quay.io/containers/buildah:v1.20.1"))
 			})
 
 			It("should ensure ImagePullPolicy can be set by the build strategy author.", func() {
-				Expect(got.Steps[1].Container.ImagePullPolicy).To(Equal(corev1.PullPolicy("Always")))
+				Expect(got.Steps[1].ImagePullPolicy).To(Equal(corev1.PullPolicy("Always")))
 			})
 
 			It("should ensure command replacements happen when needed", func() {
-				Expect(got.Steps[1].Container.Command[0]).To(Equal("/usr/bin/buildah"))
+				Expect(got.Steps[1].Command[0]).To(Equal("/usr/bin/buildah"))
 			})
 
 			It("should ensure resource replacements happen for the first step", func() {
-				Expect(got.Steps[1].Container.Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
+				Expect(got.Steps[1].Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
 			})
 
 			It("should ensure resource replacements happen for the second step", func() {
-				Expect(got.Steps[2].Container.Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
+				Expect(got.Steps[2].Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
 			})
 
 			It("should ensure arg replacements happen when needed", func() {
-				Expect(got.Steps[1].Container.Args).To(Equal(expectedCommandOrArg))
+				Expect(got.Steps[1].Args).To(Equal(expectedCommandOrArg))
 			})
 
 			It("should ensure top level volumes are populated", func() {

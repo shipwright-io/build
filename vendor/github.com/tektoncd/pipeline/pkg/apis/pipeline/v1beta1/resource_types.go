@@ -128,16 +128,15 @@ type PipelineResourceBinding struct {
 
 // PipelineResourceResult used to export the image name and digest as json
 type PipelineResourceResult struct {
-	Key          string `json:"key"`
-	Value        string `json:"value"`
-	ResourceName string `json:"resourceName,omitempty"`
-	// The field ResourceRef should be deprecated and removed in the next API version.
-	// See https://github.com/tektoncd/pipeline/issues/2694 for more information.
-	ResourceRef *PipelineResourceRef `json:"resourceRef,omitempty"`
-	ResultType  ResultType           `json:"type,omitempty"`
+	Key          string     `json:"key"`
+	Value        string     `json:"value"`
+	ResourceName string     `json:"resourceName,omitempty"`
+	ResultType   ResultType `json:"type,omitempty"`
 }
 
 // ResultType used to find out whether a PipelineResourceResult is from a task result or not
+// Note that ResultsType is another type which is used to define the data type
+// (e.g. string, array, etc) we used for Results
 type ResultType int
 
 // UnmarshalJSON unmarshals either an int or a string into a ResultType. String
