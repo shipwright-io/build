@@ -11,7 +11,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -214,7 +213,7 @@ func runMutateImage(ctx context.Context) error {
 
 	// Writing image digest to file
 	if resultFileImageDigest := flagValues.resultFileImageDigest; resultFileImageDigest != "" {
-		if err := ioutil.WriteFile(
+		if err := os.WriteFile(
 			resultFileImageDigest, []byte(digest.String()), 0644,
 		); err != nil {
 			return err
@@ -228,7 +227,7 @@ func runMutateImage(ctx context.Context) error {
 			return err
 		}
 
-		if err := ioutil.WriteFile(
+		if err := os.WriteFile(
 			resultFileImageSize, []byte(strconv.FormatInt(size, 10)), 0644,
 		); err != nil {
 			return err

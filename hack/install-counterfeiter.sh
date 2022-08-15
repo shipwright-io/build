@@ -3,6 +3,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -eu
+set -euo pipefail
 
-GO111MODULE=off go get -u github.com/maxbrunsfeld/counterfeiter
+go install github.com/maxbrunsfeld/counterfeiter/v6@latest

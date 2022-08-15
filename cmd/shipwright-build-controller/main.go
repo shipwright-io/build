@@ -8,7 +8,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"runtime"
 
@@ -110,7 +109,7 @@ func main() {
 
 		// we also want to put this into the termination log
 		// so that user can see this message as the reason pod failed
-		if err := ioutil.WriteFile(buildCfg.TerminationLogPath, []byte(msg), 0644); err != nil {
+		if err := os.WriteFile(buildCfg.TerminationLogPath, []byte(msg), 0644); err != nil {
 			ctxlog.Error(ctx, err, "Error while trying to write to termination log")
 		}
 

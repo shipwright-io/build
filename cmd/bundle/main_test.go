@@ -7,7 +7,7 @@ package main_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -28,7 +28,7 @@ var _ = Describe("Bundle Loader", func() {
 
 	var run = func(args ...string) error {
 		// discard log output
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 
 		// discard stderr output
 		var tmp = os.Stderr
@@ -40,7 +40,7 @@ var _ = Describe("Bundle Loader", func() {
 	}
 
 	var withTempDir = func(f func(target string)) {
-		path, err := ioutil.TempDir(os.TempDir(), "bundle")
+		path, err := os.MkdirTemp(os.TempDir(), "bundle")
 		Expect(err).ToNot(HaveOccurred())
 		defer os.RemoveAll(path)
 
@@ -48,7 +48,7 @@ var _ = Describe("Bundle Loader", func() {
 	}
 
 	withTempFile := func(pattern string, f func(filename string)) {
-		file, err := ioutil.TempFile(os.TempDir(), pattern)
+		file, err := os.CreateTemp(os.TempDir(), pattern)
 		Expect(err).ToNot(HaveOccurred())
 		defer os.Remove(file.Name())
 
@@ -56,7 +56,7 @@ var _ = Describe("Bundle Loader", func() {
 	}
 
 	filecontent := func(path string) string {
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
 	}
@@ -94,13 +94,13 @@ var _ = Describe("Bundle Loader", func() {
 
 		It("should fail in case the provided credentials do not match the required registry", func() {
 			withTempFile("config.json", func(filename string) {
-				Expect(ioutil.WriteFile(filename, []byte(`{}`), 0644)).To(BeNil())
+				Expect(os.WriteFile(filename, []byte(`{}`), 0644)).To(BeNil())
 				Expect(run(
 					"--image", "secret.typo.registry.com/foo:bar",
 					"--secret-path", filename,
 				)).To(MatchError("failed to find registry credentials for secret.typo.registry.com, available configurations: none"))
 
-				Expect(ioutil.WriteFile(filename, []byte(`{"auths":{"secret.private.registry.com":{"auth":"Zm9vQGJhci5jb206RGlkWW91UmVhbGx5RGVjb2RlVGhpcz8K"}}}`), 0644)).To(BeNil())
+				Expect(os.WriteFile(filename, []byte(`{"auths":{"secret.private.registry.com":{"auth":"Zm9vQGJhci5jb206RGlkWW91UmVhbGx5RGVjb2RlVGhpcz8K"}}}`), 0644)).To(BeNil())
 				Expect(run(
 					"--image", "secret.typo.registry.com/foo:bar",
 					"--secret-path", filename,
