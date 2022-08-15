@@ -82,6 +82,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
 default: build
 
+.PHONY: build
 build: $(CONTROLLER)
 
 .PHONY: $(CONTROLLER)
@@ -116,6 +117,7 @@ generate:
 verify-generate: generate
 	@hack/verify-generate.sh
 
+.PHONY: ginkgo
 ginkgo:
 ifeq (, $(GINKGO))
   ifeq (, $(shell which ginkgo))
@@ -129,6 +131,7 @@ ifeq (, $(GINKGO))
   endif
 endif
 
+.PHONY: gocov
 gocov:
 ifeq (, $(shell which gocov))
 	@{ \
@@ -144,6 +147,7 @@ else
 GOCOV=$(shell which gocov)
 endif
 
+.PHONY: install-counterfeiter
 install-counterfeiter:
 	hack/install-counterfeiter.sh
 
@@ -153,6 +157,7 @@ sanity-check:
 	golangci-lint run
 
 # https://github.com/shipwright-io/build/issues/123
+.PHONY: test
 test: test-unit
 
 .PHONY: test-unit
@@ -167,6 +172,7 @@ test-unit:
 		-race \
 		-v
 
+.PHONY: test-unit-coverage
 test-unit-coverage: test-unit gocov
 	echo "Combining coverage profiles"
 	cat build/coverage/*.coverprofile | sed -E 's/([0-9])github.com/\1\ngithub.com/g' | sed -E 's/([0-9])mode: atomic/\1/g' > build/coverage/coverprofile
@@ -217,12 +223,12 @@ test-e2e-plain: ginkgo
 .PHONY: test-e2e-kind-with-prereq-install
 test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strategies test-e2e-plain
 
-.PHONY: install install-apis install-controller install-strategies
-
+.PHONY: install
 install:
 	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko apply --base-import-paths -R -f deploy/
 
+.PHONY: install-with-pprof
 install-with-pprof:
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
 
@@ -234,39 +240,50 @@ install-apis:
 		sleep 15 ; \
 	done
 
+.PHONY: install-controller
 install-controller: install-apis
 	@echo "Building Shipwright Build controller for platform ${GO_OS}/${GO_ARCH}"
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko apply --base-import-paths -f deploy/
 
+.PHONY: install-controller-kind
 install-controller-kind: install-apis
 	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
 
+.PHONY: install-strategies
 install-strategies: install-apis
 	kubectl apply -R -f samples/buildstrategy/
 
+.PHONY: local
 local: install-strategies
 	CONTROLLER_NAME=shipwright-build-controller \
 	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
+.PHONY: local-plain
 local-plain:
 	CONTROLLER_NAME=shipwright-build-controller \
 	go run cmd/shipwright-build-controller/main.go $(ZAP_FLAGS)
 
+.PHONY: clean
 clean:
 	rm -rf $(OUTPUT_DIR)
 
+.PHONY: gen-fakes
 gen-fakes:
 	./hack/generate-fakes.sh
 
+.PHONY: kubectl
 kubectl:
 	./hack/install-kubectl.sh
 
+.PHONY: kind-registry
 kind-registry:
 	./hack/install-registry.sh
 
+.PHONY: kind-tekton
 kind-tekton:
 	./hack/install-tekton.sh
 
+.PHONY: kind
 kind:
 	./hack/install-kind.sh
 	./hack/install-registry.sh
