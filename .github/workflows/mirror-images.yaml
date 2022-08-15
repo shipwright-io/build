@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: imjasonh/setup-crane@01d26682810dcd47bfc8eb1efe791558123a9373
+      - uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4
 
       - name: Mirror images
         env:

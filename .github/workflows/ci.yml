@@ -15,12 +15,14 @@ jobs:
     unit:
         runs-on: ubuntu-latest
         steps:
-        - name: Install Go
-          uses: actions/setup-go@v2
-          with:
-            go-version: 1.18.x
         - name: Check out code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
+        - name: Install Go
+          uses: actions/setup-go@v3
+          with:
+            go-version: '1.18.x'
+            cache: true
+            check-latest: true
         - name: Build
           run: make build
         - name: Test
@@ -34,23 +36,25 @@ jobs:
           max-parallel: 2
         runs-on: ubuntu-latest
         steps:
+        - name: Check out code
+          uses: actions/checkout@v3
         - name: Install Go
-          uses: actions/setup-go@v2
+          uses: actions/setup-go@v3
           with:
-            go-version: 1.18.x
+            go-version: '1.18.x'
+            cache: true
+            check-latest: true
         - name: Install Ko
-          # This sha corresponds to v0.4
-          uses: imjasonh/setup-ko@2c3450ca27f6e6f2b02e72a40f2163c281a1f675
+          # This sha corresponds to v0.5
+          uses: imjasonh/setup-ko@78eea08f10db87a7a23a666a4a6fe2734f2eeb8d
           with:
             version: v0.11.2
-        - name: Check out code
-          uses: actions/checkout@v2
         - name: Install kubectl
           uses: azure/setup-kubectl@v1
           with:
             version: ${{ matrix.kubernetes }}
         - name: Create kind cluster
-          uses: helm/kind-action@v1.2.0
+          uses: helm/kind-action@v1.3.0
           with:
             version: v0.11.1
             node_image: kindest/node:${{ matrix.kubernetes }}
@@ -93,18 +97,20 @@ jobs:
           max-parallel: 2
         runs-on: ubuntu-latest
         steps:
-        - name: Install Go
-          uses: actions/setup-go@v2
-          with:
-            go-version: 1.18.x
         - name: Check out code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
+        - name: Install Go
+          uses: actions/setup-go@v3
+          with:
+            go-version: '1.18.x'
+            cache: true
+            check-latest: true
         - name: Install kubectl
           uses: azure/setup-kubectl@v1
           with:
             version: ${{ matrix.kubernetes }}
         - name: Create kind cluster
-          uses: helm/kind-action@v1.2.0
+          uses: helm/kind-action@v1.3.0
           with:
             version: v0.11.1
             node_image: kindest/node:${{ matrix.kubernetes }}
@@ -140,8 +146,8 @@ jobs:
             kubectl apply -f test/data/registry.yaml
             kubectl -n registry rollout status deployment registry --timeout=1m
         - name: Install Ko
-          # This sha corresponds to v0.4
-          uses: imjasonh/setup-ko@2c3450ca27f6e6f2b02e72a40f2163c281a1f675
+          # This sha corresponds to v0.5
+          uses: imjasonh/setup-ko@78eea08f10db87a7a23a666a4a6fe2734f2eeb8d
           with:
             version: v0.11.2
         - name: Install Shipwright Build
