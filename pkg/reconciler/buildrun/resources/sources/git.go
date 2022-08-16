@@ -40,13 +40,11 @@ func AppendGitStep(
 	})
 
 	// initialize the step from the template
-	gitStep := tektonv1beta1.Step{
-		Container: *cfg.GitContainerTemplate.DeepCopy(),
-	}
+	gitStep := *cfg.GitContainerTemplate.DeepCopy()
 
 	// add the build-specific details
-	gitStep.Container.Name = fmt.Sprintf("source-%s", name)
-	gitStep.Container.Args = []string{
+	gitStep.Name = fmt.Sprintf("source-%s", name)
+	gitStep.Args = []string{
 		"--url",
 		*source.URL,
 		"--target",
@@ -66,8 +64,8 @@ func AppendGitStep(
 	// Check if a revision is defined
 	if source.Revision != nil {
 		// append the argument
-		gitStep.Container.Args = append(
-			gitStep.Container.Args,
+		gitStep.Args = append(
+			gitStep.Args,
 			"--revision",
 			*source.Revision,
 		)
@@ -75,7 +73,7 @@ func AppendGitStep(
 
 	// If configure, use Git URL rewrite flag
 	if cfg.GitRewriteRule {
-		gitStep.Container.Args = append(gitStep.Container.Args, "--git-url-rewrite")
+		gitStep.Args = append(gitStep.Args, "--git-url-rewrite")
 	}
 
 	if source.Credentials != nil {
@@ -92,8 +90,8 @@ func AppendGitStep(
 		})
 
 		// append the argument
-		gitStep.Container.Args = append(
-			gitStep.Container.Args,
+		gitStep.Args = append(
+			gitStep.Args,
 			"--secret-path",
 			secretMountPath,
 		)

@@ -10,7 +10,6 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // RemoteArtifactsContainerName name for the container dealing with remote artifacts download.
@@ -25,22 +24,20 @@ func AppendHTTPStep(
 	// HTTP is done currently all in a single step, see if there is already one
 	httpStep := findExistingHTTPSourcesStep(taskSpec)
 	if httpStep != nil {
-		httpStep.Container.Args[3] = fmt.Sprintf("%s ; wget %q", httpStep.Container.Args[3], source.URL)
+		httpStep.Args[3] = fmt.Sprintf("%s ; wget %q", httpStep.Args[3], source.URL)
 	} else {
 		httpStep := tektonv1beta1.Step{
-			Container: corev1.Container{
-				Name:       RemoteArtifactsContainerName,
-				Image:      cfg.RemoteArtifactsContainerImage,
-				WorkingDir: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
-				Command: []string{
-					"/bin/sh",
-				},
-				Args: []string{
-					"-e",
-					"-x",
-					"-c",
-					fmt.Sprintf("wget %q", source.URL),
-				},
+			Name:       RemoteArtifactsContainerName,
+			Image:      cfg.RemoteArtifactsContainerImage,
+			WorkingDir: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
+			Command: []string{
+				"/bin/sh",
+			},
+			Args: []string{
+				"-e",
+				"-x",
+				"-c",
+				fmt.Sprintf("wget %q", source.URL),
 			},
 		}
 

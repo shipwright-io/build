@@ -309,20 +309,18 @@ var _ = Describe("isStepReferencingParameter", func() {
 	Context("for a Step referencing parameters in different ways", func() {
 
 		step := &pipeline.Step{
-			Container: corev1.Container{
-				Command: []string{
-					"some-command",
-					"$(params.first-param)",
-				},
-				Args: []string{
-					"--flag=$(params['dot.param'])",
-					"$(params.array-param[*])",
-				},
-				Env: []corev1.EnvVar{{
-					Name:  "MY_ENV_VAR",
-					Value: "hohe $(params[\"another.dot.param\"])",
-				}},
+			Command: []string{
+				"some-command",
+				"$(params.first-param)",
 			},
+			Args: []string{
+				"--flag=$(params['dot.param'])",
+				"$(params.array-param[*])",
+			},
+			Env: []corev1.EnvVar{{
+				Name:  "MY_ENV_VAR",
+				Value: "hohe $(params[\"another.dot.param\"])",
+			}},
 		}
 
 		It("returns true for a classical referenced parameter in the command", func() {
@@ -357,19 +355,15 @@ var _ = Describe("HandleTaskRunParam", func() {
 				TaskSpec: &pipeline.TaskSpec{
 					Steps: []pipeline.Step{
 						{
-							Container: corev1.Container{
-								Name: "first-container",
-								Args: []string{
-									"--an-argument=$(params.string-parameter)",
-								},
+							Name: "first-container",
+							Args: []string{
+								"--an-argument=$(params.string-parameter)",
 							},
 						},
 						{
-							Container: corev1.Container{
-								Name: "second-container",
-								Args: []string{
-									"$(params.array-parameter[*])",
-								},
+							Name: "second-container",
+							Args: []string{
+								"$(params.array-parameter[*])",
 							},
 						},
 					},

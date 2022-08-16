@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
@@ -92,10 +93,10 @@ var (
 // can be set to use on the Build controllers
 type Config struct {
 	CtxTimeOut                    time.Duration
-	GitContainerTemplate          corev1.Container
-	MutateImageContainerTemplate  corev1.Container
-	BundleContainerTemplate       corev1.Container
-	WaiterContainerTemplate       corev1.Container
+	GitContainerTemplate          pipeline.Step
+	MutateImageContainerTemplate  pipeline.Step
+	BundleContainerTemplate       pipeline.Step
+	WaiterContainerTemplate       pipeline.Step
 	RemoteArtifactsContainerImage string
 	TerminationLogPath            string
 	Prometheus                    PrometheusConfig
@@ -144,7 +145,7 @@ type KubeAPIOptions struct {
 func NewDefaultConfig() *Config {
 	return &Config{
 		CtxTimeOut: contextTimeout,
-		GitContainerTemplate: corev1.Container{
+		GitContainerTemplate: pipeline.Step{
 			Image: gitDefaultImage,
 			Command: []string{
 				"/ko-app/git",
@@ -154,7 +155,7 @@ func NewDefaultConfig() *Config {
 				RunAsGroup: nonRoot,
 			},
 		},
-		BundleContainerTemplate: corev1.Container{
+		BundleContainerTemplate: pipeline.Step{
 			Image: bundleDefaultImage,
 			Command: []string{
 				"/ko-app/bundle",
@@ -165,7 +166,7 @@ func NewDefaultConfig() *Config {
 			},
 		},
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
-		MutateImageContainerTemplate: corev1.Container{
+		MutateImageContainerTemplate: pipeline.Step{
 			Image: mutateImageDefaultImage,
 			Command: []string{
 				"/ko-app/mutate-image",
@@ -192,7 +193,7 @@ func NewDefaultConfig() *Config {
 				},
 			},
 		},
-		WaiterContainerTemplate: corev1.Container{
+		WaiterContainerTemplate: pipeline.Step{
 			Image: waiterDefaultImage,
 			Command: []string{
 				"/ko-app/waiter",
@@ -247,7 +248,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if gitContainerTemplate := os.Getenv(gitContainerTemplateEnvVar); gitContainerTemplate != "" {
-		c.GitContainerTemplate = corev1.Container{}
+		c.GitContainerTemplate = pipeline.Step{}
 		if err := json.Unmarshal([]byte(gitContainerTemplate), &c.GitContainerTemplate); err != nil {
 			return err
 		}
@@ -262,7 +263,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if mutateImageContainerTemplate := os.Getenv(mutateImageContainerTemplateEnvVar); mutateImageContainerTemplate != "" {
-		c.MutateImageContainerTemplate = corev1.Container{}
+		c.MutateImageContainerTemplate = pipeline.Step{}
 		if err := json.Unmarshal([]byte(mutateImageContainerTemplate), &c.MutateImageContainerTemplate); err != nil {
 			return err
 		}
@@ -283,7 +284,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if bundleContainerTemplate := os.Getenv(bundleContainerTemplateEnvVar); bundleContainerTemplate != "" {
-		c.BundleContainerTemplate = corev1.Container{}
+		c.BundleContainerTemplate = pipeline.Step{}
 		if err := json.Unmarshal([]byte(bundleContainerTemplate), &c.BundleContainerTemplate); err != nil {
 			return err
 		}
@@ -298,7 +299,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if waiterContainerTemplate := os.Getenv(waiterContainerTemplateEnvVar); waiterContainerTemplate != "" {
-		c.WaiterContainerTemplate = corev1.Container{}
+		c.WaiterContainerTemplate = pipeline.Step{}
 		if err := json.Unmarshal([]byte(waiterContainerTemplate), &c.WaiterContainerTemplate); err != nil {
 			return err
 		}

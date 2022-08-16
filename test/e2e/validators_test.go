@@ -167,15 +167,15 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1alpha1.BuildRun) 
 		for _, result := range tr.Status.TaskRunResults {
 			switch result.Name {
 			case "shp-source-default-commit-sha":
-				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitSha))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].Git.CommitSha))
 			case "shp-source-default-commit-author":
-				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.CommitAuthor))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].Git.CommitAuthor))
 			case "shp-source-default-branch-name":
-				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Git.BranchName))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].Git.BranchName))
 			case "shp-image-digest":
-				Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Output.Digest))
 			case "shp-image-size":
-				size, err := strconv.ParseInt(result.Value, 10, 64)
+				size, err := strconv.ParseInt(result.Value.StringVal, 10, 64)
 				Expect(err).To(BeNil())
 				Expect(size).To(Equal(testBuildRun.Status.Output.Size))
 			}
@@ -197,11 +197,11 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1alpha1.BuildRu
 		for _, result := range tr.Status.TaskRunResults {
 			switch result.Name {
 			case "shp-source-default-image-digest":
-				Expect(result.Value).To(Equal(testBuildRun.Status.Sources[0].Bundle.Digest))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].Bundle.Digest))
 			case "shp-image-digest":
-				Expect(result.Value).To(Equal(testBuildRun.Status.Output.Digest))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Output.Digest))
 			case "shp-image-size":
-				size, err := strconv.ParseInt(result.Value, 10, 64)
+				size, err := strconv.ParseInt(result.Value.StringVal, 10, 64)
 				Expect(err).To(BeNil())
 				Expect(size).To(Equal(testBuildRun.Status.Output.Size))
 			}

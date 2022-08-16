@@ -46,20 +46,6 @@ var (
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Task{},
-		&TaskList{},
-		&Condition{},
-		&ConditionList{},
-		&ClusterTask{},
-		&ClusterTaskList{},
-		&TaskRun{},
-		&TaskRunList{},
-		&Pipeline{},
-		&PipelineList{},
-		&PipelineRun{},
-		&PipelineRunList{},
-		&PipelineResource{},
-		&PipelineResourceList{},
 		&Run{},
 		&RunList{},
 	)

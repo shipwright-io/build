@@ -110,7 +110,7 @@ type TaskSpec struct {
 
 	// StepTemplate can be used as the basis for all step containers within the
 	// Task, so that the steps inherit settings on the base container.
-	StepTemplate *corev1.Container `json:"stepTemplate,omitempty"`
+	StepTemplate *StepTemplate `json:"stepTemplate,omitempty"`
 
 	// Sidecars are run alongside the Task's step containers. They begin before
 	// the steps start and end after the steps complete.
@@ -126,72 +126,6 @@ type TaskSpec struct {
 	Results []TaskResult `json:"results,omitempty"`
 }
 
-// TaskResult used to describe the results of a task
-type TaskResult struct {
-	// Name the given name
-	Name string `json:"name"`
-
-	// Description is a human-readable description of the result
-	// +optional
-	Description string `json:"description"`
-}
-
-// Step embeds the Container type, which allows it to include fields not
-// provided by Container.
-type Step struct {
-	corev1.Container `json:",inline"`
-
-	// Script is the contents of an executable file to execute.
-	//
-	// If Script is not empty, the Step cannot have an Command and the Args will be passed to the Script.
-	// +optional
-	Script string `json:"script,omitempty"`
-
-	// Timeout is the time after which the step times out. Defaults to never.
-	// Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration
-	// +optional
-	Timeout *metav1.Duration `json:"timeout,omitempty"`
-
-	// This is an alpha field. You must set the "enable-api-fields" feature flag to "alpha"
-	// for this field to be supported.
-	//
-	// Workspaces is a list of workspaces from the Task that this Step wants
-	// exclusive access to. Adding a workspace to this list means that any
-	// other Step or Sidecar that does not also request this Workspace will
-	// not have access to it.
-	// +optional
-	// +listType=atomic
-	Workspaces []WorkspaceUsage `json:"workspaces,omitempty"`
-
-	// OnError defines the exiting behavior of a container on error
-	// can be set to [ continue | stopAndFail ]
-	// stopAndFail indicates exit the taskRun if the container exits with non-zero exit code
-	// continue indicates continue executing the rest of the steps irrespective of the container exit code
-	OnError string `json:"onError,omitempty"`
-}
-
-// Sidecar has nearly the same data structure as Step, consisting of a Container and an optional Script, but does not have the ability to timeout.
-type Sidecar struct {
-	corev1.Container `json:",inline"`
-
-	// Script is the contents of an executable file to execute.
-	//
-	// If Script is not empty, the Step cannot have an Command or Args.
-	// +optional
-	Script string `json:"script,omitempty"`
-
-	// This is an alpha field. You must set the "enable-api-fields" feature flag to "alpha"
-	// for this field to be supported.
-	//
-	// Workspaces is a list of workspaces from the Task that this Sidecar wants
-	// exclusive access to. Adding a workspace to this list means that any
-	// other Step or Sidecar that does not also request this Workspace will
-	// not have access to it.
-	// +optional
-	// +listType=atomic
-	Workspaces []WorkspaceUsage `json:"workspaces,omitempty"`
-}
-
 // TaskList contains a list of Task
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type TaskList struct {
@@ -200,36 +134,3 @@ type TaskList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Task `json:"items"`
 }
-
-// TaskRef can be used to refer to a specific instance of a task.
-// Copied from CrossVersionObjectReference: https://github.com/kubernetes/kubernetes/blob/169df7434155cbbc22f1532cba8e0a9588e29ad8/pkg/apis/autoscaling/types.go#L64
-type TaskRef struct {
-	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	Name string `json:"name,omitempty"`
-	// TaskKind indicates the kind of the task, namespaced or cluster scoped.
-	Kind TaskKind `json:"kind,omitempty"`
-	// API version of the referent
-	// +optional
-	APIVersion string `json:"apiVersion,omitempty"`
-	// Bundle url reference to a Tekton Bundle.
-	// +optional
-	Bundle string `json:"bundle,omitempty"`
-
-	// ResolverRef allows referencing a Task in a remote location
-	// like a git repo. This field is only supported when the alpha
-	// feature gate is enabled.
-	// +optional
-	ResolverRef `json:",omitempty"`
-}
-
-// Check that Pipeline may be validated and defaulted.
-
-// TaskKind defines the type of Task used by the pipeline.
-type TaskKind string
-
-const (
-	// NamespacedTaskKind indicates that the task type has a namespaced scope.
-	NamespacedTaskKind TaskKind = "Task"
-	// ClusterTaskKind indicates that task type has a cluster scope.
-	ClusterTaskKind TaskKind = "ClusterTask"
-)

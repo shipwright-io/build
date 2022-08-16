@@ -41,6 +41,8 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
+        # https://github.com/GoogleContainerTools/kaniko/issues/2164
+        - --ignore-path=/product_uuid
         - --oci-layout-path=/kaniko/oci-image-layout
         - --snapshotMode=redo
         - --no-push

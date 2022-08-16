@@ -54,12 +54,18 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-source-default-commit-sha",
-					Value: commitSha,
+					Name: "shp-source-default-commit-sha",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: commitSha,
+					},
 				},
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-source-default-commit-author",
-					Value: "foo bar",
+					Name: "shp-source-default-commit-author",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: "foo bar",
+					},
 				})
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
@@ -77,8 +83,11 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-source-default-image-digest",
-					Value: bundleImageDigest,
+					Name: "shp-source-default-image-digest",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: bundleImageDigest,
+					},
 				})
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
@@ -92,12 +101,18 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-image-digest",
-					Value: imageDigest,
+					Name: "shp-image-digest",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: imageDigest,
+					},
 				},
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-image-size",
-					Value: "230",
+					Name: "shp-image-size",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: "230",
+					},
 				})
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
@@ -113,20 +128,32 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-source-default-commit-sha",
-					Value: commitSha,
+					Name: "shp-source-default-commit-sha",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: commitSha,
+					},
 				},
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-source-default-commit-author",
-					Value: "foo bar",
+					Name: "shp-source-default-commit-author",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: "foo bar",
+					},
 				},
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-image-digest",
-					Value: imageDigest,
+					Name: "shp-image-digest",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: imageDigest,
+					},
 				},
 				pipelinev1beta1.TaskRunResult{
-					Name:  "shp-image-size",
-					Value: "230",
+					Name: "shp-image-size",
+					Value: pipelinev1beta1.ArrayOrString{
+						Type:      pipelinev1beta1.ParamTypeString,
+						StringVal: "230",
+					},
 				})
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
