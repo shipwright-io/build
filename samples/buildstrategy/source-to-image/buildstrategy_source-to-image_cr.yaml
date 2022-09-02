@@ -44,7 +44,7 @@ spec:
           value: NOT_SET
         - name: AWS_SECRET_KEY
           value: NOT_SET
-      image: gcr.io/kaniko-project/executor:v1.8.1
+      image: gcr.io/kaniko-project/executor:v1.9.0
       name: build-and-push
       securityContext:
         runAsUser: 0
@@ -65,7 +65,7 @@ spec:
           mountPath: /kaniko/oci-image-layout
       workingDir: /gen-source
     - name: results
-      image: registry.access.redhat.com/ubi8/ubi-minimal
+      image: registry.access.redhat.com/ubi9/ubi-minimal
       command:
         - /bin/bash
       args:
