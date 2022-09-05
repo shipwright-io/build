@@ -1,0 +1,9 @@
+
+
+:source-highlighter: rouge
+:rouge-style: monokai
+
+[source,ruby]
+----
+puts "Hello, Rouge!"
+----
