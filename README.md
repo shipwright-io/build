@@ -161,7 +161,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 
 ### Platform support
 
-We are building container images of the Shipwright Build controller for all platforms supported by the base image that we are using which is [registry.access.redhat.com/ubi8/ubi-minimal](https://catalog.redhat.com/software/containers/ubi8/ubi-minimal/5c359a62bed8bd75a2c3fba8). Those are:
+We are building container images of the Shipwright Build controller for all platforms supported by the base image that we are using which is [registry.access.redhat.com/ubi9/ubi-minimal](https://catalog.redhat.com/software/containers/ubi9/ubi-minimal/615bd9b4075b022acc111bf5). Those are:
 
 - linux/amd64
 - linux/arm64

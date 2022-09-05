@@ -567,7 +567,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.8.1
+      image: gcr.io/kaniko-project/executor:v1.9.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -611,7 +611,7 @@ metadata:
 spec:
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.8.1
+      image: gcr.io/kaniko-project/executor:v1.9.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -906,7 +906,7 @@ metadata:
 spec:
   buildSteps:
     - name: build
-      image: quay.io/containers/buildah:v1.26.0
+      image: quay.io/containers/buildah:v1.27.0
       workingDir: $(params.shp-source-root)
       command:
         - buildah

@@ -9,7 +9,7 @@ spec:
       emptyDir: {}
   buildSteps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.8.1
+      image: gcr.io/kaniko-project/executor:v1.9.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -54,7 +54,7 @@ spec:
         - name: layout
           mountPath: /kaniko/oci-image-layout
     - name: results
-      image: registry.access.redhat.com/ubi8/ubi-minimal
+      image: registry.access.redhat.com/ubi9/ubi-minimal
       command:
         - /bin/bash
       args:

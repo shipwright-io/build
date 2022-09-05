@@ -113,7 +113,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 						ForBuild(build).
 						Name(testID).
 						GenerateServiceAccount().
-						StringParamValue("image", "registry.access.redhat.com/ubi8/ubi-minimal").
+						StringParamValue("image", "registry.access.redhat.com/ubi9/ubi-minimal").
 						StringParamValueFromSecret("env3", "a-secret", "number2", nil).
 						ArrayParamValueFromSecret("args", "a-secret", "number3", pointer.String("${SECRET_VALUE}9")).
 						ArrayParamValue("args", "47").
