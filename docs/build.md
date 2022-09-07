@@ -25,7 +25,7 @@ SPDX-License-Identifier: Apache-2.0
 A `Build` resource allows the user to define:
 
 - source
-- sources
+- sources (**this is deprecated, and will be removed in a future release**)
 - strategy
 - params
 - builder
@@ -86,7 +86,7 @@ The `Build` definition supports the following fields:
 - Optional:
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
-  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts.
+  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts. **This field has been deprecated, and will be removed in a future release.**
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The default is ten minutes. You can overwrite the value in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
   - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
@@ -707,6 +707,8 @@ spec:
 ```
 
 ### Sources
+
+**Note: This feature has been deprecated, and will be removed in a future release**.
 
 Sources represent remote artifacts, as in external entities added to the build context before the actual Build starts. Therefore, you may employ `.spec.sources` to download artifacts from external repositories.
 

@@ -118,6 +118,8 @@ type BuildSpec struct {
 	// (`.spec.source`) data.
 	//
 	// +optional
+	//
+	// NOTICE: Multiple sources in a build are deprecated. This feature will be removed in a future release.
 	Sources []BuildSource `json:"sources,omitempty"`
 
 	// Trigger defines the scenarios where a new build should be triggered.

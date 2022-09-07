@@ -17,6 +17,8 @@ const LocalCopy BuildSourceType = "LocalCopy"
 
 // HTTP defines a (HTTP) remote artifact, which will be downloaded into the build POD, right before
 // the build process starts. Represents a remote dependency.
+//
+// NOTICE: HTTP artifact downloads are deprecated. This feature will be removed in a future release.
 const HTTP BuildSourceType = "HTTP"
 
 // BuildSource remote artifact definition, also known as "sources". Simple "name" and "url" pairs,

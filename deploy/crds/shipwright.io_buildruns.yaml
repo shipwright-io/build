@@ -419,8 +419,10 @@ spec:
                         type: string
                     type: object
                   sources:
-                    description: Sources slice of BuildSource, defining external build
-                      artifacts complementary to VCS (`.spec.source`) data.
+                    description: "Sources slice of BuildSource, defining external
+                      build artifacts complementary to VCS (`.spec.source`) data.
+                      \n NOTICE: Multiple sources in a build are deprecated. This
+                      feature will be removed in a future release."
                     items:
                       description: BuildSource remote artifact definition, also known
                         as "sources". Simple "name" and "url" pairs, initially without
@@ -4224,8 +4226,10 @@ spec:
                         type: string
                     type: object
                   sources:
-                    description: Sources slice of BuildSource, defining external build
-                      artifacts complementary to VCS (`.spec.source`) data.
+                    description: "Sources slice of BuildSource, defining external
+                      build artifacts complementary to VCS (`.spec.source`) data.
+                      \n NOTICE: Multiple sources in a build are deprecated. This
+                      feature will be removed in a future release."
                     items:
                       description: BuildSource remote artifact definition, also known
                         as "sources". Simple "name" and "url" pairs, initially without
