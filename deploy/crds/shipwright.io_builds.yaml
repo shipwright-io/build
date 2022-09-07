@@ -2012,7 +2012,8 @@ spec:
             - strategy
             type: object
           status:
-            description: BuildStatus defines the observed state of Build
+            description: "BuildStatus defines the observed state of Build \n NOTICE:
+              This is deprecated and will be removed in a future release."
             properties:
               message:
                 description: The message of the registered Build, either an error

@@ -51,6 +51,8 @@ When the controller reconciles it:
 
 ## Build Validations
 
+**Note: reported validations in build status are deprecated, and will be removed in a future release.**
+
 To prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `status.reason`. However, if any validations fail, users can rely on the `status.reason` and `status.message` fields to understand the root cause.
 
 | Status.Reason | Description |

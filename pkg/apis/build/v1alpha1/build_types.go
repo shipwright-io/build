@@ -222,6 +222,8 @@ type Image struct {
 }
 
 // BuildStatus defines the observed state of Build
+//
+// NOTICE: This is deprecated and will be removed in a future release.
 type BuildStatus struct {
 	// The Register status of the Build
 	// +optional
