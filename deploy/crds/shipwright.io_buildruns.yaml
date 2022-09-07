@@ -2357,7 +2357,9 @@ spec:
                   be set if it is empty
                 properties:
                   generate:
-                    description: If generates a new ServiceAccount for the build
+                    description: "If generates a new ServiceAccount for the build
+                      \n NOTICE: Generated ServiceAccounts are deprecated, and will
+                      be removed in a future release."
                     type: boolean
                   name:
                     description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'

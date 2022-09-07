@@ -219,6 +219,8 @@ type ServiceAccount struct {
 	// +optional
 	Name *string `json:"name,omitempty"`
 	// If generates a new ServiceAccount for the build
+	//
+	// NOTICE: Generated ServiceAccounts are deprecated, and will be removed in a future release.
 	// +optional
 	Generate *bool `json:"generate,omitempty"`
 }
