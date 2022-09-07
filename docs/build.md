@@ -81,13 +81,13 @@ The `Build` definition supports the following fields:
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `Build`.
   - `spec.source` - Refers to the location of the source code, for example a Git repository or source bundle image.
   - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/buildstrategy)
-  - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies, this is just required for `source-to-image` buildStrategy_)
+  - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies, this is just required for `source-to-image` buildStrategy_) **This field has been deprecated, and will be removed in a future release.**
   - `spec.output`- Refers to the location where the generated image would be pushed.
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
 - Optional:
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`.
-  - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
+  - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_). **This field has been deprecated, and will be removed in a future release.**
   - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts. **This field has been deprecated, and will be removed in a future release.**
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The default is ten minutes. You can overwrite the value in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
@@ -416,6 +416,8 @@ Here, we pass three items in the `build-args` array:
 **NOTE**: The logging output of BuildKit contains expanded `ARG`s in `RUN` commands. Also, such information ends up in the final container image if you use such args in the [final stage of your Dockerfile](https://docs.docker.com/develop/develop-images/multistage-build/). An alternative approach to pass secrets is using [secret mounts](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The BuildKit sample strategy supports them using the `secrets` parameter.
 
 ### Defining the Builder or Dockerfile
+
+**Note: Builder and Dockerfile options are deprecated, and will be removed in a future release.**
 
 In the `Build` resource, you use the `spec.builder` or `spec.dockerfile` parameters to specify the image that contains the tools to build the final image. For example, the following Build definition specifies a `Dockerfile` image.
 

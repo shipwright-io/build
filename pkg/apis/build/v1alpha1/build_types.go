@@ -134,12 +134,18 @@ type BuildSpec struct {
 	// Builder refers to the image containing the build tools inside which
 	// the source code would be built.
 	//
+	// NOTICE: Builder is deprecated, and will be removed in a future release.
+	// Build strategies which rely on "builder" should provide an equivalent parameter instead.
+	//
 	// +optional
 	Builder *Image `json:"builder,omitempty"`
 
 	// Dockerfile is the path to the Dockerfile to be used for
 	// build strategies which bank on the Dockerfile for building
 	// an image.
+	//
+	// NOTICE: Dockerfile is deprecated, and will be removed in a future release.
+	// Build strategies which rely on "dockerfile" should provide an equivalent parameter instead.
 	//
 	// +optional
 	Dockerfile *string `json:"dockerfile,omitempty"`

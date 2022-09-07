@@ -59,8 +59,11 @@ spec:
             description: BuildSpec defines the desired state of Build
             properties:
               builder:
-                description: Builder refers to the image containing the build tools
-                  inside which the source code would be built.
+                description: "Builder refers to the image containing the build tools
+                  inside which the source code would be built. \n NOTICE: Builder
+                  is deprecated, and will be removed in a future release. Build strategies
+                  which rely on \"builder\" should provide an equivalent parameter
+                  instead."
                 properties:
                   annotations:
                     additionalProperties:
@@ -90,8 +93,11 @@ spec:
                 - image
                 type: object
               dockerfile:
-                description: Dockerfile is the path to the Dockerfile to be used for
-                  build strategies which bank on the Dockerfile for building an image.
+                description: "Dockerfile is the path to the Dockerfile to be used
+                  for build strategies which bank on the Dockerfile for building an
+                  image. \n NOTICE: Dockerfile is deprecated, and will be removed
+                  in a future release. Build strategies which rely on \"dockerfile\"
+                  should provide an equivalent parameter instead."
                 type: string
               env:
                 description: Env contains additional environment variables that should
