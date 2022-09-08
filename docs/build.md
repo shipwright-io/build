@@ -25,7 +25,7 @@ SPDX-License-Identifier: Apache-2.0
 A `Build` resource allows the user to define:
 
 - source
-- sources
+- sources (**this is deprecated, and will be removed in a future release**)
 - strategy
 - params
 - builder
@@ -50,6 +50,8 @@ When the controller reconciles it:
 - Validates if the referenced `spec.source.url` endpoint exists.
 
 ## Build Validations
+
+**Note: reported validations in build status are deprecated, and will be removed in a future release.**
 
 To prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `status.reason`. However, if any validations fail, users can rely on the `status.reason` and `status.message` fields to understand the root cause.
 
@@ -79,14 +81,14 @@ The `Build` definition supports the following fields:
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `Build`.
   - `spec.source` - Refers to the location of the source code, for example a Git repository or source bundle image.
   - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/buildstrategy)
-  - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies, this is just required for `source-to-image` buildStrategy_)
+  - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies, this is just required for `source-to-image` buildStrategy_) **This field has been deprecated, and will be removed in a future release.**
   - `spec.output`- Refers to the location where the generated image would be pushed.
   - `spec.output.credentials.name`- Reference an existing secret to get access to the container registry.
 
 - Optional:
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`.
-  - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
-  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts.
+  - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_). **This field has been deprecated, and will be removed in a future release.**
+  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts. **This field has been deprecated, and will be removed in a future release.**
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The default is ten minutes. You can overwrite the value in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
   - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
@@ -415,6 +417,8 @@ Here, we pass three items in the `build-args` array:
 
 ### Defining the Builder or Dockerfile
 
+**Note: Builder and Dockerfile options are deprecated, and will be removed in a future release.**
+
 In the `Build` resource, you use the `spec.builder` or `spec.dockerfile` parameters to specify the image that contains the tools to build the final image. For example, the following Build definition specifies a `Dockerfile` image.
 
 ```yaml
@@ -707,6 +711,8 @@ spec:
 ```
 
 ### Sources
+
+**Note: This feature has been deprecated, and will be removed in a future release**.
 
 Sources represent remote artifacts, as in external entities added to the build context before the actual Build starts. Therefore, you may employ `.spec.sources` to download artifacts from external repositories.
 

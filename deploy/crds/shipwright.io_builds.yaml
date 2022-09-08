@@ -59,8 +59,11 @@ spec:
             description: BuildSpec defines the desired state of Build
             properties:
               builder:
-                description: Builder refers to the image containing the build tools
-                  inside which the source code would be built.
+                description: "Builder refers to the image containing the build tools
+                  inside which the source code would be built. \n NOTICE: Builder
+                  is deprecated, and will be removed in a future release. Build strategies
+                  which rely on \"builder\" should provide an equivalent parameter
+                  instead."
                 properties:
                   annotations:
                     additionalProperties:
@@ -90,8 +93,11 @@ spec:
                 - image
                 type: object
               dockerfile:
-                description: Dockerfile is the path to the Dockerfile to be used for
-                  build strategies which bank on the Dockerfile for building an image.
+                description: "Dockerfile is the path to the Dockerfile to be used
+                  for build strategies which bank on the Dockerfile for building an
+                  image. \n NOTICE: Dockerfile is deprecated, and will be removed
+                  in a future release. Build strategies which rely on \"dockerfile\"
+                  should provide an equivalent parameter instead."
                 type: string
               env:
                 description: Env contains additional environment variables that should
@@ -397,8 +403,10 @@ spec:
                     type: string
                 type: object
               sources:
-                description: Sources slice of BuildSource, defining external build
-                  artifacts complementary to VCS (`.spec.source`) data.
+                description: "Sources slice of BuildSource, defining external build
+                  artifacts complementary to VCS (`.spec.source`) data. \n NOTICE:
+                  Multiple sources in a build are deprecated. This feature will be
+                  removed in a future release."
                 items:
                   description: BuildSource remote artifact definition, also known
                     as "sources". Simple "name" and "url" pairs, initially without
@@ -2010,7 +2018,8 @@ spec:
             - strategy
             type: object
           status:
-            description: BuildStatus defines the observed state of Build
+            description: "BuildStatus defines the observed state of Build \n NOTICE:
+              This is deprecated and will be removed in a future release."
             properties:
               message:
                 description: The message of the registered Build, either an error

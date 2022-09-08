@@ -118,6 +118,8 @@ type BuildSpec struct {
 	// (`.spec.source`) data.
 	//
 	// +optional
+	//
+	// NOTICE: Multiple sources in a build are deprecated. This feature will be removed in a future release.
 	Sources []BuildSource `json:"sources,omitempty"`
 
 	// Trigger defines the scenarios where a new build should be triggered.
@@ -132,12 +134,18 @@ type BuildSpec struct {
 	// Builder refers to the image containing the build tools inside which
 	// the source code would be built.
 	//
+	// NOTICE: Builder is deprecated, and will be removed in a future release.
+	// Build strategies which rely on "builder" should provide an equivalent parameter instead.
+	//
 	// +optional
 	Builder *Image `json:"builder,omitempty"`
 
 	// Dockerfile is the path to the Dockerfile to be used for
 	// build strategies which bank on the Dockerfile for building
 	// an image.
+	//
+	// NOTICE: Dockerfile is deprecated, and will be removed in a future release.
+	// Build strategies which rely on "dockerfile" should provide an equivalent parameter instead.
 	//
 	// +optional
 	Dockerfile *string `json:"dockerfile,omitempty"`
@@ -220,6 +228,8 @@ type Image struct {
 }
 
 // BuildStatus defines the observed state of Build
+//
+// NOTICE: This is deprecated and will be removed in a future release.
 type BuildStatus struct {
 	// The Register status of the Build
 	// +optional

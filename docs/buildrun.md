@@ -165,7 +165,7 @@ spec:
     name: pipeline
 ```
 
-You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you. The name of the generated service account is the name of the BuildRun.
+You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you. The name of the generated service account is the name of the BuildRun. **This field is deprecated, and will be removed in a future release.**
 
 _**Note**_: When the service account is not defined, the `BuildRun` uses the `pipeline` service account if it exists in the namespace, and falls back to the `default` service account.
 
