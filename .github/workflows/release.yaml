@@ -35,10 +35,10 @@ jobs:
         check-latest: true
 
     # Install tools
-    # This sha corresponds to v0.5
-    - uses: imjasonh/setup-ko@78eea08f10db87a7a23a666a4a6fe2734f2eeb8d
+    # This sha corresponds to v0.6
+    - uses: imjasonh/setup-ko@c682db27121307b4d02d11694318530ec9041d4c
       with:
-        version: v0.11.2
+        version: v0.12.0
     - uses: sigstore/cosign-installer@v2.5.0
 
     - name: Build Release Changelog

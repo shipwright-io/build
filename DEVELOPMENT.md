@@ -81,7 +81,7 @@ You must install these tools:
 1.  [`go`](https://golang.org/doc/install): The language Shipwright Build is
     built in
 1.  [`git`](https://help.github.com/articles/set-up-git/): For source control
-1   [`ko`](https://github.com/google/ko): To build and deploy changes.
+1   [`ko`](https://github.com/ko-build/ko): To build and deploy changes.
 1.  [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/): For
     interacting with your kube cluster
 
@@ -108,7 +108,7 @@ export GOPATH="$HOME/go"
 export PATH="${PATH}:${GOPATH}/bin"
 ```
 
-Make sure to configure [authentication](https://github.com/google/ko#authenticating) if required. To be able to push images to the container registry, you need to run this once:
+Make sure to configure [authentication](https://github.com/ko-build/ko#authenticating) if required. To be able to push images to the container registry, you need to run this once:
 
 ```sh
 ko login [OPTIONS] [SERVER]

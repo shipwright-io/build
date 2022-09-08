@@ -184,7 +184,7 @@ kubectl apply -f samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml
 
 ## ko
 
-The `ko` ClusterBuilderStrategy is using [ko](https://github.com/google/ko)'s publish command to build an image from a Golang main package.
+The `ko` ClusterBuilderStrategy is using [ko](https://github.com/ko-build/ko)'s publish command to build an image from a Golang main package.
 
 ### Installing ko Strategy
 
@@ -202,7 +202,7 @@ The build strategy provides the following parameters that you can set in a Build
 | -- | -- | -- |
 | `go-flags` | Value for the GOFLAGS environment variable. | Empty |
 | `go-version` | Version of Go, must match a tag from [the golang image](https://hub.docker.com/_/golang?tab=tags) | `1.18` |
-| `ko-version` | Version of ko, must be either `latest` for the newest release, or a [ko release name](https://github.com/google/ko/releases) | `latest` |
+| `ko-version` | Version of ko, must be either `latest` for the newest release, or a [ko release name](https://github.com/ko-build/ko/releases) | `latest` |
 | `package-directory` | The directory inside the context directory containing the main package. | `.` |
 | `target-platform` | Target platform to be built. For example: `linux/arm64`. Multiple platforms can be provided separated by comma, for example: `linux/arm64,linux/amd64`. The value `all` will build all platforms supported by the base image. The value `current` will build the platform on which the build runs. | `current` |
 

@@ -12,7 +12,7 @@ spec:
       description: "Version of Go, must match a tag from https://hub.docker.com/_/golang?tab=tags"
       default: "1.18"
     - name: ko-version
-      description: "Version of ko, must be either 'latest', or a release name from https://github.com/google/ko/releases"
+      description: "Version of ko, must be either 'latest', or a release name from https://github.com/ko-build/ko/releases"
       default: latest
     - name: package-directory
       description: "The directory inside the context directory containing the main package."
@@ -110,7 +110,7 @@ spec:
           # Determine the ko version
           KO_VERSION="${PARAM_KO_VERSION}"
           if [ "${KO_VERSION}" == "latest" ]; then
-            KO_VERSION=$(curl --silent "https://api.github.com/repos/google/ko/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+            KO_VERSION=$(curl --silent "https://api.github.com/repos/ko-build/ko/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           fi
 
           # Create one variable with v-suffix and one without as we need both for the download URL
@@ -123,7 +123,7 @@ spec:
           fi
 
           # Download ko to the temp directory
-          curl -f -s -L "https://github.com/google/ko/releases/download/${KO_VERSION_WITH_V}/ko_${KO_VERSION_WITHOUT_V}_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz" | tar xzf - -C /tmp ko
+          curl -f -s -L "https://github.com/ko-build/ko/releases/download/${KO_VERSION_WITH_V}/ko_${KO_VERSION_WITHOUT_V}_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz" | tar xzf - -C /tmp ko
 
           # Determine the platform
           PLATFORM="${PARAM_TARGET_PLATFORM}"
