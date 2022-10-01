@@ -8,7 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 
 The following document provides an introduction around the different authentication methods that can take place during an image build when using the Build controller.
 
-- [Understanding authentication at runtime](#understanding-authentication-at-runtime)
   - [Overview](#overview)
   - [Build Secrets Annotation](#build-secrets-annotation)
   - [Authentication for Git](#authentication-for-git)
