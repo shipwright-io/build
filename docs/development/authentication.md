@@ -8,16 +8,16 @@ SPDX-License-Identifier: Apache-2.0
 
 The following document provides an introduction around the different authentication methods that can take place during an image build when using the Build controller.
 
-  - [Overview](#overview)
-  - [Build Secrets Annotation](#build-secrets-annotation)
-  - [Authentication for Git](#authentication-for-git)
-    - [SSH authentication](#ssh-authentication)
-    - [Basic authentication](#basic-authentication)
-    - [Usage of git secret](#usage-of-git-secret)
-  - [Authentication to container registries](#authentication-to-container-registries)
-    - [Docker Hub](#docker-hub)
-    - [Usage of registry secret](#usage-of-registry-secret)
-  - [References](#references)
+- [Overview](#overview)
+- [Build Secrets Annotation](#build-secrets-annotation)
+- [Authentication for Git](#authentication-for-git)
+  - [SSH authentication](#ssh-authentication)
+  - [Basic authentication](#basic-authentication)
+  - [Usage of git secret](#usage-of-git-secret)
+- [Authentication to container registries](#authentication-to-container-registries)
+  - [Docker Hub](#docker-hub)
+  - [Usage of registry secret](#usage-of-registry-secret)
+- [References](#references)
 
 ## Overview
 
