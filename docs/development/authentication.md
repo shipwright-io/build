@@ -8,16 +8,17 @@ SPDX-License-Identifier: Apache-2.0
 
 The following document provides an introduction around the different authentication methods that can take place during an image build when using the Build controller.
 
-- [Overview](#overview)
-- [Build Secrets Annotation](#build-secrets-annotation)
-- [Authentication for Git](#authentication-for-git)
-  - [Basic authentication](#basic-authentication)
-  - [SSH authentication](#ssh-authentication)
-  - [Usage of git secret](#usage-of-git-secret)
-- [Authentication to container registries](#authentication-to-container-registries)
-  - [Docker Hub](#docker-hub)
-  - [Usage of registry secret](#usage-of-registry-secret)
-- [References](#references)
+- [Understanding authentication at runtime](#understanding-authentication-at-runtime)
+  - [Overview](#overview)
+  - [Build Secrets Annotation](#build-secrets-annotation)
+  - [Authentication for Git](#authentication-for-git)
+    - [SSH authentication](#ssh-authentication)
+    - [Basic authentication](#basic-authentication)
+    - [Usage of git secret](#usage-of-git-secret)
+  - [Authentication to container registries](#authentication-to-container-registries)
+    - [Docker Hub](#docker-hub)
+    - [Usage of registry secret](#usage-of-registry-secret)
+  - [References](#references)
 
 ## Overview
 
@@ -78,7 +79,10 @@ data:
 The Basic authentication is very similar to the ssh one, but with the following differences:
 
 - The Kubernetes secret should be of the type `kubernetes.io/basic-auth`
-- The `stringData` should host your user and password in clear text.
+- The `stringData` should host your user and personal access token in clear text.
+
+Note: GitHub and GitLab no longer accepts account passwords when authenticating Git operations.
+Instead, token-based authentication will be required for all authenticated Git operations. You can create your own personal access token on [GitHub](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and [GitLab](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html).
 
 ```yaml
 apiVersion: v1
@@ -90,7 +94,7 @@ metadata:
 type: kubernetes.io/basic-auth
 stringData:
   username: <cleartext username>
-  password: <cleartext password>
+  password: <cleartext token>
 ```
 
 ### Usage of git secret
