@@ -11,8 +11,8 @@ The following document provides an introduction around the different authenticat
 - [Overview](#overview)
 - [Build Secrets Annotation](#build-secrets-annotation)
 - [Authentication for Git](#authentication-for-git)
-  - [Basic authentication](#basic-authentication)
   - [SSH authentication](#ssh-authentication)
+  - [Basic authentication](#basic-authentication)
   - [Usage of git secret](#usage-of-git-secret)
 - [Authentication to container registries](#authentication-to-container-registries)
   - [Docker Hub](#docker-hub)
@@ -78,7 +78,10 @@ data:
 The Basic authentication is very similar to the ssh one, but with the following differences:
 
 - The Kubernetes secret should be of the type `kubernetes.io/basic-auth`
-- The `stringData` should host your user and password in clear text.
+- The `stringData` should host your user and personal access token in clear text.
+
+Note: GitHub and GitLab no longer accept account passwords when authenticating Git operations.
+Instead, you must use token-based authentication for all authenticated Git operations. You can create your own personal access token on [GitHub](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and [GitLab](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html).
 
 ```yaml
 apiVersion: v1
@@ -90,7 +93,7 @@ metadata:
 type: kubernetes.io/basic-auth
 stringData:
   username: <cleartext username>
-  password: <cleartext password>
+  password: <cleartext token>
 ```
 
 ### Usage of git secret
