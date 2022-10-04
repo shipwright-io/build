@@ -80,7 +80,7 @@ The Basic authentication is very similar to the ssh one, but with the following 
 - The Kubernetes secret should be of the type `kubernetes.io/basic-auth`
 - The `stringData` should host your user and personal access token in clear text.
 
-Note: GitHub and GitLab no longer accepts account passwords when authenticating Git operations.
+Note: GitHub and GitLab no longer accept account passwords when authenticating Git operations.
 Instead, token-based authentication will be required for all authenticated Git operations. You can create your own personal access token on [GitHub](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and [GitLab](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html).
 
 ```yaml
