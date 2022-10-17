@@ -34,7 +34,9 @@ func TaskSpecVolumes(
 		return nil, err
 	}
 
-	for _, v := range volumes {
+	for i := range volumes {
+		v := volumes[i]
+
 		if readOnly, ok := existingVolumeMounts[v.Name]; ok {
 			// In case volume mount is not read only and
 			// volume type is either secret or config map,
