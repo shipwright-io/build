@@ -144,28 +144,49 @@ type KubeAPIOptions struct {
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
 func NewDefaultConfig() *Config {
 	return &Config{
-		CtxTimeOut: contextTimeout,
+		CtxTimeOut:                    contextTimeout,
+		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
+		TerminationLogPath:            terminationLogPathDefault,
+		GitRewriteRule:                false,
+
 		GitContainerTemplate: pipeline.Step{
 			Image: gitDefaultImage,
 			Command: []string{
 				"/ko-app/git",
 			},
+			// We explicitly define HOME=/tekton/home because this was always set in the
+			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			Env: []corev1.EnvVar{
+				{
+					Name:  "HOME",
+					Value: "/tekton/home",
+				},
+			},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser:  nonRoot,
 				RunAsGroup: nonRoot,
 			},
 		},
+
 		BundleContainerTemplate: pipeline.Step{
 			Image: bundleDefaultImage,
 			Command: []string{
 				"/ko-app/bundle",
 			},
+			// We explicitly define HOME=/tekton/home because this was always set in the
+			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			Env: []corev1.EnvVar{
+				{
+					Name:  "HOME",
+					Value: "/tekton/home",
+				},
+			},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser:  nonRoot,
 				RunAsGroup: nonRoot,
 			},
 		},
-		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
+
 		MutateImageContainerTemplate: pipeline.Step{
 			Image: mutateImageDefaultImage,
 			Command: []string{
@@ -193,6 +214,7 @@ func NewDefaultConfig() *Config {
 				},
 			},
 		},
+
 		WaiterContainerTemplate: pipeline.Step{
 			Image: waiterDefaultImage,
 			Command: []string{
@@ -201,19 +223,30 @@ func NewDefaultConfig() *Config {
 			Args: []string{
 				"start",
 			},
+			// We explicitly define HOME=/tekton/home because this was always set in the
+			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			Env: []corev1.EnvVar{
+				{
+					Name:  "HOME",
+					Value: "/tekton/home",
+				},
+			},
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser:  nonRoot,
 				RunAsGroup: nonRoot,
 			},
 		},
+
 		Prometheus: PrometheusConfig{
 			BuildRunCompletionDurationBuckets: metricBuildRunCompletionDurationBuckets,
 			BuildRunEstablishDurationBuckets:  metricBuildRunEstablishDurationBuckets,
 			BuildRunRampUpDurationBuckets:     metricBuildRunRampUpDurationBuckets,
 		},
+
 		ManagerOptions: ManagerOptions{
 			LeaderElectionNamespace: leaderElectionNamespaceDefault,
 		},
+
 		Controllers: Controllers{
 			Build: ControllerOptions{
 				MaxConcurrentReconciles: 0,
@@ -228,12 +261,11 @@ func NewDefaultConfig() *Config {
 				MaxConcurrentReconciles: 0,
 			},
 		},
+
 		KubeAPIOptions: KubeAPIOptions{
 			QPS:   0,
 			Burst: 0,
 		},
-		TerminationLogPath: terminationLogPathDefault,
-		GitRewriteRule:     false,
 	}
 }
 

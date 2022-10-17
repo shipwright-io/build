@@ -132,6 +132,7 @@ var _ = Describe("Config", func() {
 					Command: []string{
 						"/ko-app/git",
 					},
+					Env: []corev1.EnvVar{{Name: "HOME", Value: "/tekton/home"}},
 					SecurityContext: &corev1.SecurityContext{
 						RunAsUser:  nonRoot,
 						RunAsGroup: nonRoot,
@@ -226,6 +227,7 @@ var _ = Describe("Config", func() {
 					Image:   "myregistry/custom/image",
 					Command: []string{"/ko-app/waiter"},
 					Args:    []string{"start"},
+					Env:     []corev1.EnvVar{{Name: "HOME", Value: "/tekton/home"}},
 					SecurityContext: &corev1.SecurityContext{
 						RunAsUser:  nonRoot,
 						RunAsGroup: nonRoot,
