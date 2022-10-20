@@ -254,7 +254,9 @@ stepLookupLoop:
 	// In this second loop, we iterate all the steps and add the environment variable to all steps
 	// where the parameter is referenced.
 stepModifyLoop:
-	for i, step := range taskRun.Spec.TaskSpec.Steps {
+	for i := range taskRun.Spec.TaskSpec.Steps {
+		step := taskRun.Spec.TaskSpec.Steps[i]
+
 		if isStepReferencingParameter(&step, paramName) {
 			// make sure we don't add a duplicate environment variable to a step
 			for _, env := range step.Env {
@@ -314,7 +316,9 @@ stepLookupLoop:
 	// In this second loop, we iterate all the steps and add the environment variable to all steps
 	// where the parameter is referenced.
 stepModifyLoop:
-	for i, step := range taskRun.Spec.TaskSpec.Steps {
+	for i := range taskRun.Spec.TaskSpec.Steps {
+		step := taskRun.Spec.TaskSpec.Steps[i]
+
 		if isStepReferencingParameter(&step, paramName) {
 			// make sure we don't add a duplicate environment variable to a step
 			for _, env := range step.Env {

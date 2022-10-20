@@ -30,7 +30,6 @@ type OwnerRef struct {
 // ValidatePath implements BuildPath interface and validates
 // setting the ownershipReference between a Build and a BuildRun
 func (o OwnerRef) ValidatePath(ctx context.Context) error {
-
 	buildRunList, err := o.retrieveBuildRunsfromBuild(ctx)
 	if err != nil {
 		return err
@@ -39,7 +38,9 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 	switch o.Build.GetAnnotations()[build.AnnotationBuildRunDeletion] {
 	case "true":
 		// if the buildRun does not have an ownerreference to the Build, lets add it.
-		for _, buildRun := range buildRunList.Items {
+		for i := range buildRunList.Items {
+			buildRun := buildRunList.Items[i]
+
 			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
 				if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
 					o.Build.Status.Reason = build.BuildReasonPtr(build.SetOwnerReferenceFailed)
@@ -53,7 +54,9 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 		}
 	case "", "false":
 		// if the buildRun have an ownerreference to the Build, lets remove it
-		for _, buildRun := range buildRunList.Items {
+		for i := range buildRunList.Items {
+			buildRun := buildRunList.Items[i]
+
 			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index != -1 {
 				buildRun.OwnerReferences = removeOwnerReferenceByIndex(buildRun.OwnerReferences, index)
 				if err := o.Client.Update(ctx, &buildRun); err != nil {
