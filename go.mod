@@ -12,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.22.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/client_model v0.3.0
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.38.3
 	go.uber.org/zap v1.23.0
