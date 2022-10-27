@@ -3,7 +3,7 @@ module github.com/shipwright-io/build
 go 1.18
 
 require (
-	github.com/docker/cli v20.10.20+incompatible
+	github.com/docker/cli v20.10.21+incompatible
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-logr/logr v1.2.3
 	github.com/golang-jwt/jwt/v4 v4.4.2
