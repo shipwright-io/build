@@ -1,0 +1,47 @@
+name: Update images in sample build strategies
+on:
+  schedule:
+  - cron: '0 0 * * *'
+  issue_comment:
+    types: [created, edited]
+jobs:
+  check-new-versions:
+    if: contains(github.event.comment.body, '/rebase') || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image: gcr.io/kaniko-project/executor
+            latest-release-url: https://api.github.com/repos/GoogleContainerTools/kaniko/releases/latest
+          - image: docker.io/aquasec/trivy
+            latest-release-url: https://api.github.com/repos/aquasecurity/trivy/releases/latest
+          - image: quay.io/containers/buildah
+            latest-release-url: https://quay.io/api/v1/repository/containers/buildah/tag/
+          - image: gcr.io/go-containerregistry/crane
+            latest-release-url: https://api.github.com/repos/google/go-containerregistry/releases/latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Check and modify ${{ matrix.image }}
+        env:
+          IMAGE: ${{ matrix.image }}
+          LATEST_RELEASE_URL: ${{ matrix.latest-release-url }}
+        run: |
+          for directory in samples test; do hack/check-latest-images.sh ${IMAGE} ${LATEST_RELEASE_URL} ${directory}; done
+      - name: Check image change
+        run: |
+          echo "FROM=$(git diff --unified=0 | grep '^[-].*image: .*/.*/.*:' | cut --delimiter=':' --fields='3')" >> $GITHUB_OUTPUT
+          echo "TO=$(git diff --unified=0 | grep '^[+].*image: .*/.*/.*:' | cut --delimiter=':' --fields='3')" >> $GITHUB_OUTPUT
+        id: image-diff
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          commit-message: Bump ${{ matrix.image }}
+          title: Bump ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}
+          body: |
+            Bumps ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}.
+
+            You can trigger a rebase manually by commenting `/rebase` and resolve any conflicts with this PR.
+          labels: kind/dependency-change
+          branch: ${{ matrix.image }}
+          delete-branch: true
