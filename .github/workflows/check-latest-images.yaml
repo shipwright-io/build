@@ -27,21 +27,33 @@ jobs:
           IMAGE: ${{ matrix.image }}
           LATEST_RELEASE_URL: ${{ matrix.latest-release-url }}
         run: |
-          for directory in samples test; do hack/check-latest-images.sh ${IMAGE} ${LATEST_RELEASE_URL} ${directory}; done
+          for directory in docs samples test; do hack/check-latest-images.sh ${IMAGE} ${LATEST_RELEASE_URL} ${directory}; done
       - name: Check image change
         run: |
-          echo "FROM=$(git diff --unified=0 | grep '^[-].*image: .*/.*/.*:' | cut --delimiter=':' --fields='3')" >> $GITHUB_OUTPUT
-          echo "TO=$(git diff --unified=0 | grep '^[+].*image: .*/.*/.*:' | cut --delimiter=':' --fields='3')" >> $GITHUB_OUTPUT
+          echo "FROM=$(git diff --unified=0 | grep '^[-].*image: .*/.*/.*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
+          echo "TO=$(git diff --unified=0 | grep '^[+].*image: .*/.*/.*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
         id: image-diff
       - name: Create pull request
         uses: peter-evans/create-pull-request@v4
         with:
-          commit-message: Bump ${{ matrix.image }}
+          commit-message: Bump ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}
           title: Bump ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}
           body: |
+            # Changes
             Bumps ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}.
 
             You can trigger a rebase manually by commenting `/rebase` and resolve any conflicts with this PR.
+
+            # Submitter Checklist
+            - [ ] Includes tests if functionality changed/was added
+            - [ ] Includes docs if changes are user-facing
+            - [x] [Set a kind label on this PR](https://prow.k8s.io/command-help#kind)
+            - [x] Release notes block has been filled in, or marked NONE
+
+            # Release Notes
+            ```release-note
+            NONE
+            ```
           labels: kind/dependency-change
           branch: ${{ matrix.image }}
           delete-branch: true
