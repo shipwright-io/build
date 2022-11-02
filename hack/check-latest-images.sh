@@ -34,7 +34,7 @@ function validate() {
 
 function update() {
         # Search the image URL recursively and parse the current image tag
-        CURRENT_TAG=$(grep --no-filename --recursive --max-count=1 "image: ${IMAGE}:"  | cut --delimiter=':' --fields='3')
+        CURRENT_TAG=$(grep --no-filename --recursive "image: ${IMAGE}:" | head --lines=1  | cut --delimiter=':' --fields='3')
 
         # Fetch the latest release tag name from release URL
         LATEST_TAG=$(curl --silent --retry 3 ${LATEST_RELEASE_URL} | jq --raw-output '.name')
