@@ -178,6 +178,14 @@ type BuildSpec struct {
 	// to be overridden. Must only contain volumes that exist in the corresponding BuildStrategy
 	// +optional
 	Volumes []BuildVolume `json:"volumes,omitempty"`
+
+	// Labels contains labels that should be passed to the build pod
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations contains annotations that should be passed to the build pod
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // BuildVolume is a volume that will be mounted in build pod during build step

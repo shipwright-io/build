@@ -58,6 +58,12 @@ spec:
           spec:
             description: BuildSpec defines the desired state of Build
             properties:
+              annotations:
+                additionalProperties:
+                  type: string
+                description: Annotations contains annotations that should be passed
+                  to the build pod
+                type: object
               builder:
                 description: "Builder refers to the image containing the build tools
                   inside which the source code would be built. \n NOTICE: Builder
@@ -205,6 +211,12 @@ spec:
                   - name
                   type: object
                 type: array
+              labels:
+                additionalProperties:
+                  type: string
+                description: Labels contains labels that should be passed to the build
+                  pod
+                type: object
               output:
                 description: Output refers to the location where the built image would
                   be pushed.

@@ -245,6 +245,63 @@ func GenerateTaskSpec(
 	return &generatedTaskSpec, nil
 }
 
+func generateTaskRunLabels(
+	build *buildv1alpha1.Build,
+	buildRun *buildv1alpha1.BuildRun,
+	strategy buildv1alpha1.BuilderStrategy,
+) map[string]string {
+	// Add BuildRun name reference to the TaskRun labels
+	taskRunLabels := map[string]string{
+		buildv1alpha1.LabelBuildRun:           buildRun.Name,
+		buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+	}
+
+	// Add Build name reference unless it is an embedded Build (empty build name)
+	if build.Name != "" {
+		taskRunLabels[buildv1alpha1.LabelBuild] = build.Name
+		taskRunLabels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+	}
+
+	for label, value := range strategy.GetResourceLabels() {
+		taskRunLabels[label] = value
+	}
+
+	for label, value := range build.Spec.Labels {
+		taskRunLabels[label] = value
+	}
+
+	for label, value := range buildRun.Spec.Labels {
+		taskRunLabels[label] = value
+	}
+
+	return taskRunLabels
+}
+
+func generateTaskRunAnnotations(
+	build *buildv1alpha1.Build,
+	buildRun *buildv1alpha1.BuildRun,
+	strategy buildv1alpha1.BuilderStrategy,
+) map[string]string {
+	// assign the annotations from the build strategy, filter out those that should not be propagated
+	taskRunAnnotations := make(map[string]string)
+	for key, value := range strategy.GetAnnotations() {
+		if isPropagatableAnnotation(key) {
+			taskRunAnnotations[key] = value
+		}
+	}
+
+	for label, value := range build.Spec.Annotations {
+		taskRunAnnotations[label] = value
+	}
+
+	for label, value := range buildRun.Spec.Annotations {
+		taskRunAnnotations[label] = value
+	}
+
+	return taskRunAnnotations
+
+}
+
 // GenerateTaskRun creates a Tekton TaskRun to be used for a build run
 func GenerateTaskRun(
 	cfg *config.Config,
@@ -274,23 +331,12 @@ func GenerateTaskRun(
 		return nil, err
 	}
 
-	// Add BuildRun name reference to the TaskRun labels
-	taskRunLabels := map[string]string{
-		buildv1alpha1.LabelBuildRun:           buildRun.Name,
-		buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
-	}
-
-	// Add Build name reference unless it is an embedded Build (empty build name)
-	if build.Name != "" {
-		taskRunLabels[buildv1alpha1.LabelBuild] = build.Name
-		taskRunLabels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
-	}
-
 	expectedTaskRun := &v1beta1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: buildRun.Name + "-",
 			Namespace:    buildRun.Namespace,
-			Labels:       taskRunLabels,
+			Labels:       generateTaskRunLabels(build, buildRun, strategy),
+			Annotations:  generateTaskRunAnnotations(build, buildRun, strategy),
 		},
 		Spec: v1beta1.TaskRunSpec{
 			ServiceAccountName: serviceAccountName,
@@ -303,21 +349,6 @@ func GenerateTaskRun(
 				},
 			},
 		},
-	}
-
-	// assign the annotations from the build strategy, filter out those that should not be propagated
-	taskRunAnnotations := make(map[string]string)
-	for key, value := range strategy.GetAnnotations() {
-		if isPropagatableAnnotation(key) {
-			taskRunAnnotations[key] = value
-		}
-	}
-	if len(taskRunAnnotations) > 0 {
-		expectedTaskRun.Annotations = taskRunAnnotations
-	}
-
-	for label, value := range strategy.GetResourceLabels() {
-		expectedTaskRun.Labels[label] = value
 	}
 
 	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
