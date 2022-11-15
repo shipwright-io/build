@@ -71,7 +71,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			// - when a BuildRun already have a referenced TaskRun, but the latest version is not canceled
 			// - when a BuildRun have a completionTime set
 			switch {
-			case o.GetLabels()[buildv1alpha1.LabelBuild] == "":
+			case o.Spec.BuildRef != nil && o.GetLabels()[buildv1alpha1.LabelBuild] == "":
 				return false
 			case o.Status.LatestTaskRunRef != nil && !n.IsCanceled():
 				return false
