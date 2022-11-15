@@ -131,6 +131,21 @@ spec:
     name: foobar
 `
 
+const MinimalOneOffBuildRun = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: standalone-buildrun
+spec:
+  buildSpec:
+    source:
+      url: "https://github.com/shipwright-io/sample-go"
+    strategy:
+      kind: ClusterBuildStrategy
+      name: buildah
+    dockerfile: Dockerfile
+`
+
 // MinimalBuildRunWithParams defines a param override
 const MinimalBuildRunWithParams = `
 apiVersion: shipwright.io/v1alpha1

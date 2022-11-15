@@ -1039,6 +1039,16 @@ func (c *Catalog) LoadBRWithNameAndRef(name string, buildName string, d []byte) 
 	return b, nil
 }
 
+func (c *Catalog) LoadStandAloneBuildRunWithName(name string, d []byte) (*build.BuildRun, error) {
+	b := &build.BuildRun{}
+	err := yaml.Unmarshal(d, b)
+	if err != nil {
+		return nil, err
+	}
+	b.Name = name
+	return b, nil
+}
+
 // LoadBuildStrategyFromBytes returns a populated BuildStrategy
 func (c *Catalog) LoadBuildStrategyFromBytes(d []byte) (*build.BuildStrategy, error) {
 	b := &build.BuildStrategy{}

@@ -80,9 +80,11 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
 
-		_, err = tb.GetBuild(buildObject.Name)
-		if err == nil {
-			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+		if buildObject != nil {
+			_, err = tb.GetBuild(buildObject.Name)
+			if err == nil {
+				Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+			}
 		}
 
 		err := tb.DeleteClusterBuildStrategy(cbsObject.Name)
@@ -340,6 +342,37 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 		})
+	})
+
+	Context("when a standalone buildrun is created and the buildrun is cancelled", func() {
+
+		var standAloneBuildRunSample []byte
+
+		BeforeEach(func() {
+			standAloneBuildRunSample = []byte(test.MinimalOneOffBuildRun)
+
+			buildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithName(BUILDRUN+tb.Namespace, standAloneBuildRunSample)
+			Expect(err).To(BeNil())
+		})
+
+		It("should reflect a TaskRunCancelled reason and no completionTime", func() {
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			br, err := tb.GetBRTillStartTime(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			br.Spec.State = v1alpha1.BuildRunRequestedStatePtr(v1alpha1.BuildRunStateCancel)
+
+			err = tb.UpdateBR(br)
+			Expect(err).To(BeNil())
+
+			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, "TaskRunCancelled")
+			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "TaskRunCancelled", actualReason))
+		})
+
 	})
 
 	Context("when a buildrun is created and the buildrun is cancelled", func() {
