@@ -140,10 +140,12 @@ spec:
   buildSpec:
     source:
       url: "https://github.com/shipwright-io/sample-go"
+      contextDir: docker-build
     strategy:
       kind: ClusterBuildStrategy
       name: buildah
-    dockerfile: Dockerfile
+    output:
+      image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
 
 // MinimalBuildRunWithParams defines a param override

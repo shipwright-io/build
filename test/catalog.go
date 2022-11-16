@@ -1039,13 +1039,15 @@ func (c *Catalog) LoadBRWithNameAndRef(name string, buildName string, d []byte) 
 	return b, nil
 }
 
-func (c *Catalog) LoadStandAloneBuildRunWithName(name string, d []byte) (*build.BuildRun, error) {
+func (c *Catalog) LoadStandAloneBuildRunWithNameAndStrategy(name string, strategy *build.ClusterBuildStrategy, d []byte) (*build.BuildRun, error) {
 	b := &build.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
 	}
 	b.Name = name
+	b.Spec.BuildSpec.Strategy = build.Strategy{Kind: (*build.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name}
+
 	return b, nil
 }
 

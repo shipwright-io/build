@@ -20,6 +20,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -79,12 +80,9 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
-
-		if buildObject != nil {
-			_, err = tb.GetBuild(buildObject.Name)
-			if err == nil {
-				Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
-			}
+		_, err = tb.GetBuild(buildObject.Name)
+		if err == nil {
+			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
 		}
 
 		err := tb.DeleteClusterBuildStrategy(cbsObject.Name)
@@ -347,32 +345,38 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	Context("when a standalone buildrun is created and the buildrun is cancelled", func() {
 
 		var standAloneBuildRunSample []byte
+		var standaloneBuildRunObject *v1alpha1.BuildRun
 
 		BeforeEach(func() {
 			standAloneBuildRunSample = []byte(test.MinimalOneOffBuildRun)
 
-			buildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithName(BUILDRUN+tb.Namespace, standAloneBuildRunSample)
+			standaloneBuildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithNameAndStrategy(BUILDRUN+tb.Namespace+"-standalone", cbsObject, standAloneBuildRunSample)
 			Expect(err).To(BeNil())
 		})
 
 		It("should reflect a TaskRunCancelled reason and no completionTime", func() {
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+			Expect(tb.CreateBR(standaloneBuildRunObject)).ToNot(HaveOccurred())
 
-			br, err := tb.GetBRTillStartTime(buildRunObject.Name)
-			Expect(err).To(BeNil())
+			br, err := tb.GetBRTillStartTime(standaloneBuildRunObject.Name)
+			Expect(err).ToNot(HaveOccurred())
 
-			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
-			Expect(err).To(BeNil())
+			_, err = tb.GetTaskRunFromBuildRun(br.Name)
+			Expect(err).ToNot(HaveOccurred())
 
 			br.Spec.State = v1alpha1.BuildRunRequestedStatePtr(v1alpha1.BuildRunStateCancel)
+			data := []byte(fmt.Sprintf(`{"spec":{"state": "%s"}}`, v1alpha1.BuildRunStateCancel))
+			br, err = tb.BuildClientSet.ShipwrightV1alpha1().
+				BuildRuns(tb.Namespace).
+				Patch(tb.Context, br.Name, types.MergePatchType, data, metav1.PatchOptions{})
+			Expect(err).ToNot(HaveOccurred())
 
-			err = tb.UpdateBR(br)
-			Expect(err).To(BeNil())
+			actualReason, err := tb.GetTRTillDesiredReason(br.Name, "TaskRunCancelled")
+			Expect(err).ToNot(HaveOccurred(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "TaskRunCancelled", actualReason))
 
-			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, "TaskRunCancelled")
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "TaskRunCancelled", actualReason))
+			actualReason, err = tb.GetBRTillDesiredReason(br.Name, v1alpha1.BuildRunStateCancel)
+			Expect(err).ToNot(HaveOccurred(), fmt.Sprintf("failed to get desired BuildRun reason; expected %s, got %s", v1alpha1.BuildRunStateCancel, actualReason))
+			Expect(actualReason).To(Equal(v1alpha1.BuildRunStateCancel))
 		})
-
 	})
 
 	Context("when a buildrun is created and the buildrun is cancelled", func() {
