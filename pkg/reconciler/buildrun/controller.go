@@ -66,20 +66,14 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
 			n := e.ObjectNew.(*buildv1alpha1.BuildRun)
 
-			// Avoid reconciling when for updates on the BuildRun the following takes place
-			// - the build.shipwright.io/name label is set
-			// - when a BuildRun already have a referenced TaskRun, but the latest version is not canceled
-			// - when a BuildRun have a completionTime set
+			// Only reconcile a BuildRun update when
+			// - it is set to canceled
 			switch {
-			case o.GetLabels()[buildv1alpha1.LabelBuild] == "":
-				return false
-			case o.Status.LatestTaskRunRef != nil && !n.IsCanceled():
-				return false
-			case o.Status.CompletionTime != nil:
-				return false
+			case !o.IsCanceled() && n.IsCanceled():
+				return true
 			}
 
-			return o.GetGeneration() != n.GetGeneration()
+			return false
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Never reconcile on deletion, there is nothing we have to do

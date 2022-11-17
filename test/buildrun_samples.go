@@ -131,6 +131,23 @@ spec:
     name: foobar
 `
 
+const MinimalOneOffBuildRun = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: standalone-buildrun
+spec:
+  buildSpec:
+    source:
+      url: "https://github.com/shipwright-io/sample-go"
+      contextDir: docker-build
+    strategy:
+      kind: ClusterBuildStrategy
+      name: buildah
+    output:
+      image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
 // MinimalBuildRunWithParams defines a param override
 const MinimalBuildRunWithParams = `
 apiVersion: shipwright.io/v1alpha1
