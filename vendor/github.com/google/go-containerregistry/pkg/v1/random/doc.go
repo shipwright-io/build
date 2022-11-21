@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC All Rights Reserved.
+// Copyright 2018 Google LLC All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package legacy provides functionality to work with docker images in the v1
-// format.
-// See: https://github.com/moby/moby/blob/master/image/spec/v1.md
-package legacy
+// Package random provides a facility for synthesizing pseudo-random images.
+package random
