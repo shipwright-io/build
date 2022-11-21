@@ -215,6 +215,12 @@ func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) OutputImageInsecure(insecure bool) *buildPrototype {
+	b.build.Spec.Output.Insecure = &insecure
+
+	return b
+}
+
 func (b buildPrototype) Create() (build *buildv1alpha1.Build, err error) {
 	ctx := context.Background()
 

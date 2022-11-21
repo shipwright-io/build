@@ -9,7 +9,7 @@ spec:
     credentials:
       name: github-ssh-all
   strategy:
-    name: buildah
+    name: buildah-shipwright-managed-push
     kind: ClusterBuildStrategy
   dockerfile: Dockerfile
   output:

@@ -12,6 +12,7 @@ import (
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
+	"github.com/shipwright-io/build/test/utils"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -526,6 +527,128 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 				Expect(buildRun.Status.FailureDetails.Location.Container).To(Equal("step-fail-with-error-result"))
 				Expect(buildRun.Status.FailureDetails.Message).To(Equal("integration test error message"))
 				Expect(buildRun.Status.FailureDetails.Reason).To(Equal("integration test error reason"))
+			})
+		})
+	})
+
+	Context("buildstrategy without push operation", Label("managed-push"), func() {
+
+		BeforeEach(func() {
+			// Create a Strategy with parameters
+			bsObject, err = tb.Catalog.LoadBuildStrategyFromBytes(
+				[]byte(test.BuildStrategyWithoutPush),
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = tb.CreateBuildStrategy(bsObject)
+			Expect(err).ToNot(HaveOccurred())
+
+			buildRunSample = []byte(test.MinimalBuildRun)
+			buildSample = []byte(test.BuildBSMinimalNoSource)
+		})
+
+		Context("build output without secret", func() {
+
+			It("creates a TaskRun with Shipwright managed push", func() {
+				Expect(tb.CreateBuild(buildObject)).ToNot(HaveOccurred())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(tb.CreateBR(buildRunObject)).ToNot(HaveOccurred())
+
+				buildRunObject, err = tb.GetBRTillStartTime(buildRunObject.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				taskRun, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Verify the steps
+				Expect(taskRun.Spec.TaskSpec.Steps).To(HaveLen(2))
+				Expect(taskRun.Spec.TaskSpec.Steps[0].Name).To(Equal("store-tarball"))
+				Expect(taskRun.Spec.TaskSpec.Steps[1].Name).To(Equal("image-processing"))
+
+				// Verify the volume for the output directory
+				Expect(taskRun.Spec.TaskSpec.Volumes).To(utils.ContainNamedElement("shp-output-directory"))
+				Expect(taskRun.Spec.TaskSpec.Steps[0].VolumeMounts).To(utils.ContainNamedElement("shp-output-directory"))
+				Expect(taskRun.Spec.TaskSpec.Steps[1].VolumeMounts).To(utils.ContainNamedElement("shp-output-directory"))
+
+				// Verify the param
+				Expect(taskRun.Spec.TaskSpec.Params).To(utils.ContainNamedElement("shp-output-directory"))
+				Expect(taskRun.Spec.Params).To(utils.ContainNamedElement("shp-output-directory"))
+
+				// Verify the step args
+				Expect(taskRun.Spec.TaskSpec.Steps[1].Args).To(BeEquivalentTo([]string{
+					"--push",
+					"$(params.shp-output-directory)",
+					"--image",
+					"$(params.shp-output-image)",
+					"--insecure=$(params.shp-output-insecure)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"--result-file-image-size",
+					"$(results.shp-image-size.path)",
+				}))
+			})
+		})
+
+		Context("build output with secret", func() {
+
+			BeforeEach(func() {
+				secret = tb.Catalog.SecretWithDockerConfigJson("registry", tb.Namespace, "registry.abc", "some-user", "some-password")
+				err := tb.CreateSecret(secret)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("creates a TaskRun with Shipwright managed push", func() {
+				buildObject.Spec.Output.Credentials = &corev1.LocalObjectReference{
+					Name: secret.Name,
+				}
+				Expect(tb.CreateBuild(buildObject)).ToNot(HaveOccurred())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(tb.CreateBR(buildRunObject)).ToNot(HaveOccurred())
+
+				buildRunObject, err = tb.GetBRTillStartTime(buildRunObject.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				taskRun, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Verify the steps
+				Expect(taskRun.Spec.TaskSpec.Steps).To(HaveLen(2))
+				Expect(taskRun.Spec.TaskSpec.Steps[0].Name).To(Equal("store-tarball"))
+				Expect(taskRun.Spec.TaskSpec.Steps[1].Name).To(Equal("image-processing"))
+
+				// Verify the volume for the output directory
+				Expect(taskRun.Spec.TaskSpec.Volumes).To(utils.ContainNamedElement("shp-output-directory"))
+				Expect(taskRun.Spec.TaskSpec.Steps[0].VolumeMounts).To(utils.ContainNamedElement("shp-output-directory"))
+				Expect(taskRun.Spec.TaskSpec.Steps[1].VolumeMounts).To(utils.ContainNamedElement("shp-output-directory"))
+
+				// Verify the volume for the output secret
+				Expect(taskRun.Spec.TaskSpec.Volumes).To(utils.ContainNamedElement(fmt.Sprintf("shp-%s", secret.Name)))
+				Expect(taskRun.Spec.TaskSpec.Steps[1].VolumeMounts).To(utils.ContainNamedElement(fmt.Sprintf("shp-%s", secret.Name)))
+
+				// Verify the param
+				Expect(taskRun.Spec.TaskSpec.Params).To(utils.ContainNamedElement("shp-output-directory"))
+				Expect(taskRun.Spec.Params).To(utils.ContainNamedElement("shp-output-directory"))
+
+				// Verify the step args
+				Expect(taskRun.Spec.TaskSpec.Steps[1].Args).To(BeEquivalentTo([]string{
+					"--push",
+					"$(params.shp-output-directory)",
+					"--image",
+					"$(params.shp-output-image)",
+					"--insecure=$(params.shp-output-insecure)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"--result-file-image-size",
+					"$(results.shp-image-size.path)",
+					"--secret-path",
+					"/workspace/shp-push-secret",
+				}))
 			})
 		})
 	})

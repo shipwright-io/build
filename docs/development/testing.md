@@ -128,6 +128,7 @@ The following table contains a list of environment variables that will override 
 | Environment Variable               | Path                           | Description                                                   |
 |------------------------------------|--------------------------------|---------------------------------------------------------------|
 | `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests                         |
+| `TEST_IMAGE_REPO_INSECURE`         | `spec.output.insecure`         | Flag whether image repository is secure or not.                       |
 | `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                             |
 | `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`            |
 

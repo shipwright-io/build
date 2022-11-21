@@ -30,6 +30,7 @@ KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
 KIND_CLUSTER_VERSION="${KIND_CLUSTER_VERSION:-v1.25.3}"
 
 echo "# Creating a new Kubernetes cluster..."
+kind delete cluster --name="${KIND_CLUSTER_NAME}"
 kind create cluster --name="${KIND_CLUSTER_NAME}" --image="kindest/node:${KIND_CLUSTER_VERSION}" --wait=120s --config="${DIR}/../test/kind/config.yaml"
 
 echo "# Using KinD context..."

@@ -11,6 +11,7 @@ import (
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/test"
+	"github.com/shipwright-io/build/test/utils"
 )
 
 var _ = Describe("Integration tests Build and TaskRun", func() {
@@ -162,17 +163,18 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				Expect(tr.Spec.TaskSpec.Steps[3].Name).To(Equal("mutate-image"))
-				Expect(tr.Spec.TaskSpec.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+				Expect(tr.Spec.TaskSpec.Steps[3].Name).To(Equal("image-processing"))
+				Expect(tr.Spec.TaskSpec.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
 				Expect(tr.Spec.TaskSpec.Steps[3].Args).To(Equal([]string{
-					"--image",
-					"$(params.shp-output-image)",
-					"--result-file-image-digest",
-					"$(results.shp-image-digest.path)",
-					"result-file-image-size",
-					"$(results.shp-image-size.path)",
 					"--annotation",
 					"org.opencontainers.image.url=https://my-company.com/images",
+					"--image",
+					"$(params.shp-output-image)",
+					"--insecure=$(params.shp-output-insecure)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"--result-file-image-size",
+					"$(results.shp-image-size.path)",
 				}))
 			})
 
@@ -193,9 +195,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				for _, step := range tr.Spec.TaskSpec.Steps {
-					Expect(step.Name).ToNot(Equal("mutate-image"))
-				}
+				Expect(tr.Spec.TaskSpec.Steps).ToNot(utils.ContainNamedElement("image-processing"))
 			})
 		})
 	})

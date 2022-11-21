@@ -7,7 +7,7 @@ spec:
   source:
     url: git@gitlab.com:eduardooli/newtaxi.git
   strategy:
-    name: buildah
+    name: buildah-shipwright-managed-push
     kind: ClusterBuildStrategy
   dockerfile: Dockerfile
   output:

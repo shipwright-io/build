@@ -45,7 +45,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 	})
 
-	Context("when a Buildah build is defined", func() {
+	Context("when a Buildah build is defined that is using shipwright-managed push", func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildah")
@@ -54,7 +54,31 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			build = createBuild(
 				testBuild,
 				testID,
-				"samples/build/build_buildah_cr.yaml",
+				"samples/build/build_buildah_shipwright_managed_push_cr.yaml",
+			)
+		})
+
+		It("successfully runs a build and surface results to BuildRun", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "samples/buildrun/buildrun_buildah_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			appendRegistryInsecureParamValue(build, buildRun)
+
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			validateBuildRunResultsFromGitSource(buildRun)
+			testBuild.ValidateImageDigest(buildRun)
+		})
+	})
+
+	Context("when a Buildah build is defined that is using strategy-managed push", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildah")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"samples/build/build_buildah_strategy_managed_push_cr.yaml",
 			)
 		})
 
@@ -472,7 +496,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			build = createBuild(
 				testBuild,
 				testID,
-				"test/data/build_buildkit_cr_insecure_registry.yaml",
+				"samples/build/build_buildkit_cr.yaml",
 			)
 		})
 

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -23,6 +24,15 @@ import (
 )
 
 var _ = Describe("Test local source code (bundle) functionality", func() {
+
+	insecure := false
+	value, found := os.LookupEnv(EnvVarImageRepoInsecure)
+	if found {
+		var err error
+		insecure, err = strconv.ParseBool(value)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
 	var (
 		testID string
 		err    error
@@ -73,6 +83,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 				Dockerfile("Dockerfile").
 				OutputImage(outputImage).
 				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
+				OutputImageInsecure(insecure).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -97,6 +108,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 				SourceContextDir("source-build").
 				OutputImage(outputImage).
 				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
+				OutputImageInsecure(insecure).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -114,14 +126,15 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 
 		It("should work with Buildah build strategy", func() {
 			buildPrototype := NewBuildPrototype().
-				ClusterBuildStrategy("buildah").
+				ClusterBuildStrategy("buildah-shipwright-managed-push").
 				Name(testID).
 				Namespace(testBuild.Namespace).
 				SourceBundle(inputImage).
 				SourceContextDir("docker-build").
 				Dockerfile("Dockerfile").
 				OutputImage(outputImage).
-				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret))
+				OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
+				OutputImageInsecure(insecure)
 
 			if strings.Contains(outputImage, "cluster.local") {
 				parts := strings.Split(outputImage, "/")
@@ -238,6 +251,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 					Dockerfile("Dockerfile").
 					OutputImage(outputImage).
 					OutputImageCredentials(secretName).
+					OutputImageInsecure(insecure).
 					Create()
 				Expect(err).ToNot(HaveOccurred())
 

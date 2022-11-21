@@ -52,7 +52,9 @@ TEST_E2E_TIMEOUT_MULTIPLIER ?= 1
 
 # test repository to store images build during end-to-end tests
 TEST_IMAGE_REPO ?= ghcr.io/shipwright-io/build/build-e2e
-# test container registyr secret name
+# test repository insecure (HTTP or self-signed certificate)
+TEST_IMAGE_REPO_INSECURE ?= false
+# test container registry secret name
 TEST_IMAGE_REPO_SECRET ?=
 # test container registry secret, must be defined during runtime
 TEST_IMAGE_REPO_DOCKERCONFIGJSON ?=
@@ -153,7 +155,7 @@ install-counterfeiter:
 # Install golangci-lint via: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 .PHONY: sanity-check
 sanity-check:
-	golangci-lint run
+	golangci-lint run --timeout=10m
 
 # https://github.com/shipwright-io/build/issues/123
 .PHONY: test
