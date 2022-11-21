@@ -4,9 +4,6 @@ kind: ClusterBuildStrategy
 metadata:
   name: kaniko
 spec:
-  volumes:
-    - name: layout
-      emptyDir: {}
   buildSteps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.9.2
@@ -34,15 +31,20 @@ spec:
       command:
         - /kaniko/executor
       args:
-        - --skip-tls-verify=true
-        - --dockerfile=$(build.dockerfile)
-        - --context=$(params.shp-source-context)
-        - --destination=$(params.shp-output-image)
+        - --dockerfile
+        - $(build.dockerfile)
+        - --context
+        - $(params.shp-source-context)
+        - --destination
+        - $(params.shp-output-image)
+        - --snapshotMode
+        - redo
+        - --no-push
+        - --tarPath
+        - $(params.shp-output-directory)/image.tar
         # https://github.com/GoogleContainerTools/kaniko/issues/2164
-        - --ignore-path=/product_uuid
-        - --oci-layout-path=/kaniko/oci-image-layout
-        - --snapshotMode=redo
-        - --push-retry=3
+        - --ignore-path
+        - /product_uuid
       resources:
         limits:
           cpu: 500m
@@ -50,31 +52,3 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
-      volumeMounts:
-        - name: layout
-          mountPath: /kaniko/oci-image-layout
-    - name: results
-      image: registry.access.redhat.com/ubi9/ubi-minimal
-      command:
-        - /bin/bash
-      args:
-        - -c
-        - |
-          set -euo pipefail
-          
-          # Store the image digest
-          grep digest /kaniko/oci-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
-
-          # Store the image size
-          du -b -c /kaniko/oci-image-layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > "$(results.shp-image-size.path)"
-      resources:
-        limits:
-          cpu: 100m
-          memory: 128Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
-      volumeMounts:
-        - name: layout
-          mountPath: /kaniko/oci-image-layout
-

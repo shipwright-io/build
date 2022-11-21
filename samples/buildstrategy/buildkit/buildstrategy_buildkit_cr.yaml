@@ -19,10 +19,6 @@ spec:
     description: "Configure BuildKit's cache usage. Allowed values are 'disabled' and 'registry'. The default is 'registry'."
     type: string
     default: registry
-  - name: insecure-registry
-    type: string
-    description: "Enables the push to an insecure registry"
-    default: "false"
   - name: platforms
     description: "Build the image for different platforms. By default, the image is built for the platform used by the FROM image. If that is present for multiple platforms, then it is built for the environment's platform."
     type: array
@@ -70,10 +66,12 @@ spec:
         value: $(params.shp-source-context)
       - name: PARAM_DOCKERFILE
         value: $(params.DOCKERFILE)
+      - name: PARAM_OUTPUT_DIRECTORY
+        value: $(params.shp-output-directory)
       - name: PARAM_OUTPUT_IMAGE
         value: $(params.shp-output-image)
-      - name: PARAM_INSECURE_REGISTRY
-        value: $(params.insecure-registry)
+      - name: PARAM_OUTPUT_INSECURE
+        value: $(params.shp-output-insecure)
       - name: PARAM_CACHE
         value: $(params.cache)
       command:
@@ -115,10 +113,10 @@ spec:
           echo "--opt=filename=\"${DOCKERFILE_NAME}\" \\" >> /tmp/run.sh
           echo "--local=context=\"${PARAM_SOURCE_CONTEXT}\" \\" >> /tmp/run.sh
           echo "--local=dockerfile=\"${DOCKERFILE_DIR}\" \\" >> /tmp/run.sh
-          echo "--output=type=image,name=\"${PARAM_OUTPUT_IMAGE}\",push=true,registry.insecure=\"${PARAM_INSECURE_REGISTRY}\" \\" >> /tmp/run.sh
+          echo "--output=type=oci \\" >> /tmp/run.sh
           if [ "${PARAM_CACHE}" == "registry" ]; then
             echo "--export-cache=type=inline \\" >> /tmp/run.sh
-            echo "--import-cache=type=registry,ref=\"${PARAM_OUTPUT_IMAGE}\",registry.insecure=\"${PARAM_INSECURE_REGISTRY}\" \\" >> /tmp/run.sh
+            echo "--import-cache=type=registry,ref=\"${PARAM_OUTPUT_IMAGE}\",registry.insecure=\"${PARAM_OUTPUT_INSECURE}\" \\" >> /tmp/run.sh
           elif [ "${PARAM_CACHE}" == "disabled" ]; then
             echo "--no-cache \\" >> /tmp/run.sh
           else
@@ -172,13 +170,10 @@ spec:
             echo "--opt=\"platform=${platforms}\" \\" >> /tmp/run.sh
           fi
 
-          echo "--metadata-file /tmp/image-metadata.json" >> /tmp/run.sh
+          echo "--metadata-file /tmp/image-metadata.json | tar -C \"${PARAM_OUTPUT_DIRECTORY}\" -xf -" >> /tmp/run.sh
 
           chmod +x /tmp/run.sh
           /tmp/run.sh
-
-          # Store the image digest
-          grep containerimage.digest /tmp/image-metadata.json | sed -E 's/.*containerimage.digest":\s*"([^"]*).*/\1/' | tr -d '\n' > '$(results.shp-image-digest.path)'
         # That's the separator between the shell script and its args
         - --
         - --build-args
