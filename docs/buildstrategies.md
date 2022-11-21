@@ -26,11 +26,13 @@ SPDX-License-Identifier: Apache-2.0
 - [ko](#ko)
   - [Installing ko Strategy](#installing-ko-strategy)
   - [Parameters](#parameters)
+  - [Volumes](#volumes)
 - [Source to Image](#source-to-image)
   - [Installing Source to Image Strategy](#installing-source-to-image-strategy)
   - [Build Steps](#build-steps)
 - [Strategy parameters](#strategy-parameters)
 - [System parameters](#system-parameters)
+  - [Output directory vs. output image](#output-directory-vs-output-image)
 - [System parameters vs Strategy Parameters Comparison](#system-parameters-vs-strategy-parameters-comparison)
 - [Securely referencing string parameters](#securely-referencing-string-parameters)
 - [System results](#system-results)
@@ -53,7 +55,7 @@ Well-known strategies can be bootstrapped from [here](../samples/buildstrategy).
 
 | Name | Supported platforms |
 | ---- | ------------------- |
-| [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml) | all |
+| [buildah](../samples/buildstrategy/buildah) | all |
 | [BuildKit](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) | all |
 | [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
 | [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
@@ -74,14 +76,22 @@ The current supported namespaces BuildStrategy are:
 
 ## Buildah
 
-The `buildah` ClusterBuildStrategy consists of using [`buildah`](https://github.com/containers/buildah) to build and push a container image, out of a `Dockerfile`. The `Dockerfile` should be specified on the `Build` resource.
+The `buildah` ClusterBuildStrategy uses [`buildah`](https://github.com/containers/buildah) to build and push a container image, out of a `Dockerfile`. The `Dockerfile` should be specified on the `Build` resource.
+
+The strategy is available in two formats:
+
+- [`buildah-shipwright-managed-push`](../samples/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push%20copy_cr.yaml)
+- [`buildah-strategy-managed-push`](../samples/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml)
+
+Learn more about the differences of [shipwright-, or strategy-managed push](#output-directory-vs-output-image)
 
 ### Installing Buildah Strategy
 
 To install use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml
+kubectl apply -f samples/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push_cr.yaml
+kubectl apply -f samples/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml
 ```
 
 ---
@@ -410,7 +420,27 @@ Contrary to the strategy `spec.parameters`, you can use system parameters and th
 | ------------------------------ | ----------- |
 | `$(params.shp-source-root)`    | The absolute path to the directory that contains the user's sources. |
 | `$(params.shp-source-context)` | The absolute path to the context directory of the user's sources. If the user specified no value for `spec.source.contextDir` in their `Build`, then this value will equal the value for `$(params.shp-source-root)`. Note that this directory is not guaranteed to exist at the time the container for your step is started, you can therefore not use this parameter as a step's working directory. |
-| `$(params.shp-output-image)`      | The URL of the image that the user wants to push as specified in the Build's `spec.output.image`, or the override from the BuildRun's `spec.output.image`. |
+| `$(params.shp-output-directory)` | The absolute path to a directory that the build strategy should store the image in. You can store a single tarball containing a single image, or an OCI image layout. |
+| `$(params.shp-output-image)`     | The URL of the image that the user wants to push, as specified in the Build's `spec.output.image` or as an override from the BuildRun's `spec.output.image`. |
+| `$(params.shp-output-insecure)`  |  A flag that indicates the output image's registry location is insecure because it uses a certificate not signed by a certificate authority, or uses HTTP. |
+
+### Output directory vs. output image
+
+As a build strategy author, you decide whether your build strategy or Shipwright pushes the build image to the container registry:
+
+- If you DO NOT use `$(params.shp-output-directory)`, then Shipwright assumes that your build strategy PUSHES the image. We call this a strategy-managed push.
+- If you DO use `$(params.shp-output-directory)`, then Shipwright assumes that your build strategy does NOT PUSH the image. We call this a shipwright-managed push.
+
+When you use the `$(params.shp-output-directory)` parameter, then Shipwright will also set the [image-related system results](#system-results).
+
+If you are uncertain about how to implement your build strategy, then follow this guidance:
+
+1. If your build strategy tool cannot locally store an image but always pushes it, then you must do the push operation. An example is the [Buildpacks strategy](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml). You SHOULD respect the `$(params.shp-output-insecure)` parameter.
+2. If your build strategy tool can locally store an image, then the choice depends on how you expect your build users to make use of your strategy, and the nature of your strategy.
+   1. Some build strategies do not produce all layers of an image, but use a common base image and put one or more layers on top with the application. An example is `ko`. Such base image layers are often already present in the destination registry (like in rebuilds). If the strategy can perform the push operation, then it can optimize the process and can omit the download of the base image when it is not required to push it. In the case of a shipwright-managed push, the complete image must be locally stored in `$(params.shp-output-directory)`, which implies that a base image must always be downloaded.
+   2. Some build strategy tools do not make it easy to determine the digest or size of the image, which can make it complex for your to set the [strategy results](#system-results). In the case of a shipwright-managed push, Shipwright has the responsibility to set them.
+   3. Build users can configure the build to amend additional annotations, or labels to the final image. In the case of a shipwright-managed push, these can be set directly and the image will only be pushed once. In a strategy-managed push scenario, your build strategy will push the first version of the image without those annotations and labels. Shipwright will then mutate the image and push it again with the updated annotations and labels. Such a duplicate push can cause unexpected behavior with registries that trigger other actions when an image gets pushed, or that do not allow overwriting a tag.
+   4. The Shipwright maintainers plan to provide more capabilities in the future that need the image locally, such as vulnerability scanning, or software bill of material (SBOM) creation. These capabilities may be only fully supported with shipwright-managed push.
 
 ## System parameters vs Strategy Parameters Comparison
 
@@ -501,16 +531,16 @@ To securely pass a parameter value into a script-style argument, you can chose b
 
 ## System results
 
-You can optionally store the size and digest of the image your build strategy created to a set of files.
+If you are using a strategy-managed push, see [output directory vs output image](#output-directory-vs-output-image), you can optionally store the size and digest of the image your build strategy created to a set of files.
 
 | Result file                        | Description                                     |
 | ---------------------------------- | ----------------------------------------------- |
 | `$(results.shp-image-digest.path)` | File to store the digest of the image.          |
 | `$(results.shp-image-size.path)`   | File to store the compressed size of the image. |
 
-You can look at sample build strategies, such as [Kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml), or [Buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml), to see how they fill some or all of the results files.
+You can look at sample build strategies, such as [Buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml), to see how they fill some or all of the results files.
 
-This information will be available in the `.status.output` field of the BuildRun.
+This information will be available in the `.status.output` section of the BuildRun.
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
@@ -533,7 +563,7 @@ Additionally, you can store error details for debugging purposes when a BuildRun
 
 Reason is intended to be a one-word CamelCase classification of the error source, with the first letter capitalized.
 Error details are only propagated if the build container terminates with a non-zero exit code.
-This information will be available in the `.status.failureDetails` field of the BuildRun.
+This information will be available in the `.status.failureDetails` section of the BuildRun.
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
