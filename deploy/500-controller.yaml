@@ -37,8 +37,8 @@ spec:
               value: ko://github.com/shipwright-io/build/cmd/git
             - name: GIT_ENABLE_REWRITE_RULE
               value: "false"
-            - name: MUTATE_IMAGE_CONTAINER_IMAGE
-              value: ko://github.com/shipwright-io/build/cmd/mutate-image
+            - name: IMAGE_PROCESSING_CONTAINER_IMAGE
+              value: ko://github.com/shipwright-io/build/cmd/image-processing
             - name: BUNDLE_CONTAINER_IMAGE
               value: ko://github.com/shipwright-io/build/cmd/bundle
             - name: WAITER_CONTAINER_IMAGE

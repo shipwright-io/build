@@ -24,17 +24,16 @@ import (
 const (
 	prefixParamsResultsVolumes = "shp"
 
-	paramOutputImage   = "output-image"
-	paramSourceRoot    = "source-root"
-	paramSourceContext = "source-context"
+	paramOutputImage    = "output-image"
+	paramOutputInsecure = "output-insecure"
+	paramSourceRoot     = "source-root"
+	paramSourceContext  = "source-context"
 
 	workspaceSource = "source"
 
 	inputParamBuilder    = "BUILDER_IMAGE"
 	inputParamDockerfile = "DOCKERFILE"
 	inputParamContextDir = "CONTEXT_DIR"
-
-	imageMutateContainerName = "mutate-image"
 )
 
 // getStringTransformations gets us MANDATORY replacements using
@@ -93,6 +92,11 @@ func GenerateTaskSpec(
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 				Description: "The URL of the image that the build produces",
+				Type:        v1beta1.ParamTypeString,
+			},
+			{
+				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
+				Description: "A flag indicating that the output image is on an insecure container registry",
 				Type:        v1beta1.ParamTypeString,
 			},
 			{
@@ -217,7 +221,7 @@ func GenerateTaskSpec(
 			// here we should check that volume actually exists for this mount
 			// and in case it does not, exit early with an error
 			if _, ok := buildStrategyVolumesMap[vm.Name]; !ok {
-				return nil, fmt.Errorf("Volume for the Volume Mount %q is not found", vm.Name)
+				return nil, fmt.Errorf("volume for the Volume Mount %q is not found", vm.Name)
 			}
 			volumeMounts[vm.Name] = vm.ReadOnly
 		}
@@ -229,18 +233,6 @@ func GenerateTaskSpec(
 		return nil, err
 	}
 	generatedTaskSpec.Volumes = append(generatedTaskSpec.Volumes, volumes...)
-
-	buildRunOutput := buildRun.Spec.Output
-	if buildRunOutput == nil {
-		buildRunOutput = &buildv1alpha1.Image{}
-	}
-
-	// Amending task spec with image mutate step if annotations or labels are
-	// specified in build manifest or buildRun manifest
-	if len(build.Spec.Output.Annotations) > 0 || len(build.Spec.Output.Labels) > 0 ||
-		len(buildRunOutput.Annotations) > 0 || len(buildRunOutput.Labels) > 0 {
-		amendTaskSpecWithImageMutate(cfg, &generatedTaskSpec, build.Spec.Output, *buildRunOutput)
-	}
 
 	return &generatedTaskSpec, nil
 }
@@ -260,6 +252,13 @@ func GenerateTaskRun(
 		image = buildRun.Spec.Output.Image
 	} else {
 		image = build.Spec.Output.Image
+	}
+
+	insecure := false
+	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Insecure != nil {
+		insecure = *buildRun.Spec.Output.Insecure
+	} else if build.Spec.Output.Insecure != nil {
+		insecure = *build.Spec.Output.Insecure
 	}
 
 	taskSpec, err := GenerateTaskSpec(
@@ -332,6 +331,14 @@ func GenerateTaskRun(
 			},
 		},
 		{
+			// shp-output-insecure
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
+			Value: v1beta1.ArrayOrString{
+				Type:      v1beta1.ParamTypeString,
+				StringVal: strconv.FormatBool(insecure),
+			},
+		},
+		{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
 			Value: v1beta1.ArrayOrString{
 				Type:      v1beta1.ParamTypeString,
@@ -400,6 +407,14 @@ func GenerateTaskRun(
 			return nil, err
 		}
 	}
+
+	// Setup image processing, this can be a no-op if no annotations or labels need to be mutated,
+	// and if the strategy is pushing the image by not using $(params.shp-output-directory)
+	buildRunOutput := buildRun.Spec.Output
+	if buildRunOutput == nil {
+		buildRunOutput = &buildv1alpha1.Image{}
+	}
+	SetupImageProcessing(expectedTaskRun, cfg, build.Spec.Output, *buildRunOutput)
 
 	return expectedTaskRun, nil
 }

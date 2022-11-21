@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestMutateImageCmd(t *testing.T) {
+func TestImageProcessingCmd(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Mutate Image Command Suite")
+	RunSpecs(t, "Image Processing Command Suite")
 }

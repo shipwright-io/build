@@ -75,8 +75,9 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
-				Expect(err).To(BeNil())
+				taskRun, err := resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, "", buildStrategy)
+				Expect(err).ToNot(HaveOccurred())
+				got = taskRun.Spec.TaskSpec
 			})
 
 			It("should contain a step to clone the Git sources", func() {
@@ -141,29 +142,32 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Params).To(utils.ContainNamedElement("shp-source-root"))
 				Expect(got.Params).To(utils.ContainNamedElement("shp-source-context"))
 				Expect(got.Params).To(utils.ContainNamedElement("shp-output-image"))
+				Expect(got.Params).To(utils.ContainNamedElement("shp-output-insecure"))
 
 				// legacy params
 				Expect(got.Params).ToNot(utils.ContainNamedElement("BUILDER_IMAGE")) // test build has no builder image
 				Expect(got.Params).To(utils.ContainNamedElement("CONTEXT_DIR"))
 				Expect(got.Params).To(utils.ContainNamedElement("DOCKERFILE"))
 
-				Expect(len(got.Params)).To(Equal(5))
+				Expect(len(got.Params)).To(Equal(6))
 			})
 
 			It("should contain a step to mutate the image with single mutate args", func() {
-				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
-				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
-				Expect(got.Steps[3].Args).To(Equal([]string{
-					"--image",
-					"$(params.shp-output-image)",
-					"--result-file-image-digest",
-					"$(results.shp-image-digest.path)",
-					"result-file-image-size",
-					"$(results.shp-image-size.path)",
+				Expect(got.Steps).To(HaveLen(4))
+				Expect(got.Steps[3].Name).To(Equal("image-processing"))
+				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
+				Expect(got.Steps[3].Args).To(BeEquivalentTo([]string{
 					"--annotation",
 					"org.opencontainers.image.url=https://my-company.com/images",
 					"--label",
 					"maintainer=team@my-company.com",
+					"--image",
+					"$(params.shp-output-image)",
+					"--insecure=$(params.shp-output-insecure)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"--result-file-image-size",
+					"$(results.shp-image-size.path)",
 				}))
 			})
 
@@ -171,18 +175,14 @@ var _ = Describe("GenerateTaskrun", func() {
 				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithMultipleAnnotationAndLabel))
 				Expect(err).To(BeNil())
 
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
-				Expect(err).To(BeNil())
+				taskRun, err := resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, "", buildStrategy)
+				Expect(err).ToNot(HaveOccurred())
+				got = taskRun.Spec.TaskSpec
 
-				Expect(got.Steps[3].Name).To(Equal("mutate-image"))
-				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
-				Expect(got.Steps[3].Args).Should(ConsistOf([]string{
-					"--image",
-					"$(params.shp-output-image)",
-					"--result-file-image-digest",
-					"$(results.shp-image-digest.path)",
-					"result-file-image-size",
-					"$(results.shp-image-size.path)",
+				Expect(got.Steps[3].Name).To(Equal("image-processing"))
+				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
+
+				expected := []string{
 					"--annotation",
 					"org.opencontainers.image.source=https://github.com/org/repo",
 					"--annotation",
@@ -191,7 +191,36 @@ var _ = Describe("GenerateTaskrun", func() {
 					"description=This is my cool image",
 					"--label",
 					"maintainer=team@my-company.com",
-				}))
+					"--image",
+					"$(params.shp-output-image)",
+					"--insecure=$(params.shp-output-insecure)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"--result-file-image-size",
+					"$(results.shp-image-size.path)",
+				}
+
+				Expect(got.Steps[3].Args).To(HaveLen(len(expected)))
+
+				// there is no way to say which annotation comes first
+
+				Expect(got.Steps[3].Args[1]).To(BeElementOf(expected[1], expected[3]))
+				Expect(got.Steps[3].Args[3]).To(BeElementOf(expected[1], expected[3]))
+				Expect(got.Steps[3].Args[1]).ToNot(Equal(got.Steps[3].Args[3]))
+
+				expected[1] = got.Steps[3].Args[1]
+				expected[3] = got.Steps[3].Args[3]
+
+				// same for labels
+
+				Expect(got.Steps[3].Args[5]).To(BeElementOf(expected[5], expected[7]))
+				Expect(got.Steps[3].Args[7]).To(BeElementOf(expected[5], expected[7]))
+				Expect(got.Steps[3].Args[5]).ToNot(Equal(got.Steps[3].Args[7]))
+
+				expected[5] = got.Steps[3].Args[5]
+				expected[7] = got.Steps[3].Args[7]
+
+				Expect(got.Steps[3].Args).To(BeEquivalentTo(expected))
 			})
 		})
 
@@ -307,7 +336,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
 					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
-					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
 					Expect(got.Steps[3].Args).To(Equal([]string{
 						"--image",
 						"$(params.shp-output-image)",
@@ -348,7 +377,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
 					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
-					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/mutate-image"))
+					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
 					Expect(got.Steps[3].Args).To(Equal([]string{
 						"--image",
 						"$(params.shp-output-image)",
@@ -487,6 +516,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				paramSourceRootFound := false
 				paramSourceContextFound := false
 				paramOutputImageFound := false
+				paramOutputInsecureFound := false
 
 				// legacy params
 				paramBuilderImageFound := false
@@ -506,6 +536,10 @@ var _ = Describe("GenerateTaskrun", func() {
 					case "shp-output-image":
 						paramOutputImageFound = true
 						Expect(param.Value.StringVal).To(Equal(outputPath))
+
+					case "shp-output-insecure":
+						paramOutputInsecureFound = true
+						Expect(param.Value.StringVal).To(Equal("false"))
 
 					case "BUILDER_IMAGE":
 						paramBuilderImageFound = true
@@ -527,6 +561,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(paramSourceRootFound).To(BeTrue())
 				Expect(paramSourceContextFound).To(BeTrue())
 				Expect(paramOutputImageFound).To(BeTrue())
+				Expect(paramOutputInsecureFound).To(BeTrue())
 
 				Expect(paramBuilderImageFound).To(BeTrue())
 				Expect(paramDockerfileFound).To(BeTrue())

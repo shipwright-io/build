@@ -21,10 +21,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 
-	. "github.com/shipwright-io/build/cmd/mutate-image"
+	. "github.com/shipwright-io/build/cmd/image-processing"
 )
 
-var _ = Describe("Image Mutate Resource", func() {
+var _ = Describe("Image Processing Resource", func() {
 	run := func(args ...string) error {
 		log.SetOutput(io.Discard)
 
@@ -69,15 +69,29 @@ var _ = Describe("Image Mutate Resource", func() {
 		})
 
 		tag, err := name.NewTag(fmt.Sprintf("%s:%s", imageURL, version))
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect(remote.Write(
 			tag,
 			empty.Image,
 			remote.WithAuth(auth),
-		)).To(BeNil())
+		)).ToNot(HaveOccurred())
 
 		return tag
+	}
+
+	getCompressedImageSize := func(img containerreg.Image) int64 {
+		manifest, err := img.Manifest()
+		Expect(err).ToNot(HaveOccurred())
+
+		configSize := manifest.Config.Size
+
+		var layersSize int64
+		for _, layer := range manifest.Layers {
+			layersSize += layer.Size
+		}
+
+		return layersSize + configSize
 	}
 
 	getImageConfigLabel := func(image, label string) string {
@@ -87,13 +101,13 @@ var _ = Describe("Image Mutate Resource", func() {
 		})
 
 		ref, err := name.ParseReference(image)
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		img, err := remote.Image(ref, remote.WithAuth(auth))
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		config, err := img.ConfigFile()
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		return config.Config.Labels[label]
 	}
@@ -105,13 +119,13 @@ var _ = Describe("Image Mutate Resource", func() {
 		})
 
 		ref, err := name.ParseReference(image)
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		img, err := remote.Image(ref, remote.WithAuth(auth))
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		manifest, err := img.Manifest()
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		return manifest.Annotations[annotation]
 	}
@@ -122,6 +136,15 @@ var _ = Describe("Image Mutate Resource", func() {
 		defer os.Remove(file.Name())
 
 		f(file.Name())
+	}
+
+	withDockerConfigJSON := func(f func(dockerConfigJSONPath string)) {
+		withTempFile("docker.config", func(tempFile string) {
+			err := os.WriteFile(tempFile, ([]byte(fmt.Sprintf("{\"auths\":{%q:{\"username\":%q,\"password\":%q}}}", os.Getenv(imageHost), os.Getenv(regUser), os.Getenv(regPass)))), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			f(tempFile)
+		})
 	}
 
 	filecontent := func(path string) string {
@@ -137,20 +160,20 @@ var _ = Describe("Image Mutate Resource", func() {
 		})
 
 		ref, err := name.ParseReference(tag.String())
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		desc, err := remote.Get(ref, remote.WithAuth(auth))
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		img, err := desc.Image()
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		return img
 	}
 
 	getImageDigest := func(tag name.Tag) containerreg.Hash {
 		digest, err := getImage(tag).Digest()
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 
 		return digest
 	}
@@ -202,12 +225,16 @@ var _ = Describe("Image Mutate Resource", func() {
 		It("should mutate an image with single annotation", func() {
 			tag := pushImage("test3")
 
-			Expect(run(
-				"--image",
-				tag.String(),
-				"--annotation",
-				"org.opencontainers.image.url=https://my-company.com/images",
-			)).To(BeNil())
+			withDockerConfigJSON(func(dockerConfigJSONPath string) {
+				Expect(run(
+					"--image",
+					tag.String(),
+					"--annotation",
+					"org.opencontainers.image.url=https://my-company.com/images",
+					"--secret-path",
+					dockerConfigJSONPath,
+				)).ToNot(HaveOccurred())
+			})
 
 			Expect(getImageAnnotation(tag.String(), "org.opencontainers.image.url")).
 				To(Equal("https://my-company.com/images"))
@@ -216,14 +243,18 @@ var _ = Describe("Image Mutate Resource", func() {
 		It("should mutate an image with multiple annotations", func() {
 			tag := pushImage("test4")
 
-			Expect(run(
-				"--image",
-				tag.String(),
-				"--annotation",
-				"org.opencontainers.image.url=https://my-company.com/images",
-				"--annotation",
-				"org.opencontainers.image.source=https://github.com/org/repo",
-			)).To(BeNil())
+			withDockerConfigJSON(func(dockerConfigJSONPath string) {
+				Expect(run(
+					"--image",
+					tag.String(),
+					"--annotation",
+					"org.opencontainers.image.url=https://my-company.com/images",
+					"--annotation",
+					"org.opencontainers.image.source=https://github.com/org/repo",
+					"--secret-path",
+					dockerConfigJSONPath,
+				)).ToNot(HaveOccurred())
+			})
 
 			Expect(getImageAnnotation(tag.String(), "org.opencontainers.image.url")).
 				To(Equal("https://my-company.com/images"))
@@ -235,12 +266,16 @@ var _ = Describe("Image Mutate Resource", func() {
 		It("should mutate an image with single label", func() {
 			tag := pushImage("test5")
 
-			Expect(run(
-				"--image",
-				tag.String(),
-				"--label",
-				"description=image description",
-			)).To(BeNil())
+			withDockerConfigJSON(func(dockerConfigJSONPath string) {
+				Expect(run(
+					"--image",
+					tag.String(),
+					"--label",
+					"description=image description",
+					"--secret-path",
+					dockerConfigJSONPath,
+				)).ToNot(HaveOccurred())
+			})
 
 			Expect(getImageConfigLabel(tag.String(), "description")).
 				To(Equal("image description"))
@@ -249,14 +284,18 @@ var _ = Describe("Image Mutate Resource", func() {
 		It("should mutate an image with multiple labels", func() {
 			tag := pushImage("test6")
 
-			Expect(run(
-				"--image",
-				tag.String(),
-				"--label",
-				"description=image description",
-				"--label",
-				"maintainer=team@my-company.com",
-			)).To(BeNil())
+			withDockerConfigJSON(func(dockerConfigJSONPath string) {
+				Expect(run(
+					"--image",
+					tag.String(),
+					"--label",
+					"description=image description",
+					"--label",
+					"maintainer=team@my-company.com",
+					"--secret-path",
+					dockerConfigJSONPath,
+				)).ToNot(HaveOccurred())
+			})
 
 			Expect(getImageConfigLabel(tag.String(), "description")).
 				To(Equal("image description"))
@@ -268,14 +307,18 @@ var _ = Describe("Image Mutate Resource", func() {
 		It("should mutate an image with both annotation and label", func() {
 			tag := pushImage("test7")
 
-			Expect(run(
-				"--image",
-				tag.String(),
-				"--label",
-				"description=image description",
-				"--annotation",
-				"org.opencontainers.image.url=https://my-company.com/images",
-			)).To(BeNil())
+			withDockerConfigJSON(func(dockerConfigJSONPath string) {
+				Expect(run(
+					"--image",
+					tag.String(),
+					"--label",
+					"description=image description",
+					"--annotation",
+					"org.opencontainers.image.url=https://my-company.com/images",
+					"--secret-path",
+					dockerConfigJSONPath,
+				)).ToNot(HaveOccurred())
+			})
 
 			Expect(getImageConfigLabel(tag.String(), "description")).
 				To(Equal("image description"))
@@ -290,14 +333,18 @@ var _ = Describe("Image Mutate Resource", func() {
 			tag := pushImage("test8")
 
 			withTempFile("image-digest", func(filename string) {
-				Expect(run(
-					"--image",
-					tag.String(),
-					"--annotation",
-					"org.opencontainers.image.url=https://my-company.com/images",
-					"--result-file-image-digest",
-					filename,
-				)).To(BeNil())
+				withDockerConfigJSON(func(dockerConfigJSONPath string) {
+					Expect(run(
+						"--image",
+						tag.String(),
+						"--annotation",
+						"org.opencontainers.image.url=https://my-company.com/images",
+						"--result-file-image-digest",
+						filename,
+						"--secret-path",
+						dockerConfigJSONPath,
+					)).ToNot(HaveOccurred())
+				})
 
 				Expect(filecontent(filename)).To(Equal(getImageDigest(tag).String()))
 			})
@@ -307,18 +354,21 @@ var _ = Describe("Image Mutate Resource", func() {
 			tag := pushImage("test9")
 
 			withTempFile("image-size", func(filename string) {
-				Expect(run(
-					"--image",
-					tag.String(),
-					"--annotation",
-					"org.opencontainers.image.url=https://my-company.com/images",
-					"--result-file-image-size",
-					filename,
-				)).To(BeNil())
+				withDockerConfigJSON(func(dockerConfigJSONPath string) {
+					Expect(run(
+						"--image",
+						tag.String(),
+						"--annotation",
+						"org.opencontainers.image.url=https://my-company.com/images",
+						"--result-file-image-size",
+						filename,
+						"--secret-path",
+						dockerConfigJSONPath,
+					)).ToNot(HaveOccurred())
 
-				size, err := GetCompressedImageSize(getImage(tag))
-				Expect(err).To(BeNil())
-				Expect(filecontent(filename)).To(Equal(strconv.FormatInt(size, 10)))
+					size := getCompressedImageSize(getImage(tag))
+					Expect(filecontent(filename)).To(Equal(strconv.FormatInt(size, 10)))
+				})
 			})
 		})
 	})
