@@ -39,7 +39,7 @@ TEST_NAMESPACE ?= default
 TEKTON_VERSION ?= v0.30.0
 
 # E2E test flags
-TEST_E2E_FLAGS ?= --fail-fast -p --randomize-all --slow-spec-threshold=5m -timeout=1h -progress -trace -v
+TEST_E2E_FLAGS ?= --fail-fast -p --randomize-all -timeout=1h -progress -trace -v
 
 # E2E test service account name to be used for the build runs, can be set to generated to use the generated service account feature
 TEST_E2E_SERVICEACCOUNT_NAME ?= pipeline
@@ -189,7 +189,6 @@ test-unit-ginkgo: ginkgo
 		--randomize-suites \
 		--fail-on-pending \
 		--keep-going \
-		--slow-spec-threshold=4m \
 		-compilers=2 \
 		-race \
 		-trace \
@@ -203,7 +202,6 @@ test-integration: install-apis ginkgo
 		--randomize-all \
 		--randomize-suites \
 		--fail-on-pending \
-		--slow-spec-threshold=4m \
 		-trace \
 		test/integration/...
 
