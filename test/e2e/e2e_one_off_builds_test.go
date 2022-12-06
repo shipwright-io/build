@@ -24,7 +24,7 @@ var _ = Describe("Using One-Off Builds", func() {
 	)
 
 	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			printTestFailureDebugInfo(testBuild, testBuild.Namespace, testID)
 
 		} else if buildRun != nil {
