@@ -119,17 +119,25 @@ ParsePackets:
 			default:
 				continue
 			}
-			var keys []Key
-			if p.KeyId == 0 {
-				keys = keyring.DecryptionKeys()
-			} else {
-				keys = keyring.KeysById(p.KeyId)
+			if keyring != nil {
+				var keys []Key
+				if p.KeyId == 0 {
+					keys = keyring.DecryptionKeys()
+				} else {
+					keys = keyring.KeysById(p.KeyId)
+				}
+				for _, k := range keys {
+					pubKeys = append(pubKeys, keyEnvelopePair{k, p})
+				}
 			}
-			for _, k := range keys {
-				pubKeys = append(pubKeys, keyEnvelopePair{k, p})
+		case *packet.SymmetricallyEncrypted:
+			if !p.MDC && !config.AllowUnauthenticatedMessages() {
+				return nil, errors.UnsupportedError("message is not authenticated")
 			}
-		case *packet.SymmetricallyEncrypted, *packet.AEADEncrypted:
-			edp = p.(packet.EncryptedDataPacket)
+			edp = p
+			break ParsePackets
+		case *packet.AEADEncrypted:
+			edp = p
 			break ParsePackets
 		case *packet.Compressed, *packet.LiteralData, *packet.OnePassSignature:
 			// This message isn't encrypted.
@@ -268,9 +276,11 @@ FindLiteralData:
 
 			md.IsSigned = true
 			md.SignedByKeyId = p.KeyId
-			keys := keyring.KeysByIdUsage(p.KeyId, packet.KeyFlagSign)
-			if len(keys) > 0 {
-				md.SignedBy = &keys[0]
+			if keyring != nil {
+				keys := keyring.KeysByIdUsage(p.KeyId, packet.KeyFlagSign)
+				if len(keys) > 0 {
+					md.SignedBy = &keys[0]
+				}
 			}
 		case *packet.LiteralData:
 			md.LiteralData = p
