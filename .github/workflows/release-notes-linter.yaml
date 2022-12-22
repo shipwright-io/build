@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  build:
+  release-note-linter:
     name: Release Note Linter
     runs-on: ubuntu-latest
     steps:
