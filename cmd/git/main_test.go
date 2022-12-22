@@ -105,7 +105,7 @@ var _ = Describe("Git Resource", func() {
 		})
 	})
 
-	Context("cloning publically available repositories", func() {
+	Context("cloning publicly available repositories", func() {
 		const exampleRepo = "https://github.com/shipwright-io/sample-go"
 
 		It("should Git clone a repository to the specified target directory", func() {
@@ -294,46 +294,53 @@ var _ = Describe("Git Resource", func() {
 	Context("cloning private repositories using basic auth", func() {
 		const exampleRepo = "https://github.com/shipwright-io/sample-nodejs-private"
 
-		var username string
-		var password string
-
-		BeforeEach(func() {
-			username = os.Getenv("TEST_GIT_PRIVATE_USERNAME")
-			password = os.Getenv("TEST_GIT_PRIVATE_PASSWORD")
-			if username == "" || password == "" {
-				Skip("Skipping private repository tests since TEST_GIT_PRIVATE_USERNAME and/or TEST_GIT_PRIVATE_PASSWORD environment variables are not set")
+		var withUsernamePassword = func(f func(username, password string)) {
+			var username = os.Getenv("TEST_GIT_PRIVATE_USERNAME")
+			if username == "" {
+				Skip("Skipping private repository tests since TEST_GIT_PRIVATE_USERNAME environment variables are not set")
 			}
-		})
+
+			var password = os.Getenv("TEST_GIT_PRIVATE_PASSWORD")
+			if password == "" {
+				Skip("Skipping private repository tests since TEST_GIT_PRIVATE_PASSWORD environment variables are not set")
+			}
+
+			f(username, password)
+		}
 
 		It("should fail in case only username or password is provided", func() {
 			withTempDir(func(secret string) {
-				// Mock the filesystem state of `kubernetes.io/basic-auth` type secret volume mount
-				file(filepath.Join(secret, "password"), 0400, []byte(password))
+				withUsernamePassword(func(_, password string) {
+					// Mock the filesystem state of `kubernetes.io/basic-auth` type secret volume mount
+					file(filepath.Join(secret, "password"), 0400, []byte(password))
 
-				withTempDir(func(target string) {
-					Expect(run(
-						"--url", exampleRepo,
-						"--secret-path", secret,
-						"--target", target,
-					)).To(HaveOccurred())
+					withTempDir(func(target string) {
+						Expect(run(
+							"--url", exampleRepo,
+							"--secret-path", secret,
+							"--target", target,
+						)).To(HaveOccurred())
+					})
 				})
 			})
 		})
 
 		It("should Git clone a private repository using basic auth credentials provided via a secret", func() {
 			withTempDir(func(secret string) {
-				// Mock the filesystem state of `kubernetes.io/basic-auth` type secret volume mount
-				file(filepath.Join(secret, "username"), 0400, []byte(username))
-				file(filepath.Join(secret, "password"), 0400, []byte(password))
+				withUsernamePassword(func(username, password string) {
+					// Mock the filesystem state of `kubernetes.io/basic-auth` type secret volume mount
+					file(filepath.Join(secret, "username"), 0400, []byte(username))
+					file(filepath.Join(secret, "password"), 0400, []byte(password))
 
-				withTempDir(func(target string) {
-					Expect(run(
-						"--url", exampleRepo,
-						"--secret-path", secret,
-						"--target", target,
-					)).ToNot(HaveOccurred())
+					withTempDir(func(target string) {
+						Expect(run(
+							"--url", exampleRepo,
+							"--secret-path", secret,
+							"--target", target,
+						)).ToNot(HaveOccurred())
 
-					Expect(filepath.Join(target, "README.md")).To(BeAnExistingFile())
+						Expect(filepath.Join(target, "README.md")).To(BeAnExistingFile())
+					})
 				})
 			})
 		})
