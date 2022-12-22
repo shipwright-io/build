@@ -21,7 +21,7 @@ jobs:
             latest-release-url: https://api.github.com/repos/google/go-containerregistry/releases/latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Check and modify ${{ matrix.image }}
         env:
           IMAGE: ${{ matrix.image }}
