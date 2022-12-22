@@ -14,7 +14,11 @@ SPDX-License-Identifier: Apache-2.0
     <a href="https://bestpractices.coreinfrastructure.org/projects/5315"><img src="https://bestpractices.coreinfrastructure.org/projects/5315/badge"></a>
 </p>
 
-# ![shipwright-logo](./.docs/shipwright-logo-lightbg-512.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.docs/shipwright-logo-darkbg-512.png">
+  <source media="(prefers-color-scheme: light)" srcset="./.docs/shipwright-logo-lightbg-512.png">
+  <img alt="Shows the Shipwright logo, which is a heptagon containing a stylized ship next to the word shipwright." src="./.docs/shipwright-logo-lightbg-512.png">
+</picture>
 
 Shipwright is an extensible framework for building container images on Kubernetes.
 
