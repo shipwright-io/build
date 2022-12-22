@@ -37,6 +37,8 @@ const (
 	AuthUnexpectedSSH
 	// AuthBasicIncomplete expresses that either username or password is missing in basic auth credentials
 	AuthBasicIncomplete
+	// AuthUnexpectedHTTP expresses that basic auth username and password are used in combination with a HTTP endpoint
+	AuthUnexpectedHTTP
 	// AuthInvalidKey expresses that ssh authentication is not possible
 	AuthInvalidKey
 	// RevisionNotFound expresses that a remote branch does not exist.
@@ -96,6 +98,8 @@ func (class ErrorClass) String() string {
 		return "GitSSHAuthUnexpected"
 	case AuthExpectedSSH:
 		return "GitSSHAuthExpected"
+	case AuthUnexpectedHTTP:
+		return "AuthUnexpectedHTTP"
 	}
 
 	return "GitError"
@@ -120,6 +124,8 @@ func (class ErrorClass) ToMessage() string {
 		return "Credential/URL inconsistency: No SSH credentials provided, but URL is a SSH Git URL."
 	case AuthBasicIncomplete:
 		return "Basic Auth incomplete: Both username and password need to be configured."
+	case AuthUnexpectedHTTP:
+		return "Refusing to continue with basic authentication (username and password) over insecure HTTP connection"
 	}
 
 	return "Git encountered an unknown error."

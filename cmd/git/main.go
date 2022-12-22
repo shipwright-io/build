@@ -488,10 +488,16 @@ func checkCredentials() (credentialType, error) {
 	// in which case there need to be the files username and password
 	hasUsername := hasFile(flagValues.secretPath, "username")
 	hasPassword := hasFile(flagValues.secretPath, "password")
-	isHTTPSURL := strings.HasPrefix(flagValues.url, "https")
 	switch {
-	case hasUsername && hasPassword && isHTTPSURL:
+	case hasUsername && hasPassword && strings.HasPrefix(flagValues.url, "https://"):
 		return typeUsernamePassword, nil
+
+	case hasUsername && hasPassword && strings.HasPrefix(flagValues.url, "http://"):
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthUnexpectedHTTP.ToMessage(),
+			Reason:  shpgit.AuthUnexpectedHTTP,
+		}
 
 	case hasUsername && !hasPassword || !hasUsername && hasPassword:
 		return typeUndef, &ExitError{

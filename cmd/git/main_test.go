@@ -344,6 +344,24 @@ var _ = Describe("Git Resource", func() {
 				})
 			})
 		})
+
+		It("should fail in case basic auth credentials are used in conjunction with HTTP URI", func() {
+			withTempDir(func(secret string) {
+				withUsernamePassword(func(username, password string) {
+					// Mock the filesystem state of `kubernetes.io/basic-auth` type secret volume mount
+					file(filepath.Join(secret, "username"), 0400, []byte(username))
+					file(filepath.Join(secret, "password"), 0400, []byte(password))
+
+					withTempDir(func(target string) {
+						Expect(run(
+							"--url", "http://github.com/shipwright-io/sample-nodejs-private",
+							"--secret-path", secret,
+							"--target", target,
+						)).To(FailWith(shpgit.AuthUnexpectedHTTP))
+					})
+				})
+			})
+		})
 	})
 
 	Context("cloning repositories with submodules", func() {
