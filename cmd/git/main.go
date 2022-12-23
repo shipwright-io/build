@@ -103,8 +103,8 @@ func main() {
 			exitcode = err.Code
 		}
 
-		if err := writeErrorResults(shpgit.NewErrorResultFromMessage(err.Error())); err != nil {
-			log.Printf("Could not write error results: %s", err.Error())
+		if writeErr := writeErrorResults(shpgit.NewErrorResultFromMessage(err.Error())); writeErr != nil {
+			log.Printf("Could not write error results: %s", writeErr.Error())
 		}
 
 		log.Print(err.Error())

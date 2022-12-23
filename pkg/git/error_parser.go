@@ -164,10 +164,10 @@ func parseLine(line string) (*errorToken, error) {
 		return nil, errWrongFormat
 	}
 
-	prefixToken := parsePrefix(prefixBuilder.String())
-	errorClassToken := parseErrorMessage(errorMessage)
-
-	return &errorToken{classToken: errorClassToken, prefixToken: prefixToken}, nil
+	return &errorToken{
+		classToken:  parseErrorMessage(errorMessage),
+		prefixToken: parsePrefix(prefixBuilder.String()),
+	}, nil
 }
 
 func parsePrefix(raw string) prefixToken {
