@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # Manual trigger
 
 jobs:
-  build:
+  base-image-build:
     if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
     strategy:
