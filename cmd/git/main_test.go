@@ -631,7 +631,6 @@ var _ = Describe("Git Resource", func() {
 						withTempDir(func(target string) {
 							withTempDir(func(secret string) {
 								// Mock the filesystem state of `kubernetes.io/ssh-auth` type secret volume mount
-								GinkgoWriter.Write([]byte(sshPrivateKey))
 								file(filepath.Join(secret, "ssh-privatekey"), 0400, []byte(sshPrivateKey))
 
 								err := run(withArgs(
