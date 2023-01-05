@@ -30,6 +30,8 @@ const (
 var useNoTagsFlag = false
 var useDepthForSubmodule = false
 
+var displayURL string
+
 // ExitError is an error which has an exit code to be used in os.Exit() to
 // return both an exit code and an error message
 type ExitError struct {
@@ -103,8 +105,8 @@ func main() {
 			exitcode = err.Code
 		}
 
-		if err := writeErrorResults(shpgit.NewErrorResultFromMessage(err.Error())); err != nil {
-			log.Printf("Could not write error results: %s", err.Error())
+		if writeErr := writeErrorResults(shpgit.NewErrorResultFromMessage(err.Error())); writeErr != nil {
+			log.Printf("Could not write error results: %s", writeErr.Error())
 		}
 
 		log.Print(err.Error())
@@ -127,13 +129,18 @@ func Execute(ctx context.Context) error {
 		return err
 	}
 
-	checkGitVersionSpecificSettings(ctx)
+	// Check if Git CLI supports --no-tags for clone
+	out, _ := git(ctx, "clone", "-h")
+	useNoTagsFlag = strings.Contains(out, "--no-tags")
 
-	if err := runGitClone(ctx); err != nil {
-		return err
-	}
+	// Check if Git CLI support --single-branch and therefore shallow clones using --depth
+	out, _ = git(ctx, "submodule", "-h")
+	useDepthForSubmodule = strings.Contains(out, "single-branch")
 
-	return nil
+	// Create clean version of the URL that should be safe to be displayed in logs
+	displayURL = cleanURL()
+
+	return runGitClone(ctx)
 }
 
 func runGitClone(ctx context.Context) error {
@@ -215,16 +222,6 @@ func checkEnvironment(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func checkGitVersionSpecificSettings(ctx context.Context) {
-	// Check if Git CLI supports --no-tags for clone
-	out, _ := git(ctx, "clone", "-h")
-	useNoTagsFlag = strings.Contains(out, "--no-tags")
-
-	// Check if Git CLI support --single-branch and therefore shallow clones using --depth
-	out, _ = git(ctx, "submodule", "-h")
-	useDepthForSubmodule = strings.Contains(out, "single-branch")
 }
 
 func clone(ctx context.Context) error {
@@ -410,7 +407,7 @@ func clone(ctx context.Context) error {
 	}
 
 	log.Printf("Successfully loaded %s (%s) into %s\n",
-		flagValues.url,
+		displayURL,
 		revision,
 		flagValues.target,
 	)
@@ -420,7 +417,9 @@ func clone(ctx context.Context) error {
 
 func git(ctx context.Context, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", args...)
-	log.Print(cmd.String())
+
+	// Print the command to be executed, but replace the URL with a safe version
+	log.Print(strings.ReplaceAll(cmd.String(), flagValues.url, displayURL))
 
 	// Make sure that the spawned process does not try to prompt for infos
 	os.Setenv("GIT_TERMINAL_PROMPT", "0")
@@ -488,10 +487,16 @@ func checkCredentials() (credentialType, error) {
 	// in which case there need to be the files username and password
 	hasUsername := hasFile(flagValues.secretPath, "username")
 	hasPassword := hasFile(flagValues.secretPath, "password")
-	isHTTPSURL := strings.HasPrefix(flagValues.url, "https")
 	switch {
-	case hasUsername && hasPassword && isHTTPSURL:
+	case hasUsername && hasPassword && strings.HasPrefix(flagValues.url, "https://"):
 		return typeUsernamePassword, nil
+
+	case hasUsername && hasPassword && strings.HasPrefix(flagValues.url, "http://"):
+		return typeUndef, &ExitError{
+			Code:    110,
+			Message: shpgit.AuthUnexpectedHTTP.ToMessage(),
+			Reason:  shpgit.AuthUnexpectedHTTP,
+		}
 
 	case hasUsername && !hasPassword || !hasUsername && hasPassword:
 		return typeUndef, &ExitError{
@@ -529,4 +534,23 @@ func writeErrorResults(failure *shpgit.ErrorResult) (err error) {
 	}
 
 	return nil
+}
+
+func cleanURL() string {
+	// non HTTP/HTTPS URLs are returned as-is (i.e. Git+SSH URLs)
+	if !strings.HasPrefix(flagValues.url, "http") {
+		return flagValues.url
+	}
+
+	// return redacted version of the URL if it is a parsable URL
+	if repoURL, err := url.Parse(flagValues.url); err == nil {
+		if repoURL.User != nil {
+			log.Println("URL has inline credentials, which need to be redacted for log out. If possible, use an alternative approach.")
+		}
+
+		return repoURL.Redacted()
+	}
+
+	// in any case, as a fallback, return it as-is
+	return flagValues.url
 }
