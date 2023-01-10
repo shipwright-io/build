@@ -7,7 +7,6 @@ approvers:
 - qu1queee
 - SaschaSchwarze0
 - HeavyWombat
-- ImJasonH
 
 reviewers:
 - adambkaplan
@@ -16,8 +15,8 @@ reviewers:
 - qu1queee
 - SaschaSchwarze0
 - HeavyWombat
-- ImJasonH
 
 emeritus_approvers:
 - sbose78 # 2022-08-15
 - gabemontero # 2022-08-15
+- ImJasonH # 2023-01-07
