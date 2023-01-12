@@ -33,25 +33,28 @@ function validate() {
 }
 
 function update() {
-        # Search the image URL recursively and parse the current image tag
-        CURRENT_TAG=$(grep --no-filename --recursive "image: ${IMAGE}:" | head --lines=1  | cut --delimiter=':' --fields='3')
+        echo "[INFO] Processing directory ${DIRECTORY}"
 
-        # Fetch the latest release tag name from release URL
-        LATEST_TAG=$(curl --silent --retry 3 ${LATEST_RELEASE_URL} | jq --raw-output '.name')
+        # Search the image URL recursively and parse the current image tag
+        CURRENT_TAG=$(grep --no-filename --recursive "image: ${IMAGE}:" "${DIRECTORY}" | head --lines=1  | cut --delimiter=':' --fields='3')
+        echo "[INFO] Determined current tag ${CURRENT_TAG}"
+
+        # Determine the latest tag
+        QUERY=".name"
+        if [[ ${IMAGE} == *buildah* ]]; then
+                QUERY=".tags | .[0].name"
+        fi
+        LATEST_TAG=$(curl --silent --retry 3 "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")
 
         # Trivy image tag (0.31.3) is different from release tag name (v0.31.3)
         if [[ ${IMAGE} == *trivy* ]]; then
-                LATEST_TAG=$(curl --silent --retry 3 ${LATEST_RELEASE_URL} | jq --raw-output '.name')
                 LATEST_TAG="${LATEST_TAG:1}"
         fi
 
-        # Buildah release URL needs different jq filter
-        if [[ ${IMAGE} == *buildah* ]]; then
-                LATEST_TAG=$(curl --silent --retry 3 ${LATEST_RELEASE_URL} | jq --raw-output '.tags | .[0].name')
-        fi
+        echo "[INFO] Determined latest tag ${LATEST_TAG}"
 
         # Search and modify the image tag with the latest
-        find ${DIRECTORY} -type f -exec sed --in-place "s%${IMAGE}\:${CURRENT_TAG}%${IMAGE}\:${LATEST_TAG}%g" {} \;
+        find "${DIRECTORY}" -type f -exec sed --in-place "s%${IMAGE}\:${CURRENT_TAG}%${IMAGE}\:${LATEST_TAG}%g" {} \;
 }
 
 validate "${@}"
