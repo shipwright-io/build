@@ -36,7 +36,7 @@ jobs:
 
     - name: Get current date
       id: date
-      run: echo "::set-output name=date::$(date +'%Y-%m-%d-%s')"
+      run: echo "{date}={$(date +'%Y-%m-%d-%s')}" >> $GITHUB_OUTPUT
 
     - name: Generate and upload release YAMLs
       env:
