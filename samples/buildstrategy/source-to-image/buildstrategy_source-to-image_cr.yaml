@@ -44,7 +44,7 @@ spec:
           value: NOT_SET
         - name: AWS_SECRET_KEY
           value: NOT_SET
-      image: gcr.io/kaniko-project/executor:v1.9.0
+      image: gcr.io/kaniko-project/executor:v1.9.1
       name: build-and-push
       securityContext:
         runAsUser: 0
