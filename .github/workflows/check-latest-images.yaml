@@ -27,7 +27,7 @@ jobs:
           IMAGE: ${{ matrix.image }}
           LATEST_RELEASE_URL: ${{ matrix.latest-release-url }}
         run: |
-          for directory in docs samples test; do hack/check-latest-images.sh ${IMAGE} ${LATEST_RELEASE_URL} ${directory}; done
+          for directory in docs pkg samples test; do hack/check-latest-images.sh ${IMAGE} ${LATEST_RELEASE_URL} ${directory}; done
       - name: Check image change
         run: |
           echo "FROM=$(git diff --unified=0 | grep '^[-].*image: .*/.*/.*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
