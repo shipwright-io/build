@@ -36,7 +36,11 @@ function update() {
         echo "[INFO] Processing directory ${DIRECTORY}"
 
         # Search the image URL recursively and parse the current image tag
-        CURRENT_TAG=$(grep --no-filename --recursive "image: ${IMAGE}:" "${DIRECTORY}" | head --lines=1  | cut --delimiter=':' --fields='3')
+        CURRENT_TAG="$( (grep --no-filename --recursive "${IMAGE}:" "${DIRECTORY}" || true) | head --lines=1 | sed -E "s#.*${IMAGE}:([v\.0-9]*).*?#\1#")"
+        if [ "${CURRENT_TAG}" == "" ]; then
+                echo "[INFO] No image reference found"
+                return
+        fi
         echo "[INFO] Determined current tag ${CURRENT_TAG}"
 
         # Determine the latest tag
@@ -44,7 +48,7 @@ function update() {
         if [[ ${IMAGE} == *buildah* ]]; then
                 QUERY=".tags | .[0].name"
         fi
-        LATEST_TAG=$(curl --silent --retry 3 "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")
+        LATEST_TAG="$(curl --silent --retry 3 "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")"
 
         # Trivy image tag (0.31.3) is different from release tag name (v0.31.3)
         if [[ ${IMAGE} == *trivy* ]]; then
