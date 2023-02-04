@@ -110,7 +110,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure IMAGE is replaced by builder image when needed.", func() {
-				Expect(got.Steps[1].Image).To(Equal("quay.io/containers/buildah:v1.20.1"))
+				Expect(got.Steps[1].Image).To(Equal("quay.io/containers/buildah:v1.28.0"))
 			})
 
 			It("should ensure ImagePullPolicy can be set by the build strategy author.", func() {
