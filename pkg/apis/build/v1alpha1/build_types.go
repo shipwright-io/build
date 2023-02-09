@@ -187,6 +187,9 @@ type BuildVolume struct {
 	Name string `json:"name"`
 
 	// Description of the Build Volume
+	//
+	// NOTICE: Description is deprecated, and will be removed in a future release.
+	//
 	// +optional
 	Description *string `json:"description,omitempty"`
 
