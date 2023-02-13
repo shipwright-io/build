@@ -36,7 +36,7 @@ ZAP_FLAGS ?= --zap-log-level=debug --zap-encoder=console
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines controller version
-TEKTON_VERSION ?= v0.30.0
+TEKTON_VERSION ?= v0.44.0
 
 # E2E test flags
 TEST_E2E_FLAGS ?= --fail-fast -p --randomize-all -timeout=1h -progress -trace -v
