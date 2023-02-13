@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
-	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	knativev1 "knative.dev/pkg/apis/duck/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -542,8 +542,8 @@ func (c *Catalog) TaskRunWithStatus(trName string, ns string) *v1beta1.TaskRun {
 			},
 		},
 		Status: v1beta1.TaskRunStatus{
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:   apis.ConditionSucceeded,
 						Reason: "Unknown",
@@ -574,8 +574,8 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, n
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:   apis.ConditionSucceeded,
 						Reason: reason,
@@ -612,8 +612,8 @@ func (c *Catalog) TaskRunWithCompletionAndStartTime(trName string, buildRunName 
 				},
 				PodName: "foobar",
 			},
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:    apis.ConditionSucceeded,
 						Reason:  "something bad happened",
@@ -636,8 +636,8 @@ func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName stri
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:    apis.ConditionSucceeded,
 						Reason:  "something bad happened",

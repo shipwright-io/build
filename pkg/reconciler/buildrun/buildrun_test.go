@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
 	knativeapi "knative.dev/pkg/apis"
-	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	knativev1 "knative.dev/pkg/apis/duck/v1"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -395,7 +395,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// actually set value the patch would have set (but we overrode above)
 				// for next call
 				taskRunSample.Spec.Status = v1beta1.TaskRunSpecStatusCancelled
-				taskRunSample.Status.Conditions = knativev1beta1.Conditions{
+				taskRunSample.Status.Conditions = knativev1.Conditions{
 					{
 						Type:   knativeapi.ConditionSucceeded,
 						Reason: string(v1beta1.TaskRunReasonCancelled),
@@ -480,8 +480,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 								Time: time.Now(),
 							},
 						},
-						Status: knativev1beta1.Status{
-							Conditions: knativev1beta1.Conditions{
+						Status: knativev1.Status{
+							Conditions: knativev1.Conditions{
 								{
 									Type:    knativeapi.ConditionSucceeded,
 									Reason:  string(v1beta1.TaskRunReasonFailed),
