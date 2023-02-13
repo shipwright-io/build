@@ -22,12 +22,13 @@ import (
 
 	apisconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
+	pod "github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	runv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/run/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/clock"
+	"k8s.io/utils/clock"
 	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
 )
@@ -60,6 +61,10 @@ type RunSpec struct {
 	// +optional
 	Status RunSpecStatus `json:"status,omitempty"`
 
+	// Status message for cancellation.
+	// +optional
+	StatusMessage RunSpecStatusMessage `json:"statusMessage,omitempty"`
+
 	// Used for propagating retries count to custom tasks
 	// +optional
 	Retries int `json:"retries,omitempty"`
@@ -69,7 +74,7 @@ type RunSpec struct {
 
 	// PodTemplate holds pod specific configuration
 	// +optional
-	PodTemplate *v1beta1.PodTemplate `json:"podTemplate,omitempty"`
+	PodTemplate *pod.PodTemplate `json:"podTemplate,omitempty"`
 
 	// Time after which the custom-task times out.
 	// Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration
@@ -90,6 +95,17 @@ const (
 	RunSpecStatusCancelled RunSpecStatus = "RunCancelled"
 )
 
+// RunSpecStatusMessage defines human readable status messages for the TaskRun.
+type RunSpecStatusMessage string
+
+const (
+	// RunCancelledByPipelineMsg indicates that the PipelineRun of which part this Run was
+	// has been cancelled.
+	RunCancelledByPipelineMsg RunSpecStatusMessage = "Run cancelled as the PipelineRun it belongs to has been cancelled."
+	// RunCancelledByPipelineTimeoutMsg indicates that the Run was cancelled because the PipelineRun running it timed out.
+	RunCancelledByPipelineTimeoutMsg RunSpecStatusMessage = "Run cancelled as the PipelineRun it belongs to has timed out."
+)
+
 // GetParam gets the Param from the RunSpec with the given name
 // TODO(jasonhall): Move this to a Params type so other code can use it?
 func (rs RunSpec) GetParam(name string) *v1beta1.Param {
@@ -101,18 +117,33 @@ func (rs RunSpec) GetParam(name string) *v1beta1.Param {
 	return nil
 }
 
+// RunReason is an enum used to store all Run reason for the Succeeded condition that are controlled by the Run itself.
+type RunReason string
+
 const (
+	// RunReasonStarted is the reason set when the Run has just started.
+	RunReasonStarted RunReason = "Started"
+	// RunReasonRunning is the reason set when the Run is running.
+	RunReasonRunning RunReason = "Running"
+	// RunReasonSuccessful is the reason set when the Run completed successfully.
+	RunReasonSuccessful RunReason = "Succeeded"
+	// RunReasonFailed is the reason set when the Run completed with a failure.
+	RunReasonFailed RunReason = "Failed"
 	// RunReasonCancelled must be used in the Condition Reason to indicate that a Run was cancelled.
-	RunReasonCancelled = "RunCancelled"
+	RunReasonCancelled RunReason = "RunCancelled"
 	// RunReasonTimedOut must be used in the Condition Reason to indicate that a Run was timed out.
-	RunReasonTimedOut = "RunTimedOut"
+	RunReasonTimedOut RunReason = "RunTimedOut"
 	// RunReasonWorkspaceNotSupported can be used in the Condition Reason to indicate that the
 	// Run contains a workspace which is not supported by this custom task.
-	RunReasonWorkspaceNotSupported = "RunWorkspaceNotSupported"
+	RunReasonWorkspaceNotSupported RunReason = "RunWorkspaceNotSupported"
 	// RunReasonPodTemplateNotSupported can be used in the Condition Reason to indicate that the
 	// Run contains a pod template which is not supported by this custom task.
-	RunReasonPodTemplateNotSupported = "RunPodTemplateNotSupported"
+	RunReasonPodTemplateNotSupported RunReason = "RunPodTemplateNotSupported"
 )
+
+func (t RunReason) String() string {
+	return string(t)
+}
 
 // RunStatus defines the observed state of Run.
 type RunStatus = runv1alpha1.RunStatus
@@ -231,4 +262,9 @@ func (r *Run) GetTimeout() time.Duration {
 		return apisconfig.DefaultTimeoutMinutes * time.Minute
 	}
 	return r.Spec.Timeout.Duration
+}
+
+// GetRetryCount returns the number of times this Run has already been retried
+func (r *Run) GetRetryCount() int {
+	return len(r.Status.RetriesStatus)
 }

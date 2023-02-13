@@ -23,7 +23,7 @@ import (
 	"knative.dev/pkg/apis"
 )
 
-// ResultNameFormat Constant used to define the the regex Result.Name should follow
+// ResultNameFormat Constant used to define the regex Result.Name should follow
 const ResultNameFormat = `^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`
 
 var resultNameFormatRegex = regexp.MustCompile(ResultNameFormat)
@@ -35,7 +35,9 @@ func (tr TaskResult) Validate(ctx context.Context) (errs *apis.FieldError) {
 	}
 	// Array and Object are alpha features
 	if tr.Type == ResultsTypeArray || tr.Type == ResultsTypeObject {
-		return errs.Also(version.ValidateEnabledAPIFields(ctx, "results type", config.AlphaAPIFields))
+		errs := validateObjectResult(tr)
+		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "results type", config.AlphaAPIFields))
+		return errs
 	}
 
 	// Resources created before the result. Type was introduced may not have Type set
@@ -46,8 +48,31 @@ func (tr TaskResult) Validate(ctx context.Context) (errs *apis.FieldError) {
 
 	// By default the result type is string
 	if tr.Type != ResultsTypeString {
-		return apis.ErrInvalidValue(tr.Type, "type", fmt.Sprintf("type must be string"))
+		return apis.ErrInvalidValue(tr.Type, "type", "type must be string")
 	}
 
+	return nil
+}
+
+// validateObjectResult validates the object result and check if the Properties is missing
+// for Properties values it will check if the type is string.
+func validateObjectResult(tr TaskResult) (errs *apis.FieldError) {
+	if ParamType(tr.Type) == ParamTypeObject && tr.Properties == nil {
+		return apis.ErrMissingField(fmt.Sprintf("%s.properties", tr.Name))
+	}
+
+	invalidKeys := []string{}
+	for key, propertySpec := range tr.Properties {
+		if propertySpec.Type != ParamTypeString {
+			invalidKeys = append(invalidKeys, key)
+		}
+	}
+
+	if len(invalidKeys) != 0 {
+		return &apis.FieldError{
+			Message: fmt.Sprintf("The value type specified for these keys %v is invalid, the type must be string", invalidKeys),
+			Paths:   []string{fmt.Sprintf("%s.properties", tr.Name)},
+		}
+	}
 	return nil
 }

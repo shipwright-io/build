@@ -28,7 +28,10 @@ import (
 
 type TektonV1Interface interface {
 	RESTClient() rest.Interface
+	PipelinesGetter
+	PipelineRunsGetter
 	TasksGetter
+	TaskRunsGetter
 }
 
 // TektonV1Client is used to interact with features provided by the tekton.dev group.
@@ -36,8 +39,20 @@ type TektonV1Client struct {
 	restClient rest.Interface
 }
 
+func (c *TektonV1Client) Pipelines(namespace string) PipelineInterface {
+	return newPipelines(c, namespace)
+}
+
+func (c *TektonV1Client) PipelineRuns(namespace string) PipelineRunInterface {
+	return newPipelineRuns(c, namespace)
+}
+
 func (c *TektonV1Client) Tasks(namespace string) TaskInterface {
 	return newTasks(c, namespace)
+}
+
+func (c *TektonV1Client) TaskRuns(namespace string) TaskRunInterface {
+	return newTaskRuns(c, namespace)
 }
 
 // NewForConfig creates a new TektonV1Client for the given config.

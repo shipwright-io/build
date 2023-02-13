@@ -8,7 +8,7 @@
   "paths": {},
   "definitions": {
     "pod.AffinityAssistantTemplate": {
-      "description": "AAPodTemplate holds pod specific configuration for the affinity-assistant",
+      "description": "AffinityAssistantTemplate holds pod specific configuration and is a subset of the generic pod Template",
       "type": "object",
       "properties": {
         "imagePullSecrets": {
@@ -40,7 +40,7 @@
       }
     },
     "pod.Template": {
-      "description": "PodTemplate holds pod specific configuration",
+      "description": "Template holds pod specific configuration",
       "type": "object",
       "properties": {
         "affinity": {
@@ -62,6 +62,17 @@
         "enableServiceLinks": {
           "description": "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links. Optional: Defaults to true.",
           "type": "boolean"
+        },
+        "env": {
+          "description": "List of environment variables that can be provided to the containers belonging to the pod.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          },
+          "x-kubernetes-list-type": "atomic",
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge"
         },
         "hostAliases": {
           "description": "HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. This is only valid for non-hostNetwork pods.",
@@ -115,6 +126,15 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/v1.Toleration"
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
+        "topologySpreadConstraints": {
+          "description": "TopologySpreadConstraints controls how Pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined topology domains.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.TopologySpreadConstraint"
           },
           "x-kubernetes-list-type": "atomic"
         },
@@ -298,42 +318,6 @@
         }
       }
     },
-    "v1beta1.ArrayOrString": {
-      "description": "ArrayOrString is a type that can hold a single string or string array. Used in JSON unmarshalling so that a single JSON field can accept either an individual string or an array of strings. consideration the object case after the community reaches an agreement on it.",
-      "type": "object",
-      "required": [
-        "type",
-        "stringVal",
-        "arrayVal",
-        "objectVal"
-      ],
-      "properties": {
-        "arrayVal": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "default": ""
-          },
-          "x-kubernetes-list-type": "atomic"
-        },
-        "objectVal": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "stringVal": {
-          "description": "Represents the stored type of ArrayOrString.",
-          "type": "string",
-          "default": ""
-        },
-        "type": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
     "v1beta1.ChildStatusReference": {
       "description": "ChildStatusReference is used to point to the statuses of individual TaskRuns and Runs within this PipelineRun.",
       "type": "object",
@@ -407,7 +391,7 @@
       }
     },
     "v1beta1.ClusterTask": {
-      "description": "ClusterTask is a Task with a cluster scope. ClusterTasks are used to represent Tasks that should be publicly addressable from any namespace in the cluster.",
+      "description": "ClusterTask is a Task with a cluster scope. ClusterTasks are used to represent Tasks that should be publicly addressable from any namespace in the cluster. Deprecated: Please use the cluster resolver instead.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -454,6 +438,154 @@
         "metadata": {
           "default": {},
           "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    "v1beta1.ConfigSource": {
+      "description": "ConfigSource identifies the source where a resource came from. This can include Git repositories, Task Bundles, file checksums, or other information that allows users to identify where the resource came from and what version was used.",
+      "type": "object",
+      "properties": {
+        "digest": {
+          "description": "Digest is a collection of cryptographic digests for the contents of the artifact specified by URI. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.digest Example: {\"sha1\": \"f99d13e554ffcb696dee719fa85b695cb5b0f428\"}",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "entryPoint": {
+          "description": "EntryPoint identifies the entry point into the build. This is often a path to a configuration file and/or a target label within that file. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.entryPoint Example: \"task/git-clone/0.8/git-clone.yaml\"",
+          "type": "string"
+        },
+        "uri": {
+          "description": "URI indicates the identity of the source of the config. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.uri Example: \"https://github.com/tektoncd/catalog\"",
+          "type": "string"
+        }
+      }
+    },
+    "v1beta1.CustomRun": {
+      "description": "CustomRun represents a single execution of a Custom Task.",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/v1beta1.CustomRunSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/github.com.tektoncd.pipeline.pkg.apis.run.v1beta1.CustomRunStatus"
+        }
+      }
+    },
+    "v1beta1.CustomRunList": {
+      "description": "CustomRunList contains a list of CustomRun",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.CustomRun"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    "v1beta1.CustomRunSpec": {
+      "description": "CustomRunSpec defines the desired state of CustomRun",
+      "type": "object",
+      "properties": {
+        "customRef": {
+          "$ref": "#/definitions/v1beta1.TaskRef"
+        },
+        "customSpec": {
+          "description": "Spec is a specification of a custom task",
+          "$ref": "#/definitions/v1beta1.EmbeddedCustomRunSpec"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.Param"
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
+        "retries": {
+          "description": "Used for propagating retries count to custom tasks",
+          "type": "integer",
+          "format": "int32"
+        },
+        "serviceAccountName": {
+          "type": "string",
+          "default": ""
+        },
+        "status": {
+          "description": "Used for cancelling a customrun (and maybe more later on)",
+          "type": "string"
+        },
+        "statusMessage": {
+          "description": "Status message for cancellation.",
+          "type": "string"
+        },
+        "timeout": {
+          "description": "Time after which the custom-task times out. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
+          "$ref": "#/definitions/v1.Duration"
+        },
+        "workspaces": {
+          "description": "Workspaces is a list of WorkspaceBindings from volumes to workspaces.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.WorkspaceBinding"
+          },
+          "x-kubernetes-list-type": "atomic"
+        }
+      }
+    },
+    "v1beta1.EmbeddedCustomRunSpec": {
+      "description": "EmbeddedCustomRunSpec allows custom task definitions to be embedded",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1beta1.PipelineTaskMetadata"
+        },
+        "spec": {
+          "description": "Spec is a specification of a custom task",
+          "default": {},
+          "$ref": "#/definitions/k8s.io.apimachinery.pkg.runtime.RawExtension"
         }
       }
     },
@@ -579,8 +711,23 @@
         }
       }
     },
+    "v1beta1.Matrix": {
+      "description": "Matrix is used to fan out Tasks in a Pipeline",
+      "type": "object",
+      "properties": {
+        "params": {
+          "description": "Params is a list of parameters used to fan out the pipelineTask Params takes only `Parameters` of type `\"array\"` Each array element is supplied to the `PipelineTask` by substituting `params` of type `\"string\"` in the underlying `Task`. The names of the `params` in the `Matrix` must match the names of the `params` in the underlying `Task` that they will be substituting.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.Param"
+          },
+          "x-kubernetes-list-type": "atomic"
+        }
+      }
+    },
     "v1beta1.Param": {
-      "description": "Param declares an ArrayOrString to use for the parameter called name.",
+      "description": "Param declares an ParamValues to use for the parameter called name.",
       "type": "object",
       "required": [
         "name",
@@ -593,7 +740,7 @@
         },
         "value": {
           "default": {},
-          "$ref": "#/definitions/v1beta1.ArrayOrString"
+          "$ref": "#/definitions/v1beta1.ParamValue"
         }
       }
     },
@@ -606,7 +753,7 @@
       "properties": {
         "default": {
           "description": "Default is the value a parameter takes if no input value is supplied. If default is set, a Task may be executed without a supplied value for the parameter.",
-          "$ref": "#/definitions/v1beta1.ArrayOrString"
+          "$ref": "#/definitions/v1beta1.ParamValue"
         },
         "description": {
           "description": "Description is a user-facing description of the parameter that may be used to populate a UI.",
@@ -628,6 +775,42 @@
         "type": {
           "description": "Type is the user-specified type of the parameter. The possible types are currently \"string\", \"array\" and \"object\", and \"string\" is the default.",
           "type": "string"
+        }
+      }
+    },
+    "v1beta1.ParamValue": {
+      "description": "ResultValue is a type alias of ParamValue",
+      "type": "object",
+      "required": [
+        "type",
+        "stringVal",
+        "arrayVal",
+        "objectVal"
+      ],
+      "properties": {
+        "arrayVal": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
+        "objectVal": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "stringVal": {
+          "description": "Represents the stored type of ParamValues.",
+          "type": "string",
+          "default": ""
+        },
+        "type": {
+          "type": "string",
+          "default": ""
         }
       }
     },
@@ -715,7 +898,7 @@
           "type": "string"
         },
         "bundle": {
-          "description": "Bundle url reference to a Tekton Bundle.",
+          "description": "Bundle url reference to a Tekton Bundle. Deprecated: Please use ResolverRef with the bundles resolver instead.",
           "type": "string"
         },
         "name": {
@@ -806,7 +989,7 @@
         "value": {
           "description": "Value the expression used to retrieve the value",
           "default": {},
-          "$ref": "#/definitions/v1beta1.ArrayOrString"
+          "$ref": "#/definitions/v1beta1.ParamValue"
         }
       }
     },
@@ -877,12 +1060,12 @@
         "value": {
           "description": "Value is the result returned from the execution of this PipelineRun",
           "default": {},
-          "$ref": "#/definitions/v1beta1.ArrayOrString"
+          "$ref": "#/definitions/v1beta1.ParamValue"
         }
       }
     },
     "v1beta1.PipelineRunRunStatus": {
-      "description": "PipelineRunRunStatus contains the name of the PipelineTask for this Run and the Run's Status",
+      "description": "PipelineRunRunStatus contains the name of the PipelineTask for this CustomRun or Run and the CustomRun or Run's Status",
       "type": "object",
       "properties": {
         "pipelineTaskName": {
@@ -890,8 +1073,8 @@
           "type": "string"
         },
         "status": {
-          "description": "Status is the RunStatus for the corresponding Run",
-          "$ref": "#/definitions/github.com.tektoncd.pipeline.pkg.apis.run.v1alpha1.RunStatus"
+          "description": "Status is the CustomRunStatus for the corresponding CustomRun or Run",
+          "$ref": "#/definitions/github.com.tektoncd.pipeline.pkg.apis.run.v1beta1.CustomRunStatus"
         },
         "whenExpressions": {
           "description": "WhenExpressions is the list of checks guarding the execution of the PipelineTask",
@@ -1006,6 +1189,10 @@
           "x-kubernetes-patch-merge-key": "type",
           "x-kubernetes-patch-strategy": "merge"
         },
+        "finallyStartTime": {
+          "description": "FinallyStartTime is when all non-finally tasks have been completed and only finally tasks are being executed.",
+          "$ref": "#/definitions/v1.Time"
+        },
         "observedGeneration": {
           "description": "ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.",
           "type": "integer",
@@ -1024,6 +1211,10 @@
           "description": "PipelineRunSpec contains the exact spec used to instantiate the run",
           "$ref": "#/definitions/v1beta1.PipelineSpec"
         },
+        "provenance": {
+          "description": "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+          "$ref": "#/definitions/v1beta1.Provenance"
+        },
         "runs": {
           "description": "Deprecated - use ChildReferences instead. map of PipelineRunRunStatus with the run name as the key",
           "type": "object",
@@ -1039,6 +1230,14 @@
             "$ref": "#/definitions/v1beta1.SkippedTask"
           },
           "x-kubernetes-list-type": "atomic"
+        },
+        "spanContext": {
+          "description": "SpanContext contains tracing span context fields",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
         },
         "startTime": {
           "description": "StartTime is the time the PipelineRun is actually started.",
@@ -1070,6 +1269,10 @@
           "description": "CompletionTime is the time the PipelineRun completed.",
           "$ref": "#/definitions/v1.Time"
         },
+        "finallyStartTime": {
+          "description": "FinallyStartTime is when all non-finally tasks have been completed and only finally tasks are being executed.",
+          "$ref": "#/definitions/v1.Time"
+        },
         "pipelineResults": {
           "description": "PipelineResults are the list of results written out by the pipeline task's containers",
           "type": "array",
@@ -1082,6 +1285,10 @@
         "pipelineSpec": {
           "description": "PipelineRunSpec contains the exact spec used to instantiate the run",
           "$ref": "#/definitions/v1beta1.PipelineSpec"
+        },
+        "provenance": {
+          "description": "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+          "$ref": "#/definitions/v1beta1.Provenance"
         },
         "runs": {
           "description": "Deprecated - use ChildReferences instead. map of PipelineRunRunStatus with the run name as the key",
@@ -1098,6 +1305,14 @@
             "$ref": "#/definitions/v1beta1.SkippedTask"
           },
           "x-kubernetes-list-type": "atomic"
+        },
+        "spanContext": {
+          "description": "SpanContext contains tracing span context fields",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
         },
         "startTime": {
           "description": "StartTime is the time the PipelineRun is actually started.",
@@ -1205,12 +1420,7 @@
       "properties": {
         "matrix": {
           "description": "Matrix declares parameters used to fan out this task.",
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/v1beta1.Param"
-          },
-          "x-kubernetes-list-type": "atomic"
+          "$ref": "#/definitions/v1beta1.Matrix"
         },
         "name": {
           "description": "Name is the name of this task within the context of a Pipeline. Name is used as a coordinate with the `from` and `runAfter` fields to establish the execution order of tasks relative to one another.",
@@ -1463,42 +1673,164 @@
         }
       }
     },
-    "v1beta1.ResolverParam": {
-      "description": "ResolverParam is a single parameter passed to a resolver.",
+    "v1beta1.Provenance": {
+      "description": "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.). For now, it only contains the subfield `ConfigSource` that identifies the source where a build config file came from. In future, it can be expanded as needed to include more metadata about the build. This field aims to be used to carry minimum amount of the authenticated metadata in *Run status so that Tekton Chains can pick it up and record in the provenance it generates.",
+      "type": "object",
+      "properties": {
+        "configSource": {
+          "description": "ConfigSource identifies the source where a resource came from.",
+          "$ref": "#/definitions/v1beta1.ConfigSource"
+        }
+      }
+    },
+    "v1beta1.ResolutionRequest": {
+      "description": "ResolutionRequest is an object for requesting the content of a Tekton resource like a pipeline.yaml.",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "description": "Spec holds the information for the request part of the resource request.",
+          "default": {},
+          "$ref": "#/definitions/v1beta1.ResolutionRequestSpec"
+        },
+        "status": {
+          "description": "Status communicates the state of the request and, ultimately, the content of the resolved resource.",
+          "default": {},
+          "$ref": "#/definitions/v1beta1.ResolutionRequestStatus"
+        }
+      }
+    },
+    "v1beta1.ResolutionRequestList": {
+      "description": "ResolutionRequestList is a list of ResolutionRequests.",
       "type": "object",
       "required": [
-        "name",
-        "value"
+        "items"
       ],
       "properties": {
-        "name": {
-          "description": "Name is the name of the parameter that will be passed to the resolver.",
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.ResolutionRequest"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    "v1beta1.ResolutionRequestSpec": {
+      "description": "ResolutionRequestSpec are all the fields in the spec of the ResolutionRequest CRD.",
+      "type": "object",
+      "properties": {
+        "params": {
+          "description": "Parameters are the runtime attributes passed to the resolver to help it figure out how to resolve the resource being requested. For example: repo URL, commit SHA, path to file, the kind of authentication to leverage, etc.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.Param"
+          },
+          "x-kubernetes-list-type": "atomic"
+        }
+      }
+    },
+    "v1beta1.ResolutionRequestStatus": {
+      "description": "ResolutionRequestStatus are all the fields in a ResolutionRequest's status subresource.",
+      "type": "object",
+      "required": [
+        "data",
+        "source"
+      ],
+      "properties": {
+        "annotations": {
+          "description": "Annotations is additional Status fields for the Resource to save some additional State as well as convey more information to the user. This is roughly akin to Annotations on any k8s resource, just the reconciler conveying richer information outwards.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "conditions": {
+          "description": "Conditions the latest available observations of a resource's current state.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/knative.Condition"
+          },
+          "x-kubernetes-patch-merge-key": "type",
+          "x-kubernetes-patch-strategy": "merge"
+        },
+        "data": {
+          "description": "Data is a string representation of the resolved content of the requested resource in-lined into the ResolutionRequest object.",
           "type": "string",
           "default": ""
         },
-        "value": {
-          "description": "Value is the string value of the parameter that will be passed to the resolver.",
+        "observedGeneration": {
+          "description": "ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "source": {
+          "description": "Source is the source reference of the remote data that records the url, digest and the entrypoint.",
+          "$ref": "#/definitions/v1beta1.ConfigSource"
+        }
+      }
+    },
+    "v1beta1.ResolutionRequestStatusFields": {
+      "description": "ResolutionRequestStatusFields are the ResolutionRequest-specific fields for the status subresource.",
+      "type": "object",
+      "required": [
+        "data",
+        "source"
+      ],
+      "properties": {
+        "data": {
+          "description": "Data is a string representation of the resolved content of the requested resource in-lined into the ResolutionRequest object.",
           "type": "string",
           "default": ""
+        },
+        "source": {
+          "description": "Source is the source reference of the remote data that records the url, digest and the entrypoint.",
+          "$ref": "#/definitions/v1beta1.ConfigSource"
         }
       }
     },
     "v1beta1.ResolverRef": {
-      "description": "ResolverRef can be used to refer to a Pipeline or Task in a remote location like a git repo. This feature is in alpha and these fields are only available when the alpha feature gate is enabled.",
+      "description": "ResolverRef can be used to refer to a Pipeline or Task in a remote location like a git repo.",
       "type": "object",
       "properties": {
-        "resolver": {
-          "description": "Resolver is the name of the resolver that should perform resolution of the referenced Tekton resource, such as \"git\".",
-          "type": "string"
-        },
-        "resource": {
-          "description": "Resource contains the parameters used to identify the referenced Tekton resource. Example entries might include \"repo\" or \"path\" but the set of params ultimately depends on the chosen resolver.",
+        "params": {
+          "description": "Params contains the parameters used to identify the referenced Tekton resource. Example entries might include \"repo\" or \"path\" but the set of params ultimately depends on the chosen resolver.",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.ResolverParam"
+            "$ref": "#/definitions/v1beta1.Param"
           },
           "x-kubernetes-list-type": "atomic"
+        },
+        "resolver": {
+          "description": "Resolver is the name of the resolver that should perform resolution of the referenced Tekton resource, such as \"git\".",
+          "type": "string"
         }
       }
     },
@@ -1539,7 +1871,7 @@
       ],
       "properties": {
         "args": {
-          "description": "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "description": "Arguments to the entrypoint. The image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
           "type": "array",
           "items": {
             "type": "string",
@@ -1548,7 +1880,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "command": {
-          "description": "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "description": "Entrypoint array. Not executed within a shell. The image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the Sidecar's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
           "type": "array",
           "items": {
             "type": "string",
@@ -1557,7 +1889,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "env": {
-          "description": "List of environment variables to set in the container. Cannot be updated.",
+          "description": "List of environment variables to set in the Sidecar. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -1568,7 +1900,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "envFrom": {
-          "description": "List of sources to populate environment variables in the container. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the container is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
+          "description": "List of sources to populate environment variables in the Sidecar. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the Sidecar is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -1577,7 +1909,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "image": {
-          "description": "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
+          "description": "Image name to be used by the Sidecar. More info: https://kubernetes.io/docs/concepts/containers/images",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -1585,20 +1917,20 @@
           "type": "string"
         },
         "lifecycle": {
-          "description": "Actions that the management system should take in response to container lifecycle events. Cannot be updated.",
+          "description": "Actions that the management system should take in response to Sidecar lifecycle events. Cannot be updated.",
           "$ref": "#/definitions/v1.Lifecycle"
         },
         "livenessProbe": {
-          "description": "Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Periodic probe of Sidecar liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
           "$ref": "#/definitions/v1.Probe"
         },
         "name": {
-          "description": "Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated.",
+          "description": "Name of the Sidecar specified as a DNS_LABEL. Each Sidecar in a Task must have a unique name (DNS_LABEL). Cannot be updated.",
           "type": "string",
           "default": ""
         },
         "ports": {
-          "description": "List of ports to expose from the container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
+          "description": "List of ports to expose from the Sidecar. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -1613,11 +1945,11 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "readinessProbe": {
-          "description": "Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Periodic probe of Sidecar service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
           "$ref": "#/definitions/v1.Probe"
         },
         "resources": {
-          "description": "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "description": "Compute Resources required by this Sidecar. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
         },
@@ -1626,35 +1958,35 @@
           "type": "string"
         },
         "securityContext": {
-          "description": "SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+          "description": "SecurityContext defines the security options the Sidecar should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
           "$ref": "#/definitions/v1.SecurityContext"
         },
         "startupProbe": {
-          "description": "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "StartupProbe indicates that the Pod the Sidecar is running in has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
           "$ref": "#/definitions/v1.Probe"
         },
         "stdin": {
-          "description": "Whether this container should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the container will always result in EOF. Default is false.",
+          "description": "Whether this Sidecar should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the Sidecar will always result in EOF. Default is false.",
           "type": "boolean"
         },
         "stdinOnce": {
-          "description": "Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the container is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false",
+          "description": "Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on Sidecar start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the Sidecar is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false",
           "type": "boolean"
         },
         "terminationMessagePath": {
-          "description": "Optional: Path at which the file to which the container's termination message will be written is mounted into the container's filesystem. Message written is intended to be brief final status, such as an assertion failure message. Will be truncated by the node if greater than 4096 bytes. The total message length across all containers will be limited to 12kb. Defaults to /dev/termination-log. Cannot be updated.",
+          "description": "Optional: Path at which the file to which the Sidecar's termination message will be written is mounted into the Sidecar's filesystem. Message written is intended to be brief final status, such as an assertion failure message. Will be truncated by the node if greater than 4096 bytes. The total message length across all containers will be limited to 12kb. Defaults to /dev/termination-log. Cannot be updated.",
           "type": "string"
         },
         "terminationMessagePolicy": {
-          "description": "Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the container status message on both success and failure. FallbackToLogsOnError will use the last chunk of container log output if the termination message file is empty and the container exited with an error. The log output is limited to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot be updated.",
+          "description": "Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the Sidecar status message on both success and failure. FallbackToLogsOnError will use the last chunk of Sidecar log output if the termination message file is empty and the Sidecar exited with an error. The log output is limited to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot be updated.",
           "type": "string"
         },
         "tty": {
-          "description": "Whether this container should allocate a TTY for itself, also requires 'stdin' to be true. Default is false.",
+          "description": "Whether this Sidecar should allocate a TTY for itself, also requires 'stdin' to be true. Default is false.",
           "type": "boolean"
         },
         "volumeDevices": {
-          "description": "volumeDevices is the list of block devices to be used by the container.",
+          "description": "volumeDevices is the list of block devices to be used by the Sidecar.",
           "type": "array",
           "items": {
             "default": {},
@@ -1665,7 +1997,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "volumeMounts": {
-          "description": "Pod volumes to mount into the container's filesystem. Cannot be updated.",
+          "description": "Volumes to mount into the Sidecar's filesystem. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -1676,7 +2008,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "workingDir": {
-          "description": "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
+          "description": "Sidecar's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
           "type": "string"
         },
         "workspaces": {
@@ -1754,7 +2086,7 @@
       ],
       "properties": {
         "args": {
-          "description": "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "description": "Arguments to the entrypoint. The image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
           "type": "array",
           "items": {
             "type": "string",
@@ -1763,7 +2095,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "command": {
-          "description": "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "description": "Entrypoint array. Not executed within a shell. The image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
           "type": "array",
           "items": {
             "type": "string",
@@ -1792,7 +2124,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "image": {
-          "description": "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
+          "description": "Image reference name to run for this Step. More info: https://kubernetes.io/docs/concepts/containers/images",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -1804,20 +2136,20 @@
           "$ref": "#/definitions/v1.Lifecycle"
         },
         "livenessProbe": {
-          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container liveness. Step will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
           "$ref": "#/definitions/v1.Probe"
         },
         "name": {
-          "description": "Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated.",
+          "description": "Name of the Step specified as a DNS_LABEL. Each Step in a Task must have a unique name.",
           "type": "string",
           "default": ""
         },
         "onError": {
-          "description": "OnError defines the exiting behavior of a container on error can be set to [ continue | stopAndFail ] stopAndFail indicates exit the taskRun if the container exits with non-zero exit code continue indicates continue executing the rest of the steps irrespective of the container exit code",
+          "description": "OnError defines the exiting behavior of a container on error can be set to [ continue | stopAndFail ]",
           "type": "string"
         },
         "ports": {
-          "description": "Deprecated. This field will be removed in a future release. List of ports to expose from the container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
+          "description": "Deprecated. This field will be removed in a future release. List of ports to expose from the Step's container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -1832,11 +2164,11 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "readinessProbe": {
-          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container service readiness. Step will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
           "$ref": "#/definitions/v1.Probe"
         },
         "resources": {
-          "description": "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "description": "Compute Resources required by this Step. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
         },
@@ -1845,11 +2177,11 @@
           "type": "string"
         },
         "securityContext": {
-          "description": "SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+          "description": "SecurityContext defines the security options the Step should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
           "$ref": "#/definitions/v1.SecurityContext"
         },
         "startupProbe": {
-          "description": "Deprecated. This field will be removed in a future release. DeprecatedStartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Deprecated. This field will be removed in a future release. DeprecatedStartupProbe indicates that the Pod this Step runs in has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
           "$ref": "#/definitions/v1.Probe"
         },
         "stderrConfig": {
@@ -1869,11 +2201,11 @@
           "$ref": "#/definitions/v1beta1.StepOutputConfig"
         },
         "terminationMessagePath": {
-          "description": "Deprecated. This field will be removed in a future release. Optional: Path at which the file to which the container's termination message will be written is mounted into the container's filesystem. Message written is intended to be brief final status, such as an assertion failure message. Will be truncated by the node if greater than 4096 bytes. The total message length across all containers will be limited to 12kb. Defaults to /dev/termination-log. Cannot be updated.",
+          "description": "Deprecated. This field will be removed in a future release and can't be meaningfully used.",
           "type": "string"
         },
         "terminationMessagePolicy": {
-          "description": "Deprecated. This field will be removed in a future release. Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the container status message on both success and failure. FallbackToLogsOnError will use the last chunk of container log output if the termination message file is empty and the container exited with an error. The log output is limited to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot be updated.",
+          "description": "Deprecated. This field will be removed in a future release and can't be meaningfully used.",
           "type": "string"
         },
         "timeout": {
@@ -1885,7 +2217,7 @@
           "type": "boolean"
         },
         "volumeDevices": {
-          "description": "volumeDevices is the list of block devices to be used by the container.",
+          "description": "volumeDevices is the list of block devices to be used by the Step.",
           "type": "array",
           "items": {
             "default": {},
@@ -1896,7 +2228,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "volumeMounts": {
-          "description": "Pod volumes to mount into the container's filesystem. Cannot be updated.",
+          "description": "Volumes to mount into the Step's filesystem. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -1907,7 +2239,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "workingDir": {
-          "description": "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
+          "description": "Step's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
           "type": "string"
         },
         "workspaces": {
@@ -1966,7 +2298,7 @@
       ],
       "properties": {
         "args": {
-          "description": "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "description": "Arguments to the entrypoint. The image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the Step's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
           "type": "array",
           "items": {
             "type": "string",
@@ -1975,7 +2307,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "command": {
-          "description": "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "description": "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the Step's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
           "type": "array",
           "items": {
             "type": "string",
@@ -1995,7 +2327,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "envFrom": {
-          "description": "List of sources to populate environment variables in the container. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the container is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
+          "description": "List of sources to populate environment variables in the Step. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the container is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -2004,7 +2336,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "image": {
-          "description": "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
+          "description": "Default image name to use for each Step. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -2020,12 +2352,12 @@
           "$ref": "#/definitions/v1.Probe"
         },
         "name": {
-          "description": "Deprecated. This field will be removed in a future release. DeprecatedName of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated.",
+          "description": "Deprecated. This field will be removed in a future release. Default name for each Step specified as a DNS_LABEL. Each Step in a Task must have a unique name. Cannot be updated.",
           "type": "string",
           "default": ""
         },
         "ports": {
-          "description": "Deprecated. This field will be removed in a future release. List of ports to expose from the container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
+          "description": "Deprecated. This field will be removed in a future release. List of ports to expose from the Step's container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -2044,12 +2376,12 @@
           "$ref": "#/definitions/v1.Probe"
         },
         "resources": {
-          "description": "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "description": "Compute Resources required by this Step. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
         },
         "securityContext": {
-          "description": "SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+          "description": "SecurityContext defines the security options the Step should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
           "$ref": "#/definitions/v1.SecurityContext"
         },
         "startupProbe": {
@@ -2057,7 +2389,7 @@
           "$ref": "#/definitions/v1.Probe"
         },
         "stdin": {
-          "description": "Deprecated. This field will be removed in a future release. Whether this container should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the container will always result in EOF. Default is false.",
+          "description": "Deprecated. This field will be removed in a future release. Whether this Step should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the Step will always result in EOF. Default is false.",
           "type": "boolean"
         },
         "stdinOnce": {
@@ -2065,19 +2397,19 @@
           "type": "boolean"
         },
         "terminationMessagePath": {
-          "description": "Deprecated. This field will be removed in a future release. Optional: Path at which the file to which the container's termination message will be written is mounted into the container's filesystem. Message written is intended to be brief final status, such as an assertion failure message. Will be truncated by the node if greater than 4096 bytes. The total message length across all containers will be limited to 12kb. Defaults to /dev/termination-log. Cannot be updated.",
+          "description": "Deprecated. This field will be removed in a future release and cannot be meaningfully used.",
           "type": "string"
         },
         "terminationMessagePolicy": {
-          "description": "Deprecated. This field will be removed in a future release. Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the container status message on both success and failure. FallbackToLogsOnError will use the last chunk of container log output if the termination message file is empty and the container exited with an error. The log output is limited to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot be updated.",
+          "description": "Deprecated. This field will be removed in a future release and cannot be meaningfully used.",
           "type": "string"
         },
         "tty": {
-          "description": "Deprecated. This field will be removed in a future release. Whether this container should allocate a DeprecatedTTY for itself, also requires 'stdin' to be true. Default is false.",
+          "description": "Deprecated. This field will be removed in a future release. Whether this Step should allocate a DeprecatedTTY for itself, also requires 'stdin' to be true. Default is false.",
           "type": "boolean"
         },
         "volumeDevices": {
-          "description": "volumeDevices is the list of block devices to be used by the container.",
+          "description": "volumeDevices is the list of block devices to be used by the Step.",
           "type": "array",
           "items": {
             "default": {},
@@ -2088,7 +2420,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "volumeMounts": {
-          "description": "Pod volumes to mount into the container's filesystem. Cannot be updated.",
+          "description": "Volumes to mount into the Step's filesystem. Cannot be updated.",
           "type": "array",
           "items": {
             "default": {},
@@ -2099,7 +2431,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "workingDir": {
-          "description": "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
+          "description": "Step's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
           "type": "string"
         }
       }
@@ -2164,7 +2496,7 @@
           "type": "string"
         },
         "bundle": {
-          "description": "Bundle url reference to a Tekton Bundle.",
+          "description": "Bundle url reference to a Tekton Bundle. Deprecated: Please use ResolverRef with the bundles resolver instead.",
           "type": "string"
         },
         "kind": {
@@ -2438,7 +2770,7 @@
         "value": {
           "description": "Value the given value of the result",
           "default": {},
-          "$ref": "#/definitions/v1beta1.ArrayOrString"
+          "$ref": "#/definitions/v1beta1.ParamValue"
         }
       }
     },
@@ -2488,6 +2820,11 @@
         "resources": {
           "$ref": "#/definitions/v1beta1.TaskRunResources"
         },
+        "retries": {
+          "description": "Retries represents how many times this TaskRun should be retried in the event of Task failure.",
+          "type": "integer",
+          "format": "int32"
+        },
         "serviceAccountName": {
           "type": "string",
           "default": ""
@@ -2502,7 +2839,11 @@
           "x-kubernetes-list-type": "atomic"
         },
         "status": {
-          "description": "Used for cancelling a taskrun (and maybe more later on)",
+          "description": "Used for cancelling a TaskRun (and maybe more later on)",
+          "type": "string"
+        },
+        "statusMessage": {
+          "description": "Status message for cancellation.",
           "type": "string"
         },
         "stepOverrides": {
@@ -2522,7 +2863,7 @@
           "$ref": "#/definitions/v1beta1.TaskSpec"
         },
         "timeout": {
-          "description": "Time after which the build times out. Defaults to 1 hour. Specified build timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
+          "description": "Time after which one retry attempt times out. Defaults to 1 hour. Specified build timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
           "$ref": "#/definitions/v1.Duration"
         },
         "workspaces": {
@@ -2552,7 +2893,7 @@
           }
         },
         "cloudEvents": {
-          "description": "CloudEvents describe the state of each cloud event requested via a CloudEventResource.",
+          "description": "Deprecated. CloudEvents describe the state of each cloud event requested via a CloudEventResource.",
           "type": "array",
           "items": {
             "default": {},
@@ -2584,8 +2925,12 @@
           "type": "string",
           "default": ""
         },
+        "provenance": {
+          "description": "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+          "$ref": "#/definitions/v1beta1.Provenance"
+        },
         "resourcesResult": {
-          "description": "Results from Resources built during the taskRun. currently includes the digest of build container images",
+          "description": "Results from Resources built during the TaskRun. currently includes the digest of build container images",
           "type": "array",
           "items": {
             "default": {},
@@ -2610,6 +2955,14 @@
             "$ref": "#/definitions/v1beta1.SidecarState"
           },
           "x-kubernetes-list-type": "atomic"
+        },
+        "spanContext": {
+          "description": "SpanContext contains tracing span context fields",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
         },
         "startTime": {
           "description": "StartTime is the time the build is actually started.",
@@ -2647,7 +3000,7 @@
       ],
       "properties": {
         "cloudEvents": {
-          "description": "CloudEvents describe the state of each cloud event requested via a CloudEventResource.",
+          "description": "Deprecated. CloudEvents describe the state of each cloud event requested via a CloudEventResource.",
           "type": "array",
           "items": {
             "default": {},
@@ -2664,8 +3017,12 @@
           "type": "string",
           "default": ""
         },
+        "provenance": {
+          "description": "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+          "$ref": "#/definitions/v1beta1.Provenance"
+        },
         "resourcesResult": {
-          "description": "Results from Resources built during the taskRun. currently includes the digest of build container images",
+          "description": "Results from Resources built during the TaskRun. currently includes the digest of build container images",
           "type": "array",
           "items": {
             "default": {},
@@ -2690,6 +3047,14 @@
             "$ref": "#/definitions/v1beta1.SidecarState"
           },
           "x-kubernetes-list-type": "atomic"
+        },
+        "spanContext": {
+          "description": "SpanContext contains tracing span context fields",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
         },
         "startTime": {
           "description": "StartTime is the time the build is actually started.",

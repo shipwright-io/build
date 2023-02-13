@@ -19,8 +19,6 @@ package v1beta1
 import (
 	"context"
 
-	"github.com/tektoncd/pipeline/pkg/apis/config"
-	"github.com/tektoncd/pipeline/pkg/apis/version"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"knative.dev/pkg/apis"
 )
@@ -68,27 +66,14 @@ func (b *WorkspaceBinding) Validate(ctx context.Context) (errs *apis.FieldError)
 		return apis.ErrMissingField("secret.secretName")
 	}
 
-	// The projected workspace is only supported when the alpha feature gate is enabled.
 	// For a Projected volume to work, you must provide at least one source.
-	if b.Projected != nil {
-		if err := version.ValidateEnabledAPIFields(ctx, "projected workspace type", config.AlphaAPIFields).ViaField("workspace"); err != nil {
-			return err
-		}
-		if len(b.Projected.Sources) == 0 {
-			return apis.ErrMissingField("projected.sources")
-		}
+	if b.Projected != nil && len(b.Projected.Sources) == 0 {
+		return apis.ErrMissingField("projected.sources")
 	}
 
-	// The csi workspace is only supported when the alpha feature gate is enabled.
 	// For a CSI to work, you must provide and have installed the driver to use.
-	if b.CSI != nil {
-		errs := version.ValidateEnabledAPIFields(ctx, "csi workspace type", config.AlphaAPIFields).ViaField("workspaces")
-		if errs != nil {
-			return errs
-		}
-		if b.CSI.Driver == "" {
-			return apis.ErrMissingField("csi.driver")
-		}
+	if b.CSI != nil && b.CSI.Driver == "" {
+		return apis.ErrMissingField("csi.driver")
 	}
 
 	return nil

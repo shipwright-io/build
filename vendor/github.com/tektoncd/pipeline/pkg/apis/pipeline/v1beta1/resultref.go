@@ -39,6 +39,8 @@ const (
 	objectResultExpressionFormat = "tasks.<taskName>.results.<objectResultName>.<individualAttribute>"
 	// ResultTaskPart Constant used to define the "tasks" part of a pipeline result reference
 	ResultTaskPart = "tasks"
+	// ResultFinallyPart Constant used to define the "finally" part of a pipeline result reference
+	ResultFinallyPart = "finally"
 	// ResultResultPart Constant used to define the "results" part of a pipeline result reference
 	ResultResultPart = "results"
 	// TODO(#2462) use one regex across all substitutions
@@ -49,7 +51,7 @@ const (
 	exactVariableSubstitutionFormat = `^\$\([_a-zA-Z0-9.-]+(\.[_a-zA-Z0-9.-]+)*(\[([0-9]+|\*)\])?\)$`
 	// arrayIndexing will match all `[int]` and `[*]` for parseExpression
 	arrayIndexing = `\[([0-9])*\*?\]`
-	// ResultNameFormat Constant used to define the the regex Result.Name should follow
+	// ResultNameFormat Constant used to define the regex Result.Name should follow
 	ResultNameFormat = `^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`
 )
 
@@ -99,7 +101,8 @@ func LooksLikeContainsResultRefs(expressions []string) bool {
 // looksLikeResultRef attempts to check if the given string looks like it contains any
 // result references. Returns true if it does, false otherwise
 func looksLikeResultRef(expression string) bool {
-	return strings.HasPrefix(expression, "task") && strings.Contains(expression, ".result")
+	subExpressions := strings.Split(expression, ".")
+	return len(subExpressions) >= 4 && (subExpressions[0] == ResultTaskPart || subExpressions[0] == ResultFinallyPart) && subExpressions[2] == ResultResultPart
 }
 
 // GetVarSubstitutionExpressionsForParam extracts all the value between "$(" and ")"" for a parameter
@@ -168,25 +171,24 @@ func stripVarSubExpression(expression string) string {
 // - Output: "", "", 0, "", error
 // TODO: may use regex for each type to handle possible reference formats
 func parseExpression(substitutionExpression string) (string, string, int, string, error) {
-	subExpressions := strings.Split(substitutionExpression, ".")
-
-	// For string result: tasks.<taskName>.results.<stringResultName>
-	// For array result: tasks.<taskName>.results.<arrayResultName>[index]
-	if len(subExpressions) == 4 && subExpressions[0] == ResultTaskPart && subExpressions[2] == ResultResultPart {
-		resultName, stringIdx := ParseResultName(subExpressions[3])
-		if stringIdx != "" {
-			intIdx, _ := strconv.Atoi(stringIdx)
-			return subExpressions[1], resultName, intIdx, "", nil
+	if looksLikeResultRef(substitutionExpression) {
+		subExpressions := strings.Split(substitutionExpression, ".")
+		// For string result: tasks.<taskName>.results.<stringResultName>
+		// For array result: tasks.<taskName>.results.<arrayResultName>[index]
+		if len(subExpressions) == 4 {
+			resultName, stringIdx := ParseResultName(subExpressions[3])
+			if stringIdx != "" {
+				intIdx, _ := strconv.Atoi(stringIdx)
+				return subExpressions[1], resultName, intIdx, "", nil
+			}
+			return subExpressions[1], resultName, 0, "", nil
+		} else if len(subExpressions) == 5 {
+			// For object type result: tasks.<taskName>.results.<objectResultName>.<individualAttribute>
+			return subExpressions[1], subExpressions[3], 0, subExpressions[4], nil
 		}
-		return subExpressions[1], resultName, 0, "", nil
 	}
 
-	// For object type result: tasks.<taskName>.results.<objectResultName>.<individualAttribute>
-	if len(subExpressions) == 5 && subExpressions[0] == ResultTaskPart && subExpressions[2] == ResultResultPart {
-		return subExpressions[1], subExpressions[3], 0, subExpressions[4], nil
-	}
-
-	return "", "", 0, "", fmt.Errorf("Must be one of the form 1). %q; 2). %q", resultExpressionFormat, objectResultExpressionFormat)
+	return "", "", 0, "", fmt.Errorf("must be one of the form 1). %q; 2). %q", resultExpressionFormat, objectResultExpressionFormat)
 }
 
 // ParseResultName parse the input string to extract resultName and result index.
@@ -206,7 +208,11 @@ func ParseResultName(resultName string) (string, string) {
 // in a PipelineTask and returns a list of any references that are found.
 func PipelineTaskResultRefs(pt *PipelineTask) []*ResultRef {
 	refs := []*ResultRef{}
-	for _, p := range append(pt.Params, pt.Matrix...) {
+	var matrixParams []Param
+	if pt.IsMatrixed() {
+		matrixParams = pt.Matrix.Params
+	}
+	for _, p := range append(pt.Params, matrixParams...) {
 		expressions, _ := GetVarSubstitutionExpressionsForParam(p)
 		refs = append(refs, NewResultRefs(expressions)...)
 	}

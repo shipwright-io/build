@@ -18,22 +18,28 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"github.com/tektoncd/pipeline/pkg/apis/validate"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"knative.dev/pkg/apis"
+	"knative.dev/pkg/webhook/resourcesemantics"
 )
 
 var _ apis.Validatable = (*Run)(nil)
+var _ resourcesemantics.VerbLimited = (*Run)(nil)
+
+// SupportedVerbs returns the operations that validation should be called for
+func (r *Run) SupportedVerbs() []admissionregistrationv1.OperationType {
+	return []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update}
+}
 
 // Validate taskrun
 func (r *Run) Validate(ctx context.Context) *apis.FieldError {
 	if err := validate.ObjectMetadata(r.GetObjectMeta()).ViaField("metadata"); err != nil {
 		return err
-	}
-	if apis.IsInDelete(ctx) {
-		return nil
 	}
 	return r.Spec.Validate(ctx)
 }
@@ -65,6 +71,11 @@ func (rs *RunSpec) Validate(ctx context.Context) *apis.FieldError {
 		}
 		if rs.Spec.Kind == "" {
 			return apis.ErrMissingField("spec.spec.kind")
+		}
+	}
+	if rs.Status == "" {
+		if rs.StatusMessage != "" {
+			return apis.ErrInvalidValue(fmt.Sprintf("statusMessage should not be set if status is not set, but it is currently set to %s", rs.StatusMessage), "statusMessage")
 		}
 	}
 	if err := v1beta1.ValidateParameters(ctx, rs.Params).ViaField("spec.params"); err != nil {

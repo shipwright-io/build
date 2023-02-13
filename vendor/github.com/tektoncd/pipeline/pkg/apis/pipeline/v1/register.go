@@ -48,8 +48,13 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Task{},
 		&TaskList{},
-	) // TODO(#4983): v1 types go here
-
+		&Pipeline{},
+		&PipelineList{},
+		&TaskRun{},
+		&TaskRunList{},
+		&PipelineRun{},
+		&PipelineRunList{},
+	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
