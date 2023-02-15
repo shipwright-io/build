@@ -28,8 +28,6 @@ function listDockerfiles() {
 function listBashFiles() {
   find . -name '*.sh' -not -path './vendor/*'
   local bashFiles=$?
-  find ./build/bin -type f
-  bashFiles="$bashFiles $?"
 }
 
 function listMarkdownFiles() {
