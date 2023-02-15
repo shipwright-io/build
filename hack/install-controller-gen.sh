@@ -11,7 +11,7 @@
 set -eu
 
 # controller-gen version
-CONTROLLER_GEN_VERSION="${CONTROLLER_GEN_VERSION:-v0.6.2}"
+CONTROLLER_GEN_VERSION="${CONTROLLER_GEN_VERSION:-v0.10.0}"
 
 if [ ! -f "${GOPATH}/bin/controller-gen" ]; then
   echo "# Installing controller-gen..."

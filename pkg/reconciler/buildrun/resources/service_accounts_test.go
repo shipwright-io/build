@@ -38,8 +38,8 @@ var _ = Describe("Operating service accounts", func() {
 	})
 
 	// stub client GET calls and return a initialized sa when asking for a sa
-	var generateGetSAStub = func(saName string) func(context context.Context, nn types.NamespacedName, object crc.Object) error {
-		return func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+	var generateGetSAStub = func(saName string) func(context context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
+		return func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
 			switch object := object.(type) {
 			case *corev1.ServiceAccount:
 				ctl.DefaultServiceAccount(saName).DeepCopyInto(object)
@@ -50,8 +50,8 @@ var _ = Describe("Operating service accounts", func() {
 	}
 
 	// stub client GET calls and return an error when asking for a service account
-	var generateGetSAStubWithError = func(customError error) func(context context.Context, nn types.NamespacedName, object crc.Object) error {
-		return func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+	var generateGetSAStubWithError = func(customError error) func(context context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
+		return func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
 			switch object.(type) {
 			case *corev1.ServiceAccount:
 				return customError

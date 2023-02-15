@@ -63,7 +63,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 	// Basic stubs that simulate the output of all client calls in the Reconciler logic.
 	// This applies only for a Build and BuildRun client get.
-	getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+	getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			buildSample.DeepCopyInto(object)
@@ -574,7 +574,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Buildrun
-				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
 					switch object := object.(type) {
 					case *build.Build:
 						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -596,7 +596,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a BuildRun
-				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 					switch object := object.(type) {
 					case *build.Build:
 						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -626,7 +626,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			It("fails on a TaskRun creation due to service account not found", func() {
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Build and Buildrun, none TaskRun
-				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -667,7 +667,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// override the initial getClientStub, and generate a new stub
 				// that only contains a Build, BuildRun and a random error when
 				// retrieving a service account
-				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -729,7 +729,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.NamespacedBuildStrategyKind)
 
 				// stub get calls so that on namespaced strategy retrieval, we throw a random error
-				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -796,7 +796,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
 
 				// stub get calls so that on cluster strategy retrieval, we throw a random error
-				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+				stubGetCalls := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -1015,7 +1015,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			It("stops creation when a FALSE registered status of the build occurs", func() {
 				// Init the Build with registered status false
 				buildSample = ctl.DefaultBuildWithFalseRegistered(buildName, strategyName, build.ClusterBuildStrategyKind)
-				getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+				getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 					switch object := object.(type) {
 					case *build.Build:
 						buildSample.DeepCopyInto(object)
@@ -1438,7 +1438,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						},
 					}
 
-					client.GetCalls(func(_ context.Context, nn types.NamespacedName, o crc.Object) error {
+					client.GetCalls(func(_ context.Context, nn types.NamespacedName, o crc.Object, _ ...crc.GetOption) error {
 						switch object := o.(type) {
 						case *build.BuildRun:
 							buildRunSample.DeepCopyInto(object)
