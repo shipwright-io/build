@@ -579,6 +579,8 @@ An example of a user using both TTL and Limit retention fields. In case of such 
 
 ### Defining Volumes
 
+**Note: The `spec.volumes[].description` field is deprecated, and will be removed in a future release.**
+
 `Builds` can declare `volumes`. They must override `volumes` defined by the according `BuildStrategy`. If a `volume`
 is not `overridable` then the `BuildRun` will eventually fail.
 
