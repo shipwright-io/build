@@ -68,9 +68,17 @@ type BuildStrategyVolume struct {
 	// +optional
 	Overridable *bool `json:"overridable,omitempty"`
 
-	// Inline BuildVolume object, same as Build's Volume
+	// Name of the Build Volume
 	// +required
-	BuildVolume `json:",inline"`
+	Name string `json:"name"`
+
+	// Description of the Build Volume
+	// +optional
+	Description *string `json:"description,omitempty"`
+
+	// Represents the source of a volume to mount
+	// +required
+	corev1.VolumeSource `json:",inline"`
 }
 
 // BuildStep defines a partial step that needs to run in container for building the image.

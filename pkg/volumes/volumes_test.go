@@ -68,12 +68,10 @@ func createBuildStrategyVolume(name string, description string, vt volumeType, v
 	}
 
 	bv := buildv1alpha1.BuildStrategyVolume{
-		BuildVolume: buildv1alpha1.BuildVolume{
-			Name:         name,
-			Description:  descr,
-			VolumeSource: *vs,
-		},
-		Overridable: &overridable,
+		Name:         name,
+		Description:  descr,
+		VolumeSource: *vs,
+		Overridable:  &overridable,
 	}
 	return bv
 }
@@ -87,11 +85,9 @@ func createBuildStrategyVolumeEmptyOverridable(name string, description string, 
 	}
 
 	bv := buildv1alpha1.BuildStrategyVolume{
-		BuildVolume: buildv1alpha1.BuildVolume{
-			Name:         name,
-			Description:  descr,
-			VolumeSource: *vs,
-		},
+		Name:         name,
+		Description:  descr,
+		VolumeSource: *vs,
 	}
 	return bv
 }

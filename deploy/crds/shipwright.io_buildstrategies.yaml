@@ -1561,8 +1561,7 @@ spec:
                       - driver
                       type: object
                     description:
-                      description: "Description of the Build Volume \n NOTICE: Description
-                        is deprecated, and will be removed in a future release."
+                      description: Description of the Build Volume
                       type: string
                     downwardAPI:
                       description: DownwardAPI represents downward API about the pod

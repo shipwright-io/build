@@ -625,7 +625,12 @@ func (in *BuildStrategyVolume) DeepCopyInto(out *BuildStrategyVolume) {
 		*out = new(bool)
 		**out = **in
 	}
-	in.BuildVolume.DeepCopyInto(&out.BuildVolume)
+	if in.Description != nil {
+		in, out := &in.Description, &out.Description
+		*out = new(string)
+		**out = **in
+	}
+	in.VolumeSource.DeepCopyInto(&out.VolumeSource)
 	return
 }
 
