@@ -28,12 +28,12 @@ func (t *TestBuild) CreateNamespace() error {
 		return err
 	}
 
-	// wait for the default service account to exist and contain the token secret
+	// wait for the default service account to exist
 	pollServiceAccount := func() (bool, error) {
 
 		serviceAccountInterface := t.Clientset.CoreV1().ServiceAccounts(t.Namespace)
 
-		serviceAccount, err := serviceAccountInterface.Get(context.TODO(), "default", metav1.GetOptions{})
+		_, err := serviceAccountInterface.Get(context.TODO(), "default", metav1.GetOptions{})
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return false, err
@@ -41,11 +41,7 @@ func (t *TestBuild) CreateNamespace() error {
 			return false, nil
 		}
 
-		if len(serviceAccount.Secrets) > 0 {
-			return true, nil
-		}
-
-		return false, nil
+		return true, nil
 	}
 
 	return wait.PollImmediate(t.Interval, t.TimeOut, pollServiceAccount)
