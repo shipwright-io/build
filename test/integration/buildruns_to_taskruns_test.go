@@ -80,13 +80,19 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
-		_, err = tb.GetBuild(buildObject.Name)
-		if err == nil {
-			Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+		if buildObject != nil {
+			_, err = tb.GetBuild(buildObject.Name)
+			if err == nil {
+				Expect(tb.DeleteBuild(buildObject.Name)).To(BeNil())
+			}
+			buildObject = nil
 		}
 
-		err := tb.DeleteClusterBuildStrategy(cbsObject.Name)
-		Expect(err).To(BeNil())
+		if cbsObject != nil {
+			err := tb.DeleteClusterBuildStrategy(cbsObject.Name)
+			Expect(err).To(BeNil())
+			cbsObject = nil
+		}
 	})
 
 	// Override the Builds and BuildRuns CRDs instances to use
