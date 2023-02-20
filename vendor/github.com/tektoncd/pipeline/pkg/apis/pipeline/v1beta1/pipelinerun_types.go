@@ -26,13 +26,13 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	apisconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
-	runv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/run/v1alpha1"
+	pod "github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/clock"
+	"k8s.io/utils/clock"
 	"knative.dev/pkg/apis"
-	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	duckv1 "knative.dev/pkg/apis/duck/v1"
 )
 
 // +genclient
@@ -97,7 +97,7 @@ func (pr *PipelineRun) IsGracefullyStopped() bool {
 	return pr.Spec.Status == PipelineRunSpecStatusStoppedRunFinally
 }
 
-// PipelineTimeout returns the the applicable timeout for the PipelineRun
+// PipelineTimeout returns the applicable timeout for the PipelineRun
 func (pr *PipelineRun) PipelineTimeout(ctx context.Context) time.Duration {
 	if pr.Spec.Timeout != nil {
 		return pr.Spec.Timeout.Duration
@@ -108,7 +108,7 @@ func (pr *PipelineRun) PipelineTimeout(ctx context.Context) time.Duration {
 	return time.Duration(config.FromContextOrDefaults(ctx).Defaults.DefaultTimeoutMinutes) * time.Minute
 }
 
-// TasksTimeout returns the the tasks timeout for the PipelineRun, if set,
+// TasksTimeout returns the tasks timeout for the PipelineRun, if set,
 // or the tasks timeout computed from the Pipeline and Finally timeouts, if those are set.
 func (pr *PipelineRun) TasksTimeout() *metav1.Duration {
 	t := pr.Spec.Timeouts
@@ -127,7 +127,7 @@ func (pr *PipelineRun) TasksTimeout() *metav1.Duration {
 	return nil
 }
 
-// FinallyTimeout returns the the finally timeout for the PipelineRun, if set,
+// FinallyTimeout returns the finally timeout for the PipelineRun, if set,
 // or the finally timeout computed from the Pipeline and Tasks timeouts, if those are set.
 func (pr *PipelineRun) FinallyTimeout() *metav1.Duration {
 	t := pr.Spec.Timeouts
@@ -167,6 +167,40 @@ func (pr *PipelineRun) HasTimedOut(ctx context.Context, c clock.PassiveClock) bo
 		}
 		runtime := c.Since(startTime.Time)
 		if runtime > timeout {
+			return true
+		}
+	}
+	return false
+}
+
+// HaveTasksTimedOut returns true if a pipelinerun has exceeded its spec.Timeouts.Tasks
+func (pr *PipelineRun) HaveTasksTimedOut(ctx context.Context, c clock.PassiveClock) bool {
+	timeout := pr.TasksTimeout()
+	startTime := pr.Status.StartTime
+
+	if !startTime.IsZero() && timeout != nil {
+		if timeout.Duration == config.NoTimeoutDuration {
+			return false
+		}
+		runtime := c.Since(startTime.Time)
+		if runtime > timeout.Duration {
+			return true
+		}
+	}
+	return false
+}
+
+// HasFinallyTimedOut returns true if a pipelinerun has exceeded its spec.Timeouts.Finally, based on status.FinallyStartTime
+func (pr *PipelineRun) HasFinallyTimedOut(ctx context.Context, c clock.PassiveClock) bool {
+	timeout := pr.FinallyTimeout()
+	startTime := pr.Status.FinallyStartTime
+
+	if startTime != nil && !startTime.IsZero() && timeout != nil {
+		if timeout.Duration == config.NoTimeoutDuration {
+			return false
+		}
+		runtime := c.Since(startTime.Time)
+		if runtime > timeout.Duration {
 			return true
 		}
 	}
@@ -217,7 +251,7 @@ type PipelineRunSpec struct {
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 	// PodTemplate holds pod specific configuration
-	PodTemplate *PodTemplate `json:"podTemplate,omitempty"`
+	PodTemplate *pod.PodTemplate `json:"podTemplate,omitempty"`
 	// Workspaces holds a set of workspace bindings that must match names
 	// with those declared in the pipeline.
 	// +optional
@@ -263,7 +297,7 @@ const (
 
 // PipelineRunStatus defines the observed state of PipelineRun
 type PipelineRunStatus struct {
-	duckv1beta1.Status `json:",inline"`
+	duckv1.Status `json:",inline"`
 
 	// PipelineRunStatusFields inlines the status fields.
 	PipelineRunStatusFields `json:",inline"`
@@ -383,11 +417,9 @@ type ChildStatusReference struct {
 // consume these fields via duck typing.
 type PipelineRunStatusFields struct {
 	// StartTime is the time the PipelineRun is actually started.
-	// +optional
 	StartTime *metav1.Time `json:"startTime,omitempty"`
 
 	// CompletionTime is the time the PipelineRun completed.
-	// +optional
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 
 	// Deprecated - use ChildReferences instead.
@@ -417,6 +449,17 @@ type PipelineRunStatusFields struct {
 	// +optional
 	// +listType=atomic
 	ChildReferences []ChildStatusReference `json:"childReferences,omitempty"`
+
+	// FinallyStartTime is when all non-finally tasks have been completed and only finally tasks are being executed.
+	// +optional
+	FinallyStartTime *metav1.Time `json:"finallyStartTime,omitempty"`
+
+	// Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).
+	// +optional
+	Provenance *Provenance `json:"provenance,omitempty"`
+
+	// SpanContext contains tracing span context fields
+	SpanContext map[string]string `json:"spanContext,omitempty"`
 }
 
 // SkippedTask is used to describe the Tasks that were skipped due to their When Expressions
@@ -449,6 +492,12 @@ const (
 	GracefullyStoppedSkip SkippingReason = "PipelineRun was gracefully stopped"
 	// MissingResultsSkip means the task was skipped because it's missing necessary results
 	MissingResultsSkip SkippingReason = "Results were missing"
+	// PipelineTimedOutSkip means the task was skipped because the PipelineRun has passed its overall timeout.
+	PipelineTimedOutSkip SkippingReason = "PipelineRun timeout has been reached"
+	// TasksTimedOutSkip means the task was skipped because the PipelineRun has passed its Timeouts.Tasks.
+	TasksTimedOutSkip SkippingReason = "PipelineRun Tasks timeout has been reached"
+	// FinallyTimedOutSkip means the task was skipped because the PipelineRun has passed its Timeouts.Finally.
+	FinallyTimedOutSkip SkippingReason = "PipelineRun Finally timeout has been reached"
 	// None means the task was not skipped
 	None SkippingReason = "None"
 )
@@ -459,7 +508,7 @@ type PipelineRunResult struct {
 	Name string `json:"name"`
 
 	// Value is the result returned from the execution of this PipelineRun
-	Value ArrayOrString `json:"value"`
+	Value ResultValue `json:"value"`
 }
 
 // PipelineRunTaskRunStatus contains the name of the PipelineTask for this TaskRun and the TaskRun's Status
@@ -475,13 +524,13 @@ type PipelineRunTaskRunStatus struct {
 	WhenExpressions []WhenExpression `json:"whenExpressions,omitempty"`
 }
 
-// PipelineRunRunStatus contains the name of the PipelineTask for this Run and the Run's Status
+// PipelineRunRunStatus contains the name of the PipelineTask for this CustomRun or Run and the CustomRun or Run's Status
 type PipelineRunRunStatus struct {
 	// PipelineTaskName is the name of the PipelineTask.
 	PipelineTaskName string `json:"pipelineTaskName,omitempty"`
-	// Status is the RunStatus for the corresponding Run
+	// Status is the CustomRunStatus for the corresponding CustomRun or Run
 	// +optional
-	Status *runv1alpha1.RunStatus `json:"status,omitempty"`
+	Status *CustomRunStatus `json:"status,omitempty"`
 	// WhenExpressions is the list of checks guarding the execution of the PipelineTask
 	// +optional
 	// +listType=atomic
@@ -508,9 +557,9 @@ type PipelineTaskRun struct {
 // PipelineTaskRunSpec  can be used to configure specific
 // specs for a concrete Task
 type PipelineTaskRunSpec struct {
-	PipelineTaskName       string       `json:"pipelineTaskName,omitempty"`
-	TaskServiceAccountName string       `json:"taskServiceAccountName,omitempty"`
-	TaskPodTemplate        *PodTemplate `json:"taskPodTemplate,omitempty"`
+	PipelineTaskName       string           `json:"pipelineTaskName,omitempty"`
+	TaskServiceAccountName string           `json:"taskServiceAccountName,omitempty"`
+	TaskPodTemplate        *pod.PodTemplate `json:"taskPodTemplate,omitempty"`
 	// +listType=atomic
 	StepOverrides []TaskRunStepOverride `json:"stepOverrides,omitempty"`
 	// +listType=atomic
@@ -542,6 +591,7 @@ func (pr *PipelineRun) GetTaskRunSpec(pipelineTaskName string) PipelineTaskRunSp
 			s.StepOverrides = task.StepOverrides
 			s.SidecarOverrides = task.SidecarOverrides
 			s.Metadata = task.Metadata
+			s.ComputeResources = task.ComputeResources
 		}
 	}
 	return s

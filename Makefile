@@ -36,7 +36,7 @@ ZAP_FLAGS ?= --zap-log-level=debug --zap-encoder=console
 TEST_NAMESPACE ?= default
 
 # CI: tekton pipelines controller version
-TEKTON_VERSION ?= v0.30.0
+TEKTON_VERSION ?= v0.44.0
 
 # E2E test flags
 TEST_E2E_FLAGS ?= --fail-fast -p --randomize-all -timeout=1h -progress -trace -v
@@ -76,7 +76,6 @@ TAG ?= latest
 
 # options for generating crds with controller-gen
 CONTROLLER_GEN="${GOBIN}/controller-gen"
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
 .EXPORT_ALL_VARIABLES:
 
@@ -111,7 +110,7 @@ generate:
 	hack/generate-fakes.sh
 	hack/generate-copyright.sh
 	hack/install-controller-gen.sh
-	"$(CONTROLLER_GEN)" "$(CRD_OPTIONS)" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=deploy/crds
+	"$(CONTROLLER_GEN)" crd rbac:roleName=manager-role webhook paths="./..." output:crd:dir=deploy/crds
 
 .PHONY: verify-generate
 verify-generate: generate

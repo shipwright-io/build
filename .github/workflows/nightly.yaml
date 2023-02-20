@@ -27,8 +27,7 @@ jobs:
         check-latest: true
 
     # Install tools
-    # This sha corresponds to v0.6
-    - uses: imjasonh/setup-ko@c682db27121307b4d02d11694318530ec9041d4c
+    - uses: ko-build/setup-ko@v0.6
       with:
         version: v0.12.0
     - uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4

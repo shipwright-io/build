@@ -70,6 +70,13 @@ func (in *Template) DeepCopyInto(out *Template) {
 			(*out)[key] = val
 		}
 	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
@@ -132,6 +139,13 @@ func (in *Template) DeepCopyInto(out *Template) {
 	if in.HostAliases != nil {
 		in, out := &in.HostAliases, &out.HostAliases
 		*out = make([]v1.HostAlias, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

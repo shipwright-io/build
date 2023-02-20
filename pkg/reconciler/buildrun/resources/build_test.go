@@ -49,7 +49,7 @@ var _ = Describe("Build Resource", func() {
 			buildSample := ctl.DefaultBuild(buildName, "foostrategy", build.ClusterBuildStrategyKind)
 
 			// stub a GET API call with buildSample contents
-			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				switch object := object.(type) {
 				case *build.Build:
 					buildSample.DeepCopyInto(object)
@@ -67,7 +67,7 @@ var _ = Describe("Build Resource", func() {
 
 		It("should not retrieve a missing build object when missing", func() {
 			// stub a GET API call that returns "not found"
-			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
 			})
 

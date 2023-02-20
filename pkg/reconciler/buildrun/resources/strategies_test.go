@@ -29,9 +29,9 @@ var _ = Describe("Operating Build strategies", func() {
 		client = &fakes.FakeClient{}
 		buildSample := ctl.BuildWithBuildStrategy("foobuild", "foostrategy", "foostrategy")
 
-		It("should return a cluster buildstrategy", func() {			
+		It("should return a cluster buildstrategy", func() {
 			// stub a GET API call with a cluster strategy
-			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				switch object := object.(type) {
 				case *buildv1alpha1.ClusterBuildStrategy:
 					ctl.DefaultClusterBuildStrategy().DeepCopyInto(object)
@@ -47,9 +47,9 @@ var _ = Describe("Operating Build strategies", func() {
 			Expect(cbs.Name).To(Equal("foobar"))
 		})
 
-		It("should return a namespaced buildstrategy", func() {			
+		It("should return a namespaced buildstrategy", func() {
 			// stub a GET API call with a namespace strategy
-			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				switch object := object.(type) {
 				case *buildv1alpha1.BuildStrategy:
 					ctl.DefaultNamespacedBuildStrategy().DeepCopyInto(object)

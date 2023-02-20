@@ -25,12 +25,18 @@ import (
 
 var _ apis.Convertible = (*ClusterTask)(nil)
 
-// ConvertTo implements api.Convertible
+// ConvertTo implements apis.Convertible
 func (ct *ClusterTask) ConvertTo(ctx context.Context, sink apis.Convertible) error {
+	if apis.IsInDelete(ctx) {
+		return nil
+	}
 	return fmt.Errorf("v1beta1 is the highest known version, got: %T", sink)
 }
 
-// ConvertFrom implements api.Convertible
+// ConvertFrom implements apis.Convertible
 func (ct *ClusterTask) ConvertFrom(ctx context.Context, source apis.Convertible) error {
-	return fmt.Errorf("v1beta1 is the highest know version, got: %T", source)
+	if apis.IsInDelete(ctx) {
+		return nil
+	}
+	return fmt.Errorf("v1beta1 is the highest known version, got: %T", source)
 }

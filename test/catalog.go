@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"knative.dev/pkg/apis"
-	knativev1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	knativev1 "knative.dev/pkg/apis/duck/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -256,8 +256,8 @@ func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName str
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
 	b *build.BuildRun,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			b.DeepCopyInto(object)
@@ -272,8 +272,8 @@ func (c *Catalog) StubBuildRun(
 func (c *Catalog) StubBuildRunAndTaskRun(
 	b *build.BuildRun,
 	tr *v1beta1.TaskRun,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			b.DeepCopyInto(object)
@@ -291,8 +291,8 @@ func (c *Catalog) StubBuildRunAndTaskRun(
 func (c *Catalog) StubBuildAndTaskRun(
 	b *build.Build,
 	tr *v1beta1.TaskRun,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -356,8 +356,8 @@ func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context conte
 func (c *Catalog) StubBuildRunGetWithoutSA(
 	b *build.Build,
 	br *build.BuildRun,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -377,8 +377,8 @@ func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
 	br *build.BuildRun,
 	tr *v1beta1.TaskRun,
 	sa *corev1.ServiceAccount,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -403,8 +403,8 @@ func (c *Catalog) StubBuildRunGetWithSA(
 	b *build.Build,
 	br *build.BuildRun,
 	sa *corev1.ServiceAccount,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -428,8 +428,8 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 	sa *corev1.ServiceAccount,
 	cb *build.ClusterBuildStrategy,
 	bs *build.BuildStrategy,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			if b != nil {
@@ -467,8 +467,8 @@ func (c *Catalog) StubBuildCRDs(
 	sa *corev1.ServiceAccount,
 	cb *build.ClusterBuildStrategy,
 	bs *build.BuildStrategy,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -500,8 +500,8 @@ func (c *Catalog) StubBuildCRDsPodAndTaskRun(
 	bs *build.BuildStrategy,
 	tr *v1beta1.TaskRun,
 	pod *corev1.Pod,
-) func(context context.Context, nn types.NamespacedName, object client.Object) error {
-	return func(context context.Context, nn types.NamespacedName, object client.Object) error {
+) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
@@ -542,8 +542,8 @@ func (c *Catalog) TaskRunWithStatus(trName string, ns string) *v1beta1.TaskRun {
 			},
 		},
 		Status: v1beta1.TaskRunStatus{
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:   apis.ConditionSucceeded,
 						Reason: "Unknown",
@@ -574,8 +574,8 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, n
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:   apis.ConditionSucceeded,
 						Reason: reason,
@@ -612,8 +612,8 @@ func (c *Catalog) TaskRunWithCompletionAndStartTime(trName string, buildRunName 
 				},
 				PodName: "foobar",
 			},
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:    apis.ConditionSucceeded,
 						Reason:  "something bad happened",
@@ -636,8 +636,8 @@ func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName stri
 		},
 		Spec: v1beta1.TaskRunSpec{},
 		Status: v1beta1.TaskRunStatus{
-			Status: knativev1beta1.Status{
-				Conditions: knativev1beta1.Conditions{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
 					{
 						Type:    apis.ConditionSucceeded,
 						Reason:  "something bad happened",

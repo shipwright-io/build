@@ -32,22 +32,61 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	return map[string]common.OpenAPIDefinition{
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.AffinityAssistantTemplate":   schema_pkg_apis_pipeline_pod_AffinityAssistantTemplate(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template":                    schema_pkg_apis_pipeline_pod_Template(ref),
-		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArrayOrString":                schema_pkg_apis_pipeline_v1_ArrayOrString(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ChildStatusReference":         schema_pkg_apis_pipeline_v1_ChildStatusReference(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ConfigSource":                 schema_pkg_apis_pipeline_v1_ConfigSource(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.EmbeddedTask":                 schema_pkg_apis_pipeline_v1_EmbeddedTask(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Matrix":                       schema_pkg_apis_pipeline_v1_Matrix(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param":                        schema_pkg_apis_pipeline_v1_Param(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamSpec":                    schema_pkg_apis_pipeline_v1_ParamSpec(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue":                   schema_pkg_apis_pipeline_v1_ParamValue(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Pipeline":                     schema_pkg_apis_pipeline_v1_Pipeline(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineList":                 schema_pkg_apis_pipeline_v1_PipelineList(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRef":                  schema_pkg_apis_pipeline_v1_PipelineRef(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineResult":               schema_pkg_apis_pipeline_v1_PipelineResult(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRun":                  schema_pkg_apis_pipeline_v1_PipelineRun(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunList":              schema_pkg_apis_pipeline_v1_PipelineRunList(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunResult":            schema_pkg_apis_pipeline_v1_PipelineRunResult(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunRunStatus":         schema_pkg_apis_pipeline_v1_PipelineRunRunStatus(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunSpec":              schema_pkg_apis_pipeline_v1_PipelineRunSpec(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunStatus":            schema_pkg_apis_pipeline_v1_PipelineRunStatus(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunStatusFields":      schema_pkg_apis_pipeline_v1_PipelineRunStatusFields(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunTaskRunStatus":     schema_pkg_apis_pipeline_v1_PipelineRunTaskRunStatus(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec":                 schema_pkg_apis_pipeline_v1_PipelineSpec(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTask":                 schema_pkg_apis_pipeline_v1_PipelineTask(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskMetadata":         schema_pkg_apis_pipeline_v1_PipelineTaskMetadata(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskParam":            schema_pkg_apis_pipeline_v1_PipelineTaskParam(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskRun":              schema_pkg_apis_pipeline_v1_PipelineTaskRun(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskRunSpec":          schema_pkg_apis_pipeline_v1_PipelineTaskRunSpec(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskRunTemplate":      schema_pkg_apis_pipeline_v1_PipelineTaskRunTemplate(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineWorkspaceDeclaration": schema_pkg_apis_pipeline_v1_PipelineWorkspaceDeclaration(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PropertySpec":                 schema_pkg_apis_pipeline_v1_PropertySpec(ref),
-		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ResolverParam":                schema_pkg_apis_pipeline_v1_ResolverParam(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance":                   schema_pkg_apis_pipeline_v1_Provenance(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ResolverRef":                  schema_pkg_apis_pipeline_v1_ResolverRef(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ResultRef":                    schema_pkg_apis_pipeline_v1_ResultRef(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Sidecar":                      schema_pkg_apis_pipeline_v1_Sidecar(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SidecarState":                 schema_pkg_apis_pipeline_v1_SidecarState(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SkippedTask":                  schema_pkg_apis_pipeline_v1_SkippedTask(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Step":                         schema_pkg_apis_pipeline_v1_Step(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepOutputConfig":             schema_pkg_apis_pipeline_v1_StepOutputConfig(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepState":                    schema_pkg_apis_pipeline_v1_StepState(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepTemplate":                 schema_pkg_apis_pipeline_v1_StepTemplate(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Task":                         schema_pkg_apis_pipeline_v1_Task(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskList":                     schema_pkg_apis_pipeline_v1_TaskList(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRef":                      schema_pkg_apis_pipeline_v1_TaskRef(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskResult":                   schema_pkg_apis_pipeline_v1_TaskResult(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRun":                      schema_pkg_apis_pipeline_v1_TaskRun(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunDebug":                 schema_pkg_apis_pipeline_v1_TaskRunDebug(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunInputs":                schema_pkg_apis_pipeline_v1_TaskRunInputs(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunList":                  schema_pkg_apis_pipeline_v1_TaskRunList(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunResult":                schema_pkg_apis_pipeline_v1_TaskRunResult(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSidecarSpec":           schema_pkg_apis_pipeline_v1_TaskRunSidecarSpec(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSpec":                  schema_pkg_apis_pipeline_v1_TaskRunSpec(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus":                schema_pkg_apis_pipeline_v1_TaskRunStatus(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatusFields":          schema_pkg_apis_pipeline_v1_TaskRunStatusFields(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStepSpec":              schema_pkg_apis_pipeline_v1_TaskRunStepSpec(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskSpec":                     schema_pkg_apis_pipeline_v1_TaskSpec(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TimeoutFields":                schema_pkg_apis_pipeline_v1_TimeoutFields(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression":               schema_pkg_apis_pipeline_v1_WhenExpression(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceBinding":             schema_pkg_apis_pipeline_v1_WorkspaceBinding(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceDeclaration":         schema_pkg_apis_pipeline_v1_WorkspaceDeclaration(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspacePipelineTaskBinding": schema_pkg_apis_pipeline_v1_WorkspacePipelineTaskBinding(ref),
@@ -142,6 +181,27 @@ func schema_pkg_apis_pipeline_pod_Template(ref common.ReferenceCallback) common.
 										Default: "",
 										Type:    []string{"string"},
 										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"env": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type":       "atomic",
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "List of environment variables that can be provided to the containers belonging to the pod.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
 									},
 								},
 							},
@@ -292,58 +352,111 @@ func schema_pkg_apis_pipeline_pod_Template(ref common.ReferenceCallback) common.
 							Format:      "",
 						},
 					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
-	}
-}
-
-func schema_pkg_apis_pipeline_v1_ArrayOrString(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ArrayOrString is a type that can hold a single string or string array. Used in JSON unmarshalling so that a single JSON field can accept either an individual string or an array of strings. consideration the object case after the community reaches an agreement on it.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"type": {
-						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
-						},
-					},
-					"stringVal": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Represents the stored type of ArrayOrString.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"arrayVal": {
+					"topologySpreadConstraints": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
 								"x-kubernetes-list-type": "atomic",
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
+							Description: "TopologySpreadConstraints controls how Pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined topology domains.",
+							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.TopologySpreadConstraint"),
 									},
 								},
 							},
 						},
 					},
-					"objectVal": {
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.TopologySpreadConstraint", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_ChildStatusReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ChildStatusReference is used to point to the statuses of individual TaskRuns and Runs within this PipelineRun.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the TaskRun or Run this is referencing.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"pipelineTaskName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PipelineTaskName is the name of the PipelineTask this is referencing.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"whenExpressions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "WhenExpressions is the list of checks guarding the execution of the PipelineTask",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_ConfigSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ConfigSource identifies the source where a resource came from. This can include Git repositories, Task Bundles, file checksums, or other information that allows users to identify where the resource came from and what version was used.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"uri": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URI indicates the identity of the source of the config. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.uri Example: \"https://github.com/tektoncd/catalog\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"digest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Digest is a collection of cryptographic digests for the contents of the artifact specified by URI. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.digest Example: {\"sha1\": \"f99d13e554ffcb696dee719fa85b695cb5b0f428\"}",
+							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
 								Schema: &spec.Schema{
@@ -356,10 +469,217 @@ func schema_pkg_apis_pipeline_v1_ArrayOrString(ref common.ReferenceCallback) com
 							},
 						},
 					},
+					"entryPoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "EntryPoint identifies the entry point into the build. This is often a path to a configuration file and/or a target label within that file. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.entryPoint Example: \"task/git-clone/0.8/git-clone.yaml\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"type", "stringVal", "arrayVal", "objectVal"},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_EmbeddedTask(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EmbeddedTask is used to define a Task inline within a Pipeline's PipelineTasks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec is a specification of a custom task",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskMetadata"),
+						},
+					},
+					"params": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Params is a list of input parameters required to run the task. Params must be supplied as inputs in TaskRuns unless they declare a default value.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamSpec"),
+									},
+								},
+							},
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description is a user-facing description of the task that may be used to populate a UI.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"steps": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Steps are the steps of the build; each step is run sequentially with the source mounted into /workspace.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Step"),
+									},
+								},
+							},
+						},
+					},
+					"volumes": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Volumes is a collection of volumes that are available to mount into the steps of the build.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"stepTemplate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StepTemplate can be used as the basis for all step containers within the Task, so that the steps inherit settings on the base container.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepTemplate"),
+						},
+					},
+					"sidecars": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Sidecars are run alongside the Task's step containers. They begin before the steps start and end after the steps complete.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Sidecar"),
+									},
+								},
+							},
+						},
+					},
+					"workspaces": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Workspaces are the volumes that this Task requires.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceDeclaration"),
+									},
+								},
+							},
+						},
+					},
+					"results": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Results are values that this Task can output",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskResult"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskMetadata", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Sidecar", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Step", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepTemplate", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceDeclaration", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_Matrix(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Matrix is used to fan out Tasks in a Pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"params": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Params is a list of parameters used to fan out the pipelineTask Params takes only `Parameters` of type `\"array\"` Each array element is supplied to the `PipelineTask` by substituting `params` of type `\"string\"` in the underlying `Task`. The names of the `params` in the `Matrix` must match the names of the `params` in the underlying `Task` that they will be substituting.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"},
 	}
 }
 
@@ -367,7 +687,7 @@ func schema_pkg_apis_pipeline_v1_Param(ref common.ReferenceCallback) common.Open
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Param declares an ArrayOrString to use for the parameter called name.",
+				Description: "Param declares an ParamValues to use for the parameter called name.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
@@ -380,7 +700,7 @@ func schema_pkg_apis_pipeline_v1_Param(ref common.ReferenceCallback) common.Open
 					"value": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArrayOrString"),
+							Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"),
 						},
 					},
 				},
@@ -388,7 +708,7 @@ func schema_pkg_apis_pipeline_v1_Param(ref common.ReferenceCallback) common.Open
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArrayOrString"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"},
 	}
 }
 
@@ -439,7 +759,7 @@ func schema_pkg_apis_pipeline_v1_ParamSpec(ref common.ReferenceCallback) common.
 					"default": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Default is the value a parameter takes if no input value is supplied. If default is set, a Task may be executed without a supplied value for the parameter.",
-							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArrayOrString"),
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"),
 						},
 					},
 				},
@@ -447,7 +767,1240 @@ func schema_pkg_apis_pipeline_v1_ParamSpec(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArrayOrString", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PropertySpec"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PropertySpec"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_ParamValue(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ResultValue is a type alias of ParamValue",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"stringVal": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Represents the stored type of ParamValues.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"arrayVal": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"objectVal": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"type", "stringVal", "arrayVal", "objectVal"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_Pipeline(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Pipeline describes a list of Tasks to execute. It expresses how outputs of tasks feed into inputs of subsequent tasks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec holds the desired state of the Pipeline from the client",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineList contains a list of Pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Pipeline"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Pipeline", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRef can be used to refer to a specific instance of a Pipeline.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "API version of the referent",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineResult used to describe the results of a pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name the given name",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type is the user-specified type of the result. The possible types are 'string', 'array', and 'object', with 'string' as the default. 'array' and 'object' types are alpha features.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description is a human-readable description of the result",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value the expression used to retrieve the value",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"),
+						},
+					},
+				},
+				Required: []string{"name", "value"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRun(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRun represents a single execution of a Pipeline. PipelineRuns are how the graph of Tasks declared in a Pipeline are executed; they specify inputs to Pipelines such as parameter values and capture operational aspects of the Tasks execution such as service account and tolerations. Creating a PipelineRun creates TaskRuns for Tasks in the referenced Pipeline.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRunList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRunList contains a list of PipelineRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRun"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRun", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRunResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRunResult used to describe the results of a pipeline",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the result's name as declared by the Pipeline",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the result returned from the execution of this PipelineRun",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"),
+						},
+					},
+				},
+				Required: []string{"name", "value"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRunRunStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRunRunStatus contains the name of the PipelineTask for this Run and the Run's Status",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipelineTaskName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PipelineTaskName is the name of the PipelineTask.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status is the RunStatus for the corresponding Run",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/run/v1beta1.CustomRunStatus"),
+						},
+					},
+					"whenExpressions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "WhenExpressions is the list of checks guarding the execution of the PipelineTask",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression", "github.com/tektoncd/pipeline/pkg/apis/run/v1beta1.CustomRunStatus"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRunSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRunSpec defines the desired state of PipelineRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipelineRef": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRef"),
+						},
+					},
+					"pipelineSpec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec"),
+						},
+					},
+					"params": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Params is a list of parameter names and values.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"),
+									},
+								},
+							},
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Used for cancelling a pipelinerun (and maybe more later on)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"timeouts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Time after which the Pipeline times out. Currently three keys are accepted in the map pipeline, tasks and finally with Timeouts.pipeline >= Timeouts.tasks + Timeouts.finally",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TimeoutFields"),
+						},
+					},
+					"taskRunTemplate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TaskRunTemplate represent template of taskrun",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskRunTemplate"),
+						},
+					},
+					"workspaces": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Workspaces holds a set of workspace bindings that must match names with those declared in the pipeline.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceBinding"),
+									},
+								},
+							},
+						},
+					},
+					"taskRunSpecs": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "TaskRunSpecs holds a set of runtime specs",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskRunSpec"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskRunSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskRunTemplate", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TimeoutFields", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceBinding"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRunStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRunStatus defines the observed state of PipelineRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"conditions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "type",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions the latest available observations of a resource's current state.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("knative.dev/pkg/apis.Condition"),
+									},
+								},
+							},
+						},
+					},
+					"annotations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Annotations is additional Status fields for the Resource to save some additional State as well as convey more information to the user. This is roughly akin to Annotations on any k8s resource, just the reconciler conveying richer information outwards.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"startTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StartTime is the time the PipelineRun is actually started.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"completionTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CompletionTime is the time the PipelineRun completed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"results": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Results are the list of results written out by the pipeline task's containers",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunResult"),
+									},
+								},
+							},
+						},
+					},
+					"pipelineSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PipelineRunSpec contains the exact spec used to instantiate the run",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec"),
+						},
+					},
+					"skippedTasks": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "list of tasks that were skipped due to when expressions evaluating to false",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SkippedTask"),
+									},
+								},
+							},
+						},
+					},
+					"childReferences": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "list of TaskRun and Run names, PipelineTask names, and API versions/kinds for children of this PipelineRun.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ChildStatusReference"),
+									},
+								},
+							},
+						},
+					},
+					"finallyStartTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FinallyStartTime is when all non-finally tasks have been completed and only finally tasks are being executed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"provenance": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ChildStatusReference", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SkippedTask", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "knative.dev/pkg/apis.Condition"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRunStatusFields(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRunStatusFields holds the fields of PipelineRunStatus' status. This is defined separately and inlined so that other types can readily consume these fields via duck typing.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"startTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StartTime is the time the PipelineRun is actually started.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"completionTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CompletionTime is the time the PipelineRun completed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"results": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Results are the list of results written out by the pipeline task's containers",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunResult"),
+									},
+								},
+							},
+						},
+					},
+					"pipelineSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PipelineRunSpec contains the exact spec used to instantiate the run",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec"),
+						},
+					},
+					"skippedTasks": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "list of tasks that were skipped due to when expressions evaluating to false",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SkippedTask"),
+									},
+								},
+							},
+						},
+					},
+					"childReferences": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "list of TaskRun and Run names, PipelineTask names, and API versions/kinds for children of this PipelineRun.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ChildStatusReference"),
+									},
+								},
+							},
+						},
+					},
+					"finallyStartTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FinallyStartTime is when all non-finally tasks have been completed and only finally tasks are being executed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"provenance": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ChildStatusReference", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SkippedTask", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineRunTaskRunStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineRunTaskRunStatus contains the name of the PipelineTask for this TaskRun and the TaskRun's Status",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipelineTaskName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PipelineTaskName is the name of the PipelineTask.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status is the TaskRunStatus for the corresponding TaskRun",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus"),
+						},
+					},
+					"whenExpressions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "WhenExpressions is the list of checks guarding the execution of the PipelineTask",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineSpec defines the desired state of Pipeline.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description is a user-facing description of the pipeline that may be used to populate a UI.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"tasks": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Tasks declares the graph of Tasks that execute when this Pipeline is run.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTask"),
+									},
+								},
+							},
+						},
+					},
+					"params": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Params declares a list of input parameters that must be supplied when this Pipeline is run.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamSpec"),
+									},
+								},
+							},
+						},
+					},
+					"workspaces": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Workspaces declares a set of named workspaces that are expected to be provided by a PipelineRun.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineWorkspaceDeclaration"),
+									},
+								},
+							},
+						},
+					},
+					"results": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Results are values that this pipeline can output once run",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineResult"),
+									},
+								},
+							},
+						},
+					},
+					"finally": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Finally declares the list of Tasks that execute just before leaving the Pipeline i.e. either after all Tasks are finished executing successfully or after a failure which would result in ending the Pipeline",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTask"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTask", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineWorkspaceDeclaration"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineTask(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineTask defines a task in a Pipeline, passing inputs from both Params and from the output of previous tasks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of this task within the context of a Pipeline. Name is used as a coordinate with the `from` and `runAfter` fields to establish the execution order of tasks relative to one another.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"taskRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TaskRef is a reference to a task definition.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRef"),
+						},
+					},
+					"taskSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TaskSpec is a specification of a task",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.EmbeddedTask"),
+						},
+					},
+					"when": {
+						SchemaProps: spec.SchemaProps{
+							Description: "When is a list of when expressions that need to be true for the task to run",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"),
+									},
+								},
+							},
+						},
+					},
+					"retries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Retries represents how many times this task should be retried in case of task failure: ConditionSucceeded set to False",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"runAfter": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "RunAfter is the list of PipelineTask names that should be executed before this Task executes. (Used to force a specific ordering in graph execution.)",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"params": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Parameters declares parameters passed to this task.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"),
+									},
+								},
+							},
+						},
+					},
+					"matrix": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Matrix declares parameters used to fan out this task.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Matrix"),
+						},
+					},
+					"workspaces": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Workspaces maps workspaces from the pipeline spec to the workspaces declared in the Task.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspacePipelineTaskBinding"),
+									},
+								},
+							},
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Time after which the TaskRun times out. Defaults to 1 hour. Specified TaskRun timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.EmbeddedTask", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Matrix", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspacePipelineTaskBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineTaskMetadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineTaskMetadata contains the labels or annotations for an EmbeddedTask",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"labels": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"annotations": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineTaskParam(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineTaskParam is used to provide arbitrary string parameters to a Task.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"name", "value"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineTaskRun(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineTaskRun reports the results of running a step in the Task. Each task has the potential to succeed or fail (based on the exit code) and produces logs.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineTaskRunSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineTaskRunSpec  can be used to configure specific specs for a concrete Task",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipelineTaskName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"podTemplate": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template"),
+						},
+					},
+					"stepSpecs": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStepSpec"),
+									},
+								},
+							},
+						},
+					},
+					"sidecarSpecs": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSidecarSpec"),
+									},
+								},
+							},
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskMetadata"),
+						},
+					},
+					"computeResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Compute resources to use for this TaskRun",
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.PipelineTaskMetadata", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSidecarSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStepSpec", "k8s.io/api/core/v1.ResourceRequirements"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_PipelineTaskRunTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineTaskRunTemplate is used to specify run specifications for all Task in pipelinerun.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"podTemplate": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template"),
+						},
+					},
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template"},
 	}
 }
 
@@ -506,33 +2059,24 @@ func schema_pkg_apis_pipeline_v1_PropertySpec(ref common.ReferenceCallback) comm
 	}
 }
 
-func schema_pkg_apis_pipeline_v1_ResolverParam(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_pipeline_v1_Provenance(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ResolverParam is a single parameter passed to a resolver.",
+				Description: "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.). For now, it only contains the subfield `ConfigSource` that identifies the source where a build config file came from. In future, it can be expanded as needed to include more metadata about the build. This field aims to be used to carry minimum amount of the authenticated metadata in *Run status so that Tekton Chains can pick it up and record in the provenance it generates.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"name": {
+					"configSource": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name is the name of the parameter that will be passed to the resolver.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"value": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Value is the string value of the parameter that will be passed to the resolver.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
+							Description: "ConfigSource identifies the source where a resource came from.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ConfigSource"),
 						},
 					},
 				},
-				Required: []string{"name", "value"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ConfigSource"},
 	}
 }
 
@@ -540,7 +2084,7 @@ func schema_pkg_apis_pipeline_v1_ResolverRef(ref common.ReferenceCallback) commo
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ResolverRef can be used to refer to a Pipeline or Task in a remote location like a git repo. This feature is in alpha and these fields are only available when the alpha feature gate is enabled.",
+				Description: "ResolverRef can be used to refer to a Pipeline or Task in a remote location like a git repo. This feature is in beta and these fields are only available when the beta feature gate is enabled.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"resolver": {
@@ -550,20 +2094,20 @@ func schema_pkg_apis_pipeline_v1_ResolverRef(ref common.ReferenceCallback) commo
 							Format:      "",
 						},
 					},
-					"resource": {
+					"params": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
 								"x-kubernetes-list-type": "atomic",
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Resource contains the parameters used to identify the referenced Tekton resource. Example entries might include \"repo\" or \"path\" but the set of params ultimately depends on the chosen resolver.",
+							Description: "Params contains the parameters used to identify the referenced Tekton resource. Example entries might include \"repo\" or \"path\" but the set of params ultimately depends on the chosen resolver.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ResolverParam"),
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"),
 									},
 								},
 							},
@@ -573,7 +2117,49 @@ func schema_pkg_apis_pipeline_v1_ResolverRef(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ResolverParam"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_ResultRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ResultRef is a type that represents a reference to a task run result",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipelineTask": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"result": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"resultsIndex": {
+						SchemaProps: spec.SchemaProps{
+							Default: 0,
+							Type:    []string{"integer"},
+							Format:  "int32",
+						},
+					},
+					"property": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"pipelineTask", "result", "resultsIndex", "property"},
+			},
+		},
 	}
 }
 
@@ -586,7 +2172,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated.",
+							Description: "Name of the Sidecar specified as a DNS_LABEL. Each Sidecar in a Task must have a unique name (DNS_LABEL). Cannot be updated.",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -594,7 +2180,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
+							Description: "Image reference name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -606,7 +2192,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Description: "Entrypoint array. Not executed within a shell. The image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the Sidecar's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -626,7 +2212,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Description: "Arguments to the entrypoint. The image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the Sidecar's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -641,7 +2227,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 					},
 					"workingDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
+							Description: "Sidecar's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -659,7 +2245,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "List of ports to expose from the container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
+							Description: "List of ports to expose from the Sidecar. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -678,7 +2264,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "List of sources to populate environment variables in the container. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the container is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
+							Description: "List of sources to populate environment variables in the Sidecar. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the container is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -699,7 +2285,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "List of environment variables to set in the container. Cannot be updated.",
+							Description: "List of environment variables to set in the Sidecar. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -711,9 +2297,9 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 					},
-					"resources": {
+					"computeResources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+							Description: "ComputeResources required by this Sidecar. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
@@ -727,7 +2313,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Pod volumes to mount into the container's filesystem. Cannot be updated.",
+							Description: "Volumes to mount into the Sidecar's filesystem. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -748,7 +2334,7 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "volumeDevices is the list of block devices to be used by the container.",
+							Description: "volumeDevices is the list of block devices to be used by the Sidecar.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -762,38 +2348,38 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 					},
 					"livenessProbe": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+							Description: "Periodic probe of Sidecar liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
 							Ref:         ref("k8s.io/api/core/v1.Probe"),
 						},
 					},
 					"readinessProbe": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+							Description: "Periodic probe of Sidecar service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
 							Ref:         ref("k8s.io/api/core/v1.Probe"),
 						},
 					},
 					"startupProbe": {
 						SchemaProps: spec.SchemaProps{
-							Description: "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+							Description: "StartupProbe indicates that the Pod the Sidecar is running in has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
 							Ref:         ref("k8s.io/api/core/v1.Probe"),
 						},
 					},
 					"lifecycle": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Actions that the management system should take in response to container lifecycle events. Cannot be updated.",
+							Description: "Actions that the management system should take in response to Sidecar lifecycle events. Cannot be updated.",
 							Ref:         ref("k8s.io/api/core/v1.Lifecycle"),
 						},
 					},
 					"terminationMessagePath": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Optional: Path at which the file to which the container's termination message will be written is mounted into the container's filesystem. Message written is intended to be brief final status, such as an assertion failure message. Will be truncated by the node if greater than 4096 bytes. The total message length across all containers will be limited to 12kb. Defaults to /dev/termination-log. Cannot be updated.",
+							Description: "Optional: Path at which the file to which the Sidecar's termination message will be written is mounted into the Sidecar's filesystem. Message written is intended to be brief final status, such as an assertion failure message. Will be truncated by the node if greater than 4096 bytes. The total message length across all containers will be limited to 12kb. Defaults to /dev/termination-log. Cannot be updated.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"terminationMessagePolicy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the container status message on both success and failure. FallbackToLogsOnError will use the last chunk of container log output if the termination message file is empty and the container exited with an error. The log output is limited to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot be updated.",
+							Description: "Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the Sidecar status message on both success and failure. FallbackToLogsOnError will use the last chunk of Sidecar log output if the termination message file is empty and the Sidecar exited with an error. The log output is limited to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot be updated.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -807,27 +2393,27 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 					},
 					"securityContext": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+							Description: "SecurityContext defines the security options the Sidecar should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
 							Ref:         ref("k8s.io/api/core/v1.SecurityContext"),
 						},
 					},
 					"stdin": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Whether this container should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the container will always result in EOF. Default is false.",
+							Description: "Whether this Sidecar should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the Sidecar will always result in EOF. Default is false.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
 					"stdinOnce": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the container is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false",
+							Description: "Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on Sidecar start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the Sidecar is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
 					"tty": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Whether this container should allocate a TTY for itself, also requires 'stdin' to be true. Default is false.",
+							Description: "Whether this Sidecar should allocate a TTY for itself, also requires 'stdin' to be true. Default is false.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -867,6 +2453,108 @@ func schema_pkg_apis_pipeline_v1_Sidecar(ref common.ReferenceCallback) common.Op
 	}
 }
 
+func schema_pkg_apis_pipeline_v1_SidecarState(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SidecarState reports the results of running a sidecar in a Task.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"waiting": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Details about a waiting container",
+							Ref:         ref("k8s.io/api/core/v1.ContainerStateWaiting"),
+						},
+					},
+					"running": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Details about a running container",
+							Ref:         ref("k8s.io/api/core/v1.ContainerStateRunning"),
+						},
+					},
+					"terminated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Details about a terminated container",
+							Ref:         ref("k8s.io/api/core/v1.ContainerStateTerminated"),
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"container": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"imageID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ContainerStateRunning", "k8s.io/api/core/v1.ContainerStateTerminated", "k8s.io/api/core/v1.ContainerStateWaiting"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_SkippedTask(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SkippedTask is used to describe the Tasks that were skipped due to their When Expressions evaluating to False. This is a struct because we are looking into including more details about the When Expressions that caused this Task to be skipped.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the Pipeline Task name",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"reason": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reason is the cause of the PipelineTask being skipped.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"whenExpressions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "WhenExpressions is the list of checks guarding the execution of the PipelineTask",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name", "reason"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WhenExpression"},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -876,7 +2564,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated.",
+							Description: "Name of the Step specified as a DNS_LABEL. Each Step in a Task must have a unique name.",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -884,7 +2572,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
+							Description: "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -896,7 +2584,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Description: "Entrypoint array. Not executed within a shell. The image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -916,7 +2604,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Description: "Arguments to the entrypoint. The image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -931,7 +2619,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 					},
 					"workingDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
+							Description: "Step's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -943,7 +2631,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "List of sources to populate environment variables in the container. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the container is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
+							Description: "List of sources to populate environment variables in the Step. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the Step is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -964,7 +2652,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "List of environment variables to set in the container. Cannot be updated.",
+							Description: "List of environment variables to set in the Step. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -976,9 +2664,9 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 							},
 						},
 					},
-					"resources": {
+					"computeResources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+							Description: "ComputeResources required by this Step. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
@@ -992,7 +2680,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Pod volumes to mount into the container's filesystem. Cannot be updated.",
+							Description: "Volumes to mount into the Step's filesystem. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1013,7 +2701,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "volumeDevices is the list of block devices to be used by the container.",
+							Description: "volumeDevices is the list of block devices to be used by the Step.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1034,7 +2722,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 					},
 					"securityContext": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+							Description: "SecurityContext defines the security options the Step should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
 							Ref:         ref("k8s.io/api/core/v1.SecurityContext"),
 						},
 					},
@@ -1072,7 +2760,7 @@ func schema_pkg_apis_pipeline_v1_Step(ref common.ReferenceCallback) common.OpenA
 					},
 					"onError": {
 						SchemaProps: spec.SchemaProps{
-							Description: "OnError defines the exiting behavior of a container on error can be set to [ continue | stopAndFail ] stopAndFail indicates exit the taskRun if the container exits with non-zero exit code continue indicates continue executing the rest of the steps irrespective of the container exit code",
+							Description: "OnError defines the exiting behavior of a container on error can be set to [ continue | stopAndFail ]",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1118,6 +2806,57 @@ func schema_pkg_apis_pipeline_v1_StepOutputConfig(ref common.ReferenceCallback) 
 	}
 }
 
+func schema_pkg_apis_pipeline_v1_StepState(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StepState reports the results of running a step in a Task.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"waiting": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Details about a waiting container",
+							Ref:         ref("k8s.io/api/core/v1.ContainerStateWaiting"),
+						},
+					},
+					"running": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Details about a running container",
+							Ref:         ref("k8s.io/api/core/v1.ContainerStateRunning"),
+						},
+					},
+					"terminated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Details about a terminated container",
+							Ref:         ref("k8s.io/api/core/v1.ContainerStateTerminated"),
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"container": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"imageID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ContainerStateRunning", "k8s.io/api/core/v1.ContainerStateTerminated", "k8s.io/api/core/v1.ContainerStateWaiting"},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1127,7 +2866,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
+							Description: "Image reference name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1139,7 +2878,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Description: "Entrypoint array. Not executed within a shell. The image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the Step's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1159,7 +2898,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Description: "Arguments to the entrypoint. The image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the Step's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. \"$$(VAR_NAME)\" will produce the string literal \"$(VAR_NAME)\". Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1174,7 +2913,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 					},
 					"workingDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
+							Description: "Step's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1186,7 +2925,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "List of sources to populate environment variables in the container. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the container is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
+							Description: "List of sources to populate environment variables in the Step. The keys defined within a source must be a C_IDENTIFIER. All invalid keys will be reported as an event when the Step is starting. When a key exists in multiple sources, the value associated with the last source will take precedence. Values defined by an Env with a duplicate key will take precedence. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1207,7 +2946,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "List of environment variables to set in the container. Cannot be updated.",
+							Description: "List of environment variables to set in the Step. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1219,9 +2958,9 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 							},
 						},
 					},
-					"resources": {
+					"computeResources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+							Description: "ComputeResources required by this Step. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
@@ -1235,7 +2974,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Pod volumes to mount into the container's filesystem. Cannot be updated.",
+							Description: "Volumes to mount into the Step's filesystem. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1256,7 +2995,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "volumeDevices is the list of block devices to be used by the container.",
+							Description: "volumeDevices is the list of block devices to be used by the Step.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1277,7 +3016,7 @@ func schema_pkg_apis_pipeline_v1_StepTemplate(ref common.ReferenceCallback) comm
 					},
 					"securityContext": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+							Description: "SecurityContext defines the security options the Step should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext. More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
 							Ref:         ref("k8s.io/api/core/v1.SecurityContext"),
 						},
 					},
@@ -1380,6 +3119,40 @@ func schema_pkg_apis_pipeline_v1_TaskList(ref common.ReferenceCallback) common.O
 	}
 }
 
+func schema_pkg_apis_pipeline_v1_TaskRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRef can be used to refer to a specific instance of a task.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TaskKind indicates the kind of the task, namespaced or cluster scoped.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "API version of the referent",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1_TaskResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1433,6 +3206,167 @@ func schema_pkg_apis_pipeline_v1_TaskResult(ref common.ReferenceCallback) common
 	}
 }
 
+func schema_pkg_apis_pipeline_v1_TaskRun(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRun represents a single execution of a Task. TaskRuns are how the steps specified in a Task are executed; they specify the parameters and resources used to run the steps in a Task.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunDebug(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunDebug defines the breakpoint config for a particular TaskRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"breakpoint": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunInputs(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunInputs holds the input values that this task was invoked with.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"params": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunList contains a list of TaskRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRun"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRun", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1_TaskRunResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1459,7 +3393,7 @@ func schema_pkg_apis_pipeline_v1_TaskRunResult(ref common.ReferenceCallback) com
 						SchemaProps: spec.SchemaProps{
 							Description: "Value the given value of the result",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArrayOrString"),
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"),
 						},
 					},
 				},
@@ -1467,7 +3401,512 @@ func schema_pkg_apis_pipeline_v1_TaskRunResult(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ArrayOrString"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.ParamValue"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunSidecarSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunSidecarSpec is used to override the values of a Sidecar in the corresponding Task.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The name of the Sidecar to override.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"computeResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The resource requirements to apply to the Sidecar.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+				},
+				Required: []string{"name", "computeResources"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ResourceRequirements"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunSpec defines the desired state of TaskRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"debug": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunDebug"),
+						},
+					},
+					"params": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param"),
+									},
+								},
+							},
+						},
+					},
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"taskRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "no more than one of the TaskRef and TaskSpec may be specified.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRef"),
+						},
+					},
+					"taskSpec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Used for cancelling a TaskRun (and maybe more later on)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"statusMessage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status message for cancellation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"retries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Retries represents how many times this TaskRun should be retried in the event of task failure.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Time after which one retry attempt times out. Defaults to 1 hour. Specified build timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"podTemplate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodTemplate holds pod specific configuration",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template"),
+						},
+					},
+					"workspaces": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Workspaces is a list of WorkspaceBindings from volumes to workspaces.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceBinding"),
+									},
+								},
+							},
+						},
+					},
+					"stepSpecs": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Specs to apply to Steps in this TaskRun. If a field is specified in both a Step and a StepSpec, the value from the StepSpec will be used. This field is only supported when the alpha feature gate is enabled.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStepSpec"),
+									},
+								},
+							},
+						},
+					},
+					"sidecarSpecs": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Specs to apply to Sidecars in this TaskRun. If a field is specified in both a Sidecar and a SidecarSpec, the value from the SidecarSpec will be used. This field is only supported when the alpha feature gate is enabled.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSidecarSpec"),
+									},
+								},
+							},
+						},
+					},
+					"computeResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Compute resources to use for this TaskRun",
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunDebug", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunSidecarSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStepSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.WorkspaceBinding", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunStatus defines the observed state of TaskRun",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"conditions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "type",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions the latest available observations of a resource's current state.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("knative.dev/pkg/apis.Condition"),
+									},
+								},
+							},
+						},
+					},
+					"annotations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Annotations is additional Status fields for the Resource to save some additional State as well as convey more information to the user. This is roughly akin to Annotations on any k8s resource, just the reconciler conveying richer information outwards.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"podName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodName is the name of the pod responsible for executing this task's steps.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"startTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StartTime is the time the build is actually started.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"completionTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CompletionTime is the time the build completed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"steps": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Steps describes the state of each build step container.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepState"),
+									},
+								},
+							},
+						},
+					},
+					"retriesStatus": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "RetriesStatus contains the history of TaskRunStatus in case of a retry in order to keep record of failures. All TaskRunStatus stored in RetriesStatus will have no date within the RetriesStatus as is redundant.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus"),
+									},
+								},
+							},
+						},
+					},
+					"results": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Results are the list of results written out by the task's containers",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunResult"),
+									},
+								},
+							},
+						},
+					},
+					"sidecars": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "The list has one entry per sidecar in the manifest. Each entry is represents the imageid of the corresponding sidecar.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SidecarState"),
+									},
+								},
+							},
+						},
+					},
+					"taskSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TaskSpec contains the Spec from the dereferenced Task definition used to instantiate this TaskRun.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskSpec"),
+						},
+					},
+					"provenance": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance"),
+						},
+					},
+				},
+				Required: []string{"podName"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SidecarState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "knative.dev/pkg/apis.Condition"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunStatusFields(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunStatusFields holds the fields of TaskRun's status.  This is defined separately and inlined so that other types can readily consume these fields via duck typing.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"podName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodName is the name of the pod responsible for executing this task's steps.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"startTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StartTime is the time the build is actually started.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"completionTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CompletionTime is the time the build completed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"steps": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Steps describes the state of each build step container.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepState"),
+									},
+								},
+							},
+						},
+					},
+					"retriesStatus": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "RetriesStatus contains the history of TaskRunStatus in case of a retry in order to keep record of failures. All TaskRunStatus stored in RetriesStatus will have no date within the RetriesStatus as is redundant.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus"),
+									},
+								},
+							},
+						},
+					},
+					"results": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Results are the list of results written out by the task's containers",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunResult"),
+									},
+								},
+							},
+						},
+					},
+					"sidecars": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "The list has one entry per sidecar in the manifest. Each entry is represents the imageid of the corresponding sidecar.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SidecarState"),
+									},
+								},
+							},
+						},
+					},
+					"taskSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TaskSpec contains the Spec from the dereferenced Task definition used to instantiate this TaskRun.",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskSpec"),
+						},
+					},
+					"provenance": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance"),
+						},
+					},
+				},
+				Required: []string{"podName"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.SidecarState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.StepState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_TaskRunStepSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskRunStepSpec is used to override the values of a Step in the corresponding Task.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The name of the Step to override.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"computeResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The resource requirements to apply to the Step.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+				},
+				Required: []string{"name", "computeResources"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
 
@@ -1613,6 +4052,89 @@ func schema_pkg_apis_pipeline_v1_TaskSpec(ref common.ReferenceCallback) common.O
 	}
 }
 
+func schema_pkg_apis_pipeline_v1_TimeoutFields(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TimeoutFields allows granular specification of pipeline, task, and finally timeouts",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipeline": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Pipeline sets the maximum allowed duration for execution of the entire pipeline. The sum of individual timeouts for tasks and finally must not exceed this value.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"tasks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tasks sets the maximum allowed duration of this pipeline's tasks",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"finally": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Finally sets the maximum allowed duration of this pipeline's finally",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1_WhenExpression(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WhenExpression allows a PipelineTask to declare expressions to be evaluated before the Task is run to determine whether the Task should be executed or skipped",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"input": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Input is the string for guard checking which can be a static input or an output from a parent Task",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"operator": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Operator that represents an Input's relationship to the values",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"values": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Values is an array of strings, which is compared against the input, for guard checking It must be non-empty",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"input", "operator", "values"},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1_WorkspaceBinding(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1665,12 +4187,24 @@ func schema_pkg_apis_pipeline_v1_WorkspaceBinding(ref common.ReferenceCallback) 
 							Ref:         ref("k8s.io/api/core/v1.SecretVolumeSource"),
 						},
 					},
+					"projected": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Projected represents a projected volume that should populate this workspace.",
+							Ref:         ref("k8s.io/api/core/v1.ProjectedVolumeSource"),
+						},
+					},
+					"csi": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CSI (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers.",
+							Ref:         ref("k8s.io/api/core/v1.CSIVolumeSource"),
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource"},
+			"k8s.io/api/core/v1.CSIVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource"},
 	}
 }
 

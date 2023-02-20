@@ -144,7 +144,7 @@ var _ = Describe("Conditions", func() {
 		It("updates BuildRun condition when TaskRun fails and pod not found", func() {
 
 			// stub a GET API call that fails with not found
-			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				switch object.(type) {
 				case *corev1.Pod:
 					return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
@@ -201,7 +201,7 @@ var _ = Describe("Conditions", func() {
 			}
 
 			// stub a GET API call with taskRunGeneratedPod
-			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				switch object := object.(type) {
 				case *corev1.Pod:
 					taskRunGeneratedPod.DeepCopyInto(object)
@@ -247,7 +247,7 @@ var _ = Describe("Conditions", func() {
 			}
 
 			// stub a GET API call with to pass the created pod
-			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				switch object := object.(type) {
 				case *corev1.Pod:
 					failedTaskRunEvictedPod.DeepCopyInto(object)
@@ -290,7 +290,7 @@ var _ = Describe("Conditions", func() {
 			}
 
 			// stub a GET API call with the above taskRunGeneratedPod spec
-			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object) error {
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
 				switch object := object.(type) {
 				case *corev1.Pod:
 					taskRunGeneratedPod.DeepCopyInto(object)
