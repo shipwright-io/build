@@ -71,6 +71,8 @@ spec:
           value: $(params.shp-output-image)
         - name: PARAM_SOURCE_CONTEXT
           value: $(params.shp-source-context)
+        - name: PARAM_SOURCE_ROOT
+          value: $(params.shp-source-root)
         - name: PARAM_TARGET_PLATFORM
           value: $(params.target-platform)
         - name: PARAM_PACKAGE_DIRECTORY
@@ -134,6 +136,11 @@ spec:
           # Print version information
           go version
           echo "ko version $(/tmp/ko version)"
+
+          # Allow directory to be owned by other user which is normal for a volume-mounted directory.
+          # This allows Go to run git commands to access repository metadata.
+          # Documentation: https://git-scm.com/docs/git-config/2.39.0#Documentation/git-config.txt-safedirectory
+          git config --global --add safe.directory "${PARAM_SOURCE_ROOT}"
 
           # Run ko
 
