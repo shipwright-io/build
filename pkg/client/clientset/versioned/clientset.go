@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	shipwrightv1beta1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -26,11 +27,17 @@ type Interface interface {
 type Clientset struct {
 	*discovery.DiscoveryClient
 	shipwrightV1alpha1 *shipwrightv1alpha1.ShipwrightV1alpha1Client
+	shipwrightV1beta1 *shipwrightv1beta1.ShipwrightV1beta1Client
 }
 
 // ShipwrightV1alpha1 retrieves the ShipwrightV1alpha1Client
 func (c *Clientset) ShipwrightV1alpha1() shipwrightv1alpha1.ShipwrightV1alpha1Interface {
 	return c.shipwrightV1alpha1
+}
+
+// ShipwrightV1beta1 retrieves the ShipwrightV1beta1Client
+func (c *Clientset) ShipwrightV1beta1() shipwrightv1beta1.ShipwrightV1beta1Interface {
+	return c.shipwrightV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
