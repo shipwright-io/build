@@ -230,6 +230,7 @@ type ServiceAccount struct {
 
 // BuildRun is the Schema representing an instance of build execution
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 // +kubebuilder:resource:path=buildruns,scope=Namespaced,shortName=br;brs
 // +kubebuilder:printcolumn:name="Succeeded",type="string",JSONPath=".status.conditions[?(@.type==\"Succeeded\")].status",description="The Succeeded status of the BuildRun"
 // +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.conditions[?(@.type==\"Succeeded\")].reason",description="The Succeeded reason of the BuildRun"

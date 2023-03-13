@@ -24,5 +24,5 @@ echo ""
 GOFLAGS="" GOPATH=${GOPATH} /bin/bash ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
   github.com/shipwright-io/build/pkg/client \
   github.com/shipwright-io/build/pkg/apis \
-  "build:v1alpha1" \
+  "build:v1alpha1,v1beta1" \
   --go-header-file "${SCRIPT_ROOT}/hack/boilerplate.go.txt"
