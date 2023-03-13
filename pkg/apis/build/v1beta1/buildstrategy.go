@@ -18,7 +18,7 @@ const (
 
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
-	BuildSteps []Step                `json:"steps,omitempty"`
+	Steps      []Step                `json:"steps,omitempty"`
 	Parameters []Parameter           `json:"parameters,omitempty"`
 	Volumes    []BuildStrategyVolume `json:"volumes,omitempty"`
 }

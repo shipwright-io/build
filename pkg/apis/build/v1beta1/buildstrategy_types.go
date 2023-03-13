@@ -71,7 +71,7 @@ func (s BuildStrategy) GetResourceLabels() map[string]string {
 
 // GetBuildSteps returns the spec build steps of the build strategy
 func (s BuildStrategy) GetBuildSteps() []Step {
-	return s.Spec.BuildSteps
+	return s.Spec.Steps
 }
 
 // GetParameters returns the parameters defined by the build strategy

@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	shipwrightv1beta1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -19,6 +20,7 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	ShipwrightV1alpha1() shipwrightv1alpha1.ShipwrightV1alpha1Interface
+	ShipwrightV1beta1() shipwrightv1beta1.ShipwrightV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -26,11 +28,17 @@ type Interface interface {
 type Clientset struct {
 	*discovery.DiscoveryClient
 	shipwrightV1alpha1 *shipwrightv1alpha1.ShipwrightV1alpha1Client
+	shipwrightV1beta1  *shipwrightv1beta1.ShipwrightV1beta1Client
 }
 
 // ShipwrightV1alpha1 retrieves the ShipwrightV1alpha1Client
 func (c *Clientset) ShipwrightV1alpha1() shipwrightv1alpha1.ShipwrightV1alpha1Interface {
 	return c.shipwrightV1alpha1
+}
+
+// ShipwrightV1beta1 retrieves the ShipwrightV1beta1Client
+func (c *Clientset) ShipwrightV1beta1() shipwrightv1beta1.ShipwrightV1beta1Interface {
+	return c.shipwrightV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -81,6 +89,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	if err != nil {
 		return nil, err
 	}
+	cs.shipwrightV1beta1, err = shipwrightv1beta1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
@@ -103,6 +115,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.shipwrightV1alpha1 = shipwrightv1alpha1.New(c)
+	cs.shipwrightV1beta1 = shipwrightv1beta1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

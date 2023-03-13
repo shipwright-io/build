@@ -20,23 +20,22 @@ const (
 	LabelBuildRunGeneration = BuildRunDomain + "/generation"
 )
 
+type ReferencedBuild struct {
+	// Build refers to an embedded build specification
+	//
+	// +optional
+	Build *BuildSpec `json:"spec,omitempty"`
+
+	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	Name string `json:"name"`
+}
+
 // BuildRunSpec defines the desired state of BuildRun
 type BuildRunSpec struct {
 	// Build refers to an embedded build specification
 	//
 	// +optional
-	Build *BuildSpec `json:"build,omitempty"`
-
-	// Name refers to the Build
-	//
-	// +optional
-	Name *BuildRef `json:"name,omitempty"`
-
-	// Sources slice of BuildSource, defining external build artifacts complementary to VCS
-	// (`.spec.source`) data.
-	//
-	// +optional
-	Sources []BuildSource `json:"sources,omitempty"`
+	Build *ReferencedBuild `json:"build,omitempty"`
 
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.
@@ -383,11 +382,11 @@ func (brs *BuildRunStatus) SetCondition(condition *Condition) {
 	}
 }
 
-// BuildName returns the name of the associated build, which can be a referened
+// BuildName returns the name of the associated build, which can be a referenced
 // build resource or an embedded build specification
 func (buildrunSpec *BuildRunSpec) BuildName() string {
-	if buildrunSpec.Name != nil {
-		return buildrunSpec.Name.Name
+	if buildrunSpec.Build != nil {
+		return buildrunSpec.Build.Name
 	}
 
 	// Only BuildRuns with a BuildRef can actually return a proper Build name

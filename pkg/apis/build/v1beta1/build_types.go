@@ -176,11 +176,10 @@ type Image struct {
 	// Image is the reference of the image.
 	Image string `json:"image"`
 
-	// Credentials references a Secret that contains credentials to access
-	// the image registry.
+	// Describes the secret name for pushing a container image.
 	//
 	// +optional
-	Credentials PushSecret `json:"credentials,omitempty"`
+	PushSecret *string `json:"pushSecret,omitempty"`
 
 	// Annotations references the additional annotations to be applied on the image
 	//
@@ -191,13 +190,6 @@ type Image struct {
 	//
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
-}
-
-type PushSecret struct {
-	// Describes the secret name for pushing a container image.
-	//
-	// +optional
-	PushSecret *string `json:"pushSecret,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build
@@ -267,6 +259,10 @@ type BuildRetention struct {
 	// +optional
 	// +kubebuilder:validation:Format=duration
 	TTLAfterSucceeded *metav1.Duration `json:"ttlAfterSucceeded,omitempty"`
+	// AtBuildDeletion defines if related BuildRuns should be deleted when deleting the Build.
+	//
+	// +optional
+	AtBuildDeletion bool `json:"atBuildDeletion,omitempty"`
 }
 
 func init() {
