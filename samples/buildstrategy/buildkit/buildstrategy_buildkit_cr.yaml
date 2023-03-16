@@ -118,7 +118,7 @@ spec:
           echo "--output=type=image,name=\"${PARAM_OUTPUT_IMAGE}\",push=true,registry.insecure=\"${PARAM_INSECURE_REGISTRY}\" \\" >> /tmp/run.sh
           if [ "${PARAM_CACHE}" == "registry" ]; then
             echo "--export-cache=type=inline \\" >> /tmp/run.sh
-            echo "--import-cache=type=registry,ref=\"${PARAM_OUTPUT_IMAGE}\" \\" >> /tmp/run.sh
+            echo "--import-cache=type=registry,ref=\"${PARAM_OUTPUT_IMAGE}\",registry.insecure=\"${PARAM_INSECURE_REGISTRY}\" \\" >> /tmp/run.sh
           elif [ "${PARAM_CACHE}" == "disabled" ]; then
             echo "--no-cache \\" >> /tmp/run.sh
           else
