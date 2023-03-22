@@ -11,6 +11,7 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
+	"github.com/shipwright-io/build/test/utils"
 
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +33,7 @@ var _ = Describe("Git", func() {
 		JustBeforeEach(func() {
 			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
 				URL: pointer.String("https://github.com/shipwright-io/build"),
-			}, "default")
+			}, []buildv1alpha1.BuildStep{}, "default")
 		})
 
 		It("adds results for the commit sha, commit author and branch name", func() {
@@ -62,6 +63,8 @@ var _ = Describe("Git", func() {
 				"--result-file-error-reason",
 				"$(results.shp-error-reason.path)",
 			}))
+			Expect(taskSpec.Steps[0].Env).To(utils.ContainNamedElementWithValue("SHP_USER", "1000"))
+			Expect(taskSpec.Steps[0].Env).To(utils.ContainNamedElementWithValue("SHP_GROUP", "1000"))
 		})
 	})
 
@@ -79,7 +82,7 @@ var _ = Describe("Git", func() {
 				Credentials: &corev1.LocalObjectReference{
 					Name: "a.secret",
 				},
-			}, "default")
+			}, []buildv1alpha1.BuildStep{}, "default")
 		})
 
 		It("adds results for the commit sha, commit author and branch name", func() {
@@ -118,6 +121,8 @@ var _ = Describe("Git", func() {
 				"--secret-path",
 				"/workspace/shp-source-secret",
 			}))
+			Expect(taskSpec.Steps[0].Env).To(utils.ContainNamedElementWithValue("SHP_USER", "1000"))
+			Expect(taskSpec.Steps[0].Env).To(utils.ContainNamedElementWithValue("SHP_GROUP", "1000"))
 			Expect(len(taskSpec.Steps[0].VolumeMounts)).To(Equal(1))
 			Expect(taskSpec.Steps[0].VolumeMounts[0].Name).To(Equal("shp-a-secret"))
 			Expect(taskSpec.Steps[0].VolumeMounts[0].MountPath).To(Equal("/workspace/shp-source-secret"))

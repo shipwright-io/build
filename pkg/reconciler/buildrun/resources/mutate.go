@@ -11,6 +11,7 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 )
 
 // amendTaskSpecWithImageMutate add more steps to Tekton's Task in order to
@@ -19,6 +20,7 @@ func amendTaskSpecWithImageMutate(
 	cfg *config.Config,
 	taskSpec *tektonv1beta1.TaskSpec,
 	buildOutput, buildRunOutput buildv1alpha1.Image,
+	buildStrategySteps []buildv1alpha1.BuildStep,
 ) {
 	// initialize the step from the template
 	mutateStep := *cfg.MutateImageContainerTemplate.DeepCopy()
@@ -30,6 +32,8 @@ func amendTaskSpecWithImageMutate(
 	annotations := mergeMaps(buildOutput.Annotations, buildRunOutput.Annotations)
 
 	mutateStep.Args = mutateArgs(annotations, labels)
+
+	steps.UpdateSecurityContext(&mutateStep, buildStrategySteps)
 
 	// append the mutate step
 	taskSpec.Steps = append(taskSpec.Steps, mutateStep)

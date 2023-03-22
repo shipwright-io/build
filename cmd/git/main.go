@@ -59,6 +59,7 @@ type settings struct {
 	gitURLRewrite          bool
 	resultFileErrorMessage string
 	resultFileErrorReason  string
+	verbose                bool
 }
 
 var flagValues settings
@@ -95,6 +96,7 @@ func init() {
 	// Mostly internal flag
 	pflag.BoolVar(&flagValues.skipValidation, "skip-validation", false, "skip pre-requisite validation")
 	pflag.BoolVar(&flagValues.gitURLRewrite, "git-url-rewrite", false, "set Git config to use url-insteadOf setting based on Git repository URL")
+	pflag.BoolVar(&flagValues.verbose, "verbose", false, "Verbose logging")
 }
 
 func main() {
@@ -124,6 +126,10 @@ func Execute(ctx context.Context) error {
 		return nil
 	}
 
+	if err := setupUser(); err != nil {
+		return err
+	}
+
 	// pre-req checks
 	if err := checkEnvironment(ctx); err != nil {
 		return err
@@ -141,6 +147,20 @@ func Execute(ctx context.Context) error {
 	displayURL = cleanURL()
 
 	return runGitClone(ctx)
+}
+
+func setupUser() error {
+	shpUser := os.Getenv("SHP_USER")
+	shpGroup := os.Getenv("SHP_GROUP")
+
+	if shpUser == "" || shpGroup == "" {
+		return nil
+	}
+
+	if err := os.WriteFile("/etc/passwd", []byte(fmt.Sprintf("git-user:x:%s:%s:git-group:%s:/sbin/nologin\n", shpUser, shpGroup, os.Getenv("HOME"))), 0400); err != nil {
+		return err
+	}
+	return os.WriteFile("/etc/groups", []byte(fmt.Sprintf("git-group:x:%s:\n", shpGroup)), 0400)
 }
 
 func runGitClone(ctx context.Context) error {
@@ -209,8 +229,14 @@ func checkEnvironment(ctx context.Context) error {
 			return &ExitError{Code: 120, Message: err.Error(), Cause: err}
 		}
 
+		if flagValues.verbose {
+			log.Printf("Debug: %s %s\n", path, check.versionArg)
+		}
 		out, err := exec.CommandContext(ctx, path, check.versionArg).CombinedOutput()
 		if err != nil {
+			if out != nil {
+				log.Printf("Info: %s: %s\n", check.toolName, strings.TrimRight(string(out), "\n"))
+			}
 			return err
 		}
 

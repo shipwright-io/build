@@ -12,6 +12,7 @@ import (
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 
 	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
@@ -21,6 +22,7 @@ func AppendBundleStep(
 	cfg *config.Config,
 	taskSpec *pipeline.TaskSpec,
 	source build.Source,
+	buildStrategySteps []build.BuildStep,
 	name string,
 ) {
 	// append the result
@@ -63,6 +65,8 @@ func AppendBundleStep(
 	if source.BundleContainer.Prune != nil && *source.BundleContainer.Prune == build.PruneAfterPull {
 		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
+
+	steps.UpdateSecurityContext(&bundleStep, buildStrategySteps)
 
 	taskSpec.Steps = append(taskSpec.Steps, bundleStep)
 }

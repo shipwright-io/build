@@ -132,8 +132,14 @@ var _ = Describe("Config", func() {
 					Command: []string{
 						"/ko-app/git",
 					},
-					Env: []corev1.EnvVar{{Name: "HOME", Value: "/tekton/home"}},
+					Env: []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}},
 					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: pointer.Bool(false),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								"ALL",
+							},
+						},
 						RunAsUser:  nonRoot,
 						RunAsGroup: nonRoot,
 					},
@@ -229,6 +235,12 @@ var _ = Describe("Config", func() {
 					Args:    []string{"start"},
 					Env:     []corev1.EnvVar{{Name: "HOME", Value: "/tekton/home"}},
 					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: pointer.Bool(false),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								"ALL",
+							},
+						},
 						RunAsUser:  nonRoot,
 						RunAsGroup: nonRoot,
 					},

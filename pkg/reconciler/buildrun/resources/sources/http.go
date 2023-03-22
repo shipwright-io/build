@@ -9,6 +9,7 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
@@ -20,6 +21,7 @@ func AppendHTTPStep(
 	cfg *config.Config,
 	taskSpec *tektonv1beta1.TaskSpec,
 	source buildv1alpha1.BuildSource,
+	buildStrategySteps []buildv1alpha1.BuildStep,
 ) {
 	// HTTP is done currently all in a single step, see if there is already one
 	httpStep := findExistingHTTPSourcesStep(taskSpec)
@@ -40,6 +42,8 @@ func AppendHTTPStep(
 				fmt.Sprintf("wget %q", source.URL),
 			},
 		}
+
+		steps.UpdateSecurityContext(&httpStep, buildStrategySteps)
 
 		// append the git step
 		taskSpec.Steps = append(taskSpec.Steps, httpStep)

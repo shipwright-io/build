@@ -40,16 +40,17 @@ func AmendTaskSpecWithSources(
 	taskSpec *pipeline.TaskSpec,
 	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
+	buildStrategySteps []buildv1alpha1.BuildStep,
 ) {
 	if localCopy := isLocalCopyBuildSource(build, buildRun); localCopy != nil {
-		sources.AppendLocalCopyStep(cfg, taskSpec, localCopy.Timeout)
+		sources.AppendLocalCopyStep(cfg, taskSpec, localCopy.Timeout, buildStrategySteps)
 	} else {
 		// create the step for spec.source, either Git or Bundle
 		switch {
 		case build.Spec.Source.BundleContainer != nil:
-			sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source, defaultSourceName)
+			sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source, buildStrategySteps, defaultSourceName)
 		case build.Spec.Source.URL != nil:
-			sources.AppendGitStep(cfg, taskSpec, build.Spec.Source, defaultSourceName)
+			sources.AppendGitStep(cfg, taskSpec, build.Spec.Source, buildStrategySteps, defaultSourceName)
 		}
 	}
 
@@ -57,7 +58,7 @@ func AmendTaskSpecWithSources(
 	// in order to handle remote artifacts
 	for _, source := range build.Spec.Sources {
 		if source.Type == buildv1alpha1.HTTP {
-			sources.AppendHTTPStep(cfg, taskSpec, source)
+			sources.AppendHTTPStep(cfg, taskSpec, source, buildStrategySteps)
 		}
 	}
 }

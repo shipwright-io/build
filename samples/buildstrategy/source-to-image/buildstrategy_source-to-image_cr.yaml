@@ -19,6 +19,9 @@ spec:
       image: quay.io/openshift-pipeline/s2i:nightly
       imagePullPolicy: Always
       name: s2i-build-as-dockerfile
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
@@ -48,6 +51,7 @@ spec:
       name: build-and-push
       securityContext:
         runAsUser: 0
+        runAsGroup: 0
         allowPrivilegeEscalation: false
         capabilities:
           add:
@@ -85,6 +89,9 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
       volumeMounts:
         - name: layout
           mountPath: /kaniko/oci-image-layout

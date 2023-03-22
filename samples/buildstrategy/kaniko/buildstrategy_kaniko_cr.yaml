@@ -13,6 +13,7 @@ spec:
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
+        runAsGroup: 0
         capabilities:
           add:
             - CHOWN
@@ -74,6 +75,9 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
       volumeMounts:
         - name: layout
           mountPath: /kaniko/oci-image-layout
