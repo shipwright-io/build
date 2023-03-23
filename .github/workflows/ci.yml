@@ -71,7 +71,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.12.0
+          version: v0.13.0
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -173,7 +173,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.12.0
+          version: v0.13.0
       - name: Install Shipwright Build
         run: |
           make install-controller-kind
