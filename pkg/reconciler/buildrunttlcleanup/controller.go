@@ -9,7 +9,6 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -27,9 +26,8 @@ const (
 
 // Add creates a new BuildRun_ttl_cleanup Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
-	ctx = ctxlog.NewContext(ctx, "buildrun-ttl-cleanup-controller")
-	return add(ctx, mgr, NewReconciler(c, mgr), c.Controllers.BuildRun.MaxConcurrentReconciles)
+func Add(_ context.Context, c *config.Config, mgr manager.Manager) error {
+	return add(mgr, NewReconciler(c, mgr), c.Controllers.BuildRun.MaxConcurrentReconciles)
 }
 
 // reconcileCompletedBuildRun returns true if the object has the required TTL parameters
@@ -58,7 +56,7 @@ func reconcileCompletedBuildRun(condition *buildv1alpha1.Condition, o *buildv1al
 
 // reconcileAlreadyCompletedBuildRun returns true only if the TTL limit was introduced
 // or if it was lowered as the object was completed before the update
-func reconcileAlreadyCompletedBuildRun(newCondition *buildv1alpha1.Condition, oldCondition *buildv1alpha1.Condition, n *buildv1alpha1.BuildRun, o *buildv1alpha1.BuildRun) bool {
+func reconcileAlreadyCompletedBuildRun(newCondition *buildv1alpha1.Condition, n *buildv1alpha1.BuildRun, o *buildv1alpha1.BuildRun) bool {
 	if newCondition.Status == corev1.ConditionTrue {
 		// check if a successful BuildRun has a TTL that was lowered or introduced
 		if (o.Spec.Retention == nil || o.Spec.Retention.TTLAfterSucceeded == nil) && n.Spec.Retention != nil && n.Spec.Retention.TTLAfterSucceeded != nil {
@@ -81,7 +79,7 @@ func reconcileAlreadyCompletedBuildRun(newCondition *buildv1alpha1.Condition, ol
 	return false
 }
 
-func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles int) error {
+func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles int) error {
 	// Create the controller options
 	options := controller.Options{
 		Reconciler: r,
@@ -128,7 +126,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 
 			// for objects that were already complete, check if the TTL was lowered or introduced
 			if oldCondition != nil && oldCondition.Status != corev1.ConditionUnknown {
-				return reconcileAlreadyCompletedBuildRun(newCondition, oldCondition, n, o)
+				return reconcileAlreadyCompletedBuildRun(newCondition, n, o)
 			}
 
 			return false
@@ -139,8 +137,5 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		},
 	}
 	// Watch for changes to primary resource BuildRun
-	if err = c.Watch(&source.Kind{Type: &buildv1alpha1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun); err != nil {
-		return err
-	}
-	return nil
+	return c.Watch(&source.Kind{Type: &buildv1alpha1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun)
 }

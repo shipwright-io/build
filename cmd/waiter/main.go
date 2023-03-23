@@ -107,7 +107,6 @@ func newDoneCmd() *cobra.Command {
 func main() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("[ERROR] %v\n", err)
-		os.Exit(1)
 	}
 	os.Exit(0)
 }

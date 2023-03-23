@@ -529,11 +529,7 @@ func writeErrorResults(failure *shpgit.ErrorResult) (err error) {
 		return err
 	}
 
-	if err = os.WriteFile(flagValues.resultFileErrorReason, []byte(failure.Reason.String()), 0666); err != nil {
-		return err
-	}
-
-	return nil
+	return os.WriteFile(flagValues.resultFileErrorReason, []byte(failure.Reason.String()), 0666)
 }
 
 func cleanURL() string {
