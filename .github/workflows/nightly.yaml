@@ -31,7 +31,7 @@ jobs:
       with:
         version: v0.13.0
     - uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4
-    - uses: sigstore/cosign-installer@v2.5.0
+    - uses: sigstore/cosign-installer@v3
 
     - name: Get current date
       id: date
@@ -64,12 +64,6 @@ jobs:
         done
 
     - name: Sign released images
-      env:
-        # This enables keyless mode
-        # (https://github.com/sigstore/cosign/blob/main/KEYLESS.md) which signs
-        # images using an ephemeral key tied to the GitHub Actions identity via
-        # OIDC.
-        COSIGN_EXPERIMENTAL: "true"
       run: |
         for f in \
           nightly-${{ steps.date.outputs.date }}.yaml \
