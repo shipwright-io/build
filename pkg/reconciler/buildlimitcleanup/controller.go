@@ -9,7 +9,6 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,11 +28,10 @@ const (
 
 // Add creates a new build_limit_cleanup Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started
-func Add(ctx context.Context, c *config.Config, mgr manager.Manager) error {
-	ctx = ctxlog.NewContext(ctx, "build-limit-cleanup-controller")
-	return add(ctx, mgr, NewReconciler(c, mgr), c.Controllers.Build.MaxConcurrentReconciles)
+func Add(_ context.Context, c *config.Config, mgr manager.Manager) error {
+	return add(mgr, NewReconciler(c, mgr), c.Controllers.Build.MaxConcurrentReconciles)
 }
-func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles int) error {
+func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles int) error {
 	// Create the controller options
 	options := controller.Options{
 		Reconciler: r,
