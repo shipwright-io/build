@@ -38,7 +38,7 @@ jobs:
     - uses: ko-build/setup-ko@v0.6
       with:
         version: v0.13.0
-    - uses: sigstore/cosign-installer@v2.5.0
+    - uses: sigstore/cosign-installer@v3
 
     - name: Build Release Changelog
       env:
@@ -74,12 +74,6 @@ jobs:
         gh release upload ${TAG} sample-strategies.yaml
 
     - name: Sign released images
-      env:
-        # This enables keyless mode
-        # (https://github.com/sigstore/cosign/blob/main/KEYLESS.md) which signs
-        # images using an ephemeral key tied to the GitHub Actions identity via
-        # OIDC.
-        COSIGN_EXPERIMENTAL: "true"
       run: |
         grep -o "ghcr.io[^\"]*" release.yaml | xargs cosign sign \
             -a sha=${{ github.sha }} \
