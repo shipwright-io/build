@@ -68,7 +68,7 @@ jobs:
         for f in \
           nightly-${{ steps.date.outputs.date }}.yaml \
           nightly-${{ steps.date.outputs.date }}-debug.yaml; do
-          grep -o "ghcr.io[^\"]*" $f | xargs cosign sign \
+          grep -o "ghcr.io[^\"]*" $f | xargs cosign sign --yes \
               -a sha=${{ github.sha }} \
               -a run_id=${{ github.run_id }} \
               -a run_attempt=${{ github.run_attempt }}
