@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/docker/cli v23.0.1+incompatible
 	github.com/go-git/go-git/v5 v5.6.1
-	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/logr v1.2.4
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-containerregistry v0.14.0
 	github.com/onsi/ginkgo/v2 v2.9.2
