@@ -7,6 +7,7 @@ package resources
 import (
 	"fmt"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -35,12 +36,13 @@ const (
 	inputParamContextDir = "CONTEXT_DIR"
 
 	imageMutateContainerName = "mutate-image"
+
+	reservedLabels = `([a-z0-9]+\.)*(kubernetes.io|k8s.io|tekton.dev|shipwright.io)`
 )
 
 // getStringTransformations gets us MANDATORY replacements using
 // a poor man's templating mechanism - TODO: Use golang templating
 func getStringTransformations(fullText string) string {
-
 	stringTransformations := map[string]string{
 		// this will be removed, build strategy author should use $(params.shp-output-image) directly
 		"$(build.output.image)": fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
@@ -69,7 +71,6 @@ func GenerateTaskSpec(
 	parameterDefinitions []buildv1alpha1.Parameter,
 	buildStrategyVolumes []buildv1alpha1.BuildStrategyVolume,
 ) (*v1beta1.TaskSpec, error) {
-
 	generatedTaskSpec := v1beta1.TaskSpec{
 		Params: []v1beta1.ParamSpec{
 			{
@@ -253,7 +254,6 @@ func GenerateTaskRun(
 	serviceAccountName string,
 	strategy buildv1alpha1.BuilderStrategy,
 ) (*v1beta1.TaskRun, error) {
-
 	// retrieve expected imageURL form build or buildRun
 	var image string
 	if buildRun.Spec.Output != nil {
@@ -318,6 +318,32 @@ func GenerateTaskRun(
 
 	for label, value := range strategy.GetResourceLabels() {
 		expectedTaskRun.Labels[label] = value
+	}
+
+	reserved, err := regexp.Compile(reservedLabels)
+	if err != nil {
+		return nil, err
+	}
+
+	// assign labels from the build strategy, filter out those that should not be propagated
+	for key, value := range strategy.GetLabels() {
+		if !reserved.MatchString(value) {
+			expectedTaskRun.Labels[key] = value
+		}
+	}
+
+	// assign labels from the build, filter out those that should not be propagated
+	for key, value := range build.GetLabels() {
+		if !reserved.MatchString(value) {
+			expectedTaskRun.Labels[key] = value
+		}
+	}
+
+	// assign labels from the buildrun, filter out those that should not be propagated
+	for key, value := range buildRun.GetLabels() {
+		if !reserved.MatchString(value) {
+			expectedTaskRun.Labels[key] = value
+		}
 	}
 
 	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
@@ -407,7 +433,6 @@ func GenerateTaskRun(
 func effectiveTimeout(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) *metav1.Duration {
 	if buildRun.Spec.Timeout != nil {
 		return buildRun.Spec.Timeout
-
 	} else if build.Spec.Timeout != nil {
 		return build.Spec.Timeout
 	}
