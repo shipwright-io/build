@@ -8,9 +8,12 @@ RUN \
   microdnf --assumeyes --nodocs install git git-lfs && \
   microdnf clean all && \
   rm -rf /var/cache/yum && \
-  echo 'nonroot:x:1000:1000:nonroot:/:/sbin/nologin' > /etc/passwd && \
-  echo 'nonroot:x:1000:' > /etc/group && \
-  mkdir /.docker && chown 1000:1000 /.docker && \
-  mkdir /.ssh && chown 1000:1000 /.ssh
+  # The following setup is necessary so that this image can run as any user
+  mkdir -p /shared-home/.docker /shared-home/.ssh && chmod -R 0777 /shared-home && \
+  # ssh, which is required for Git clone using SSH, will require an entry in /etc/passwd,
+  # as we do not know the user/group combination, we allow the user to register itself.
+  # The runtime privileges of the container will prevent a switch to root.
+  echo -n > /etc/passwd && chmod 0666 /etc/passwd && \
+  echo -n > /etc/groups && chmod 0666 /etc/groups
 
-USER 1000:1000
+ENV HOME /shared-home
