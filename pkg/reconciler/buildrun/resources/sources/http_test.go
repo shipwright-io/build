@@ -30,7 +30,7 @@ var _ = Describe("HTTP", func() {
 			sources.AppendHTTPStep(cfg, taskSpec, buildv1alpha1.BuildSource{
 				Name: "logo",
 				URL:  "https://shipwright.io/icons/logo.svg",
-			})
+			}, []buildv1alpha1.BuildStep{})
 
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Name).To(Equal(sources.RemoteArtifactsContainerName))
@@ -68,7 +68,7 @@ var _ = Describe("HTTP", func() {
 			sources.AppendHTTPStep(cfg, taskSpec, buildv1alpha1.BuildSource{
 				Name: "logo",
 				URL:  "https://shipwright.io/icons/logo.svg",
-			})
+			}, []buildv1alpha1.BuildStep{})
 
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Name).To(Equal(sources.RemoteArtifactsContainerName))
@@ -95,7 +95,7 @@ var _ = Describe("HTTP", func() {
 			sources.AppendHTTPStep(cfg, taskSpec, buildv1alpha1.BuildSource{
 				Name: "logo",
 				URL:  "https://shipwright.io/icons/logo.svg",
-			})
+			}, []buildv1alpha1.BuildStep{})
 
 			Expect(len(taskSpec.Steps)).To(Equal(2))
 			Expect(taskSpec.Steps[1].Name).To(Equal(sources.RemoteArtifactsContainerName))

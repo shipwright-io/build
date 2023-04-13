@@ -6,10 +6,12 @@ package sources
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -25,6 +27,7 @@ func AppendGitStep(
 	cfg *config.Config,
 	taskSpec *tektonv1beta1.TaskSpec,
 	source buildv1alpha1.Source,
+	buildStrategySteps []buildv1alpha1.BuildStep,
 	name string,
 ) {
 	// append the result
@@ -95,6 +98,26 @@ func AppendGitStep(
 			"--secret-path",
 			secretMountPath,
 		)
+	}
+
+	// Update the security context with the runAs user of the build strategy
+	steps.UpdateSecurityContext(&gitStep, buildStrategySteps)
+
+	// Setup environment variables with the final runAs configuration that the logic will use to setup /etc/passwd and /etc/group
+	if gitStep.SecurityContext != nil {
+		if gitStep.SecurityContext.RunAsUser != nil {
+			gitStep.Env = append(gitStep.Env, corev1.EnvVar{
+				Name:  "SHP_USER",
+				Value: strconv.Itoa(int(*gitStep.SecurityContext.RunAsUser)),
+			})
+		}
+
+		if gitStep.SecurityContext.RunAsGroup != nil {
+			gitStep.Env = append(gitStep.Env, corev1.EnvVar{
+				Name:  "SHP_GROUP",
+				Value: strconv.Itoa(int(*gitStep.SecurityContext.RunAsGroup)),
+			})
+		}
 	}
 
 	// append the git step

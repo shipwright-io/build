@@ -129,7 +129,7 @@ func GenerateTaskSpec(
 	}
 
 	// define the results, steps and volumes for sources, or alternatively, wait for user upload
-	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build, buildRun)
+	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build, buildRun, buildSteps)
 
 	// Add the strategy defined parameters into the Task spec
 	for _, parameterDefinition := range parameterDefinitions {
@@ -239,7 +239,7 @@ func GenerateTaskSpec(
 	// specified in build manifest or buildRun manifest
 	if len(build.Spec.Output.Annotations) > 0 || len(build.Spec.Output.Labels) > 0 ||
 		len(buildRunOutput.Annotations) > 0 || len(buildRunOutput.Labels) > 0 {
-		amendTaskSpecWithImageMutate(cfg, &generatedTaskSpec, build.Spec.Output, *buildRunOutput)
+		amendTaskSpecWithImageMutate(cfg, &generatedTaskSpec, build.Spec.Output, *buildRunOutput, buildSteps)
 	}
 
 	return &generatedTaskSpec, nil

@@ -6,14 +6,15 @@ package sources_test
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
+
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("LocalCopy", func() {
@@ -24,7 +25,7 @@ var _ = Describe("LocalCopy", func() {
 
 		BeforeEach(func() {
 			taskSpec = &tektonv1beta1.TaskSpec{}
-			sources.AppendLocalCopyStep(cfg, taskSpec, &metav1.Duration{Duration: time.Minute})
+			sources.AppendLocalCopyStep(cfg, taskSpec, &metav1.Duration{Duration: time.Minute}, []buildv1alpha1.BuildStep{})
 		})
 
 		It("produces a local-copy step", func() {
