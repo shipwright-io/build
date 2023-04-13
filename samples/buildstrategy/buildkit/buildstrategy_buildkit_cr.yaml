@@ -32,20 +32,6 @@ spec:
     type: array
     defaults: []
   buildSteps:
-    - name: prepare
-      image: alpine:latest
-      securityContext:
-        runAsUser: 0
-        capabilities:
-          add:
-            - CHOWN
-            - DAC_OVERRIDE
-      command:
-        - /bin/chown
-      args:
-        - -R
-        - 1000:1000
-        - /tekton/home
     - name: build-and-push
       image: moby/buildkit:nightly-rootless
       imagePullPolicy: Always

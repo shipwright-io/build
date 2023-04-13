@@ -17,6 +17,9 @@ spec:
         - $(build.builder.image)
         - $(params.shp-output-image)
         - --as-dockerfile=/s2i/Dockerfile
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
       volumeMounts:
         - name: s2i
           mountPath: /s2i
@@ -24,6 +27,8 @@ spec:
       image: quay.io/containers/buildah:v1.29.1
       workingDir: /s2i
       securityContext:
+        runAsUser: 0
+        runAsGroup: 0
         privileged: true
       command:
         - /bin/bash

@@ -10,6 +10,8 @@ spec:
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
+        runAsUser: 0
+        runAsGroup: 0
       command:
         - /bin/bash
       args:

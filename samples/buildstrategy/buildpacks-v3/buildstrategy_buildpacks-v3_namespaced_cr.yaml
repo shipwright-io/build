@@ -12,32 +12,10 @@ spec:
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
       default: "0.4"
   buildSteps:
-    - name: prepare
-      image: docker.io/paketobuildpacks/builder:full
-      imagePullPolicy: Always
-      securityContext:
-        runAsUser: 0
-        capabilities:
-          add: 
-            - CHOWN
-      command:
-        - chown
-      args:
-        - -R
-        - "1000:1000"
-        - /tekton/home
-      resources:
-        limits:
-          cpu: 500m
-          memory: 1Gi
-        requests:
-          cpu: 250m
-          memory: 65Mi
     - name: build-and-push
-      image: docker.io/paketobuildpacks/builder:full
-      imagePullPolicy: Always
+      image: docker.io/paketobuildpacks/builder-jammy-full:latest
       securityContext:
-        runAsUser: 1000
+        runAsUser: 1001
         runAsGroup: 1000
       env: 
         - name: CNB_PLATFORM_API
