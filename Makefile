@@ -244,7 +244,11 @@ install-controller: install-apis
 
 .PHONY: install-controller-kind
 install-controller-kind: install-apis
-	KO_DOCKER_REPO=kind.local GOFLAGS="$(GO_FLAGS)" ko apply -f deploy/
+	KO_DOCKER_REPO=kind.local \
+	GOFLAGS="$(GO_FLAGS)" \
+	ko apply \
+	  --platform=$(GO_OS)/$(GO_ARCH) \
+	  --filename=deploy
 
 .PHONY: install-strategies
 install-strategies: install-apis
