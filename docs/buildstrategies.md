@@ -34,6 +34,7 @@ SPDX-License-Identifier: Apache-2.0
 - [System parameters vs Strategy Parameters Comparison](#system-parameters-vs-strategy-parameters-comparison)
 - [Securely referencing string parameters](#securely-referencing-string-parameters)
 - [System results](#system-results)
+- [Steps Security Context](#steps-security-context)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
   - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
@@ -549,6 +550,15 @@ status:
       to access it.
     reason: GitRemotePrivate
 ```
+
+## Steps Security Context
+
+All strategy steps can include a [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) in which they declare - beside other settings - the `runAsUser` and `runAsGroup`. Setting them is optional but strongly recommended. From those settings, Shipwright will derive the `runAsUser` and `runAsGroup` for the steps that Shipwright injects, for example to retrieve the source code.
+
+Based on how you define your build strategy, Shipwright will do the following:
+
+- If all build strategy steps define the same `runAsUser` and `runAsGroup`, then the Shipwright-injected steps will use these settings. It is recommended that you do exactly this in your build strategies because this ensures that source code is owned by the same user and group that you use in your build strategy. This guarantees full access, prevents permission-related issues, and is key for builds that should fully run as a non-root user.
+- If build strategy steps do not define a `runAsUser` or `runAsGroup`, or if your strategy contains multiple steps with different settings, then Shipwright-injected steps will use the default `runAsUser` and `runAsGroup` that is defined in the [configuration's container templates](configuration.md).
 
 ## Steps Resource Definition
 
