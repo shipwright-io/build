@@ -36,6 +36,7 @@ SPDX-License-Identifier: Apache-2.0
 - [System parameters vs Strategy Parameters Comparison](#system-parameters-vs-strategy-parameters-comparison)
 - [Securely referencing string parameters](#securely-referencing-string-parameters)
 - [System results](#system-results)
+- [Security Contexts](#security-contexts)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Strategies with different resources](#strategies-with-different-resources)
   - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
@@ -579,6 +580,23 @@ status:
       to access it.
     reason: GitRemotePrivate
 ```
+
+## Security Contexts
+
+In a build strategy, it is recommended that you define a `securityContext` with a runAsUser and runAsGroup:
+
+```yaml
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+```
+
+This runAs configuration will be used for all shipwright-managed steps such as the step that retrieves the source code, and for the steps you define in the build strategy. This configuration ensures that all steps share the same runAs configuration which eliminates file permission problems.
+
+Without a `securityContext` for the build strategy, shipwright-managed steps will run with the `runAsUser` and `runAsGroup` that is defined in the [configuration's container templates](configuration.md) that is potentially a different user than you use in your build strategy. This can result in issues when for example source code is downloaded as user A as defined by the Git container template, but your strategy accesses it as user B.
+
+In build strategy steps you can define a step-specific `securityContext` that matches [Kubernetes' security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) where you can configure other security aspects such as capabilities or privileged containers.
 
 ## Steps Resource Definition
 
