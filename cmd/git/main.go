@@ -59,6 +59,7 @@ type settings struct {
 	gitURLRewrite          bool
 	resultFileErrorMessage string
 	resultFileErrorReason  string
+	verbose                bool
 }
 
 var flagValues settings
@@ -95,6 +96,7 @@ func init() {
 	// Mostly internal flag
 	pflag.BoolVar(&flagValues.skipValidation, "skip-validation", false, "skip pre-requisite validation")
 	pflag.BoolVar(&flagValues.gitURLRewrite, "git-url-rewrite", false, "set Git config to use url-insteadOf setting based on Git repository URL")
+	pflag.BoolVar(&flagValues.verbose, "verbose", false, "Verbose logging")
 }
 
 func main() {
@@ -209,8 +211,12 @@ func checkEnvironment(ctx context.Context) error {
 			return &ExitError{Code: 120, Message: err.Error(), Cause: err}
 		}
 
+		if flagValues.verbose {
+			log.Printf("Debug: %s %s\n", path, check.versionArg)
+		}
 		out, err := exec.CommandContext(ctx, path, check.versionArg).CombinedOutput()
 		if err != nil {
+			log.Printf("Error: %s: %s\n", check.toolName, strings.TrimRight(string(out), "\n"))
 			return err
 		}
 

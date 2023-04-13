@@ -154,15 +154,20 @@ func NewDefaultConfig() *Config {
 			Command: []string{
 				"/ko-app/git",
 			},
-			// We explicitly define HOME=/tekton/home because this was always set in the
-			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
 			Env: []corev1.EnvVar{
+				// This directory is created in the base image as writable for everybody
 				{
 					Name:  "HOME",
-					Value: "/tekton/home",
+					Value: "/shared-home",
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
+				AllowPrivilegeEscalation: pointer.Bool(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
 				RunAsUser:  nonRoot,
 				RunAsGroup: nonRoot,
 			},
@@ -173,15 +178,20 @@ func NewDefaultConfig() *Config {
 			Command: []string{
 				"/ko-app/bundle",
 			},
-			// We explicitly define HOME=/tekton/home because this was always set in the
-			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			// This directory is created in the base image as writable for everybody
 			Env: []corev1.EnvVar{
 				{
 					Name:  "HOME",
-					Value: "/tekton/home",
+					Value: "/shared-home",
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
+				AllowPrivilegeEscalation: pointer.Bool(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
 				RunAsUser:  nonRoot,
 				RunAsGroup: nonRoot,
 			},
@@ -191,12 +201,11 @@ func NewDefaultConfig() *Config {
 			Command: []string{
 				"/ko-app/image-processing",
 			},
-			// We explicitly define HOME=/tekton/home because this was always set in the
-			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			// This directory is created in the base image as writable for everybody
 			Env: []corev1.EnvVar{
 				{
 					Name:  "HOME",
-					Value: "/tekton/home",
+					Value: "/shared-home",
 				},
 			},
 			// The image processing step runs after the build strategy steps where an arbitrary
@@ -205,10 +214,15 @@ func NewDefaultConfig() *Config {
 			// in all possible scenarios, we run this step as root with DAC_OVERRIDE
 			// capability.
 			SecurityContext: &corev1.SecurityContext{
-				RunAsUser: root,
+				AllowPrivilegeEscalation: pointer.Bool(false),
+				RunAsUser:                root,
+				RunAsGroup:               root,
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"DAC_OVERRIDE",
+					},
+					Drop: []corev1.Capability{
+						"ALL",
 					},
 				},
 			},
@@ -222,15 +236,20 @@ func NewDefaultConfig() *Config {
 			Args: []string{
 				"start",
 			},
-			// We explicitly define HOME=/tekton/home because this was always set in the
-			// default configuration of Tekton until v0.24.0, see https://github.com/tektoncd/pipeline/pull/3878
+			// This directory is created in the base image as writable for everybody
 			Env: []corev1.EnvVar{
 				{
 					Name:  "HOME",
-					Value: "/tekton/home",
+					Value: "/shared-home",
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
+				AllowPrivilegeEscalation: pointer.Bool(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
 				RunAsUser:  nonRoot,
 				RunAsGroup: nonRoot,
 			},
