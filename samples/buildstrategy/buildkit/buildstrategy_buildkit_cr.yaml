@@ -28,20 +28,6 @@ spec:
     type: array
     defaults: []
   buildSteps:
-    - name: prepare
-      image: alpine:latest
-      securityContext:
-        runAsUser: 0
-        capabilities:
-          add:
-            - CHOWN
-            - DAC_OVERRIDE
-      command:
-        - /bin/chown
-      args:
-        - -R
-        - 1000:1000
-        - /tekton/home
     - name: build-and-push
       image: moby/buildkit:nightly-rootless
       imagePullPolicy: Always
@@ -51,8 +37,6 @@ spec:
           add:
             - SETGID
             - SETUID
-        runAsUser: 1000
-        runAsGroup: 1000
       workingDir: $(params.shp-source-root)
       env:
       - name: DOCKER_CONFIG
@@ -182,3 +166,6 @@ spec:
         - $(params.platforms[*])
         - --secrets
         - $(params.secrets[*])
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000

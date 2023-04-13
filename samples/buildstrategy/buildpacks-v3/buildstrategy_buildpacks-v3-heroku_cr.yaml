@@ -12,31 +12,8 @@ spec:
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
       default: "0.4"
   buildSteps:
-    - name: prepare
-      image: heroku/buildpacks:18
-      securityContext:
-        runAsUser: 0
-        capabilities:
-          add:
-            - CHOWN
-      command:
-        - chown
-      args:
-        - -R
-        - "1000:1000"
-        - /tekton/home
-      resources:
-        limits:
-          cpu: 500m
-          memory: 1Gi
-        requests:
-          cpu: 250m
-          memory: 65Mi
     - name: build-and-push
       image: heroku/buildpacks:18
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
       env:
         - name: ALLOW_INSECURE_HEROKU_18_BUILDER
           value: "1"
@@ -86,26 +63,26 @@ spec:
 
           mkdir "$CACHE_DIR" "$LAYERS_DIR"
 
-          function anounce_phase {
+          function announce_phase {
             printf "===> %s\n" "$1" 
           }
 
-          anounce_phase "DETECTING"
+          announce_phase "DETECTING"
           /cnb/lifecycle/detector -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
 
-          anounce_phase "ANALYZING"
+          announce_phase "ANALYZING"
           /cnb/lifecycle/analyzer -layers="$LAYERS_DIR" -cache-dir="$CACHE_DIR" "${PARAM_OUTPUT_IMAGE}"
 
-          anounce_phase "RESTORING"
+          announce_phase "RESTORING"
           /cnb/lifecycle/restorer -cache-dir="$CACHE_DIR"
 
-          anounce_phase "BUILDING"
+          announce_phase "BUILDING"
           /cnb/lifecycle/builder -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
 
           exporter_args=( -layers="$LAYERS_DIR" -report=/tmp/report.toml -cache-dir="$CACHE_DIR" -app="${PARAM_SOURCE_CONTEXT}")
           grep -q "buildpack-default-process-type" "$LAYERS_DIR/config/metadata.toml" || exporter_args+=( -process-type web ) 
 
-          anounce_phase "EXPORTING"
+          announce_phase "EXPORTING"
           /cnb/lifecycle/exporter "${exporter_args[@]}" "${PARAM_OUTPUT_IMAGE}"
 
           # Store the image digest
@@ -120,3 +97,6 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000

@@ -50,7 +50,6 @@ spec:
         - name: AWS_SECRET_KEY
           value: NOT_SET
       securityContext:
-        runAsUser: 0
         allowPrivilegeEscalation: false
         capabilities:
           add:
@@ -65,3 +64,6 @@ spec:
         - mountPath: /gen-source
           name: gen-source
       workingDir: /gen-source
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
