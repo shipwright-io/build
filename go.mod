@@ -10,7 +10,7 @@ require (
 	github.com/google/go-containerregistry v0.14.0
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.6
-	github.com/prometheus/client_golang v1.14.0
+	github.com/prometheus/client_golang v1.15.0
 	github.com/prometheus/client_model v0.3.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
@@ -44,7 +44,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -93,8 +93,8 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prometheus/common v0.37.0 // indirect
-	github.com/prometheus/procfs v0.8.0 // indirect
+	github.com/prometheus/common v0.42.0 // indirect
+	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/prometheus/statsd_exporter v0.22.5 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
@@ -119,7 +119,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2 // indirect
 	google.golang.org/grpc v1.51.0 // indirect
-	google.golang.org/protobuf v1.29.1 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
