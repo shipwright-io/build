@@ -164,6 +164,18 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
 
+// BuildBSMinimalNoSource defines a Build with a BuildStrategy without sources
+const BuildBSMinimalNoSource = `
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+spec:
+  source: {}
+  strategy:
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
 // BuildCBSMinimal defines a Build with a
 // ClusterBuildStrategy
 const BuildCBSMinimal = `

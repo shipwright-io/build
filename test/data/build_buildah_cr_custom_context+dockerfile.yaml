@@ -8,7 +8,7 @@ spec:
     url: https://github.com/shipwright-io/sample-nodejs
     contextDir: docker-build-renamed
   strategy:
-    name: buildah
+    name: buildah-shipwright-managed-push
     kind: ClusterBuildStrategy
   dockerfile: RenamedDockerfile
   output:

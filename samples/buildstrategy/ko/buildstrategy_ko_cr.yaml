@@ -69,6 +69,8 @@ spec:
           value: /gocache
         - name: PARAM_OUTPUT_IMAGE
           value: $(params.shp-output-image)
+        - name: PARAM_OUTPUT_DIRECTORY
+          value: $(params.shp-output-directory)
         - name: PARAM_SOURCE_CONTEXT
           value: $(params.shp-source-context)
         - name: PARAM_SOURCE_ROOT
@@ -85,29 +87,6 @@ spec:
         - -c
         - |
           set -euo pipefail
-
-          # Parse image URL to extract repository and tag, must work with
-          # - a URL without a tag and a port: registry/image
-          # - a URL without a tag but a port: registry:port/image
-          # - a URL with a tag but without a port: registry/image:tag
-          # - a URL with both a tag and a port: registry:port/image:tag
-
-          REPO=
-          TAG=
-
-          IFS=':' read -ra PARTS <<< "${PARAM_OUTPUT_IMAGE}"
-          for PART in "${PARTS[@]}"; do
-            if [ "${REPO}" == "" ]; then
-              REPO="${PART}"
-          	elif [[ "${PART}" == *"/"* ]]; then
-              REPO="${REPO}:${PART}"
-            elif [ "${TAG}" == "" ]; then
-              TAG="${PART}"
-            else
-              REPO="${REPO}:${TAG}"
-              TAG="${PART}"
-            fi
-          done
 
           # Determine the ko version
           KO_VERSION="${PARAM_KO_VERSION}"
@@ -145,21 +124,10 @@ spec:
           # Run ko
 
           export GOROOT="$(go env GOROOT)"
-          export KO_DOCKER_REPO="${REPO}"
 
           pushd "${PARAM_SOURCE_CONTEXT}" > /dev/null
-            if [ "${TAG}" == "" ]; then
-              /tmp/ko publish "${PARAM_PACKAGE_DIRECTORY}" --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}"
-            else
-              /tmp/ko publish "${PARAM_PACKAGE_DIRECTORY}" --bare --oci-layout-path=/tmp/layout --platform="${PLATFORM}" --tags="${TAG}"
-            fi
+            /tmp/ko publish "${PARAM_PACKAGE_DIRECTORY}" --oci-layout-path="${PARAM_OUTPUT_DIRECTORY}" --push=false
           popd > /dev/null
-
-          # Store the image digest
-          grep digest /tmp/layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > '$(results.shp-image-digest.path)'
-
-          # Store the image size
-          du -b -c /tmp/layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > '$(results.shp-image-size.path)'
       resources:
         limits:
           cpu: 500m

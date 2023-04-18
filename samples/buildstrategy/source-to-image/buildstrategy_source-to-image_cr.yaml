@@ -6,8 +6,6 @@ spec:
   volumes:
     - name: gen-source
       emptyDir: {}
-    - name: layout
-      emptyDir: {}
   buildSteps:
     - command:
         - /usr/local/bin/s2i
@@ -23,18 +21,25 @@ spec:
         - mountPath: /gen-source
           name: gen-source
       workingDir: $(params.shp-source-root)
-    - args:
-        - '--skip-tls-verify=true'
-        - '--dockerfile=/gen-source/Dockerfile.gen'
-        - '--context=/gen-source'
-        - '--destination=$(params.shp-output-image)'
-        # https://github.com/GoogleContainerTools/kaniko/issues/2164
-        - --ignore-path=/product_uuid
-        - '--oci-layout-path=/kaniko/oci-image-layout'
-        - '--snapshotMode=redo'
-        - '--push-retry=3'
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:v1.9.2
       command:
         - /kaniko/executor
+      args:
+        - --dockerfile
+        - /gen-source/Dockerfile.gen
+        - --context
+        - /gen-source
+        - --destination
+        - $(params.shp-output-image)
+        - --snapshotMode
+        - redo
+        - --no-push
+        - --tarPath
+        - $(params.shp-output-directory)/image.tar
+        # https://github.com/GoogleContainerTools/kaniko/issues/2164
+        - --ignore-path
+        - /product_uuid
       env:
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
@@ -44,8 +49,6 @@ spec:
           value: NOT_SET
         - name: AWS_SECRET_KEY
           value: NOT_SET
-      image: gcr.io/kaniko-project/executor:v1.9.2
-      name: build-and-push
       securityContext:
         runAsUser: 0
         allowPrivilegeEscalation: false
@@ -61,30 +64,4 @@ spec:
       volumeMounts:
         - mountPath: /gen-source
           name: gen-source
-        - name: layout
-          mountPath: /kaniko/oci-image-layout
       workingDir: /gen-source
-    - name: results
-      image: registry.access.redhat.com/ubi9/ubi-minimal
-      command:
-        - /bin/bash
-      args:
-        - -c
-        - |
-          set -euo pipefail
-          
-          # Store the image digest
-          grep digest /kaniko/oci-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
-
-          # Store the image size
-          du -b -c /kaniko/oci-image-layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > "$(results.shp-image-size.path)"
-      resources:
-        limits:
-          cpu: 100m
-          memory: 128Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
-      volumeMounts:
-        - name: layout
-          mountPath: /kaniko/oci-image-layout

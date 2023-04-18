@@ -37,22 +37,20 @@ spec:
       command:
         - /kaniko/executor
       args:
-        - --skip-tls-verify=true
-        - --dockerfile=$(build.dockerfile)
-        - --context=$(params.shp-source-context)
-        - --destination=$(params.shp-output-image)
-        # https://github.com/GoogleContainerTools/kaniko/issues/2164
-        - --ignore-path=/product_uuid
-        - --oci-layout-path=/kaniko/oci-image-layout
-        - --snapshotMode=redo
+        - --dockerfile
+        - $(build.dockerfile)
+        - --context
+        - $(params.shp-source-context)
+        - --destination
+        - $(params.shp-output-image)
+        - --snapshotMode
+        - redo
         - --no-push
         - --tarPath
-        - /kaniko/tar-image/image.tar
-      volumeMounts:
-        - name: layout
-          mountPath: /kaniko/oci-image-layout
-        - name: tar
-          mountPath: /kaniko/tar-image
+        - $(params.shp-output-directory)/image.tar
+        # https://github.com/GoogleContainerTools/kaniko/issues/2164
+        - --ignore-path
+        - /product_uuid
       resources:
         limits:
           cpu: 500m
@@ -62,9 +60,6 @@ spec:
           memory: 65Mi
     - name: trivy-scan
       image: docker.io/aquasec/trivy:0.39.1
-      volumeMounts:
-      - mountPath: /image/
-        name: tar
       command:
         - trivy
       args:
@@ -72,7 +67,7 @@ spec:
         - --exit-code=1
         - --severity=CRITICAL
         - --input
-        - /image/image.tar
+        - $(params.shp-output-directory)/image.tar
       env:
         - name: HOME
           value: /tekton/home
@@ -83,43 +78,3 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
-    - name: crane-push
-      image: gcr.io/go-containerregistry/crane:v0.14.0
-      securityContext:
-        runAsUser: 0
-      volumeMounts:
-      - mountPath: /image/
-        name: tar
-      command:
-        - crane
-      args:
-        - push
-        - /image/image.tar
-        - $(params.shp-output-image)
-      env:
-        - name: HOME
-          value: /tekton/home
-    - name: results
-      image: registry.access.redhat.com/ubi9/ubi-minimal
-      command:
-        - /bin/bash
-      args:
-        - -c
-        - |
-          set -euo pipefail
-          
-          # Store the image digest
-          grep digest /kaniko/oci-image-layout/index.json | sed -E 's/.*sha256([^"]*).*/sha256\1/' | tr -d '\n' > "$(results.shp-image-digest.path)"
-
-          # Store the image size
-          du -b -c /kaniko/oci-image-layout/blobs/sha256/* | tail -1 | sed 's/\s*total//' | tr -d '\n' > "$(results.shp-image-size.path)"
-      resources:
-        limits:
-          cpu: 100m
-          memory: 128Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
-      volumeMounts:
-        - name: layout
-          mountPath: /kaniko/oci-image-layout

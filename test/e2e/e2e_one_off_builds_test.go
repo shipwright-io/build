@@ -7,6 +7,7 @@ package e2e_test
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,6 +17,15 @@ import (
 )
 
 var _ = Describe("Using One-Off Builds", func() {
+
+	insecure := false
+	value, found := os.LookupEnv(EnvVarImageRepoInsecure)
+	if found {
+		var err error
+		insecure, err = strconv.ParseBool(value)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
 	var (
 		testID string
 		err    error
@@ -63,6 +73,7 @@ var _ = Describe("Using One-Off Builds", func() {
 					SourceContextDir("source-build").
 					OutputImage(outputImage.String()).
 					OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
+					OutputImageInsecure(insecure).
 					BuildSpec()).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
@@ -74,7 +85,7 @@ var _ = Describe("Using One-Off Builds", func() {
 				Namespace(testBuild.Namespace).
 				Name(testID).
 				WithBuildSpec(NewBuildPrototype().
-					ClusterBuildStrategy("buildah").
+					ClusterBuildStrategy("buildah-shipwright-managed-push").
 					Namespace(testBuild.Namespace).
 					Name(testID).
 					SourceGit("https://github.com/shipwright-io/sample-go.git").
@@ -83,6 +94,7 @@ var _ = Describe("Using One-Off Builds", func() {
 					ArrayParamValue("registries-insecure", outputImage.Context().RegistryStr()).
 					OutputImage(outputImage.String()).
 					OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
+					OutputImageInsecure(insecure).
 					BuildSpec()).
 				Create()
 			Expect(err).ToNot(HaveOccurred())
@@ -101,6 +113,7 @@ var _ = Describe("Using One-Off Builds", func() {
 					SourceContextDir("source-build").
 					OutputImage(outputImage.String()).
 					OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
+					OutputImageInsecure(insecure).
 					BuildSpec()).
 				Create()
 			Expect(err).ToNot(HaveOccurred())

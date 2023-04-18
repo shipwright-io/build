@@ -16,6 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/shipwright-io/build/cmd/bundle"
+	"github.com/shipwright-io/build/pkg/image"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
@@ -144,19 +145,19 @@ var _ = Describe("Bundle Loader", func() {
 		var dockerConfigFile string
 
 		var copyImage = func(src, dst name.Reference) {
-			srcAuth, err := ResolveAuthBasedOnTargetUsingConfigFile(src, dockerConfigFile)
+			options, _, err := image.GetOptions(context.TODO(), src, true, dockerConfigFile, "test-agent")
 			Expect(err).ToNot(HaveOccurred())
 
-			srcDesc, err := remote.Get(src, remote.WithAuth(srcAuth))
+			srcDesc, err := remote.Get(src, options...)
 			Expect(err).ToNot(HaveOccurred())
 
 			srcImage, err := srcDesc.Image()
 			Expect(err).ToNot(HaveOccurred())
 
-			dstAuth, err := ResolveAuthBasedOnTargetUsingConfigFile(dst, dockerConfigFile)
+			options, _, err = image.GetOptions(context.TODO(), dst, true, dockerConfigFile, "test-agent")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = remote.Write(dst, srcImage, remote.WithAuth(dstAuth))
+			err = remote.Write(dst, srcImage, options...)
 			Expect(err).ToNot(HaveOccurred())
 		}
 
@@ -190,11 +191,11 @@ var _ = Describe("Bundle Loader", func() {
 			ref, err := name.ParseReference(testImage)
 			Expect(err).ToNot(HaveOccurred())
 
-			auth, err := ResolveAuthBasedOnTargetUsingConfigFile(ref, dockerConfigFile)
+			options, auth, err := image.GetOptions(context.TODO(), ref, true, dockerConfigFile, "test-agent")
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete test image (best effort)
-			_ = Prune(context.TODO(), ref, auth)
+			_ = Prune(ref, options, *auth)
 		})
 
 		It("should pull and unpack an image from a private registry", func() {
@@ -223,10 +224,10 @@ var _ = Describe("Bundle Loader", func() {
 				ref, err := name.ParseReference(testImage)
 				Expect(err).ToNot(HaveOccurred())
 
-				auth, err := ResolveAuthBasedOnTargetUsingConfigFile(ref, dockerConfigFile)
+				options, _, err := image.GetOptions(context.TODO(), ref, true, dockerConfigFile, "test-agent")
 				Expect(err).ToNot(HaveOccurred())
 
-				_, err = remote.Head(ref, remote.WithAuth(auth))
+				_, err = remote.Head(ref, options...)
 				Expect(err).To(HaveOccurred())
 			})
 		})

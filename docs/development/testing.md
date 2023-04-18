@@ -125,11 +125,12 @@ The following table contains a set of environment variables that control the beh
 
 The following table contains a list of environment variables that will override specific paths under the **Build** CRD.
 
-| Environment Variable               | Path                           | Description                                                   |
-|------------------------------------|--------------------------------|---------------------------------------------------------------|
-| `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests                         |
-| `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                             |
-| `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`            |
+| Environment Variable               | Path                           | Description                                         |
+|------------------------------------|--------------------------------|-----------------------------------------------------|
+| `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests               |
+| `TEST_IMAGE_REPO_INSECURE`         | `spec.output.insecure`         | Flag whether the image repository is secure or not. |
+| `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                   |
+| `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`  |
 
 The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io](https://quay.io) using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The JSON payload is for example:
 

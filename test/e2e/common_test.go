@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -71,7 +72,7 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 }
 
 // amendOutputImage amend container image URL based on informed image repository.
-func amendOutputImage(b *buildv1alpha1.Build, imageRepo string) {
+func amendOutputImage(b *buildv1alpha1.Build, imageRepo string, insecure bool) {
 	if imageRepo == "" {
 		return
 	}
@@ -81,6 +82,8 @@ func amendOutputImage(b *buildv1alpha1.Build, imageRepo string) {
 
 	imageURL := fmt.Sprintf("%s:%s", imageRepo, imageTag)
 	b.Spec.Output.Image = imageURL
+	b.Spec.Output.Insecure = &insecure
+
 	Logf("Amended object: name='%s', image-url='%s'", b.Name, imageURL)
 }
 
@@ -119,7 +122,15 @@ func amendBuild(identifier string, b *buildv1alpha1.Build) {
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGitlab))
 	}
 
-	amendOutputImage(b, os.Getenv(EnvVarImageRepo))
+	insecure := false
+	value, found := os.LookupEnv(EnvVarImageRepoInsecure)
+	if found {
+		var err error
+		insecure, err = strconv.ParseBool(value)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	amendOutputImage(b, os.Getenv(EnvVarImageRepo), insecure)
 	amendOutputCredentials(b, os.Getenv(EnvVarImageRepoSecret))
 }
 

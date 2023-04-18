@@ -34,13 +34,13 @@ spec:
 
           # Parse parameters
           image=
+          target=
           registriesBlock=""
           inRegistriesBlock=false
           registriesInsecure=""
           inRegistriesInsecure=false
           registriesSearch=""
           inRegistriesSearch=false
-          tlsVerify=true
           while [[ $# -gt 0 ]]; do
             arg="$1"
             shift
@@ -50,6 +50,13 @@ spec:
               inRegistriesInsecure=false
               inRegistriesSearch=false
               image="$1"
+              shift
+            elif [ "${arg}" == "--target" ]; then
+              inBuildArgs=false
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+              target="$1"
               shift
             elif [ "${arg}" == "--registries-block" ]; then
               inRegistriesBlock=true
@@ -67,11 +74,6 @@ spec:
               registriesBlock="${registriesBlock}'${arg}', "
             elif [ "${inRegistriesInsecure}" == "true" ]; then
               registriesInsecure="${registriesInsecure}'${arg}', "
-
-              # This assumes that the image is passed before the insecure registries which is fair in this context
-              if [[ ${image} == ${arg}/* ]]; then
-                tlsVerify=false
-              fi
             elif [ "${inRegistriesSearch}" == "true" ]; then
               registriesSearch="${registriesSearch}'${arg}', "
             else
@@ -109,12 +111,11 @@ spec:
             --registries-conf=/tmp/registries.conf \
             --tag="${image}"
 
-          # Push the image
-          echo "[INFO] Pushing image ${image}"
+          # Write the image
+          echo "[INFO] Writing image ${image}"
           buildah push \
-            --digestfile='$(results.shp-image-digest.path)' \
-            --tls-verify="${tlsVerify}" \
-            "docker://${image}"
+            "${image}" \
+            "oci:${target}"
         # That's the separator between the shell script and its args
         - --
         - --image
@@ -125,6 +126,8 @@ spec:
         - $(params.registries-insecure[*])
         - --registries-search
         - $(params.registries-search[*])
+        - --target
+        - $(params.shp-output-directory)
       volumeMounts:
         - name: s2i
           mountPath: /s2i

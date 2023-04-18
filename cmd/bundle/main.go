@@ -14,11 +14,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/docker/cli/cli/config"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -27,6 +25,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/shipwright-io/build/pkg/bundle"
+	"github.com/shipwright-io/build/pkg/image"
 )
 
 type settings struct {
@@ -78,7 +77,7 @@ func Do(ctx context.Context) error {
 		return err
 	}
 
-	auth, err := resolveAuthBasedOnTarget(ref)
+	options, auth, err := image.GetOptions(ctx, ref, true, flagValues.secretPath, "Shipwright Build")
 	if err != nil {
 		return err
 	}
@@ -87,8 +86,7 @@ func Do(ctx context.Context) error {
 	img, err := bundle.PullAndUnpack(
 		ref,
 		flagValues.target,
-		remote.WithContext(ctx),
-		remote.WithAuth(auth))
+		options...)
 	if err != nil {
 		return err
 	}
@@ -116,85 +114,12 @@ func Do(ctx context.Context) error {
 		}
 
 		log.Printf("Deleting image %q", ref)
-		if err := Prune(ctx, ref, auth); err != nil {
+		if err := Prune(ref, options, *auth); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func resolveAuthBasedOnTarget(ref name.Reference) (authn.Authenticator, error) {
-	// In case no secret is mounted, use anonymous
-	if flagValues.secretPath == "" {
-		log.Printf("No access credentials provided, using anonymous mode")
-		return authn.Anonymous, nil
-	}
-
-	// Read the registry credentials from the well-known location if it exists
-	var mountedSecretDefaultFileName = filepath.Join(flagValues.secretPath, ".dockerconfigjson")
-	if _, err := os.Stat(mountedSecretDefaultFileName); err == nil {
-		return ResolveAuthBasedOnTargetUsingConfigFile(ref, mountedSecretDefaultFileName)
-	}
-
-	// Otherwise, treat secret path as a file (for none Kubernetes setups)
-	return ResolveAuthBasedOnTargetUsingConfigFile(ref, flagValues.secretPath)
-}
-
-// ResolveAuthBasedOnTargetUsingConfigFile resolves if possible the respective authenticator to be used for
-// given image reference (full registry and image name)
-func ResolveAuthBasedOnTargetUsingConfigFile(ref name.Reference, dockerConfigFile string) (authn.Authenticator, error) {
-	file, err := os.Open(dockerConfigFile)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	cf, err := config.LoadFromReader(file)
-	if err != nil {
-		return nil, err
-	}
-
-	// Look-up the respective registry server inside the credentials
-	registryName := ref.Context().RegistryStr()
-	if registryName == name.DefaultRegistry {
-		registryName = authn.DefaultAuthKey
-	}
-
-	authConfig, err := cf.GetAuthConfig(registryName)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return an error in case the credentials do not match the desired
-	// registry and list all servers that actually are available
-	if authConfig.ServerAddress != registryName {
-		var servers []string
-		for name := range cf.GetAuthConfigs() {
-			servers = append(servers, name)
-		}
-
-		var availableConfigs string
-		if len(servers) > 0 {
-			availableConfigs = strings.Join(servers, ", ")
-		} else {
-			availableConfigs = "none"
-		}
-
-		return nil, fmt.Errorf("failed to find registry credentials for %s, available configurations: %s",
-			registryName,
-			availableConfigs,
-		)
-	}
-
-	log.Printf("Using provided access credentials for %s", registryName)
-	return authn.FromConfig(authn.AuthConfig{
-		Username:      authConfig.Username,
-		Password:      authConfig.Password,
-		Auth:          authConfig.Auth,
-		IdentityToken: authConfig.IdentityToken,
-		RegistryToken: authConfig.RegistryToken,
-	}), nil
 }
 
 // Prune removes the image from the container registry
@@ -208,10 +133,10 @@ func ResolveAuthBasedOnTargetUsingConfigFile(ref name.Reference, dockerConfigFil
 // is a provider switch to deal with images on DockerHub differently.
 //
 // DockerHub images:
-// - In case the repository only has one tag, the repository is deleted.
-// - If there are multiple tags, the tag to be deleted is overwritten
-//   with an empty image (to remove the content, and save quota).
-// - Edge case would be no tags in the repository, which is ignored.
+//   - In case the repository only has one tag, the repository is deleted.
+//   - If there are multiple tags, the tag to be deleted is overwritten
+//     with an empty image (to remove the content, and save quota).
+//   - Edge case would be no tags in the repository, which is ignored.
 //
 // IBM Container Registry images:
 // Custom delete API call has to be used, since ICR does not support the
@@ -223,11 +148,10 @@ func ResolveAuthBasedOnTargetUsingConfigFile(ref name.Reference, dockerConfigFil
 //
 // Other registries:
 // Use standard spec delete API request to delete the provided tag.
-//
-func Prune(ctx context.Context, ref name.Reference, auth authn.Authenticator) error {
+func Prune(ref name.Reference, options []remote.Option, auth authn.AuthConfig) error {
 	switch {
 	case strings.Contains(ref.Context().RegistryStr(), "docker.io"):
-		list, err := remote.List(ref.Context(), remote.WithContext(ctx), remote.WithAuth(auth))
+		list, err := remote.List(ref.Context(), options...)
 		if err != nil {
 			return err
 		}
@@ -237,14 +161,8 @@ func Prune(ctx context.Context, ref name.Reference, auth authn.Authenticator) er
 			return nil
 
 		case 1:
-			var authr *authn.AuthConfig
-			authr, err = auth.Authorization()
-			if err != nil {
-				return err
-			}
-
 			var token string
-			token, err = dockerHubLogin(authr.Username, authr.Password)
+			token, err = dockerHubLogin(auth.Username, auth.Password)
 			if err != nil {
 				return err
 			}
@@ -268,18 +186,12 @@ func Prune(ctx context.Context, ref name.Reference, auth authn.Authenticator) er
 			return remote.Write(
 				ref,
 				empty.Image,
-				remote.WithContext(ctx),
-				remote.WithAuth(auth),
+				options...,
 			)
 		}
 
 	case strings.Contains(ref.Context().RegistryStr(), "icr.io"):
-		authr, err := auth.Authorization()
-		if err != nil {
-			return err
-		}
-
-		token, accountID, err := icrLogin(ref.Context().RegistryStr(), authr.Username, authr.Password)
+		token, accountID, err := icrLogin(ref.Context().RegistryStr(), auth.Username, auth.Password)
 		if err != nil {
 			return err
 		}
@@ -289,8 +201,7 @@ func Prune(ctx context.Context, ref name.Reference, auth authn.Authenticator) er
 	default:
 		return remote.Delete(
 			ref,
-			remote.WithContext(ctx),
-			remote.WithAuth(auth),
+			options...,
 		)
 	}
 }

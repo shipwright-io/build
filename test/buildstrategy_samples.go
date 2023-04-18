@@ -349,3 +349,21 @@ spec:
     - --
     - $(params.args[*])
 `
+
+// BuildStrategyWithoutPush is a strategy that writes an image tarball and pushes nothing
+const BuildStrategyWithoutPush = `
+apiVersion: shipwright.io/v1alpha1
+kind: BuildStrategy
+metadata:
+  name: strategy-without-push
+spec:
+  buildSteps:
+  - name: store-tarball
+    image: gcr.io/go-containerregistry/crane:v0.8.0
+    command:
+    - crane
+    args:
+    - export
+    - busybox
+    - $(params.shp-output-directory)/image.tar
+`

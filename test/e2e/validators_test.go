@@ -32,6 +32,7 @@ const (
 	EnvVarVerifyTektonObjects  = "TEST_E2E_VERIFY_TEKTONOBJECTS"
 	EnvVarTimeoutMultiplier    = "TEST_E2E_TIMEOUT_MULTIPLIER"
 	EnvVarImageRepo            = "TEST_IMAGE_REPO"
+	EnvVarImageRepoInsecure    = "TEST_IMAGE_REPO_INSECURE"
 	EnvVarEnablePrivateRepos   = "TEST_PRIVATE_REPO"
 	EnvVarImageRepoSecret      = "TEST_IMAGE_REPO_SECRET"
 	EnvVarSourceRepoSecretJSON = "TEST_IMAGE_REPO_DOCKERCONFIGJSON"

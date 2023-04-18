@@ -4,7 +4,7 @@ kind: Build
 metadata:
   name: buildkit-build
   annotations:
-    build.build.dev/build-run-deletion: "true"
+    build.shipwright.io/build-run-deletion: "true"
 spec:
   source:
     url: https://github.com/shipwright-io/sample-go

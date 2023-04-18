@@ -160,14 +160,14 @@ var _ = Describe("Config", func() {
 			})
 		})
 
-		It("should allow for an override of the Mutate-Image container template", func() {
+		It("should allow for an override of the image processing container template", func() {
 			overrides := map[string]string{
-				"MUTATE_IMAGE_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/mutate-image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
+				"IMAGE_PROCESSING_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/image-processing","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.MutateImageContainerTemplate).To(Equal(pipeline.Step{
-					Image: "myregistry/custom/mutate-image",
+				Expect(config.ImageProcessingContainerTemplate).To(Equal(pipeline.Step{
+					Image: "myregistry/custom/image-processing",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("0.5"),
@@ -198,13 +198,13 @@ var _ = Describe("Config", func() {
 
 		It("should allow for an override of the Mutate-Image container template and image", func() {
 			overrides := map[string]string{
-				"MUTATE_IMAGE_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/mutate-image","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
-				"MUTATE_IMAGE_CONTAINER_IMAGE":    "myregistry/custom/mutate-image:override",
+				"IMAGE_PROCESSING_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/image-processing","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
+				"IMAGE_PROCESSING_CONTAINER_IMAGE":    "myregistry/custom/image-processing:override",
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.MutateImageContainerTemplate).To(Equal(pipeline.Step{
-					Image: "myregistry/custom/mutate-image:override",
+				Expect(config.ImageProcessingContainerTemplate).To(Equal(pipeline.Step{
+					Image: "myregistry/custom/image-processing:override",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("0.5"),

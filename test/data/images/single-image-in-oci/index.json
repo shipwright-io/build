@@ -1,0 +1,13 @@
+{
+   "schemaVersion": 2,
+   "manifests": [
+      {
+         "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+         "size": 524,
+         "digest": "sha256:94236105831be2a795cee01edd16e7711ca43a12cdc4ffd602227eae50b544d9",
+         "annotations": {
+            "dev.ggcr.image.name": "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
+         }
+      }
+   ]
+}

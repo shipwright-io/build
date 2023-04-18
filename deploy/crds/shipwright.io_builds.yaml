@@ -83,6 +83,9 @@ spec:
                   image:
                     description: Image is the reference of the image.
                     type: string
+                  insecure:
+                    description: Insecure defines whether the registry is not secure
+                    type: boolean
                   labels:
                     additionalProperties:
                       type: string
@@ -232,6 +235,9 @@ spec:
                   image:
                     description: Image is the reference of the image.
                     type: string
+                  insecure:
+                    description: Insecure defines whether the registry is not secure
+                    type: boolean
                   labels:
                     additionalProperties:
                       type: string

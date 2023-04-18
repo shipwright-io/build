@@ -6,6 +6,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -59,6 +60,20 @@ func (c *Catalog) SecretWithStringData(name string, ns string, stringData map[st
 			Namespace: ns,
 		},
 		StringData: stringData,
+	}
+}
+
+// SecretWithDockerConfigJson creates a secret of type dockerconfigjson
+func (c *Catalog) SecretWithDockerConfigJson(name string, ns string, host string, username string, password string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		StringData: map[string]string{
+			".dockerconfigjson": fmt.Sprintf("{\"auths\":{%q:{\"username\":%q,\"password\":%q}}}", host, username, password),
+		},
 	}
 }
 
