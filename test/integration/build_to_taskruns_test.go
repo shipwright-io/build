@@ -145,7 +145,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 		})
 
 		Context("when creating the taskrun", func() {
-			It("should contain a step to mutate the image", func() {
+			It("should contain an image-processing step to mutate the image", func() {
 				buildObject.Spec.Output.Annotations =
 					map[string]string{
 						"org.opencontainers.image.url": "https://my-company.com/images",

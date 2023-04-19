@@ -27,17 +27,17 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 	// Check if any build step references the output-directory system parameter. If that is the case,
 	// then we assume that Shipwright performs the image push operation.
 	volumeAdded := false
-	prefixedOuputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+	prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
 	for i := range taskRun.Spec.TaskSpec.Steps {
 		step := taskRun.Spec.TaskSpec.Steps[i]
 
-		if isStepReferencingParameter(&step, prefixedOuputDirectory) {
+		if isStepReferencingParameter(&step, prefixedOutputDirectory) {
 			if !volumeAdded {
 				volumeAdded = true
 
 				// add an emptyDir volume for the output directory
 				taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
-					Name: prefixedOuputDirectory,
+					Name: prefixedOutputDirectory,
 					VolumeSource: core.VolumeSource{
 						EmptyDir: &core.EmptyDirVolumeSource{},
 					},
@@ -45,13 +45,13 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 
 				// add the parameter definition
 				taskRun.Spec.TaskSpec.Params = append(taskRun.Spec.TaskSpec.Params, pipeline.ParamSpec{
-					Name: prefixedOuputDirectory,
+					Name: prefixedOutputDirectory,
 					Type: pipeline.ParamTypeString,
 				})
 
 				// add the parameter value
 				taskRun.Spec.Params = append(taskRun.Spec.Params, pipeline.Param{
-					Name: prefixedOuputDirectory,
+					Name: prefixedOutputDirectory,
 					Value: pipeline.ArrayOrString{
 						StringVal: outputDirectoryMountPath,
 						Type:      pipeline.ParamTypeString,
@@ -64,7 +64,7 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 
 			// add a volumeMount to the step
 			taskRun.Spec.TaskSpec.Steps[i].VolumeMounts = append(taskRun.Spec.TaskSpec.Steps[i].VolumeMounts, core.VolumeMount{
-				Name:      prefixedOuputDirectory,
+				Name:      prefixedOutputDirectory,
 				MountPath: outputDirectoryMountPath,
 			})
 		}
@@ -103,7 +103,7 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 
 		if volumeAdded {
 			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
-				Name:      prefixedOuputDirectory,
+				Name:      prefixedOutputDirectory,
 				MountPath: outputDirectoryMountPath,
 				ReadOnly:  true,
 			})
@@ -132,7 +132,7 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 	}
 }
 
-// convertMutateArgs to convert the argument map to comma seprated values
+// convertMutateArgs to convert the argument map to comma separated values
 func convertMutateArgs(flag string, args map[string]string) []string {
 	var result []string
 
