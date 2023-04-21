@@ -196,7 +196,7 @@ var _ = Describe("Config", func() {
 			})
 		})
 
-		It("should allow for an override of the Mutate-Image container template and image", func() {
+		It("should allow for an override of the image-processing container template and image", func() {
 			overrides := map[string]string{
 				"IMAGE_PROCESSING_CONTAINER_TEMPLATE": `{"image":"myregistry/custom/image-processing","resources":{"requests":{"cpu":"0.5","memory":"128Mi"}}}`,
 				"IMAGE_PROCESSING_CONTAINER_IMAGE":    "myregistry/custom/image-processing:override",

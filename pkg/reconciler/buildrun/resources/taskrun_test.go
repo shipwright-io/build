@@ -334,8 +334,8 @@ var _ = Describe("GenerateTaskrun", func() {
 					Expect(err).To(BeNil())
 				})
 
-				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
-					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+				It("should contain an image-processing step to mutate the image with labels and annotations merged from build and buildrun", func() {
+					Expect(got.Steps[3].Name).To(Equal("image-processing"))
 					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
 					Expect(got.Steps[3].Args).To(Equal([]string{
 						"--image",
@@ -375,8 +375,8 @@ var _ = Describe("GenerateTaskrun", func() {
 					Expect(err).To(BeNil())
 				})
 
-				It("should contain a step to mutate the image with labels and annotations merged from build and buildrun", func() {
-					Expect(got.Steps[3].Name).To(Equal("mutate-image"))
+				It("should contain an image-processing step to mutate the image with labels and annotations merged from build and buildrun", func() {
+					Expect(got.Steps[3].Name).To(Equal("image-processing"))
 					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
 					Expect(got.Steps[3].Args).To(Equal([]string{
 						"--image",
