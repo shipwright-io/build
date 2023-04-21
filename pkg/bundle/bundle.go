@@ -7,7 +7,6 @@ package bundle
 import (
 	"archive/tar"
 	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"io/fs"
@@ -31,16 +30,7 @@ const shpIgnoreFilename = ".shpignore"
 // remote.Option for optional options to the image push to the registry, for
 // example to provide the appropriate access credentials.
 func PackAndPush(ref name.Reference, directory string, options ...remote.Option) (name.Digest, error) {
-	r, err := Pack(directory)
-	if err != nil {
-		return name.Digest{}, err
-	}
-
-	// nolint:staticcheck
-	// tarball.LayerFromReader is deprecated, but we need to continue to use it because
-	// Pack do some custom work for us like ignoring files, dereferencing all symlinks and
-	// there is no support for doing this in the new recommended method.
-	bundleLayer, err := tarball.LayerFromReader(r)
+	bundleLayer, err := tarball.LayerFromOpener(func() (io.ReadCloser, error) { return Pack(directory) })
 	if err != nil {
 		return name.Digest{}, err
 	}
@@ -98,7 +88,7 @@ func PullAndUnpack(ref name.Reference, targetPath string, options ...remote.Opti
 // - storing all directories and regular files as-is,
 // - dereferencing all symlinks and storing the respective target,
 // - ignoring all files configured in .shpignore
-func Pack(directory string) (io.Reader, error) {
+func Pack(directory string) (io.ReadCloser, error) {
 	var split = func(path string) []string { return strings.Split(path, string(filepath.Separator)) }
 
 	var write = func(w io.Writer, path string) error {
@@ -150,11 +140,18 @@ func Pack(directory string) (io.Reader, error) {
 
 	matcher := gitignore.NewMatcher(patterns)
 
-	var buf bytes.Buffer
-	var tw = tar.NewWriter(&buf)
-	defer tw.Close()
+	r, w, err := os.Pipe()
+	if err != nil {
+		return nil, err
+	}
 
-	err := filepath.WalkDir(directory, func(path string, d fs.DirEntry, err error) error {
+	var tw = tar.NewWriter(w)
+	defer func() {
+		_ = tw.Close()
+		_ = w.Close()
+	}()
+
+	err = filepath.WalkDir(directory, func(path string, d fs.DirEntry, err error) error {
 		// Bail out on path errors
 		if err != nil {
 			return err
@@ -222,7 +219,7 @@ func Pack(directory string) (io.Reader, error) {
 		}
 	})
 
-	return &buf, err
+	return r, err
 }
 
 // Unpack reads a tar stream and writes the content into the local file system
