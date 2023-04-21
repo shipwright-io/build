@@ -17,7 +17,7 @@ import (
 var _ = Describe("Bundle", func() {
 	Context("packing and unpacking", func() {
 		It("should pack and unpack a directory", func() {
-			r, err := Pack("../../test/bundle")
+			r, err := Pack(filepath.Join("..", "..", "test", "bundle"))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(r).ToNot(BeNil())
 
@@ -25,13 +25,9 @@ var _ = Describe("Bundle", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(tempDir)
 
-			err = Unpack(r, tempDir)
-			Expect(err).ToNot((HaveOccurred()))
-
+			Expect(Unpack(r, tempDir)).To(Succeed())
 			Expect(filepath.Join(tempDir, "README.md")).To(BeAnExistingFile())
-
 			Expect(filepath.Join(tempDir, ".someToolDir", "config.json")).ToNot(BeAnExistingFile())
-
 			Expect(filepath.Join(tempDir, "somefile")).To(BeAnExistingFile())
 			Expect(filepath.Join(tempDir, "linktofile")).To(BeAnExistingFile())
 		})
