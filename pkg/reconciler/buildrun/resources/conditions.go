@@ -88,7 +88,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 				// Note: this is an edge case, but not doing this prevent a BuildRun from being marked as Failed
 				// while the TaskRun is already with a Failed Reason in it´s condition.
 				if apierrors.IsNotFound(err) {
-					message = fmt.Sprintf("buildrun failed, pod %s not found", taskRun.Status.PodName)
+					message = fmt.Sprintf("buildrun failed, pod %s/%s not found", taskRun.Namespace, taskRun.Status.PodName)
 					break
 				}
 				return err
