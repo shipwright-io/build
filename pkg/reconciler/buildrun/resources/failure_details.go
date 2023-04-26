@@ -9,13 +9,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	"knative.dev/pkg/apis"
 )
 
 const (
@@ -62,9 +63,10 @@ func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason strin
 	return errorReason, errorMessage
 }
 
-func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (*v1.Pod, *v1.Container, error) {
-	var pod v1.Pod
+func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (*corev1.Pod, *corev1.Container, error) {
+	var pod corev1.Pod
 	if err := client.Get(ctx, types.NamespacedName{Namespace: taskRun.Namespace, Name: taskRun.Status.PodName}, &pod); err != nil {
+		ctxlog.Error(ctx, err, "failed to get pod for failure extraction", namespace, taskRun.Namespace, name, taskRun.Status.PodName)
 		return nil, nil, err
 	}
 
@@ -77,7 +79,7 @@ func extractFailedPodAndContainer(ctx context.Context, client client.Client, tas
 	}
 
 	// Find the first container that has a failure status
-	var failedContainer *v1.Container
+	var failedContainer *corev1.Container
 	for i, container := range pod.Spec.Containers {
 		if _, has := failures[container.Name]; has {
 			failedContainer = &pod.Spec.Containers[i]
