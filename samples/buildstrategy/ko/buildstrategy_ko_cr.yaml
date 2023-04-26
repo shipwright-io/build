@@ -47,7 +47,7 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
-    - name: build-and-push
+    - name: build
       image: golang:$(params.go-version)
       imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
@@ -126,7 +126,7 @@ spec:
           export GOROOT="$(go env GOROOT)"
 
           pushd "${PARAM_SOURCE_CONTEXT}" > /dev/null
-            /tmp/ko publish "${PARAM_PACKAGE_DIRECTORY}" --oci-layout-path="${PARAM_OUTPUT_DIRECTORY}" --push=false
+            /tmp/ko build "${PARAM_PACKAGE_DIRECTORY}" --oci-layout-path="${PARAM_OUTPUT_DIRECTORY}" --platform="${PLATFORM}" --push=false
           popd > /dev/null
       resources:
         limits:
