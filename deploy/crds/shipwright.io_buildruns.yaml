@@ -6526,8 +6526,9 @@ spec:
                             type: string
                         type: object
                       source:
-                        description: Source refers to the Git repository containing
-                          the source code to be built.
+                        description: Source refers to the location where the source
+                          code is, this could be a git repository, a local source
+                          or an oci artifact
                         properties:
                           contextDir:
                             description: ContextDir is a path to subfolder in the
@@ -6536,15 +6537,10 @@ spec:
                           git:
                             description: GitSource
                             properties:
-                              credentials:
-                                description: Credentials references a Secret that
+                              cloneSecret:
+                                description: CloneSecret references a Secret that
                                   contains credentials to access the repository.
-                                properties:
-                                  cloneSecret:
-                                    description: Describes the secret name for cloning
-                                      a repository.
-                                    type: string
-                                type: object
+                                type: string
                               revision:
                                 description: "Revision describes the Git revision
                                   (e.g., branch, tag, commit SHA, etc.) to fetch.
@@ -6567,6 +6563,10 @@ spec:
                                   (no deletion) and `AfterPull` (removal after the
                                   image was successfully pulled from the registry).
                                   \n If not defined, it defaults to 'Never'."
+                                type: string
+                              pullSecret:
+                                description: PullSecret references a Secret that contains
+                                  credentials to access the repository.
                                 type: string
                             required:
                             - image
@@ -6602,17 +6602,10 @@ spec:
                         description: Trigger defines the scenarios where a new build
                           should be triggered.
                         properties:
-                          secretRef:
-                            description: SecretRef points to a local object carrying
+                          triggerSecret:
+                            description: TriggerSecret points to a local object carrying
                               the secret token to validate webhook request.
-                            properties:
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Add other useful fields. apiVersion, kind,
-                                  uid?'
-                                type: string
-                            type: object
-                            x-kubernetes-map-type: atomic
+                            type: string
                           when:
                             description: When the list of scenarios when a new build
                               should take place.
@@ -8334,8 +8327,6 @@ spec:
                     - source
                     - strategy
                     type: object
-                required:
-                - name
                 type: object
               env:
                 description: Env contains additional environment variables that should
@@ -8593,11 +8584,7 @@ spec:
                 description: ServiceAccount refers to the kubernetes serviceaccount
                   which is used for resource control. Default serviceaccount will
                   be set if it is empty
-                properties:
-                  name:
-                    description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
-                    type: string
-                type: object
+                type: string
               state:
                 description: State is used for canceling a buildrun (and maybe more
                   later on).
@@ -10400,8 +10387,9 @@ spec:
                         type: string
                     type: object
                   source:
-                    description: Source refers to the Git repository containing the
-                      source code to be built.
+                    description: Source refers to the location where the source code
+                      is, this could be a git repository, a local source or an oci
+                      artifact
                     properties:
                       contextDir:
                         description: ContextDir is a path to subfolder in the repo.
@@ -10410,15 +10398,10 @@ spec:
                       git:
                         description: GitSource
                         properties:
-                          credentials:
-                            description: Credentials references a Secret that contains
+                          cloneSecret:
+                            description: CloneSecret references a Secret that contains
                               credentials to access the repository.
-                            properties:
-                              cloneSecret:
-                                description: Describes the secret name for cloning
-                                  a repository.
-                                type: string
-                            type: object
+                            type: string
                           revision:
                             description: "Revision describes the Git revision (e.g.,
                               branch, tag, commit SHA, etc.) to fetch. \n If not defined,
@@ -10440,6 +10423,10 @@ spec:
                               and `AfterPull` (removal after the image was successfully
                               pulled from the registry). \n If not defined, it defaults
                               to 'Never'."
+                            type: string
+                          pullSecret:
+                            description: PullSecret references a Secret that contains
+                              credentials to access the repository.
                             type: string
                         required:
                         - image
@@ -10475,16 +10462,10 @@ spec:
                     description: Trigger defines the scenarios where a new build should
                       be triggered.
                     properties:
-                      secretRef:
-                        description: SecretRef points to a local object carrying the
-                          secret token to validate webhook request.
-                        properties:
-                          name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Add other useful fields. apiVersion, kind, uid?'
-                            type: string
-                        type: object
-                        x-kubernetes-map-type: atomic
+                      triggerSecret:
+                        description: TriggerSecret points to a local object carrying
+                          the secret token to validate webhook request.
+                        type: string
                       when:
                         description: When the list of scenarios when a new build should
                           take place.
@@ -12169,21 +12150,12 @@ spec:
                   - type
                   type: object
                 type: array
-              failedAt:
-                description: 'Deprecated: FailedAt points to the resource where the
-                  BuildRun failed'
-                properties:
-                  container:
-                    type: string
-                  pod:
-                    type: string
-                type: object
               failureDetails:
                 description: FailureDetails contains error details that are collected
                   and surfaced from TaskRun
                 properties:
                   location:
-                    description: FailedAt describes the location where the failure
+                    description: Location describes the location where the failure
                       happened
                     properties:
                       container:
@@ -12215,17 +12187,9 @@ spec:
                   description: SourceResult holds the results emitted from the different
                     sources
                   properties:
-                    bundle:
-                      description: Bundle holds the results emitted from from the
-                        step definition of bundle source
-                      properties:
-                        digest:
-                          description: Digest hold the image digest result
-                          type: string
-                      type: object
                     git:
-                      description: Git holds the results emitted from from the step
-                        definition of a git source
+                      description: Git holds the results emitted from the source step
+                        of type git
                       properties:
                         branchName:
                           description: BranchName holds the default branch name of
@@ -12243,6 +12207,14 @@ spec:
                     name:
                       description: Name is the name of source
                       type: string
+                    ociArtifact:
+                      description: OciArtifact holds the results emitted from the
+                        source step of type ociArtifact
+                      properties:
+                        digest:
+                          description: Digest hold the image digest result
+                          type: string
+                      type: object
                   required:
                   - name
                   type: object

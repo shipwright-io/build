@@ -2400,8 +2400,8 @@ spec:
                     type: string
                 type: object
               source:
-                description: Source refers to the Git repository containing the source
-                  code to be built.
+                description: Source refers to the location where the source code is,
+                  this could be a git repository, a local source or an oci artifact
                 properties:
                   contextDir:
                     description: ContextDir is a path to subfolder in the repo. Optional.
@@ -2409,14 +2409,10 @@ spec:
                   git:
                     description: GitSource
                     properties:
-                      credentials:
-                        description: Credentials references a Secret that contains
+                      cloneSecret:
+                        description: CloneSecret references a Secret that contains
                           credentials to access the repository.
-                        properties:
-                          cloneSecret:
-                            description: Describes the secret name for cloning a repository.
-                            type: string
-                        type: object
+                        type: string
                       revision:
                         description: "Revision describes the Git revision (e.g., branch,
                           tag, commit SHA, etc.) to fetch. \n If not defined, it will
@@ -2438,6 +2434,10 @@ spec:
                           and `AfterPull` (removal after the image was successfully
                           pulled from the registry). \n If not defined, it defaults
                           to 'Never'."
+                        type: string
+                      pullSecret:
+                        description: PullSecret references a Secret that contains
+                          credentials to access the repository.
                         type: string
                     required:
                     - image
@@ -2473,16 +2473,10 @@ spec:
                 description: Trigger defines the scenarios where a new build should
                   be triggered.
                 properties:
-                  secretRef:
-                    description: SecretRef points to a local object carrying the secret
-                      token to validate webhook request.
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    type: object
-                    x-kubernetes-map-type: atomic
+                  triggerSecret:
+                    description: TriggerSecret points to a local object carrying the
+                      secret token to validate webhook request.
+                    type: string
                   when:
                     description: When the list of scenarios when a new build should
                       take place.
