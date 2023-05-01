@@ -53,11 +53,11 @@ type Git struct {
 	// +optional
 	Revision *string `json:"revision,omitempty"`
 
-	// Credentials references a Secret that contains credentials to access
+	// CloneSecret references a Secret that contains credentials to access
 	// the repository.
 	//
 	// +optional
-	Credentials CloneSecret `json:"credentials,omitempty"`
+	CloneSecret *string `json:"cloneSecret,omitempty"`
 }
 
 // OCIArtifact describes the source code bundle container to pull
@@ -73,6 +73,11 @@ type OCIArtifact struct {
 	//
 	// +optional
 	Prune *PruneOption `json:"prune,omitempty"`
+	// PullSecret references a Secret that contains credentials to access
+	// the repository.
+	//
+	// +optional
+	PullSecret *string `json:"pullSecret,omitempty"`
 }
 
 // Source describes the Git source repository to fetch.
@@ -96,11 +101,4 @@ type Source struct {
 	//
 	// +optional
 	GitSource *Git `json:"git,omitempty"`
-}
-
-type CloneSecret struct {
-	// Describes the secret name for cloning a repository.
-	//
-	// +optional
-	CloneSecret *string `json:"cloneSecret,omitempty"`
 }

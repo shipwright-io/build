@@ -27,7 +27,9 @@ type ReferencedBuild struct {
 	Build *BuildSpec `json:"spec,omitempty"`
 
 	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	Name string `json:"name"`
+	//
+	// +optional
+	Name string `json:"name,omitempty"`
 }
 
 // BuildRunSpec defines the desired state of BuildRun
@@ -42,7 +44,7 @@ type BuildRunSpec struct {
 	// Default serviceaccount will be set if it is empty
 	//
 	// +optional
-	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
+	ServiceAccount *string `json:"serviceAccount,omitempty"`
 
 	// Timeout defines the maximum run time of this BuildRun.
 	//
@@ -105,21 +107,21 @@ type SourceResult struct {
 	// Name is the name of source
 	Name string `json:"name"`
 
-	// Git holds the results emitted from from the
-	// step definition of a git source
+	// Git holds the results emitted from the
+	// source step of type git
 	//
 	// +optional
 	Git *GitSourceResult `json:"git,omitempty"`
 
-	// Bundle holds the results emitted from from the
-	// step definition of bundle source
+	// OciArtifact holds the results emitted from
+	// the source step of type ociArtifact
 	//
 	// +optional
-	Bundle *BundleSourceResult `json:"bundle,omitempty"`
+	OciArtifact *OciArtifactSourceResult `json:"ociArtifact,omitempty"`
 }
 
-// BundleSourceResult holds the results emitted from the bundle source
-type BundleSourceResult struct {
+// OciArtifactSourceResult holds the results emitted from the bundle source
+type OciArtifactSourceResult struct {
 	// Digest hold the image digest result
 	Digest string `json:"digest,omitempty"`
 }
@@ -134,15 +136,21 @@ type GitSourceResult struct {
 
 	// BranchName holds the default branch name of the git source
 	// this will be set only when revision is not specified in Build object
+	//
+	// +optional
 	BranchName string `json:"branchName,omitempty"`
 }
 
-// Output holds the results emitted from the output step (build-and-push)
+// Output holds the information about the container image that the BuildRun built
 type Output struct {
 	// Digest holds the digest of output image
+	//
+	// +optional
 	Digest string `json:"digest,omitempty"`
 
 	// Size holds the compressed size of output image
+	//
+	// +optional
 	Size int64 `json:"size,omitempty"`
 }
 
@@ -179,17 +187,13 @@ type BuildRunStatus struct {
 	// +optional
 	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
 
-	// Deprecated: FailedAt points to the resource where the BuildRun failed
-	// +optional
-	FailedAt *FailedAt `json:"failedAt,omitempty"`
-
 	// FailureDetails contains error details that are collected and surfaced from TaskRun
 	// +optional
 	FailureDetails *FailureDetails `json:"failureDetails,omitempty"`
 }
 
-// FailedAt describes the location where the failure happened
-type FailedAt struct {
+// Location describes the location where the failure happened
+type Location struct {
 	Pod       string `json:"pod,omitempty"`
 	Container string `json:"container,omitempty"`
 }
@@ -198,23 +202,7 @@ type FailedAt struct {
 type FailureDetails struct {
 	Reason   string    `json:"reason,omitempty"`
 	Message  string    `json:"message,omitempty"`
-	Location *FailedAt `json:"location,omitempty"`
-}
-
-// BuildRef can be used to refer to a specific instance of a Build.
-type BuildRef struct {
-	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	Name string `json:"name"`
-	// API version of the referent
-	// +optional
-	APIVersion *string `json:"apiVersion,omitempty"`
-}
-
-// ServiceAccount can be used to refer to a specific ServiceAccount.
-type ServiceAccount struct {
-	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	// +optional
-	Name *string `json:"name,omitempty"`
+	Location *Location `json:"location,omitempty"`
 }
 
 // +genclient
@@ -389,6 +377,6 @@ func (buildrunSpec *BuildRunSpec) BuildName() string {
 		return buildrunSpec.Build.Name
 	}
 
-	// Only BuildRuns with a BuildRef can actually return a proper Build name
+	// Only BuildRuns with a ReferencedBuild can actually return a proper Build name
 	return ""
 }

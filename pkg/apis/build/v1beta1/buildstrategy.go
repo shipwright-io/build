@@ -123,28 +123,6 @@ type Step struct {
 	// Cannot be updated.
 	// +optional
 	WorkingDir string `json:"workingDir,omitempty" protobuf:"bytes,5,opt,name=workingDir"`
-	// List of ports to expose from the container. Not specifying a port here
-	// DOES NOT prevent that port from being exposed. Any port which is
-	// listening on the default "0.0.0.0" address inside a container will be
-	// accessible from the network.
-	// Modifying this array with strategic merge patch may corrupt the data.
-	// For more information See https://github.com/kubernetes/kubernetes/issues/108255.
-	// Cannot be updated.
-	// +optional
-	// +patchMergeKey=containerPort
-	// +patchStrategy=merge
-	// +listType=map
-	// +listMapKey=containerPort
-	// +listMapKey=protocol
-	Ports []corev1.ContainerPort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort" protobuf:"bytes,6,rep,name=ports"`
-	// List of sources to populate environment variables in the container.
-	// The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-	// will be reported as an event when the container is starting. When a key exists in multiple
-	// sources, the value associated with the last source will take precedence.
-	// Values defined by an Env with a duplicate key will take precedence.
-	// Cannot be updated.
-	// +optional
-	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty" protobuf:"bytes,19,rep,name=envFrom"`
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional

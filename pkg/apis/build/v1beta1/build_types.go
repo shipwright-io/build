@@ -107,8 +107,9 @@ const (
 
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
-	// Source refers to the Git repository containing the
-	// source code to be built.
+	// Source refers to the location where the source code is,
+	// this could be a git repository, a local source or an oci
+	// artifact
 	Source Source `json:"source"`
 
 	// Trigger defines the scenarios where a new build should be triggered.
