@@ -273,20 +273,3 @@ clean:
 .PHONY: gen-fakes
 gen-fakes:
 	./hack/generate-fakes.sh
-
-.PHONY: kubectl
-kubectl:
-	./hack/install-kubectl.sh
-
-.PHONY: kind-registry
-kind-registry:
-	./hack/install-registry.sh
-
-.PHONY: kind-tekton
-kind-tekton:
-	./hack/install-tekton.sh
-
-.PHONY: kind
-kind:
-	./hack/install-kind.sh
-	./hack/install-registry.sh

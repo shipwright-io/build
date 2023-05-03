@@ -6,21 +6,23 @@ SPDX-License-Identifier: Apache-2.0
 
 # Testing guide
 
-- [Overview](#overview)
-- [Ginkgo](#ginkgo)
-- [Verifying your code](#verifying-your-code)
-  - [Counterfeiter](#counterfeiter)
-- [Unit Tests](#unit-tests)
-- [Integration Tests](#integration-tests)
-  - [Running integration tests](#running-integration-tests)
-- [E2E Tests](#e2e-tests)
-  - [General test parameters](#general-test-parameters)
-  - [Build override parameters](#build-override-parameters)
-  - [BuildRun override parameters](#buildrun-override-parameters)
-  - [Private Git override parameters](#private-git-override-parameters)
-  - [Running e2e tests](#running-e2e-tests)
-  - [Running e2e tests with local registry](#running-e2e-tests-with-local-registry)
-  - [Running e2e tests with private git repositories](#running-e2e-tests-with-private-git-repositories)
+- [Testing guide](#testing-guide)
+  - [Overview](#overview)
+  - [Ginkgo](#ginkgo)
+  - [Verifying your code](#verifying-your-code)
+    - [Counterfeiter](#counterfeiter)
+    - [Static code analysis and linting](#static-code-analysis-and-linting)
+  - [Unit Tests](#unit-tests)
+  - [Integration Tests](#integration-tests)
+    - [Running integration tests](#running-integration-tests)
+  - [E2E Tests](#e2e-tests)
+    - [General test parameters](#general-test-parameters)
+    - [Build override parameters](#build-override-parameters)
+    - [BuildRun override parameters](#buildrun-override-parameters)
+    - [Private Git override parameters](#private-git-override-parameters)
+    - [Running e2e tests](#running-e2e-tests)
+    - [Running e2e tests with local registry](#running-e2e-tests-with-local-registry)
+    - [Running e2e tests with private git repositories](#running-e2e-tests-with-private-git-repositories)
 
 ## Overview
 
@@ -96,8 +98,8 @@ Integration tests are designed based on the following:
 
 Before running these tests, ensure you have:
 
-- A running cluster. You can use Kind, see [installation](https://github.com/shipwright-io/build/blob/main/hack/install-kind.sh)
-- Tekton controllers installed, see [installation](https://github.com/shipwright-io/build/blob/main/hack/install-tekton.sh)
+- A running cluster. You can use Kind, see [installation](https://kind.sigs.k8s.io/docs/user/quick-start/)
+- Tekton Pipelines installed, see [installation](https://tekton.dev/docs/pipelines/install/)
 
 ```sh
 make test-integration

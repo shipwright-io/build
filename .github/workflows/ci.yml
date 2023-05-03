@@ -68,14 +68,6 @@ jobs:
           go-version: '1.19.x'
           cache: true
           check-latest: true
-      - name: Install Ko
-        uses: ko-build/setup-ko@v0.6
-        with:
-          version: v0.13.0
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: ${{ matrix.kubernetes }}
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
@@ -83,30 +75,13 @@ jobs:
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           wait: 120s
-      - name: Verify kind cluster
-        run: |
-          echo "# Using KinD context..."
-          kubectl config use-context "kind-kind"
-          echo "# KinD nodes:"
-          kubectl get nodes
-
-          NODE_STATUS=$(kubectl get node kind-control-plane -o json | jq -r .'status.conditions[] | select(.type == "Ready") | .status')
-          if [ "${NODE_STATUS}" != "True" ]; then
-            echo "# Node is not ready:"
-            kubectl describe node kind-control-plane
-
-            echo "# Pods:"
-            kubectl get pod -A
-            echo "# Events:"
-            kubectl get events -A
-
-            exit 1
-          fi
-      - name: Install Tekton
-        run: |
-          make kind-tekton
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
+      - uses: openshift-pipelines/setup-tektoncd@v1
+        with:
+          pipeline_version: v0.44.0
+      - name: Install Ko
+        uses: ko-build/setup-ko@v0.6
+        with:
+          version: v0.13.0
       - name: Test
         run: |
           export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
@@ -130,10 +105,6 @@ jobs:
           go-version: '1.19.x'
           cache: true
           check-latest: true
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: ${{ matrix.kubernetes }}
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
@@ -142,34 +113,9 @@ jobs:
           cluster_name: kind
           config: test/kind/config.yaml
           wait: 120s
-      - name: Verify kind cluster
-        run: |
-          echo "# Using KinD context..."
-          kubectl config use-context "kind-kind"
-          echo "# KinD nodes:"
-          kubectl get nodes
-
-          NODE_STATUS=$(kubectl get node kind-control-plane -o json | jq -r .'status.conditions[] | select(.type == "Ready") | .status')
-          if [ "${NODE_STATUS}" != "True" ]; then
-            echo "# Node is not ready:"
-            kubectl describe node kind-control-plane
-
-            echo "# Pods:"
-            kubectl get pod -A
-            echo "# Events:"
-            kubectl get events -A
-
-            exit 1
-          fi
-      - name: Install Tekton
-        run: |
-          make kind-tekton
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
-      - name: Install Registry
-        run: |
-          kubectl apply -f test/data/registry.yaml
-          kubectl -n registry rollout status deployment registry --timeout=1m
+      - uses: openshift-pipelines/setup-tektoncd@v1
+        with:
+          pipeline_version: v0.44.0
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
