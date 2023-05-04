@@ -215,6 +215,7 @@ type BuildStatus struct {
 
 // Build is the Schema representing a Build definition
 // +kubebuilder:subresource:status
+// +kubebuilder:unservedversion
 // +kubebuilder:resource:path=builds,scope=Namespaced
 // +kubebuilder:printcolumn:name="Registered",type="string",JSONPath=".status.registered",description="The register status of the Build"
 // +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.reason",description="The reason of the registered Build, either an error or succeed message"
