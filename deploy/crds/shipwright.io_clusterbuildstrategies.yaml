@@ -4823,7 +4823,7 @@ spec:
             description: BuildStrategyStatus defines the observed state of BuildStrategy
             type: object
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}
