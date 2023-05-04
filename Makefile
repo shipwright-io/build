@@ -232,7 +232,7 @@ install-with-pprof:
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/
 
 install-apis:
-	kubectl apply -f deploy/crds/
+	kubectl apply -f deploy/crds/ --server-side
 	for i in 1 2 3 ; do \
 		kubectl wait --timeout=$(TIMEOUT) --for="condition=Established" crd/clusterbuildstrategies.shipwright.io && \
 		break ; \

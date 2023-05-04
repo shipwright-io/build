@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package v1beta1
 
 import (
 	"strconv"
@@ -26,7 +26,6 @@ const (
 
 // BuildStrategy is the Schema representing a strategy in the namespace scope to build images from source code.
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
 // +kubebuilder:resource:path=buildstrategies,scope=Namespaced,shortName=bs;bss
 type BuildStrategy struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -71,8 +70,8 @@ func (s BuildStrategy) GetResourceLabels() map[string]string {
 }
 
 // GetBuildSteps returns the spec build steps of the build strategy
-func (s BuildStrategy) GetBuildSteps() []BuildStep {
-	return s.Spec.BuildSteps
+func (s BuildStrategy) GetBuildSteps() []Step {
+	return s.Spec.Steps
 }
 
 // GetParameters returns the parameters defined by the build strategy

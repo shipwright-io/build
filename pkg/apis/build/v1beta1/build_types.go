@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -95,9 +95,6 @@ const (
 	// LabelBuildGeneration is a label key for defining the build generation
 	LabelBuildGeneration = BuildDomain + "/generation"
 
-	// AnnotationBuildRunDeletion is a label key for enabling/disabling the BuildRun deletion
-	AnnotationBuildRunDeletion = BuildDomain + "/build-run-deletion"
-
 	// AnnotationBuildRefSecret is an annotation that tells the Build Controller to reconcile on
 	// events of the secret only if is referenced by a Build in the same namespace
 	AnnotationBuildRefSecret = BuildDomain + "/referenced.secret"
@@ -110,17 +107,10 @@ const (
 
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
-	// Source refers to the Git repository containing the
-	// source code to be built.
+	// Source refers to the location where the source code is,
+	// this could be a git repository, a local source or an oci
+	// artifact
 	Source Source `json:"source"`
-
-	// Sources slice of BuildSource, defining external build artifacts complementary to VCS
-	// (`.spec.source`) data.
-	//
-	// +optional
-	//
-	// NOTICE: Multiple sources in a build are deprecated. This feature will be removed in a future release.
-	Sources []BuildSource `json:"sources,omitempty"`
 
 	// Trigger defines the scenarios where a new build should be triggered.
 	//
@@ -130,25 +120,6 @@ type BuildSpec struct {
 	// Strategy references the BuildStrategy to use to build the container
 	// image.
 	Strategy Strategy `json:"strategy"`
-
-	// Builder refers to the image containing the build tools inside which
-	// the source code would be built.
-	//
-	// NOTICE: Builder is deprecated, and will be removed in a future release.
-	// Build strategies which rely on "builder" should provide an equivalent parameter instead.
-	//
-	// +optional
-	Builder *Image `json:"builder,omitempty"`
-
-	// Dockerfile is the path to the Dockerfile to be used for
-	// build strategies which bank on the Dockerfile for building
-	// an image.
-	//
-	// NOTICE: Dockerfile is deprecated, and will be removed in a future release.
-	// Build strategies which rely on "dockerfile" should provide an equivalent parameter instead.
-	//
-	// +optional
-	Dockerfile *string `json:"dockerfile,omitempty"`
 
 	// Params is a list of key/value that could be used
 	// to set strategy parameters
@@ -186,13 +157,6 @@ type BuildVolume struct {
 	// +required
 	Name string `json:"name"`
 
-	// Description of the Build Volume
-	//
-	// NOTICE: Description is deprecated, and will be removed in a future release.
-	//
-	// +optional
-	Description *string `json:"description,omitempty"`
-
 	// Represents the source of a volume to mount
 	// +required
 	corev1.VolumeSource `json:",inline"`
@@ -213,16 +177,10 @@ type Image struct {
 	// Image is the reference of the image.
 	Image string `json:"image"`
 
-	// Insecure defines whether the registry is not secure
+	// Describes the secret name for pushing a container image.
 	//
 	// +optional
-	Insecure *bool `json:"insecure,omitempty"`
-
-	// Credentials references a Secret that contains credentials to access
-	// the image registry.
-	//
-	// +optional
-	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
+	PushSecret *string `json:"pushSecret,omitempty"`
 
 	// Annotations references the additional annotations to be applied on the image
 	//
@@ -257,7 +215,6 @@ type BuildStatus struct {
 
 // Build is the Schema representing a Build definition
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
 // +kubebuilder:resource:path=builds,scope=Namespaced
 // +kubebuilder:printcolumn:name="Registered",type="string",JSONPath=".status.registered",description="The register status of the Build"
 // +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.reason",description="The reason of the registered Build, either an error or succeed message"
@@ -303,6 +260,10 @@ type BuildRetention struct {
 	// +optional
 	// +kubebuilder:validation:Format=duration
 	TTLAfterSucceeded *metav1.Duration `json:"ttlAfterSucceeded,omitempty"`
+	// AtBuildDeletion defines if related BuildRuns should be deleted when deleting the Build.
+	//
+	// +optional
+	AtBuildDeletion bool `json:"atBuildDeletion,omitempty"`
 }
 
 func init() {

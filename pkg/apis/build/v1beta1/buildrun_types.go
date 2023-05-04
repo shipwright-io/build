@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -20,30 +20,31 @@ const (
 	LabelBuildRunGeneration = BuildRunDomain + "/generation"
 )
 
+type ReferencedBuild struct {
+	// Build refers to an embedded build specification
+	//
+	// +optional
+	Build *BuildSpec `json:"spec,omitempty"`
+
+	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	//
+	// +optional
+	Name string `json:"name,omitempty"`
+}
+
 // BuildRunSpec defines the desired state of BuildRun
 type BuildRunSpec struct {
-	// BuildSpec refers to an embedded build specification
+	// Build refers to an embedded build specification
 	//
 	// +optional
-	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
-
-	// BuildRef refers to the Build
-	//
-	// +optional
-	BuildRef *BuildRef `json:"buildRef,omitempty"`
-
-	// Sources slice of BuildSource, defining external build artifacts complementary to VCS
-	// (`.spec.source`) data.
-	//
-	// +optional
-	Sources []BuildSource `json:"sources,omitempty"`
+	Build *ReferencedBuild `json:"build,omitempty"`
 
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.
 	// Default serviceaccount will be set if it is empty
 	//
 	// +optional
-	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
+	ServiceAccount *string `json:"serviceAccount,omitempty"`
 
 	// Timeout defines the maximum run time of this BuildRun.
 	//
@@ -106,21 +107,21 @@ type SourceResult struct {
 	// Name is the name of source
 	Name string `json:"name"`
 
-	// Git holds the results emitted from from the
-	// step definition of a git source
+	// Git holds the results emitted from the
+	// source step of type git
 	//
 	// +optional
 	Git *GitSourceResult `json:"git,omitempty"`
 
-	// Bundle holds the results emitted from from the
-	// step definition of bundle source
+	// OciArtifact holds the results emitted from
+	// the source step of type ociArtifact
 	//
 	// +optional
-	Bundle *BundleSourceResult `json:"bundle,omitempty"`
+	OciArtifact *OciArtifactSourceResult `json:"ociArtifact,omitempty"`
 }
 
-// BundleSourceResult holds the results emitted from the bundle source
-type BundleSourceResult struct {
+// OciArtifactSourceResult holds the results emitted from the bundle source
+type OciArtifactSourceResult struct {
 	// Digest hold the image digest result
 	Digest string `json:"digest,omitempty"`
 }
@@ -135,15 +136,21 @@ type GitSourceResult struct {
 
 	// BranchName holds the default branch name of the git source
 	// this will be set only when revision is not specified in Build object
+	//
+	// +optional
 	BranchName string `json:"branchName,omitempty"`
 }
 
-// Output holds the results emitted from the output step (build-and-push)
+// Output holds the information about the container image that the BuildRun built
 type Output struct {
 	// Digest holds the digest of output image
+	//
+	// +optional
 	Digest string `json:"digest,omitempty"`
 
 	// Size holds the compressed size of output image
+	//
+	// +optional
 	Size int64 `json:"size,omitempty"`
 }
 
@@ -163,12 +170,10 @@ type BuildRunStatus struct {
 	// Conditions holds the latest available observations of a resource's current state.
 	Conditions Conditions `json:"conditions,omitempty"`
 
-	// LatestTaskRunRef is the name of the TaskRun responsible for executing this BuildRun.
-	//
-	// TODO: This should be called something like "TaskRunName"
+	// TaskRunName is the name of the TaskRun responsible for executing this BuildRun.
 	//
 	// +optional
-	LatestTaskRunRef *string `json:"latestTaskRunRef,omitempty"`
+	TaskRunName *string `json:"taskRunName,omitempty"`
 
 	// StartTime is the time the build is actually started.
 	// +optional
@@ -182,17 +187,13 @@ type BuildRunStatus struct {
 	// +optional
 	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
 
-	// Deprecated: FailedAt points to the resource where the BuildRun failed
-	// +optional
-	FailedAt *FailedAt `json:"failedAt,omitempty"`
-
 	// FailureDetails contains error details that are collected and surfaced from TaskRun
 	// +optional
 	FailureDetails *FailureDetails `json:"failureDetails,omitempty"`
 }
 
-// FailedAt describes the location where the failure happened
-type FailedAt struct {
+// Location describes the location where the failure happened
+type Location struct {
 	Pod       string `json:"pod,omitempty"`
 	Container string `json:"container,omitempty"`
 }
@@ -201,28 +202,7 @@ type FailedAt struct {
 type FailureDetails struct {
 	Reason   string    `json:"reason,omitempty"`
 	Message  string    `json:"message,omitempty"`
-	Location *FailedAt `json:"location,omitempty"`
-}
-
-// BuildRef can be used to refer to a specific instance of a Build.
-type BuildRef struct {
-	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	Name string `json:"name"`
-	// API version of the referent
-	// +optional
-	APIVersion *string `json:"apiVersion,omitempty"`
-}
-
-// ServiceAccount can be used to refer to a specific ServiceAccount.
-type ServiceAccount struct {
-	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
-	// +optional
-	Name *string `json:"name,omitempty"`
-	// If generates a new ServiceAccount for the build
-	//
-	// NOTICE: Generated ServiceAccounts are deprecated, and will be removed in a future release.
-	// +optional
-	Generate *bool `json:"generate,omitempty"`
+	Location *Location `json:"location,omitempty"`
 }
 
 // +genclient
@@ -230,7 +210,6 @@ type ServiceAccount struct {
 
 // BuildRun is the Schema representing an instance of build execution
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
 // +kubebuilder:resource:path=buildruns,scope=Namespaced,shortName=br;brs
 // +kubebuilder:printcolumn:name="Succeeded",type="string",JSONPath=".status.conditions[?(@.type==\"Succeeded\")].status",description="The Succeeded status of the BuildRun"
 // +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.conditions[?(@.type==\"Succeeded\")].reason",description="The Succeeded reason of the BuildRun"
@@ -391,13 +370,13 @@ func (brs *BuildRunStatus) SetCondition(condition *Condition) {
 	}
 }
 
-// BuildName returns the name of the associated build, which can be a referened
+// BuildName returns the name of the associated build, which can be a referenced
 // build resource or an embedded build specification
 func (buildrunSpec *BuildRunSpec) BuildName() string {
-	if buildrunSpec.BuildRef != nil {
-		return buildrunSpec.BuildRef.Name
+	if buildrunSpec.Build != nil {
+		return buildrunSpec.Build.Name
 	}
 
-	// Only BuildRuns with a BuildRef can actually return a proper Build name
+	// Only BuildRuns with a ReferencedBuild can actually return a proper Build name
 	return ""
 }

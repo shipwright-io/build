@@ -10,6 +10,8 @@ import (
 	clientset "github.com/shipwright-io/build/pkg/client/clientset/versioned"
 	shipwrightv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	fakeshipwrightv1alpha1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
+	shipwrightv1beta1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1beta1"
+	fakeshipwrightv1beta1 "github.com/shipwright-io/build/pkg/client/clientset/versioned/typed/build/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -70,4 +72,9 @@ var (
 // ShipwrightV1alpha1 retrieves the ShipwrightV1alpha1Client
 func (c *Clientset) ShipwrightV1alpha1() shipwrightv1alpha1.ShipwrightV1alpha1Interface {
 	return &fakeshipwrightv1alpha1.FakeShipwrightV1alpha1{Fake: &c.Fake}
+}
+
+// ShipwrightV1beta1 retrieves the ShipwrightV1beta1Client
+func (c *Clientset) ShipwrightV1beta1() shipwrightv1beta1.ShipwrightV1beta1Interface {
+	return &fakeshipwrightv1beta1.FakeShipwrightV1beta1{Fake: &c.Fake}
 }
