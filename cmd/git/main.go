@@ -416,7 +416,12 @@ func clone(ctx context.Context) error {
 }
 
 func git(ctx context.Context, args ...string) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", args...)
+	fullArgs := []string{
+		"-c",
+		fmt.Sprintf("safe.directory=%s", flagValues.target),
+	}
+	fullArgs = append(fullArgs, args...)
+	cmd := exec.CommandContext(ctx, "git", fullArgs...)
 
 	// Print the command to be executed, but replace the URL with a safe version
 	log.Print(strings.ReplaceAll(cmd.String(), flagValues.url, displayURL))
