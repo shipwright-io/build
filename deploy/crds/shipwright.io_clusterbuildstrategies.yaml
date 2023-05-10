@@ -1296,6 +1296,30 @@ spec:
                   - name
                   type: object
                 type: array
+              securityContext:
+                description: BuildStrategySecurityContext defines a UID and GID for
+                  the build that is to be used for the build strategy steps as well
+                  as for shipwright-managed steps such as the source retrieval, or
+                  the image processing. The value can be overwritten on the steps
+                  for the strategy steps. If omitted, then UID and GID from the Shipwright
+                  configuration will be used for the shipwright-managed steps.
+                properties:
+                  runAsGroup:
+                    description: The GID to run the entrypoint of the container process.
+                      Defaults to group specified in image metadata if unspecified.
+                      Can be overwritten by the security context on the step level.
+                    format: int64
+                    type: integer
+                  runAsUser:
+                    description: The UID to run the entrypoint of the container process.
+                      Defaults to user specified in image metadata if unspecified.
+                      Can be overwritten by the security context on the step level.
+                    format: int64
+                    type: integer
+                required:
+                - runAsGroup
+                - runAsUser
+                type: object
               volumes:
                 items:
                   description: BuildStrategyVolume is a volume that will be mounted
@@ -2874,6 +2898,30 @@ spec:
                   - name
                   type: object
                 type: array
+              securityContext:
+                description: BuildStrategySecurityContext defines a UID and GID for
+                  the build that is to be used for the build strategy steps as well
+                  as for shipwright-managed steps such as the source retrieval, or
+                  the image processing. The value can be overwritten on the steps
+                  for the strategy steps. If omitted, then UID and GID from the Shipwright
+                  configuration will be used for the shipwright-managed steps.
+                properties:
+                  runAsGroup:
+                    description: The GID to run the entrypoint of the container process.
+                      Defaults to group specified in image metadata if unspecified.
+                      Can be overwritten by the security context on the step level.
+                    format: int64
+                    type: integer
+                  runAsUser:
+                    description: The UID to run the entrypoint of the container process.
+                      Defaults to user specified in image metadata if unspecified.
+                      Can be overwritten by the security context on the step level.
+                    format: int64
+                    type: integer
+                required:
+                - runAsGroup
+                - runAsUser
+                type: object
               steps:
                 items:
                   description: BuildStep defines a partial step that needs to run

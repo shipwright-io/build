@@ -18,9 +18,10 @@ const (
 
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
-	BuildSteps []BuildStep           `json:"buildSteps,omitempty"`
-	Parameters []Parameter           `json:"parameters,omitempty"`
-	Volumes    []BuildStrategyVolume `json:"volumes,omitempty"`
+	BuildSteps      []BuildStep                   `json:"buildSteps,omitempty"`
+	Parameters      []Parameter                   `json:"parameters,omitempty"`
+	SecurityContext *BuildStrategySecurityContext `json:"securityContext,omitempty"`
+	Volumes         []BuildStrategyVolume         `json:"volumes,omitempty"`
 }
 
 // ParameterType indicates the type of a parameter
@@ -90,6 +91,23 @@ type BuildStep struct {
 	corev1.Container `json:",inline"`
 }
 
+// BuildStrategySecurityContext defines a UID and GID for the build that is to be used for the build strategy steps as
+// well as for shipwright-managed steps such as the source retrieval, or the image processing.
+// The value can be overwritten on the steps for the strategy steps.
+// If omitted, then UID and GID from the Shipwright configuration will be used for the shipwright-managed steps.
+type BuildStrategySecurityContext struct {
+
+	// The UID to run the entrypoint of the container process.
+	// Defaults to user specified in image metadata if unspecified.
+	// Can be overwritten by the security context on the step level.
+	RunAsUser int64 `json:"runAsUser"`
+
+	// The GID to run the entrypoint of the container process.
+	// Defaults to group specified in image metadata if unspecified.
+	// Can be overwritten by the security context on the step level.
+	RunAsGroup int64 `json:"runAsGroup"`
+}
+
 // BuildStrategyStatus defines the observed state of BuildStrategy
 type BuildStrategyStatus struct {
 }
@@ -119,5 +137,6 @@ type BuilderStrategy interface {
 	GetResourceLabels() map[string]string
 	GetBuildSteps() []BuildStep
 	GetParameters() []Parameter
+	GetSecurityContext() *BuildStrategySecurityContext
 	GetVolumes() []BuildStrategyVolume
 }
