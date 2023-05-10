@@ -37,7 +37,9 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
-      env: 
+      env:
+        - name: ALLOW_INSECURE_HEROKU_18_BUILDER
+          value: "1"
         - name: CNB_PLATFORM_API
           value: $(params.platform-api-version)
         - name: PARAM_SOURCE_CONTEXT
