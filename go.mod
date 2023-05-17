@@ -7,7 +7,7 @@ require (
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/go-logr/logr v1.2.4
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/google/go-containerregistry v0.15.1
+	github.com/google/go-containerregistry v0.15.2
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.6
 	github.com/prometheus/client_golang v1.15.1
