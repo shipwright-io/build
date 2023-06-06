@@ -5,6 +5,8 @@
 package utils
 
 import (
+	"fmt"
+	"net/http"
 	"reflect"
 
 	"github.com/onsi/gomega/format"
@@ -48,5 +50,48 @@ func (matcher *ContainNamedElementMatcher) Match(actual interface{}) (success bo
 func ContainNamedElement(name string) types.GomegaMatcher {
 	return &ContainNamedElementMatcher{
 		Name: name,
+	}
+}
+
+type returnMatcher struct {
+	actualStatusCode   int
+	expectedStatusCode int
+}
+
+func (matcher *returnMatcher) FailureMessage(actual interface{}) (message string) {
+	return format.Message(matcher.expectedStatusCode, fmt.Sprintf("to be the HTTP response for %s, but received", actual), matcher.actualStatusCode)
+}
+
+func (matcher *returnMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+	return format.Message(matcher.expectedStatusCode, fmt.Sprintf("to not be the HTTP response for %s, but received", actual), matcher.actualStatusCode)
+}
+
+func (matcher *returnMatcher) Match(actual interface{}) (success bool, err error) {
+	if actual == nil {
+		return false, nil
+	}
+
+	kind := reflect.TypeOf(actual).Kind()
+	if kind == reflect.String {
+		url := reflect.ValueOf(actual).String()
+
+		// #nosec:G107 test code
+		resp, err := http.Get(url)
+		if err != nil {
+			return false, err
+		}
+
+		matcher.actualStatusCode = resp.StatusCode
+
+		return resp.StatusCode == matcher.expectedStatusCode, nil
+	}
+
+	return false, nil
+}
+
+// Return can be applied for a string, it will call the URL and check the status code
+func Return(statusCode int) types.GomegaMatcher {
+	return &returnMatcher{
+		expectedStatusCode: statusCode,
 	}
 }
