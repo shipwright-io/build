@@ -195,7 +195,7 @@ var _ = Describe("Bundle Loader", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete test image (best effort)
-			_ = Prune(ref, options, *auth)
+			_ = image.Delete(ref, options, *auth)
 		})
 
 		It("should pull and unpack an image from a private registry", func() {
