@@ -43,6 +43,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   ```bash
   kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.44.0/release.yaml
   ```
+  If you are using OpenShift cluster refer [Running on OpenShift](#running-on-openshift) for some more configurations.
 
 - Install the Shipwright deployment. To install the latest version, run:
 
@@ -129,6 +130,17 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   ```
 
 - After your *BuildRun* is completed, check your container registry, you will find the new generated image uploaded there.
+
+### Running on OpenShift
+
+If you are running on OpenShift and if the `pipeline` service account isn't already created,
+here are the steps to create the same:
+
+```sh
+oc create serviceaccount pipeline
+oc adm policy add-scc-to-user privileged -z pipeline
+oc adm policy add-role-to-user edit -z pipeline
+```
 
 ## Please tell us more!
 
