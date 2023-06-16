@@ -44,7 +44,7 @@ function update() {
         echo "[INFO] Determined current tag ${CURRENT_TAG}"
 
         # Determine the latest tag
-        QUERY=".name"
+        QUERY=".tag_name"
         if [[ ${IMAGE} == *buildah* ]]; then
                 QUERY=".tags | .[0].name"
         fi
