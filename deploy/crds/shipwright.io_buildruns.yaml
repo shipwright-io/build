@@ -55,6 +55,12 @@ spec:
           spec:
             description: BuildRunSpec defines the desired state of BuildRun
             properties:
+              annotations:
+                additionalProperties:
+                  type: string
+                description: Annotations contains annotations that should be passed
+                  to the build pod
+                type: object
               buildRef:
                 description: BuildRef refers to the Build
                 properties:
@@ -70,6 +76,12 @@ spec:
               buildSpec:
                 description: BuildSpec refers to an embedded build specification
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations contains annotations that should be passed
+                      to the build pod
+                    type: object
                   builder:
                     description: "Builder refers to the image containing the build
                       tools inside which the source code would be built. \n NOTICE:
@@ -231,6 +243,12 @@ spec:
                       - name
                       type: object
                     type: array
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels contains labels that should be passed to the
+                      build pod
+                    type: object
                   output:
                     description: Output refers to the location where the built image
                       would be pushed.
@@ -2263,6 +2281,12 @@ spec:
                   - name
                   type: object
                 type: array
+              labels:
+                additionalProperties:
+                  type: string
+                description: Labels contains labels that should be passed to the build
+                  pod
+                type: object
               output:
                 description: Output refers to the location where the generated image
                   would be pushed to. It will overwrite the output image in build
@@ -3987,6 +4011,12 @@ spec:
               buildSpec:
                 description: BuildSpec is the Build Spec of this BuildRun.
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations contains annotations that should be passed
+                      to the build pod
+                    type: object
                   builder:
                     description: "Builder refers to the image containing the build
                       tools inside which the source code would be built. \n NOTICE:
@@ -4148,6 +4178,12 @@ spec:
                       - name
                       type: object
                     type: array
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels contains labels that should be passed to the
+                      build pod
+                    type: object
                   output:
                     description: Output refers to the location where the built image
                       would be pushed.
