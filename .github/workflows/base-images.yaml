@@ -7,16 +7,18 @@ on:
 
 jobs:
   base-image-build:
-    if: ${{ github.repository == 'shipwright-io/build' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         image:
+          - base
           - git
           - image-processing
           - waiter
-      max-parallel: 3
+      # We cannot run in parallel because the base image must be built first
+      max-parallel: 1
 
     steps:
       - uses: actions/checkout@v3
@@ -36,4 +38,4 @@ jobs:
         working-directory: images/${{ matrix.image }}
         run: |
           NAMESPACE=$(tr '[:upper:]' '[:lower:]' <<<${{ github.repository_owner }})
-          IMAGE=ghcr.io/${NAMESPACE}/base-${{ matrix.image }} docker buildx bake --push -f ../docker-bake.hcl
+          IMAGE=ghcr.io/${NAMESPACE}/base-${{ matrix.image }} NAMESPACE="${NAMESPACE}" docker buildx bake --push -f ../docker-bake.hcl
