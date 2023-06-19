@@ -17,7 +17,6 @@ spec:
       image: gcr.io/kaniko-project/executor:v1.11.0
       workingDir: $(params.shp-source-root)
       securityContext:
-        runAsUser: 0
         capabilities:
           add:
             - CHOWN
@@ -78,3 +77,6 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0

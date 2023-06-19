@@ -26,34 +26,10 @@ spec:
       overridable: true
       emptyDir: {}
   buildSteps:
-    - name: prepare
-      image: golang:$(params.go-version)
-      imagePullPolicy: Always
-      securityContext:
-        runAsUser: 0
-        capabilities:
-          add: 
-            - CHOWN
-      command:
-        - chown
-      args:
-        - -R
-        - "1000:1000"
-        - /tekton/home
-      resources:
-        limits:
-          cpu: 100m
-          memory: 128Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
     - name: build
       image: golang:$(params.go-version)
       imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
       volumeMounts:
         - mountPath: /gocache
           name: gocache
@@ -135,3 +111,6 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000

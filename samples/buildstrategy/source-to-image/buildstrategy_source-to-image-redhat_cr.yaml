@@ -146,3 +146,6 @@ spec:
       defaults:
         - docker.io
         - quay.io
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0

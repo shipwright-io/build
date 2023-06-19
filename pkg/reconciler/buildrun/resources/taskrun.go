@@ -18,6 +18,7 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/env"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 	"github.com/shipwright-io/build/pkg/volumes"
 )
 
@@ -68,7 +69,6 @@ func GenerateTaskSpec(
 	parameterDefinitions []buildv1alpha1.Parameter,
 	buildStrategyVolumes []buildv1alpha1.BuildStrategyVolume,
 ) (*v1beta1.TaskSpec, error) {
-
 	generatedTaskSpec := v1beta1.TaskSpec{
 		Params: []v1beta1.ParamSpec{
 			{
@@ -311,6 +311,10 @@ func GenerateTaskRun(
 			taskRunAnnotations[key] = value
 		}
 	}
+
+	// Update the security context of the Shipwright-injected steps with the runAs user of the build strategy
+	steps.UpdateSecurityContext(taskSpec, taskRunAnnotations, strategy.GetBuildSteps(), strategy.GetSecurityContext())
+
 	if len(taskRunAnnotations) > 0 {
 		expectedTaskRun.Annotations = taskRunAnnotations
 	}
