@@ -10,13 +10,11 @@ spec:
   parameters:
     - name: platform-api-version
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
-      default: "0.4"
+      default: "0.7"
   buildSteps:
     - name: build-and-push
-      image: heroku/buildpacks:18
+      image: heroku/builder:22
       env:
-        - name: ALLOW_INSECURE_HEROKU_18_BUILDER
-          value: "1"
         - name: CNB_PLATFORM_API
           value: $(params.platform-api-version)
         - name: PARAM_SOURCE_CONTEXT
@@ -58,23 +56,23 @@ spec:
             fi
           done
 
-          LAYERS_DIR=/tmp/layers
-          CACHE_DIR=/tmp/cache
+          LAYERS_DIR=/tmp/.shp/layers
+          CACHE_DIR=/tmp/.shp/cache
 
-          mkdir "$CACHE_DIR" "$LAYERS_DIR"
+          mkdir -p "$CACHE_DIR" "$LAYERS_DIR"
 
           function announce_phase {
             printf "===> %s\n" "$1" 
           }
 
+          announce_phase "ANALYZING"
+          /cnb/lifecycle/analyzer -layers="$LAYERS_DIR" "${PARAM_OUTPUT_IMAGE}"
+
           announce_phase "DETECTING"
           /cnb/lifecycle/detector -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
 
-          announce_phase "ANALYZING"
-          /cnb/lifecycle/analyzer -layers="$LAYERS_DIR" -cache-dir="$CACHE_DIR" "${PARAM_OUTPUT_IMAGE}"
-
           announce_phase "RESTORING"
-          /cnb/lifecycle/restorer -cache-dir="$CACHE_DIR"
+          /cnb/lifecycle/restorer -cache-dir="$CACHE_DIR" -layers="$LAYERS_DIR"
 
           announce_phase "BUILDING"
           /cnb/lifecycle/builder -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
@@ -86,7 +84,7 @@ spec:
           /cnb/lifecycle/exporter "${exporter_args[@]}" "${PARAM_OUTPUT_IMAGE}"
 
           # Store the image digest
-          grep digest /tmp/report.toml | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
+          grep digest /tmp/report.toml | tail -n 1 | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
       volumeMounts:
         - mountPath: /platform/env
           name: platform-env
