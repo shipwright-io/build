@@ -110,8 +110,8 @@ To install use:
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push_cr.yaml
-kubectl apply -f samples/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml
+oc apply -f samples/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push_cr.yaml
+oc apply -f samples/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml
 ----
 
 '''
@@ -132,14 +132,14 @@ To install the cluster scope strategy, use (below is a heroku example, you can a
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml
+oc apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml
 ----
 
 To install the namespaced scope strategy, use:
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml
+oc apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml
 ----
 
 '''
@@ -154,7 +154,7 @@ To install the cluster scope strategy, use:
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
+oc apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 ----
 
 ==== Scanning with Trivy
@@ -165,7 +165,7 @@ To install the cluster scope strategy, use:
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
+oc apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
 ----
 
 _Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Frameworks/strategies such as build-packs or source-to-image (which avoid directly building a Dockerfile) should be considered if you need guardrails around the code you want to build._
@@ -212,7 +212,7 @@ To install the cluster scope strategy, use:
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml
+oc apply -f samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml
 ----
 
 '''
@@ -227,7 +227,7 @@ To install the cluster scope strategy, use:
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
+oc apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
 ----
 
 === Parameters
@@ -279,7 +279,7 @@ To install the cluster scope strategy use:
 
 [,sh]
 ----
-kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml
+oc apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml
 ----
 
 === Build Steps
@@ -803,7 +803,7 @@ For the `TaskRun`, as expected we can see the resources on each `step`, as we pr
 
 [,sh]
 ----
-$ kubectl -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-bud" ) | .resources'
+$ oc -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-bud" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -815,7 +815,7 @@ $ kubectl -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json |
   }
 }
 
-$ kubectl -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-push" ) | .resources'
+$ oc -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-push" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -832,7 +832,7 @@ The pod definition is different, while Tekton will only use the *highest* values
 
 [,sh]
 ----
-$ kubectl -n test-build get pods buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-bud" ) | .resources'
+$ oc -n test-build get pods buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-bud" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -845,7 +845,7 @@ $ kubectl -n test-build get pods buildah-golang-buildrun-9gmcx-pod-lhzbc -o json
   }
 }
 
-$ kubectl -n test-build get pods buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-push" ) | .resources'
+$ oc -n test-build get pods buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-push" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -918,7 +918,7 @@ For the `TaskRun`, as expected we can see the resources on each `step`.
 
 [,sh]
 ----
-$ kubectl -n test-build get tr buildah-golang-buildrun-skgrp -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-bud" ) | .resources'
+$ oc -n test-build get tr buildah-golang-buildrun-skgrp -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-bud" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -930,7 +930,7 @@ $ kubectl -n test-build get tr buildah-golang-buildrun-skgrp -o json | jq '.spec
   }
 }
 
-$ kubectl -n test-build get tr buildah-golang-buildrun-skgrp -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-push" ) | .resources'
+$ oc -n test-build get tr buildah-golang-buildrun-skgrp -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-push" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -947,7 +947,7 @@ The pod definition is different, while Tekton will only use the *highest* values
 
 [,sh]
 ----
-$ kubectl -n test-build get pods buildah-golang-buildrun-95xq8-pod-mww8d -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-bud" ) | .resources'
+$ oc -n test-build get pods buildah-golang-buildrun-95xq8-pod-mww8d -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-bud" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -959,7 +959,7 @@ $ kubectl -n test-build get pods buildah-golang-buildrun-95xq8-pod-mww8d -o json
     "memory": "0"                 <------------------- See how the memory is set to ZERO
   }
 }
-$ kubectl -n test-build get pods buildah-golang-buildrun-95xq8-pod-mww8d -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-push" ) | .resources'
+$ oc -n test-build get pods buildah-golang-buildrun-95xq8-pod-mww8d -o json | jq '.spec.containers[] | select(.name == "step-step-buildah-push" ) | .resources'
 {
   "limits": {
     "cpu": "500m",
@@ -990,7 +990,7 @@ Annotations can be defined for a BuildStrategy/ClusterBuildStrategy as for any o
 
 The following annotations are not propagated:
 
-* `kubectl.kubernetes.io/last-applied-configuration`
+* `oc.kubernetes.io/last-applied-configuration`
 * `clusterbuildstrategy.shipwright.io/*`
 * `buildstrategy.shipwright.io/*`
 * `build.shipwright.io/*`

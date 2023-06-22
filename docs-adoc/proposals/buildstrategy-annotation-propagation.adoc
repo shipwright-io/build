@@ -90,7 +90,7 @@ In the `BuildStrategy` and `ClusterBuildStrategy`, the build strategy administra
 
 Based on that naming, the other three prefixes reserved by our controllers are: `buildstrategy.build.dev`, `clusterbuildstrategy.build.dev` and `buildrun.build.dev`.
 
-When generating a Tekton `TaskRun`, the idea is to look at the annotations of the `BuildStrategy` or `ClusterBuildStrategy` and copy all annotations over to the `TaskRun`, except those that use one of our own prefixes because we today have no feature anyway where we look for one of our annotations on a `TaskRun` or `Pod`, and except the `kubectl.kubernetes.io/last-applied-configuration` annotation.
+When generating a Tekton `TaskRun`, the idea is to look at the annotations of the `BuildStrategy` or `ClusterBuildStrategy` and copy all annotations over to the `TaskRun`, except those that use one of our own prefixes because we today have no feature anyway where we look for one of our annotations on a `TaskRun` or `Pod`, and except the `oc.kubernetes.io/last-applied-configuration` annotation.
 
 Tekton automatically copies all `TaskRun` annotations to the `Pod`, see https://github.com/tektoncd/pipeline/blob/v0.21.0/pkg/pod/pod.go#L258[pod.go].
 
@@ -121,7 +121,7 @@ metadata:
 
 The implementation requires the link:../../pkg/apis/build/v1alpha1/buildstrategy.go[BuilderStrategy interface] to be extended with a `GetAnnotations` functions that is implemented in the link:../../pkg/apis/build/v1alpha1/buildstrategy_types.go[BuildStrategy] and link:../../pkg/apis/build/v1alpha1/clusterbuildstrategy_types.go[ClusterBuildStrategy] types by returning the object's annotations.
 
-The assignment of the `TaskRun` annotations needs to be done in the link:../../pkg/reconciler/buildrun/resources/taskrun.go[generate_taskrun.go] file in the `GenerateTaskRun` function. The annotations from the build strategy need to be copied to the `TaskRun` except those using one of the four Shipwright Build owned prefixes mentioned under <<proposal,Proposal>>, and except the `kubectl.kubernetes.io/last-applied-configuration` annotation.
+The assignment of the `TaskRun` annotations needs to be done in the link:../../pkg/reconciler/buildrun/resources/taskrun.go[generate_taskrun.go] file in the `GenerateTaskRun` function. The annotations from the build strategy need to be copied to the `TaskRun` except those using one of the four Shipwright Build owned prefixes mentioned under <<proposal,Proposal>>, and except the `oc.kubernetes.io/last-applied-configuration` annotation.
 
 === Risks and Mitigations
 
@@ -169,6 +169,6 @@ spec:
 
 This idea was not considered because it is unnecessary. The described filtering already eliminates annotations that are not of interest for the `Pod`.
 
-(2) Instead of filtering out a hard-coded list of annotations by prefix (our Shipwright prefixes) or by full key (`kubectl.kubernetes.io/last-applied-configuration`), one could have introduced an extension to our link:../../pkg/config/config.go[configuration] to allow the administrator of the build operator to configure which annotations are copied from the `BuildStrategy` and `ClusterBuildStrategy` to the `TaskRun`, using white- or black-listing.
+(2) Instead of filtering out a hard-coded list of annotations by prefix (our Shipwright prefixes) or by full key (`oc.kubernetes.io/last-applied-configuration`), one could have introduced an extension to our link:../../pkg/config/config.go[configuration] to allow the administrator of the build operator to configure which annotations are copied from the `BuildStrategy` and `ClusterBuildStrategy` to the `TaskRun`, using white- or black-listing.
 
 This idea was not considered because we were not seeing a relevant use case for it.

@@ -18,7 +18,7 @@ For this tutorial, we will require to create a `tutorial-secret` Kubernetes secr
 [,sh]
 ----
 $ REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
-$ kubectl create secret docker-registry tutorial-secret --docker-server=$REGISTRY_SERVER --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWORD  --docker-email=me@here.com
+$ oc create secret docker-registry tutorial-secret --docker-server=$REGISTRY_SERVER --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWORD  --docker-email=me@here.com
 ----
 
 NOTE: For more information about authentication, please refer to the related xref:../development/authentication.adoc[docs].
@@ -29,7 +29,7 @@ Ensure all strategies are in place, see the link:../../README.md#try-it[Try It!]
 
 [,sh]
 ----
-$ kubectl get cbs
+$ oc get cbs
 NAME              AGE
 buildah           2m
 buildpacks-v3     2m
@@ -53,7 +53,7 @@ Let's apply our Build and wait for it to be ready:
 [,bash]
 ----
 $ export REGISTRY_ORG=<your_registry_org>
-$ cat <<EOF | kubectl apply -f -
+$ cat <<EOF | oc apply -f -
 apiVersion: shipwright.io/v1alpha1
 kind: Build
 metadata:
@@ -76,7 +76,7 @@ Verify that the `go-tutorial` Build was created successfully:
 
 [,sh]
 ----
-kubectl get build
+oc get build
 NAME          REGISTERED   REASON      BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
 go-tutorial   True         Succeeded   ClusterBuildStrategy   kaniko              13s
 ----
@@ -89,7 +89,7 @@ Second, we will create a `BuildRun` resource that references our previous `go-tu
 
 [,sh]
 ----
-$ cat <<EOF | kubectl create -f -
+$ cat <<EOF | oc create -f -
 apiVersion: shipwright.io/v1alpha1
 kind: BuildRun
 metadata:
@@ -104,7 +104,7 @@ Wait until your `go-tutorial-buildrun` buildrun is completed:
 
 [,sh]
 ----
-kubectl get buildrun
+oc get buildrun
 NAME                         SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
 go-tutorial-buildrun         True        Succeeded   2m45s       35s
 ----
@@ -113,7 +113,7 @@ To know more about the state of the BuildRun, the `.status.conditions` fields pr
 
 [,sh]
 ----
-kubectl get buildrun go-tutorial-buildrun -o json | jq '.status.conditions[]'
+oc get buildrun go-tutorial-buildrun -o json | jq '.status.conditions[]'
 {
   "lastTransitionTime": "2021-03-23T18:14:15Z",
   "message": "All Steps have completed executing",

@@ -324,7 +324,7 @@ The `BuildRun` resource is updated as soon as the current image building status 
 
 [,sh]
 ----
-$ kubectl get buildrun buildpacks-v3-buildrun
+$ oc get buildrun buildpacks-v3-buildrun
 NAME                    SUCCEEDED   REASON    MESSAGE   STARTTIME   COMPLETIONTIME
 buildpacks-v3-buildrun  Unknown     Pending   Pending   1s
 ----
@@ -333,7 +333,7 @@ And finally:
 
 [,sh]
 ----
-$ kubectl get buildrun buildpacks-v3-buildrun
+$ oc get buildrun buildpacks-v3-buildrun
 NAME                    SUCCEEDED   REASON      MESSAGE                              STARTTIME   COMPLETIONTIME
 buildpacks-v3-buildrun  True        Succeeded   All Steps have completed executing   4m28s       16s
 ----
@@ -512,7 +512,7 @@ NOTE: We heavily rely on the Tekton TaskRun https://github.com/tektoncd/pipeline
 
 [DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer the pod and container where the failure took place from the `status.failedAt` field.
 
-In addition, the `status.conditions` hosts a compacted message under the' message' field that contains the `kubectl` command to trigger and retrieve the logs.
+In addition, the `status.conditions` hosts a compacted message under the' message' field that contains the `oc` command to trigger and retrieve the logs.
 
 Lastly, users can check the `status.failureDetails` field, which includes the same information available in the `status.failedAt` field,
 as well as a human-readable error message and reason.

@@ -33,7 +33,7 @@ status: provisional
 = Summary
 
 This enhancement proposal describes a command-line client for Shipwright Build operator, covering
-from the command line structure, the usage as a kubectl plugin, and as a standalone binary, as
+from the command line structure, the usage as a oc plugin, and as a standalone binary, as
 well as testing this new project.
 
 = Motivation
@@ -68,7 +68,7 @@ provide are contained in this document.
 
 == Usage and Installation
 
-This command-line application will be consumed as a standalone binary, or as a plugin in `kubectl`.
+This command-line application will be consumed as a standalone binary, or as a plugin in `oc`.
 This implies a few more extra settings, and making sure the application binary complies with the
 https://krew.sigs.k8s.io/docs/developer-guide/develop/best-practices/[expected convention].
 
@@ -84,17 +84,17 @@ As a https://krew.sigs.k8s.io/docs/developer-guide/[krew plugin], the expected u
 
 [,sh]
 ----
-$ kubectl shp ...
+$ oc shp ...
 ----
 
-And the following global flags are expected, to keep consistency with `kubectl`:
+And the following global flags are expected, to keep consistency with `oc`:
 
 * `-h/--help`
 * `-n/--namespace`
 * `-A/--all-namespaces`
 
 Those three flags are mandatory to keep compatibility. However, the
-https://pkg.go.dev/k8s.io/kubectl@v0.17.6/pkg/cmd/util[upstream kubectl package] provides
+https://pkg.go.dev/k8s.io/oc@v0.17.6/pkg/cmd/util[upstream oc package] provides
 https://github.com/otaviof/shp/blob/55ce2e8d58435b0264e3db0bef5cf439abfeca18/vendor/k8s.io/cli-runtime/pkg/genericclioptions/config_flags.go#L317[more options]
 out of the box.
 
@@ -102,7 +102,7 @@ out of the box.
 
 The project will use https://github.com/spf13/cobra[cobra]/https://github.com/spf13/viper[viper]
 for scaffolding the command-line structure, which in terms of organization and workflow, follows
-`kubectl` convention. Thus, the following pattern:
+`oc` convention. Thus, the following pattern:
 
 [,sh]
 ----

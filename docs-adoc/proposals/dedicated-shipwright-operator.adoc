@@ -69,7 +69,7 @@ The custom resource serves as an API to the application (also known as _operand_
 The operator can then report the state of the operand via the CR's status subresource.
 
 OLM has an optional web console that can be deployed locally or packaged in a Kubernetes distribution.
-With appropriately annotated custom resources, Shipwright Builds can be configured without the kubectl command line.
+With appropriately annotated custom resources, Shipwright Builds can be configured without the oc command line.
 
 === Goals
 
@@ -239,7 +239,7 @@ OLM-managed operators have the advantage that:
 . OLM operators can report the state of their _operands_ and act accordingly.
 
 That said, this proposal does not exclude adding a Helm chart or "all in one" YAML manifest to Shipwright Builds as a part of its release process.
-The latter YAML manifest approach may prove most practical, since can be used by any administrator with `kubectl`.
+The latter YAML manifest approach may prove most practical, since can be used by any administrator with `oc`.
 
 == Infrastructure Needed
 

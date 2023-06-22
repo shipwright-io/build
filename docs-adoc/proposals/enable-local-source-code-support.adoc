@@ -324,7 +324,7 @@ This approach relies on a container registry being present, which should be secu
 
 As mentioned before in this enhancement proposal document, currently a container build executes a `git clone` before the actual container-image build starts, this information is stored in a Kubernetes volume mounted at `/workspace/source`.
 
-Previously, in https://github.com/shipwright-io/build/issues/97[issue #97], we've explored a different mechanism to receive users' data upload, instead of executing the regular `git clone`. This mechanism is comparable to `kubectl cp` and `oc rsync`.
+Previously, in https://github.com/shipwright-io/build/issues/97[issue #97], we've explored a different mechanism to receive users' data upload, instead of executing the regular `git clone`. This mechanism is comparable to `oc cp` and `oc rsync`.
 
 . Make the build POD wait for users upload, by adding a init-container which will receive the data
 . The init-container saves the payload on a locally mounted volume, analogous to `/workspace/source`
@@ -333,4 +333,4 @@ Previously, in https://github.com/shipwright-io/build/issues/97[issue #97], we'v
 
 As a general solution this alternative approach can leverage different type of Kubernetes volumes, and allows the cluster-administrator to grant privileges to end-users. In other words, it offers fine grain control over allowing specific users to upload data, and once the data is uploaded the operator can decide what will happen next.
 
-This approach requires more exploration of the building blocks employed on `kubectl cp` and `oc rysnc`, Kubernetes port-forwarding and more.
+This approach requires more exploration of the building blocks employed on `oc cp` and `oc rysnc`, Kubernetes port-forwarding and more.

@@ -13,9 +13,9 @@ In the Kubernetes cluster, edit the `shipwright-build-controller` deployment to 
 
 [,sh]
 ----
-kubectl --namespace <namespace> set image \
+oc --namespace <namespace> set image \
   deployment/shipwright-build-controller \
-  shipwright-build-controller="$(kubectl --namespace <namespace> get deployment shipwright-build-controller --output jsonpath='{.spec.template.spec.containers[].image}')-debug"
+  shipwright-build-controller="$(oc --namespace <namespace> get deployment shipwright-build-controller --output jsonpath='{.spec.template.spec.containers[].image}')-debug"
 ----
 
 == Connect `go pprof` to build controller
@@ -24,7 +24,7 @@ Depending on the respective setup, there could be multiple build controller pods
 
 [,sh]
 ----
-kubectl --namespace <namespace> get configmap shipwright-build-controller-lock --output json \
+oc --namespace <namespace> get configmap shipwright-build-controller-lock --output json \
   | jq --raw-output '.metadata.annotations["control-plane.alpha.kubernetes.io/leader"]' \
   | jq --raw-output .holderIdentity
 ----
@@ -33,7 +33,7 @@ The `pprof` endpoint is not exposed in the cluster and can only be used from ins
 
 [,sh]
 ----
-kubectl --namespace <namespace> port-forward <controller-pod-name> 8383:8383
+oc --namespace <namespace> port-forward <controller-pod-name> 8383:8383
 ----
 
 Now, you can setup a local webserver to browse through the profiling data.
