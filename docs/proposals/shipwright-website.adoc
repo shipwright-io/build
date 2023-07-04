@@ -1,115 +1,118 @@
-<!--
+////
 Copyright The Shipwright Contributors
 
 SPDX-License-Identifier: Apache-2.0
--->
+////
+:doctype: book
 
----
+'''
+
 title: shipwright-website
 authors:
-  - "@adambkaplan"
+
+* "@adambkaplan"
 reviewers:
-  - "@otaviof"
-  - "@SaschaSchwarze0"
+* "@otaviof"
+* "@SaschaSchwarze0"
 approvers:
-  - "@qu1queee"
-  - "@sbose78"
+* "@qu1queee"
+* "@sbose78"
 creation-date: 2020-09-14
 last-updated: 2020-09-14
 status: implementable
----
+--
 
-# Shipwright Website
+= Shipwright Website
 
-**Build Enhancement Proposals have been moved into the Shipwright [Community](https://github.com/shipwright-io/community) repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date [SHIP](https://github.com/shipwright-io/community/blob/main/ships/0007-shipwright-website.md) for more information.**
+*Build Enhancement Proposals have been moved into the Shipwright https://github.com/shipwright-io/community[Community] repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date https://github.com/shipwright-io/community/blob/main/ships/0007-shipwright-website.md[SHIP] for more information.*
 
-## Release Signoff Checklist
+== Release Signoff Checklist
 
-- [x] Enhancement is `implementable`
-- [x] Design details are appropriately documented from clear requirements
-- [ ] Test plan is defined
-- [ ] Graduation criteria for dev preview, tech preview, GA
-- [ ] User-facing documentation is created in [docs](/docs/)
+* [x] Enhancement is `implementable`
+* [x] Design details are appropriately documented from clear requirements
+* [ ] Test plan is defined
+* [ ] Graduation criteria for dev preview, tech preview, GA
+* [ ] User-facing documentation is created in link:/docs/[docs]
 
-## Summary
+== Summary
 
 Create a website to host documentation, release notes, news, and blog posts.
 
-## Motivation
+== Motivation
 
 The `build` repository is not sufficient to evangelize the project. Running a separate website with
 documentation, release notes, and how-tos is a preferable format for users to consume information.
 
-### Goals
+=== Goals
 
-- Lay out a framework for managing website content.
-- Establish a process for individuals to contribute content.
+* Lay out a framework for managing website content.
+* Establish a process for individuals to contribute content.
 
-### Non-Goals
+=== Non-Goals
 
-- Create exhaustive documentation
-- Author blog posts/tutorials
+* Create exhaustive documentation
+* Author blog posts/tutorials
 
-## Proposal
+== Proposal
 
-Shipwright can take advantage of [GitHub Pages](https://docs.github.com/en/github/working-with-github-pages/getting-started-with-github-pages)
-and the [Hugo templating engine](https://gohugo.io/) to generate a static website. Hugo is a
+Shipwright can take advantage of https://docs.github.com/en/github/working-with-github-pages/getting-started-with-github-pages[GitHub Pages]
+and the https://gohugo.io/[Hugo templating engine] to generate a static website. Hugo is a
 popular framework to manage content, and is used by several communities (including upstream
-[Kubernetes](https://github.com/kubernetes/website)). The site will consist of two GitHub
+https://github.com/kubernetes/website[Kubernetes]). The site will consist of two GitHub
 repositories:
 
-1. A `website` repo with the Hugo assets, template, and content in Markdown format
-2. The `shipwright-io.github.io` repository, our org's GitHub Pages repo.
+. A `website` repo with the Hugo assets, template, and content in Markdown format
+. The `shipwright-io.github.io` repository, our org's GitHub Pages repo.
 
 The `website` repository will contain the theme and the GitHub Pages repositories as submodules.
 A deployment script in `website` will update the site content on pull request merges.
 This can be automated via Travis CI.
 
-[Docsy](https://www.docsy.dev/) will be used as the baseline theme, which is optimized for software
+https://www.docsy.dev/[Docsy] will be used as the baseline theme, which is optimized for software
 projects. This is the base theme used by upstream Kubernetes.
 
-### Implementation Details/Notes/Constraints
+=== Implementation Details/Notes/Constraints
 
-GitHub pages has support for [custom domains](https://docs.github.com/en/github/working-with-github-pages/configuring-a-custom-domain-for-your-github-pages-site).
+GitHub pages has support for https://docs.github.com/en/github/working-with-github-pages/configuring-a-custom-domain-for-your-github-pages-site[custom domains].
 With appropriate `CNAME` and DNS records, the GitHub Pages site can be the host for `shipwright.io`
-content. GitHub Pages can also [enforce HTTPS](https://docs.github.com/en/github/working-with-github-pages/securing-your-github-pages-site-with-https).
+content. GitHub Pages can also https://docs.github.com/en/github/working-with-github-pages/securing-your-github-pages-site-with-https[enforce HTTPS].
 
 Since the website is content (not software), the
-[Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/legalcode)
+https://creativecommons.org/licenses/by/4.0/legalcode[Creative Commons Attribution 4.0 International]
 license is appropriate for the `website` repo and generated content on `shipwright.io`. The latter
 can identify licensing via a custom footer.
 
 The Docsy theme supports internationalization with appropriate configuration in place. We should
 use this to support content translations in the future.
 
-### Risks and Mitigations
+=== Risks and Mitigations
 
-**Risk**: Unsanctioned content is published.
+*Risk*: Unsanctioned content is published.
 
 _Mitigation_: The main GitHub Pages site will enforce branch protection on the default branch. Only
 admins and sanctioned robot accounts will be allowed to merge to the default branch.
 
-## Design Details
+== Design Details
 
 The following sections are proposed for content:
 
-1. Documentation (`/docs`)
-2. Blog (`/blog`)
-   1. News (`/news`)
-   2. Release Notes (`/releases`)
+. Documentation (`/docs`)
+. Blog (`/blog`)
+ .. News (`/news`)
+ .. Release Notes (`/releases`)
 
-## Implementation History
+== Implementation History
 
-- 2020-09-14: Proposal
+* 2020-09-14: Proposal
 
-## Drawbacks
+== Drawbacks
 
-- Docs are separated from the repositories where code is written.
-- Release note content may be duplicated.
+* Docs are separated from the repositories where code is written.
+* Release note content may be duplicated.
 
-## Alternatives
+== Alternatives
 
-### Host docs and blogs alongside code
+=== Host docs and blogs alongside code
 
 Only one repository has active development at present (`build`). Documentation can be hosted as
 Markdown in the existing `docs` folder. Release notes can be hosted directly on GitHub without an
@@ -118,10 +121,10 @@ organization page.
 Blogs and tutorials can be hosted as Markdown in `docs`, or can be published on sites run by
 project maintainers.
 
-## Infrastructure Needed
+== Infrastructure Needed
 
-1. GitHub repositories (`website` and `shipwright-io.github.io`)
-2. GitHub robot account to push changes from `website` onto `shipwright-io.github.io`.
-3. Appropriate branch protection on `website` and `shipwright-io.github.io`
+. GitHub repositories (`website` and `shipwright-io.github.io`)
+. GitHub robot account to push changes from `website` onto `shipwright-io.github.io`.
+. Appropriate branch protection on `website` and `shipwright-io.github.io`
 
-## Open Questions [optional]
+== Open Questions [optional]

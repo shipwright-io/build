@@ -1,41 +1,45 @@
-<!--
+////
 Copyright The Shipwright Contributors
 
 SPDX-License-Identifier: Apache-2.0
--->
+////
+:doctype: book
 
----
+'''
+
 title: remote-artifacts
 authors:
-  - @otaviof
+
+* @otaviof
 
 reviewers:
-  - @SaschaSchwarze0
-  - @qu1queee
-  - @adambkaplan
-  - @zhangtbj
-  - @coreydaley
+
+* @SaschaSchwarze0
+* @qu1queee
+* @adambkaplan
+* @zhangtbj
+* @coreydaley
 
 approvers:
-  - TBD
+
+* TBD
 creation-date: 2020-10-02
 last-updated:  2020-11-09
 status: provisional
----
+--
 
-Shipwright Remote Artifacts
----------------------------
+== Shipwright Remote Artifacts
 
-**Build Enhancement Proposals have been moved into the Shipwright [Community](https://github.com/shipwright-io/community) repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date [SHIP](https://github.com/shipwright-io/community/blob/main/ships/0008-remote-artifacts.md) for more information.**
+*Build Enhancement Proposals have been moved into the Shipwright https://github.com/shipwright-io/community[Community] repository. This document holds an obsolete Enhancement Proposal, please refer to the up-to-date https://github.com/shipwright-io/community/blob/main/ships/0008-remote-artifacts.md[SHIP] for more information.*
 
-# Summary
+= Summary
 
 Remote artifacts are dependencies of the software building process, they represent binaries or
 other data stored outside of the version control system (Git). Hence, they are required when
 dealing with container images as well, and this enhancement proposal focuses on adding a remote
 artifacts support to Shipwright's Build API.
 
-# Motivation
+= Motivation
 
 Give Shipwright's operator broader build use-case support by enhancing its capabilities to include
 the concept of Artifacts. In other words, remote entities that will be available for the image
@@ -45,29 +49,30 @@ End users will be able to include remote artifacts as a build runtime dependency
 controlled by remote systems will be downloaded before the build process starts. Those artifacts may
 be a pre-compile binary, `jar` files, `war` files, etc.
 
-## Goals
+== Goals
 
-*   Provide means to declare remote artifacts, dependencies that can be employed on builds;
-*   Create the mechanism to download and prepare remote artifacts for builds;
+* Provide means to declare remote artifacts, dependencies that can be employed on builds;
+* Create the mechanism to download and prepare remote artifacts for builds;
 
-## Non-Goals
+== Non-Goals
 
-*   Automate the upload of local artifacts into the cluster;
-*   Manage remote artifacts;
-*   Amend container images created by the given `BuildStrategy`;
-*   Walking a remote directory tree, similarly to a `git checkout`;
+* Automate the upload of local artifacts into the cluster;
+* Manage remote artifacts;
+* Amend container images created by the given `BuildStrategy`;
+* Walking a remote directory tree, similarly to a `git checkout`;
 
-# Proposal
+= Proposal
 
 The enhancement proposal is centered around the idea of declaring external dependencies, here
 called "artifacts", and being able to use them during the container image building process.
 
-## Build Artifacts
+== Build Artifacts
 
 The remote artifacts will be directly expressed in the body of a `Build` resource, as the
 following example:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: Build
@@ -82,25 +87,25 @@ spec:
       url: https://licenses.company.com/customer-id/license.tar
       http:
         path: $(workspace)/licenses/license.tar
-```
+----
 
 We will add `sources` section, side by side with current `source`. The idea is to accommodate both
 constructions in `v1alpha1`, and save API breaking changes for upcoming `v1beta1`.
 
 The new `sources` will contain the following attributes:
 
-- `name`: source name (required);
-- `type`: input source type, `git` or `http` (required);
-- `sourceRef`: use a external resource, the name in this field is the resource name (optional);
-- `url`: the URL of the repository or remote artifact (optional);
-- `credentials`: the credentials to interact with the artifact (optional);
-- `http`: settings for `http`, containing inner attribute `.spec.http.path` (optional);
-- `git`: settings for `git`, as exists today;
+* `name`: source name (required);
+* `type`: input source type, `git` or `http` (required);
+* `sourceRef`: use a external resource, the name in this field is the resource name (optional);
+* `url`: the URL of the repository or remote artifact (optional);
+* `credentials`: the credentials to interact with the artifact (optional);
+* `http`: settings for `http`, containing inner attribute `.spec.http.path` (optional);
+* `git`: settings for `git`, as exists today;
 
 The resource `UID`/`GID` will be defined by the same user running the Tekton task, later on, we
 can extend the API to support arbitrary configuration.
 
-### Single vs. Multiple Git Repositories
+=== Single vs. Multiple Git Repositories
 
 For the initial implementation, we will only support one git repository that is specified in
 `.spec.source`. Remote artifacts will be specified n `.spec.sources` only.
@@ -108,7 +113,7 @@ For the initial implementation, we will only support one git repository that is 
 We will address supporting multiple Git repositories in a future enhancement proposal. This will
 involve re-defining `/workspace/source` location and the `$workspace` placeholder.
 
-## Steps and Helper
+== Steps and Helper
 
 Artifacts are requirements for the build process, thus downloading and preparing artifacts must
 happen before the build process starts. To achieve the objective, the operator will generate a new
@@ -123,7 +128,8 @@ plus arguments, to download the specified artifacts.
 
 The step generated by the operator will look like the following:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: tekton.dev/v1beta1
 kind: TaskRun
@@ -141,19 +147,20 @@ spec:
           wget --output="/workspace/source/classpath/main.jar" https://nexus.company.com/app/main.jar && \
           chown 1000:1001 /workspace/source/classpath/main.jar && \
           chmod 0644 /workspace/source/classpath/main.jar
-```
+----
 
-## Example Use-Case
+== Example Use-Case
 
-Using [Shipwright's proposed logos](https://github.com/shipwright-io/build/issues/325) as example,
-let's assume we are building a [TypeScript application](https://github.com/otaviof/typescript-ex)
+Using https://github.com/shipwright-io/build/issues/325[Shipwright's proposed logos] as example,
+let's assume we are building a https://github.com/otaviof/typescript-ex[TypeScript application]
 which will use the project logo, and we would like to create two different builds, one with the
 default project logo, and another with the alternative.
 
 By using remote artifacts, we can keep the separation of project source code and assets, and we
 can describe those resources as:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildSource
@@ -166,11 +173,12 @@ spec:
       url: https://user-images.githubusercontent.com/2587818/92114986-69bfb600-edfa-11ea-820e-96cdb1014f58.png
       http:
         path: $(workspace)/assets/images/shipwright-logo.png
-```
+----
 
 And, the alternative logo:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildSource
@@ -183,11 +191,12 @@ spec:
       url: https://user-images.githubusercontent.com/2587818/92100668-c1ebbd80-ede4-11ea-9e8a-7379c3875ea0.png
       http:
         path: $(workspace)/assets/images/shipwright-logo.png
-```
+----
 
 Then, we can create the `Build` resource, as per:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: Build
@@ -207,12 +216,12 @@ spec:
       sourceRef: ship-logo
   output:
     image: quay.io/otaviof/typescript-ex:latest
-```
+----
 
 Now, we can create two `BuildRun` resources. The first only runs the build with original settings:
 
-
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
@@ -221,12 +230,13 @@ metadata:
 spec:
   buildRef:
     name: typescript-ex
-```
+----
 
 And later, we can create yet another `BuildRun`, but this time use the alternative logo. Here we are
 overwriting the `project-logo` source name, with an alternative resource, i.e.:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
@@ -240,25 +250,26 @@ spec:
   sources:
     - name: project-logo
       sourceRef: axes-logo
-```
+----
 
 When the build processes are done, the following images will be available:
-*   `quay.io/otaviof/typescript-ex:latest`
-*   `quay.io/otaviof/typescript-ex:alternative`
+
+* `quay.io/otaviof/typescript-ex:latest`
+* `quay.io/otaviof/typescript-ex:alternative`
 
 A number of real world use-cases can be derived from this example, the `BuildSource` is the
 foundation.
 
-## Test Plan
+== Test Plan
 
-1. Deploy the Shipwright Build operator in a cluster;
-2. Create a `BuildSource` resource instance, point to a remote binary;
-3. Create `Build` and `BuildRun` resources, using `BuildSource`;
-4. Make sure the build process happens successfully, being able to use remote artifact;
+. Deploy the Shipwright Build operator in a cluster;
+. Create a `BuildSource` resource instance, point to a remote binary;
+. Create `Build` and `BuildRun` resources, using `BuildSource`;
+. Make sure the build process happens successfully, being able to use remote artifact;
 
-## Alternatives
+== Alternatives
 
-### Standalone CRD
+=== Standalone CRD
 
 Alternatively, we may define the artifacts as a standalone CRD, that is a `BuildSource` resource.
 The advantage of this design is being able to exchange, and reuse, artifacts on several builds.
@@ -271,7 +282,8 @@ resource.
 
 The following snippet shows how an Artifact, i.e.: `BuildSource`, will be represented.
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildSource
@@ -284,14 +296,15 @@ spec:
       url: https://licenses.company.com/customer-id/license.tar
       http:
         path: $(workspace)/licenses/license.tar
-```
+----
 
-#### Usage
+==== Usage
 
 The usage of this feature is based on declaring a slice of `.spec.sources` and later on overwriting
 entries using `BuildRun` resource. For instance:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: Build
@@ -302,11 +315,12 @@ spec:
     # ...
   sources:
     - name: license-file
-```
+----
 
 Could have its `license-file` overwritten in a `BuildRun` with:
 
-```yml
+[,yml]
+----
 ---
 apiVersion: build.dev/v1alpha1
 kind: BuildRun
@@ -318,4 +332,4 @@ spec:
   sources:
     - name: license-file
       sourceRef: alternative-file
-```
+----
