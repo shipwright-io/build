@@ -11,16 +11,17 @@ Documentation inspired from https://github.com/tektoncd/pipeline/blob/ce7591acec
 
 ## Getting started
 
-1.  [Ramp up on kubernetes and CRDs](#ramp-up)
-1.  Create [a GitHub account](https://github.com/join)
-1.  Setup
-    [GitHub access via SSH](https://help.github.com/articles/connecting-to-github-with-ssh/)
-1.  [Create and checkout a repo fork](#checkout-your-fork)
-1.  Install [requirements](#requirements)
-1.  [Set up a Kubernetes cluster](#create-a-cluster-and-a-repo)
-1.  Set up your [shell environment](#environment-setup)
-1.  [Configure kubectl to use your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
-1.  [Install Shipwright Build in your cluster](#install-shipwright-build)
+- [Developing](#developing)
+  - [Getting started](#getting-started)
+    - [Ramp up](#ramp-up)
+    - [Checkout your fork](#checkout-your-fork)
+    - [Requirements](#requirements)
+    - [Create a cluster and a repo](#create-a-cluster-and-a-repo)
+  - [Environment Setup](#environment-setup)
+  - [Install Shipwright Build](#install-shipwright-build)
+    - [Redeploy controller](#redeploy-controller)
+    - [Tear it down](#tear-it-down)
+    - [Accessing logs](#accessing-logs)
 
 ### Ramp up
 
@@ -118,12 +119,12 @@ Note: This is roughly equivalent to [`docker login`](https://docs.docker.com/eng
 
 ## Install Shipwright Build
 
-The following set of steps highlight how to deploy a Build controller pod into an existing Kubernetes cluster.
+The following set of steps highlight how to deploy the Build controller into a existing Kubernetes cluster.
 
-1. Target your Kubernetes cluster and install the Shipwright Build. Run this from the root of the source repo:
+1. Follow the official Tekton Pipelines [installation documentation](https://tekton.dev/docs/pipelines/install/):
 
-    ```sh
-    ./hack/install-tekton.sh
+    ```bash
+    kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/${TEKTON_VERSION}/release.yaml
     ```
 
 1. Set your `KO_DOCKER_REPO` environment variable. This will be the container
@@ -165,4 +166,3 @@ To look at the controller logs, run:
 ```sh
 kubectl -n shipwright-build logs $(kubectl -n shipwright-build get pods -l name=shipwright-build-controller -o name)
 ```
-

@@ -10,8 +10,9 @@ The following document highlights how to deploy a Build controller locally for r
 
 **Before generating an instance of the Build controller, ensure the following:**
 
-- Target your Kubernetes cluster. We recommend the usage of KinD for development, which you can launch via our [install-kind.sh](/hack/install-kind.sh) script.
-- On the cluster, ensure the Tekton controllers are running. You can use our Tekton installation script in [install-tekton.sh](/hack/install-tekton.sh)
+- Target your Kubernetes cluster. We recommend the usage of [KinD](https://kind.sigs.k8s.io/docs/user/quick-start/) for development.
+
+- On the cluster, ensure the Tekton Pipelines is deployed. Please follow the [official documentation](https://tekton.dev/docs/pipelines/install/).
 
 ---
 
