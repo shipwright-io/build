@@ -3,7 +3,7 @@ Copyright The Shipwright Contributors
 
 SPDX-License-Identifier: Apache-2.0
 -->
-
+Sample line
 <p align="center">
     <img alt="Work in Progress" src="https://img.shields.io/badge/Status-Work%20in%20Progress-informational">
     <a alt="GoReport" href="https://goreportcard.com/report/github.com/shipwright-io/build">
@@ -95,10 +95,10 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
   ```bash
   $ kubectl get builds
- 
+
   NAME                     REGISTERED   REASON      BUILDSTRATEGYKIND      BUILDSTRATEGYNAME   CREATIONTIME
   buildpack-nodejs-build   True         Succeeded   ClusterBuildStrategy   buildpacks-v3       68s
-  ```  
+  ```
 
 - Submit your *BuildRun*:
 
@@ -118,7 +118,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
   ```bash
   $ kubectl get buildruns
-  
+
   NAME                              SUCCEEDED   REASON      STARTTIME   COMPLETIONTIME
   buildpack-nodejs-buildrun-xyzds   True        Succeeded   69s         2s
   ```
