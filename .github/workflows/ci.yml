@@ -57,8 +57,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.24.7
-          - v1.25.3
+          - v1.24.15
+          - v1.25.11
       max-parallel: 2
     runs-on: ubuntu-latest
     steps:
@@ -81,7 +81,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.17.0
+          version: v0.20.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           wait: 120s
@@ -119,8 +119,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.24.7
-          - v1.25.3
+          - v1.24.15
+          - v1.25.11
       max-parallel: 2
     runs-on: ubuntu-latest
     steps:
@@ -139,7 +139,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.17.0
+          version: v0.20.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           config: test/kind/config.yaml
@@ -182,7 +182,8 @@ jobs:
           kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
       - name: Test
         run: |
-          export TEST_NAMESPACE=shipwright-build
+          kubectl create namespace shp-e2e
+          export TEST_NAMESPACE=shp-e2e
           export TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
           export TEST_IMAGE_REPO_INSECURE=true
           export TEST_E2E_TIMEOUT_MULTIPLIER=2

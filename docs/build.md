@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
   - [Defining Retention Parameters](#defining-retention-parameters)
   - [Defining Volumes](#defining-volumes)
   - [Defining Triggers](#defining-triggers)
-- [BuildRun deletion](#BuildRun-deletion)
+- [BuildRun deletion](#buildrun-deletion)
 
 ## Overview
 
@@ -64,7 +64,7 @@ To prevent users from triggering `BuildRuns` (_execution of a Build_) that will 
 | SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist. |
 | SpecBuilderSecretRefNotFound | The secret used to authenticate the container registry doesn't exist.|
 | MultipleSecretRefNotFound | More than one secret is missing. At the moment, only three paths on a Build can specify a secret. |
-| RestrictedParametersInUse | One or many defined `params` are colliding with Shipwright reserved parameters. See [Defining Params](#defining-params) for more information. |
+| RestrictedParametersInUse | One or many defined `params` are colliding with Shipwright reserved parameters. See [Defining Params](#defining-paramvalues) for more information. |
 | UndefinedParameter | One or many defined `params` are not defined in the referenced strategy. Please ensure that the strategy defines them under its `spec.parameters` list. |
 | RemoteRepositoryUnreachable | The defined `spec.source.url` was not found. This validation only takes place for HTTP/HTTPS protocols. |
 | BuildNameInvalid | The defined `Build` name (`metadata.name`) is invalid. The `Build` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
@@ -78,7 +78,7 @@ The `Build` definition supports the following fields:
 - Required:
   - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1alpha1`.
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `Build`.
-  - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `Build`.
+  - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the custom resource instance, especially the name of the `Build`, and in which [namespace](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) you place it. **Note**: You should use your own namespace, and not put your builds into the shipwright-build namespace where Shipwright's system components run.
   - `spec.source` - Refers to the location of the source code, for example a Git repository or source bundle image.
   - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/buildstrategy)
   - `spec.builder.image` - Refers to the image containing the build tools to build the source code. (_Use this path for Dockerless strategies, this is just required for `source-to-image` buildStrategy_) **This field has been deprecated, and will be removed in a future release.**
@@ -88,7 +88,7 @@ The `Build` definition supports the following fields:
 - Optional:
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_). **This field has been deprecated, and will be removed in a future release.**
-  - `spec.sources` - [Sources](#Sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts. **This field has been deprecated, and will be removed in a future release.**
+  - `spec.sources` - [Sources](#sources) describes a slice of artifacts that will be imported into the project context before the actual build process starts. **This field has been deprecated, and will be removed in a future release.**
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The default is ten minutes. You can overwrite the value in the `BuildRun`.
   - `metadata.annotations[build.shipwright.io/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
   - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
@@ -156,7 +156,7 @@ spec:
     contextDir: renamed
 ```
 
-Example of a `Build` that specifies the tag `v.0.1.0` for the git repository:
+Example of a `Build` that specifies the tag `v0.1.0` for the git repository:
 
 ```yaml
 apiVersion: shipwright.io/v1alpha1
