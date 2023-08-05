@@ -19,7 +19,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.19.x'
+          go-version: '1.20.x'
           cache: true
           check-latest: true
       - name: Build
@@ -67,7 +67,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.19.x'
+          go-version: '1.20.x'
           cache: true
           check-latest: true
       - name: Install Ko
@@ -129,7 +129,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.19.x'
+          go-version: '1.20.x'
           cache: true
           check-latest: true
       - name: Install kubectl
