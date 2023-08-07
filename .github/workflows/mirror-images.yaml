@@ -22,6 +22,7 @@ jobs:
             library/golang:1.17 \
             library/golang:1.18 \
             library/golang:1.19 \
+            library/golang:1.20 \
             library/maven:3-jdk-8-openj9 \
             library/node:12 \
             library/node:14 \
