@@ -1,5 +1,5 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: buildkit
@@ -27,7 +27,11 @@ spec:
     description: "The secrets to pass to the build. Values must be in the format ID=FILE_CONTENT."
     type: array
     defaults: []
-  buildSteps:
+  - name: dockerfile
+    description: The path to the Dockerfile to be used for building the image.
+    type: string
+    default: "Dockerfile"
+  steps:
     - name: build-and-push
       image: moby/buildkit:nightly-rootless
       imagePullPolicy: Always
@@ -49,7 +53,7 @@ spec:
       - name: PARAM_SOURCE_CONTEXT
         value: $(params.shp-source-context)
       - name: PARAM_DOCKERFILE
-        value: $(params.DOCKERFILE)
+        value: $(params.dockerfile)
       - name: PARAM_OUTPUT_DIRECTORY
         value: $(params.shp-output-directory)
       - name: PARAM_OUTPUT_IMAGE

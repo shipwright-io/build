@@ -9,8 +9,8 @@ SPDX-License-Identifier: Apache-2.0
 - [Overview](#overview)
 - [BuildRun Controller](#buildrun-controller)
 - [Configuring a BuildRun](#configuring-a-buildrun)
-  - [Defining the BuildRef](#defining-the-buildref)
-  - [Defining the BuildSpec](#defining-the-buildspec)
+  - [Defining the Build Reference](#defining-the-buildref)
+  - [Defining the Build Specification](#defining-the-buildspec)
   - [Defining ParamValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
   - [Defining Retention Parameters](#defining-retention-parameters)
@@ -28,7 +28,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-The resource `BuildRun` (`buildruns.shipwright.io/v1alpha1`) is the build process of a `Build` resource definition executed in Kubernetes.
+The resource `BuildRun` (`buildruns.shipwright.io/v1beta1`) is the build process of a `Build` resource definition executed in Kubernetes.
 
 A `BuildRun` resource allows the user to define:
 
@@ -57,55 +57,57 @@ When the controller reconciles it:
 The `BuildRun` definition supports the following fields:
 
 - Required:
-  - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1alpha1`.
+  - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1beta1`.
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `BuildRun`.
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the CRD instance, for example the name of the `BuildRun`.
 
 - Optional:
-  - `spec.buildRef` - Specifies an existing `Build` resource instance to use. It cannot be used together with `buildSpec`.
-  - `spec.buildSpec` - Specifies an embedded (transient) Build resource to use. It cannot be used together with `buildRef`.
+  - `spec.build.name` - Specifies an existing `Build` resource instance to use.
+  - `spec.build.spec` - Specifies an embedded (transient) Build resource to use.
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The value overwrites the value that is defined in the `Build`.
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`. This value overwrites values defined with the same name in the Build.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value defined in `Build`. ( Note: other properties of the output, for example, the credentials, cannot be specified in the buildRun spec. )
-  - `spec.output.credentials.name` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
+  - `spec.output.pushSecret` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
 
-_Note:_ The `BuildRef` and `BuildSpec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `buildRef`, but **not** with `buildSpec`.
+_Note:_ The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
 
-### Defining the BuildRef
+### Defining the Build Reference
 
 A `BuildRun` resource can reference a `Build` resource, that indicates what image to build. For example:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced
 spec:
-  buildRef:
+  build:
     name: buildpack-nodejs-build-namespaced
 ```
 
-### Defining the BuildSpec
+### Defining the Build Specification
 
-Alternatively to `BuildRef`, a complete `BuildSpec` can be embedded into the `BuildRun` for the build.
+A complete `BuildSpec` can be embedded into the `BuildRun` for the build.
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: standalone-buildrun
 spec:
-  buildSpec:
-    source:
-      url: https://github.com/shipwright-io/sample-go.git
-      contextDir: source-build
-    strategy:
-      kind: ClusterBuildStrategy
-      name: buildpacks-v3
-    output:
-      image: foo/bar:latest
+  build:
+    spec:
+      source:
+        git:
+          url: https://github.com/shipwright-io/sample-go.git
+        contextDir: source-build
+      strategy:
+        kind: ClusterBuildStrategy
+        name: buildpacks-v3
+      output:
+        image: foo/bar:latest
 ```
 
 ### Defining ParamValues
@@ -116,7 +118,7 @@ For example, the following `BuildRun` overrides the value for _sleep-time_ param
 
 ```yaml
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: a-build
@@ -134,13 +136,13 @@ spec:
   ...
 
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: a-buildrun
   namespace: a-namespace
 spec:
-  buildRef:
+  build:
     name: a-build
   paramValues:
   - name: cache
@@ -154,18 +156,17 @@ See more about _paramValues_ usage in the related [Build](./build.md#defining-pa
 A `BuildRun` resource can define a serviceaccount to use. Usually this SA will host all related secrets referenced on the `Build` resource, for example:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced
 spec:
-  buildRef:
+  build:
     name: buildpack-nodejs-build-namespaced
-  serviceAccount:
-    name: pipeline
+  serviceAccount: pipeline
 ```
 
-You can also use set the `spec.serviceAccount.generate` path to `true`. This will generate the service account during runtime for you. The name of the generated service account is the name of the BuildRun. **This field is deprecated, and will be removed in a future release.**
+You can also set the value of `spec.serviceAccount` to `".generate"`. This will generate the service account during runtime for you. The name of the generated service account is the same as that of the BuildRun.
 
 _**Note**_: When the service account is not defined, the `BuildRun` uses the `pipeline` service account if it exists in the namespace, and falls back to the `default` service account.
 
@@ -181,12 +182,12 @@ As part of the buildrun retention parameters, we have the following fields:
 An example of a user using buildrun TTL parameters.
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buidrun-retention-ttl
 spec:
-  buildRef:
+  build:
     name: build-retention-ttl
   retention:
     ttlAfterFailed: 10m
@@ -209,12 +210,12 @@ all the usual `volumeSource` types are supported.
 Here is an example of `BuildRun` object that overrides `volumes`:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildrun-name
 spec:
-  buildRef:
+  build:
     name: build-name
   volumes:
     - name: volume-name
@@ -231,7 +232,7 @@ When you cancel a `BuildRun`, the underlying `TaskRun` is marked as canceled per
 Example of canceling a `BuildRun`:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced
@@ -259,12 +260,12 @@ We have two controllers that ensure that buildruns can be deleted automatically 
 An example of a `BuildRun` that specifies environment variables:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced
 spec:
-  buildRef:
+  build:
     name: buildpack-nodejs-build-namespaced
   env:
     - name: EXAMPLE_VAR_1
@@ -277,12 +278,12 @@ Example of a `BuildRun` that uses the Kubernetes Downward API to
 expose a `Pod` field as an environment variable:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced
 spec:
-  buildRef:
+  build:
     name: buildpack-nodejs-build-namespaced
   env:
     - name: POD_NAME
@@ -295,12 +296,12 @@ Example of a `BuildRun` that uses the Kubernetes Downward API to
 expose a `Container` field as an environment variable:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildpack-nodejs-buildrun-namespaced
 spec:
-  buildRef:
+  build:
     name: buildpack-nodejs-build-namespaced
   env:
     - name: MEMORY_LIMIT
@@ -370,22 +371,20 @@ The following table illustrates the different states a BuildRun can have under i
 | False    | BuildNotFound                           | Yes | The related Build in the BuildRun was not found. |
 | False    | BuildRunCanceled                        | Yes | The BuildRun and underlying TaskRun were canceled successfully. |
 | False    | BuildRunNameInvalid                     | Yes | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
-| False    | BuildRunNoRefOrSpec                     | Yes | BuildRun does not have either `BuildRef` or `BuildSpec` defined. There is no connection to a Build specification. |
-| False    | BuildRunAmbiguousBuild                  | Yes | The defined `BuildRun` uses both `BuildRef` and `BuildSpec`. Only one of them is allowed at the same time.|
-| False    | BuildRunBuildFieldOverrideForbidden     | Yes | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, or `env`) in combination with `BuildSpec`, which is not allowed. Use the `BuildSpec` to directly specify the respective value. |
+| False    | BuildRunNoRefOrSpec                     | Yes | BuildRun does not have either `spec.build.name` or `spec.build.spec` defined. There is no connection to a Build specification. |
+| False    | BuildRunAmbiguousBuild                  | Yes | The defined `BuildRun` uses both `spec.build.name` and `spec.build.spec`. Only one of them is allowed at the same time.|
+| False    | BuildRunBuildFieldOverrideForbidden     | Yes | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, or `env`) in combination with `spec.build.spec`, which is not allowed. Use the `spec.build.spec` to directly specify the respective value. |
 | False    | PodEvicted                              | Yes | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
 
 _Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
 
 ### Understanding failed BuildRuns
 
-[DEPRECATED] To make it easier for users to understand why did a BuildRun failed, users can infer the pod and container where the failure took place from the `status.failedAt` field.
+To make it easier for users to understand why did a BuildRun failed, users can infer the pod and container where the failure took place from the `status.failureDetails` field.
 
-In addition, the `status.conditions` hosts a compacted message under the' message' field that contains the `kubectl` command to trigger and retrieve the logs.
+In addition, the `status.conditions` hosts a compacted message under the `message` field that contains the `kubectl` command to trigger and retrieve the logs.
 
-Lastly, users can check the `status.failureDetails` field, which includes the same information available in the `status.failedAt` field,
-as well as a human-readable error message and reason.
-The message and reason are only included if the build strategy provides them.
+The `status.failureDetails` field also includes a detailed failure reason and message, if the build strategy provides them.
 
 Example of failed BuildRun:
 

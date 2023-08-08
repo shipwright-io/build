@@ -1,4 +1,4 @@
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: source-to-image
@@ -6,12 +6,12 @@ spec:
   volumes:
     - name: gen-source
       emptyDir: {}
-  buildSteps:
+  steps:
     - command:
         - /usr/local/bin/s2i
         - build
         - $(params.shp-source-context)
-        - $(build.builder.image)
+        - $(params.builder-image)
         - '--as-dockerfile'
         - /gen-source/Dockerfile.gen
       image: quay.io/openshift-pipeline/s2i:nightly
@@ -64,6 +64,10 @@ spec:
         - mountPath: /gen-source
           name: gen-source
       workingDir: /gen-source
+  parameters:
+    - name: builder-image
+      description: The builder image.
+      type: string
   securityContext:
     runAsUser: 0
     runAsGroup: 0

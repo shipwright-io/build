@@ -1,5 +1,5 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: source-to-image-redhat
@@ -7,14 +7,16 @@ spec:
   volumes:
     - name: s2i
       emptyDir: {}
-  buildSteps:
+  steps:
     - name: s2i-generate
       image: registry.redhat.io/ocp-tools-43-tech-preview/source-to-image-rhel8:latest
       workingDir: $(params.shp-source-root)
+      command: 
+        - /usr/local/bin/s2i
       args:
         - build
         - $(params.shp-source-context)
-        - $(build.builder.image)
+        - $(params.builder-image)
         - $(params.shp-output-image)
         - --as-dockerfile=/s2i/Dockerfile
       volumeMounts:
@@ -24,7 +26,9 @@ spec:
       image: quay.io/containers/buildah:v1.32.0
       workingDir: /s2i
       securityContext:
-        privileged: true
+        capabilities:
+          add:
+          - "SETFCAP"
       command:
         - /bin/bash
       args:
@@ -107,13 +111,13 @@ spec:
 
           # Building the image
           echo "[INFO] Building image ${image}"
-          buildah bud \
+          buildah --storage-driver=$(params.storage-driver) bud \
             --registries-conf=/tmp/registries.conf \
             --tag="${image}"
 
           # Write the image
           echo "[INFO] Writing image ${image}"
-          buildah push \
+          buildah --storage-driver=$(params.storage-driver) push \
             "${image}" \
             "oci:${target}"
         # That's the separator between the shell script and its args
@@ -146,6 +150,14 @@ spec:
       defaults:
         - docker.io
         - quay.io
+    - name: builder-image
+      description: The builder image.
+      type: string
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'."
+      type: string
+      default: "vfs"
+      # For details see the "--storage-driver" section of https://github.com/containers/buildah/blob/main/docs/buildah.1.md#options
   securityContext:
     runAsUser: 0
     runAsGroup: 0

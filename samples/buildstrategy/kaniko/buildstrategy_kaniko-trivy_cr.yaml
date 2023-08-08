@@ -2,7 +2,7 @@
 # critical CVEs. It will not be pushed into the destination registry
 # if any critical vulnerabilities are found.
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: kaniko-trivy
@@ -12,7 +12,7 @@ spec:
       emptyDir: {}
     - name: tar
       emptyDir: {}
-  buildSteps:
+  steps:
     - name: kaniko-build
       image: gcr.io/kaniko-project/executor:v1.16.0
       workingDir: $(params.shp-source-root)
@@ -37,7 +37,7 @@ spec:
         - /kaniko/executor
       args:
         - --dockerfile
-        - $(build.dockerfile)
+        - $(params.dockerfile)
         - --context
         - $(params.shp-source-context)
         - --destination
@@ -77,6 +77,11 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  parameters:
+  - name: dockerfile
+    description: The path to the Dockerfile to be used for building the image.
+    type: string
+    default: "Dockerfile"
   securityContext:
     runAsUser: 0
     runAsGroup: 0

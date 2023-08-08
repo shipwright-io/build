@@ -1,5 +1,5 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: ko
@@ -25,7 +25,7 @@ spec:
       description: "Volume to contain the GOCACHE. Can be set to a persistent volume to optimize compilation performance for rebuilds."
       overridable: true
       emptyDir: {}
-  buildSteps:
+  steps:
     - name: build
       image: golang:$(params.go-version)
       imagePullPolicy: Always

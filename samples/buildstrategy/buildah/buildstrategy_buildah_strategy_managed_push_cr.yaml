@@ -1,10 +1,10 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: buildah-strategy-managed-push
 spec:
-  buildSteps:
+  steps:
     - name: build-and-push
       image: quay.io/containers/buildah:v1.32.0
       workingDir: $(params.shp-source-root)
@@ -157,7 +157,7 @@ spec:
         - --context
         - $(params.shp-source-context)
         - --dockerfile
-        - $(build.dockerfile)
+        - $(params.dockerfile)
         - --image
         - $(params.shp-output-image)
         - --build-args
@@ -194,6 +194,10 @@ spec:
       defaults:
         - docker.io
         - quay.io
+    - name: dockerfile
+      description: The path to the Dockerfile to be used for building the image.
+      type: string
+      default: "Dockerfile"
     - name: storage-driver
       description: "The storage driver to use, such as 'overlay' or 'vfs'"
       type: string

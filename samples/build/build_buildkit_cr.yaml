@@ -1,13 +1,12 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: buildkit-build
-  annotations:
-    build.shipwright.io/build-run-deletion: "true"
 spec:
   source:
-    url: https://github.com/shipwright-io/sample-go
+    git: 
+      url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
   paramValues:
   - name: platforms
@@ -17,6 +16,8 @@ spec:
   strategy:
     name: buildkit
     kind: ClusterBuildStrategy
+  retention:
+    atBuildDeletion: true
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
 

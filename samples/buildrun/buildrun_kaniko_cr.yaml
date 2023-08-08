@@ -1,10 +1,9 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: kaniko-golang-buildrun
 spec:
-  buildRef:
+  build:
     name: kaniko-golang-build
-  serviceAccount:
-    generate: true
+  serviceAccount: ".generate"

@@ -1,8 +1,8 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: buildah-golang-buildrun
 spec:
-  buildRef:
+  build:
     name: buildah-golang-build

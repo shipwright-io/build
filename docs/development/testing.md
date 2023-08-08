@@ -129,7 +129,7 @@ The following table contains a list of environment variables that will override 
 |------------------------------------|--------------------------------|-----------------------------------------------------|
 | `TEST_IMAGE_REPO`                  | `spec.output.image`            | Image repository for end-to-end tests               |
 | `TEST_IMAGE_REPO_INSECURE`         | `spec.output.insecure`         | Flag whether the image repository is secure or not. |
-| `TEST_IMAGE_REPO_SECRET`           | `spec.output.credentials.name` | Container credentials secret name                   |
+| `TEST_IMAGE_REPO_SECRET`           | `spec.output.pushSecret`       | Container credentials secret name                   |
 | `TEST_IMAGE_REPO_DOCKERCONFIGJSON` | _none_                         | JSON payload equivalent to `~/.docker/config.json`  |
 
 The contents of `TEST_IMAGE_REPO_DOCKERCONFIGJSON` can be obtained from [quay.io](https://quay.io) using a [robot account](https://docs.quay.io/glossary/robot-accounts.html). The JSON payload is for example:
@@ -155,9 +155,9 @@ End-to-end tests can also be executed with the context of private Git repositori
 | Environment Variable  | Path                           | Description                           |
 |-----------------------|--------------------------------|---------------------------------------|
 | `TEST_PRIVATE_REPO`   | _none_                         | Enable private repository e2e tests   |
-| `TEST_PRIVATE_GITHUB` | `spec.source.url`              | Private URL, like `git@github.com`    |
-| `TEST_PRIVATE_GITLAB` | `spec.source.url`              | Private URL, like `git@gitlab.com`    |
-| `TEST_SOURCE_SECRET`  | `spec.source.credentials.name` | Private repository credentials        |
+| `TEST_PRIVATE_GITHUB` | `spec.source.git.url`              | Private URL, like `git@github.com`    |
+| `TEST_PRIVATE_GITLAB` | `spec.source.git.url`              | Private URL, like `git@gitlab.com`    |
+| `TEST_SOURCE_SECRET`  | `spec.source.git.cloneSecret` | Private repository credentials        |
 
 On using `TEST_SOURCE_SECRET`, the environment variable must contain the name of the Kubernetes Secret containing SSH private key, for given private Git repository. See the [docs](authentication.md) for more information about authentication methods in the Build.
 

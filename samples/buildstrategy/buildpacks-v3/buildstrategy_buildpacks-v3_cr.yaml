@@ -1,5 +1,5 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: buildpacks-v3
@@ -11,7 +11,7 @@ spec:
     - name: platform-api-version
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
       default: "0.7"
-  buildSteps:
+  steps:
     - name: build-and-push
       image: docker.io/paketobuildpacks/builder-jammy-full:latest
       env: 

@@ -46,7 +46,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-There are two types of strategies, the `ClusterBuildStrategy` (`clusterbuildstrategies.shipwright.io/v1alpha1`) and the `BuildStrategy` (`buildstrategies.shipwright.io/v1alpha1`). Both strategies define a shared group of steps, needed to fullfil the application build.
+There are two types of strategies, the `ClusterBuildStrategy` (`clusterbuildstrategies.shipwright.io/v1beta1`) and the `BuildStrategy` (`buildstrategies.shipwright.io/v1beta1`). Both strategies define a shared group of steps, needed to fullfil the application build.
 
 A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is available within a namespace.
 
@@ -271,7 +271,7 @@ Users defining _parameters_ under their strategies require to understand the fol
       - name: tool-args
         description: Parameters for the tool
         type: array
-    buildSteps:
+    steps:
       - name: a-step
         command:
           - some-tool
@@ -299,7 +299,7 @@ The following example is from the [BuildKit sample build strategy](../samples/bu
 
 ```yaml
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: buildkit
@@ -322,7 +322,11 @@ spec:
     description: "The secrets to pass to the build. Values must be in the format ID=FILE_CONTENT."
     type: array
     defaults: []
-  buildSteps:
+  - name: dockerfile
+    description: The path to the Dockerfile to be used for building the image.
+    type: string
+    default: "Dockerfile"
+  steps:
     ...
     - name: build-and-push
       image: moby/buildkit:nightly-rootless
@@ -337,7 +341,7 @@ spec:
           set -euo pipefail
 
           # Prepare the file arguments
-          DOCKERFILE_PATH='$(params.shp-source-context)/$(build.dockerfile)'
+          DOCKERFILE_PATH='$(params.shp-source-context)/$(params.dockerfile)'
           DOCKERFILE_DIR="$(dirname "${DOCKERFILE_PATH}")"
           DOCKERFILE_NAME="$(basename "${DOCKERFILE_PATH}")"
 
@@ -460,7 +464,7 @@ spec:
     - name: sample-parameter
       description: A sample parameter
       type: string
-  buildSteps:
+  steps:
     - name: sample-step
       command:
         - /bin/bash
@@ -491,7 +495,7 @@ To securely pass a parameter value into a script-style argument, you can chose b
        - name: sample-parameter
          description: A sample parameter
          type: string
-     buildSteps:
+     steps:
        - name: sample-step
          env:
            - name: PARAM_SAMPLE_PARAMETER
@@ -514,7 +518,7 @@ To securely pass a parameter value into a script-style argument, you can chose b
        - name: sample-parameter
          description: A sample parameter
          type: string
-     buildSteps:
+     steps:
        - name: sample-step
          command:
            - /bin/bash
@@ -544,7 +548,7 @@ You can look at sample build strategies, such as [Buildpacks](../samples/buildst
 This information will be available in the `.status.output` section of the BuildRun.
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 # [...]
 status:
@@ -567,7 +571,7 @@ Error details are only propagated if the build container terminates with a non-z
 This information will be available in the `.status.failureDetails` section of the BuildRun.
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 # [...]
 status:
@@ -608,12 +612,12 @@ If the strategy admins would require to have multiple flavours of the same strat
 
 ```yaml
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: kaniko-small
 spec:
-  buildSteps:
+  steps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.16.0
       workingDir: $(params.shp-source-root)
@@ -639,7 +643,7 @@ spec:
         - /kaniko/executor
       args:
         - --skip-tls-verify=true
-        - --dockerfile=$(build.dockerfile)
+        - --dockerfile=$(params.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
         - --snapshot-mode=redo
@@ -651,13 +655,18 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  parameters:
+  - name: dockerfile
+    description: The path to the Dockerfile to be used for building the image.
+    type: string
+    default: "Dockerfile"
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: ClusterBuildStrategy
 metadata:
   name: kaniko-medium
 spec:
-  buildSteps:
+  steps:
     - name: build-and-push
       image: gcr.io/kaniko-project/executor:v1.16.0
       workingDir: $(params.shp-source-root)
@@ -683,7 +692,7 @@ spec:
         - /kaniko/executor
       args:
         - --skip-tls-verify=true
-        - --dockerfile=$(build.dockerfile)
+        - --dockerfile=$(params.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
         - --snapshot-mode=redo
@@ -695,24 +704,32 @@ spec:
         requests:
           cpu: 500m
           memory: 1Gi
+  parameters:
+  - name: dockerfile
+    description: The path to the Dockerfile to be used for building the image.
+    type: string
+    default: "Dockerfile"
 ```
 
 The above provides more control and flexibility for the strategy admins. For `end-users`, all they need to do, is to reference the proper strategy. For example:
 
 ```yaml
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: kaniko-medium
 spec:
   source:
-    url: https://github.com/shipwright-io/sample-go
+    git:  
+      url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy
-  dockerfile: Dockerfile
+  paramValues:
+  - name: dockerfile
+    value: Dockerfile
 ```
 
 ### How does Tekton Pipelines handle resources
@@ -820,7 +837,7 @@ If we will apply the following resources:
       args:
         - bud
         - --tag=$(params.shp-output-image)
-        - --file=$(build.dockerfile)
+        - --file=$(params.dockerfile)
         - $(build.source.contextDir)
       resources:
         limits:
@@ -947,12 +964,12 @@ Build steps can declare a `volumeMount`, which allows them to access volumes def
 
 Here is an example of `BuildStrategy` object that defines `volumes` and `volumeMount`s:
 ```
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildStrategy
 metadata:
   name: buildah
 spec:
-  buildSteps:
+  steps:
     - name: build
       image: quay.io/containers/buildah:v1.27.0
       workingDir: $(params.shp-source-root)
@@ -962,7 +979,7 @@ spec:
         - --tls-verify=false
         - --layers
         - -f
-        - $(build.dockerfile)
+        - $(params.dockerfile)
         - -t
         - $(params.shp-output-image)
         - $(params.shp-source-context)
@@ -973,4 +990,5 @@ spec:
     - name: varlibcontainers
       overridable: true
       emptyDir: {}
+  # ...
 ```
