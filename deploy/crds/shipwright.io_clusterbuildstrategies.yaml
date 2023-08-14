@@ -4871,7 +4871,7 @@ spec:
             description: BuildStrategyStatus defines the observed state of BuildStrategy
             type: object
         type: object
-    served: false
+    served: true
     storage: false
     subresources:
       status: {}
