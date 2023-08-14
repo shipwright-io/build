@@ -114,6 +114,12 @@ generate:
 	hack/install-controller-gen.sh
 	"$(CONTROLLER_GEN)" crd rbac:roleName=manager-role webhook paths="./..." output:crd:dir=deploy/crds
 
+.PHONY: prepare-conversion
+prepare-conversion:
+	hack/generate-cert.sh
+	hack/install-spruce.sh
+	hack/patch-crds-with-conversion.sh
+
 .PHONY: verify-generate
 verify-generate: generate
 	@hack/verify-generate.sh
@@ -151,6 +157,10 @@ endif
 .PHONY: install-counterfeiter
 install-counterfeiter:
 	hack/install-counterfeiter.sh
+
+.PHONY: install-spruce
+install-spruce:
+	hack/install-spruce.sh
 
 # Install golangci-lint via: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 .PHONY: sanity-check
