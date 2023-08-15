@@ -401,6 +401,11 @@ func clone(ctx context.Context) error {
 		return err
 	}
 
+	safeDirectoryArgs := []string{"config", "--global", "--add", "safe.directory", flagValues.target}
+	if _, err := git(ctx, safeDirectoryArgs...); err != nil {
+		return err
+	}
+
 	revision := flagValues.revision
 	if revision == "" {
 		// user requested to clone the default branch, determine the branch name
