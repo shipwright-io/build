@@ -158,7 +158,7 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --snapshotMode=redo
+        - --snapshot-mode=redo
         - --push-retry=3
       resources:
         limits:
@@ -207,7 +207,7 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-context)
         - --destination=$(params.shp-output-image)
-        - --snapshotMode=redo
+        - --snapshot-mode=redo
         - --push-retry=3
       resources:
         limits:
@@ -325,7 +325,7 @@ spec:
         - --dockerfile=$(build.dockerfile)
         - --context=$(params.shp-source-root)
         - --destination=$(params.shp-output-image)
-        - --snapshotMode=redo
+        - --snapshot-mode=redo
         - --push-retry=3
       resources:
         limits:
