@@ -164,7 +164,7 @@ test: test-unit
 .PHONY: test-unit
 test-unit:
 	@rm -rf build/coverage
-	@mkdir build/coverage
+	@mkdir -p build/coverage
 	go test \
 		./cmd/... \
 		./pkg/... \
