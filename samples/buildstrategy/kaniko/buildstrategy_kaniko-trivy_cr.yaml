@@ -42,10 +42,10 @@ spec:
         - $(params.shp-source-context)
         - --destination
         - $(params.shp-output-image)
-        - --snapshotMode
+        - --snapshot-mode
         - redo
         - --no-push
-        - --tarPath
+        - --tar-path
         - $(params.shp-output-directory)/image.tar
         # https://github.com/GoogleContainerTools/kaniko/issues/2164
         - --ignore-path
