@@ -202,7 +202,7 @@ We host weekly meetings for users, contributors, maintainers and anyone interest
 
 We are so excited to have you!
 
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for an overview of our processes
+- See [CONTRIBUTING.md](https://github.com/shipwright-io/.github/blob/main/CONTRIBUTING.md) for an overview of our processes
 - See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
 - See [HACK.md](HACK.md) for how to build, test & run
   (advanced reading material)
