@@ -92,12 +92,11 @@ spec:
           echo "set -euo pipefail" >> /tmp/run.sh
           echo "buildctl-daemonless.sh \\" >> /tmp/run.sh
           echo "build \\" >> /tmp/run.sh
-          echo "--progress=plain \\" >> /tmp/run.sh
           echo "--frontend=dockerfile.v0 \\" >> /tmp/run.sh
           echo "--opt=filename=\"${DOCKERFILE_NAME}\" \\" >> /tmp/run.sh
           echo "--local=context=\"${PARAM_SOURCE_CONTEXT}\" \\" >> /tmp/run.sh
           echo "--local=dockerfile=\"${DOCKERFILE_DIR}\" \\" >> /tmp/run.sh
-          echo "--output=type=oci \\" >> /tmp/run.sh
+          echo "--output=type=oci,tar=false,dest=\"${PARAM_OUTPUT_DIRECTORY}\" \\" >> /tmp/run.sh
           if [ "${PARAM_CACHE}" == "registry" ]; then
             echo "--export-cache=type=inline \\" >> /tmp/run.sh
             echo "--import-cache=type=registry,ref=\"${PARAM_OUTPUT_IMAGE}\",registry.insecure=\"${PARAM_OUTPUT_INSECURE}\" \\" >> /tmp/run.sh
@@ -154,7 +153,7 @@ spec:
             echo "--opt=\"platform=${platforms}\" \\" >> /tmp/run.sh
           fi
 
-          echo "--metadata-file /tmp/image-metadata.json | tar -C \"${PARAM_OUTPUT_DIRECTORY}\" -xf -" >> /tmp/run.sh
+          echo "--progress=plain" >> /tmp/run.sh
 
           chmod +x /tmp/run.sh
           /tmp/run.sh
