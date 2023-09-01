@@ -21,7 +21,8 @@ spec:
       image: quay.io/containers/buildah:v1.31.0
       workingDir: $(params.shp-source-root)
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
@@ -42,7 +43,8 @@ spec:
     - name: buildah-push
       image: quay.io/containers/buildah:v1.31.0
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
@@ -74,15 +76,22 @@ spec:
   volumes:
     - name: buildah-images
       emptyDir: {}
+  parameters:
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'"
+      type: string
+      default: "vfs"
   buildSteps:
     - name: buildah-bud
       image: quay.io/containers/buildah:v1.31.0
       workingDir: $(params.shp-source-root)
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
+        - --storage-driver=$(params.storage-driver)
         - bud
         - --tag=$(params.shp-output-image)
         - --file=$(build.dockerfile)
@@ -107,10 +116,12 @@ spec:
     - name: buildah-push
       image: quay.io/containers/buildah:v1.31.0
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
+        - --storage-driver=$(params.storage-driver)
         - push
         - --tls-verify=false
         - docker://$(params.shp-output-image)
@@ -143,12 +154,18 @@ spec:
   volumes:
     - name: varlibcontainers
       emptyDir: {}
+  parameters:
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'"
+      type: string
+      default: "vfs"
   buildSteps:
     - name: build
       image: "$(build.builder.image)"
       workingDir: $(params.shp-source-root)
       command:
         - buildah
+        - --storage-driver=$(params.storage-driver)
         - bud
         - --tls-verify=false
         - --layers

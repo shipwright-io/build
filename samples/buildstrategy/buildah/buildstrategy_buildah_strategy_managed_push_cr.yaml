@@ -9,7 +9,9 @@ spec:
       image: quay.io/containers/buildah:v1.31.0
       workingDir: $(params.shp-source-root)
       securityContext:
-        privileged: true
+        capabilities:
+          add:
+          - "SETFCAP"
       command:
         - /bin/bash
       args:
@@ -136,7 +138,8 @@ spec:
 
           # Building the image
           echo "[INFO] Building image ${image}"
-          buildah bud "${buildArgs[@]}" \
+          buildah --storage-driver=$(params.storage-driver) \
+            bud "${buildArgs[@]}" \
             --registries-conf=/tmp/registries.conf \
             --tag="${image}" \
             --file="${dockerfile}" \
@@ -144,7 +147,7 @@ spec:
 
           # Push the image
           echo "[INFO] Pushing image ${image}"
-          buildah push \
+          buildah --storage-driver=$(params.storage-driver) push \
             --digestfile='$(results.shp-image-digest.path)' \
             --tls-verify="${tlsVerify}" \
             "${image}" \
@@ -191,6 +194,11 @@ spec:
       defaults:
         - docker.io
         - quay.io
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'"
+      type: string
+      default: "vfs"
+      # For details see the "--storage-driver" section of https://github.com/containers/buildah/blob/main/docs/buildah.1.md#options
   securityContext:
     runAsUser: 0
     runAsGroup: 0

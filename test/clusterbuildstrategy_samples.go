@@ -17,15 +17,22 @@ spec:
     - name: buildah-images
       volumeSource:
         emptyDir: {}
+  parameters:
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'"
+      type: string
+      default: "vfs"
   buildSteps:
     - name: buildah-bud
       image: quay.io/containers/buildah:v1.31.0
       workingDir: $(params.shp-source-root)
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
+        - --storage-driver=$(params.storage-driver)
         - bud
         - --tag=$(params.shp-output-image)
         - --file=$(build.dockerfile)
@@ -43,10 +50,12 @@ spec:
     - name: buildah-push
       image: quay.io/containers/buildah:v1.31.0
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
+        - --storage-driver=$(params.storage-driver)
         - push
         - --tls-verify=false
         - docker://$(params.shp-output-image)
@@ -75,15 +84,22 @@ spec:
     - name: buildah-images
       volumeSource:
         emptyDir: {}
+  parameters:
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'"
+      type: string
+      default: "vfs"
   buildSteps:
     - name: buildah-bud
       image: quay.io/containers/buildah:v1.31.0
       workingDir: $(params.shp-source-root)
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
+        - --storage-driver=$(params.storage-driver)
         - bud
         - --tag=$(params.shp-output-image)
         - --file=$(build.dockerfile)
@@ -101,10 +117,12 @@ spec:
     - name: buildah-push
       image: quay.io/containers/buildah:v1.31.0
       securityContext:
-        privileged: true
+        capabilities:
+          add: ["SETFCAP"]
       command:
         - /usr/bin/buildah
       args:
+        - --storage-driver=$(params.storage-driver)
         - push
         - --tls-verify=false
         - docker://$(params.shp-output-image)
