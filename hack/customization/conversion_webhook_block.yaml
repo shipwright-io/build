@@ -1,0 +1,12 @@
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        caBundle: CA_BUNDLE
+        service:
+          namespace: shipwright-build
+          name: shp-build-webhook
+          path: /convert
+      conversionReviewVersions:
+      - v1

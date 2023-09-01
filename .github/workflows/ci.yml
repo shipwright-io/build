@@ -178,8 +178,10 @@ jobs:
           version: v0.13.0
       - name: Install Shipwright Build
         run: |
+          make prepare-conversion
           make install-controller-kind
           kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
+          kubectl -n shipwright-build rollout status deployment shipwright-build-webhook --timeout=1m || true
       - name: Test
         run: |
           kubectl create namespace shp-e2e

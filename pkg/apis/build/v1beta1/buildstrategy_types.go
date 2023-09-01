@@ -26,7 +26,6 @@ const (
 
 // BuildStrategy is the Schema representing a strategy in the namespace scope to build images from source code.
 // +kubebuilder:subresource:status
-// +kubebuilder:unservedversion
 // +kubebuilder:resource:path=buildstrategies,scope=Namespaced,shortName=bs;bss
 type BuildStrategy struct {
 	metav1.TypeMeta   `json:",inline"`

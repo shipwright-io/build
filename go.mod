@@ -8,6 +8,7 @@ require (
 	github.com/go-logr/logr v1.2.4
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-containerregistry v0.16.1
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
 	github.com/prometheus/client_golang v1.16.0
@@ -17,6 +18,7 @@ require (
 	github.com/tektoncd/pipeline v0.44.0
 	go.uber.org/zap v1.25.0
 	k8s.io/api v0.25.6
+	k8s.io/apiextensions-apiserver v0.25.2
 	k8s.io/apimachinery v0.25.6
 	k8s.io/client-go v0.25.6
 	k8s.io/code-generator v0.25.6
@@ -89,7 +91,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect

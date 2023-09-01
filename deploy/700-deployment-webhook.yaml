@@ -1,0 +1,51 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipwright-build-webhook
+  namespace: shipwright-build
+  labels:
+    app: shp-build-webhook
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: shp-build-webhook
+  template:
+    metadata:
+      name: shp-build-webhook
+      labels:
+        name: shp-build-webhook
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: shipwright-build-webhook
+      containers:
+      - name:  shp-build-webhook
+        image: ko://github.com/shipwright-io/build/cmd/shipwright-build-webhook
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
+        ports:
+        - containerPort: 8443
+          name: https-port
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          seccompProfile:
+            type: RuntimeDefault
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: shipwright-build-webhook-cert
