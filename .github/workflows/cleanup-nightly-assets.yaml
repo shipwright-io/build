@@ -1,0 +1,49 @@
+name: Cleanup Nightly Assets
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+  - cron: '0 0 * * 0' # At 00:00 on Sunday, UTC
+
+jobs:
+  nightly:
+    if: ${{ github.repository == 'shipwright-io/build' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # To be able to update releases.
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Get current month
+      id: currentmonth
+      run: echo "date=$(date +'%Y-%m')" >> $GITHUB_OUTPUT
+    - name: Get previous month
+      id: previousmonth
+      run: echo "date=$(date -d "1 month ago" +%Y-%m')" >> $GITHUB_OUTPUT
+    - name: Get two months ago
+      id: twomonthsago
+      run: echo "date=$(date -d "2 month ago" +%Y-%m)" >> $GITHUB_OUTPUT
+    - name: Generate and upload release YAMLs
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        WORK_DIR=`mktemp -d -p "$DIR"`
+        gh release download nightly -D ${WORK_DIR}
+        
+        ASSETS_TOTAL=$(ls $WORK_DIR | wc -l)
+        echo "[INFO] Currently ${ASSETS_TOTAL} assets for nightly release"
+
+        ASSETS_TO_REMOVE=$(ls $WORK_DIR | grep  -v "${{ steps.currentmonth.outputs.date }}\|${{ steps.previousmonth.outputs.date }}\|${{ steps.twomonthsago.outputs.date }}" | wc -l)
+        if [ "$ASSETS_TO_REMOVE" -eq "0" ]; then
+          echo "[INFO] Nothing to delete"
+          exit 0
+        fi
+
+        find $WORK_DIR -type f -iname "*.yaml" -printf "%f\n" | grep  -v "${{ steps.currentmonth.outputs.date }}\|${{ steps.previousmonth.outputs.date }}\|${{ steps.twomonthsago.outputs.date }}" |
+          while IFS= read FILE; do
+            gh release delete-asset nightly $FILE -y
+          done
+
+        rm -rf "$WORK_DIR"
+        echo "[INFO] Deleted temporary directory ${WORK_DIR}"
+  
