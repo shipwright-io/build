@@ -19,10 +19,7 @@ jobs:
       run: echo "date=$(date +'%Y-%m')" >> $GITHUB_OUTPUT
     - name: Get previous month
       id: previousmonth
-      run: echo "date=$(date -d "1 month ago" +%Y-%m')" >> $GITHUB_OUTPUT
-    - name: Get two months ago
-      id: twomonthsago
-      run: echo "date=$(date -d "2 month ago" +%Y-%m)" >> $GITHUB_OUTPUT
+      run: echo "date=$(date -d "1 month ago" +%Y-%m)" >> $GITHUB_OUTPUT
     - name: Generate and upload release YAMLs
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,13 +30,13 @@ jobs:
         ASSETS_TOTAL=$(ls $WORK_DIR | wc -l)
         echo "[INFO] Currently ${ASSETS_TOTAL} assets for nightly release"
 
-        ASSETS_TO_REMOVE=$(ls $WORK_DIR | grep  -v "${{ steps.currentmonth.outputs.date }}\|${{ steps.previousmonth.outputs.date }}\|${{ steps.twomonthsago.outputs.date }}" | wc -l)
+        ASSETS_TO_REMOVE=$(ls $WORK_DIR | grep  -v "${{ steps.currentmonth.outputs.date }}\|${{ steps.previousmonth.outputs.date }}" | wc -l)
         if [ "$ASSETS_TO_REMOVE" -eq "0" ]; then
           echo "[INFO] Nothing to delete"
           exit 0
         fi
 
-        find $WORK_DIR -type f -iname "*.yaml" -printf "%f\n" | grep  -v "${{ steps.currentmonth.outputs.date }}\|${{ steps.previousmonth.outputs.date }}\|${{ steps.twomonthsago.outputs.date }}" |
+        find $WORK_DIR -type f -iname "*.yaml" -printf "%f\n" | grep  -v "${{ steps.currentmonth.outputs.date }}\|${{ steps.previousmonth.outputs.date }}" |
           while IFS= read FILE; do
             gh release delete-asset nightly $FILE -y
           done
