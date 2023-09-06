@@ -177,6 +177,11 @@ type Image struct {
 	// Image is the reference of the image.
 	Image string `json:"image"`
 
+	// Insecure defines whether the registry is not secure
+	//
+	// +optional
+	Insecure *bool `json:"insecure,omitempty"`
+
 	// Describes the secret name for pushing a container image.
 	//
 	// +optional
