@@ -99,6 +99,11 @@ func (in *BuildRetention) DeepCopyInto(out *BuildRetention) {
 		*out = new(v1.Duration)
 		**out = **in
 	}
+	if in.AtBuildDeletion != nil {
+		in, out := &in.AtBuildDeletion, &out.AtBuildDeletion
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

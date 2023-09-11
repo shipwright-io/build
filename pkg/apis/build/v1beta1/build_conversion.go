@@ -6,6 +6,7 @@ package v1beta1
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
@@ -13,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -33,6 +35,15 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 	alphaBuild.ObjectMeta = src.ObjectMeta
 
 	src.Spec.ConvertTo(&alphaBuild.Spec)
+
+	// convert annotation-controlled features
+	if src.Spec.Retention != nil && src.Spec.Retention.AtBuildDeletion != nil {
+		if alphaBuild.ObjectMeta.Annotations == nil {
+			alphaBuild.ObjectMeta.Annotations = make(map[string]string, 1)
+		}
+		alphaBuild.ObjectMeta.Annotations[v1alpha1.AnnotationBuildRunDeletion] = strconv.FormatBool(*src.Spec.Retention.AtBuildDeletion)
+	}
+
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&alphaBuild)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed structuring the newObject")
@@ -58,6 +69,15 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 	src.TypeMeta.APIVersion = betaGroupVersion
 
 	src.Spec.ConvertFrom(&alphaBuild.Spec)
+
+	// convert annotation-controlled features
+	if value, set := alphaBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]; set {
+		if src.Spec.Retention == nil {
+			src.Spec.Retention = &BuildRetention{}
+		}
+		src.Spec.Retention.AtBuildDeletion = pointer.Bool(value == "true")
+		delete(src.ObjectMeta.Annotations, v1alpha1.AnnotationBuildRunDeletion)
+	}
 
 	src.Status = BuildStatus{
 		Registered: alphaBuild.Status.Registered,
@@ -222,7 +242,11 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 	bs.Env = dest.Env
 
 	// Handle BuildSpec Retention
-	if dest.Retention != nil {
+	if dest.Retention != nil &&
+		(dest.Retention.FailedLimit != nil ||
+			dest.Retention.SucceededLimit != nil ||
+			dest.Retention.TTLAfterFailed != nil ||
+			dest.Retention.TTLAfterSucceeded != nil) {
 		bs.Retention = &v1alpha1.BuildRetention{
 			FailedLimit:       dest.Retention.FailedLimit,
 			SucceededLimit:    dest.Retention.SucceededLimit,
