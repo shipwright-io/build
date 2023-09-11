@@ -130,6 +130,7 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 
 	// Handle BuildSpec Output
 	dest.Output.Image = orig.Output.Image
+	dest.Output.Insecure = orig.Output.Insecure
 	if orig.Output.Credentials != nil {
 		dest.Output.PushSecret = &orig.Output.Credentials.Name
 	}
@@ -205,9 +206,8 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 	}
 
 	// Handle BuildSpec Output
-	// insecure := false
-	// bs.Output.Insecure = &insecure
 	bs.Output.Image = dest.Output.Image
+	bs.Output.Insecure = dest.Output.Insecure
 	if dest.Output.PushSecret != nil {
 		bs.Output.Credentials = &corev1.LocalObjectReference{}
 		bs.Output.Credentials.Name = *dest.Output.PushSecret
