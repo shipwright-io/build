@@ -27,6 +27,8 @@ var _ webhook.Conversion = (*Build)(nil)
 
 // ConvertTo converts this Build object to v1alpha1 format.
 func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
+	ctxlog.Debug(ctx, "Converting Build from beta to alpha", "namespace", src.Namespace, "name", src.Name)
+
 	var alphaBuild v1alpha1.Build
 
 	alphaBuild.TypeMeta = src.TypeMeta
@@ -64,6 +66,9 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed unstructuring the convertedObject")
 	}
+
+	ctxlog.Debug(ctx, "Converting Build from alpha to beta", "namespace", alphaBuild.Namespace, "name", alphaBuild.Name)
+
 	src.ObjectMeta = alphaBuild.ObjectMeta
 	src.TypeMeta = alphaBuild.TypeMeta
 	src.TypeMeta.APIVersion = betaGroupVersion
@@ -217,12 +222,14 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 	// Handle BuildSpec ParamValues
 	bs.ParamValues = nil
 	for _, p := range dest.ParamValues {
+		if p.Name == "dockerfile" && p.SingleValue != nil {
+			bs.Dockerfile = p.SingleValue.Value
+			continue
+		}
+
 		param := v1alpha1.ParamValue{}
 		p.convertToAlpha(&param)
 		bs.ParamValues = append(bs.ParamValues, param)
-		if param.Name == "dockerfile" {
-			bs.Dockerfile = param.Value
-		}
 	}
 
 	// Handle BuildSpec Output

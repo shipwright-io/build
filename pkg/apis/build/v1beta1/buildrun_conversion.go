@@ -20,6 +20,7 @@ var _ webhook.Conversion = (*BuildRun)(nil)
 
 // To Alpha
 func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
+	ctxlog.Debug(ctx, "Converting BuildRun from beta to alpha", "namespace", src.Namespace, "name", src.Name)
 
 	var alphaBuildRun v1alpha1.BuildRun
 
@@ -109,6 +110,8 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed unstructuring the buildrun convertedObject")
 	}
+
+	ctxlog.Debug(ctx, "Converting BuildRun from alpha to beta", "namespace", alphaBuildRun.Namespace, "name", alphaBuildRun.Name)
 
 	src.ObjectMeta = alphaBuildRun.ObjectMeta
 	src.TypeMeta = alphaBuildRun.TypeMeta

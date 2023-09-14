@@ -260,12 +260,6 @@ request:
 					},
 					ParamValues: []v1alpha1.ParamValue{
 						{
-							Name: "dockerfile",
-							SingleValue: &v1alpha1.SingleValue{
-								Value: &dockerfileVal,
-							},
-						},
-						{
 							Name: "foo1",
 							SingleValue: &v1alpha1.SingleValue{
 								Value: &valDisable,
@@ -978,6 +972,10 @@ request:
         steps:
         - name: step-foobar
           image: foobar
+          command:
+          - some-command
+          args:
+          - $(params.dockerfile)
           securityContext:
             privileged: false
         parameters:
@@ -987,6 +985,10 @@ request:
         - name: param_two
           description: foobar
           type: array
+        - name: dockerfile
+          description: The Dockerfile to build.
+          type: string
+          default: Dockerfile
         securityContext:
           runAsUser: 1000
           runAsGroup: 1000
@@ -1024,8 +1026,10 @@ request:
 					BuildSteps: []v1alpha1.BuildStep{
 						{
 							Container: corev1.Container{
-								Name:  "step-foobar",
-								Image: "foobar",
+								Name:    "step-foobar",
+								Command: []string{"some-command"},
+								Args:    []string{"$(params.DOCKERFILE)"},
+								Image:   "foobar",
 								SecurityContext: &corev1.SecurityContext{
 									Privileged: &privileged,
 								},
@@ -1079,6 +1083,10 @@ request:
       spec:
         buildSteps:
         - name: step-foobar
+          command:
+          - some-command
+          args:
+          - $(params.DOCKERFILE)
           image: foobar
           securityContext:
             privileged: false
@@ -1125,8 +1133,10 @@ request:
 				Spec: v1beta1.BuildStrategySpec{
 					Steps: []v1beta1.Step{
 						{
-							Name:  "step-foobar",
-							Image: "foobar",
+							Name:    "step-foobar",
+							Command: []string{"some-command"},
+							Args:    []string{"$(params.dockerfile)"},
+							Image:   "foobar",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
@@ -1142,6 +1152,12 @@ request:
 							Name:        "param_two",
 							Description: "foobar",
 							Type:        v1beta1.ParameterTypeArray,
+						},
+						{
+							Name:        "dockerfile",
+							Description: "The Dockerfile to be built.",
+							Type:        v1beta1.ParameterTypeString,
+							Default:     pointer.String("Dockerfile"),
 						},
 					},
 					SecurityContext: &v1beta1.BuildStrategySecurityContext{
