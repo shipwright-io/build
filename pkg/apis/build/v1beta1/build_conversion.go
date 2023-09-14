@@ -40,8 +40,10 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 
 	// convert annotation-controlled features
 	if src.Spec.Retention != nil && src.Spec.Retention.AtBuildDeletion != nil {
-		if alphaBuild.ObjectMeta.Annotations == nil {
-			alphaBuild.ObjectMeta.Annotations = make(map[string]string, 1)
+		// We must create a new Map as otherwise the addition is not kept
+		alphaBuild.ObjectMeta.Annotations = map[string]string{}
+		for k, v := range src.Annotations {
+			alphaBuild.ObjectMeta.Annotations[k] = v
 		}
 		alphaBuild.ObjectMeta.Annotations[v1alpha1.AnnotationBuildRunDeletion] = strconv.FormatBool(*src.Spec.Retention.AtBuildDeletion)
 	}
