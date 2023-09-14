@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/utils/pointer"
 )
 
 func getConversionReview(o string) (apiextensionsv1.ConversionReview, error) {
@@ -204,6 +205,8 @@ request:
         output:
           image: %s
           pushSecret: %s
+        retention:
+          atBuildDeletion: true
 `
 			o := fmt.Sprintf(buildTemplate, apiVersion,
 				desiredAPIVersion, ctxDir,
@@ -234,6 +237,9 @@ request:
 				},
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
+					Annotations: map[string]string{
+						v1alpha1.AnnotationBuildRunDeletion: "true",
+					},
 				},
 				Spec: v1alpha1.BuildSpec{
 					Source: v1alpha1.Source{
@@ -270,7 +276,7 @@ request:
 							// todo: figure out why we need to set this one
 							SingleValue: &v1alpha1.SingleValue{},
 							Values: []v1alpha1.SingleValue{
-								v1alpha1.SingleValue{
+								{
 									SecretValue: &v1alpha1.ObjectKeyRef{
 										Name:   "npm-registry-access",
 										Key:    "npm-auth-token",
@@ -416,6 +422,8 @@ request:
       kind: Build
       metadata:
         name: buildkit-build
+        annotations:
+          build.shipwright.io/build-run-deletion: "true"
       spec:
         source:
           contextDir: %s
@@ -493,6 +501,9 @@ request:
 								Value: &dockerfileVal,
 							},
 						},
+					},
+					Retention: &v1beta1.BuildRetention{
+						AtBuildDeletion: pointer.Bool(true),
 					},
 					Trigger: &v1beta1.Trigger{
 						When: []v1beta1.TriggerWhen{
@@ -612,7 +623,7 @@ request:
 							// todo: figure out why we need to set this one
 							SingleValue: &v1beta1.SingleValue{},
 							Values: []v1beta1.SingleValue{
-								v1beta1.SingleValue{
+								{
 									SecretValue: &v1beta1.ObjectKeyRef{
 										Name:   "npm-registry-access",
 										Key:    "npm-auth-token",

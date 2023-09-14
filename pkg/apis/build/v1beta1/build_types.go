@@ -268,7 +268,7 @@ type BuildRetention struct {
 	// AtBuildDeletion defines if related BuildRuns should be deleted when deleting the Build.
 	//
 	// +optional
-	AtBuildDeletion bool `json:"atBuildDeletion,omitempty"`
+	AtBuildDeletion *bool `json:"atBuildDeletion,omitempty"`
 }
 
 func init() {
