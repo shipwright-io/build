@@ -29,7 +29,7 @@ jobs:
     # Install tools
     - uses: ko-build/setup-ko@v0.6
       with:
-        version: v0.13.0
+        version: v0.14.1
     - uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4
     - uses: sigstore/cosign-installer@v3
 
@@ -54,6 +54,9 @@ jobs:
 
         mv sample-strategies.yaml nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
         gh release upload nightly nightly-${{ steps.date.outputs.date }}-sample-strategies.yaml
+
+        echo ${{ steps.date.outputs.date }} > /tmp/latest.txt
+        gh release upload nightly /tmp/latest.txt --clobber
 
     - name: Update latest tag of supporting images
       working-directory: ./cmd

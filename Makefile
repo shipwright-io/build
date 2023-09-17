@@ -113,11 +113,6 @@ generate:
 	hack/generate-copyright.sh
 	hack/install-controller-gen.sh
 	"$(CONTROLLER_GEN)" crd rbac:roleName=manager-role webhook paths="./..." output:crd:dir=deploy/crds
-
-.PHONY: prepare-conversion
-prepare-conversion:
-	hack/generate-cert.sh
-	hack/install-spruce.sh
 	hack/patch-crds-with-conversion.sh
 
 .PHONY: verify-generate
@@ -261,6 +256,7 @@ install-controller-kind: install-apis
 	ko apply \
 	  --platform=$(GO_OS)/$(GO_ARCH) \
 	  --filename=deploy
+	./hack/setup-webhook-cert.sh
 
 .PHONY: install-strategies
 install-strategies: install-apis

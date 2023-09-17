@@ -37,7 +37,10 @@ jobs:
     - name: Install Counterfeiter
       run: |
         make -C go/src/github.com/shipwright-io/build install-counterfeiter
+    - name: Install Spruce
+      run: |
+        make -C go/src/github.com/shipwright-io/build install-spruce
     - name: Run verify-generate
       run: |
         export GOPATH="${GITHUB_WORKSPACE}"/go
-        make -C $GOPATH/src/github.com/shipwright-io/build verify-generate
+        make -C go/src/github.com/shipwright-io/build verify-generate

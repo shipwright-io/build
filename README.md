@@ -43,6 +43,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   ```bash
   kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.44.0/release.yaml
   ```
+
   If you are using OpenShift cluster refer [Running on OpenShift](#running-on-openshift) for some more configurations.
 
 - Install the Shipwright deployment. To install the latest version, run:
@@ -51,10 +52,23 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.11.0/release.yaml
   ```
 
+  To install the latest nightly release, run:
+
+  ```bash
+  kubectl apply --filename "https://github.com/shipwright-io/build/releases/download/nightly/nightly-$(curl --silent https://github.com/shipwright-io/build/releases/download/nightly/latest.txt).yaml" --server-side
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/main/hack/setup-webhook-cert.sh | bash
+  ```
+
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
   kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.11.0/sample-strategies.yaml
+  ```
+
+  To install the latest nightly release, run:
+
+  ```bash
+  kubectl apply --filename "https://github.com/shipwright-io/build/releases/download/nightly/nightly-$(curl --silent https://github.com/shipwright-io/build/releases/download/nightly/latest.txt)-sample-strategies.yaml" --server-side
   ```
 
 - Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):

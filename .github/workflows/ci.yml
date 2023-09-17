@@ -73,7 +73,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.13.0
+          version: v0.14.1
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -175,10 +175,9 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.13.0
+          version: v0.14.1
       - name: Install Shipwright Build
         run: |
-          make prepare-conversion
           make install-controller-kind
           kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
           kubectl -n shipwright-build rollout status deployment shipwright-build-webhook --timeout=1m || true
