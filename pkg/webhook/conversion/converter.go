@@ -80,7 +80,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 				}
 				clusterBuildStrategy.ConvertTo(ctx, convertedObject)
 			} else {
-				return nil, statusErrorWithMessage("unsupporteddda skdksdjkjsd Kind")
+				return nil, statusErrorWithMessage("unsupported Kind")
 			}
 		default:
 			return nil, statusErrorWithMessage("unexpected conversion version to %q", toVersion)
