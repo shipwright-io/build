@@ -250,7 +250,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(err).To(BeNil())
 
 				expectedCommandOrArg = []string{
-					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+					"--storage-driver=$(params.storage-driver)", "bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
 				}
 			})
 
