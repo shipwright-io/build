@@ -36,8 +36,13 @@ jobs:
           exit 0
         fi
 
+        echo "[INFO] Going to delete ${ASSETS_TO_REMOVE} assets"
+
         find $WORK_DIR -type f -iname "*.yaml" -printf "%f\n" | grep  -v "${{ steps.currentmonth.outputs.date }}\|${{ steps.previousmonth.outputs.date }}" |
           while IFS= read FILE; do
+            # sleep 2 sec, as recommended by https://docs.github.com/en/rest/guides/best-practices-for-using-the-rest-api?apiVersion=2022-11-28#dealing-with-secondary-rate-limits
+            sleep 2
+            echo "[INFO] Going to delete ${FILE} asset"
             gh release delete-asset nightly $FILE -y
           done
 
