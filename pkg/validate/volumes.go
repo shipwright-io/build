@@ -7,7 +7,6 @@ package validate
 import (
 	"fmt"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
@@ -25,7 +24,7 @@ func BuildRunVolumes(strategyVolumes []buildv1alpha1.BuildStrategyVolume, buildV
 // validateBuildVolumes validates build overriding the build strategy volumes. in case it tries
 // to override the non-overridable volume, or volume that does not exist in the strategy, it is
 // good to fail early
-func validateVolumes(strategyVolumes []build.BuildStrategyVolume, buildVolumes []build.BuildVolume) (bool, buildv1alpha1.BuildReason, string) {
+func validateVolumes(strategyVolumes []buildv1alpha1.BuildStrategyVolume, buildVolumes []buildv1alpha1.BuildVolume) (bool, buildv1alpha1.BuildReason, string) {
 	strategyVolumesMap := toVolumeMap(strategyVolumes)
 
 	for _, buildVolume := range buildVolumes {
@@ -44,8 +43,8 @@ func validateVolumes(strategyVolumes []build.BuildStrategyVolume, buildVolumes [
 }
 
 // toVolumeMap coverts slice of build strategy volumes to map of build strategy volumes, in order to later search them quickly by name
-func toVolumeMap(strategyVolumes []build.BuildStrategyVolume) map[string]build.BuildStrategyVolume {
-	res := make(map[string]build.BuildStrategyVolume)
+func toVolumeMap(strategyVolumes []buildv1alpha1.BuildStrategyVolume) map[string]buildv1alpha1.BuildStrategyVolume {
+	res := make(map[string]buildv1alpha1.BuildStrategyVolume)
 	for _, vol := range strategyVolumes {
 		res[vol.Name] = vol
 	}
