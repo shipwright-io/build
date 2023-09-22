@@ -6,6 +6,7 @@ package utils
 
 import (
 	"context"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -68,5 +69,5 @@ func (t *TestBuild) DeleteNamespace() error {
 		return false, nil
 	}
 
-	return wait.PollImmediate(t.Interval, t.TimeOut, pollNamespace)
+	return wait.PollImmediate(t.Interval, 5*time.Second, pollNamespace)
 }

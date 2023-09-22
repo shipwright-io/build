@@ -111,7 +111,12 @@ jobs:
           kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
       - name: Test
         run: |
+          # host.docker.internal does not work in a GitHub action
+          docker exec kind-control-plane bash -c "echo '172.17.0.1 host.docker.internal' >>/etc/hosts"
+
+          # Build and load the Git image
           export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
+
           make test-integration
 
   e2e:

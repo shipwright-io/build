@@ -25,7 +25,6 @@ import (
 	buildClient "github.com/shipwright-io/build/pkg/client/clientset/versioned"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/test"
-	// from https://github.com/kubernetes/client-go/issues/345
 )
 
 var (
@@ -42,11 +41,11 @@ type TestBuild struct {
 	Interval                 time.Duration
 	TimeOut                  time.Duration
 	KubeConfig               *rest.Config
-	Clientset                *kubernetes.Clientset
+	Clientset                kubernetes.Interface
 	Namespace                string
 	StopBuildControllers     context.CancelFunc
-	BuildClientSet           *buildClient.Clientset
-	PipelineClientSet        *tektonClient.Clientset
+	BuildClientSet           buildClient.Interface
+	PipelineClientSet        tektonClient.Interface
 	ControllerRuntimeClient  client.Client
 	Catalog                  test.Catalog
 	Context                  context.Context

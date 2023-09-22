@@ -6,6 +6,7 @@ package integration_test
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -28,9 +29,20 @@ func TestIntegration(t *testing.T) {
 // TODO: clean resources in cluster, e.g. mainly cluster-scope ones
 // TODO: clean each resource created per spec
 var (
-	tb  *utils.TestBuild
-	err error
+	tb            *utils.TestBuild
+	err           error
+	webhookServer *http.Server
 )
+
+var _ = BeforeSuite(func() {
+	webhookServer = utils.StartBuildWebhook()
+})
+
+var _ = AfterSuite(func() {
+	if webhookServer != nil {
+		utils.StopBuildWebhook(webhookServer)
+	}
+})
 
 var _ = BeforeEach(func() {
 	tb, err = utils.NewTestBuild()
