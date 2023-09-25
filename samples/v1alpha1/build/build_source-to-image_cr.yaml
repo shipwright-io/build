@@ -1,0 +1,16 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: s2i-nodejs-build
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: source-build/
+  strategy:
+    name: source-to-image
+    kind: ClusterBuildStrategy
+  builder:
+    image: docker.io/centos/nodejs-10-centos7
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex

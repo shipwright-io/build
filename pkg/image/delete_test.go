@@ -17,7 +17,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/shipwright-io/build/pkg/image"
-	"github.com/shipwright-io/build/test/utils"
+	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

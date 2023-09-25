@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -113,7 +113,7 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionTrue)
-	b.Status.Message = pointer.String(build.AllValidationsSucceeded)
+	b.Status.Message = ptr.To[string](build.AllValidationsSucceeded)
 	if err := r.client.Status().Update(ctx, b); err != nil {
 		return reconcile.Result{}, err
 	}

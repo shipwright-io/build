@@ -1,0 +1,22 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: ko-build
+  annotations:
+    build.shipwright.io/build-run-deletion: "false"
+spec:
+  paramValues:
+    - name: go-flags
+      value: "-v -mod=vendor -ldflags=-w"
+    - name: go-version
+      value: "1.20"
+    - name: package-directory
+      value: ./cmd/shipwright-build-controller
+  source:
+    url: https://github.com/shipwright-io/build
+  strategy:
+    name: ko
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/shipwright-build

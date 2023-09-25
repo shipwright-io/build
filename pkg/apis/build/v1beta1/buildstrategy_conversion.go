@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // ensure v1beta1 implements the Conversion interface
@@ -41,12 +41,17 @@ func (src *BuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstr
 }
 
 func (src *BuildStrategySpec) ConvertTo(bs *v1alpha1.BuildStrategySpec) {
-	usesMigratedDockerfileArg := false
+	usesMigratedDockerfileArg, usesMigratedBuilderArg := false, false
 
 	bs.Parameters = []v1alpha1.Parameter{}
 	for _, param := range src.Parameters {
 		if param.Name == "dockerfile" && param.Type == ParameterTypeString && param.Default != nil && *param.Default == "Dockerfile" {
 			usesMigratedDockerfileArg = true
+			continue
+		}
+
+		if param.Name == "builder-image" && param.Type == ParameterTypeString && param.Default == nil {
+			usesMigratedBuilderArg = true
 			continue
 		}
 
@@ -99,6 +104,28 @@ func (src *BuildStrategySpec) ConvertTo(bs *v1alpha1.BuildStrategySpec) {
 			}
 		}
 
+		if usesMigratedBuilderArg {
+			// Migrate to legacy argument
+
+			for commandIndex, command := range buildStep.Command {
+				if strings.Contains(command, "$(params.builder-image)") {
+					buildStep.Command[commandIndex] = strings.ReplaceAll(command, "$(params.builder-image)", "$(build.builder.image)")
+				}
+			}
+
+			for argIndex, arg := range buildStep.Args {
+				if strings.Contains(arg, "$(params.dockerfile)") {
+					buildStep.Args[argIndex] = strings.ReplaceAll(arg, "$(params.builder-image)", "$(build.builder.image)")
+				}
+			}
+
+			for envIndex, env := range buildStep.Env {
+				if strings.Contains(env.Value, "$(params.dockerfile)") {
+					buildStep.Env[envIndex].Value = strings.ReplaceAll(env.Value, "$(params.builder-image)", "$(build.builder.image)")
+				}
+			}
+		}
+
 		bs.BuildSteps = append(bs.BuildSteps, buildStep)
 	}
 
@@ -141,7 +168,7 @@ func (src *BuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Uns
 func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 	src.Steps = []Step{}
 
-	usesDockerfile := false
+	usesDockerfile, usesBuilderImage := false, false
 
 	for _, brStep := range bs.BuildSteps {
 		step := Step{
@@ -168,6 +195,10 @@ func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 				usesDockerfile = true
 				step.Command[commandIndex] = strings.ReplaceAll(command, "$(build.dockerfile)", "$(params.dockerfile)")
 			}
+			if strings.Contains(command, "$(build.builder.image)") {
+				usesBuilderImage = true
+				step.Command[commandIndex] = strings.ReplaceAll(command, "$(build.builder.image)", "$(params.builder-image)")
+			}
 		}
 
 		for argIndex, arg := range step.Args {
@@ -179,6 +210,10 @@ func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 				usesDockerfile = true
 				step.Args[argIndex] = strings.ReplaceAll(arg, "$(build.dockerfile)", "$(params.dockerfile)")
 			}
+			if strings.Contains(arg, "$(build.builder.image)") {
+				usesBuilderImage = true
+				step.Command[argIndex] = strings.ReplaceAll(arg, "$(build.builder.image)", "$(params.builder-image)")
+			}
 		}
 
 		for envIndex, env := range step.Env {
@@ -189,6 +224,10 @@ func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 			if strings.Contains(env.Value, "$(build.dockerfile)") {
 				usesDockerfile = true
 				step.Env[envIndex].Value = strings.ReplaceAll(env.Value, "$(build.dockerfile)", "$(params.dockerfile)")
+			}
+			if strings.Contains(env.Value, "$(build.builder.image)") {
+				usesBuilderImage = true
+				step.Command[envIndex] = strings.ReplaceAll(env.Value, "$(build.builder.image)", "$(params.builder-image)")
 			}
 		}
 
@@ -213,7 +252,15 @@ func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 			Name:        "dockerfile",
 			Description: "The Dockerfile to be built.",
 			Type:        ParameterTypeString,
-			Default:     pointer.String("Dockerfile"),
+			Default:     ptr.To[string]("Dockerfile"),
+		})
+	}
+
+	if usesBuilderImage {
+		src.Parameters = append(src.Parameters, Parameter{
+			Name:        "builder-image",
+			Description: "The builder image.",
+			Type:        ParameterTypeString,
 		})
 	}
 

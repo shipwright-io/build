@@ -12,11 +12,11 @@ import (
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	"github.com/shipwright-io/build/test"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 
 	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -50,7 +50,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 		It("should surface the TaskRun results emitting from default(git) source step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
-			br.Status.BuildSpec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go")
+			br.Status.BuildSpec.Source.URL = ptr.To[string]("https://github.com/shipwright-io/sample-go")
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
@@ -124,7 +124,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from source and output step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
-			br.Status.BuildSpec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go")
+			br.Status.BuildSpec.Source.URL = ptr.To[string]("https://github.com/shipwright-io/sample-go")
 
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{

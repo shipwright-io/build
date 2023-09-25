@@ -20,7 +20,7 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	"github.com/shipwright-io/build/test"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("Build Resource", func() {

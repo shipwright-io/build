@@ -39,7 +39,7 @@ TEST_NAMESPACE ?= default
 TEKTON_VERSION ?= v0.44.0
 
 # E2E test flags
-TEST_E2E_FLAGS ?= -p --randomize-all -timeout=1h -trace -v
+TEST_E2E_FLAGS ?= -r -p --randomize-all -timeout=1h -trace -v
 
 # E2E test service account name to be used for the build runs, can be set to generated to use the generated service account feature
 TEST_E2E_SERVICEACCOUNT_NAME ?= pipeline
@@ -222,7 +222,7 @@ test-e2e-plain: ginkgo
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
 	TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
-	$(GINKGO) ${TEST_E2E_FLAGS} test/e2e
+	$(GINKGO) ${TEST_E2E_FLAGS} test/e2e/
 
 .PHONY: test-e2e-kind-with-prereq-install
 test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strategies test-e2e-plain
@@ -270,7 +270,7 @@ install-controller-kind: install-apis
 
 .PHONY: install-strategies
 install-strategies: install-apis
-	kubectl apply -R -f samples/buildstrategy/
+	kubectl apply -R -f samples/v1beta1/buildstrategy/
 
 .PHONY: local
 local: install-strategies

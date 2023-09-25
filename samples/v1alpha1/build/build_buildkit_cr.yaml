@@ -1,0 +1,22 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildkit-build
+  annotations:
+    build.shipwright.io/build-run-deletion: "true"
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  paramValues:
+  - name: platforms
+    values:
+    - value: linux/amd64
+    - value: linux/arm64
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+

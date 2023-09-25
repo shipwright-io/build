@@ -1,0 +1,8 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: buildah-custom-context-dockerfile
+spec:
+  build:
+    name: buildah-custom-context-dockerfile

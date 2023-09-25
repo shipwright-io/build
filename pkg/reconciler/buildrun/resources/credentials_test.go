@@ -11,13 +11,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
-var _ = Describe("Credentials", func() {	
+var _ = Describe("Credentials", func() {
 	var (
 		build                       *buildv1alpha1.Build
 		buildRun                    *buildv1alpha1.BuildRun
@@ -33,12 +33,12 @@ var _ = Describe("Credentials", func() {
 		}
 	})
 
-	Context("when secrets were not present in the service account", func() {	
+	Context("when secrets were not present in the service account", func() {
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL: pointer.String("a/b/c"),
+						URL: ptr.To[string]("a/b/c"),
 						Credentials: &corev1.LocalObjectReference{
 							Name: "secret_a",
 						},
@@ -89,12 +89,12 @@ var _ = Describe("Credentials", func() {
 		})
 	})
 
-	Context("when secrets were already in the service account", func() {	
+	Context("when secrets were already in the service account", func() {
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL: pointer.String("a/b/c"),
+						URL: ptr.To[string]("a/b/c"),
 					},
 					Output: buildv1alpha1.Image{
 						Credentials: &corev1.LocalObjectReference{
@@ -126,12 +126,12 @@ var _ = Describe("Credentials", func() {
 		})
 	})
 
-	Context("when build does not reference any secret", func() {	
+	Context("when build does not reference any secret", func() {
 		BeforeEach(func() {
 			build = &buildv1alpha1.Build{
 				Spec: buildv1alpha1.BuildSpec{
 					Source: buildv1alpha1.Source{
-						URL:         pointer.String("a/b/c"),
+						URL:         ptr.To[string]("a/b/c"),
 						Credentials: nil,
 					},
 				},

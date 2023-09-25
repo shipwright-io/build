@@ -1,0 +1,24 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildkit-build
+spec:
+  source:
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  paramValues:
+  - name: insecure-registry
+    value: "true"
+  - name: platforms
+    values:
+    - value: linux/amd64
+    - value: linux/arm64
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  retention:
+    atBuildDeletion: true
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

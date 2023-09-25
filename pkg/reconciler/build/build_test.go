@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -24,7 +24,7 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	buildController "github.com/shipwright-io/build/pkg/reconciler/build"
-	"github.com/shipwright-io/build/test"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("Reconcile Build", func() {
@@ -371,7 +371,7 @@ var _ = Describe("Reconcile Build", func() {
 		Context("when source URL is specified", func() {
 			// validate file protocol
 			It("fails when source URL is invalid", func() {
-				buildSample.Spec.Source.URL = pointer.String("foobar")
+				buildSample.Spec.Source.URL = ptr.To[string]("foobar")
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -385,7 +385,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// validate https protocol
 			It("fails when public source URL is unreachable", func() {
-				buildSample.Spec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go-fake")
+				buildSample.Spec.Source.URL = ptr.To[string]("https://github.com/shipwright-io/sample-go-fake")
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -400,7 +400,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// skip validation because of empty sourceURL annotation
 			It("succeed when source URL is invalid because source annotation is empty", func() {
-				buildSample.Spec.Source.URL = pointer.String("foobar")
+				buildSample.Spec.Source.URL = ptr.To[string]("foobar")
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -451,7 +451,7 @@ var _ = Describe("Reconcile Build", func() {
 			// skip validation because build references a sourceURL secret
 			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
 				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
-				buildSample.Spec.Source.URL = pointer.String("https://github.yourco.com/org/build-fake")
+				buildSample.Spec.Source.URL = ptr.To[string]("https://github.yourco.com/org/build-fake")
 				buildSample.Spec.Source.Credentials.Name = registrySecret
 
 				// Fake some client Get calls and ensure we populate all

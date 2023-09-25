@@ -22,8 +22,8 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	"github.com/shipwright-io/build/test"
-	"github.com/shipwright-io/build/test/utils"
+	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("GenerateTaskrun", func() {

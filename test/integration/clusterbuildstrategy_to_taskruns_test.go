@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/test"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("Integration tests ClusterBuildStrategies and TaskRuns", func() {
@@ -55,13 +55,13 @@ var _ = Describe("Integration tests ClusterBuildStrategies and TaskRuns", func()
 		}
 	})
 
-	Context("when a buildrun is created", func() {	
+	Context("when a buildrun is created", func() {
 		BeforeEach(func() {
 			buildSample = []byte(test.BuildCBSMinimal)
 			buildRunSample = []byte(test.MinimalBuildRun)
 		})
 
-		It("should create a taskrun with the correct annotations", func() {	
+		It("should create a taskrun with the correct annotations", func() {
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)

@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 )
 
 // ensure v1beta1 implements the Conversion interface
@@ -42,8 +43,16 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	}
 
 	// BuildRunSpec ServiceAccount
-	alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{
-		Name: src.Spec.ServiceAccount,
+	// With the deprecation of serviceAccount.Generate, serviceAccount is set to ".generate" to have the SA created on fly.
+	if src.Spec.ServiceAccount != nil && *src.Spec.ServiceAccount == ".generate" {
+		alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{
+			Name:     &src.ObjectMeta.Name,
+			Generate: ptr.To[bool](true),
+		}
+	} else {
+		alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{
+			Name: src.Spec.ServiceAccount,
+		}
 	}
 
 	// BuildRunSpec Timeout
@@ -140,6 +149,14 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 			Message:            c.Message,
 		}
 		conditions = append(conditions, ct)
+	}
+
+	if alphaBuildRun.Status.FailureDetails != nil {
+		src.Status.FailureDetails = &FailureDetails{
+			Reason:   alphaBuildRun.Status.FailureDetails.Reason,
+			Message:  alphaBuildRun.Status.FailureDetails.Message,
+			Location: (*Location)(alphaBuildRun.Status.FailureDetails.Location),
+		}
 	}
 
 	src.Status = BuildRunStatus{

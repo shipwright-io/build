@@ -1,0 +1,204 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: buildah-strategy-managed-push
+spec:
+  buildSteps:
+    - name: build-and-push
+      image: quay.io/containers/buildah:v1.32.0
+      workingDir: $(params.shp-source-root)
+      securityContext:
+        capabilities:
+          add:
+          - "SETFCAP"
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          # Parse parameters
+          context=
+          dockerfile=
+          image=
+          buildArgs=()
+          inBuildArgs=false
+          registriesBlock=""
+          inRegistriesBlock=false
+          registriesInsecure=""
+          inRegistriesInsecure=false
+          registriesSearch=""
+          inRegistriesSearch=false
+          tlsVerify=true
+          while [[ $# -gt 0 ]]; do
+            arg="$1"
+            shift
+
+            if [ "${arg}" == "--context" ]; then
+              inBuildArgs=false
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+              context="$1"
+              shift
+            elif [ "${arg}" == "--dockerfile" ]; then
+              inBuildArgs=false
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+              dockerfile="$1"
+              shift
+            elif [ "${arg}" == "--image" ]; then
+              inBuildArgs=false
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+              image="$1"
+              shift
+            elif [ "${arg}" == "--build-args" ]; then
+              inBuildArgs=true
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+            elif [ "${arg}" == "--registries-block" ]; then
+              inRegistriesBlock=true
+              inBuildArgs=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+            elif [ "${arg}" == "--registries-insecure" ]; then
+              inRegistriesInsecure=true
+              inBuildArgs=false
+              inRegistriesBlock=false
+              inRegistriesSearch=false
+            elif [ "${arg}" == "--registries-search" ]; then
+              inRegistriesSearch=true
+              inBuildArgs=false
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+            elif [ "${inBuildArgs}" == "true" ]; then
+              buildArgs+=("--build-arg" "${arg}")
+            elif [ "${inRegistriesBlock}" == "true" ]; then
+              registriesBlock="${registriesBlock}'${arg}', "
+            elif [ "${inRegistriesInsecure}" == "true" ]; then
+              registriesInsecure="${registriesInsecure}'${arg}', "
+
+              # This assumes that the image is passed before the insecure registries which is fair in this context
+              if [[ ${image} == ${arg}/* ]]; then
+                tlsVerify=false
+              fi
+            elif [ "${inRegistriesSearch}" == "true" ]; then
+              registriesSearch="${registriesSearch}'${arg}', "
+            else
+              echo "Invalid usage"
+              exit 1
+            fi
+          done
+
+          # Verify the existence of the context directory
+          if [ ! -d "${context}" ]; then
+            echo -e "The context directory '${context}' does not exist."
+            echo -n "ContextDirNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The context directory '${context}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+          cd "${context}"
+
+          # Verify the existence of the Dockerfile
+          if [ ! -f "${dockerfile}" ]; then
+            echo -e "The Dockerfile '${dockerfile}' does not exist."
+            echo -n "DockerfileNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The Dockerfile '${dockerfile}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+
+          echo "[INFO] Creating registries config file..."
+          if [ "${registriesSearch}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.search]
+          registries = [${registriesSearch::-2}]
+
+          EOF
+          fi
+          if [ "${registriesInsecure}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.insecure]
+          registries = [${registriesInsecure::-2}]
+
+          EOF
+          fi
+          if [ "${registriesBlock}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.block]
+          registries = [${registriesBlock::-2}]
+
+          EOF
+          fi
+
+          # Building the image
+          echo "[INFO] Building image ${image}"
+          buildah --storage-driver=$(params.storage-driver) \
+            bud "${buildArgs[@]}" \
+            --registries-conf=/tmp/registries.conf \
+            --tag="${image}" \
+            --file="${dockerfile}" \
+            .
+
+          # Push the image
+          echo "[INFO] Pushing image ${image}"
+          buildah --storage-driver=$(params.storage-driver) push \
+            --digestfile='$(results.shp-image-digest.path)' \
+            --tls-verify="${tlsVerify}" \
+            "${image}" \
+            "docker://${image}"
+        # That's the separator between the shell script and its args
+        - --
+        - --context
+        - $(params.shp-source-context)
+        - --dockerfile
+        - $(build.dockerfile)
+        - --image
+        - $(params.shp-output-image)
+        - --build-args
+        - $(params.build-args[*])
+        - --registries-block
+        - $(params.registries-block[*])
+        - --registries-insecure
+        - $(params.registries-insecure[*])
+        - --registries-search
+        - $(params.registries-search[*])
+      resources:
+        limits:
+          cpu: "1"
+          memory: 2Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+  parameters:
+    - name: build-args
+      description: "The values for the args in the Dockerfile. Values must be in the format KEY=VALUE."
+      type: array
+      defaults: []
+    - name: registries-block
+      description: The registries that need to block pull access.
+      type: array
+      defaults: []
+    - name: registries-insecure
+      description: The fully-qualified name of insecure registries. An insecure registry is one that does not have a valid SSL certificate or only supports HTTP.
+      type: array
+      defaults: []
+    - name: registries-search
+      description: The registries for searching short name images such as `golang:latest`.
+      type: array
+      defaults:
+        - docker.io
+        - quay.io
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'"
+      type: string
+      default: "vfs"
+      # For details see the "--storage-driver" section of https://github.com/containers/buildah/blob/main/docs/buildah.1.md#options
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0

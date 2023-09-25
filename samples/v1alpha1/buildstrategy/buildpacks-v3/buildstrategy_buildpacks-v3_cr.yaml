@@ -1,0 +1,100 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: buildpacks-v3
+spec:
+  volumes:
+    - name: platform-env
+      emptyDir: {}
+  parameters:
+    - name: platform-api-version
+      description: The referenced version is the minimum version that all relevant buildpack implementations support.
+      default: "0.7"
+  buildSteps:
+    - name: build-and-push
+      image: docker.io/paketobuildpacks/builder-jammy-full:latest
+      env: 
+        - name: CNB_PLATFORM_API
+          value: $(params.platform-api-version)
+        - name: PARAM_SOURCE_CONTEXT
+          value: $(params.shp-source-context)
+        - name: PARAM_OUTPUT_IMAGE
+          value: $(params.shp-output-image)
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          echo "> Processing environment variables..."
+          ENV_DIR="/platform/env"
+
+          envs=($(env))
+
+          # Denying the creation of non required files from system environments.
+          # The creation of a file named PATH (corresponding to PATH system environment)
+          # caused failure for python source during pip install (https://github.com/Azure-Samples/python-docs-hello-world)
+          block_list=("PATH" "HOSTNAME" "PWD" "_" "SHLVL" "HOME" "")
+
+          for env in "${envs[@]}"; do
+            blocked=false
+
+            IFS='=' read -r key value string <<< "$env"
+
+            for str in "${block_list[@]}"; do
+              if [[ "$key" == "$str" ]]; then
+                blocked=true
+                break
+              fi
+            done
+
+            if [ "$blocked" == "false" ]; then
+              path="${ENV_DIR}/${key}"
+              echo -n "$value" > "$path"
+            fi
+          done
+
+          LAYERS_DIR=/tmp/.shp/layers
+          CACHE_DIR=/tmp/.shp/cache
+
+          mkdir -p "$CACHE_DIR" "$LAYERS_DIR"
+
+          function announce_phase {
+            printf "===> %s\n" "$1" 
+          }
+
+          announce_phase "ANALYZING"
+          /cnb/lifecycle/analyzer -layers="$LAYERS_DIR" "${PARAM_OUTPUT_IMAGE}"
+
+          announce_phase "DETECTING"
+          /cnb/lifecycle/detector -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
+
+          announce_phase "RESTORING"
+          /cnb/lifecycle/restorer -cache-dir="$CACHE_DIR" -layers="$LAYERS_DIR"
+
+          announce_phase "BUILDING"
+          /cnb/lifecycle/builder -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
+
+          exporter_args=( -layers="$LAYERS_DIR" -report=/tmp/report.toml -cache-dir="$CACHE_DIR" -app="${PARAM_SOURCE_CONTEXT}")
+          grep -q "buildpack-default-process-type" "$LAYERS_DIR/config/metadata.toml" || exporter_args+=( -process-type web ) 
+
+          announce_phase "EXPORTING"
+          /cnb/lifecycle/exporter "${exporter_args[@]}" "${PARAM_OUTPUT_IMAGE}"
+
+          # Store the image digest
+          grep digest /tmp/report.toml | tail -n 1 | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
+      volumeMounts:
+        - mountPath: /platform/env
+          name: platform-env
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+  securityContext:
+    runAsUser: 1001
+    runAsGroup: 1000

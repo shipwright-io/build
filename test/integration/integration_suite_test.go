@@ -12,7 +12,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/shipwright-io/build/test/utils"
+	// utils "github.com/shipwright-io/build/test/utils"
+	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
 )
 
 const (

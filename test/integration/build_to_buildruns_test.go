@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/test"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("Integration tests Build and BuildRuns", func() {

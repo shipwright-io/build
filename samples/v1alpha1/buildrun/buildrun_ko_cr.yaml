@@ -1,0 +1,10 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: ko-buildrun
+spec:
+  buildRef:
+    name: ko-build
+  serviceAccount:
+    generate: true

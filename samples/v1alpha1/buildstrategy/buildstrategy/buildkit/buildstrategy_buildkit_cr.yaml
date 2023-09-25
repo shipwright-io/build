@@ -1,0 +1,170 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: ClusterBuildStrategy
+metadata:
+  name: buildkit
+  annotations:
+    # See https://github.com/moby/buildkit/blob/master/docs/rootless.md#about---oci-worker-no-process-sandbox for more information
+    container.apparmor.security.beta.kubernetes.io/step-build-and-push: unconfined
+    # The usage of seccomp annotation will be deprecate in k8s v1.22.0, see
+    # https://kubernetes.io/docs/tutorials/clusters/seccomp/#create-a-pod-with-a-seccomp-profile-for-syscall-auditing for more information
+    container.seccomp.security.alpha.kubernetes.io/step-build-and-push: unconfined
+spec:
+  parameters:
+  - name: build-args
+    description: "The values for the ARGs in the Dockerfile. Values must be in the format KEY=VALUE."
+    type: array
+    defaults: []
+  - name: cache
+    description: "Configure BuildKit's cache usage. Allowed values are 'disabled' and 'registry'. The default is 'registry'."
+    type: string
+    default: registry
+  - name: platforms
+    description: "Build the image for different platforms. By default, the image is built for the platform used by the FROM image. If that is present for multiple platforms, then it is built for the environment's platform."
+    type: array
+    defaults: []
+  - name: secrets
+    description: "The secrets to pass to the build. Values must be in the format ID=FILE_CONTENT."
+    type: array
+    defaults: []
+  buildSteps:
+    - name: build-and-push
+      image: moby/buildkit:nightly-rootless
+      imagePullPolicy: Always
+      securityContext:
+        allowPrivilegeEscalation: true
+        capabilities:
+          add:
+            - SETGID
+            - SETUID
+      workingDir: $(params.shp-source-root)
+      env:
+      - name: DOCKER_CONFIG
+        value: /tekton/home/.docker
+      - name: HOME
+        value: /tekton/home
+      # See https://github.com/moby/buildkit/blob/master/docs/rootless.md#about---oci-worker-no-process-sandbox for more information
+      - name: BUILDKITD_FLAGS
+        value: --oci-worker-no-process-sandbox
+      - name: PARAM_SOURCE_CONTEXT
+        value: $(params.shp-source-context)
+      - name: PARAM_DOCKERFILE
+        value: $(params.DOCKERFILE)
+      - name: PARAM_OUTPUT_DIRECTORY
+        value: $(params.shp-output-directory)
+      - name: PARAM_OUTPUT_IMAGE
+        value: $(params.shp-output-image)
+      - name: PARAM_OUTPUT_INSECURE
+        value: $(params.shp-output-insecure)
+      - name: PARAM_CACHE
+        value: $(params.cache)
+      command:
+        - /bin/ash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          # Verify the existence of the context directory
+          if [ ! -d "${PARAM_SOURCE_CONTEXT}" ]; then
+            echo -e "The context directory '${PARAM_SOURCE_CONTEXT}' does not exist."
+            echo -n "ContextDirNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The context directory '${PARAM_SOURCE_CONTEXT}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+
+          # Prepare the file arguments
+          DOCKERFILE_PATH="${PARAM_SOURCE_CONTEXT}/${PARAM_DOCKERFILE}"
+          DOCKERFILE_DIR="$(dirname "${DOCKERFILE_PATH}")"
+          DOCKERFILE_NAME="$(basename "${DOCKERFILE_PATH}")"
+
+          # Verify the existence of the Dockerfile
+          if [ ! -f "${DOCKERFILE_PATH}" ]; then
+            echo -e "The Dockerfile '${DOCKERFILE_PATH}' does not exist."
+            echo -n "DockerfileNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The Dockerfile '${DOCKERFILE_PATH}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+
+          # We only have ash here and therefore no bash arrays to help add dynamic arguments (the build-args) to the build command.
+
+          echo "#!/bin/ash" > /tmp/run.sh
+          echo "set -euo pipefail" >> /tmp/run.sh
+          echo "buildctl-daemonless.sh \\" >> /tmp/run.sh
+          echo "build \\" >> /tmp/run.sh
+          echo "--frontend=dockerfile.v0 \\" >> /tmp/run.sh
+          echo "--opt=filename=\"${DOCKERFILE_NAME}\" \\" >> /tmp/run.sh
+          echo "--local=context=\"${PARAM_SOURCE_CONTEXT}\" \\" >> /tmp/run.sh
+          echo "--local=dockerfile=\"${DOCKERFILE_DIR}\" \\" >> /tmp/run.sh
+          echo "--output=type=oci,tar=false,dest=\"${PARAM_OUTPUT_DIRECTORY}\" \\" >> /tmp/run.sh
+          if [ "${PARAM_CACHE}" == "registry" ]; then
+            echo "--export-cache=type=inline \\" >> /tmp/run.sh
+            echo "--import-cache=type=registry,ref=\"${PARAM_OUTPUT_IMAGE}\",registry.insecure=\"${PARAM_OUTPUT_INSECURE}\" \\" >> /tmp/run.sh
+          elif [ "${PARAM_CACHE}" == "disabled" ]; then
+            echo "--no-cache \\" >> /tmp/run.sh
+          else
+            echo -e "An invalid value for the parameter 'cache' has been provided: '${PARAM_CACHE}'. Allowed values are 'disabled' and 'registry'."
+            echo -n "InvalidParameterValue" > '$(results.shp-error-reason.path)'
+            echo -n "An invalid value for the parameter 'cache' has been provided: '${PARAM_CACHE}'. Allowed values are 'disabled' and 'registry'." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+
+          stage=""
+          platforms=""
+          for a in "$@"
+          do
+            if [ "${a}" == "--build-args" ]; then
+              stage=build-args
+            elif [ "${a}" == "--platforms" ]; then
+              stage=platforms
+            elif [ "${a}" == "--secrets" ]; then
+              stage=secrets
+            elif [ "${stage}" == "build-args" ]; then
+              echo "--opt=\"build-arg:${a}\" \\" >> /tmp/run.sh
+            elif [ "${stage}" == "platforms" ]; then
+              if [ "${platforms}" == "" ]; then
+                platforms="${a}"
+              else
+                platforms="${platforms},${a}"
+              fi
+            elif [ "${stage}" == "secrets" ]; then
+              # Split ID=FILE_CONTENT into variables id and data
+
+              # using head because the data could be multiline
+              id="$(echo "${a}" | head -1 | sed 's/=.*//')"
+
+              # This is hacky, we remove the suffix ${id}= from all lines of the data.
+              # If the data would be multiple lines and a line would start with ${id}=
+              # then we would remove it. We could force users to give us the secret
+              # base64 encoded. But ultimately, the best solution might be if the user
+              # mounts the secret and just gives us the path here.
+              data="$(echo "${a}" | sed "s/^${id}=//")"
+
+              # Write the secret data into a temporary file, once we have volume support
+              # in the build strategy, we should use a memory based emptyDir for this.
+              echo -n "${data}" > "/tmp/secret_${id}"
+
+              # Add the secret argument
+              echo "--secret id=${id},src="/tmp/secret_${id}" \\" >> /tmp/run.sh
+            fi
+          done
+
+          if [ "${platforms}" != "" ]; then
+            echo "--opt=\"platform=${platforms}\" \\" >> /tmp/run.sh
+          fi
+
+          echo "--progress=plain" >> /tmp/run.sh
+
+          chmod +x /tmp/run.sh
+          /tmp/run.sh
+        # That's the separator between the shell script and its args
+        - --
+        - --build-args
+        - $(params.build-args[*])
+        - --platforms
+        - $(params.platforms[*])
+        - --secrets
+        - $(params.secrets[*])
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000

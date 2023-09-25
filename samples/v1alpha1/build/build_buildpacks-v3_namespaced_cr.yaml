@@ -1,0 +1,14 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: Build
+metadata:
+  name: buildpack-nodejs-build-namespaced
+spec:
+  source:
+    url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: source-build
+  strategy:
+    name: buildpacks-v3
+    kind: BuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

@@ -1,0 +1,15 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildpack-php-build
+spec:
+  source:
+    git:
+      url: https://github.com/shipwright-io/sample-php
+    contextDir: source-build
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

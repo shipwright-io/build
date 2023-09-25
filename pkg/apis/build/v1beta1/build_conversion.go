@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -46,6 +46,14 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 			alphaBuild.ObjectMeta.Annotations[k] = v
 		}
 		alphaBuild.ObjectMeta.Annotations[v1alpha1.AnnotationBuildRunDeletion] = strconv.FormatBool(*src.Spec.Retention.AtBuildDeletion)
+	}
+
+	// convert OCIArtifact to Bundle
+	if src.Spec.Source.OCIArtifact != nil {
+		alphaBuild.Spec.Source.BundleContainer = &v1alpha1.BundleContainer{
+			Image: src.Spec.Source.OCIArtifact.Image,
+			Prune: (*v1alpha1.PruneOption)(src.Spec.Source.OCIArtifact.Prune),
+		}
 	}
 
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&alphaBuild)
@@ -82,7 +90,7 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 		if src.Spec.Retention == nil {
 			src.Spec.Retention = &BuildRetention{}
 		}
-		src.Spec.Retention.AtBuildDeletion = pointer.Bool(value == "true")
+		src.Spec.Retention.AtBuildDeletion = ptr.To[bool](value == "true")
 		delete(src.ObjectMeta.Annotations, v1alpha1.AnnotationBuildRunDeletion)
 	}
 
@@ -152,6 +160,17 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 			},
 		}
 		dest.ParamValues = append(dest.ParamValues, dockerfileParam)
+	}
+
+	// handle spec.Builder migration
+	if orig.Builder != nil {
+		builderParam := ParamValue{
+			Name: "builder-image",
+			SingleValue: &SingleValue{
+				Value: &orig.Builder.Image,
+			},
+		}
+		dest.ParamValues = append(dest.ParamValues, builderParam)
 	}
 
 	// Handle BuildSpec Output
@@ -227,6 +246,12 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 			continue
 		}
 
+		if p.Name == "builder-image" && p.SingleValue != nil {
+			bs.Builder = &v1alpha1.Image{
+				Image: *p.SingleValue.Value,
+			}
+			continue
+		}
 		param := v1alpha1.ParamValue{}
 		p.convertToAlpha(&param)
 		bs.ParamValues = append(bs.ParamValues, param)
@@ -271,6 +296,7 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 		}
 		bs.Volumes = append(bs.Volumes, aux)
 	}
+
 	return nil
 }
 
@@ -282,11 +308,15 @@ func (p ParamValue) convertToAlpha(dest *v1alpha1.ParamValue) {
 	}
 
 	if p.ConfigMapValue != nil {
-		dest.ConfigMapValue = &v1alpha1.ObjectKeyRef{}
-		dest.ConfigMapValue = (*v1alpha1.ObjectKeyRef)(p.ConfigMapValue)
+		dest.SingleValue = &v1alpha1.SingleValue{
+			ConfigMapValue: (*v1alpha1.ObjectKeyRef)(p.ConfigMapValue),
+		}
 	}
+
 	if p.SecretValue != nil {
-		dest.SecretValue = (*v1alpha1.ObjectKeyRef)(p.SecretValue)
+		dest.SingleValue = &v1alpha1.SingleValue{
+			SecretValue: (*v1alpha1.ObjectKeyRef)(p.SecretValue),
+		}
 	}
 
 	dest.Name = p.Name
@@ -323,9 +353,11 @@ func convertBetaParamValue(orig v1alpha1.ParamValue) ParamValue {
 	}
 
 	if orig.ConfigMapValue != nil {
+		p.SingleValue = &SingleValue{}
 		p.ConfigMapValue = (*ObjectKeyRef)(orig.ConfigMapValue)
 	}
 	if orig.SecretValue != nil {
+		p.SingleValue = &SingleValue{}
 		p.SecretValue = (*ObjectKeyRef)(orig.SecretValue)
 	}
 

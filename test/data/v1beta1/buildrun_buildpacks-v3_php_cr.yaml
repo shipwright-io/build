@@ -1,0 +1,9 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: buildpack-php-buildrun
+spec:
+  build:
+    name: buildpack-php-build
+  serviceAccount: ".generate"

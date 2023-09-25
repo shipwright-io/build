@@ -1,0 +1,10 @@
+---
+apiVersion: shipwright.io/v1alpha1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun-heroku
+spec:
+  buildRef:
+    name: buildpack-nodejs-build-heroku
+  serviceAccount:
+    generate: true
