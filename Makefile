@@ -39,7 +39,7 @@ TEST_NAMESPACE ?= default
 TEKTON_VERSION ?= v0.44.0
 
 # E2E test flags
-TEST_E2E_FLAGS ?= --fail-fast -p --randomize-all -timeout=1h -trace -vv
+TEST_E2E_FLAGS ?= -p --randomize-all -timeout=1h -trace -v
 
 # E2E test service account name to be used for the build runs, can be set to generated to use the generated service account feature
 TEST_E2E_SERVICEACCOUNT_NAME ?= pipeline
@@ -113,11 +113,6 @@ generate:
 	hack/generate-copyright.sh
 	hack/install-controller-gen.sh
 	"$(CONTROLLER_GEN)" crd rbac:roleName=manager-role webhook paths="./..." output:crd:dir=deploy/crds
-
-.PHONY: prepare-conversion
-prepare-conversion:
-	hack/generate-cert.sh
-	hack/install-spruce.sh
 	hack/patch-crds-with-conversion.sh
 
 .PHONY: verify-generate
@@ -209,13 +204,13 @@ test-unit-ginkgo: ginkgo
 # Based on https://github.com/kubernetes/community/blob/master/contributors/devel/sig-testing/integration-tests.md
 .PHONY: test-integration
 test-integration: install-apis ginkgo
+	./hack/setup-webhook-cert-integration-test.sh
 	$(GINKGO) \
 		--randomize-all \
 		--randomize-suites \
 		--fail-on-pending \
 		-trace \
 		test/integration/...
-
 
 .PHONY: test-e2e
 test-e2e: install-strategies test-e2e-plain
@@ -242,7 +237,17 @@ install-with-pprof:
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko apply -R -f deploy/ -- --server-side
 
 install-apis:
-	kubectl apply -f deploy/crds/ --server-side
+	for resource in buildruns builds buildstrategies clusterbuildstrategies ; do \
+		if kubectl get crd "$${resource}.shipwright.io" >/dev/null 2>&1 ; then \
+			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
+				kubectl replace -f "deploy/crds/shipwright.io_$${resource}.yaml" ; \
+			else \
+				kubectl apply -f "deploy/crds/shipwright.io_$${resource}.yaml" --server-side ; \
+			fi ; \
+		else \
+			kubectl create -f "deploy/crds/shipwright.io_$${resource}.yaml" ; \
+		fi ; \
+	done
 	for i in 1 2 3 ; do \
 		kubectl wait --timeout=$(TIMEOUT) --for="condition=Established" crd/clusterbuildstrategies.shipwright.io && \
 		break ; \
@@ -261,6 +266,7 @@ install-controller-kind: install-apis
 	ko apply \
 	  --platform=$(GO_OS)/$(GO_ARCH) \
 	  --filename=deploy
+	./hack/setup-webhook-cert.sh
 
 .PHONY: install-strategies
 install-strategies: install-apis

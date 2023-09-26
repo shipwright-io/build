@@ -73,7 +73,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.13.0
+          version: v0.14.1
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -111,7 +111,12 @@ jobs:
           kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
       - name: Test
         run: |
+          # host.docker.internal does not work in a GitHub action
+          docker exec kind-control-plane bash -c "echo '172.17.0.1 host.docker.internal' >>/etc/hosts"
+
+          # Build and load the Git image
           export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
+
           make test-integration
 
   e2e:
@@ -175,10 +180,9 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.13.0
+          version: v0.14.1
       - name: Install Shipwright Build
         run: |
-          make prepare-conversion
           make install-controller-kind
           kubectl -n shipwright-build rollout status deployment shipwright-build-controller --timeout=1m || true
           kubectl -n shipwright-build rollout status deployment shipwright-build-webhook --timeout=1m || true
