@@ -97,7 +97,14 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 			//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
 			buildRun.Status.FailedAt = &buildv1alpha1.FailedAt{Pod: pod.Name}
 
-			if failedContainer != nil {
+			if pod.Status.Reason == "Evicted" {
+				message = pod.Status.Message
+				reason = buildv1alpha1.BuildRunStatePodEvicted
+				if failedContainer != nil {
+					//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
+					buildRun.Status.FailedAt.Container = failedContainer.Name
+				}
+			} else if failedContainer != nil {
 				//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
 				buildRun.Status.FailedAt.Container = failedContainer.Name
 				message = fmt.Sprintf("buildrun step %s failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
@@ -107,9 +114,6 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 					pod.Name,
 					failedContainer.Name,
 				)
-			} else if pod.Status.Reason == "Evicted" {
-				message = pod.Status.Message
-				reason = buildv1alpha1.BuildRunStatePodEvicted
 			} else {
 				message = fmt.Sprintf("buildrun failed due to an unexpected error in pod %s: for detailed information: kubectl --namespace %s logs %s --all-containers",
 					pod.Name,
