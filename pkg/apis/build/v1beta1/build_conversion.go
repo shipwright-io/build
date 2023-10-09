@@ -133,9 +133,8 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 
 	// Handle BuildSpec Strategy
 	dest.Strategy = Strategy{
-		Name:       orig.StrategyName(),
-		Kind:       (*BuildStrategyKind)(orig.Strategy.Kind),
-		APIVersion: orig.Strategy.APIVersion,
+		Name: orig.StrategyName(),
+		Kind: (*BuildStrategyKind)(orig.Strategy.Kind),
 	}
 
 	// Handle BuildSpec ParamValues
@@ -213,9 +212,8 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 
 	// Handle BuildSpec Strategy
 	bs.Strategy = v1alpha1.Strategy{
-		Name:       dest.StrategyName(),
-		Kind:       (*v1alpha1.BuildStrategyKind)(dest.Strategy.Kind),
-		APIVersion: dest.Strategy.APIVersion,
+		Name: dest.StrategyName(),
+		Kind: (*v1alpha1.BuildStrategyKind)(dest.Strategy.Kind),
 	}
 
 	// Handle BuildSpec Builder, TODO

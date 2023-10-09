@@ -187,10 +187,6 @@ type Strategy struct {
 
 	// BuildStrategyKind indicates the kind of the buildstrategy, namespaced or cluster scoped.
 	Kind *BuildStrategyKind `json:"kind,omitempty"`
-
-	// API version of the referent
-	// +optional
-	APIVersion *string `json:"apiVersion,omitempty"`
 }
 
 // BuilderStrategy defines the common elements of build strategies
