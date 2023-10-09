@@ -17,22 +17,12 @@ limitations under the License.
 package v1beta1
 
 import (
-	"context"
-	"fmt"
-	"strings"
-
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
-	"github.com/tektoncd/pipeline/pkg/apis/version"
-
 	"github.com/tektoncd/pipeline/pkg/reconciler/pipeline/dag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/validation"
-	"knative.dev/pkg/apis"
 	"knative.dev/pkg/kmeta"
 )
 
@@ -87,12 +77,15 @@ func (*Pipeline) GetGroupVersionKind() schema.GroupVersionKind {
 
 // PipelineSpec defines the desired state of Pipeline.
 type PipelineSpec struct {
+	// DisplayName is a user-facing name of the pipeline that may be
+	// used to populate a UI.
+	// +optional
+	DisplayName string `json:"displayName,omitempty"`
 	// Description is a user-facing description of the pipeline that may be
 	// used to populate a UI.
 	// +optional
 	Description string `json:"description,omitempty"`
-	// Resources declares the names and types of the resources given to the
-	// Pipeline's tasks as inputs and outputs.
+	// Deprecated: Unused, preserved only for backwards compatibility
 	// +listType=atomic
 	Resources []PipelineDeclaredResource `json:"resources,omitempty"`
 	// Tasks declares the graph of Tasks that execute when this Pipeline is run.
@@ -101,7 +94,7 @@ type PipelineSpec struct {
 	// Params declares a list of input parameters that must be supplied when
 	// this Pipeline is run.
 	// +listType=atomic
-	Params []ParamSpec `json:"params,omitempty"`
+	Params ParamSpecs `json:"params,omitempty"`
 	// Workspaces declares a set of named workspaces that are expected to be
 	// provided by a PipelineRun.
 	// +optional
@@ -162,16 +155,6 @@ type EmbeddedTask struct {
 	TaskSpec `json:",inline,omitempty"`
 }
 
-// Matrix is used to fan out Tasks in a Pipeline
-type Matrix struct {
-	// Params is a list of parameters used to fan out the pipelineTask
-	// Params takes only `Parameters` of type `"array"`
-	// Each array element is supplied to the `PipelineTask` by substituting `params` of type `"string"` in the underlying `Task`.
-	// The names of the `params` in the `Matrix` must match the names of the `params` in the underlying `Task` that they will be substituting.
-	// +listType=atomic
-	Params []Param `json:"params,omitempty"`
-}
-
 // PipelineTask defines a task in a Pipeline, passing inputs from both
 // Params and from the output of previous tasks.
 type PipelineTask struct {
@@ -179,6 +162,16 @@ type PipelineTask struct {
 	// used as a coordinate with the `from` and `runAfter` fields to establish
 	// the execution order of tasks relative to one another.
 	Name string `json:"name,omitempty"`
+
+	// DisplayName is the display name of this task within the context of a Pipeline.
+	// This display name may be used to populate a UI.
+	// +optional
+	DisplayName string `json:"displayName,omitempty"`
+
+	// Description is the description of this task within the context of a Pipeline.
+	// This description may be used to populate a UI.
+	// +optional
+	Description string `json:"description,omitempty"`
 
 	// TaskRef is a reference to a task definition.
 	// +optional
@@ -202,15 +195,14 @@ type PipelineTask struct {
 	// +listType=atomic
 	RunAfter []string `json:"runAfter,omitempty"`
 
-	// Resources declares the resources given to this task as inputs and
-	// outputs.
+	// Deprecated: Unused, preserved only for backwards compatibility
 	// +optional
 	Resources *PipelineTaskResources `json:"resources,omitempty"`
 
 	// Parameters declares parameters passed to this task.
 	// +optional
 	// +listType=atomic
-	Params []Param `json:"params,omitempty"`
+	Params Params `json:"params,omitempty"`
 
 	// Matrix declares parameters used to fan out this task.
 	// +optional
@@ -229,207 +221,16 @@ type PipelineTask struct {
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
-// validateRefOrSpec validates at least one of taskRef or taskSpec is specified
-func (pt PipelineTask) validateRefOrSpec() (errs *apis.FieldError) {
-	// can't have both taskRef and taskSpec at the same time
-	if pt.TaskRef != nil && pt.TaskSpec != nil {
-		errs = errs.Also(apis.ErrMultipleOneOf("taskRef", "taskSpec"))
-	}
-	// Check that one of TaskRef and TaskSpec is present
-	if pt.TaskRef == nil && pt.TaskSpec == nil {
-		errs = errs.Also(apis.ErrMissingOneOf("taskRef", "taskSpec"))
-	}
-	return errs
-}
-
-// validateCustomTask validates custom task specifications - checking kind and fail if not yet supported features specified
-func (pt PipelineTask) validateCustomTask() (errs *apis.FieldError) {
-	if pt.TaskRef != nil && pt.TaskRef.Kind == "" {
-		errs = errs.Also(apis.ErrInvalidValue("custom task ref must specify kind", "taskRef.kind"))
-	}
-	if pt.TaskSpec != nil && pt.TaskSpec.Kind == "" {
-		errs = errs.Also(apis.ErrInvalidValue("custom task spec must specify kind", "taskSpec.kind"))
-	}
-	if pt.TaskRef != nil && pt.TaskRef.APIVersion == "" {
-		errs = errs.Also(apis.ErrInvalidValue("custom task ref must specify apiVersion", "taskRef.apiVersion"))
-	}
-	if pt.TaskSpec != nil && pt.TaskSpec.APIVersion == "" {
-		errs = errs.Also(apis.ErrInvalidValue("custom task spec must specify apiVersion", "taskSpec.apiVersion"))
-	}
-
-	// TODO(#3133): Support these features if possible.
-	if pt.Resources != nil {
-		errs = errs.Also(apis.ErrInvalidValue("custom tasks do not support PipelineResources", "resources"))
-	}
-	return errs
-}
-
-// validateBundle validates bundle specifications - checking name and bundle
-func (pt PipelineTask) validateBundle() (errs *apis.FieldError) {
-	// bundle requires a TaskRef to be specified
-	if (pt.TaskRef != nil && pt.TaskRef.Bundle != "") && pt.TaskRef.Name == "" {
-		errs = errs.Also(apis.ErrMissingField("taskRef.name"))
-	}
-	// If a bundle url is specified, ensure it is parsable
-	if pt.TaskRef != nil && pt.TaskRef.Bundle != "" {
-		if _, err := name.ParseReference(pt.TaskRef.Bundle); err != nil {
-			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("invalid bundle reference (%s)", err.Error()), "taskRef.bundle"))
-		}
-	}
-	return errs
-}
-
-// validateTask validates a pipeline task or a final task for taskRef and taskSpec
-func (pt PipelineTask) validateTask(ctx context.Context) (errs *apis.FieldError) {
-	cfg := config.FromContextOrDefaults(ctx)
-	// Validate TaskSpec if it's present
-	if pt.TaskSpec != nil {
-		errs = errs.Also(pt.TaskSpec.Validate(ctx).ViaField("taskSpec"))
-	}
-	if pt.TaskRef != nil {
-		if pt.TaskRef.Name != "" {
-			// TaskRef name must be a valid k8s name
-			if errSlice := validation.IsQualifiedName(pt.TaskRef.Name); len(errSlice) != 0 {
-				errs = errs.Also(apis.ErrInvalidValue(strings.Join(errSlice, ","), "taskRef.name"))
-			}
-		} else if pt.TaskRef.Resolver == "" {
-			errs = errs.Also(apis.ErrInvalidValue("taskRef must specify name", "taskRef.name"))
-		}
-		// fail if bundle is present when EnableTektonOCIBundles feature flag is off (as it won't be allowed nor used)
-		if !cfg.FeatureFlags.EnableTektonOCIBundles && pt.TaskRef.Bundle != "" {
-			errs = errs.Also(apis.ErrDisallowedFields("taskRef.bundle"))
-		}
-	}
-	return errs
+// IsCustomTask checks whether an embedded TaskSpec is a Custom Task
+func (et *EmbeddedTask) IsCustomTask() bool {
+	// Note that if `apiVersion` is set to `"tekton.dev/v1beta1"` and `kind` is set to `"Task"`,
+	// the reference will be considered a Custom Task - https://github.com/tektoncd/pipeline/issues/6457
+	return et != nil && et.APIVersion != "" && et.Kind != ""
 }
 
 // IsMatrixed return whether pipeline task is matrixed
 func (pt *PipelineTask) IsMatrixed() bool {
-	return pt.Matrix != nil && len(pt.Matrix.Params) > 0
-}
-
-func (pt *PipelineTask) validateMatrix(ctx context.Context) (errs *apis.FieldError) {
-	if pt.IsMatrixed() {
-		// This is an alpha feature and will fail validation if it's used in a pipeline spec
-		// when the enable-api-fields feature gate is anything but "alpha".
-		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "matrix", config.AlphaAPIFields))
-		// Matrix requires "embedded-status" feature gate to be set to "minimal", and will fail
-		// validation if it is anything but "minimal".
-		errs = errs.Also(ValidateEmbeddedStatus(ctx, "matrix", config.MinimalEmbeddedStatus))
-		errs = errs.Also(pt.validateMatrixCombinationsCount(ctx))
-	}
-	errs = errs.Also(validateParameterInOneOfMatrixOrParams(pt.Matrix, pt.Params))
-	errs = errs.Also(validateParametersInTaskMatrix(pt.Matrix))
-	return errs
-}
-
-func (pt *PipelineTask) validateMatrixCombinationsCount(ctx context.Context) (errs *apis.FieldError) {
-	matrixCombinationsCount := pt.GetMatrixCombinationsCount()
-	maxMatrixCombinationsCount := config.FromContextOrDefaults(ctx).Defaults.DefaultMaxMatrixCombinationsCount
-	if matrixCombinationsCount > maxMatrixCombinationsCount {
-		errs = errs.Also(apis.ErrOutOfBoundsValue(matrixCombinationsCount, 0, maxMatrixCombinationsCount, "matrix"))
-	}
-	return errs
-}
-
-func (pt PipelineTask) validateEmbeddedOrType() (errs *apis.FieldError) {
-	// Reject cases where APIVersion and/or Kind are specified alongside an embedded Task.
-	// We determine if this is an embedded Task by checking of TaskSpec.TaskSpec.Steps has items.
-	if pt.TaskSpec != nil && len(pt.TaskSpec.TaskSpec.Steps) > 0 {
-		if pt.TaskSpec.APIVersion != "" {
-			errs = errs.Also(&apis.FieldError{
-				Message: "taskSpec.apiVersion cannot be specified when using taskSpec.steps",
-				Paths:   []string{"taskSpec.apiVersion"},
-			})
-		}
-		if pt.TaskSpec.Kind != "" {
-			errs = errs.Also(&apis.FieldError{
-				Message: "taskSpec.kind cannot be specified when using taskSpec.steps",
-				Paths:   []string{"taskSpec.kind"},
-			})
-		}
-	}
-	return
-}
-
-// GetMatrixCombinationsCount returns the count of combinations of Parameters generated from the Matrix in PipelineTask.
-func (pt *PipelineTask) GetMatrixCombinationsCount() int {
-	if !pt.IsMatrixed() {
-		return 0
-	}
-	count := 1
-	for _, param := range pt.Matrix.Params {
-		count *= len(param.Value.ArrayVal)
-	}
-	return count
-}
-
-func (pt *PipelineTask) validateResultsFromMatrixedPipelineTasksNotConsumed(matrixedPipelineTasks sets.String) (errs *apis.FieldError) {
-	for _, ref := range PipelineTaskResultRefs(pt) {
-		if matrixedPipelineTasks.Has(ref.PipelineTask) {
-			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("consuming results from matrixed task %s is not allowed", ref.PipelineTask), ""))
-		}
-	}
-	return errs
-}
-
-func (pt *PipelineTask) validateExecutionStatusVariablesDisallowed() (errs *apis.FieldError) {
-	for _, param := range pt.Params {
-		if expressions, ok := GetVarSubstitutionExpressionsForParam(param); ok {
-			errs = errs.Also(validateContainsExecutionStatusVariablesDisallowed(expressions, "value").
-				ViaFieldKey("params", param.Name))
-		}
-	}
-	for i, we := range pt.WhenExpressions {
-		if expressions, ok := we.GetVarSubstitutionExpressions(); ok {
-			errs = errs.Also(validateContainsExecutionStatusVariablesDisallowed(expressions, "").
-				ViaFieldIndex("when", i))
-		}
-	}
-	return errs
-}
-
-func (pt *PipelineTask) validateExecutionStatusVariablesAllowed(ptNames sets.String) (errs *apis.FieldError) {
-	for _, param := range pt.Params {
-		if expressions, ok := GetVarSubstitutionExpressionsForParam(param); ok {
-			errs = errs.Also(validateExecutionStatusVariablesExpressions(expressions, ptNames, "value").
-				ViaFieldKey("params", param.Name))
-		}
-	}
-	for i, we := range pt.WhenExpressions {
-		if expressions, ok := we.GetVarSubstitutionExpressions(); ok {
-			errs = errs.Also(validateExecutionStatusVariablesExpressions(expressions, ptNames, "").
-				ViaFieldIndex("when", i))
-		}
-	}
-	return errs
-}
-
-func (pt *PipelineTask) validateWorkspaces(workspaceNames sets.String) (errs *apis.FieldError) {
-	workspaceBindingNames := sets.NewString()
-	for i, ws := range pt.Workspaces {
-		if workspaceBindingNames.Has(ws.Name) {
-			errs = errs.Also(apis.ErrGeneric(
-				fmt.Sprintf("workspace name %q must be unique", ws.Name), "").ViaFieldIndex("workspaces", i))
-		}
-
-		if ws.Workspace == "" {
-			if !workspaceNames.Has(ws.Name) {
-				errs = errs.Also(apis.ErrInvalidValue(
-					fmt.Sprintf("pipeline task %q expects workspace with name %q but none exists in pipeline spec", pt.Name, ws.Name),
-					"",
-				).ViaFieldIndex("workspaces", i))
-			}
-		} else if !workspaceNames.Has(ws.Workspace) {
-			errs = errs.Also(apis.ErrInvalidValue(
-				fmt.Sprintf("pipeline task %q expects workspace with name %q but none exists in pipeline spec", pt.Name, ws.Workspace),
-				"",
-			).ViaFieldIndex("workspaces", i))
-		}
-
-		workspaceBindingNames.Insert(ws.Name)
-	}
-	return errs
+	return pt.Matrix.HasParams() || pt.Matrix.HasInclude()
 }
 
 // TaskSpecMetadata returns the metadata of the PipelineTask's EmbeddedTask spec.
@@ -442,55 +243,10 @@ func (pt PipelineTask) HashKey() string {
 	return pt.Name
 }
 
-// ValidateName checks whether the PipelineTask's name is a valid DNS label
-func (pt PipelineTask) ValidateName() *apis.FieldError {
-	if err := validation.IsDNS1123Label(pt.Name); len(err) > 0 {
-		return &apis.FieldError{
-			Message: fmt.Sprintf("invalid value %q", pt.Name),
-			Paths:   []string{"name"},
-			Details: "Pipeline Task name must be a valid DNS Label." +
-				"For more info refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
-		}
-	}
-	return nil
-}
-
-// Validate classifies whether a task is a custom task, bundle, or a regular task(dag/final)
-// calls the validation routine based on the type of the task
-func (pt PipelineTask) Validate(ctx context.Context) (errs *apis.FieldError) {
-	errs = errs.Also(pt.validateRefOrSpec())
-
-	errs = errs.Also(pt.validateEmbeddedOrType())
-
-	cfg := config.FromContextOrDefaults(ctx)
-	// Pipeline task having taskRef/taskSpec with APIVersion is classified as custom task
-	switch {
-	case pt.TaskRef != nil && pt.TaskRef.APIVersion != "":
-		errs = errs.Also(pt.validateCustomTask())
-	case pt.TaskSpec != nil && pt.TaskSpec.APIVersion != "":
-		errs = errs.Also(pt.validateCustomTask())
-		// If EnableTektonOCIBundles feature flag is on, validate bundle specifications
-	case cfg.FeatureFlags.EnableTektonOCIBundles && pt.TaskRef != nil && pt.TaskRef.Bundle != "":
-		errs = errs.Also(pt.validateBundle())
-	default:
-		errs = errs.Also(pt.validateTask(ctx))
-	}
-	return
-}
-
 // Deps returns all other PipelineTask dependencies of this PipelineTask, based on resource usage or ordering
 func (pt PipelineTask) Deps() []string {
 	// hold the list of dependencies in a set to avoid duplicates
 	deps := sets.NewString()
-
-	// add any new dependents from a resource/workspace
-	if pt.Resources != nil {
-		for _, rd := range pt.Resources.Inputs {
-			for _, f := range rd.From {
-				deps.Insert(f)
-			}
-		}
-	}
 
 	// add any new dependents from result references - resource dependency
 	for _, ref := range PipelineTaskResultRefs(&pt) {
@@ -540,81 +296,10 @@ func (l PipelineTaskList) Names() sets.String {
 	return names
 }
 
-// Validate a list of pipeline tasks including custom task and bundles
-func (l PipelineTaskList) Validate(ctx context.Context, taskNames sets.String, path string) (errs *apis.FieldError) {
-	for i, t := range l {
-		// validate pipeline task name
-		errs = errs.Also(t.ValidateName().ViaFieldIndex(path, i))
-		// names cannot be duplicated - checking that pipelineTask names are unique
-		if _, ok := taskNames[t.Name]; ok {
-			errs = errs.Also(apis.ErrMultipleOneOf("name").ViaFieldIndex(path, i))
-		}
-		taskNames.Insert(t.Name)
-		// validate custom task, bundle, dag, or final task
-		errs = errs.Also(t.Validate(ctx).ViaFieldIndex(path, i))
-	}
-	return errs
-}
-
 // PipelineTaskParam is used to provide arbitrary string parameters to a Task.
 type PipelineTaskParam struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
-}
-
-// PipelineDeclaredResource is used by a Pipeline to declare the types of the
-// PipelineResources that it will required to run and names which can be used to
-// refer to these PipelineResources in PipelineTaskResourceBindings.
-type PipelineDeclaredResource struct {
-	// Name is the name that will be used by the Pipeline to refer to this resource.
-	// It does not directly correspond to the name of any PipelineResources Task
-	// inputs or outputs, and it does not correspond to the actual names of the
-	// PipelineResources that will be bound in the PipelineRun.
-	Name string `json:"name"`
-	// Type is the type of the PipelineResource.
-	Type PipelineResourceType `json:"type"`
-	// Optional declares the resource as optional.
-	// optional: true - the resource is considered optional
-	// optional: false - the resource is considered required (default/equivalent of not specifying it)
-	Optional bool `json:"optional,omitempty"`
-}
-
-// PipelineTaskResources allows a Pipeline to declare how its DeclaredPipelineResources
-// should be provided to a Task as its inputs and outputs.
-type PipelineTaskResources struct {
-	// Inputs holds the mapping from the PipelineResources declared in
-	// DeclaredPipelineResources to the input PipelineResources required by the Task.
-	// +listType=atomic
-	Inputs []PipelineTaskInputResource `json:"inputs,omitempty"`
-	// Outputs holds the mapping from the PipelineResources declared in
-	// DeclaredPipelineResources to the input PipelineResources required by the Task.
-	// +listType=atomic
-	Outputs []PipelineTaskOutputResource `json:"outputs,omitempty"`
-}
-
-// PipelineTaskInputResource maps the name of a declared PipelineResource input
-// dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources
-// that should be used. This input may come from a previous task.
-type PipelineTaskInputResource struct {
-	// Name is the name of the PipelineResource as declared by the Task.
-	Name string `json:"name"`
-	// Resource is the name of the DeclaredPipelineResource to use.
-	Resource string `json:"resource"`
-	// From is the list of PipelineTask names that the resource has to come from.
-	// (Implies an ordering in the execution graph.)
-	// +optional
-	// +listType=atomic
-	From []string `json:"from,omitempty"`
-}
-
-// PipelineTaskOutputResource maps the name of a declared PipelineResource output
-// dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources
-// that should be used.
-type PipelineTaskOutputResource struct {
-	// Name is the name of the PipelineResource as declared by the Task.
-	Name string `json:"name"`
-	// Resource is the name of the DeclaredPipelineResource to use.
-	Resource string `json:"resource"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -625,48 +310,4 @@ type PipelineList struct {
 	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Pipeline `json:"items"`
-}
-
-func validateContainsExecutionStatusVariablesDisallowed(expressions []string, path string) (errs *apis.FieldError) {
-	if containsExecutionStatusReferences(expressions) {
-		errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("pipeline tasks can not refer to execution status"+
-			" of any other pipeline task or aggregate status of tasks"), path))
-	}
-	return errs
-}
-
-func containsExecutionStatusReferences(expressions []string) bool {
-	// validate tasks.pipelineTask.status/tasks.status if this expression is not a result reference
-	if !LooksLikeContainsResultRefs(expressions) {
-		for _, e := range expressions {
-			// check if it contains context variable accessing execution status - $(tasks.taskname.status)
-			// or an aggregate status - $(tasks.status)
-			if containsExecutionStatusRef(e) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func validateExecutionStatusVariablesExpressions(expressions []string, ptNames sets.String, fieldPath string) (errs *apis.FieldError) {
-	// validate tasks.pipelineTask.status if this expression is not a result reference
-	if !LooksLikeContainsResultRefs(expressions) {
-		for _, expression := range expressions {
-			// its a reference to aggregate status of dag tasks - $(tasks.status)
-			if expression == PipelineTasksAggregateStatus {
-				continue
-			}
-			// check if it contains context variable accessing execution status - $(tasks.taskname.status)
-			if containsExecutionStatusRef(expression) {
-				// strip tasks. and .status from tasks.taskname.status to further verify task name
-				pt := strings.TrimSuffix(strings.TrimPrefix(expression, "tasks."), ".status")
-				// report an error if the task name does not exist in the list of dag tasks
-				if !ptNames.Has(pt) {
-					errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("pipeline task %s is not defined in the pipeline", pt), fieldPath))
-				}
-			}
-		}
-	}
-	return errs
 }

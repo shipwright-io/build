@@ -36,8 +36,15 @@ func (pr *PipelineRun) SetDefaults(ctx context.Context) {
 // SetDefaults implements apis.Defaultable
 func (prs *PipelineRunSpec) SetDefaults(ctx context.Context) {
 	cfg := config.FromContextOrDefaults(ctx)
+	if prs.PipelineRef != nil && prs.PipelineRef.Name == "" && prs.PipelineRef.Resolver == "" {
+		prs.PipelineRef.Resolver = ResolverName(cfg.Defaults.DefaultResolverType)
+	}
 
-	if prs.Timeouts != nil && prs.Timeouts.Pipeline == nil {
+	if prs.Timeouts == nil {
+		prs.Timeouts = &TimeoutFields{}
+	}
+
+	if prs.Timeouts.Pipeline == nil {
 		prs.Timeouts.Pipeline = &metav1.Duration{Duration: time.Duration(cfg.Defaults.DefaultTimeoutMinutes) * time.Minute}
 	}
 

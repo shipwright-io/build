@@ -1,3 +1,19 @@
+/*
+Copyright 2023 The Tekton Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1beta1
 
 import (
@@ -32,7 +48,7 @@ func (pr PipelineRef) convertBundleToResolver(sink *v1.PipelineRef) {
 	if pr.Bundle != "" {
 		sink.ResolverRef = v1.ResolverRef{
 			Resolver: "bundles",
-			Params: []v1.Param{{
+			Params: v1.Params{{
 				Name:  "bundle",
 				Value: v1.ParamValue{StringVal: pr.Bundle, Type: v1.ParamTypeString},
 			}, {
@@ -40,7 +56,7 @@ func (pr PipelineRef) convertBundleToResolver(sink *v1.PipelineRef) {
 				Value: v1.ParamValue{StringVal: pr.Name, Type: v1.ParamTypeString},
 			}, {
 				Name:  "kind",
-				Value: v1.ParamValue{StringVal: "Task", Type: v1.ParamTypeString},
+				Value: v1.ParamValue{StringVal: "Pipeline", Type: v1.ParamTypeString},
 			}},
 		}
 	}

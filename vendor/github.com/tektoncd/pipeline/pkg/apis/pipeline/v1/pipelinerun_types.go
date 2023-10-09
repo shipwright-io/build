@@ -20,15 +20,14 @@ import (
 	"context"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	apisconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	pod "github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	runv1beta1 "github.com/tektoncd/pipeline/pkg/apis/run/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/clock"
@@ -224,7 +223,7 @@ type PipelineRunSpec struct {
 	PipelineSpec *PipelineSpec `json:"pipelineSpec,omitempty"`
 	// Params is a list of parameter names and values.
 	// +listType=atomic
-	Params []Param `json:"params,omitempty"`
+	Params Params `json:"params,omitempty"`
 
 	// Used for cancelling a pipelinerun (and maybe more later on)
 	// +optional
@@ -429,6 +428,9 @@ type PipelineRunStatusFields struct {
 	// Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.).
 	// +optional
 	Provenance *Provenance `json:"provenance,omitempty"`
+
+	// SpanContext contains tracing span context fields
+	SpanContext map[string]string `json:"spanContext,omitempty"`
 }
 
 // SkippedTask is used to describe the Tasks that were skipped due to their When Expressions
@@ -467,6 +469,8 @@ const (
 	TasksTimedOutSkip SkippingReason = "PipelineRun Tasks timeout has been reached"
 	// FinallyTimedOutSkip means the task was skipped because the PipelineRun has passed its Timeouts.Finally.
 	FinallyTimedOutSkip SkippingReason = "PipelineRun Finally timeout has been reached"
+	// EmptyArrayInMatrixParams means the task was skipped because Matrix parameters contain empty array.
+	EmptyArrayInMatrixParams SkippingReason = "Matrix Parameters have an empty array"
 	// None means the task was not skipped
 	None SkippingReason = "None"
 )
@@ -551,9 +555,9 @@ func (pr *PipelineRun) GetTaskRunSpec(pipelineTaskName string) PipelineTaskRunSp
 	}
 	for _, task := range pr.Spec.TaskRunSpecs {
 		if task.PipelineTaskName == pipelineTaskName {
-			if task.PodTemplate != nil {
-				s.PodTemplate = task.PodTemplate
-			}
+			// merge podTemplates specified in pipelineRun.spec.taskRunSpecs[].podTemplate and pipelineRun.spec.podTemplate
+			// with taskRunSpecs taking higher precedence
+			s.PodTemplate = pod.MergePodTemplateWithDefault(task.PodTemplate, s.PodTemplate)
 			if task.ServiceAccountName != "" {
 				s.ServiceAccountName = task.ServiceAccountName
 			}

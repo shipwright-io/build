@@ -151,173 +151,6 @@
         }
       }
     },
-    "v1alpha1.PipelineResource": {
-      "description": "PipelineResource describes a resource that is an input to or output from a Task.",
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-          "type": "string"
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "default": {},
-          "$ref": "#/definitions/v1.ObjectMeta"
-        },
-        "spec": {
-          "description": "Spec holds the desired state of the PipelineResource from the client",
-          "default": {},
-          "$ref": "#/definitions/v1alpha1.PipelineResourceSpec"
-        },
-        "status": {
-          "description": "Status is deprecated. It usually is used to communicate the observed state of the PipelineResource from the controller, but was unused as there is no controller for PipelineResource.",
-          "$ref": "#/definitions/v1alpha1.PipelineResourceStatus"
-        }
-      }
-    },
-    "v1alpha1.PipelineResourceList": {
-      "description": "PipelineResourceList contains a list of PipelineResources",
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-          "type": "string"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/v1alpha1.PipelineResource"
-          }
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "default": {},
-          "$ref": "#/definitions/v1.ListMeta"
-        }
-      }
-    },
-    "v1alpha1.PipelineResourceSpec": {
-      "description": "PipelineResourceSpec defines  an individual resources used in the pipeline.",
-      "type": "object",
-      "required": [
-        "type",
-        "params"
-      ],
-      "properties": {
-        "description": {
-          "description": "Description is a user-facing description of the resource that may be used to populate a UI.",
-          "type": "string"
-        },
-        "params": {
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/v1alpha1.ResourceParam"
-          },
-          "x-kubernetes-list-type": "atomic"
-        },
-        "secrets": {
-          "description": "Secrets to fetch to populate some of resource fields",
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/v1alpha1.SecretParam"
-          },
-          "x-kubernetes-list-type": "atomic"
-        },
-        "type": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
-    "v1alpha1.PipelineResourceStatus": {
-      "description": "PipelineResourceStatus does not contain anything because PipelineResources on their own do not have a status Deprecated",
-      "type": "object"
-    },
-    "v1alpha1.ResourceDeclaration": {
-      "description": "ResourceDeclaration defines an input or output PipelineResource declared as a requirement by another type such as a Task or Condition. The Name field will be used to refer to these PipelineResources within the type's definition, and when provided as an Input, the Name will be the path to the volume mounted containing this PipelineResource as an input (e.g. an input Resource named `workspace` will be mounted at `/workspace`).",
-      "type": "object",
-      "required": [
-        "name",
-        "type"
-      ],
-      "properties": {
-        "description": {
-          "description": "Description is a user-facing description of the declared resource that may be used to populate a UI.",
-          "type": "string"
-        },
-        "name": {
-          "description": "Name declares the name by which a resource is referenced in the definition. Resources may be referenced by name in the definition of a Task's steps.",
-          "type": "string",
-          "default": ""
-        },
-        "optional": {
-          "description": "Optional declares the resource as optional. By default optional is set to false which makes a resource required. optional: true - the resource is considered optional optional: false - the resource is considered required (equivalent of not specifying it)",
-          "type": "boolean"
-        },
-        "targetPath": {
-          "description": "TargetPath is the path in workspace directory where the resource will be copied.",
-          "type": "string"
-        },
-        "type": {
-          "description": "Type is the type of this resource;",
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
-    "v1alpha1.ResourceParam": {
-      "description": "ResourceParam declares a string value to use for the parameter called Name, and is used in the specific context of PipelineResources.",
-      "type": "object",
-      "required": [
-        "name",
-        "value"
-      ],
-      "properties": {
-        "name": {
-          "type": "string",
-          "default": ""
-        },
-        "value": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
-    "v1alpha1.SecretParam": {
-      "description": "SecretParam indicates which secret can be used to populate a field of the resource",
-      "type": "object",
-      "required": [
-        "fieldName",
-        "secretKey",
-        "secretName"
-      ],
-      "properties": {
-        "fieldName": {
-          "type": "string",
-          "default": ""
-        },
-        "secretKey": {
-          "type": "string",
-          "default": ""
-        },
-        "secretName": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
     "v1beta1.ChildStatusReference": {
       "description": "ChildStatusReference is used to point to the statuses of individual TaskRuns and Runs within this PipelineRun.",
       "type": "object",
@@ -391,7 +224,7 @@
       }
     },
     "v1beta1.ClusterTask": {
-      "description": "ClusterTask is a Task with a cluster scope. ClusterTasks are used to represent Tasks that should be publicly addressable from any namespace in the cluster. Deprecated: Please use the cluster resolver instead.",
+      "description": "ClusterTask is a Task with a cluster scope. ClusterTasks are used to represent Tasks that should be publicly addressable from any namespace in the cluster.\n\nDeprecated: Please use the cluster resolver instead.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -442,11 +275,11 @@
       }
     },
     "v1beta1.ConfigSource": {
-      "description": "ConfigSource identifies the source where a resource came from. This can include Git repositories, Task Bundles, file checksums, or other information that allows users to identify where the resource came from and what version was used.",
+      "description": "ConfigSource contains the information that can uniquely identify where a remote built definition came from i.e. Git repositories, Tekton Bundles in OCI registry and hub.",
       "type": "object",
       "properties": {
         "digest": {
-          "description": "Digest is a collection of cryptographic digests for the contents of the artifact specified by URI. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.digest Example: {\"sha1\": \"f99d13e554ffcb696dee719fa85b695cb5b0f428\"}",
+          "description": "Digest is a collection of cryptographic digests for the contents of the artifact specified by URI. Example: {\"sha1\": \"f99d13e554ffcb696dee719fa85b695cb5b0f428\"}",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -454,11 +287,11 @@
           }
         },
         "entryPoint": {
-          "description": "EntryPoint identifies the entry point into the build. This is often a path to a configuration file and/or a target label within that file. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.entryPoint Example: \"task/git-clone/0.8/git-clone.yaml\"",
+          "description": "EntryPoint identifies the entry point into the build. This is often a path to a build definition file and/or a target label within that file. Example: \"task/git-clone/0.8/git-clone.yaml\"",
           "type": "string"
         },
         "uri": {
-          "description": "URI indicates the identity of the source of the config. Definition: https://slsa.dev/provenance/v0.2#invocation.configSource.uri Example: \"https://github.com/tektoncd/catalog\"",
+          "description": "URI indicates the identity of the source of the build definition. Example: \"https://github.com/tektoncd/catalog\"",
           "type": "string"
         }
       }
@@ -600,6 +433,10 @@
           "description": "Description is a user-facing description of the task that may be used to populate a UI.",
           "type": "string"
         },
+        "displayName": {
+          "description": "DisplayName is a user-facing name of the task that may be used to populate a UI.",
+          "type": "string"
+        },
         "kind": {
           "type": "string"
         },
@@ -617,7 +454,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "resources": {
-          "description": "Resources is a list input and output resource to run the task Resources are represented in TaskRuns as bindings to instances of PipelineResources.",
+          "description": "Resources is a list input and output resource to run the task Resources are represented in TaskRuns as bindings to instances of PipelineResources.\n\nDeprecated: Unused, preserved only for backwards compatibility",
           "$ref": "#/definitions/v1beta1.TaskResources"
         },
         "results": {
@@ -676,8 +513,27 @@
         }
       }
     },
+    "v1beta1.IncludeParams": {
+      "description": "IncludeParams allows passing in a specific combinations of Parameters into the Matrix.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name the specified combination",
+          "type": "string"
+        },
+        "params": {
+          "description": "Params takes only `Parameters` of type `\"string\"` The names of the `params` must match the names of the `params` in the underlying `Task`",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.Param"
+          },
+          "x-kubernetes-list-type": "atomic"
+        }
+      }
+    },
     "v1beta1.InternalTaskModifier": {
-      "description": "InternalTaskModifier implements TaskModifier for resources that are built-in to Tekton Pipelines.",
+      "description": "InternalTaskModifier implements TaskModifier for resources that are built-in to Tekton Pipelines.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "required": [
         "stepsToPrepend",
@@ -715,6 +571,15 @@
       "description": "Matrix is used to fan out Tasks in a Pipeline",
       "type": "object",
       "properties": {
+        "include": {
+          "description": "Include is a list of IncludeParams which allows passing in specific combinations of Parameters into the Matrix.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.IncludeParams"
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
         "params": {
           "description": "Params is a list of parameters used to fan out the pipelineTask Params takes only `Parameters` of type `\"array\"` Each array element is supplied to the `PipelineTask` by substituting `params` of type `\"string\"` in the underlying `Task`. The names of the `params` in the `Matrix` must match the names of the `params` in the underlying `Task` that they will be substituting.",
           "type": "array",
@@ -782,13 +647,13 @@
       "description": "ResultValue is a type alias of ParamValue",
       "type": "object",
       "required": [
-        "type",
-        "stringVal",
-        "arrayVal",
-        "objectVal"
+        "Type",
+        "StringVal",
+        "ArrayVal",
+        "ObjectVal"
       ],
       "properties": {
-        "arrayVal": {
+        "ArrayVal": {
           "type": "array",
           "items": {
             "type": "string",
@@ -796,19 +661,19 @@
           },
           "x-kubernetes-list-type": "atomic"
         },
-        "objectVal": {
+        "ObjectVal": {
           "type": "object",
           "additionalProperties": {
             "type": "string",
             "default": ""
           }
         },
-        "stringVal": {
+        "StringVal": {
           "description": "Represents the stored type of ParamValues.",
           "type": "string",
           "default": ""
         },
-        "type": {
+        "Type": {
           "type": "string",
           "default": ""
         }
@@ -838,7 +703,7 @@
       }
     },
     "v1beta1.PipelineDeclaredResource": {
-      "description": "PipelineDeclaredResource is used by a Pipeline to declare the types of the PipelineResources that it will required to run and names which can be used to refer to these PipelineResources in PipelineTaskResourceBindings.",
+      "description": "PipelineDeclaredResource is used by a Pipeline to declare the types of the PipelineResources that it will required to run and names which can be used to refer to these PipelineResources in PipelineTaskResourceBindings.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "required": [
         "name",
@@ -898,7 +763,7 @@
           "type": "string"
         },
         "bundle": {
-          "description": "Bundle url reference to a Tekton Bundle. Deprecated: Please use ResolverRef with the bundles resolver instead.",
+          "description": "Bundle url reference to a Tekton Bundle.\n\nDeprecated: Please use ResolverRef with the bundles resolver instead.",
           "type": "string"
         },
         "name": {
@@ -908,7 +773,7 @@
       }
     },
     "v1beta1.PipelineResourceBinding": {
-      "description": "PipelineResourceBinding connects a reference to an instance of a PipelineResource with a PipelineResource dependency that the Pipeline has declared",
+      "description": "PipelineResourceBinding connects a reference to an instance of a PipelineResource with a PipelineResource dependency that the Pipeline has declared\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "name": {
@@ -926,7 +791,7 @@
       }
     },
     "v1beta1.PipelineResourceRef": {
-      "description": "PipelineResourceRef can be used to refer to a specific instance of a Resource",
+      "description": "PipelineResourceRef can be used to refer to a specific instance of a Resource\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -936,31 +801,6 @@
         "name": {
           "description": "Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names",
           "type": "string"
-        }
-      }
-    },
-    "v1beta1.PipelineResourceResult": {
-      "description": "PipelineResourceResult used to export the image name and digest as json",
-      "type": "object",
-      "required": [
-        "key",
-        "value"
-      ],
-      "properties": {
-        "key": {
-          "type": "string",
-          "default": ""
-        },
-        "resourceName": {
-          "type": "string"
-        },
-        "type": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "value": {
-          "type": "string",
-          "default": ""
         }
       }
     },
@@ -1111,7 +951,7 @@
           "$ref": "#/definitions/pod.Template"
         },
         "resources": {
-          "description": "Resources is a list of bindings specifying which actual instances of PipelineResources to use for the resources the Pipeline has declared it needs.",
+          "description": "Resources is a list of bindings specifying which actual instances of PipelineResources to use for the resources the Pipeline has declared it needs.\n\nDeprecated: Unused, preserved only for backwards compatibility",
           "type": "array",
           "items": {
             "default": {},
@@ -1136,7 +976,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "timeout": {
-          "description": "Timeout Deprecated: use pipelineRunSpec.Timeouts.Pipeline instead Time after which the Pipeline times out. Defaults to never. Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
+          "description": "Timeout is the Time after which the Pipeline times out. Defaults to never. Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration\n\nDeprecated: use pipelineRunSpec.Timeouts.Pipeline instead",
           "$ref": "#/definitions/v1.Duration"
         },
         "timeouts": {
@@ -1216,7 +1056,7 @@
           "$ref": "#/definitions/v1beta1.Provenance"
         },
         "runs": {
-          "description": "Deprecated - use ChildReferences instead. map of PipelineRunRunStatus with the run name as the key",
+          "description": "Runs is a map of PipelineRunRunStatus with the run name as the key\n\nDeprecated: use ChildReferences instead. As of v0.45.0, this field is no longer populated and is only included for backwards compatibility with older server versions.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1beta1.PipelineRunRunStatus"
@@ -1244,7 +1084,7 @@
           "$ref": "#/definitions/v1.Time"
         },
         "taskRuns": {
-          "description": "Deprecated - use ChildReferences instead. map of PipelineRunTaskRunStatus with the taskRun name as the key",
+          "description": "TaskRuns is a map of PipelineRunTaskRunStatus with the taskRun name as the key.\n\nDeprecated: use ChildReferences instead. As of v0.45.0, this field is no longer populated and is only included for backwards compatibility with older server versions.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1beta1.PipelineRunTaskRunStatus"
@@ -1291,7 +1131,7 @@
           "$ref": "#/definitions/v1beta1.Provenance"
         },
         "runs": {
-          "description": "Deprecated - use ChildReferences instead. map of PipelineRunRunStatus with the run name as the key",
+          "description": "Runs is a map of PipelineRunRunStatus with the run name as the key\n\nDeprecated: use ChildReferences instead. As of v0.45.0, this field is no longer populated and is only included for backwards compatibility with older server versions.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1beta1.PipelineRunRunStatus"
@@ -1319,7 +1159,7 @@
           "$ref": "#/definitions/v1.Time"
         },
         "taskRuns": {
-          "description": "Deprecated - use ChildReferences instead. map of PipelineRunTaskRunStatus with the taskRun name as the key",
+          "description": "TaskRuns is a map of PipelineRunTaskRunStatus with the taskRun name as the key.\n\nDeprecated: use ChildReferences instead. As of v0.45.0, this field is no longer populated and is only included for backwards compatibility with older server versions.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1beta1.PipelineRunTaskRunStatus"
@@ -1358,6 +1198,10 @@
           "description": "Description is a user-facing description of the pipeline that may be used to populate a UI.",
           "type": "string"
         },
+        "displayName": {
+          "description": "DisplayName is a user-facing name of the pipeline that may be used to populate a UI.",
+          "type": "string"
+        },
         "finally": {
           "description": "Finally declares the list of Tasks that execute just before leaving the Pipeline i.e. either after all Tasks are finished executing successfully or after a failure which would result in ending the Pipeline",
           "type": "array",
@@ -1377,7 +1221,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "resources": {
-          "description": "Resources declares the names and types of the resources given to the Pipeline's tasks as inputs and outputs.",
+          "description": "Deprecated: Unused, preserved only for backwards compatibility",
           "type": "array",
           "items": {
             "default": {},
@@ -1418,6 +1262,14 @@
       "description": "PipelineTask defines a task in a Pipeline, passing inputs from both Params and from the output of previous tasks.",
       "type": "object",
       "properties": {
+        "description": {
+          "description": "Description is the description of this task within the context of a Pipeline. This description may be used to populate a UI.",
+          "type": "string"
+        },
+        "displayName": {
+          "description": "DisplayName is the display name of this task within the context of a Pipeline. This display name may be used to populate a UI.",
+          "type": "string"
+        },
         "matrix": {
           "description": "Matrix declares parameters used to fan out this task.",
           "$ref": "#/definitions/v1beta1.Matrix"
@@ -1436,7 +1288,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "resources": {
-          "description": "Resources declares the resources given to this task as inputs and outputs.",
+          "description": "Deprecated: Unused, preserved only for backwards compatibility",
           "$ref": "#/definitions/v1beta1.PipelineTaskResources"
         },
         "retries": {
@@ -1485,7 +1337,7 @@
       }
     },
     "v1beta1.PipelineTaskInputResource": {
-      "description": "PipelineTaskInputResource maps the name of a declared PipelineResource input dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources that should be used. This input may come from a previous task.",
+      "description": "PipelineTaskInputResource maps the name of a declared PipelineResource input dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources that should be used. This input may come from a previous task.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "required": [
         "name",
@@ -1534,7 +1386,7 @@
       }
     },
     "v1beta1.PipelineTaskOutputResource": {
-      "description": "PipelineTaskOutputResource maps the name of a declared PipelineResource output dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources that should be used.",
+      "description": "PipelineTaskOutputResource maps the name of a declared PipelineResource output dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources that should be used.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "required": [
         "name",
@@ -1572,7 +1424,7 @@
       }
     },
     "v1beta1.PipelineTaskResources": {
-      "description": "PipelineTaskResources allows a Pipeline to declare how its DeclaredPipelineResources should be provided to a Task as its inputs and outputs.",
+      "description": "PipelineTaskResources allows a Pipeline to declare how its DeclaredPipelineResources should be provided to a Task as its inputs and outputs.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "inputs": {
@@ -1643,7 +1495,7 @@
       }
     },
     "v1beta1.PipelineWorkspaceDeclaration": {
-      "description": "WorkspacePipelineDeclaration creates a named slot in a Pipeline that a PipelineRun is expected to populate with a workspace binding. Deprecated: use PipelineWorkspaceDeclaration type instead",
+      "description": "WorkspacePipelineDeclaration creates a named slot in a Pipeline that a PipelineRun is expected to populate with a workspace binding.\n\nDeprecated: use PipelineWorkspaceDeclaration type instead",
       "type": "object",
       "required": [
         "name"
@@ -1674,12 +1526,42 @@
       }
     },
     "v1beta1.Provenance": {
-      "description": "Provenance contains some key authenticated metadata about how a software artifact was built (what sources, what inputs/outputs, etc.). For now, it only contains the subfield `ConfigSource` that identifies the source where a build config file came from. In future, it can be expanded as needed to include more metadata about the build. This field aims to be used to carry minimum amount of the authenticated metadata in *Run status so that Tekton Chains can pick it up and record in the provenance it generates.",
+      "description": "Provenance contains metadata about resources used in the TaskRun/PipelineRun such as the source from where a remote build definition was fetched. This field aims to carry minimum amoumt of metadata in *Run status so that Tekton Chains can capture them in the provenance.",
       "type": "object",
       "properties": {
         "configSource": {
-          "description": "ConfigSource identifies the source where a resource came from.",
+          "description": "Deprecated: Use RefSource instead",
           "$ref": "#/definitions/v1beta1.ConfigSource"
+        },
+        "featureFlags": {
+          "description": "FeatureFlags identifies the feature flags that were used during the task/pipeline run",
+          "$ref": "#/definitions/github.com.tektoncd.pipeline.pkg.apis.config.FeatureFlags"
+        },
+        "refSource": {
+          "description": "RefSource identifies the source where a remote task/pipeline came from.",
+          "$ref": "#/definitions/v1beta1.RefSource"
+        }
+      }
+    },
+    "v1beta1.RefSource": {
+      "description": "RefSource contains the information that can uniquely identify where a remote built definition came from i.e. Git repositories, Tekton Bundles in OCI registry and hub.",
+      "type": "object",
+      "properties": {
+        "digest": {
+          "description": "Digest is a collection of cryptographic digests for the contents of the artifact specified by URI. Example: {\"sha1\": \"f99d13e554ffcb696dee719fa85b695cb5b0f428\"}",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "entryPoint": {
+          "description": "EntryPoint identifies the entry point into the build. This is often a path to a build definition file and/or a target label within that file. Example: \"task/git-clone/0.8/git-clone.yaml\"",
+          "type": "string"
+        },
+        "uri": {
+          "description": "URI indicates the identity of the source of the build definition. Example: \"https://github.com/tektoncd/catalog\"",
+          "type": "string"
         }
       }
     },
@@ -1759,7 +1641,8 @@
       "type": "object",
       "required": [
         "data",
-        "source"
+        "source",
+        "refSource"
       ],
       "properties": {
         "annotations": {
@@ -1790,8 +1673,12 @@
           "type": "integer",
           "format": "int64"
         },
+        "refSource": {
+          "description": "RefSource is the source reference of the remote data that records the url, digest and the entrypoint.",
+          "$ref": "#/definitions/v1beta1.RefSource"
+        },
         "source": {
-          "description": "Source is the source reference of the remote data that records the url, digest and the entrypoint.",
+          "description": "Deprecated: Use RefSource instead",
           "$ref": "#/definitions/v1beta1.ConfigSource"
         }
       }
@@ -1801,7 +1688,8 @@
       "type": "object",
       "required": [
         "data",
-        "source"
+        "source",
+        "refSource"
       ],
       "properties": {
         "data": {
@@ -1809,8 +1697,12 @@
           "type": "string",
           "default": ""
         },
+        "refSource": {
+          "description": "RefSource is the source reference of the remote data that records the url, digest and the entrypoint.",
+          "$ref": "#/definitions/v1beta1.RefSource"
+        },
         "source": {
-          "description": "Source is the source reference of the remote data that records the url, digest and the entrypoint.",
+          "description": "Deprecated: Use RefSource instead",
           "$ref": "#/definitions/v1beta1.ConfigSource"
         }
       }
@@ -2132,11 +2024,11 @@
           "type": "string"
         },
         "lifecycle": {
-          "description": "Deprecated. This field will be removed in a future release. Actions that the management system should take in response to container lifecycle events. Cannot be updated.",
+          "description": "Actions that the management system should take in response to container lifecycle events. Cannot be updated.\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Lifecycle"
         },
         "livenessProbe": {
-          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container liveness. Step will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Periodic probe of container liveness. Step will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Probe"
         },
         "name": {
@@ -2149,7 +2041,7 @@
           "type": "string"
         },
         "ports": {
-          "description": "Deprecated. This field will be removed in a future release. List of ports to expose from the Step's container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
+          "description": "List of ports to expose from the Step's container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.\n\nDeprecated: This field will be removed in a future release.",
           "type": "array",
           "items": {
             "default": {},
@@ -2164,7 +2056,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "readinessProbe": {
-          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container service readiness. Step will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Periodic probe of container service readiness. Step will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Probe"
         },
         "resources": {
@@ -2181,7 +2073,7 @@
           "$ref": "#/definitions/v1.SecurityContext"
         },
         "startupProbe": {
-          "description": "Deprecated. This field will be removed in a future release. DeprecatedStartupProbe indicates that the Pod this Step runs in has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "DeprecatedStartupProbe indicates that the Pod this Step runs in has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Probe"
         },
         "stderrConfig": {
@@ -2189,11 +2081,11 @@
           "$ref": "#/definitions/v1beta1.StepOutputConfig"
         },
         "stdin": {
-          "description": "Deprecated. This field will be removed in a future release. Whether this container should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the container will always result in EOF. Default is false.",
+          "description": "Whether this container should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the container will always result in EOF. Default is false.\n\nDeprecated: This field will be removed in a future release.",
           "type": "boolean"
         },
         "stdinOnce": {
-          "description": "Deprecated. This field will be removed in a future release. Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the container is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false",
+          "description": "Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the container is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false\n\nDeprecated: This field will be removed in a future release.",
           "type": "boolean"
         },
         "stdoutConfig": {
@@ -2201,11 +2093,11 @@
           "$ref": "#/definitions/v1beta1.StepOutputConfig"
         },
         "terminationMessagePath": {
-          "description": "Deprecated. This field will be removed in a future release and can't be meaningfully used.",
+          "description": "Deprecated: This field will be removed in a future release and can't be meaningfully used.",
           "type": "string"
         },
         "terminationMessagePolicy": {
-          "description": "Deprecated. This field will be removed in a future release and can't be meaningfully used.",
+          "description": "Deprecated: This field will be removed in a future release and can't be meaningfully used.",
           "type": "string"
         },
         "timeout": {
@@ -2213,7 +2105,7 @@
           "$ref": "#/definitions/v1.Duration"
         },
         "tty": {
-          "description": "Deprecated. This field will be removed in a future release. Whether this container should allocate a DeprecatedTTY for itself, also requires 'stdin' to be true. Default is false.",
+          "description": "Whether this container should allocate a DeprecatedTTY for itself, also requires 'stdin' to be true. Default is false.\n\nDeprecated: This field will be removed in a future release.",
           "type": "boolean"
         },
         "volumeDevices": {
@@ -2344,20 +2236,20 @@
           "type": "string"
         },
         "lifecycle": {
-          "description": "Deprecated. This field will be removed in a future release. Actions that the management system should take in response to container lifecycle events. Cannot be updated.",
+          "description": "Actions that the management system should take in response to container lifecycle events. Cannot be updated.\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Lifecycle"
         },
         "livenessProbe": {
-          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Probe"
         },
         "name": {
-          "description": "Deprecated. This field will be removed in a future release. Default name for each Step specified as a DNS_LABEL. Each Step in a Task must have a unique name. Cannot be updated.",
+          "description": "Default name for each Step specified as a DNS_LABEL. Each Step in a Task must have a unique name. Cannot be updated.\n\nDeprecated: This field will be removed in a future release.",
           "type": "string",
           "default": ""
         },
         "ports": {
-          "description": "Deprecated. This field will be removed in a future release. List of ports to expose from the Step's container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.",
+          "description": "List of ports to expose from the Step's container. Exposing a port here gives the system additional information about the network connections a container uses, but is primarily informational. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default \"0.0.0.0\" address inside a container will be accessible from the network. Cannot be updated.\n\nDeprecated: This field will be removed in a future release.",
           "type": "array",
           "items": {
             "default": {},
@@ -2372,7 +2264,7 @@
           "x-kubernetes-patch-strategy": "merge"
         },
         "readinessProbe": {
-          "description": "Deprecated. This field will be removed in a future release. Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Probe"
         },
         "resources": {
@@ -2385,27 +2277,27 @@
           "$ref": "#/definitions/v1.SecurityContext"
         },
         "startupProbe": {
-          "description": "Deprecated. This field will be removed in a future release. DeprecatedStartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+          "description": "DeprecatedStartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes\n\nDeprecated: This field will be removed in a future release.",
           "$ref": "#/definitions/v1.Probe"
         },
         "stdin": {
-          "description": "Deprecated. This field will be removed in a future release. Whether this Step should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the Step will always result in EOF. Default is false.",
+          "description": "Whether this Step should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the Step will always result in EOF. Default is false.\n\nDeprecated: This field will be removed in a future release.",
           "type": "boolean"
         },
         "stdinOnce": {
-          "description": "Deprecated. This field will be removed in a future release. Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the container is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false",
+          "description": "Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the first client attaches to stdin, and then remains open and accepts data until the client disconnects, at which time stdin is closed and remains closed until the container is restarted. If this flag is false, a container processes that reads from stdin will never receive an EOF. Default is false\n\nDeprecated: This field will be removed in a future release.",
           "type": "boolean"
         },
         "terminationMessagePath": {
-          "description": "Deprecated. This field will be removed in a future release and cannot be meaningfully used.",
+          "description": "Deprecated: This field will be removed in a future release and cannot be meaningfully used.",
           "type": "string"
         },
         "terminationMessagePolicy": {
-          "description": "Deprecated. This field will be removed in a future release and cannot be meaningfully used.",
+          "description": "Deprecated: This field will be removed in a future release and cannot be meaningfully used.",
           "type": "string"
         },
         "tty": {
-          "description": "Deprecated. This field will be removed in a future release. Whether this Step should allocate a DeprecatedTTY for itself, also requires 'stdin' to be true. Default is false.",
+          "description": "Whether this Step should allocate a DeprecatedTTY for itself, also requires 'stdin' to be true. Default is false.\n\nDeprecated: This field will be removed in a future release.",
           "type": "boolean"
         },
         "volumeDevices": {
@@ -2492,15 +2384,15 @@
       "type": "object",
       "properties": {
         "apiVersion": {
-          "description": "API version of the referent",
+          "description": "API version of the referent Note: A Task with non-empty APIVersion and Kind is considered a Custom Task",
           "type": "string"
         },
         "bundle": {
-          "description": "Bundle url reference to a Tekton Bundle. Deprecated: Please use ResolverRef with the bundles resolver instead.",
+          "description": "Bundle url reference to a Tekton Bundle.\n\nDeprecated: Please use ResolverRef with the bundles resolver instead.",
           "type": "string"
         },
         "kind": {
-          "description": "TaskKind indicates the kind of the task, namespaced or cluster scoped.",
+          "description": "TaskKind indicates the Kind of the Task: 1. Namespaced Task when Kind is set to \"Task\". If Kind is \"\", it defaults to \"Task\". 2. Cluster-Scoped Task when Kind is set to \"ClusterTask\" 3. Custom Task when Kind is non-empty and APIVersion is non-empty",
           "type": "string"
         },
         "name": {
@@ -2510,7 +2402,7 @@
       }
     },
     "v1beta1.TaskResource": {
-      "description": "TaskResource defines an input or output Resource declared as a requirement by a Task. The Name field will be used to refer to these Resources within the Task definition, and when provided as an Input, the Name will be the path to the volume mounted containing this Resource as an input (e.g. an input Resource named `workspace` will be mounted at `/workspace`).",
+      "description": "TaskResource defines an input or output Resource declared as a requirement by a Task. The Name field will be used to refer to these Resources within the Task definition, and when provided as an Input, the Name will be the path to the volume mounted containing this Resource as an input (e.g. an input Resource named `workspace` will be mounted at `/workspace`).\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "required": [
         "name",
@@ -2542,7 +2434,7 @@
       }
     },
     "v1beta1.TaskResourceBinding": {
-      "description": "TaskResourceBinding points to the PipelineResource that will be used for the Task input or output called Name.",
+      "description": "TaskResourceBinding points to the PipelineResource that will be used for the Task input or output called Name.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "name": {
@@ -2569,7 +2461,7 @@
       }
     },
     "v1beta1.TaskResources": {
-      "description": "TaskResources allows a Pipeline to declare how its DeclaredPipelineResources should be provided to a Task as its inputs and outputs.",
+      "description": "TaskResources allows a Pipeline to declare how its DeclaredPipelineResources should be provided to a Task as its inputs and outputs.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "inputs": {
@@ -2663,7 +2555,7 @@
       }
     },
     "v1beta1.TaskRunInputs": {
-      "description": "TaskRunInputs holds the input values that this task was invoked with.",
+      "description": "TaskRunInputs holds the input values that this task was invoked with.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "params": {
@@ -2713,7 +2605,7 @@
       }
     },
     "v1beta1.TaskRunOutputs": {
-      "description": "TaskRunOutputs holds the output values that this task was invoked with.",
+      "description": "TaskRunOutputs holds the output values that this task was invoked with.\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "resources": {
@@ -2727,7 +2619,7 @@
       }
     },
     "v1beta1.TaskRunResources": {
-      "description": "TaskRunResources allows a TaskRun to declare inputs and outputs TaskResourceBinding",
+      "description": "TaskRunResources allows a TaskRun to declare inputs and outputs TaskResourceBinding\n\nDeprecated: Unused, preserved only for backwards compatibility",
       "type": "object",
       "properties": {
         "inputs": {
@@ -2818,6 +2710,7 @@
           "$ref": "#/definitions/pod.Template"
         },
         "resources": {
+          "description": "Deprecated: Unused, preserved only for backwards compatibility",
           "$ref": "#/definitions/v1beta1.TaskRunResources"
         },
         "retries": {
@@ -2893,7 +2786,7 @@
           }
         },
         "cloudEvents": {
-          "description": "Deprecated. CloudEvents describe the state of each cloud event requested via a CloudEventResource.",
+          "description": "CloudEvents describe the state of each cloud event requested via a CloudEventResource.\n\nDeprecated: Removed in v0.44.0.",
           "type": "array",
           "items": {
             "default": {},
@@ -2930,11 +2823,11 @@
           "$ref": "#/definitions/v1beta1.Provenance"
         },
         "resourcesResult": {
-          "description": "Results from Resources built during the TaskRun. currently includes the digest of build container images",
+          "description": "Results from Resources built during the TaskRun. This is tomb-stoned along with the removal of pipelineResources Deprecated: this field is not populated and is preserved only for backwards compatibility",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineResourceResult"
+            "$ref": "#/definitions/github.com.tektoncd.pipeline.pkg.result.RunResult"
           },
           "x-kubernetes-list-type": "atomic"
         },
@@ -3000,7 +2893,7 @@
       ],
       "properties": {
         "cloudEvents": {
-          "description": "Deprecated. CloudEvents describe the state of each cloud event requested via a CloudEventResource.",
+          "description": "CloudEvents describe the state of each cloud event requested via a CloudEventResource.\n\nDeprecated: Removed in v0.44.0.",
           "type": "array",
           "items": {
             "default": {},
@@ -3022,11 +2915,11 @@
           "$ref": "#/definitions/v1beta1.Provenance"
         },
         "resourcesResult": {
-          "description": "Results from Resources built during the TaskRun. currently includes the digest of build container images",
+          "description": "Results from Resources built during the TaskRun. This is tomb-stoned along with the removal of pipelineResources Deprecated: this field is not populated and is preserved only for backwards compatibility",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.PipelineResourceResult"
+            "$ref": "#/definitions/github.com.tektoncd.pipeline.pkg.result.RunResult"
           },
           "x-kubernetes-list-type": "atomic"
         },
@@ -3112,6 +3005,10 @@
           "description": "Description is a user-facing description of the task that may be used to populate a UI.",
           "type": "string"
         },
+        "displayName": {
+          "description": "DisplayName is a user-facing name of the task that may be used to populate a UI.",
+          "type": "string"
+        },
         "params": {
           "description": "Params is a list of input parameters required to run the task. Params must be supplied as inputs in TaskRuns unless they declare a default value.",
           "type": "array",
@@ -3122,7 +3019,7 @@
           "x-kubernetes-list-type": "atomic"
         },
         "resources": {
-          "description": "Resources is a list input and output resource to run the task Resources are represented in TaskRuns as bindings to instances of PipelineResources.",
+          "description": "Resources is a list input and output resource to run the task Resources are represented in TaskRuns as bindings to instances of PipelineResources.\n\nDeprecated: Unused, preserved only for backwards compatibility",
           "$ref": "#/definitions/v1beta1.TaskResources"
         },
         "results": {
