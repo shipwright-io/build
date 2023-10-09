@@ -55,14 +55,14 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-source-default-commit-sha",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: commitSha,
 					},
 				},
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-source-default-commit-author",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: "foo bar",
 					},
@@ -84,7 +84,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-source-default-image-digest",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: bundleImageDigest,
 					},
@@ -102,14 +102,14 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-image-digest",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: imageDigest,
 					},
 				},
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-image-size",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: "230",
 					},
@@ -129,28 +129,28 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-source-default-commit-sha",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: commitSha,
 					},
 				},
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-source-default-commit-author",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: "foo bar",
 					},
 				},
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-image-digest",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: imageDigest,
 					},
 				},
 				pipelinev1beta1.TaskRunResult{
 					Name: "shp-image-size",
-					Value: pipelinev1beta1.ArrayOrString{
+					Value: pipelinev1beta1.ParamValue{
 						Type:      pipelinev1beta1.ParamTypeString,
 						StringVal: "230",
 					},

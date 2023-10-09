@@ -127,7 +127,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 		var constructStringParam = func(paramName string, val string) v1beta1.Param {
 			return v1beta1.Param{
 				Name: paramName,
-				Value: v1beta1.ArrayOrString{
+				Value: v1beta1.ParamValue{
 					Type:      v1beta1.ParamTypeString,
 					StringVal: val,
 				},
@@ -137,7 +137,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 		var constructArrayParam = func(paramName string, values ...string) v1beta1.Param {
 			return v1beta1.Param{
 				Name: paramName,
-				Value: v1beta1.ArrayOrString{
+				Value: v1beta1.ParamValue{
 					Type:     v1beta1.ParamTypeArray,
 					ArrayVal: values,
 				},
@@ -435,7 +435,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			// Validate that the TaskRun param have an empty string as the value
 			Expect(taskRun.Spec.Params).To(ContainElement(v1beta1.Param{
 				Name: "sleep-time",
-				Value: v1beta1.ArrayOrString{
+				Value: v1beta1.ParamValue{
 					Type:      v1beta1.ParamTypeString,
 					StringVal: "",
 				},

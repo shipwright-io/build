@@ -34,7 +34,7 @@ var _ = Describe("Env", func() {
 			err := validate.NewEnv(b).ValidatePath(context.TODO())
 			Expect(err).To(HaveOccurred())
 			Expect(b.Status.Reason).To(Equal(build.BuildReasonPtr(build.SpecEnvNameCanNotBeBlank)))
-			Expect(b.Status.Message).To(Equal(pointer.StringPtr("name for environment variable must not be blank")))
+			Expect(b.Status.Message).To(Equal(pointer.String("name for environment variable must not be blank")))
 		})
 
 		It("should fail in case of specifying both value and valueFrom", func() {
@@ -57,7 +57,7 @@ var _ = Describe("Env", func() {
 			err := validate.NewEnv(b).ValidatePath(context.TODO())
 			Expect(err).To(HaveOccurred())
 			Expect(b.Status.Reason).To(Equal(build.BuildReasonPtr(build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)))
-			Expect(b.Status.Message).To(Equal(pointer.StringPtr("only one of value or valueFrom must be specified")))
+			Expect(b.Status.Message).To(Equal(pointer.String("only one of value or valueFrom must be specified")))
 		})
 
 		It("should pass in case no env var are set", func() {

@@ -57,8 +57,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.24.15
           - v1.25.11
+          - v1.28.0
       max-parallel: 2
     runs-on: ubuntu-latest
     steps:
@@ -124,8 +124,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.24.15
           - v1.25.11
+          - v1.28.0
       max-parallel: 2
     runs-on: ubuntu-latest
     steps:

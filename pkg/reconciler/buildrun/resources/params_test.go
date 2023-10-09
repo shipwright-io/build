@@ -391,7 +391,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						Type:      pipeline.ParamTypeString,
 						StringVal: "My value",
 					},
@@ -434,7 +434,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						Type:      pipeline.ParamTypeString,
 						StringVal: fmt.Sprintf("$(%s)", envVarName),
 					},
@@ -478,7 +478,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						Type:      pipeline.ParamTypeString,
 						StringVal: fmt.Sprintf("The value from the config map is '$(%s)'.", envVarName),
 					},
@@ -521,7 +521,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						Type:      pipeline.ParamTypeString,
 						StringVal: fmt.Sprintf("$(%s)", envVarName),
 					},
@@ -565,7 +565,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						Type:      pipeline.ParamTypeString,
 						StringVal: fmt.Sprintf("secret-value: $(%s)", envVarName),
 					},
@@ -604,7 +604,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
 				{
 					Name: "array-parameter",
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						Type: pipeline.ParamTypeArray,
 						ArrayVal: []string{
 							"first entry",
@@ -663,7 +663,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
 				{
 					Name: "array-parameter",
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						Type: pipeline.ParamTypeArray,
 						ArrayVal: []string{
 							"first entry",

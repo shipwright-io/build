@@ -463,7 +463,8 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure generated TaskRun has no resources", func() {
-				Expect(got.Spec.Resources).To(BeNil())
+				//lint:ignore SA1019 we want to verify that we do not set something that is not used
+				Expect(got.Spec.Resources).To(BeNil()) // nolint:staticcheck
 			})
 
 			It("should ensure resource replacements happen when needed", func() {

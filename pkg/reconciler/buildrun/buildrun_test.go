@@ -364,7 +364,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				cancelPatchCalled := false
 				cancelUpdateCalled := false
 				// override the updateClientStub so we can see the update on the BuildRun condition
-				stubUpdateCalls := func(_ context.Context, object crc.Object, opts ...crc.UpdateOption) error {
+				stubUpdateCalls := func(_ context.Context, object crc.Object, opts ...crc.SubResourceUpdateOption) error {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
@@ -549,7 +549,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				cancelUpdateCalled := false
 				// override the updateClientStub so we can see the update on the BuildRun condition
-				stubUpdateCalls := func(_ context.Context, object crc.Object, opts ...crc.UpdateOption) error {
+				stubUpdateCalls := func(_ context.Context, object crc.Object, opts ...crc.SubResourceUpdateOption) error {
 					switch v := object.(type) {
 					case *build.BuildRun:
 						c := v.Status.GetCondition(build.Succeeded)
@@ -608,7 +608,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				}
 				client.GetCalls(stubGetCalls)
 
-				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					switch buildRun := object.(type) {
 					case *build.BuildRun:
 						if buildRun.Status.IsFailed(build.Succeeded) {
@@ -1198,7 +1198,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultServiceAccount(saName)),
 				)
 
-				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					switch buildRun := object.(type) {
 					case *build.BuildRun:
 						if buildRun.Status.IsFailed(build.Succeeded) {
@@ -1219,7 +1219,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildRunSample = ctl.BuildRunWithoutSA("f"+strings.Repeat("o", 63)+"bar", buildName)
 
 				client.GetCalls(ctl.StubBuildRun(buildRunSample))
-				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					Expect(o).To(BeAssignableToTypeOf(&build.BuildRun{}))
 					switch buildRun := o.(type) {
 					case *build.BuildRun:
@@ -1240,7 +1240,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildRunSample = ctl.BuildRunWithoutSA("fööbar", buildName)
 
 				client.GetCalls(ctl.StubBuildRun(buildRunSample))
-				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					Expect(o).To(BeAssignableToTypeOf(&build.BuildRun{}))
 					switch buildRun := o.(type) {
 					case *build.BuildRun:
@@ -1261,7 +1261,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				buildRunSample = ctl.BuildRunWithoutSA("fööbar", buildName)
 
 				client.GetCalls(ctl.StubBuildRun(buildRunSample))
-				statusWriter.UpdateCalls(func(_ context.Context, _ crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, _ crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					return k8serrors.NewInternalError(fmt.Errorf("something bad happened"))
 				})
 
@@ -1281,7 +1281,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 			Context("invalid BuildRun resource", func() {
 				simpleReconcileRunWithCustomUpdateCall := func(f func(*build.Condition)) {
 					client.GetCalls(ctl.StubBuildRun(buildRunSample))
-					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
 						Expect(o).To(BeAssignableToTypeOf(&build.BuildRun{}))
 						switch buildRun := o.(type) {
 						case *build.BuildRun:
@@ -1452,7 +1452,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
 					})
 
-					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.UpdateOption) error {
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
 						switch buildRun := o.(type) {
 						case *build.BuildRun:
 							Expect(buildRun.Labels).ToNot(HaveKey(build.LabelBuild), "no build name label is suppose to be set")

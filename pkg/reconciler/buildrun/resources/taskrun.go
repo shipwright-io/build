@@ -74,7 +74,7 @@ func GenerateTaskSpec(
 			{
 				Description: "Path to the Dockerfile",
 				Name:        inputParamDockerfile,
-				Default: &v1beta1.ArrayOrString{
+				Default: &v1beta1.ParamValue{
 					Type:      v1beta1.ParamTypeString,
 					StringVal: "Dockerfile",
 				},
@@ -84,7 +84,7 @@ func GenerateTaskSpec(
 				// in the Build object
 				Description: "The root of the code",
 				Name:        inputParamContextDir,
-				Default: &v1beta1.ArrayOrString{
+				Default: &v1beta1.ParamValue{
 					Type:      v1beta1.ParamTypeString,
 					StringVal: ".",
 				},
@@ -124,7 +124,7 @@ func GenerateTaskSpec(
 		InputBuilder := v1beta1.ParamSpec{
 			Description: "Image containing the build tools/logic",
 			Name:        inputParamBuilder,
-			Default: &v1beta1.ArrayOrString{
+			Default: &v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: build.Spec.Builder.Image,
 			},
@@ -149,7 +149,7 @@ func GenerateTaskSpec(
 		case buildv1alpha1.ParameterTypeString:
 			param.Type = v1beta1.ParamTypeString
 			if parameterDefinition.Default != nil {
-				param.Default = &v1beta1.ArrayOrString{
+				param.Default = &v1beta1.ParamValue{
 					Type:      v1beta1.ParamTypeString,
 					StringVal: *parameterDefinition.Default,
 				}
@@ -158,7 +158,7 @@ func GenerateTaskSpec(
 		case buildv1alpha1.ParameterTypeArray:
 			param.Type = v1beta1.ParamTypeArray
 			if parameterDefinition.Defaults != nil {
-				param.Default = &v1beta1.ArrayOrString{
+				param.Default = &v1beta1.ParamValue{
 					Type:     v1beta1.ParamTypeArray,
 					ArrayVal: *parameterDefinition.Defaults,
 				}
@@ -329,7 +329,7 @@ func GenerateTaskRun(
 		{
 			// shp-output-image
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: image,
 			},
@@ -337,14 +337,14 @@ func GenerateTaskRun(
 		{
 			// shp-output-insecure
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: strconv.FormatBool(insecure),
 			},
 		},
 		{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: "/workspace/source",
 			},
@@ -353,7 +353,7 @@ func GenerateTaskRun(
 	if build.Spec.Builder != nil {
 		params = append(params, v1beta1.Param{
 			Name: inputParamBuilder,
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: build.Spec.Builder.Image,
 			},
@@ -362,7 +362,7 @@ func GenerateTaskRun(
 	if build.Spec.Dockerfile != nil && *build.Spec.Dockerfile != "" {
 		params = append(params, v1beta1.Param{
 			Name: inputParamDockerfile,
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: *build.Spec.Dockerfile,
 			},
@@ -371,14 +371,14 @@ func GenerateTaskRun(
 	if build.Spec.Source.ContextDir != nil {
 		params = append(params, v1beta1.Param{
 			Name: inputParamContextDir,
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: *build.Spec.Source.ContextDir,
 			},
 		})
 		params = append(params, v1beta1.Param{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: path.Join("/workspace/source", *build.Spec.Source.ContextDir),
 			},
@@ -386,7 +386,7 @@ func GenerateTaskRun(
 	} else {
 		params = append(params, v1beta1.Param{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
-			Value: v1beta1.ArrayOrString{
+			Value: v1beta1.ParamValue{
 				Type:      v1beta1.ParamTypeString,
 				StringVal: "/workspace/source",
 			},

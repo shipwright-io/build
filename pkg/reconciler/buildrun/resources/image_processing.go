@@ -52,7 +52,7 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 				// add the parameter value
 				taskRun.Spec.Params = append(taskRun.Spec.Params, pipeline.Param{
 					Name: prefixedOutputDirectory,
-					Value: pipeline.ArrayOrString{
+					Value: pipeline.ParamValue{
 						StringVal: outputDirectoryMountPath,
 						Type:      pipeline.ParamTypeString,
 					},

@@ -92,7 +92,7 @@ var _ = Describe("Operating service accounts", func() {
 
 			client.StatusCalls(func() crc.StatusWriter {
 				statusWriter := &fakes.FakeStatusWriter{}
-				statusWriter.UpdateCalls(func(ctx context.Context, object crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(ctx context.Context, object crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					return nil
 				})
 				return statusWriter
@@ -111,7 +111,7 @@ var _ = Describe("Operating service accounts", func() {
 
 			client.StatusCalls(func() crc.StatusWriter {
 				statusWriter := &fakes.FakeStatusWriter{}
-				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.UpdateOption) error {
+				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					switch object.(type) {
 					case *buildv1alpha1.BuildRun:
 						return fmt.Errorf("failed")
