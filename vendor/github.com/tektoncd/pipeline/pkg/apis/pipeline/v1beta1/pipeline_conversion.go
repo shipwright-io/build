@@ -21,8 +21,6 @@ import (
 	"fmt"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"github.com/tektoncd/pipeline/pkg/apis/version"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 )
 
@@ -36,9 +34,6 @@ func (p *Pipeline) ConvertTo(ctx context.Context, to apis.Convertible) error {
 	switch sink := to.(type) {
 	case *v1.Pipeline:
 		sink.ObjectMeta = p.ObjectMeta
-		if err := serializePipelineResources(&sink.ObjectMeta, &p.Spec); err != nil {
-			return err
-		}
 		return p.Spec.ConvertTo(ctx, &sink.Spec)
 	default:
 		return fmt.Errorf("unknown version, got: %T", sink)
@@ -47,6 +42,7 @@ func (p *Pipeline) ConvertTo(ctx context.Context, to apis.Convertible) error {
 
 // ConvertTo implements apis.Convertible
 func (ps *PipelineSpec) ConvertTo(ctx context.Context, sink *v1.PipelineSpec) error {
+	sink.DisplayName = ps.DisplayName
 	sink.Description = ps.Description
 	sink.Tasks = nil
 	for _, t := range ps.Tasks {
@@ -92,9 +88,6 @@ func (p *Pipeline) ConvertFrom(ctx context.Context, from apis.Convertible) error
 	switch source := from.(type) {
 	case *v1.Pipeline:
 		p.ObjectMeta = source.ObjectMeta
-		if err := deserializePipelineResources(&p.ObjectMeta, &p.Spec); err != nil {
-			return err
-		}
 		return p.Spec.ConvertFrom(ctx, &source.Spec)
 	default:
 		return fmt.Errorf("unknown version, got: %T", p)
@@ -103,6 +96,7 @@ func (p *Pipeline) ConvertFrom(ctx context.Context, from apis.Convertible) error
 
 // ConvertFrom implements apis.Convertible
 func (ps *PipelineSpec) ConvertFrom(ctx context.Context, source *v1.PipelineSpec) error {
+	ps.DisplayName = source.DisplayName
 	ps.Description = source.Description
 	ps.Tasks = nil
 	for _, t := range source.Tasks {
@@ -145,6 +139,8 @@ func (ps *PipelineSpec) ConvertFrom(ctx context.Context, source *v1.PipelineSpec
 
 func (pt PipelineTask) convertTo(ctx context.Context, sink *v1.PipelineTask) error {
 	sink.Name = pt.Name
+	sink.DisplayName = pt.DisplayName
+	sink.Description = pt.Description
 	if pt.TaskRef != nil {
 		sink.TaskRef = &v1.TaskRef{}
 		pt.TaskRef.convertTo(ctx, sink.TaskRef)
@@ -189,6 +185,8 @@ func (pt PipelineTask) convertTo(ctx context.Context, sink *v1.PipelineTask) err
 
 func (pt *PipelineTask) convertFrom(ctx context.Context, source v1.PipelineTask) error {
 	pt.Name = source.Name
+	pt.DisplayName = source.DisplayName
+	pt.Description = source.Description
 	if source.TaskRef != nil {
 		newTaskRef := TaskRef{}
 		newTaskRef.convertFrom(ctx, *source.TaskRef)
@@ -267,6 +265,14 @@ func (m *Matrix) convertTo(ctx context.Context, sink *v1.Matrix) {
 		param.convertTo(ctx, &new)
 		sink.Params = append(sink.Params, new)
 	}
+	for i, include := range m.Include {
+		sink.Include = append(sink.Include, v1.IncludeParams{Name: include.Name})
+		for _, param := range include.Params {
+			newIncludeParam := v1.Param{}
+			param.convertTo(ctx, &newIncludeParam)
+			sink.Include[i].Params = append(sink.Include[i].Params, newIncludeParam)
+		}
+	}
 }
 
 func (m *Matrix) convertFrom(ctx context.Context, source v1.Matrix) {
@@ -274,6 +280,15 @@ func (m *Matrix) convertFrom(ctx context.Context, source v1.Matrix) {
 		new := Param{}
 		new.convertFrom(ctx, param)
 		m.Params = append(m.Params, new)
+	}
+
+	for i, include := range source.Include {
+		m.Include = append(m.Include, IncludeParams{Name: include.Name})
+		for _, p := range include.Params {
+			new := Param{}
+			new.convertFrom(ctx, p)
+			m.Include[i].Params = append(m.Include[i].Params, new)
+		}
 	}
 }
 
@@ -303,23 +318,4 @@ func (ptm PipelineTaskMetadata) convertTo(ctx context.Context, sink *v1.Pipeline
 func (ptm *PipelineTaskMetadata) convertFrom(ctx context.Context, source v1.PipelineTaskMetadata) {
 	ptm.Labels = source.Labels
 	ptm.Annotations = source.Labels
-}
-
-func serializePipelineResources(meta *metav1.ObjectMeta, spec *PipelineSpec) error {
-	if spec.Resources == nil {
-		return nil
-	}
-	return version.SerializeToMetadata(meta, spec.Resources, resourcesAnnotationKey)
-}
-
-func deserializePipelineResources(meta *metav1.ObjectMeta, spec *PipelineSpec) error {
-	resources := &[]PipelineDeclaredResource{}
-	err := version.DeserializeFromMetadata(meta, resources, resourcesAnnotationKey)
-	if err != nil {
-		return err
-	}
-	if len(*resources) != 0 {
-		spec.Resources = *resources
-	}
-	return nil
 }

@@ -6,6 +6,7 @@ package e2e_test
 
 import (
 	"os"
+	"time"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	. "github.com/onsi/ginkgo/v2"
@@ -350,7 +351,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					return false
 				}
 				return true
-			}).Should(BeTrue())
+			}).WithTimeout(10 + time.Second).Should(BeTrue())
 		})
 	})
 

@@ -93,7 +93,7 @@ func FindParamValueByName(paramValues []buildv1alpha1.ParamValue, name string) *
 func HandleTaskRunParam(taskRun *pipeline.TaskRun, parameterDefinition *buildv1alpha1.Parameter, paramValue buildv1alpha1.ParamValue) error {
 	taskRunParam := pipeline.Param{
 		Name:  paramValue.Name,
-		Value: pipeline.ArrayOrString{},
+		Value: pipeline.ParamValue{},
 	}
 
 	switch parameterDefinition.Type {

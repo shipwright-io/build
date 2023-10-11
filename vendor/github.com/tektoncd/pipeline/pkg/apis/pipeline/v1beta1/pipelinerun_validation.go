@@ -131,6 +131,9 @@ func (ps *PipelineRunSpec) Validate(ctx context.Context) (errs *apis.FieldError)
 	if ps.PodTemplate != nil {
 		errs = errs.Also(validatePodTemplateEnv(ctx, *ps.PodTemplate))
 	}
+	if ps.Resources != nil {
+		errs = errs.Also(apis.ErrDisallowedFields("resources"))
+	}
 
 	return errs
 }
@@ -239,7 +242,7 @@ func (ps *PipelineRunSpec) validateInlineParameters(ctx context.Context) (errs *
 	return errs
 }
 
-func appendPipelineTaskParams(paramSpecForValidation map[string]ParamSpec, params []Param) map[string]ParamSpec {
+func appendPipelineTaskParams(paramSpecForValidation map[string]ParamSpec, params Params) map[string]ParamSpec {
 	for _, p := range params {
 		if pSpec, ok := paramSpecForValidation[p.Name]; ok {
 			if p.Value.ObjectVal != nil {
