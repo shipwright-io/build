@@ -129,6 +129,16 @@ jobs:
       max-parallel: 2
     runs-on: ubuntu-latest
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@09ba4bd25af416c42e0142983065fcca855807a5
+        with:
+          root-reserve-mb: 30720
+          swap-size-mb: 1024
+          remove-android: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          remove-dotnet: "true"
+          remove-haskell: "true"
       - name: Check out code
         uses: actions/checkout@v3
       - name: Install Go
