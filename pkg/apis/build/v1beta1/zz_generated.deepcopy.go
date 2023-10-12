@@ -1139,11 +1139,6 @@ func (in *Strategy) DeepCopyInto(out *Strategy) {
 		*out = new(BuildStrategyKind)
 		**out = **in
 	}
-	if in.APIVersion != nil {
-		in, out := &in.APIVersion, &out.APIVersion
-		*out = new(string)
-		**out = **in
-	}
 	return
 }
 
