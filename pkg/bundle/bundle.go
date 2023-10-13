@@ -240,6 +240,10 @@ func Unpack(in io.Reader, targetPath string) error {
 		}
 
 		var target = filepath.Join(targetPath, header.Name)
+		if strings.Contains(target, "..") {
+			return fmt.Errorf("targetPath validation failed, path contains unexpected special elements")
+		}
+
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
