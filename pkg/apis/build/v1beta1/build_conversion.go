@@ -106,23 +106,35 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 	// Handle BuildSpec Source
 	specSource := Source{}
-	if orig.Source.BundleContainer != nil {
-		specSource.Type = OCIArtifactType
-		specSource.OCIArtifact = &OCIArtifact{
-			Image: orig.Source.BundleContainer.Image,
-			Prune: (*PruneOption)(orig.Source.BundleContainer.Prune),
-		}
-		if orig.Source.Credentials != nil {
-			specSource.OCIArtifact.PullSecret = &orig.Source.Credentials.Name
+
+	// only interested on spec.sources as long as an item of the list
+	// is of the type LocalCopy. Otherwise, we move into bundle or git types.
+	index, isLocal := v1alpha1.IsLocalCopyType(orig.Sources)
+	if len(orig.Sources) > 0 && isLocal {
+		specSource.Type = LocalType
+		specSource.LocalSource = &Local{
+			Name:    orig.Sources[index].Name,
+			Timeout: orig.Sources[index].Timeout,
 		}
 	} else {
-		specSource.Type = GitType
-		specSource.GitSource = &Git{
-			URL:      orig.Source.URL,
-			Revision: orig.Source.Revision,
-		}
-		if orig.Source.Credentials != nil {
-			specSource.GitSource.CloneSecret = &orig.Source.Credentials.Name
+		if orig.Source.BundleContainer != nil {
+			specSource.Type = OCIArtifactType
+			specSource.OCIArtifact = &OCIArtifact{
+				Image: orig.Source.BundleContainer.Image,
+				Prune: (*PruneOption)(orig.Source.BundleContainer.Prune),
+			}
+			if orig.Source.Credentials != nil {
+				specSource.OCIArtifact.PullSecret = &orig.Source.Credentials.Name
+			}
+		} else {
+			specSource.Type = GitType
+			specSource.GitSource = &Git{
+				URL:      orig.Source.URL,
+				Revision: orig.Source.Revision,
+			}
+			if orig.Source.Credentials != nil {
+				specSource.GitSource.CloneSecret = &orig.Source.Credentials.Name
+			}
 		}
 	}
 	specSource.ContextDir = orig.Source.ContextDir
@@ -213,8 +225,19 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 }
 
 func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
-	// Handle BuildSpec Source
-	bs.Source = getAlphaBuildSource(*dest)
+	// Handle BuildSpec Sources or Source
+	if dest.Source.Type == LocalType {
+		bs.Sources = []v1alpha1.BuildSource{}
+		if dest.Source.LocalSource != nil {
+			bs.Sources = append(bs.Sources, v1alpha1.BuildSource{
+				Name:    dest.Source.LocalSource.Name,
+				Type:    v1alpha1.LocalCopy,
+				Timeout: dest.Source.LocalSource.Timeout,
+			})
+		}
+	} else {
+		bs.Source = getAlphaBuildSource(*dest)
+	}
 
 	// Handle BuildSpec Trigger
 	if dest.Trigger != nil {

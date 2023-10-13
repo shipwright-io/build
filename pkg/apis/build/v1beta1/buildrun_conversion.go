@@ -42,6 +42,18 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		}
 	}
 
+	// BuildRunSpec Sources
+	if src.Spec.Source != nil {
+		alphaBuildRun.Spec.Sources = []v1alpha1.BuildSource{}
+		if src.Spec.Source.Type == LocalType {
+			alphaBuildRun.Spec.Sources = append(alphaBuildRun.Spec.Sources, v1alpha1.BuildSource{
+				Name:    src.Spec.Source.LocalSource.Name,
+				Type:    v1alpha1.LocalCopy,
+				Timeout: src.Spec.Source.LocalSource.Timeout,
+			})
+		}
+	}
+
 	// BuildRunSpec ServiceAccount
 	// With the deprecation of serviceAccount.Generate, serviceAccount is set to ".generate" to have the SA created on fly.
 	if src.Spec.ServiceAccount != nil && *src.Spec.ServiceAccount == ".generate" {
@@ -189,6 +201,19 @@ func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
 	}
 	if orig.BuildRef != nil {
 		dest.Build.Name = orig.BuildRef.Name
+	}
+
+	// only interested on spec.sources as long as an item of the list
+	// is of the type LocalCopy. Otherwise, we move into bundle or git types.
+	index, isLocal := v1alpha1.IsLocalCopyType(orig.Sources)
+	if len(orig.Sources) > 0 && isLocal {
+		dest.Source = &BuildRunSource{
+			Type: LocalType,
+			LocalSource: &Local{
+				Name:    orig.Sources[index].Name,
+				Timeout: orig.Sources[index].Timeout,
+			},
+		}
 	}
 
 	if orig.ServiceAccount != nil {

@@ -39,6 +39,12 @@ type BuildRunSpec struct {
 	// +optional
 	Build *ReferencedBuild `json:"build,omitempty"`
 
+	// Source refers to the location where the source code is,
+	// this could only be a local source
+	//
+	// +optional
+	Source *BuildRunSource `json:"source,omitempty"`
+
 	// ServiceAccount refers to the kubernetes serviceaccount
 	// which is used for resource control.
 	// Default serviceaccount will be set if it is empty
