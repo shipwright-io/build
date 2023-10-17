@@ -1,0 +1,9 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: buildpack-nodejs-buildrun
+spec:
+  build:
+    name: buildpack-nodejs-build
+  serviceAccount: ".generate"

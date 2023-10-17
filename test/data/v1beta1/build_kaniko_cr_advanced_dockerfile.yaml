@@ -1,0 +1,20 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: kaniko-advanced-dockerfile
+spec:
+  source:
+    git:
+      url: https://github.com/shipwright-io/sample-java
+    contextDir: docker-build
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  paramValues:
+  - name: dockerfile
+    value: Dockerfile
+  retention:
+    atBuildDeletion: false
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/advanced-dockerfile

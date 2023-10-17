@@ -10,7 +10,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -75,7 +75,7 @@ func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string
 		return false, err
 	} else if apierrors.IsNotFound(err) {
 		s.Build.Status.Reason = build.BuildReasonPtr(build.BuildStrategyNotFound)
-		s.Build.Status.Message = pointer.String(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", s.Build.Spec.Strategy.Name, s.Build.Namespace))
+		s.Build.Status.Message = ptr.To[string](fmt.Sprintf("buildStrategy %s does not exist in namespace %s", s.Build.Spec.Strategy.Name, s.Build.Namespace))
 		return false, nil
 	}
 	return true, nil
@@ -86,7 +86,7 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 		return false, err
 	} else if apierrors.IsNotFound(err) {
 		s.Build.Status.Reason = build.BuildReasonPtr(build.ClusterBuildStrategyNotFound)
-		s.Build.Status.Message = pointer.String(fmt.Sprintf("clusterBuildStrategy %s does not exist", s.Build.Spec.Strategy.Name))
+		s.Build.Status.Message = ptr.To[string](fmt.Sprintf("clusterBuildStrategy %s does not exist", s.Build.Spec.Strategy.Name))
 		return false, nil
 	}
 	return true, nil
@@ -97,7 +97,7 @@ func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
 
 	if !valid {
 		s.Build.Status.Reason = build.BuildReasonPtr(reason)
-		s.Build.Status.Message = pointer.String(message)
+		s.Build.Status.Message = ptr.To[string](message)
 	}
 }
 
@@ -106,6 +106,6 @@ func (s Strategy) validateBuildVolumes(strategyVolumes []build.BuildStrategyVolu
 
 	if !valid {
 		s.Build.Status.Reason = build.BuildReasonPtr(reason)
-		s.Build.Status.Message = pointer.String(message)
+		s.Build.Status.Message = ptr.To[string](message)
 	}
 }

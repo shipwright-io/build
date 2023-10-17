@@ -1,0 +1,15 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: build-non-existing-repo
+spec:
+  source:
+    git:
+      url: https://github.com/shipwright-io/sample-nodejs-no-exists
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/no-exists
+

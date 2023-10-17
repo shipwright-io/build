@@ -52,21 +52,21 @@ Let's apply our Build and wait for it to be ready:
 ```bash
 $ export REGISTRY_ORG=<your_registry_org>
 $ cat <<EOF | kubectl apply -f -
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: go-tutorial
 spec:
   source:
-    url: https://github.com/shipwright-io/sample-go
+    git:
+      url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
   strategy:
     name: kaniko
     kind: ClusterBuildStrategy
   output:
     image: docker.io/${REGISTRY_ORG}/go-tutorial:latest
-    credentials:
-      name: tutorial-secret
+    pushSecret: tutorial-secret
 EOF
 ```
 
@@ -86,12 +86,12 @@ Second, we will create a `BuildRun` resource that references our previous `go-tu
 
 ```sh
 $ cat <<EOF | kubectl create -f -
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: BuildRun
 metadata:
   name: go-tutorial-buildrun
 spec:
-  buildRef:
+  build:
     name: go-tutorial
 EOF
 ```

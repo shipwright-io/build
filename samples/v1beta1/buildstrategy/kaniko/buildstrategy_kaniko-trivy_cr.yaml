@@ -1,0 +1,87 @@
+# This Build Strategy will intentionally fail if the image has any
+# critical CVEs. It will not be pushed into the destination registry
+# if any critical vulnerabilities are found.
+---
+apiVersion: shipwright.io/v1beta1
+kind: ClusterBuildStrategy
+metadata:
+  name: kaniko-trivy
+spec:
+  volumes:
+    - name: layout
+      emptyDir: {}
+    - name: tar
+      emptyDir: {}
+  steps:
+    - name: kaniko-build
+      image: gcr.io/kaniko-project/executor:v1.16.0
+      workingDir: $(params.shp-source-root)
+      securityContext:
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+            - SETFCAP
+            - KILL
+      env:
+        - name: HOME
+          value: /tekton/home
+        - name: AWS_ACCESS_KEY_ID
+          value: NOT_SET
+        - name: AWS_SECRET_KEY
+          value: NOT_SET
+      command:
+        - /kaniko/executor
+      args:
+        - --dockerfile
+        - $(params.dockerfile)
+        - --context
+        - $(params.shp-source-context)
+        - --destination
+        - $(params.shp-output-image)
+        - --snapshot-mode
+        - redo
+        - --no-push
+        - --tar-path
+        - $(params.shp-output-directory)/image.tar
+        # https://github.com/GoogleContainerTools/kaniko/issues/2164
+        - --ignore-path
+        - /product_uuid
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+    - name: trivy-scan
+      image: docker.io/aquasec/trivy:0.46.0
+      command:
+        - trivy
+      args:
+        - image
+        - --exit-code=1
+        - --severity=CRITICAL
+        - --input
+        - $(params.shp-output-directory)/image.tar
+      env:
+        - name: HOME
+          value: /tekton/home
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 65Mi
+  parameters:
+  - name: dockerfile
+    description: The path to the Dockerfile to be used for building the image.
+    type: string
+    default: "Dockerfile"
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0

@@ -1,0 +1,8 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: s2i-nodejs-buildrun
+spec:
+  build:
+    name: s2i-nodejs-build

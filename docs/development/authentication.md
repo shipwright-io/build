@@ -105,29 +105,29 @@ Depending on the secret type, there are two ways of doing this:
 When using ssh auth, users should follow:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: git@gitlab.com:eduardooli/newtaxi.git
-    credentials:
-      name: secret-git-ssh-auth
+    git:
+      url: git@gitlab.com:eduardooli/newtaxi.git
+      cloneSecret: secret-git-ssh-auth
 ```
 
 When using basic auth, users should follow:
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: https://gitlab.com/eduardooli/newtaxi.git
-    credentials:
-      name: secret-git-basic-auth
+    git:
+      url: https://gitlab.com/eduardooli/newtaxi.git
+      cloneSecret: secret-git-basic-auth
 ```
 
 ## Authentication to container registries
@@ -153,18 +153,17 @@ _Notes:_ The value of `PASSWORD` can be your user docker hub password, or an acc
 ### Usage of registry secret
 
 With the right secret in place (_note: Ensure creation of secret in the proper Kubernetes namespace_), users should reference it on their Build YAML definitions.
-For container registries, the secret should be placed under the `spec.output.credentials` path.
+For container registries, the secret should be placed under the `spec.output.pushSecret` path.
 
 ```yaml
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: buildah-golang-build
   ...
   output:
     image: docker.io/foobar/sample:latest
-    credentials:
-      name: <CONTAINER_REGISTRY_SECRET_NAME>
+    pushSecret: <CONTAINER_REGISTRY_SECRET_NAME>
 ```
 
 ## References

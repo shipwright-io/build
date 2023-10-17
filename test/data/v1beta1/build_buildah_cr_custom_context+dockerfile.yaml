@@ -1,0 +1,18 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildah-custom-context-dockerfile
+spec:
+  source:
+    git:
+      url: https://github.com/shipwright-io/sample-nodejs
+    contextDir: docker-build-renamed
+  strategy:
+    name: buildah-shipwright-managed-push
+    kind: ClusterBuildStrategy
+  paramValues:
+  - name: dockerfile
+    value: RenamedDockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/renamed-dockerfile

@@ -1,0 +1,163 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: ClusterBuildStrategy
+metadata:
+  name: source-to-image-redhat
+spec:
+  volumes:
+    - name: s2i
+      emptyDir: {}
+  steps:
+    - name: s2i-generate
+      image: registry.redhat.io/ocp-tools-43-tech-preview/source-to-image-rhel8:latest
+      workingDir: $(params.shp-source-root)
+      command: 
+        - /usr/local/bin/s2i
+      args:
+        - build
+        - $(params.shp-source-context)
+        - $(params.builder-image)
+        - $(params.shp-output-image)
+        - --as-dockerfile=/s2i/Dockerfile
+      volumeMounts:
+        - name: s2i
+          mountPath: /s2i
+    - name: buildah
+      image: quay.io/containers/buildah:v1.32.0
+      workingDir: /s2i
+      securityContext:
+        capabilities:
+          add:
+          - "SETFCAP"
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          set -euo pipefail
+
+          # Parse parameters
+          image=
+          target=
+          registriesBlock=""
+          inRegistriesBlock=false
+          registriesInsecure=""
+          inRegistriesInsecure=false
+          registriesSearch=""
+          inRegistriesSearch=false
+          while [[ $# -gt 0 ]]; do
+            arg="$1"
+            shift
+
+            if [ "${arg}" == "--image" ]; then
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+              image="$1"
+              shift
+            elif [ "${arg}" == "--target" ]; then
+              inBuildArgs=false
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+              target="$1"
+              shift
+            elif [ "${arg}" == "--registries-block" ]; then
+              inRegistriesBlock=true
+              inRegistriesInsecure=false
+              inRegistriesSearch=false
+            elif [ "${arg}" == "--registries-insecure" ]; then
+              inRegistriesInsecure=true
+              inRegistriesBlock=false
+              inRegistriesSearch=false
+            elif [ "${arg}" == "--registries-search" ]; then
+              inRegistriesSearch=true
+              inRegistriesBlock=false
+              inRegistriesInsecure=false
+            elif [ "${inRegistriesBlock}" == "true" ]; then
+              registriesBlock="${registriesBlock}'${arg}', "
+            elif [ "${inRegistriesInsecure}" == "true" ]; then
+              registriesInsecure="${registriesInsecure}'${arg}', "
+            elif [ "${inRegistriesSearch}" == "true" ]; then
+              registriesSearch="${registriesSearch}'${arg}', "
+            else
+              echo "Invalid usage"
+              exit 1
+            fi
+          done
+
+          echo "[INFO] Creating registries config file..."
+          if [ "${registriesSearch}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.search]
+          registries = [${registriesSearch::-2}]
+
+          EOF
+          fi
+          if [ "${registriesInsecure}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.insecure]
+          registries = [${registriesInsecure::-2}]
+
+          EOF
+          fi
+          if [ "${registriesBlock}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.block]
+          registries = [${registriesBlock::-2}]
+
+          EOF
+          fi
+
+          # Building the image
+          echo "[INFO] Building image ${image}"
+          buildah --storage-driver=$(params.storage-driver) bud \
+            --registries-conf=/tmp/registries.conf \
+            --tag="${image}"
+
+          # Write the image
+          echo "[INFO] Writing image ${image}"
+          buildah --storage-driver=$(params.storage-driver) push \
+            "${image}" \
+            "oci:${target}"
+        # That's the separator between the shell script and its args
+        - --
+        - --image
+        - $(params.shp-output-image)
+        - --registries-block
+        - $(params.registries-block[*])
+        - --registries-insecure
+        - $(params.registries-insecure[*])
+        - --registries-search
+        - $(params.registries-search[*])
+        - --target
+        - $(params.shp-output-directory)
+      volumeMounts:
+        - name: s2i
+          mountPath: /s2i
+  parameters:
+    - name: registries-block
+      description: The registries that need to block pull access.
+      type: array
+      defaults: []
+    - name: registries-insecure
+      description: The fully-qualified name of insecure registries. An insecure registry is one that does not have a valid SSL certificate or only supports HTTP.
+      type: array
+      defaults: []
+    - name: registries-search
+      description: The registries for searching short name images such as `golang:latest`.
+      type: array
+      defaults:
+        - docker.io
+        - quay.io
+    - name: builder-image
+      description: The builder image.
+      type: string
+    - name: storage-driver
+      description: "The storage driver to use, such as 'overlay' or 'vfs'."
+      type: string
+      default: "vfs"
+      # For details see the "--storage-driver" section of https://github.com/containers/buildah/blob/main/docs/buildah.1.md#options
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0

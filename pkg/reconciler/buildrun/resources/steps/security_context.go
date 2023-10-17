@@ -10,7 +10,7 @@ import (
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	tektonapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -66,7 +66,7 @@ func UpdateSecurityContext(taskSpec *tektonapi.TaskSpec, taskRunAnnotations map[
 					Name: VolumeNameSecurityContext,
 					VolumeSource: corev1.VolumeSource{
 						DownwardAPI: &corev1.DownwardAPIVolumeSource{
-							DefaultMode: pointer.Int32(0444),
+							DefaultMode: ptr.To[int32](0444),
 
 							Items: []corev1.DownwardAPIVolumeFile{{
 								Path: "group",

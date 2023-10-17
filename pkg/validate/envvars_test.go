@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/validate"
@@ -34,7 +34,7 @@ var _ = Describe("Env", func() {
 			err := validate.NewEnv(b).ValidatePath(context.TODO())
 			Expect(err).To(HaveOccurred())
 			Expect(b.Status.Reason).To(Equal(build.BuildReasonPtr(build.SpecEnvNameCanNotBeBlank)))
-			Expect(b.Status.Message).To(Equal(pointer.String("name for environment variable must not be blank")))
+			Expect(b.Status.Message).To(Equal(ptr.To[string]("name for environment variable must not be blank")))
 		})
 
 		It("should fail in case of specifying both value and valueFrom", func() {
@@ -57,7 +57,7 @@ var _ = Describe("Env", func() {
 			err := validate.NewEnv(b).ValidatePath(context.TODO())
 			Expect(err).To(HaveOccurred())
 			Expect(b.Status.Reason).To(Equal(build.BuildReasonPtr(build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)))
-			Expect(b.Status.Message).To(Equal(pointer.String("only one of value or valueFrom must be specified")))
+			Expect(b.Status.Message).To(Equal(ptr.To[string]("only one of value or valueFrom must be specified")))
 		})
 
 		It("should pass in case no env var are set", func() {

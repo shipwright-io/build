@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	knativeapi "knative.dev/pkg/apis"
 	knativev1 "knative.dev/pkg/apis/duck/v1"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +34,7 @@ import (
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	buildrunctl "github.com/shipwright-io/build/pkg/reconciler/buildrun"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	"github.com/shipwright-io/build/test"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("Reconcile BuildRun", func() {
@@ -1177,8 +1177,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// in the build
 				clientUpdateCalls := ctl.StubBuildUpdateOwnerReferences("Build",
 					buildName,
-					pointer.Bool(true),
-					pointer.Bool(true),
+					ptr.To[bool](true),
+					ptr.To[bool](true),
 				)
 				client.UpdateCalls(clientUpdateCalls)
 
@@ -1365,7 +1365,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						Spec: build.BuildRunSpec{
 							ParamValues: []build.ParamValue{{
 								Name:        "foo",
-								SingleValue: &build.SingleValue{Value: pointer.String("bar")},
+								SingleValue: &build.SingleValue{Value: ptr.To[string]("bar")},
 							}},
 							BuildSpec: &build.BuildSpec{},
 						},
@@ -1421,8 +1421,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 						Spec: build.BuildRunSpec{
 							BuildSpec: &build.BuildSpec{
 								Source: build.Source{
-									URL:        pointer.String("https://github.com/shipwright-io/sample-go.git"),
-									ContextDir: pointer.String("source-build"),
+									URL:        ptr.To[string]("https://github.com/shipwright-io/sample-go.git"),
+									ContextDir: ptr.To[string]("source-build"),
 								},
 								Strategy: build.Strategy{
 									Kind: &clusterBuildStrategy,
@@ -1433,7 +1433,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 								},
 							},
 							ServiceAccount: &build.ServiceAccount{
-								Generate: pointer.Bool(true),
+								Generate: ptr.To[bool](true),
 							},
 						},
 					}

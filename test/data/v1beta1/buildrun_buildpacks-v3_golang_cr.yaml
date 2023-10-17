@@ -1,0 +1,9 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: buildpack-golang-buildrun
+spec:
+  build:
+    name: buildpack-golang-build
+  serviceAccount: ".generate"
