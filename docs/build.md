@@ -80,7 +80,7 @@ The `Build` definition supports the following fields:
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `Build`.
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the custom resource instance, especially the name of the `Build`, and in which [namespace](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) you place it. **Note**: You should use your own namespace, and not put your builds into the shipwright-build namespace where Shipwright's system components run.
   - `spec.source` - Refers to the location of the source code, for example a Git repository or source bundle image.
-  - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/buildstrategy)
+  - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/v1beta1/buildstrategy)
   - `spec.output`- Refers to the location where the generated image would be pushed.
   - `spec.output.pushSecret`- Reference an existing secret to get access to the container registry.
 
@@ -269,7 +269,7 @@ In general, _paramValues_ are tightly bound to Strategy _parameters_. Please mak
 
 #### Example
 
-The [BuildKit sample `BuildStrategy`](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) contains various parameters. Two of them are outlined here:
+The [BuildKit sample `BuildStrategy`](../samples/v1beta1/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) contains various parameters. Two of them are outlined here:
 
 ```yaml
 apiVersion: shipwright.io/v1beta1
