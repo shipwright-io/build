@@ -52,17 +52,17 @@ A `ClusterBuildStrategy` is available cluster-wide, while a `BuildStrategy` is a
 
 ## Available ClusterBuildStrategies
 
-Well-known strategies can be bootstrapped from [here](../samples/buildstrategy). The currently supported Cluster BuildStrategy are:
+Well-known strategies can be bootstrapped from [here](../samples/v1beta1/buildstrategy). The currently supported Cluster BuildStrategy are:
 
 | Name | Supported platforms |
 | ---- | ------------------- |
-| [buildah](../samples/buildstrategy/buildah) | all |
-| [BuildKit](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) | all |
-| [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
-| [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
-| [kaniko](../samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml) | all |
-| [ko](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml) | all |
-| [source-to-image](../samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml) | linux/amd64 only |
+| [buildah](../samples/v1beta1/buildstrategy/buildah) | all |
+| [BuildKit](../samples/v1beta1/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml) | all |
+| [buildpacks-v3-heroku](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only |
+| [buildpacks-v3](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml) | linux/amd64 only |
+| [kaniko](../samples/v1beta1/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml) | all |
+| [ko](../samples/v1beta1/buildstrategy/ko/buildstrategy_ko_cr.yaml) | all |
+| [source-to-image](../samples/v1beta1/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml) | linux/amd64 only |
 
 ## Available BuildStrategies
 
@@ -70,8 +70,8 @@ The current supported namespaces BuildStrategy are:
 
 | Name | Supported platforms |
 | ---- | ------------------- |
-| [buildpacks-v3-heroku](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml) | linux/amd64 only |
-| [buildpacks-v3](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml) | linux/amd64 only |
+| [buildpacks-v3-heroku](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml) | linux/amd64 only |
+| [buildpacks-v3](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml) | linux/amd64 only |
 
 ---
 
@@ -81,8 +81,8 @@ The `buildah` ClusterBuildStrategy uses [`buildah`](https://github.com/container
 
 The strategy is available in two formats:
 
-- [`buildah-shipwright-managed-push`](../samples/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push%20copy_cr.yaml)
-- [`buildah-strategy-managed-push`](../samples/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml)
+- [`buildah-shipwright-managed-push`](../samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push%20copy_cr.yaml)
+- [`buildah-strategy-managed-push`](../samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml)
 
 Learn more about the differences of [shipwright-, or strategy-managed push](#output-directory-vs-output-image)
 
@@ -91,8 +91,8 @@ Learn more about the differences of [shipwright-, or strategy-managed push](#out
 To install use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push_cr.yaml
-kubectl apply -f samples/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml
 ```
 
 ---
@@ -112,13 +112,13 @@ You can install the `BuildStrategy` in your namespace or install the `ClusterBui
 To install the cluster scope strategy, use (below is a heroku example, you can also use paketo sample):
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml
 ```
 
 To install the namespaced scope strategy, use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml
 ```
 
 ---
@@ -132,7 +132,7 @@ The `kaniko` ClusterBuildStrategy is composed by Kaniko's `executor` [kaniko], w
 To install the cluster scope strategy, use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 ```
 
 #### Scanning with Trivy
@@ -142,7 +142,7 @@ You can also incorporate scanning into the ClusterBuildStrategy. The `kaniko-tri
 To install the cluster scope strategy, use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
 ```
 
 *Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Frameworks/strategies such as build-packs or source-to-image (which avoid directly building a Dockerfile) should be considered if you need guardrails around the code you want to build.*
@@ -188,7 +188,7 @@ _Please note:_ At this point in time, there is no way to run `rootlesskit` to st
 To install the cluster scope strategy, use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml
 ```
 
 ---
@@ -202,7 +202,7 @@ The `ko` ClusterBuilderStrategy is using [ko](https://github.com/ko-build/ko)'s 
 To install the cluster scope strategy, use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/ko/buildstrategy_ko_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/ko/buildstrategy_ko_cr.yaml
 ```
 
 ### Parameters
@@ -234,7 +234,7 @@ This BuildStrategy is composed by [`source-to-image`][s2i] and [`kaniko`][kaniko
 To install the cluster scope strategy use:
 
 ```sh
-kubectl apply -f samples/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/source-to-image/buildstrategy_source-to-image_cr.yaml
 ```
 
 ### Build Steps
@@ -259,7 +259,7 @@ Users defining _parameters_ under their strategies require to understand the fol
 
 - **Definition**: A list of parameters should be defined under `spec.parameters`. Each list item should consist of a _name_, a _description_, a _type_ (either `"array"` or `"string"`) and optionally a _default_ value (for type=string), or _defaults_ values (for type=array). If no default(s) are provided, then the user must define a value in the Build or BuildRun.
 - **Usage**: In order to use a parameter in the strategy steps, use the following syntax for type=string: `$(params.your-parameter-name)`. String parameters can be used in all places in the `buildSteps`. Some example scenarios are:
-  - `image`: to use a custom tag, for example `golang:$(params.go-version)` as it is done in the [ko sample build strategy](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml))
+  - `image`: to use a custom tag, for example `golang:$(params.go-version)` as it is done in the [ko sample build strategy](../samples/v1beta1/buildstrategy/ko/buildstrategy_ko_cr.yaml))
   - `args`: to pass data into your builder command
   - `env`: to force a user to provide a value for an environment variable.
   
@@ -295,7 +295,7 @@ Users defining _parameters_ under their strategies require to understand the fol
 
 **Note**: Users can provide parameter values as simple strings or as references to keys in [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/). If they use a ConfigMap or Secret, then the value can only be used if the parameter is used in the `command`, `args`, or `env` section of the `buildSteps`. For example, the above mentioned scenario to set a step's `image` to `golang:$(params.go-version)` does not allow the usage of ConfigMaps or Secrets.
 
-The following example is from the [BuildKit sample build strategy](../samples/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml). It defines and uses several parameters:
+The following example is from the [BuildKit sample build strategy](../samples/v1beta1/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml). It defines and uses several parameters:
 
 ```yaml
 ---
@@ -440,7 +440,7 @@ When you use the `$(params.shp-output-directory)` parameter, then Shipwright wil
 
 If you are uncertain about how to implement your build strategy, then follow this guidance:
 
-1. If your build strategy tool cannot locally store an image but always pushes it, then you must do the push operation. An example is the [Buildpacks strategy](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml). You SHOULD respect the `$(params.shp-output-insecure)` parameter.
+1. If your build strategy tool cannot locally store an image but always pushes it, then you must do the push operation. An example is the [Buildpacks strategy](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml). You SHOULD respect the `$(params.shp-output-insecure)` parameter.
 2. If your build strategy tool can locally store an image, then the choice depends on how you expect your build users to make use of your strategy, and the nature of your strategy.
    1. Some build strategies do not produce all layers of an image, but use a common base image and put one or more layers on top with the application. An example is `ko`. Such base image layers are often already present in the destination registry (like in rebuilds). If the strategy can perform the push operation, then it can optimize the process and can omit the download of the base image when it is not required to push it. In the case of a shipwright-managed push, the complete image must be locally stored in `$(params.shp-output-directory)`, which implies that a base image must always be downloaded.
    2. Some build strategy tools do not make it easy to determine the digest or size of the image, which can make it complex for your to set the [strategy results](#system-results). In the case of a shipwright-managed push, Shipwright has the responsibility to set them.
@@ -487,7 +487,7 @@ This opens the door to script injection, for example if the user sets the `sampl
 
 To securely pass a parameter value into a script-style argument, you can chose between these two approaches:
 
-1. Using environment variables. This is used in some of our sample strategies, for example [ko](../samples/buildstrategy/ko/buildstrategy_ko_cr.yaml), or [buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml). Basically, instead of directly using the parameter inside the script, you pass it via environment variable. Using quoting, shells ensure that no command injection is possible:
+1. Using environment variables. This is used in some of our sample strategies, for example [ko](../samples/v1beta1/buildstrategy/ko/buildstrategy_ko_cr.yaml), or [buildpacks](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml). Basically, instead of directly using the parameter inside the script, you pass it via environment variable. Using quoting, shells ensure that no command injection is possible:
 
    ```yaml
    spec:
@@ -510,7 +510,7 @@ To securely pass a parameter value into a script-style argument, you can chose b
              some-tool --sample-argument "${PARAM_SAMPLE_PARAMETER}"
    ```
 
-2. Using arguments. This is used in some of our sample build strategies, for example [buildah](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml). Here, you use arguments to your own inline script. Appropriate shell quoting guards against command injection.
+2. Using arguments. This is used in some of our sample build strategies, for example [buildah](../samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_cr.yaml). Here, you use arguments to your own inline script. Appropriate shell quoting guards against command injection.
 
    ```yaml
    spec:
@@ -543,7 +543,7 @@ If you are using a strategy-managed push, see [output directory vs output image]
 | `$(results.shp-image-digest.path)` | File to store the digest of the image.          |
 | `$(results.shp-image-size.path)`   | File to store the compressed size of the image. |
 
-You can look at sample build strategies, such as [Buildpacks](../samples/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml), to see how they fill some or all of the results files.
+You can look at sample build strategies, such as [Buildpacks](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml), to see how they fill some or all of the results files.
 
 This information will be available in the `.status.output` section of the BuildRun.
 
@@ -752,11 +752,11 @@ If we will apply the following resources:
 
 - [buildahBuild](../samples/build/build_buildah_cr.yaml)
 - [buildahBuildRun](../samples/buildrun/buildrun_buildah_cr.yaml)
-- [buildahClusterBuildStrategy](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
+- [buildahClusterBuildStrategy](../samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_cr.yaml)
 
 We will see some differences between the `TaskRun` definition and the `pod` definition.
 
-For the `TaskRun`, as expected we can see the resources on each `step`, as we previously define on our [strategy](../samples/buildstrategy/buildah/buildstrategy_buildah_cr.yaml).
+For the `TaskRun`, as expected we can see the resources on each `step`, as we previously define on our [strategy](../samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_cr.yaml).
 
 ```sh
 $ kubectl -n test-build get tr buildah-golang-buildrun-9gmcx-pod-lhzbc -o json | jq '.spec.taskSpec.steps[] | select(.name == "step-buildah-bud" ) | .resources'
