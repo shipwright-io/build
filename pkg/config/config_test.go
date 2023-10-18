@@ -13,7 +13,7 @@ import (
 	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 
 	. "github.com/shipwright-io/build/pkg/config"
 )
@@ -126,7 +126,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				nonRoot := ptr.To[int64](1000)
+				nonRoot := pointer.Int64(1000)
 				Expect(config.GitContainerTemplate).To(Equal(pipeline.Step{
 					Image: "myregistry/custom/git-image",
 					Command: []string{
@@ -134,7 +134,7 @@ var _ = Describe("Config", func() {
 					},
 					Env: []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}},
 					SecurityContext: &corev1.SecurityContext{
-						AllowPrivilegeEscalation: ptr.To[bool](false),
+						AllowPrivilegeEscalation: pointer.Bool(false),
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
 								"ALL",
@@ -228,14 +228,14 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				nonRoot := ptr.To[int64](1000)
+				nonRoot := pointer.Int64(1000)
 				Expect(config.WaiterContainerTemplate).To(Equal(pipeline.Step{
 					Image:   "myregistry/custom/image",
 					Command: []string{"/ko-app/waiter"},
 					Args:    []string{"start"},
 					Env:     []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}},
 					SecurityContext: &corev1.SecurityContext{
-						AllowPrivilegeEscalation: ptr.To[bool](false),
+						AllowPrivilegeEscalation: pointer.Bool(false),
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
 								"ALL",

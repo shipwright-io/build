@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 )
 
 // ensure v1beta1 implements the Conversion interface
@@ -47,7 +47,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	if src.Spec.ServiceAccount != nil && *src.Spec.ServiceAccount == ".generate" {
 		alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{
 			Name:     &src.ObjectMeta.Name,
-			Generate: ptr.To[bool](true),
+			Generate: pointer.Bool(true),
 		}
 	} else {
 		alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{

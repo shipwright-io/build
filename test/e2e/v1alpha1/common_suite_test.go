@@ -17,7 +17,7 @@ import (
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
@@ -73,7 +73,7 @@ func (b *buildPrototype) SourceCredentials(name string) *buildPrototype {
 }
 
 func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
-	b.build.Spec.Source.URL = ptr.To[string](repository)
+	b.build.Spec.Source.URL = pointer.String(repository)
 	b.build.Spec.Source.BundleContainer = nil
 	return b
 }
@@ -95,7 +95,7 @@ func (b *buildPrototype) SourceBundlePrune(prune buildv1alpha1.PruneOption) *bui
 }
 
 func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
-	b.build.Spec.Source.ContextDir = ptr.To[string](contextDir)
+	b.build.Spec.Source.ContextDir = pointer.String(contextDir)
 	return b
 }
 
@@ -280,7 +280,7 @@ func (b *buildRunPrototype) GenerateServiceAccount() *buildRunPrototype {
 	if b.buildRun.Spec.ServiceAccount == nil {
 		b.buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{}
 	}
-	b.buildRun.Spec.ServiceAccount.Generate = ptr.To[bool](true)
+	b.buildRun.Spec.ServiceAccount.Generate = pointer.Bool(true)
 	return b
 }
 

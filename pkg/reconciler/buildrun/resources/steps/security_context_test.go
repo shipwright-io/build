@@ -12,7 +12,7 @@ import (
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	tektonapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -30,15 +30,15 @@ var _ = Describe("UpdateSecurityContext", func() {
 			Container: corev1.Container{
 				Name: "first-step",
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:  ptr.To[int64](891),
-					RunAsGroup: ptr.To[int64](1210),
+					RunAsUser:  pointer.Int64(891),
+					RunAsGroup: pointer.Int64(1210),
 				},
 			},
 		}, {
 			Container: corev1.Container{
 				Name: "second-step",
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: ptr.To[int64](891),
+					RunAsUser: pointer.Int64(891),
 				},
 			},
 		}, {
@@ -51,19 +51,19 @@ var _ = Describe("UpdateSecurityContext", func() {
 			Steps: []tektonapi.Step{{
 				Name: "shp-source-default",
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:  ptr.To[int64](1000),
-					RunAsGroup: ptr.To[int64](1000),
+					RunAsUser:  pointer.Int64(1000),
+					RunAsGroup: pointer.Int64(1000),
 				},
 			}, {
 				Name: "first-step",
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:  ptr.To[int64](891),
-					RunAsGroup: ptr.To[int64](1210),
+					RunAsUser:  pointer.Int64(891),
+					RunAsGroup: pointer.Int64(1210),
 				},
 			}, {
 				Name: "second-step",
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: ptr.To[int64](891),
+					RunAsUser: pointer.Int64(891),
 				},
 			}, {
 				Name: "third-step",
@@ -83,11 +83,11 @@ var _ = Describe("UpdateSecurityContext", func() {
 		})
 
 		It("does not change the step's securityContext", func() {
-			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsUser).To(Equal(ptr.To[int64](1000)))
-			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsGroup).To(Equal(ptr.To[int64](1000)))
-			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsUser).To(Equal(ptr.To[int64](891)))
-			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsGroup).To(Equal(ptr.To[int64](1210)))
-			Expect(taskRunSpec.Steps[2].SecurityContext.RunAsUser).To(Equal(ptr.To[int64](891)))
+			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsUser).To(Equal(pointer.Int64(1000)))
+			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsGroup).To(Equal(pointer.Int64(1000)))
+			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsUser).To(Equal(pointer.Int64(891)))
+			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsGroup).To(Equal(pointer.Int64(1210)))
+			Expect(taskRunSpec.Steps[2].SecurityContext.RunAsUser).To(Equal(pointer.Int64(891)))
 			Expect(taskRunSpec.Steps[2].SecurityContext.RunAsGroup).To(BeNil())
 			Expect(taskRunSpec.Steps[3].SecurityContext).To(BeNil())
 		})
@@ -115,24 +115,24 @@ var _ = Describe("UpdateSecurityContext", func() {
 		})
 
 		It("changes the securityContext of shipwright-managed steps", func() {
-			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsUser).To(Equal(ptr.To[int64](123)))
-			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsGroup).To(Equal(ptr.To[int64](456)))
+			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsUser).To(Equal(pointer.Int64(123)))
+			Expect(taskRunSpec.Steps[0].SecurityContext.RunAsGroup).To(Equal(pointer.Int64(456)))
 		})
 
 		It("does not change the securityContext of a strategy step that has runAsUser and runAsGroup set", func() {
-			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsUser).To(Equal(ptr.To[int64](891)))
-			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsGroup).To(Equal(ptr.To[int64](1210)))
+			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsUser).To(Equal(pointer.Int64(891)))
+			Expect(taskRunSpec.Steps[1].SecurityContext.RunAsGroup).To(Equal(pointer.Int64(1210)))
 		})
 
 		It("changes the securityContext of a strategy step that does not have both runAsUser and runAsGroup set", func() {
-			Expect(taskRunSpec.Steps[2].SecurityContext.RunAsUser).To(Equal(ptr.To[int64](891)))
-			Expect(taskRunSpec.Steps[2].SecurityContext.RunAsGroup).To(Equal(ptr.To[int64](456)))
+			Expect(taskRunSpec.Steps[2].SecurityContext.RunAsUser).To(Equal(pointer.Int64(891)))
+			Expect(taskRunSpec.Steps[2].SecurityContext.RunAsGroup).To(Equal(pointer.Int64(456)))
 		})
 
 		It("introduces a securityContext for a strategy step that does not have one", func() {
 			Expect(taskRunSpec.Steps[3].SecurityContext).ToNot(BeNil())
-			Expect(taskRunSpec.Steps[3].SecurityContext.RunAsUser).To(Equal(ptr.To[int64](123)))
-			Expect(taskRunSpec.Steps[3].SecurityContext.RunAsGroup).To(Equal(ptr.To[int64](456)))
+			Expect(taskRunSpec.Steps[3].SecurityContext.RunAsUser).To(Equal(pointer.Int64(123)))
+			Expect(taskRunSpec.Steps[3].SecurityContext.RunAsGroup).To(Equal(pointer.Int64(456)))
 		})
 
 		It("adds annotations", func() {
@@ -147,7 +147,7 @@ var _ = Describe("UpdateSecurityContext", func() {
 				Name: steps.VolumeNameSecurityContext,
 				VolumeSource: corev1.VolumeSource{
 					DownwardAPI: &corev1.DownwardAPIVolumeSource{
-						DefaultMode: ptr.To[int32](0444),
+						DefaultMode: pointer.Int32(0444),
 
 						Items: []corev1.DownwardAPIVolumeFile{{
 							Path: "group",

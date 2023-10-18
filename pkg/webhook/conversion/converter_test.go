@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 )
 
 func getConversionReview(o string) (apiextensionsv1.ConversionReview, error) {
@@ -497,7 +497,7 @@ request:
 						},
 					},
 					Retention: &v1beta1.BuildRetention{
-						AtBuildDeletion: ptr.To[bool](true),
+						AtBuildDeletion: pointer.Bool(true),
 					},
 					Trigger: &v1beta1.Trigger{
 						When: []v1beta1.TriggerWhen{
@@ -1157,7 +1157,7 @@ request:
 							Name:        "dockerfile",
 							Description: "The Dockerfile to be built.",
 							Type:        v1beta1.ParameterTypeString,
-							Default:     ptr.To[string]("Dockerfile"),
+							Default:     pointer.String("Dockerfile"),
 						},
 					},
 					SecurityContext: &v1beta1.BuildStrategySecurityContext{

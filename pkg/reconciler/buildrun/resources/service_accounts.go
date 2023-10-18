@@ -14,7 +14,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,7 +65,7 @@ func GenerateSA(ctx context.Context, client client.Client, build *buildv1alpha1.
 					*metav1.NewControllerRef(buildRun, buildv1alpha1.SchemeGroupVersion.WithKind("BuildRun")),
 				},
 			},
-			AutomountServiceAccountToken: ptr.To[bool](false),
+			AutomountServiceAccountToken: pointer.Bool(false),
 		}
 		ctxlog.Debug(ctx, "automatic generation of service account", namespace, serviceAccount.Namespace, name, serviceAccount.Name)
 

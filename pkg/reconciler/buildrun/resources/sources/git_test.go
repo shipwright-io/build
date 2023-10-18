@@ -14,7 +14,7 @@ import (
 
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 )
 
 var _ = Describe("Git", func() {
@@ -31,7 +31,7 @@ var _ = Describe("Git", func() {
 
 		JustBeforeEach(func() {
 			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
-				URL: ptr.To[string]("https://github.com/shipwright-io/build"),
+				URL: pointer.String("https://github.com/shipwright-io/build"),
 			}, "default")
 		})
 
@@ -75,7 +75,7 @@ var _ = Describe("Git", func() {
 
 		JustBeforeEach(func() {
 			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
-				URL: ptr.To[string]("git@github.com:shipwright-io/build.git"),
+				URL: pointer.String("git@github.com:shipwright-io/build.git"),
 				Credentials: &corev1.LocalObjectReference{
 					Name: "a.secret",
 				},
