@@ -1089,7 +1089,6 @@ request:
 							},
 						},
 					},
-					Output: &v1beta1.Image{},
 				},
 			}
 

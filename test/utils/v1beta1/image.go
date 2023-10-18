@@ -22,7 +22,7 @@ import (
 
 func getImageURL(buildRun *buildv1beta1.BuildRun) string {
 	image := ""
-	if buildRun.Spec.Output.Image != "" {
+	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Image != "" {
 		image = buildRun.Spec.Output.Image
 	} else {
 		image = buildRun.Status.BuildSpec.Output.Image

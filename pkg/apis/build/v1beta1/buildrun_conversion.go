@@ -224,16 +224,17 @@ func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
 		dest.ParamValues = append(dest.ParamValues, param)
 	}
 
-	// Handle BuildSpec Output
-	dest.Output = &Image{}
+	// Handle BuildRunSpec Output
 	if orig.Output != nil {
-		dest.Output.Image = orig.Output.Image
-		dest.Output.Annotations = orig.Output.Annotations
-		dest.Output.Labels = orig.Output.Labels
-	}
+		dest.Output = &Image{
+			Image:       orig.Output.Image,
+			Annotations: orig.Output.Annotations,
+			Labels:      orig.Output.Labels,
+		}
 
-	if orig.Output != nil && orig.Output.Credentials != nil {
-		dest.Output.PushSecret = &orig.Output.Credentials.Name
+		if orig.Output.Credentials != nil {
+			dest.Output.PushSecret = &orig.Output.Credentials.Name
+		}
 	}
 
 	// BuildRunSpec State
