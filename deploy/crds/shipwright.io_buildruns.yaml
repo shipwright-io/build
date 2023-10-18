@@ -6388,7 +6388,8 @@ spec:
             description: BuildRunSpec defines the desired state of BuildRun
             properties:
               build:
-                description: Build refers to an embedded build specification
+                description: Build refers to an embedded build specification This
+                  field is mandatory
                 properties:
                   name:
                     description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
@@ -6701,6 +6702,17 @@ spec:
                                 type: string
                               url:
                                 description: URL describes the URL of the Git repository.
+                                type: string
+                            type: object
+                          local:
+                            description: LocalSource
+                            properties:
+                              name:
+                                description: Name of the local step
+                                type: string
+                              timeout:
+                                description: Timeout how long the BuildSource execution
+                                  must take.
                                 type: string
                             type: object
                           ociArtifact:
@@ -8786,6 +8798,26 @@ spec:
                   which is used for resource control. Default serviceaccount will
                   be set if it is empty
                 type: string
+              source:
+                description: Source refers to the location where the source code is,
+                  this could only be a local source
+                properties:
+                  local:
+                    description: LocalSource
+                    properties:
+                      name:
+                        description: Name of the local step
+                        type: string
+                      timeout:
+                        description: Timeout how long the BuildSource execution must
+                          take.
+                        type: string
+                    type: object
+                  type:
+                    description: Type is the BuildRunSource qualifier, the type of
+                      the data-source. Only LocalType is supported.
+                    type: string
+                type: object
               state:
                 description: State is used for canceling a buildrun (and maybe more
                   later on).
@@ -10354,6 +10386,8 @@ spec:
                   - name
                   type: object
                 type: array
+            required:
+            - build
             type: object
           status:
             description: BuildRunStatus defines the observed state of BuildRun
@@ -10660,6 +10694,17 @@ spec:
                             type: string
                           url:
                             description: URL describes the URL of the Git repository.
+                            type: string
+                        type: object
+                      local:
+                        description: LocalSource
+                        properties:
+                          name:
+                            description: Name of the local step
+                            type: string
+                          timeout:
+                            description: Timeout how long the BuildSource execution
+                              must take.
                             type: string
                         type: object
                       ociArtifact:

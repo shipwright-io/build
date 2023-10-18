@@ -36,6 +36,9 @@ type Local struct {
 	//
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
+
+	// Name of the local step
+	Name string `json:"name,omitempty"`
 }
 
 // Git describes the git repository to pull
@@ -101,4 +104,21 @@ type Source struct {
 	//
 	// +optional
 	GitSource *Git `json:"git,omitempty"`
+
+	// LocalSource
+	//
+	// +optional
+	LocalSource *Local `json:"local,omitempty"`
+}
+
+// BuildRunSource describes the local source to use
+type BuildRunSource struct {
+	// Type is the BuildRunSource qualifier, the type of the data-source.
+	// Only LocalType is supported.
+	//
+	// +optional
+	Type BuildSourceType `json:"type,omitempty"`
+	// LocalSource
+	//
+	LocalSource *Local `json:"local,omitempty"`
 }

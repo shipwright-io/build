@@ -331,7 +331,7 @@ func buildRunTestData(ns string, identifier string, filePath string) (*buildv1be
 
 	buildRun.SetNamespace(ns)
 	buildRun.SetName(identifier)
-	buildRun.Spec.Build.Name = identifier
+	buildRun.Spec.Build.Name = &identifier
 
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 	if serviceAccountName == "generated" {

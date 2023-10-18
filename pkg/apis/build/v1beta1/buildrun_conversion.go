@@ -36,10 +36,19 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 			return err
 		}
 		alphaBuildRun.Spec.BuildSpec = &newBuildSpec
-	} else {
+	} else if src.Spec.Build.Name != nil {
 		alphaBuildRun.Spec.BuildRef = &v1alpha1.BuildRef{
-			Name: src.Spec.Build.Name,
+			Name: *src.Spec.Build.Name,
 		}
+	}
+
+	// BuildRunSpec Sources
+	if src.Spec.Source != nil && src.Spec.Source.Type == LocalType && src.Spec.Source.LocalSource != nil {
+		alphaBuildRun.Spec.Sources = append(alphaBuildRun.Spec.Sources, v1alpha1.BuildSource{
+			Name:    src.Spec.Source.LocalSource.Name,
+			Type:    v1alpha1.LocalCopy,
+			Timeout: src.Spec.Source.LocalSource.Timeout,
+		})
 	}
 
 	// BuildRunSpec ServiceAccount
@@ -181,14 +190,25 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
 
 	// BuildRunSpec BuildSpec
-	dest.Build = &ReferencedBuild{}
 	if orig.BuildSpec != nil {
-		if dest.Build.Build != nil {
-			dest.Build.Build.ConvertFrom(orig.BuildSpec)
-		}
+		dest.Build.Build = &BuildSpec{}
+		dest.Build.Build.ConvertFrom(orig.BuildSpec)
 	}
 	if orig.BuildRef != nil {
-		dest.Build.Name = orig.BuildRef.Name
+		dest.Build.Name = &orig.BuildRef.Name
+	}
+
+	// only interested on spec.sources as long as an item of the list
+	// is of the type LocalCopy. Otherwise, we move into bundle or git types.
+	index, isLocal := v1alpha1.IsLocalCopyType(orig.Sources)
+	if isLocal {
+		dest.Source = &BuildRunSource{
+			Type: LocalType,
+			LocalSource: &Local{
+				Name:    orig.Sources[index].Name,
+				Timeout: orig.Sources[index].Timeout,
+			},
+		}
 	}
 
 	if orig.ServiceAccount != nil {

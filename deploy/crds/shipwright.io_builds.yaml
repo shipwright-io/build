@@ -2479,6 +2479,17 @@ spec:
                         description: URL describes the URL of the Git repository.
                         type: string
                     type: object
+                  local:
+                    description: LocalSource
+                    properties:
+                      name:
+                        description: Name of the local step
+                        type: string
+                      timeout:
+                        description: Timeout how long the BuildSource execution must
+                          take.
+                        type: string
+                    type: object
                   ociArtifact:
                     description: OCIArtifact
                     properties:

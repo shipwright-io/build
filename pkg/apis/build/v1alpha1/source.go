@@ -65,3 +65,13 @@ type Source struct {
 	// +optional
 	Credentials *corev1.LocalObjectReference `json:"credentials,omitempty"`
 }
+
+// IsLocalCopyType tells if we have an entry of the type local
+func IsLocalCopyType(sources []BuildSource) (int, bool) {
+	for i, bs := range sources {
+		if bs.Type == LocalCopy {
+			return i, true
+		}
+	}
+	return -1, false
+}

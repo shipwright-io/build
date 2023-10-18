@@ -111,6 +111,27 @@ spec:
         image: foo/bar:latest
 ```
 
+### Defining the Build Source
+
+BuildRun's support the specification of a Local type source. This is useful for working on development
+mode, without forcing a user to commit/push changes to their related version control system. For more information please
+refer to [SHIP 0016 - enabling local source code](https://github.com/shipwright-io/community/blob/main/ships/0016-enable-local-source-code-support.md).
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: local-buildrun
+spec:
+  build:
+    name: a-build
+  source:
+    type: Local
+    local:
+      name: local-source
+      timeout: 3m
+```
+
 ### Defining ParamValues
 
 A `BuildRun` resource can define _paramValues_ for parameters specified in the build strategy. If a value has been provided for a parameter with the same name in the `Build` already, then the value from the `BuildRun` will have precedence.
