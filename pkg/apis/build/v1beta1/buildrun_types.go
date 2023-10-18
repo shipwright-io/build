@@ -29,15 +29,15 @@ type ReferencedBuild struct {
 	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
 	//
 	// +optional
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // BuildRunSpec defines the desired state of BuildRun
 type BuildRunSpec struct {
 	// Build refers to an embedded build specification
+	// This field is mandatory
 	//
-	// +optional
-	Build *ReferencedBuild `json:"build,omitempty"`
+	Build *ReferencedBuild `json:"build"`
 
 	// Source refers to the location where the source code is,
 	// this could only be a local source
@@ -380,7 +380,7 @@ func (brs *BuildRunStatus) SetCondition(condition *Condition) {
 // build resource or an embedded build specification
 func (buildrunSpec *BuildRunSpec) BuildName() string {
 	if buildrunSpec.Build != nil {
-		return buildrunSpec.Build.Name
+		return *buildrunSpec.Build.Name
 	}
 
 	// Only BuildRuns with a ReferencedBuild can actually return a proper Build name

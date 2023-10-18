@@ -36,9 +36,9 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 			return err
 		}
 		alphaBuildRun.Spec.BuildSpec = &newBuildSpec
-	} else {
+	} else if src.Spec.Build.Name != nil {
 		alphaBuildRun.Spec.BuildRef = &v1alpha1.BuildRef{
-			Name: src.Spec.Build.Name,
+			Name: *src.Spec.Build.Name,
 		}
 	}
 
@@ -200,7 +200,7 @@ func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
 		}
 	}
 	if orig.BuildRef != nil {
-		dest.Build.Name = orig.BuildRef.Name
+		dest.Build.Name = &orig.BuildRef.Name
 	}
 
 	// only interested on spec.sources as long as an item of the list

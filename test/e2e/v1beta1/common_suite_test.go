@@ -283,7 +283,7 @@ func (b *buildRunPrototype) ForBuild(build *buildv1beta1.Build) *buildRunPrototy
 	if b.buildRun.Spec.Build == nil {
 		b.buildRun.Spec.Build = &buildv1beta1.ReferencedBuild{}
 	}
-	b.buildRun.Spec.Build.Name = build.Name
+	b.buildRun.Spec.Build.Name = &build.Name
 	b.buildRun.ObjectMeta.Namespace = build.Namespace
 	return b
 }

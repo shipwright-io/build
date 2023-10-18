@@ -1078,7 +1078,7 @@ request:
 				},
 				Spec: v1beta1.BuildRunSpec{
 					Build: &v1beta1.ReferencedBuild{
-						Name: "a_build",
+						Name: pointer.String("a_build"),
 					},
 					Source: &v1beta1.BuildRunSource{
 						Type: v1beta1.LocalType,
@@ -1162,7 +1162,7 @@ request:
 				},
 				Spec: v1beta1.BuildRunSpec{
 					Build: &v1beta1.ReferencedBuild{
-						Name: "a_build",
+						Name: pointer.String("a_build"),
 					},
 					ServiceAccount: &sa,
 					Timeout: &v1.Duration{

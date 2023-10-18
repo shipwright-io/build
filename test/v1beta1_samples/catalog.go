@@ -785,7 +785,7 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 		},
 		Spec: build.BuildRunSpec{
 			Build: &build.ReferencedBuild{
-				Name: buildName,
+				Name: &buildName,
 			},
 		},
 		Status: build.BuildRunStatus{
@@ -830,7 +830,7 @@ func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName strin
 		},
 		Spec: build.BuildRunSpec{
 			Build: &build.ReferencedBuild{
-				Name: buildName,
+				Name: &buildName,
 			},
 		},
 	}
@@ -855,7 +855,7 @@ func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, build
 		},
 		Spec: build.BuildRunSpec{
 			Build: &build.ReferencedBuild{
-				Name: buildName,
+				Name: &buildName,
 			},
 		},
 	}
@@ -871,7 +871,7 @@ func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName strin
 		},
 		Spec: build.BuildRunSpec{
 			Build: &build.ReferencedBuild{
-				Name: buildName,
+				Name: &buildName,
 			},
 		},
 	}
@@ -960,7 +960,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 		},
 		Spec: build.BuildRunSpec{
 			Build: &build.ReferencedBuild{
-				Name: buildName,
+				Name: &buildName,
 			},
 			ServiceAccount: &saName,
 		},
@@ -976,7 +976,7 @@ func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *buil
 		},
 		Spec: build.BuildRunSpec{
 			Build: &build.ReferencedBuild{
-				Name: buildName,
+				Name: &buildName,
 			},
 			ServiceAccount: nil,
 		},
@@ -992,7 +992,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 		},
 		Spec: build.BuildRunSpec{
 			Build: &build.ReferencedBuild{
-				Name: buildName,
+				Name: &buildName,
 			},
 			ServiceAccount: pointer.String(".generate"),
 		},
@@ -1054,7 +1054,7 @@ func (c *Catalog) LoadBRWithNameAndRef(name string, buildName string, d []byte) 
 		return nil, err
 	}
 	b.Name = name
-	b.Spec.Build.Name = buildName
+	b.Spec.Build.Name = &buildName
 	return b, nil
 }
 
