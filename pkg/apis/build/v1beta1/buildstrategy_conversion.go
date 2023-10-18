@@ -114,13 +114,13 @@ func (src *BuildStrategySpec) ConvertTo(bs *v1alpha1.BuildStrategySpec) {
 			}
 
 			for argIndex, arg := range buildStep.Args {
-				if strings.Contains(arg, "$(params.dockerfile)") {
+				if strings.Contains(arg, "$(params.builder-image)") {
 					buildStep.Args[argIndex] = strings.ReplaceAll(arg, "$(params.builder-image)", "$(build.builder.image)")
 				}
 			}
 
 			for envIndex, env := range buildStep.Env {
-				if strings.Contains(env.Value, "$(params.dockerfile)") {
+				if strings.Contains(env.Value, "$(params.builder-image)") {
 					buildStep.Env[envIndex].Value = strings.ReplaceAll(env.Value, "$(params.builder-image)", "$(build.builder.image)")
 				}
 			}
@@ -212,7 +212,7 @@ func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 			}
 			if strings.Contains(arg, "$(build.builder.image)") {
 				usesBuilderImage = true
-				step.Command[argIndex] = strings.ReplaceAll(arg, "$(build.builder.image)", "$(params.builder-image)")
+				step.Args[argIndex] = strings.ReplaceAll(arg, "$(build.builder.image)", "$(params.builder-image)")
 			}
 		}
 
@@ -227,7 +227,7 @@ func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 			}
 			if strings.Contains(env.Value, "$(build.builder.image)") {
 				usesBuilderImage = true
-				step.Command[envIndex] = strings.ReplaceAll(env.Value, "$(build.builder.image)", "$(params.builder-image)")
+				step.Env[envIndex].Value = strings.ReplaceAll(env.Value, "$(build.builder.image)", "$(params.builder-image)")
 			}
 		}
 
