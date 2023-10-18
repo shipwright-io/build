@@ -280,18 +280,12 @@ func (b *buildRunPrototype) Namespace(namespace string) *buildRunPrototype {
 }
 
 func (b *buildRunPrototype) ForBuild(build *buildv1beta1.Build) *buildRunPrototype {
-	if b.buildRun.Spec.Build == nil {
-		b.buildRun.Spec.Build = &buildv1beta1.ReferencedBuild{}
-	}
 	b.buildRun.Spec.Build.Name = &build.Name
 	b.buildRun.ObjectMeta.Namespace = build.Namespace
 	return b
 }
 
 func (b *buildRunPrototype) WithBuildSpec(buildSpec *buildv1beta1.BuildSpec) *buildRunPrototype {
-	if b.buildRun.Spec.Build == nil {
-		b.buildRun.Spec.Build = &buildv1beta1.ReferencedBuild{}
-	}
 	b.buildRun.Spec.Build.Build = buildSpec
 	return b
 }

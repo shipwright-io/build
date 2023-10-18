@@ -110,7 +110,7 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 	// only interested on spec.sources as long as an item of the list
 	// is of the type LocalCopy. Otherwise, we move into bundle or git types.
 	index, isLocal := v1alpha1.IsLocalCopyType(orig.Sources)
-	if len(orig.Sources) > 0 && isLocal {
+	if isLocal {
 		specSource.Type = LocalType
 		specSource.LocalSource = &Local{
 			Name:    orig.Sources[index].Name,
@@ -226,15 +226,12 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 
 func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 	// Handle BuildSpec Sources or Source
-	if dest.Source.Type == LocalType {
-		bs.Sources = []v1alpha1.BuildSource{}
-		if dest.Source.LocalSource != nil {
-			bs.Sources = append(bs.Sources, v1alpha1.BuildSource{
-				Name:    dest.Source.LocalSource.Name,
-				Type:    v1alpha1.LocalCopy,
-				Timeout: dest.Source.LocalSource.Timeout,
-			})
-		}
+	if dest.Source.Type == LocalType && dest.Source.LocalSource != nil {
+		bs.Sources = append(bs.Sources, v1alpha1.BuildSource{
+			Name:    dest.Source.LocalSource.Name,
+			Type:    v1alpha1.LocalCopy,
+			Timeout: dest.Source.LocalSource.Timeout,
+		})
 	} else {
 		bs.Source = getAlphaBuildSource(*dest)
 	}

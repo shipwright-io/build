@@ -1077,7 +1077,7 @@ request:
 					Kind:       "BuildRun",
 				},
 				Spec: v1beta1.BuildRunSpec{
-					Build: &v1beta1.ReferencedBuild{
+					Build: v1beta1.ReferencedBuild{
 						Name: pointer.String("a_build"),
 					},
 					Source: &v1beta1.BuildRunSource{
@@ -1161,7 +1161,7 @@ request:
 					Kind:       "BuildRun",
 				},
 				Spec: v1beta1.BuildRunSpec{
-					Build: &v1beta1.ReferencedBuild{
+					Build: v1beta1.ReferencedBuild{
 						Name: pointer.String("a_build"),
 					},
 					ServiceAccount: &sa,

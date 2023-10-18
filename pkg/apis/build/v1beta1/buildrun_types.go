@@ -37,7 +37,7 @@ type BuildRunSpec struct {
 	// Build refers to an embedded build specification
 	// This field is mandatory
 	//
-	Build *ReferencedBuild `json:"build"`
+	Build ReferencedBuild `json:"build"`
 
 	// Source refers to the location where the source code is,
 	// this could only be a local source
@@ -379,7 +379,7 @@ func (brs *BuildRunStatus) SetCondition(condition *Condition) {
 // BuildName returns the name of the associated build, which can be a referenced
 // build resource or an embedded build specification
 func (buildrunSpec *BuildRunSpec) BuildName() string {
-	if buildrunSpec.Build != nil {
+	if buildrunSpec.Build.Name != nil {
 		return *buildrunSpec.Build.Name
 	}
 
