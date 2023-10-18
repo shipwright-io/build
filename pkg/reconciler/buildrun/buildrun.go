@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -182,7 +182,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					// mark transient build as "registered" and validated
 					build.Status.Registered = buildv1alpha1.ConditionStatusPtr(corev1.ConditionTrue)
 					build.Status.Reason = buildv1alpha1.BuildReasonPtr(buildv1alpha1.SucceedStatus)
-					build.Status.Message = ptr.To[string](buildv1alpha1.AllValidationsSucceeded)
+					build.Status.Message = pointer.String(buildv1alpha1.AllValidationsSucceeded)
 				}
 			}
 
@@ -220,7 +220,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			if build.GetAnnotations()[buildv1alpha1.AnnotationBuildRunDeletion] == "true" && !resources.IsOwnedByBuild(build, buildRun.OwnerReferences) {
 				if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
 					build.Status.Reason = buildv1alpha1.BuildReasonPtr(buildv1alpha1.SetOwnerReferenceFailed)
-					build.Status.Message = ptr.To[string](fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
+					build.Status.Message = pointer.String(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
 					if err := r.client.Status().Update(ctx, build); err != nil {
 						return reconcile.Result{}, err
 					}

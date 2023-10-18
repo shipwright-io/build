@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -43,7 +43,7 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 			return err
 		} else if apierrors.IsNotFound(err) {
 			s.Build.Status.Reason = build.BuildReasonPtr(secretType)
-			s.Build.Status.Message = ptr.To[string](fmt.Sprintf("referenced secret %s not found", refSecret))
+			s.Build.Status.Message = pointer.String(fmt.Sprintf("referenced secret %s not found", refSecret))
 			missingSecrets = append(missingSecrets, refSecret)
 		}
 	}
@@ -53,7 +53,7 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 
 	if len(missingSecrets) > 1 {
 		s.Build.Status.Reason = build.BuildReasonPtr(build.MultipleSecretRefNotFound)
-		s.Build.Status.Message = ptr.To[string](fmt.Sprintf("missing secrets are %s", strings.Join(missingSecrets, ",")))
+		s.Build.Status.Message = pointer.String(fmt.Sprintf("missing secrets are %s", strings.Join(missingSecrets, ",")))
 	}
 	return nil
 }

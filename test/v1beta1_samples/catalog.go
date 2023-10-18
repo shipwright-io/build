@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -100,7 +100,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: ptr.To[string]("foobar"),
+					URL: pointer.String("foobar"),
 				},
 			},
 			Strategy: build.Strategy{
@@ -125,7 +125,7 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: ptr.To[string]("https://github.com/shipwright-io/sample-go"),
+					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 				},
 			},
 			Strategy: build.Strategy{
@@ -152,7 +152,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL:         ptr.To[string]("https://github.com/shipwright-io/sample-go"),
+					URL:         pointer.String("https://github.com/shipwright-io/sample-go"),
 					CloneSecret: &secret,
 				},
 			},
@@ -178,7 +178,7 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: ptr.To[string]("https://github.com/shipwright-io/sample-go"),
+					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 				},
 			},
 			Strategy: build.Strategy{
@@ -199,7 +199,7 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: ptr.To[string]("https://github.com/shipwright-io/sample-go"),
+					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 				},
 			},
 			Strategy: build.Strategy{
@@ -219,7 +219,7 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: ptr.To[string]("https://github.com/shipwright-io/sample-go"),
+					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
 				},
 			},
 			Output: build.Image{
@@ -725,7 +725,7 @@ func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName stri
 				Kind: &strategyKind,
 			},
 			Retention: &build.BuildRetention{
-				AtBuildDeletion: ptr.To[bool](true),
+				AtBuildDeletion: pointer.Bool(true),
 			},
 		},
 		Status: build.BuildStatus{
@@ -748,7 +748,7 @@ func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategy
 				Kind: &strategyKind,
 			},
 			Retention: &build.BuildRetention{
-				AtBuildDeletion: ptr.To[bool](true),
+				AtBuildDeletion: pointer.Bool(true),
 			},
 		},
 		Status: build.BuildStatus{
@@ -994,7 +994,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			Build: &build.ReferencedBuild{
 				Name: buildName,
 			},
-			ServiceAccount: ptr.To[string](".generate"),
+			ServiceAccount: pointer.String(".generate"),
 		},
 	}
 }

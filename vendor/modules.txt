@@ -1049,7 +1049,7 @@ k8s.io/kube-openapi/pkg/validation/spec
 # k8s.io/kubectl v0.26.9
 ## explicit; go 1.19
 k8s.io/kubectl/pkg/scheme
-# k8s.io/utils v0.0.0-20230726121419-3b25d923346b
+# k8s.io/utils v0.0.0-20230209194617-a36077c30491
 ## explicit; go 1.18
 k8s.io/utils/buffer
 k8s.io/utils/clock
@@ -1058,7 +1058,6 @@ k8s.io/utils/integer
 k8s.io/utils/internal/third_party/forked/golang/net
 k8s.io/utils/net
 k8s.io/utils/pointer
-k8s.io/utils/ptr
 k8s.io/utils/strings/slices
 k8s.io/utils/trace
 # knative.dev/pkg v0.0.0-20230221145627-8efb3485adcf

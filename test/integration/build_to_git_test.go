@@ -10,7 +10,7 @@ import (
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 )
 
 var _ = Describe("Integration tests Build and referenced Source url", func() {
@@ -47,7 +47,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = ptr.To[string]("http://github.com/shipwright-io/sample-go")
+			buildObject.Spec.Source.URL = pointer.String("http://github.com/shipwright-io/sample-go")
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -72,7 +72,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.Spec.Source.URL = ptr.To[string]("http://github.com/shipwright-io/sample-go-fake")
+			buildObject.Spec.Source.URL = pointer.String("http://github.com/shipwright-io/sample-go-fake")
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			// wait until the Build finish the validation
@@ -98,7 +98,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = ptr.To[string]("https://github.com/shipwright-io/sample-go")
+			buildObject.Spec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go")
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -123,7 +123,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.Spec.Source.URL = ptr.To[string]("https://github.com/shipwright-io/sample-go-fake")
+			buildObject.Spec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go-fake")
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			// wait until the Build finish the validation
@@ -149,7 +149,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = ptr.To[string]("foobar")
+			buildObject.Spec.Source.URL = pointer.String("foobar")
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -176,7 +176,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "false"
-			buildObject.Spec.Source.URL = ptr.To[string]("foobar")
+			buildObject.Spec.Source.URL = pointer.String("foobar")
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			// wait until the Build finish the validation
@@ -202,7 +202,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = ptr.To[string]("https://github.yourco.com/org/build-fake")
+			buildObject.Spec.Source.URL = pointer.String("https://github.yourco.com/org/build-fake")
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -228,7 +228,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = ptr.To[string]("https://github.yourco.com/org/build-fake")
+			buildObject.Spec.Source.URL = pointer.String("https://github.yourco.com/org/build-fake")
 			buildObject.Spec.Source.Credentials = &corev1.LocalObjectReference{Name: "foobar"}
 
 			sampleSecret := tb.Catalog.SecretWithAnnotation(buildObject.Spec.Source.Credentials.Name, buildObject.Namespace)
@@ -260,7 +260,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = ptr.To[string]("git@github.com:shipwright-io/build-fake.git")
+			buildObject.Spec.Source.URL = pointer.String("git@github.com:shipwright-io/build-fake.git")
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -288,7 +288,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source.URL = ptr.To[string]("ssh://github.com/shipwright-io/build-fake.git")
+			buildObject.Spec.Source.URL = pointer.String("ssh://github.com/shipwright-io/build-fake.git")
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 

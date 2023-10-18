@@ -17,7 +17,7 @@ import (
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/ptr"
+	"k8s.io/utils/pointer"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
@@ -79,7 +79,7 @@ func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
 	if b.build.Spec.Source.GitSource == nil {
 		b.build.Spec.Source.GitSource = &buildv1beta1.Git{}
 	}
-	b.build.Spec.Source.GitSource.URL = ptr.To[string](repository)
+	b.build.Spec.Source.GitSource.URL = pointer.String(repository)
 	b.build.Spec.Source.OCIArtifact = nil
 	return b
 }
@@ -102,7 +102,7 @@ func (b *buildPrototype) SourceBundlePrune(prune buildv1beta1.PruneOption) *buil
 }
 
 func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
-	b.build.Spec.Source.ContextDir = ptr.To[string](contextDir)
+	b.build.Spec.Source.ContextDir = pointer.String(contextDir)
 	return b
 }
 
