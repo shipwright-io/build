@@ -49,7 +49,8 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.11.0/release.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.12.0/release.yaml --server-side
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.12.0/hack/setup-webhook-cert.sh | bash
   ```
 
   To install the latest nightly release, run:
@@ -62,7 +63,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.11.0/sample-strategies.yaml
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.12.0/sample-strategies.yaml --server-side
   ```
 
   To install the latest nightly release, run:
@@ -169,6 +170,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version | Docs                           | Examples                    |
 | ------- | ------------------------------ | --------------------------- |
 | HEAD    | [Docs @ HEAD](docs/README.md) | [Examples @ HEAD](samples) |
+| [v0.12.0](https://github.com/shipwright-io/build/releases/tag/v0.12.0)    | [Docs @ v0.12.0](https://github.com/shipwright-io/build/tree/v0.12.0/docs) | [Examples @ v0.12.0](https://github.com/shipwright-io/build/tree/v0.12.0/samples) |
 | [v0.11.0](https://github.com/shipwright-io/build/releases/tag/v0.11.0)    | [Docs @ v0.11.0](https://github.com/shipwright-io/build/tree/v0.11.0/docs) | [Examples @ v0.11.0](https://github.com/shipwright-io/build/tree/v0.11.0/samples) |
 | [v0.10.0](https://github.com/shipwright-io/build/releases/tag/v0.10.0)    | [Docs @ v0.10.0](https://github.com/shipwright-io/build/tree/v0.10.0/docs) | [Examples @ v0.10.0](https://github.com/shipwright-io/build/tree/v0.10.0/samples) |
 | [v0.9.0](https://github.com/shipwright-io/build/releases/tag/v0.9.0)    | [Docs @ v0.9.0](https://github.com/shipwright-io/build/tree/v0.9.0/docs) | [Examples @ v0.9.0](https://github.com/shipwright-io/build/tree/v0.9.0/samples) |
