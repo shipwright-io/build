@@ -157,7 +157,7 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1beta1.BuildRun) {
 	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
 	Expect(err).ToNot(HaveOccurred())
 
-	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
+	Expect(testBuildRun.Status.Source).ToNot(BeNil())
 
 	// Only run the TaskRun checks if Tekton objects can be accessed
 	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
@@ -167,11 +167,11 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1beta1.BuildRun) {
 		for _, result := range tr.Status.TaskRunResults {
 			switch result.Name {
 			case "shp-source-default-commit-sha":
-				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].Git.CommitSha))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Source.Git.CommitSha))
 			case "shp-source-default-commit-author":
-				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].Git.CommitAuthor))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Source.Git.CommitAuthor))
 			case "shp-source-default-branch-name":
-				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].Git.BranchName))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Source.Git.BranchName))
 			case "shp-image-digest":
 				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Output.Digest))
 			case "shp-image-size":
@@ -187,7 +187,7 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1beta1.BuildRun
 	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
 	Expect(err).ToNot(HaveOccurred())
 
-	Expect(len(testBuildRun.Status.Sources)).To(Equal(1))
+	Expect(testBuildRun.Status.Source).ToNot(BeNil())
 
 	// Only run the TaskRun checks if Tekton objects can be accessed
 	if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
@@ -197,7 +197,7 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1beta1.BuildRun
 		for _, result := range tr.Status.TaskRunResults {
 			switch result.Name {
 			case "shp-source-default-image-digest":
-				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Sources[0].OciArtifact.Digest))
+				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Source.OciArtifact.Digest))
 			case "shp-image-digest":
 				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Output.Digest))
 			case "shp-image-size":

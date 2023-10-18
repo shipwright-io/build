@@ -137,14 +137,12 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 
 	src.Spec.ConvertFrom(&alphaBuildRun.Spec)
 
-	sources := []SourceResult{}
+	var sourceStatus *SourceResult
 	for _, s := range alphaBuildRun.Status.Sources {
-		sr := SourceResult{
-			Name:        s.Name,
+		sourceStatus = &SourceResult{
 			Git:         (*GitSourceResult)(s.Git),
 			OciArtifact: (*OciArtifactSourceResult)(s.Bundle),
 		}
-		sources = append(sources, sr)
 	}
 
 	conditions := []Condition{}
@@ -169,7 +167,7 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 	}
 
 	src.Status = BuildRunStatus{
-		Sources:        sources,
+		Source:         sourceStatus,
 		Output:         (*Output)(alphaBuildRun.Status.Output),
 		Conditions:     conditions,
 		TaskRunName:    alphaBuildRun.Status.LatestTaskRunRef,

@@ -110,8 +110,6 @@ const (
 
 // SourceResult holds the results emitted from the different sources
 type SourceResult struct {
-	// Name is the name of source
-	Name string `json:"name"`
 
 	// Git holds the results emitted from the
 	// source step of type git
@@ -162,11 +160,10 @@ type Output struct {
 
 // BuildRunStatus defines the observed state of BuildRun
 type BuildRunStatus struct {
-	// Sources holds the results emitted from the step definition
-	// of different sources
+	// Source holds the results emitted from the source step
 	//
 	// +optional
-	Sources []SourceResult `json:"sources,omitempty"`
+	Source *SourceResult `json:"source,omitempty"`
 
 	// Output holds the results emitted from step definition of an output
 	//
