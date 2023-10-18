@@ -12,6 +12,7 @@ spec:
     - name: package-directory
       value: ./cmd/shipwright-build-controller
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/build
   strategy:

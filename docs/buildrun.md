@@ -100,6 +100,7 @@ spec:
   build:
     spec:
       source:
+        type: Git
         git:
           url: https://github.com/shipwright-io/sample-go.git
         contextDir: source-build

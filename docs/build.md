@@ -118,6 +118,7 @@ metadata:
     build.shipwright.io/verify.repository: "true"
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
@@ -134,6 +135,7 @@ metadata:
   name: buildpack-nodejs-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/sclorg/nodejs-ex
       cloneSecret: source-repository-credentials
@@ -148,6 +150,7 @@ metadata:
   name: buildah-custom-context-dockerfile
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/SaschaSchwarze0/npm-simple
     contextDir: renamed
@@ -162,6 +165,7 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
       revision: v0.1.0
@@ -177,6 +181,7 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
@@ -197,6 +202,7 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
@@ -217,6 +223,7 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
@@ -429,7 +436,9 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
-    url: https://github.com/shipwright-io/sample-go
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
   strategy:
     name: buildah
@@ -448,7 +457,9 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
-    url: https://github.com/shipwright-io/sample-nodejs
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-nodejs
     contextDir: source-build/
   strategy:
     name: source-to-image
@@ -473,6 +484,7 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-nodejs
     contextDir: source-build/
@@ -518,6 +530,7 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-nodejs
     contextDir: source-build/
@@ -571,6 +584,7 @@ An example of a user using both TTL and Limit retention fields. In case of such 
     name: build-retention-ttl
   spec:
     source:
+      type: Git
       git:
         url: "https://github.com/shipwright-io/sample-go"
       contextDir: docker-build
@@ -604,6 +618,7 @@ metadata:
   name: build-name
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/example/url
   strategy:
@@ -633,6 +648,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
       cloneSecret: webhook-secret

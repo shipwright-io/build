@@ -13,6 +13,7 @@ metadata:
   name: buildah
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -39,6 +40,7 @@ metadata:
   name: buildah
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -59,6 +61,7 @@ metadata:
   namespace: build-test
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -77,6 +80,7 @@ metadata:
   name: buildah
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -103,6 +107,7 @@ metadata:
   name: buildah
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -132,6 +137,7 @@ metadata:
   namespace: build-test
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
     contextDir: docker-build
@@ -159,6 +165,7 @@ metadata:
   namespace: build-test
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -174,6 +181,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -201,6 +209,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
     contextDir: docker-build
@@ -217,6 +226,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -233,6 +243,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -250,6 +261,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
       cloneSecret: source-secret
@@ -267,6 +279,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -286,6 +299,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
       cloneSecret: source-secret
@@ -306,6 +320,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -322,6 +337,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -342,6 +358,7 @@ metadata:
     build.shipwright.io/verify.repository: "true"
 spec:
   source:
+    type: Git
     git:
       url: "https://github.foobar.com/sbose78/taxi"
   strategy:
@@ -385,6 +402,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   strategy:
@@ -401,6 +419,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -418,6 +437,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -437,6 +457,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -464,6 +485,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -484,6 +506,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -501,6 +524,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -519,6 +543,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -536,6 +561,7 @@ apiVersion: shipwright.io/v1beta1
 kind: Build
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
@@ -556,6 +582,7 @@ metadata:
   name: build-retention-ttl
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
     contextDir: docker-build
@@ -577,6 +604,7 @@ metadata:
   name: build-retention-limit
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
     contextDir: docker-build
@@ -598,7 +626,9 @@ metadata:
   name: build-retention-limit
 spec:
   source:
-    url: "https://github.com/shipwright-io/sample-go"
+    type: Git
+    git:
+      url: "https://github.com/shipwright-io/sample-go"
     contextDir: docker-build
   strategy:
     kind: ClusterBuildStrategy
@@ -618,6 +648,7 @@ metadata:
   name: build-retention-ttl
 spec:
   source:
+    type: Git
     git:
       url: "https://github.com/shipwright-io/sample-go"
     contextDir: docker-build
