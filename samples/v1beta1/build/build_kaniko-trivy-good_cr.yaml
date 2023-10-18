@@ -5,6 +5,7 @@ metadata:
   name: kaniko-trivy-good-build
 spec:
   source:
+    type: Git
     git: 
       url: https://github.com/shipwright-io/sample-scanning
   strategy:
