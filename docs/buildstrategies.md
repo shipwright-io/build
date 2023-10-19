@@ -619,7 +619,7 @@ metadata:
 spec:
   steps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.16.0
+      image: gcr.io/kaniko-project/executor:v1.17.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
@@ -668,7 +668,7 @@ metadata:
 spec:
   steps:
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.16.0
+      image: gcr.io/kaniko-project/executor:v1.17.0
       workingDir: $(params.shp-source-root)
       securityContext:
         runAsUser: 0
