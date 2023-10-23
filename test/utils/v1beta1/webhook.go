@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/shipwright-io/build/pkg/webhook/conversion"
+	"github.com/shipwright-io/build/test/utils"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -51,20 +52,8 @@ func StartBuildWebhook() *http.Server {
 		}
 	}()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			IdleConnTimeout:       5 * time.Second,
-			ResponseHeaderTimeout: 5 * time.Second,
-			// #nosec:G402 test code
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-			TLSHandshakeTimeout: 5 * time.Second,
-		},
-	}
-
 	gomega.Eventually(func() int {
-		r, err := client.Get("https://localhost:30443/health")
+		r, err := utils.TestClient().Get("https://localhost:30443/health")
 		if err != nil {
 			return 0
 		}
@@ -81,20 +70,8 @@ func StopBuildWebhook(webhookServer *http.Server) {
 	err := webhookServer.Close()
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			IdleConnTimeout:       5 * time.Second,
-			ResponseHeaderTimeout: 5 * time.Second,
-			// #nosec:G402 test code
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-			TLSHandshakeTimeout: 5 * time.Second,
-		},
-	}
-
 	gomega.Eventually(func() int {
-		r, err := client.Get("https://localhost:30443/health")
+		r, err := utils.TestClient().Get("https://localhost:30443/health")
 		if err != nil {
 			return 0
 		}
