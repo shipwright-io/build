@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/docker/cli v24.0.6+incompatible
-	github.com/go-git/go-git/v5 v5.9.0
+	github.com/go-git/go-git/v5 v5.10.0
 	github.com/go-logr/logr v1.2.4
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-containerregistry v0.16.1
