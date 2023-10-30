@@ -6,5 +6,7 @@ metadata:
 spec:
   build:
     name: buildah-local-source-upload
-  sources:
-    - name: local-copy
+  source:
+    local:
+      name: local-copy
+    type: Local
