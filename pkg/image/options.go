@@ -52,17 +52,15 @@ func GetOptions(ctx context.Context, imageName name.Reference, insecure bool, do
 	options = append(options, remote.WithContext(ctx))
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: false,
+	}
 
 	if insecure {
-		// #nosec:G402 explicitly requested by user to use insecure registry
-		transport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-	} else {
-		transport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: false,
-			MinVersion:         tls.VersionTLS12,
-		}
+		// #nosec:G402 insecure is explicitly requested by user, make sure to skip verification and reset empty defaults
+		transport.TLSClientConfig.InsecureSkipVerify = insecure
+		transport.TLSClientConfig.MinVersion = 0
 	}
 
 	// find a Docker config.json

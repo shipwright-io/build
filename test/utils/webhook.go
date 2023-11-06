@@ -16,6 +16,24 @@ import (
 	"github.com/onsi/gomega"
 )
 
+func TestClient() *http.Client {
+	transport := &http.Transport{
+		IdleConnTimeout:       5 * time.Second,
+		ResponseHeaderTimeout: 5 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		},
+	}
+
+	// #nosec:G402 test code
+	transport.TLSClientConfig.InsecureSkipVerify = true
+
+	return &http.Client{
+		Transport: transport,
+	}
+}
+
 func StartBuildWebhook() *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/convert", conversion.CRDConvertHandler(context.Background()))
@@ -51,20 +69,8 @@ func StartBuildWebhook() *http.Server {
 		}
 	}()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			IdleConnTimeout:       5 * time.Second,
-			ResponseHeaderTimeout: 5 * time.Second,
-			// #nosec:G402 test code
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-			TLSHandshakeTimeout: 5 * time.Second,
-		},
-	}
-
 	gomega.Eventually(func() int {
-		r, err := client.Get("https://localhost:30443/health")
+		r, err := TestClient().Get("https://localhost:30443/health")
 		if err != nil {
 			return 0
 		}
@@ -81,20 +87,8 @@ func StopBuildWebhook(webhookServer *http.Server) {
 	err := webhookServer.Close()
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			IdleConnTimeout:       5 * time.Second,
-			ResponseHeaderTimeout: 5 * time.Second,
-			// #nosec:G402 test code
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-			TLSHandshakeTimeout: 5 * time.Second,
-		},
-	}
-
 	gomega.Eventually(func() int {
-		r, err := client.Get("https://localhost:30443/health")
+		r, err := TestClient().Get("https://localhost:30443/health")
 		if err != nil {
 			return 0
 		}
