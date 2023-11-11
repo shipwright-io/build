@@ -421,7 +421,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			namespace = "build-test"
 			contextDir = "docker-build"
 			builderImage = &buildv1alpha1.Image{
-				Image: "heroku/buildpacks:18",
+				Image: "heroku/builder:22",
 			}
 			outputPath = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
 			outputPathBuildRun = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2"

@@ -148,7 +148,7 @@ spec:
   - name: dockerfile
     value: Dockerfile
   - name: builder-image
-    value: heroku/buildpacks:18
+    value: heroku/builder:22
   output:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
   timeout: 30s
@@ -284,7 +284,7 @@ spec:
       url: "https://github.com/shipwright-io/sample-go"
   paramValues:
   - name: builder-image
-    value: heroku/buildpacks:18
+    value: heroku/builder:22
   strategy:
     kind: ClusterBuildStrategy
   output:
@@ -305,7 +305,7 @@ spec:
       cloneSecret: source-secret
   paramValues:
   - name: builder-image
-    value: heroku/buildpacks:18
+    value: heroku/builder:22
   strategy:
     kind: ClusterBuildStrategy
   output:

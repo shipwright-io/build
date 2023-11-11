@@ -99,25 +99,29 @@ kubectl apply -f samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_str
 
 ## Buildpacks v3
 
-The [buildpacks-v3][buildpacks] BuildStrategy/ClusterBuildStrategy uses a Cloud Native Builder ([CNB][cnb]) container image, and is able to implement [lifecycle commands][lifecycle]. The following CNB images are the most common options:
-
-- [`heroku/buildpacks:18`][hubheroku]
-- [`cloudfoundry/cnb:bionic`][hubcloudfoundry]
-- [`docker.io/paketobuildpacks/builder:full`](https://hub.docker.com/r/paketobuildpacks/builder/tags)
+The [buildpacks-v3][buildpacks] BuildStrategy/ClusterBuildStrategy uses a Cloud Native Builder ([CNB][cnb]) container image, and is able to implement [lifecycle commands][lifecycle].
 
 ### Installing Buildpacks v3 Strategy
 
 You can install the `BuildStrategy` in your namespace or install the `ClusterBuildStrategy` at cluster scope so that it can be shared across namespaces.
 
-To install the cluster scope strategy, use (below is a heroku example, you can also use paketo sample):
+To install the cluster scope strategy, you can chose between the Paketo and Heroku buildpacks family:
 
 ```sh
+# Paketo
+kubectl apply -f samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml
+
+# Heroku
 kubectl apply -f samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml
 ```
 
-To install the namespaced scope strategy, use:
+To install the namespaced scope strategy, you can chose between the Paketo and Heroku buildpacks family:
 
 ```sh
+# Paketo
+kubectl apply -f samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml
+
+# Heroku
 kubectl apply -f samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml
 ```
 

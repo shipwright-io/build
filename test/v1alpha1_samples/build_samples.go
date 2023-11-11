@@ -126,7 +126,7 @@ spec:
     kind: ClusterBuildStrategy
   dockerfile: Dockerfile
   builder:
-    image: heroku/buildpacks:18
+    image: heroku/builder:22
   output:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
   timeout: 30s
@@ -250,7 +250,7 @@ spec:
   source:
     url: "https://github.com/shipwright-io/sample-go"
   builder:
-    image: heroku/buildpacks:18
+    image: heroku/builder:22
     credentials:
       name: builder-secret
   strategy:
@@ -271,7 +271,7 @@ spec:
     credentials:
       name: source-secret
   builder:
-    image: heroku/buildpacks:18
+    image: heroku/builder:22
     credentials:
       name: builder-secret
   strategy:
