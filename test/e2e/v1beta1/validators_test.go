@@ -164,7 +164,7 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1beta1.BuildRun) {
 		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
 		Expect(err).ToNot(HaveOccurred())
 
-		for _, result := range tr.Status.TaskRunResults {
+		for _, result := range tr.Status.Results {
 			switch result.Name {
 			case "shp-source-default-commit-sha":
 				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Source.Git.CommitSha))
@@ -194,7 +194,7 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1beta1.BuildRun
 		tr, err := testBuild.GetTaskRunFromBuildRun(testBuildRun.Name)
 		Expect(err).ToNot(HaveOccurred())
 
-		for _, result := range tr.Status.TaskRunResults {
+		for _, result := range tr.Status.Results {
 			switch result.Name {
 			case "shp-source-default-image-digest":
 				Expect(result.Value.StringVal).To(Equal(testBuildRun.Status.Source.OciArtifact.Digest))

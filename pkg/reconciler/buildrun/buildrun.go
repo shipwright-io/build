@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/apis"
 
 	corev1 "k8s.io/api/core/v1"
@@ -81,7 +81,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 	// so we can no longer assume that a build run event will not come in after the build run has a task run ref in its status
 	buildRun = &buildv1alpha1.BuildRun{}
 	getBuildRunErr := r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
-	lastTaskRun := &v1beta1.TaskRun{}
+	lastTaskRun := &pipelineapi.TaskRun{}
 	getTaskRunErr := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun)
 
 	if getBuildRunErr != nil && getTaskRunErr != nil {
@@ -372,7 +372,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			ctxlog.Info(ctx, "buildRun marked for cancellation, patching task run", namespace, request.Namespace, name, request.Name)
 			// patch tekton taskrun a la tkn to start tekton's cancelling logic
 			trueParam := true
-			if err := r.patchTaskRun(ctx, lastTaskRun, "replace", "/spec/status", v1beta1.TaskRunSpecStatusCancelled, metav1.PatchOptions{Force: &trueParam}); err != nil {
+			if err := r.patchTaskRun(ctx, lastTaskRun, "replace", "/spec/status", pipelineapi.TaskRunSpecStatusCancelled, metav1.PatchOptions{Force: &trueParam}); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
@@ -386,9 +386,9 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			return reconcile.Result{}, nil
 		}
 
-		if len(lastTaskRun.Status.TaskRunResults) > 0 {
+		if len(lastTaskRun.Status.Results) > 0 {
 			ctxlog.Info(ctx, "surfacing taskRun results to BuildRun status", namespace, request.Namespace, name, request.Name)
-			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, lastTaskRun.Status.TaskRunResults, request)
+			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, lastTaskRun.Status.Results, request)
 		}
 
 		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
@@ -550,9 +550,9 @@ func (r *ReconcileBuildRun) getReferencedStrategy(ctx context.Context, build *bu
 	return strategy, err
 }
 
-func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, serviceAccount *corev1.ServiceAccount, strategy buildv1alpha1.BuilderStrategy, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*v1beta1.TaskRun, error) {
+func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, serviceAccount *corev1.ServiceAccount, strategy buildv1alpha1.BuilderStrategy, build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) (*pipelineapi.TaskRun, error) {
 	var (
-		generatedTaskRun *v1beta1.TaskRun
+		generatedTaskRun *pipelineapi.TaskRun
 	)
 
 	generatedTaskRun, err := resources.GenerateTaskRun(r.config, build, buildRun, serviceAccount.Name, strategy)
@@ -582,7 +582,7 @@ type patchStringValue struct {
 	Value string `json:"value"`
 }
 
-func (r *ReconcileBuildRun) patchTaskRun(ctx context.Context, tr *v1beta1.TaskRun, op, path, value string, opts metav1.PatchOptions) error {
+func (r *ReconcileBuildRun) patchTaskRun(ctx context.Context, tr *pipelineapi.TaskRun, op, path, value string, opts metav1.PatchOptions) error {
 	payload := []patchStringValue{{
 		Op:    op,
 		Path:  path,

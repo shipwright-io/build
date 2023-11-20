@@ -13,7 +13,7 @@ import (
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	test "github.com/shipwright-io/build/test/v1alpha1_samples"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -117,7 +117,7 @@ var _ = Describe("Conditions", func() {
 			client *fakes.FakeClient
 			ctl    test.Catalog
 			br     *build.BuildRun
-			tr     *v1beta1.TaskRun
+			tr     *pipelineapi.TaskRun
 		)
 
 		tr = ctl.TaskRunWithStatus("foo", "bar")

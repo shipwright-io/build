@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +46,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 		ctl                                                    test.Catalog
 		buildSample                                            *build.Build
 		buildRunSample                                         *build.BuildRun
-		taskRunSample                                          *v1beta1.TaskRun
+		taskRunSample                                          *pipelineapi.TaskRun
 		statusWriter                                           *fakes.FakeStatusWriter
 		taskRunName, buildRunName, buildName, strategyName, ns string
 	)
@@ -71,7 +71,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 		case *build.BuildRun:
 			buildRunSample.DeepCopyInto(object)
 			return nil
-		case *v1beta1.TaskRun:
+		case *pipelineapi.TaskRun:
 			taskRunSample.DeepCopyInto(object)
 			return nil
 		}
@@ -378,7 +378,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusWriter.UpdateCalls(stubUpdateCalls)
 				stubPatchCalls := func(_ context.Context, object crc.Object, patch crc.Patch, opts ...crc.PatchOption) error {
 					switch v := object.(type) {
-					case *v1beta1.TaskRun:
+					case *pipelineapi.TaskRun:
 						if v.Name == taskRunSample.Name {
 							cancelPatchCalled = true
 						}
@@ -394,11 +394,11 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 				// actually set value the patch would have set (but we overrode above)
 				// for next call
-				taskRunSample.Spec.Status = v1beta1.TaskRunSpecStatusCancelled
+				taskRunSample.Spec.Status = pipelineapi.TaskRunSpecStatusCancelled
 				taskRunSample.Status.Conditions = knativev1.Conditions{
 					{
 						Type:   knativeapi.ConditionSucceeded,
-						Reason: string(v1beta1.TaskRunReasonCancelled),
+						Reason: string(pipelineapi.TaskRunReasonCancelled),
 						Status: corev1.ConditionFalse,
 					},
 				}
@@ -463,15 +463,15 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 			It("does not break the reconcile when a failed taskrun has a pod with no failed container", func() {
 				buildRunSample = ctl.BuildRunWithBuildSnapshot(buildRunName, buildName)
-				taskRunSample = &v1beta1.TaskRun{
+				taskRunSample = &pipelineapi.TaskRun{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      taskRunName,
 						Namespace: ns,
 						Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 					},
-					Spec: v1beta1.TaskRunSpec{},
-					Status: v1beta1.TaskRunStatus{
-						TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+					Spec: pipelineapi.TaskRunSpec{},
+					Status: pipelineapi.TaskRunStatus{
+						TaskRunStatusFields: pipelineapi.TaskRunStatusFields{
 							PodName: "foobar",
 							CompletionTime: &metav1.Time{
 								Time: time.Now(),
@@ -484,7 +484,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 							Conditions: knativev1.Conditions{
 								{
 									Type:    knativeapi.ConditionSucceeded,
-									Reason:  string(v1beta1.TaskRunReasonFailed),
+									Reason:  string(pipelineapi.TaskRunReasonFailed),
 									Status:  corev1.ConditionFalse,
 									Message: "some message",
 								},
@@ -973,7 +973,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub the create calls for a TaskRun
 				client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
-					case *v1beta1.TaskRun:
+					case *pipelineapi.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
 					}
 					return nil
@@ -1002,7 +1002,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub the create calls for a TaskRun
 				client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
-					case *v1beta1.TaskRun:
+					case *pipelineapi.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
 					}
 					return nil
@@ -1085,7 +1085,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// Stub the create calls for a TaskRun
 				client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
 					switch object := object.(type) {
-					case *v1beta1.TaskRun:
+					case *pipelineapi.TaskRun:
 						ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
 					}
 					return nil
@@ -1294,7 +1294,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					var taskRunCreates int
 					client.CreateCalls(func(_ context.Context, o crc.Object, _ ...crc.CreateOption) error {
 						switch o.(type) {
-						case *v1beta1.TaskRun:
+						case *pipelineapi.TaskRun:
 							taskRunCreates++
 						}
 
@@ -1466,7 +1466,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					var taskRunCreates int
 					client.CreateCalls(func(_ context.Context, o crc.Object, _ ...crc.CreateOption) error {
 						switch taskRun := o.(type) {
-						case *v1beta1.TaskRun:
+						case *pipelineapi.TaskRun:
 							taskRunCreates++
 
 							Expect(taskRun.Labels).ToNot(HaveKey(build.LabelBuild), "no build name label is suppose to be set")

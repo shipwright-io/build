@@ -12,7 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -48,7 +48,7 @@ var _ = Describe("GenerateTaskrun", func() {
 	Describe("Generate the TaskSpec", func() {
 		var (
 			expectedCommandOrArg []string
-			got                  *v1beta1.TaskSpec
+			got                  *pipelineapi.TaskSpec
 			err                  error
 		)
 		BeforeEach(func() {
@@ -123,11 +123,11 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure resource replacements happen for the first step", func() {
-				Expect(got.Steps[1].Resources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
+				Expect(got.Steps[1].ComputeResources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
 			})
 
 			It("should ensure resource replacements happen for the second step", func() {
-				Expect(got.Steps[2].Resources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
+				Expect(got.Steps[2].ComputeResources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
 			})
 
 			It("should ensure arg replacements happen when needed", func() {
@@ -403,7 +403,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			k8sDuration30s                                                            *metav1.Duration
 			k8sDuration1m                                                             *metav1.Duration
 			namespace, contextDir, outputPath, outputPathBuildRun, serviceAccountName string
-			got                                                                       *v1beta1.TaskRun
+			got                                                                       *pipelineapi.TaskRun
 			err                                                                       error
 		)
 		BeforeEach(func() {
@@ -462,11 +462,6 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
 			})
 
-			It("should ensure generated TaskRun has no resources", func() {
-				//lint:ignore SA1019 we want to verify that we do not set something that is not used
-				Expect(got.Spec.Resources).To(BeNil()) // nolint:staticcheck
-			})
-
 			It("should ensure resource replacements happen when needed", func() {
 				expectedResourceOrArg := corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -478,7 +473,7 @@ var _ = Describe("GenerateTaskrun", func() {
 						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
 				}
-				Expect(got.Spec.TaskSpec.Steps[1].Resources).To(Equal(expectedResourceOrArg))
+				Expect(got.Spec.TaskSpec.Steps[1].ComputeResources).To(Equal(expectedResourceOrArg))
 			})
 
 			It("should have no timeout set", func() {
@@ -580,7 +575,7 @@ var _ = Describe("GenerateTaskrun", func() {
 						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
 				}
-				Expect(got.Spec.TaskSpec.Steps[1].Resources).To(Equal(expectedResourceOrArg))
+				Expect(got.Spec.TaskSpec.Steps[1].ComputeResources).To(Equal(expectedResourceOrArg))
 			})
 
 			It("should have the timeout set correctly", func() {

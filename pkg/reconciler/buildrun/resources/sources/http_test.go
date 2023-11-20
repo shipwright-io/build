@@ -12,7 +12,7 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 var _ = Describe("HTTP", func() {
@@ -20,10 +20,10 @@ var _ = Describe("HTTP", func() {
 	cfg := config.NewDefaultConfig()
 
 	Context("when a TaskSpec does not contain an step", func() {
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{}
+			taskSpec = &pipelineapi.TaskSpec{}
 		})
 
 		It("adds the first step", func() {
@@ -41,11 +41,11 @@ var _ = Describe("HTTP", func() {
 	})
 
 	Context("when a TaskSpec already contains the http step", func() {
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{
-				Steps: []tektonv1beta1.Step{
+			taskSpec = &pipelineapi.TaskSpec{
+				Steps: []pipelineapi.Step{
 					{
 						Name:       sources.RemoteArtifactsContainerName,
 						Image:      cfg.RemoteArtifactsContainerImage,
@@ -79,11 +79,11 @@ var _ = Describe("HTTP", func() {
 	})
 
 	Context("when a TaskSpec already another source step step", func() {
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{
-				Steps: []tektonv1beta1.Step{
+			taskSpec = &pipelineapi.TaskSpec{
+				Steps: []pipelineapi.Step{
 					{
 						Name: "source-something",
 					},

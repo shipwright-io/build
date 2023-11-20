@@ -7,7 +7,7 @@ package controller
 import (
 	"context"
 
-	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -39,7 +39,7 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 
 	ctxlog.Info(ctx, "Registering Components.")
 
-	if err := pipelinev1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := pipelineapi.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, err
 	}
 

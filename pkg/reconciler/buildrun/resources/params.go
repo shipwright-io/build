@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 const (
@@ -90,17 +90,17 @@ func FindParamValueByName(paramValues []buildv1alpha1.ParamValue, name string) *
 }
 
 // HandleTaskRunParam makes the necessary changes to a TaskRun for a parameter
-func HandleTaskRunParam(taskRun *pipeline.TaskRun, parameterDefinition *buildv1alpha1.Parameter, paramValue buildv1alpha1.ParamValue) error {
-	taskRunParam := pipeline.Param{
+func HandleTaskRunParam(taskRun *pipelineapi.TaskRun, parameterDefinition *buildv1alpha1.Parameter, paramValue buildv1alpha1.ParamValue) error {
+	taskRunParam := pipelineapi.Param{
 		Name:  paramValue.Name,
-		Value: pipeline.ParamValue{},
+		Value: pipelineapi.ParamValue{},
 	}
 
 	switch parameterDefinition.Type {
 	case "": // string is default
 		fallthrough
 	case buildv1alpha1.ParameterTypeString:
-		taskRunParam.Value.Type = pipeline.ParamTypeString
+		taskRunParam.Value.Type = pipelineapi.ParamTypeString
 
 		switch {
 		case paramValue.SingleValue == nil && parameterDefinition.Default == nil:
@@ -146,7 +146,7 @@ func HandleTaskRunParam(taskRun *pipeline.TaskRun, parameterDefinition *buildv1a
 		}
 
 	case buildv1alpha1.ParameterTypeArray:
-		taskRunParam.Value.Type = pipeline.ParamTypeArray
+		taskRunParam.Value.Type = pipelineapi.ParamTypeArray
 
 		switch {
 		case paramValue.Values == nil && parameterDefinition.Defaults == nil:
@@ -225,7 +225,7 @@ func generateEnvVarName(prefix string) (string, error) {
 
 // addConfigMapEnvVar modifies all steps which are referencing a parameter name in their command, args, or environment variable values,
 // to contain a mapped environment variable for the ConfigMap key. It returns the name of the environment variable name.
-func addConfigMapEnvVar(taskRun *pipeline.TaskRun, paramName string, configMapName string, configMapKey string) (string, error) {
+func addConfigMapEnvVar(taskRun *pipelineapi.TaskRun, paramName string, configMapName string, configMapKey string) (string, error) {
 	envVarName := ""
 
 	// In this first loop, we check whether any step already references the same ConfigMap key. This can
@@ -287,7 +287,7 @@ stepModifyLoop:
 
 // addSecretEnvVar modifies all steps which are referencing a parameter name in their command, args, or environment variable values,
 // to contain a mapped environment variable for the Secret key. It returns the name of the environment variable name.
-func addSecretEnvVar(taskRun *pipeline.TaskRun, paramName string, secretName string, secretKey string) (string, error) {
+func addSecretEnvVar(taskRun *pipelineapi.TaskRun, paramName string, secretName string, secretKey string) (string, error) {
 	envVarName := ""
 
 	// In this first loop, we check whether any step already references the same Secret key. This can
@@ -348,7 +348,7 @@ stepModifyLoop:
 }
 
 // isStepReferencingParameter checks if a step is referencing a parameter in its command, args, or environment variable values
-func isStepReferencingParameter(step *pipeline.Step, paramName string) bool {
+func isStepReferencingParameter(step *pipelineapi.Step, paramName string) bool {
 	searchStrings := []string{
 		// the trailing ) is intentionally omitted because of arrays
 		// Tekton reference: https://github.com/tektoncd/pipeline/blob/main/docs/tasks.md#using-variable-substitution

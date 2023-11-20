@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -20,6 +18,7 @@ import (
 	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 	"github.com/shipwright-io/build/pkg/volumes"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 const (
@@ -68,14 +67,14 @@ func GenerateTaskSpec(
 	buildSteps []buildv1alpha1.BuildStep,
 	parameterDefinitions []buildv1alpha1.Parameter,
 	buildStrategyVolumes []buildv1alpha1.BuildStrategyVolume,
-) (*v1beta1.TaskSpec, error) {
-	generatedTaskSpec := v1beta1.TaskSpec{
-		Params: []v1beta1.ParamSpec{
+) (*pipelineapi.TaskSpec, error) {
+	generatedTaskSpec := pipelineapi.TaskSpec{
+		Params: []pipelineapi.ParamSpec{
 			{
 				Description: "Path to the Dockerfile",
 				Name:        inputParamDockerfile,
-				Default: &v1beta1.ParamValue{
-					Type:      v1beta1.ParamTypeString,
+				Default: &pipelineapi.ParamValue{
+					Type:      pipelineapi.ParamTypeString,
 					StringVal: "Dockerfile",
 				},
 			},
@@ -84,33 +83,33 @@ func GenerateTaskSpec(
 				// in the Build object
 				Description: "The root of the code",
 				Name:        inputParamContextDir,
-				Default: &v1beta1.ParamValue{
-					Type:      v1beta1.ParamTypeString,
+				Default: &pipelineapi.ParamValue{
+					Type:      pipelineapi.ParamTypeString,
 					StringVal: ".",
 				},
 			},
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 				Description: "The URL of the image that the build produces",
-				Type:        v1beta1.ParamTypeString,
+				Type:        pipelineapi.ParamTypeString,
 			},
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
 				Description: "A flag indicating that the output image is on an insecure container registry",
-				Type:        v1beta1.ParamTypeString,
+				Type:        pipelineapi.ParamTypeString,
 			},
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 				Description: "The context directory inside the source directory",
-				Type:        v1beta1.ParamTypeString,
+				Type:        pipelineapi.ParamTypeString,
 			},
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
 				Description: "The source directory",
-				Type:        v1beta1.ParamTypeString,
+				Type:        pipelineapi.ParamTypeString,
 			},
 		},
-		Workspaces: []v1beta1.WorkspaceDeclaration{
+		Workspaces: []pipelineapi.WorkspaceDeclaration{
 			// workspace for the source files
 			{
 				Name: workspaceSource,
@@ -121,11 +120,11 @@ func GenerateTaskSpec(
 	generatedTaskSpec.Results = append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
 
 	if build.Spec.Builder != nil {
-		InputBuilder := v1beta1.ParamSpec{
+		InputBuilder := pipelineapi.ParamSpec{
 			Description: "Image containing the build tools/logic",
 			Name:        inputParamBuilder,
-			Default: &v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Default: &pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: build.Spec.Builder.Image,
 			},
 		}
@@ -138,7 +137,7 @@ func GenerateTaskSpec(
 	// Add the strategy defined parameters into the Task spec
 	for _, parameterDefinition := range parameterDefinitions {
 
-		param := v1beta1.ParamSpec{
+		param := pipelineapi.ParamSpec{
 			Name:        parameterDefinition.Name,
 			Description: parameterDefinition.Description,
 		}
@@ -147,19 +146,19 @@ func GenerateTaskSpec(
 		case "": // string is default
 			fallthrough
 		case buildv1alpha1.ParameterTypeString:
-			param.Type = v1beta1.ParamTypeString
+			param.Type = pipelineapi.ParamTypeString
 			if parameterDefinition.Default != nil {
-				param.Default = &v1beta1.ParamValue{
-					Type:      v1beta1.ParamTypeString,
+				param.Default = &pipelineapi.ParamValue{
+					Type:      pipelineapi.ParamTypeString,
 					StringVal: *parameterDefinition.Default,
 				}
 			}
 
 		case buildv1alpha1.ParameterTypeArray:
-			param.Type = v1beta1.ParamTypeArray
+			param.Type = pipelineapi.ParamTypeArray
 			if parameterDefinition.Defaults != nil {
-				param.Default = &v1beta1.ParamValue{
-					Type:     v1beta1.ParamTypeArray,
+				param.Default = &pipelineapi.ParamValue{
+					Type:     pipelineapi.ParamTypeArray,
 					ArrayVal: *parameterDefinition.Defaults,
 				}
 			}
@@ -202,17 +201,17 @@ func GenerateTaskSpec(
 			return &generatedTaskSpec, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
 		}
 
-		step := v1beta1.Step{
-			Image:           taskImage,
-			ImagePullPolicy: containerValue.ImagePullPolicy,
-			Name:            containerValue.Name,
-			VolumeMounts:    containerValue.VolumeMounts,
-			Command:         taskCommand,
-			Args:            taskArgs,
-			SecurityContext: containerValue.SecurityContext,
-			WorkingDir:      containerValue.WorkingDir,
-			Resources:       containerValue.Resources,
-			Env:             stepEnv,
+		step := pipelineapi.Step{
+			Image:            taskImage,
+			ImagePullPolicy:  containerValue.ImagePullPolicy,
+			Name:             containerValue.Name,
+			VolumeMounts:     containerValue.VolumeMounts,
+			Command:          taskCommand,
+			Args:             taskArgs,
+			SecurityContext:  containerValue.SecurityContext,
+			WorkingDir:       containerValue.WorkingDir,
+			ComputeResources: containerValue.Resources,
+			Env:              stepEnv,
 		}
 
 		generatedTaskSpec.Steps = append(generatedTaskSpec.Steps, step)
@@ -244,7 +243,7 @@ func GenerateTaskRun(
 	buildRun *buildv1alpha1.BuildRun,
 	serviceAccountName string,
 	strategy buildv1alpha1.BuilderStrategy,
-) (*v1beta1.TaskRun, error) {
+) (*pipelineapi.TaskRun, error) {
 
 	// retrieve expected imageURL form build or buildRun
 	var image string
@@ -285,16 +284,16 @@ func GenerateTaskRun(
 		taskRunLabels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
 	}
 
-	expectedTaskRun := &v1beta1.TaskRun{
+	expectedTaskRun := &pipelineapi.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: buildRun.Name + "-",
 			Namespace:    buildRun.Namespace,
 			Labels:       taskRunLabels,
 		},
-		Spec: v1beta1.TaskRunSpec{
+		Spec: pipelineapi.TaskRunSpec{
 			ServiceAccountName: serviceAccountName,
 			TaskSpec:           taskSpec,
-			Workspaces: []v1beta1.WorkspaceBinding{
+			Workspaces: []pipelineapi.WorkspaceBinding{
 				// workspace for the source files
 				{
 					Name:     workspaceSource,
@@ -325,69 +324,69 @@ func GenerateTaskRun(
 
 	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
 
-	params := []v1beta1.Param{
+	params := []pipelineapi.Param{
 		{
 			// shp-output-image
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: image,
 			},
 		},
 		{
 			// shp-output-insecure
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: strconv.FormatBool(insecure),
 			},
 		},
 		{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: "/workspace/source",
 			},
 		},
 	}
 	if build.Spec.Builder != nil {
-		params = append(params, v1beta1.Param{
+		params = append(params, pipelineapi.Param{
 			Name: inputParamBuilder,
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: build.Spec.Builder.Image,
 			},
 		})
 	}
 	if build.Spec.Dockerfile != nil && *build.Spec.Dockerfile != "" {
-		params = append(params, v1beta1.Param{
+		params = append(params, pipelineapi.Param{
 			Name: inputParamDockerfile,
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: *build.Spec.Dockerfile,
 			},
 		})
 	}
 	if build.Spec.Source.ContextDir != nil {
-		params = append(params, v1beta1.Param{
+		params = append(params, pipelineapi.Param{
 			Name: inputParamContextDir,
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: *build.Spec.Source.ContextDir,
 			},
 		})
-		params = append(params, v1beta1.Param{
+		params = append(params, pipelineapi.Param{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: path.Join("/workspace/source", *build.Spec.Source.ContextDir),
 			},
 		})
 	} else {
-		params = append(params, v1beta1.Param{
+		params = append(params, pipelineapi.Param{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
-			Value: v1beta1.ParamValue{
-				Type:      v1beta1.ParamTypeString,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
 				StringVal: "/workspace/source",
 			},
 		})

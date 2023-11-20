@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
@@ -93,10 +92,10 @@ var (
 // can be set to use on the Build controllers
 type Config struct {
 	CtxTimeOut                       time.Duration
-	GitContainerTemplate             pipeline.Step
-	ImageProcessingContainerTemplate pipeline.Step
-	BundleContainerTemplate          pipeline.Step
-	WaiterContainerTemplate          pipeline.Step
+	GitContainerTemplate             Step
+	ImageProcessingContainerTemplate Step
+	BundleContainerTemplate          Step
+	WaiterContainerTemplate          Step
 	RemoteArtifactsContainerImage    string
 	TerminationLogPath               string
 	Prometheus                       PrometheusConfig
@@ -141,6 +140,17 @@ type KubeAPIOptions struct {
 	Burst int
 }
 
+type Step struct {
+	Args            []string                    `json:"args,omitempty"`
+	Command         []string                    `json:"command,omitempty"`
+	Env             []corev1.EnvVar             `json:"env,omitempty"`
+	Image           string                      `json:"image,omitempty"`
+	ImagePullPolicy corev1.PullPolicy           `json:"imagePullPolicy,omitempty"`
+	Resources       corev1.ResourceRequirements `json:"resources,omitempty"`
+	SecurityContext *corev1.SecurityContext     `json:"securityContext,omitempty"`
+	WorkingDir      string                      `json:"workingDir,omitempty"`
+}
+
 // NewDefaultConfig returns a new Config, with context timeout and default Kaniko image.
 func NewDefaultConfig() *Config {
 	return &Config{
@@ -149,7 +159,7 @@ func NewDefaultConfig() *Config {
 		TerminationLogPath:            terminationLogPathDefault,
 		GitRewriteRule:                false,
 
-		GitContainerTemplate: pipeline.Step{
+		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
 			Command: []string{
 				"/ko-app/git",
@@ -173,7 +183,7 @@ func NewDefaultConfig() *Config {
 			},
 		},
 
-		BundleContainerTemplate: pipeline.Step{
+		BundleContainerTemplate: Step{
 			Image: bundleDefaultImage,
 			Command: []string{
 				"/ko-app/bundle",
@@ -196,7 +206,8 @@ func NewDefaultConfig() *Config {
 				RunAsGroup: nonRoot,
 			},
 		},
-		ImageProcessingContainerTemplate: pipeline.Step{
+
+		ImageProcessingContainerTemplate: Step{
 			Image: imageProcessingDefaultImage,
 			Command: []string{
 				"/ko-app/image-processing",
@@ -228,7 +239,7 @@ func NewDefaultConfig() *Config {
 			},
 		},
 
-		WaiterContainerTemplate: pipeline.Step{
+		WaiterContainerTemplate: Step{
 			Image: waiterDefaultImage,
 			Command: []string{
 				"/ko-app/waiter",
@@ -298,7 +309,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if gitContainerTemplate := os.Getenv(gitContainerTemplateEnvVar); gitContainerTemplate != "" {
-		c.GitContainerTemplate = pipeline.Step{}
+		c.GitContainerTemplate = Step{}
 		if err := json.Unmarshal([]byte(gitContainerTemplate), &c.GitContainerTemplate); err != nil {
 			return err
 		}
@@ -313,7 +324,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if imageProcessingContainerTemplate := os.Getenv(imageProcessingContainerTemplateEnvVar); imageProcessingContainerTemplate != "" {
-		c.ImageProcessingContainerTemplate = pipeline.Step{}
+		c.ImageProcessingContainerTemplate = Step{}
 		if err := json.Unmarshal([]byte(imageProcessingContainerTemplate), &c.ImageProcessingContainerTemplate); err != nil {
 			return err
 		}
@@ -334,7 +345,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if bundleContainerTemplate := os.Getenv(bundleContainerTemplateEnvVar); bundleContainerTemplate != "" {
-		c.BundleContainerTemplate = pipeline.Step{}
+		c.BundleContainerTemplate = Step{}
 		if err := json.Unmarshal([]byte(bundleContainerTemplate), &c.BundleContainerTemplate); err != nil {
 			return err
 		}
@@ -349,7 +360,7 @@ func (c *Config) SetConfigFromEnv() error {
 	}
 
 	if waiterContainerTemplate := os.Getenv(waiterContainerTemplateEnvVar); waiterContainerTemplate != "" {
-		c.WaiterContainerTemplate = pipeline.Step{}
+		c.WaiterContainerTemplate = Step{}
 		if err := json.Unmarshal([]byte(waiterContainerTemplate), &c.WaiterContainerTemplate); err != nil {
 			return err
 		}

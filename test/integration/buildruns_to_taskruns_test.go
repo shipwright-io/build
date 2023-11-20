@@ -12,7 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
@@ -337,7 +337,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			tr.Spec.Status = "TaskRunCancelled"
 
-			_, err = tb.UpdateTaskRun(tr.Name, func(tr *v1beta1.TaskRun) {
+			_, err = tb.UpdateTaskRun(tr.Name, func(tr *pipelineapi.TaskRun) {
 				tr.Spec.Status = "TaskRunCancelled"
 			})
 			Expect(err).To(BeNil())

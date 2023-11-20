@@ -7,7 +7,7 @@ package buildrun
 import (
 	"context"
 
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/apis"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,8 +81,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 
 	predTaskRun := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			o := e.ObjectOld.(*v1beta1.TaskRun)
-			n := e.ObjectNew.(*v1beta1.TaskRun)
+			o := e.ObjectOld.(*pipelineapi.TaskRun)
+			n := e.ObjectNew.(*pipelineapi.TaskRun)
 
 			// Process an update event when the old TR resource is not yet started and the new TR resource got a
 			// condition of the type Succeeded
@@ -99,7 +99,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			return false
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			o := e.Object.(*v1beta1.TaskRun)
+			o := e.Object.(*pipelineapi.TaskRun)
 
 			// If the TaskRun was deleted before completion, then we reconcile to update the BuildRun to a Failed status
 			return o.Status.CompletionTime == nil
@@ -113,8 +113,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 
 	// enqueue Reconciles requests only for events where a TaskRun already exists and that is related
 	// to a BuildRun
-	return c.Watch(&source.Kind{Type: &v1beta1.TaskRun{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-		taskRun := o.(*v1beta1.TaskRun)
+	return c.Watch(&source.Kind{Type: &pipelineapi.TaskRun{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+		taskRun := o.(*pipelineapi.TaskRun)
 
 		// check if TaskRun is related to BuildRun
 		if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1alpha1.LabelBuildRun] == "" {

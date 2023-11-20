@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,18 +61,18 @@ func (t *TestBuild) LookupBuildRun(entity types.NamespacedName) (*buildv1beta1.B
 	return result.(*buildv1beta1.BuildRun), err
 }
 
-func (t *TestBuild) LookupTaskRun(entity types.NamespacedName) (*pipelinev1beta1.TaskRun, error) {
+func (t *TestBuild) LookupTaskRun(entity types.NamespacedName) (*pipelineapi.TaskRun, error) {
 	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return t.PipelineClientSet.
-			TektonV1beta1().
+			TektonV1().
 			TaskRuns(entity.Namespace).
 			Get(t.Context, entity.Name, metav1.GetOptions{})
 	})
 
-	return result.(*pipelinev1beta1.TaskRun), err
+	return result.(*pipelineapi.TaskRun), err
 }
 
-func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1beta1.BuildRun) (*pipelinev1beta1.TaskRun, error) {
+func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1beta1.BuildRun) (*pipelineapi.TaskRun, error) {
 	if buildRun == nil {
 		return nil, fmt.Errorf("no BuildRun specified to lookup TaskRun")
 	}
@@ -83,7 +83,7 @@ func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1beta1.BuildRun) 
 
 	tmp, err := lookupRuntimeObject(func() (runtime.Object, error) {
 		return t.PipelineClientSet.
-			TektonV1beta1().
+			TektonV1().
 			TaskRuns(buildRun.Namespace).
 			List(t.Context, metav1.ListOptions{
 				LabelSelector: labels.SelectorFromSet(
@@ -97,7 +97,7 @@ func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1beta1.BuildRun) 
 		return nil, err
 	}
 
-	var taskRunList = tmp.(*pipelinev1beta1.TaskRunList)
+	var taskRunList = tmp.(*pipelineapi.TaskRunList)
 	switch len(taskRunList.Items) {
 	case 0:
 		return nil, fmt.Errorf("no TaskRun found for BuildRun %s/%s", buildRun.Namespace, buildRun.Name)

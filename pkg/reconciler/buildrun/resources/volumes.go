@@ -7,7 +7,7 @@ package resources
 import (
 	"context"
 
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,7 +23,7 @@ func namespacedName(name, namespace string) types.NamespacedName {
 // CheckTaskRunVolumesExist tries to find some of the volumes referenced by the BuildRun with all the
 // overrides. If some secret or configmap does not exist in the namespace, function returns error
 // describing the missing resource
-func CheckTaskRunVolumesExist(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) error {
+func CheckTaskRunVolumesExist(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) error {
 	for _, volume := range taskRun.Spec.TaskSpec.Volumes {
 		var (
 			err  error

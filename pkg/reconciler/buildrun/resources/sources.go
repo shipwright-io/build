@@ -9,7 +9,7 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 const defaultSourceName = "default"
@@ -37,7 +37,7 @@ func isLocalCopyBuildSource(
 // alternatively, configures the Task steps to use bundle and "git clone".
 func AmendTaskSpecWithSources(
 	cfg *config.Config,
-	taskSpec *pipeline.TaskSpec,
+	taskSpec *pipelineapi.TaskSpec,
 	build *buildv1alpha1.Build,
 	buildRun *buildv1alpha1.BuildRun,
 ) {
@@ -62,7 +62,7 @@ func AmendTaskSpecWithSources(
 	}
 }
 
-func updateBuildRunStatusWithSourceResult(buildrun *buildv1alpha1.BuildRun, results []pipeline.TaskRunResult) {
+func updateBuildRunStatusWithSourceResult(buildrun *buildv1alpha1.BuildRun, results []pipelineapi.TaskRunResult) {
 	buildSpec := buildrun.Status.BuildSpec
 
 	switch {

@@ -10,7 +10,7 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	core "k8s.io/api/core/v1"
 )
 
@@ -21,7 +21,7 @@ const (
 )
 
 // SetupImageProcessing appends the image-processing step to a TaskRun if desired
-func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOutput, buildRunOutput build.Image) {
+func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, buildOutput, buildRunOutput build.Image) {
 	stepArgs := []string{}
 
 	// Check if any build step references the output-directory system parameter. If that is the case,
@@ -44,17 +44,17 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 				})
 
 				// add the parameter definition
-				taskRun.Spec.TaskSpec.Params = append(taskRun.Spec.TaskSpec.Params, pipeline.ParamSpec{
+				taskRun.Spec.TaskSpec.Params = append(taskRun.Spec.TaskSpec.Params, pipelineapi.ParamSpec{
 					Name: prefixedOutputDirectory,
-					Type: pipeline.ParamTypeString,
+					Type: pipelineapi.ParamTypeString,
 				})
 
 				// add the parameter value
-				taskRun.Spec.Params = append(taskRun.Spec.Params, pipeline.Param{
+				taskRun.Spec.Params = append(taskRun.Spec.Params, pipelineapi.Param{
 					Name: prefixedOutputDirectory,
-					Value: pipeline.ParamValue{
+					Value: pipelineapi.ParamValue{
 						StringVal: outputDirectoryMountPath,
-						Type:      pipeline.ParamTypeString,
+						Type:      pipelineapi.ParamTypeString,
 					},
 				})
 
@@ -95,11 +95,19 @@ func SetupImageProcessing(taskRun *pipeline.TaskRun, cfg *config.Config, buildOu
 		stepArgs = append(stepArgs, "--result-file-image-size", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageSizeResult))
 
 		// add the push step
-		// initialize the step from the template
-		imageProcessingStep := *cfg.ImageProcessingContainerTemplate.DeepCopy()
 
-		imageProcessingStep.Name = containerNameImageProcessing
-		imageProcessingStep.Args = stepArgs
+		// initialize the step from the template and the build-specific arguments
+		imageProcessingStep := pipelineapi.Step{
+			Name:             containerNameImageProcessing,
+			Image:            cfg.ImageProcessingContainerTemplate.Image,
+			ImagePullPolicy:  cfg.ImageProcessingContainerTemplate.ImagePullPolicy,
+			Command:          cfg.ImageProcessingContainerTemplate.Command,
+			Args:             stepArgs,
+			Env:              cfg.ImageProcessingContainerTemplate.Env,
+			ComputeResources: cfg.ImageProcessingContainerTemplate.Resources,
+			SecurityContext:  cfg.ImageProcessingContainerTemplate.SecurityContext,
+			WorkingDir:       cfg.ImageProcessingContainerTemplate.WorkingDir,
+		}
 
 		if volumeAdded {
 			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{

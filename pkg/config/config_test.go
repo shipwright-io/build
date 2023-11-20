@@ -10,7 +10,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/pointer"
@@ -108,7 +107,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.GitContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.GitContainerTemplate).To(Equal(Step{
 					Image: "myregistry/custom/git-image",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
@@ -127,7 +126,7 @@ var _ = Describe("Config", func() {
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
 				nonRoot := pointer.Int64(1000)
-				Expect(config.GitContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.GitContainerTemplate).To(Equal(Step{
 					Image: "myregistry/custom/git-image",
 					Command: []string{
 						"/ko-app/git",
@@ -154,7 +153,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.GitContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.GitContainerTemplate).To(Equal(Step{
 					Image: "myregistry/custom/git-image:override",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
@@ -172,7 +171,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.ImageProcessingContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.ImageProcessingContainerTemplate).To(Equal(Step{
 					Image: "myregistry/custom/image-processing",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
@@ -190,7 +189,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.WaiterContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.WaiterContainerTemplate).To(Equal(Step{
 					Image: "myregistry/custom/image",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
@@ -209,7 +208,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.ImageProcessingContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.ImageProcessingContainerTemplate).To(Equal(Step{
 					Image: "myregistry/custom/image-processing:override",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
@@ -229,7 +228,7 @@ var _ = Describe("Config", func() {
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
 				nonRoot := pointer.Int64(1000)
-				Expect(config.WaiterContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.WaiterContainerTemplate).To(Equal(Step{
 					Image:   "myregistry/custom/image",
 					Command: []string{"/ko-app/waiter"},
 					Args:    []string{"start"},
@@ -255,7 +254,7 @@ var _ = Describe("Config", func() {
 			}
 
 			configWithEnvVariableOverrides(overrides, func(config *Config) {
-				Expect(config.WaiterContainerTemplate).To(Equal(pipeline.Step{
+				Expect(config.WaiterContainerTemplate).To(Equal(Step{
 					Image: "myregistry/custom/image:override",
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{

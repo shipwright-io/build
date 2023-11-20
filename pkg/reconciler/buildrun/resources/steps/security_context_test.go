@@ -10,7 +10,7 @@ import (
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	tektonapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 
@@ -22,7 +22,7 @@ var _ = Describe("UpdateSecurityContext", func() {
 
 	var buildStrategySecurityContext *buildapi.BuildStrategySecurityContext
 	var buildStrategySteps []buildapi.BuildStep
-	var taskRunSpec *tektonapi.TaskSpec
+	var taskRunSpec *pipelineapi.TaskSpec
 	var taskRunAnnotations map[string]string
 
 	BeforeEach(func() {
@@ -47,8 +47,8 @@ var _ = Describe("UpdateSecurityContext", func() {
 			},
 		}}
 
-		taskRunSpec = &tektonapi.TaskSpec{
-			Steps: []tektonapi.Step{{
+		taskRunSpec = &pipelineapi.TaskSpec{
+			Steps: []pipelineapi.Step{{
 				Name: "shp-source-default",
 				SecurityContext: &corev1.SecurityContext{
 					RunAsUser:  pointer.Int64(1000),
