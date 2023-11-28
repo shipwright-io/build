@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 
-	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/apis"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,10 +21,10 @@ import (
 // This class is intended to host all CRUD calls for testing TaskRuns CRDs resources
 
 // GetTaskRunFromBuildRun retrieves an owned TaskRun based on the BuildRunName
-func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRun, error) {
+func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*pipelineapi.TaskRun, error) {
 	taskRunLabelSelector := fmt.Sprintf("buildrun.shipwright.io/name=%s", buildRunName)
 
-	trInterface := t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace)
+	trInterface := t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace)
 
 	trList, err := trInterface.List(context.TODO(), metav1.ListOptions{
 		LabelSelector: taskRunLabelSelector,
@@ -41,8 +41,8 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*v1beta1.TaskRu
 }
 
 // UpdateTaskRun applies changes to a TaskRun object
-func (t *TestBuild) UpdateTaskRun(name string, apply func(tr *v1beta1.TaskRun)) (*v1beta1.TaskRun, error) {
-	var tr *v1beta1.TaskRun
+func (t *TestBuild) UpdateTaskRun(name string, apply func(tr *pipelineapi.TaskRun)) (*pipelineapi.TaskRun, error) {
+	var tr *pipelineapi.TaskRun
 	var err error
 	for i := 0; i < 5; i++ {
 		tr, err = t.LookupTaskRun(types.NamespacedName{
@@ -55,7 +55,7 @@ func (t *TestBuild) UpdateTaskRun(name string, apply func(tr *v1beta1.TaskRun)) 
 
 		apply(tr)
 
-		tr, err = t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace).Update(context.TODO(), tr, metav1.UpdateOptions{})
+		tr, err = t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace).Update(context.TODO(), tr, metav1.UpdateOptions{})
 		if err == nil {
 			return tr, nil
 		}
@@ -105,7 +105,7 @@ func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) (
 
 // DeleteTR deletes a TaskRun from a desired namespace
 func (t *TestBuild) DeleteTR(name string) error {
-	trInterface := t.PipelineClientSet.TektonV1beta1().TaskRuns(t.Namespace)
+	trInterface := t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace)
 
 	if err := trInterface.Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
 		return err

@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -47,39 +47,39 @@ const (
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition
-func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, taskRun *v1beta1.TaskRun, trCondition *apis.Condition) error {
+func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, taskRun *pipelineapi.TaskRun, trCondition *apis.Condition) error {
 	var reason, message string = trCondition.Reason, trCondition.Message
 	status := trCondition.Status
 
-	switch v1beta1.TaskRunReason(reason) {
-	case v1beta1.TaskRunReasonStarted:
+	switch pipelineapi.TaskRunReason(reason) {
+	case pipelineapi.TaskRunReasonStarted:
 		fallthrough
-	case v1beta1.TaskRunReasonRunning:
+	case pipelineapi.TaskRunReasonRunning:
 		if buildRun.IsCanceled() {
 			status = corev1.ConditionUnknown // in practice the taskrun status is already unknown in this case, but we are making sure here
 			reason = buildv1alpha1.BuildRunStateCancel
 			message = "The user requested the BuildRun to be canceled.  This BuildRun controller has requested the TaskRun be canceled.  That request has not been process by Tekton's TaskRun controller yet."
 		}
-	case v1beta1.TaskRunReasonCancelled:
+	case pipelineapi.TaskRunReasonCancelled:
 		if buildRun.IsCanceled() {
 			status = corev1.ConditionFalse // in practice the taskrun status is already false in this case, bue we are making sure here
 			reason = buildv1alpha1.BuildRunStateCancel
 			message = "The BuildRun and underlying TaskRun were canceled successfully."
 		}
 
-	case v1beta1.TaskRunReasonTimedOut:
+	case pipelineapi.TaskRunReasonTimedOut:
 		reason = "BuildRunTimeout"
 		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
 			buildRun.Name,
 			taskRun.Spec.Timeout.Duration,
 		)
 
-	case v1beta1.TaskRunReasonSuccessful:
+	case pipelineapi.TaskRunReasonSuccessful:
 		if buildRun.IsCanceled() {
 			message = "The TaskRun completed before the request to cancel the TaskRun could be processed."
 		}
 
-	case v1beta1.TaskRunReasonFailed:
+	case pipelineapi.TaskRunReasonFailed:
 		if taskRun.Status.CompletionTime != nil {
 			pod, failedContainer, err := extractFailedPodAndContainer(ctx, client, taskRun)
 			if err != nil {

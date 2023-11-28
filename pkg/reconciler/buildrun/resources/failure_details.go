@@ -15,7 +15,8 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"github.com/tektoncd/pipeline/pkg/result"
 	"knative.dev/pkg/apis"
 )
 
@@ -27,23 +28,23 @@ const (
 )
 
 // UpdateBuildRunUsingTaskFailures is extracting failures from taskRun steps and adding them to buildRun (mutates)
-func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, taskRun *v1beta1.TaskRun) {
+func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, taskRun *pipelineapi.TaskRun) {
 	trCondition := taskRun.Status.GetCondition(apis.ConditionSucceeded)
 
 	// only extract failures when failing condition is present
-	if trCondition != nil && v1beta1.TaskRunReason(trCondition.Reason) == v1beta1.TaskRunReasonFailed {
+	if trCondition != nil && pipelineapi.TaskRunReason(trCondition.Reason) == pipelineapi.TaskRunReasonFailed {
 		buildRun.Status.FailureDetails = extractFailureDetails(ctx, client, taskRun)
 	}
 }
 
-func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason string, errorMessage string) {
+func extractFailureReasonAndMessage(taskRun *pipelineapi.TaskRun) (errorReason string, errorMessage string) {
 	for _, step := range taskRun.Status.Steps {
 		if step.Terminated == nil || step.Terminated.ExitCode == 0 {
 			continue
 		}
 
 		message := step.Terminated.Message
-		var taskRunResults []v1beta1.PipelineResourceResult
+		var taskRunResults []result.RunResult
 
 		if err := json.Unmarshal([]byte(message), &taskRunResults); err != nil {
 			continue
@@ -63,7 +64,7 @@ func extractFailureReasonAndMessage(taskRun *v1beta1.TaskRun) (errorReason strin
 	return errorReason, errorMessage
 }
 
-func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (*corev1.Pod, *corev1.Container, error) {
+func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) (*corev1.Pod, *corev1.Container, error) {
 	var pod corev1.Pod
 	if err := client.Get(ctx, types.NamespacedName{Namespace: taskRun.Namespace, Name: taskRun.Status.PodName}, &pod); err != nil {
 		ctxlog.Error(ctx, err, "failed to get pod for failure extraction", namespace, taskRun.Namespace, name, taskRun.Status.PodName)
@@ -90,7 +91,7 @@ func extractFailedPodAndContainer(ctx context.Context, client client.Client, tas
 	return &pod, failedContainer, nil
 }
 
-func extractFailureDetails(ctx context.Context, client client.Client, taskRun *v1beta1.TaskRun) (failure *buildv1alpha1.FailureDetails) {
+func extractFailureDetails(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) (failure *buildv1alpha1.FailureDetails) {
 	failure = &buildv1alpha1.FailureDetails{}
 
 	failure.Reason, failure.Message = extractFailureReasonAndMessage(taskRun)
@@ -106,8 +107,8 @@ func extractFailureDetails(ctx context.Context, client client.Client, taskRun *v
 	return failure
 }
 
-func getFailureDetailsTaskSpecResults() []v1beta1.TaskResult {
-	return []v1beta1.TaskResult{
+func getFailureDetailsTaskSpecResults() []pipelineapi.TaskResult {
+	return []pipelineapi.TaskResult{
 		{
 			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorMessage),
 			Description: "The error description of the task run",

@@ -12,7 +12,7 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
@@ -23,10 +23,10 @@ var _ = Describe("Git", func() {
 
 	Context("when adding a public Git source", func() {
 
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{}
+			taskSpec = &pipelineapi.TaskSpec{}
 		})
 
 		JustBeforeEach(func() {
@@ -67,10 +67,10 @@ var _ = Describe("Git", func() {
 
 	Context("when adding a private Git source", func() {
 
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{}
+			taskSpec = &pipelineapi.TaskSpec{}
 		})
 
 		JustBeforeEach(func() {

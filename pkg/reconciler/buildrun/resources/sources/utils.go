@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
@@ -29,7 +29,7 @@ var (
 
 // AppendSecretVolume checks if a volume for a secret already exists, if not it appends it to the TaskSpec
 func AppendSecretVolume(
-	taskSpec *tektonv1beta1.TaskSpec,
+	taskSpec *pipelineapi.TaskSpec,
 	secretName string,
 ) {
 	volumeName := SanitizeVolumeNameForSecretName(secretName)
@@ -69,7 +69,7 @@ func SanitizeVolumeNameForSecretName(secretName string) string {
 	return sanitizedName
 }
 
-func findResultValue(results []tektonv1beta1.TaskRunResult, name string) string {
+func findResultValue(results []pipelineapi.TaskRunResult, name string) string {
 	for _, result := range results {
 		if result.Name == name {
 			return result.Value.StringVal

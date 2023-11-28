@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -34,10 +34,10 @@ var _ = Describe("Utils", func() {
 	})
 
 	Context("when a TaskSpec does not contain any volume", func() {
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{}
+			taskSpec = &pipelineapi.TaskSpec{}
 		})
 
 		It("adds the first volume", func() {
@@ -51,10 +51,10 @@ var _ = Describe("Utils", func() {
 	})
 
 	Context("when a TaskSpec already contains a volume secret", func() {
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{
+			taskSpec = &pipelineapi.TaskSpec{
 				Volumes: []corev1.Volume{
 					{
 						Name: "shp-a-secret",

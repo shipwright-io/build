@@ -11,7 +11,7 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/apis"
 	knativev1 "knative.dev/pkg/apis/duck/v1"
 
@@ -286,14 +286,14 @@ func (c *Catalog) StubBuildRun(
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildRunAndTaskRun(
 	b *build.BuildRun,
-	tr *v1beta1.TaskRun,
+	tr *pipelineapi.TaskRun,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			b.DeepCopyInto(object)
 			return nil
-		case *v1beta1.TaskRun:
+		case *pipelineapi.TaskRun:
 			tr.DeepCopyInto(object)
 			return nil
 		}
@@ -305,14 +305,14 @@ func (c *Catalog) StubBuildRunAndTaskRun(
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildAndTaskRun(
 	b *build.Build,
-	tr *v1beta1.TaskRun,
+	tr *pipelineapi.TaskRun,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			b.DeepCopyInto(object)
 			return nil
-		case *v1beta1.TaskRun:
+		case *pipelineapi.TaskRun:
 			tr.DeepCopyInto(object)
 			return nil
 		}
@@ -390,7 +390,7 @@ func (c *Catalog) StubBuildRunGetWithoutSA(
 func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
 	b *build.Build,
 	br *build.BuildRun,
-	tr *v1beta1.TaskRun,
+	tr *pipelineapi.TaskRun,
 	sa *corev1.ServiceAccount,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
@@ -401,7 +401,7 @@ func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
 		case *build.BuildRun:
 			br.DeepCopyInto(object)
 			return nil
-		case *v1beta1.TaskRun:
+		case *pipelineapi.TaskRun:
 			tr.DeepCopyInto(object)
 			return nil
 		case *corev1.ServiceAccount:
@@ -513,7 +513,7 @@ func (c *Catalog) StubBuildCRDsPodAndTaskRun(
 	sa *corev1.ServiceAccount,
 	cb *build.ClusterBuildStrategy,
 	bs *build.BuildStrategy,
-	tr *v1beta1.TaskRun,
+	tr *pipelineapi.TaskRun,
 	pod *corev1.Pod,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
@@ -533,7 +533,7 @@ func (c *Catalog) StubBuildCRDsPodAndTaskRun(
 		case *build.BuildStrategy:
 			bs.DeepCopyInto(object)
 			return nil
-		case *v1beta1.TaskRun:
+		case *pipelineapi.TaskRun:
 			tr.DeepCopyInto(object)
 			return nil
 		case *corev1.Pod:
@@ -545,18 +545,18 @@ func (c *Catalog) StubBuildCRDsPodAndTaskRun(
 }
 
 // TaskRunWithStatus returns a minimal tekton TaskRun with an Status
-func (c *Catalog) TaskRunWithStatus(trName string, ns string) *v1beta1.TaskRun {
-	return &v1beta1.TaskRun{
+func (c *Catalog) TaskRunWithStatus(trName string, ns string) *pipelineapi.TaskRun {
+	return &pipelineapi.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trName,
 			Namespace: ns,
 		},
-		Spec: v1beta1.TaskRunSpec{
+		Spec: pipelineapi.TaskRunSpec{
 			Timeout: &metav1.Duration{
 				Duration: time.Minute * 2,
 			},
 		},
-		Status: v1beta1.TaskRunStatus{
+		Status: pipelineapi.TaskRunStatus{
 			Status: knativev1.Status{
 				Conditions: knativev1.Conditions{
 					{
@@ -566,7 +566,7 @@ func (c *Catalog) TaskRunWithStatus(trName string, ns string) *v1beta1.TaskRun {
 					},
 				},
 			},
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+			TaskRunStatusFields: pipelineapi.TaskRunStatusFields{
 				PodName: "foobar-pod",
 				StartTime: &metav1.Time{
 					Time: time.Now(),
@@ -580,15 +580,15 @@ func (c *Catalog) TaskRunWithStatus(trName string, ns string) *v1beta1.TaskRun {
 }
 
 // DefaultTaskRunWithStatus returns a minimal tekton TaskRun with an Status
-func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, ns string, status corev1.ConditionStatus, reason string) *v1beta1.TaskRun {
-	return &v1beta1.TaskRun{
+func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, ns string, status corev1.ConditionStatus, reason string) *pipelineapi.TaskRun {
+	return &pipelineapi.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trName,
 			Namespace: ns,
 			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 		},
-		Spec: v1beta1.TaskRunSpec{},
-		Status: v1beta1.TaskRunStatus{
+		Spec: pipelineapi.TaskRunSpec{},
+		Status: pipelineapi.TaskRunStatus{
 			Status: knativev1.Status{
 				Conditions: knativev1.Conditions{
 					{
@@ -598,7 +598,7 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, n
 					},
 				},
 			},
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+			TaskRunStatusFields: pipelineapi.TaskRunStatusFields{
 				StartTime: &metav1.Time{
 					Time: time.Now(),
 				},
@@ -609,16 +609,16 @@ func (c *Catalog) DefaultTaskRunWithStatus(trName string, buildRunName string, n
 
 // TaskRunWithCompletionAndStartTime provides a TaskRun object with a
 // Completion and StartTime
-func (c *Catalog) TaskRunWithCompletionAndStartTime(trName string, buildRunName string, ns string) *v1beta1.TaskRun {
-	return &v1beta1.TaskRun{
+func (c *Catalog) TaskRunWithCompletionAndStartTime(trName string, buildRunName string, ns string) *pipelineapi.TaskRun {
+	return &pipelineapi.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trName,
 			Namespace: ns,
 			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 		},
-		Spec: v1beta1.TaskRunSpec{},
-		Status: v1beta1.TaskRunStatus{
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+		Spec: pipelineapi.TaskRunSpec{},
+		Status: pipelineapi.TaskRunStatus{
+			TaskRunStatusFields: pipelineapi.TaskRunStatusFields{
 				CompletionTime: &metav1.Time{
 					Time: time.Now(),
 				},
@@ -642,15 +642,15 @@ func (c *Catalog) TaskRunWithCompletionAndStartTime(trName string, buildRunName 
 }
 
 // DefaultTaskRunWithFalseStatus returns a minimal tektont TaskRun with a FALSE status
-func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName string, ns string) *v1beta1.TaskRun {
-	return &v1beta1.TaskRun{
+func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName string, ns string) *pipelineapi.TaskRun {
+	return &pipelineapi.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trName,
 			Namespace: ns,
 			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
 		},
-		Spec: v1beta1.TaskRunSpec{},
-		Status: v1beta1.TaskRunStatus{
+		Spec: pipelineapi.TaskRunSpec{},
+		Status: pipelineapi.TaskRunStatus{
 			Status: knativev1.Status{
 				Conditions: knativev1.Conditions{
 					{
@@ -661,7 +661,7 @@ func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName stri
 					},
 				},
 			},
-			TaskRunStatusFields: v1beta1.TaskRunStatusFields{
+			TaskRunStatusFields: pipelineapi.TaskRunStatusFields{
 				StartTime: &metav1.Time{
 					Time: time.Now(),
 				},
@@ -867,8 +867,8 @@ func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName strin
 }
 
 // DefaultTaskRun returns a minimal TaskRun object
-func (c *Catalog) DefaultTaskRun(taskRunName string, ns string) *v1beta1.TaskRun {
-	return &v1beta1.TaskRun{
+func (c *Catalog) DefaultTaskRun(taskRunName string, ns string) *pipelineapi.TaskRun {
+	return &pipelineapi.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      taskRunName,
 			Namespace: ns,

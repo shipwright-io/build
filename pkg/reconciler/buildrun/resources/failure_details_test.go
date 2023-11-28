@@ -11,7 +11,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"github.com/tektoncd/pipeline/pkg/result"
 	corev1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 
@@ -25,24 +26,24 @@ var _ = Describe("Surfacing errors", func() {
 		client := &buildfakes.FakeClient{}
 
 		It("surfaces errors to BuildRun in failed TaskRun", func() {
-			redTaskRun := pipelinev1beta1.TaskRun{}
+			redTaskRun := pipelineapi.TaskRun{}
 			redTaskRun.Status.Conditions = append(redTaskRun.Status.Conditions,
-				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelinev1beta1.TaskRunReasonFailed.String()})
-			failedStep := pipelinev1beta1.StepState{}
+				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelineapi.TaskRunReasonFailed.String()})
+			failedStep := pipelineapi.StepState{}
 
 			errorReasonValue := "PullBaseImageFailed"
 			errorMessageValue := "Failed to pull the base image."
 			errorReasonKey := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorReason)
 			errorMessageKey := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorMessage)
 
-			errorReason := pipelinev1beta1.PipelineResourceResult{Key: errorReasonKey, Value: errorReasonValue}
-			errorMessage := pipelinev1beta1.PipelineResourceResult{Key: errorMessageKey, Value: errorMessageValue}
-			unrelated := pipelinev1beta1.PipelineResourceResult{Key: "unrelated-resource-key", Value: "Unrelated resource value"}
+			errorReason := result.RunResult{Key: errorReasonKey, Value: errorReasonValue}
+			errorMessage := result.RunResult{Key: errorMessageKey, Value: errorMessageValue}
+			unrelated := result.RunResult{Key: "unrelated-resource-key", Value: "Unrelated resource value"}
 
-			message, _ := json.Marshal([]pipelinev1beta1.PipelineResourceResult{errorReason, errorMessage, unrelated})
+			message, _ := json.Marshal([]result.RunResult{errorReason, errorMessage, unrelated})
 
 			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message), ExitCode: 1}
-			followUpStep := pipelinev1beta1.StepState{}
+			followUpStep := pipelineapi.StepState{}
 
 			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep, followUpStep)
 			redBuild := buildv1alpha1.BuildRun{}
@@ -54,14 +55,14 @@ var _ = Describe("Surfacing errors", func() {
 		})
 
 		It("does not surface unrelated Tekton resources if the TaskRun fails", func() {
-			redTaskRun := pipelinev1beta1.TaskRun{}
+			redTaskRun := pipelineapi.TaskRun{}
 			redTaskRun.Status.Conditions = append(redTaskRun.Status.Conditions,
-				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelinev1beta1.TaskRunReasonFailed.String()})
-			failedStep := pipelinev1beta1.StepState{}
+				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelineapi.TaskRunReasonFailed.String()})
+			failedStep := pipelineapi.StepState{}
 
-			unrelated := pipelinev1beta1.PipelineResourceResult{Key: "unrelated", Value: "unrelated"}
+			unrelated := result.RunResult{Key: "unrelated", Value: "unrelated"}
 
-			message, _ := json.Marshal([]pipelinev1beta1.PipelineResourceResult{unrelated})
+			message, _ := json.Marshal([]result.RunResult{unrelated})
 
 			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message)}
 
@@ -75,19 +76,19 @@ var _ = Describe("Surfacing errors", func() {
 		})
 
 		It("does not surface error results if the container terminated without failure", func() {
-			greenTaskRun := pipelinev1beta1.TaskRun{}
+			greenTaskRun := pipelineapi.TaskRun{}
 			greenTaskRun.Status.Conditions = append(greenTaskRun.Status.Conditions,
-				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelinev1beta1.TaskRunReasonSuccessful.String()})
-			failedStep := pipelinev1beta1.StepState{}
+				apis.Condition{Type: apis.ConditionSucceeded, Reason: pipelineapi.TaskRunReasonSuccessful.String()})
+			failedStep := pipelineapi.StepState{}
 
 			errorReasonValue := "PullBaseImageFailed"
 			errorMessageValue := "Failed to pull the base image."
 			errorReasonKey := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorReason)
 			errorMessageKey := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultErrorMessage)
 
-			errorReason := pipelinev1beta1.PipelineResourceResult{Key: errorReasonKey, Value: errorReasonValue}
-			errorMessage := pipelinev1beta1.PipelineResourceResult{Key: errorMessageKey, Value: errorMessageValue}
-			message, _ := json.Marshal([]pipelinev1beta1.PipelineResourceResult{errorReason, errorMessage})
+			errorReason := result.RunResult{Key: errorReasonKey, Value: errorReasonValue}
+			errorMessage := result.RunResult{Key: errorMessageKey, Value: errorMessageValue}
+			message, _ := json.Marshal([]result.RunResult{errorReason, errorMessage})
 
 			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message)}
 
@@ -100,7 +101,7 @@ var _ = Describe("Surfacing errors", func() {
 		})
 
 		It("should not surface errors for a successful TaskRun", func() {
-			greenTaskRun := pipelinev1beta1.TaskRun{}
+			greenTaskRun := pipelineapi.TaskRun{}
 			greenTaskRun.Status.Conditions = append(greenTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionSucceeded})
 			greenBuildRun := buildv1alpha1.BuildRun{}
 
@@ -110,7 +111,7 @@ var _ = Describe("Surfacing errors", func() {
 		})
 
 		It("should not surface errors if the TaskRun does not have a Succeeded condition", func() {
-			unfinishedTaskRun := pipelinev1beta1.TaskRun{}
+			unfinishedTaskRun := pipelineapi.TaskRun{}
 			unfinishedTaskRun.Status.Conditions = append(unfinishedTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionReady})
 			unfinishedBuildRun := buildv1alpha1.BuildRun{}
 
@@ -119,7 +120,7 @@ var _ = Describe("Surfacing errors", func() {
 		})
 
 		It("should not surface errors if the TaskRun is in progress", func() {
-			unknownTaskRun := pipelinev1beta1.TaskRun{}
+			unknownTaskRun := pipelineapi.TaskRun{}
 			unknownTaskRun.Status.Conditions = append(unknownTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionSucceeded, Reason: "random"})
 			unknownBuildRun := buildv1alpha1.BuildRun{}
 

@@ -13,7 +13,7 @@ import (
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
 	test "github.com/shipwright-io/build/test/v1alpha1_samples"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -124,21 +124,21 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			Expect(err).To(BeNil())
 		})
 
-		var constructStringParam = func(paramName string, val string) v1beta1.Param {
-			return v1beta1.Param{
+		var constructStringParam = func(paramName string, val string) pipelineapi.Param {
+			return pipelineapi.Param{
 				Name: paramName,
-				Value: v1beta1.ParamValue{
-					Type:      v1beta1.ParamTypeString,
+				Value: pipelineapi.ParamValue{
+					Type:      pipelineapi.ParamTypeString,
 					StringVal: val,
 				},
 			}
 		}
 
-		var constructArrayParam = func(paramName string, values ...string) v1beta1.Param {
-			return v1beta1.Param{
+		var constructArrayParam = func(paramName string, values ...string) pipelineapi.Param {
+			return pipelineapi.Param{
 				Name: paramName,
-				Value: v1beta1.ParamValue{
-					Type:     v1beta1.ParamTypeArray,
+				Value: pipelineapi.ParamValue{
+					Type:     pipelineapi.ParamTypeArray,
 					ArrayVal: values,
 				},
 			}
@@ -425,18 +425,18 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			Expect(err).To(BeNil())
 
 			// Validate that the TaskSpec parameter have no default value
-			Expect(taskRun.Spec.TaskSpec.Params).To(ContainElement(v1beta1.ParamSpec{
+			Expect(taskRun.Spec.TaskSpec.Params).To(ContainElement(pipelineapi.ParamSpec{
 				Name:        "sleep-time",
-				Type:        v1beta1.ParamTypeString,
+				Type:        pipelineapi.ParamTypeString,
 				Description: "time in seconds for sleeping",
 				Default:     nil,
 			}))
 
 			// Validate that the TaskRun param have an empty string as the value
-			Expect(taskRun.Spec.Params).To(ContainElement(v1beta1.Param{
+			Expect(taskRun.Spec.Params).To(ContainElement(pipelineapi.Param{
 				Name: "sleep-time",
-				Value: v1beta1.ParamValue{
-					Type:      v1beta1.ParamTypeString,
+				Value: pipelineapi.ParamValue{
+					Type:      pipelineapi.ParamTypeString,
 					StringVal: "",
 				},
 			}))

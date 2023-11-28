@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
@@ -20,10 +20,10 @@ var _ = Describe("LocalCopy", func() {
 	cfg := config.NewDefaultConfig()
 
 	Context("when LocalCopy source type is informed", func() {
-		var taskSpec *tektonv1beta1.TaskSpec
+		var taskSpec *pipelineapi.TaskSpec
 
 		BeforeEach(func() {
-			taskSpec = &tektonv1beta1.TaskSpec{}
+			taskSpec = &pipelineapi.TaskSpec{}
 			sources.AppendLocalCopyStep(cfg, taskSpec, &metav1.Duration{Duration: time.Minute})
 		})
 

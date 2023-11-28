@@ -9,7 +9,7 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 // RemoteArtifactsContainerName name for the container dealing with remote artifacts download.
@@ -18,7 +18,7 @@ const RemoteArtifactsContainerName = "sources-http"
 // AppendHTTPStep appends the step for a HTTP source to the TaskSpec
 func AppendHTTPStep(
 	cfg *config.Config,
-	taskSpec *tektonv1beta1.TaskSpec,
+	taskSpec *pipelineapi.TaskSpec,
 	source buildv1alpha1.BuildSource,
 ) {
 	// HTTP is done currently all in a single step, see if there is already one
@@ -26,7 +26,7 @@ func AppendHTTPStep(
 	if httpStep != nil {
 		httpStep.Args[3] = fmt.Sprintf("%s ; wget %q", httpStep.Args[3], source.URL)
 	} else {
-		httpStep := tektonv1beta1.Step{
+		httpStep := pipelineapi.Step{
 			Name:       RemoteArtifactsContainerName,
 			Image:      cfg.RemoteArtifactsContainerImage,
 			WorkingDir: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
@@ -46,7 +46,7 @@ func AppendHTTPStep(
 	}
 }
 
-func findExistingHTTPSourcesStep(taskSpec *tektonv1beta1.TaskSpec) *tektonv1beta1.Step {
+func findExistingHTTPSourcesStep(taskSpec *pipelineapi.TaskSpec) *pipelineapi.Step {
 	for _, candidateStep := range taskSpec.Steps {
 		if candidateStep.Name == RemoteArtifactsContainerName {
 			return &candidateStep

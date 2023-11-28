@@ -13,31 +13,37 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
 
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 // AppendBundleStep appends the bundle step to the TaskSpec
 func AppendBundleStep(
 	cfg *config.Config,
-	taskSpec *pipeline.TaskSpec,
+	taskSpec *pipelineapi.TaskSpec,
 	source build.Source,
 	name string,
 ) {
 	// append the result
-	taskSpec.Results = append(taskSpec.Results, pipeline.TaskResult{
+	taskSpec.Results = append(taskSpec.Results, pipelineapi.TaskResult{
 		Name:        fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name),
 		Description: "The digest of the bundle image.",
 	})
 
-	// initialize the step from the template
-	bundleStep := *cfg.BundleContainerTemplate.DeepCopy()
-
-	// add the build-specific details
-	bundleStep.Name = fmt.Sprintf("source-%s", name)
-	bundleStep.Args = []string{
-		"--image", source.BundleContainer.Image,
-		"--target", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
-		"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", prefixParamsResultsVolumes, name),
+	// initialize the step from the template and the build-specific arguments
+	bundleStep := pipelineapi.Step{
+		Name:            fmt.Sprintf("source-%s", name),
+		Image:           cfg.BundleContainerTemplate.Image,
+		ImagePullPolicy: cfg.BundleContainerTemplate.ImagePullPolicy,
+		Command:         cfg.BundleContainerTemplate.Command,
+		Args: []string{
+			"--image", source.BundleContainer.Image,
+			"--target", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
+			"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", prefixParamsResultsVolumes, name),
+		},
+		Env:              cfg.BundleContainerTemplate.Env,
+		ComputeResources: cfg.BundleContainerTemplate.Resources,
+		SecurityContext:  cfg.BundleContainerTemplate.SecurityContext,
+		WorkingDir:       cfg.BundleContainerTemplate.WorkingDir,
 	}
 
 	// add credentials mount, if provided
@@ -68,7 +74,7 @@ func AppendBundleStep(
 }
 
 // AppendBundleResult append bundle source result to build run
-func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipeline.TaskRunResult) {
+func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipelineapi.TaskRunResult) {
 	imageDigest := findResultValue(results, fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name))
 
 	if strings.TrimSpace(imageDigest) != "" {

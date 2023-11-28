@@ -12,7 +12,7 @@ import (
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -26,7 +26,7 @@ const (
 func UpdateBuildRunUsingTaskResults(
 	ctx context.Context,
 	buildRun *build.BuildRun,
-	taskRunResult []pipeline.TaskRunResult,
+	taskRunResult []pipelineapi.TaskRunResult,
 	request reconcile.Request,
 ) {
 	// Set source results
@@ -39,7 +39,7 @@ func UpdateBuildRunUsingTaskResults(
 	updateBuildRunStatusWithOutputResult(ctx, buildRun, taskRunResult, request)
 }
 
-func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.BuildRun, taskRunResult []pipeline.TaskRunResult, request reconcile.Request) {
+func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.BuildRun, taskRunResult []pipelineapi.TaskRunResult, request reconcile.Request) {
 	for _, result := range taskRunResult {
 		switch result.Name {
 		case generateOutputResultName(imageDigestResult):
@@ -59,8 +59,8 @@ func generateOutputResultName(resultName string) string {
 	return fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, resultName)
 }
 
-func getTaskSpecResults() []pipeline.TaskResult {
-	return []pipeline.TaskResult{
+func getTaskSpecResults() []pipelineapi.TaskResult {
+	return []pipelineapi.TaskResult{
 		{
 			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, imageDigestResult),
 			Description: "The digest of the image",

@@ -10,7 +10,7 @@ import (
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -23,42 +23,48 @@ const (
 // AppendGitStep appends the Git step and results and volume if needed to the TaskSpec
 func AppendGitStep(
 	cfg *config.Config,
-	taskSpec *tektonv1beta1.TaskSpec,
+	taskSpec *pipelineapi.TaskSpec,
 	source buildv1alpha1.Source,
 	name string,
 ) {
 	// append the result
-	taskSpec.Results = append(taskSpec.Results, tektonv1beta1.TaskResult{
+	taskSpec.Results = append(taskSpec.Results, pipelineapi.TaskResult{
 		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitSHAResult),
 		Description: "The commit SHA of the cloned source.",
-	}, tektonv1beta1.TaskResult{
+	}, pipelineapi.TaskResult{
 		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult),
 		Description: "The author of the last commit of the cloned source.",
-	}, tektonv1beta1.TaskResult{
+	}, pipelineapi.TaskResult{
 		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName),
 		Description: "The name of the branch used of the cloned source.",
 	})
 
-	// initialize the step from the template
-	gitStep := *cfg.GitContainerTemplate.DeepCopy()
-
-	// add the build-specific details
-	gitStep.Name = fmt.Sprintf("source-%s", name)
-	gitStep.Args = []string{
-		"--url",
-		*source.URL,
-		"--target",
-		fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
-		"--result-file-commit-sha",
-		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitSHAResult),
-		"--result-file-commit-author",
-		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitAuthorResult),
-		"--result-file-branch-name",
-		fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, branchName),
-		"--result-file-error-message",
-		fmt.Sprintf("$(results.%s-error-message.path)", prefixParamsResultsVolumes),
-		"--result-file-error-reason",
-		fmt.Sprintf("$(results.%s-error-reason.path)", prefixParamsResultsVolumes),
+	// initialize the step from the template and the build-specific arguments
+	gitStep := pipelineapi.Step{
+		Name:            fmt.Sprintf("source-%s", name),
+		Image:           cfg.GitContainerTemplate.Image,
+		ImagePullPolicy: cfg.GitContainerTemplate.ImagePullPolicy,
+		Command:         cfg.GitContainerTemplate.Command,
+		Args: []string{
+			"--url",
+			*source.URL,
+			"--target",
+			fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
+			"--result-file-commit-sha",
+			fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitSHAResult),
+			"--result-file-commit-author",
+			fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitAuthorResult),
+			"--result-file-branch-name",
+			fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, branchName),
+			"--result-file-error-message",
+			fmt.Sprintf("$(results.%s-error-message.path)", prefixParamsResultsVolumes),
+			"--result-file-error-reason",
+			fmt.Sprintf("$(results.%s-error-reason.path)", prefixParamsResultsVolumes),
+		},
+		Env:              cfg.GitContainerTemplate.Env,
+		ComputeResources: cfg.GitContainerTemplate.Resources,
+		SecurityContext:  cfg.GitContainerTemplate.SecurityContext,
+		WorkingDir:       cfg.GitContainerTemplate.WorkingDir,
 	}
 
 	// Check if a revision is defined
@@ -102,7 +108,7 @@ func AppendGitStep(
 }
 
 // AppendGitResult append git source result to build run
-func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []tektonv1beta1.TaskRunResult) {
+func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []pipelineapi.TaskRunResult) {
 	commitAuthor := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult))
 	commitSha := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitSHAResult))
 	branchName := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName))

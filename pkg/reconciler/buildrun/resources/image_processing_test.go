@@ -14,19 +14,19 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 var _ = Describe("Image Processing overrides", func() {
 
 	config := config.NewDefaultConfig()
-	var processedTaskRun *pipeline.TaskRun
+	var processedTaskRun *pipelineapi.TaskRun
 
 	Context("for a TaskRun that does not reference the output directory", func() {
-		taskRun := &pipeline.TaskRun{
-			Spec: pipeline.TaskRunSpec{
-				TaskSpec: &pipeline.TaskSpec{
-					Steps: []pipeline.Step{
+		taskRun := &pipelineapi.TaskRun{
+			Spec: pipelineapi.TaskRunSpec{
+				TaskSpec: &pipelineapi.TaskSpec{
+					Steps: []pipelineapi.Step{
 						{
 							Name: "test-step",
 						},
@@ -83,10 +83,10 @@ var _ = Describe("Image Processing overrides", func() {
 
 	Context("for a TaskRun that references the output directory", func() {
 
-		taskRun := &pipeline.TaskRun{
-			Spec: pipeline.TaskRunSpec{
-				TaskSpec: &pipeline.TaskSpec{
-					Steps: []pipeline.Step{
+		taskRun := &pipelineapi.TaskRun{
+			Spec: pipelineapi.TaskRunSpec{
+				TaskSpec: &pipelineapi.TaskSpec{
+					Steps: []pipelineapi.Step{
 						{
 							Name: "test-step",
 							Args: []string{

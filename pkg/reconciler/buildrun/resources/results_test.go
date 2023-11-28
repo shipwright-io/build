@@ -14,7 +14,7 @@ import (
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 
-	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -27,7 +27,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		var (
 			taskRunRequest reconcile.Request
 			br             *build.BuildRun
-			tr             *pipelinev1beta1.TaskRun
+			tr             *pipelineapi.TaskRun
 		)
 
 		ctx := context.Background()
@@ -52,23 +52,23 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
 			br.Status.BuildSpec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go")
 
-			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
-				pipelinev1beta1.TaskRunResult{
+			tr.Status.Results = append(tr.Status.Results,
+				pipelineapi.TaskRunResult{
 					Name: "shp-source-default-commit-sha",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: commitSha,
 					},
 				},
-				pipelinev1beta1.TaskRunResult{
+				pipelineapi.TaskRunResult{
 					Name: "shp-source-default-commit-author",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: "foo bar",
 					},
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))
@@ -81,16 +81,16 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 				Image: "ghcr.io/shipwright-io/sample-go/source-bundle:latest",
 			}
 
-			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
-				pipelinev1beta1.TaskRunResult{
+			tr.Status.Results = append(tr.Status.Results,
+				pipelineapi.TaskRunResult{
 					Name: "shp-source-default-image-digest",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: bundleImageDigest,
 					},
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Bundle.Digest).To(Equal(bundleImageDigest))
@@ -99,23 +99,23 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from output step", func() {
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
 
-			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
-				pipelinev1beta1.TaskRunResult{
+			tr.Status.Results = append(tr.Status.Results,
+				pipelineapi.TaskRunResult{
 					Name: "shp-image-digest",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: imageDigest,
 					},
 				},
-				pipelinev1beta1.TaskRunResult{
+				pipelineapi.TaskRunResult{
 					Name: "shp-image-size",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: "230",
 					},
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
 			Expect(br.Status.Output.Size).To(Equal(int64(230)))
@@ -126,37 +126,37 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
 			br.Status.BuildSpec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go")
 
-			tr.Status.TaskRunResults = append(tr.Status.TaskRunResults,
-				pipelinev1beta1.TaskRunResult{
+			tr.Status.Results = append(tr.Status.Results,
+				pipelineapi.TaskRunResult{
 					Name: "shp-source-default-commit-sha",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: commitSha,
 					},
 				},
-				pipelinev1beta1.TaskRunResult{
+				pipelineapi.TaskRunResult{
 					Name: "shp-source-default-commit-author",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: "foo bar",
 					},
 				},
-				pipelinev1beta1.TaskRunResult{
+				pipelineapi.TaskRunResult{
 					Name: "shp-image-digest",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: imageDigest,
 					},
 				},
-				pipelinev1beta1.TaskRunResult{
+				pipelineapi.TaskRunResult{
 					Name: "shp-image-size",
-					Value: pipelinev1beta1.ParamValue{
-						Type:      pipelinev1beta1.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: "230",
 					},
 				})
 
-			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.TaskRunResults, taskRunRequest)
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
 			Expect(len(br.Status.Sources)).To(Equal(1))
 			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))

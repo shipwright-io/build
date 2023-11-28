@@ -15,7 +15,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 var _ = Describe("Params overrides", func() {
@@ -308,7 +308,7 @@ var _ = Describe("isStepReferencingParameter", func() {
 
 	Context("for a Step referencing parameters in different ways", func() {
 
-		step := &pipeline.Step{
+		step := &pipelineapi.Step{
 			Command: []string{
 				"some-command",
 				"$(params.first-param)",
@@ -347,13 +347,13 @@ var _ = Describe("isStepReferencingParameter", func() {
 
 var _ = Describe("HandleTaskRunParam", func() {
 
-	var taskRun *pipeline.TaskRun
+	var taskRun *pipelineapi.TaskRun
 
 	BeforeEach(func() {
-		taskRun = &pipeline.TaskRun{
-			Spec: pipeline.TaskRunSpec{
-				TaskSpec: &pipeline.TaskSpec{
-					Steps: []pipeline.Step{
+		taskRun = &pipelineapi.TaskRun{
+			Spec: pipelineapi.TaskRunSpec{
+				TaskSpec: &pipelineapi.TaskSpec{
+					Steps: []pipelineapi.Step{
 						{
 							Name: "first-container",
 							Args: []string{
@@ -388,11 +388,11 @@ var _ = Describe("HandleTaskRunParam", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ParamValue{
-						Type:      pipeline.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: "My value",
 					},
 				},
@@ -431,11 +431,11 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(len(taskRun.Spec.TaskSpec.Steps[1].Env)).To(Equal(0))
 
 			// Verify the parameters
-			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ParamValue{
-						Type:      pipeline.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: fmt.Sprintf("$(%s)", envVarName),
 					},
 				},
@@ -475,11 +475,11 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(len(taskRun.Spec.TaskSpec.Steps[1].Env)).To(Equal(0))
 
 			// Verify the parameters
-			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ParamValue{
-						Type:      pipeline.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: fmt.Sprintf("The value from the config map is '$(%s)'.", envVarName),
 					},
 				},
@@ -518,11 +518,11 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(len(taskRun.Spec.TaskSpec.Steps[1].Env)).To(Equal(0))
 
 			// Verify the parameters
-			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ParamValue{
-						Type:      pipeline.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: fmt.Sprintf("$(%s)", envVarName),
 					},
 				},
@@ -562,11 +562,11 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(len(taskRun.Spec.TaskSpec.Steps[1].Env)).To(Equal(0))
 
 			// Verify the parameters
-			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
 				{
 					Name: "string-parameter",
-					Value: pipeline.ParamValue{
-						Type:      pipeline.ParamTypeString,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
 						StringVal: fmt.Sprintf("secret-value: $(%s)", envVarName),
 					},
 				},
@@ -601,11 +601,11 @@ var _ = Describe("HandleTaskRunParam", func() {
 			Expect(len(taskRun.Spec.TaskSpec.Steps[1].Env)).To(Equal(0))
 
 			// Verify the parameters
-			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
 				{
 					Name: "array-parameter",
-					Value: pipeline.ParamValue{
-						Type: pipeline.ParamTypeArray,
+					Value: pipelineapi.ParamValue{
+						Type: pipelineapi.ParamTypeArray,
 						ArrayVal: []string{
 							"first entry",
 							"",
@@ -660,11 +660,11 @@ var _ = Describe("HandleTaskRunParam", func() {
 			}))
 
 			// Verify the parameters
-			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipeline.Param{
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
 				{
 					Name: "array-parameter",
-					Value: pipeline.ParamValue{
-						Type: pipeline.ParamTypeArray,
+					Value: pipelineapi.ParamValue{
+						Type: pipelineapi.ParamTypeArray,
 						ArrayVal: []string{
 							"first entry",
 							fmt.Sprintf("$(%s)", envVarName),
