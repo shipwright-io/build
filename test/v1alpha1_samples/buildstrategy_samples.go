@@ -365,6 +365,9 @@ spec:
       echo -n "${sum}" > '$(results.shp-image-size.path)'
     - --
     - $(params.args[*])
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
 `
 
 // BuildStrategyWithoutPush is a strategy that writes an image tarball and pushes nothing
