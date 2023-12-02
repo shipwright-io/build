@@ -79,7 +79,7 @@ func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
 	if b.build.Spec.Source.GitSource == nil {
 		b.build.Spec.Source.GitSource = &buildv1beta1.Git{}
 	}
-	b.build.Spec.Source.GitSource.URL = pointer.String(repository)
+	b.build.Spec.Source.GitSource.URL = repository
 	b.build.Spec.Source.OCIArtifact = nil
 	return b
 }

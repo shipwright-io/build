@@ -732,7 +732,7 @@ request:
 						Type:       v1beta1.GitType,
 						ContextDir: &ctxDir,
 						GitSource: &v1beta1.Git{
-							URL:         &url,
+							URL:         url,
 							Revision:    &revision,
 							CloneSecret: &secretName,
 						},

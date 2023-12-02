@@ -44,9 +44,7 @@ type Local struct {
 // Git describes the git repository to pull
 type Git struct {
 	// URL describes the URL of the Git repository.
-	//
-	// +optional
-	URL *string `json:"url,omitempty"`
+	URL string `json:"url"`
 
 	// Revision describes the Git revision (e.g., branch, tag, commit SHA,
 	// etc.) to fetch.
