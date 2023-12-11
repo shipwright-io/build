@@ -22,6 +22,7 @@ spec:
       labels:
         name: shp-build-webhook
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
       serviceAccountName: shipwright-build-webhook
