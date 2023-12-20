@@ -6703,6 +6703,8 @@ spec:
                               url:
                                 description: URL describes the URL of the Git repository.
                                 type: string
+                            required:
+                            - url
                             type: object
                           local:
                             description: LocalSource
@@ -10695,6 +10697,8 @@ spec:
                           url:
                             description: URL describes the URL of the Git repository.
                             type: string
+                        required:
+                        - url
                         type: object
                       local:
                         description: LocalSource

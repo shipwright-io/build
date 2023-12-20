@@ -111,7 +111,7 @@ func amendSourceURL(b *buildv1beta1.Build, sourceURL string) {
 	if sourceURL == "" {
 		return
 	}
-	b.Spec.Source.GitSource.URL = &sourceURL
+	b.Spec.Source.GitSource.URL = sourceURL
 }
 
 // amendBuild make changes on build object.

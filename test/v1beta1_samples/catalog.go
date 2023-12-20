@@ -100,8 +100,9 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: pointer.String("foobar"),
+					URL: "foobar",
 				},
+				Type: build.GitType,
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -125,8 +126,9 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+					URL: "https://github.com/shipwright-io/sample-go",
 				},
+				Type: build.GitType,
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -152,9 +154,10 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL:         pointer.String("https://github.com/shipwright-io/sample-go"),
+					URL:         "https://github.com/shipwright-io/sample-go",
 					CloneSecret: &secret,
 				},
+				Type: build.GitType,
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -178,8 +181,9 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+					URL: "https://github.com/shipwright-io/sample-go",
 				},
+				Type: build.GitType,
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -199,8 +203,9 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+					URL: "https://github.com/shipwright-io/sample-go",
 				},
+				Type: build.GitType,
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -219,8 +224,9 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 		Spec: build.BuildSpec{
 			Source: build.Source{
 				GitSource: &build.Git{
-					URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+					URL: "https://github.com/shipwright-io/sample-go",
 				},
+				Type: build.GitType,
 			},
 			Output: build.Image{
 				PushSecret: &secretName,

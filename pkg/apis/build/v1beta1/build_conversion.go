@@ -126,10 +126,10 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 			if orig.Source.Credentials != nil {
 				specSource.OCIArtifact.PullSecret = &orig.Source.Credentials.Name
 			}
-		} else {
+		} else if orig.Source.URL != nil {
 			specSource.Type = GitType
 			specSource.GitSource = &Git{
-				URL:      orig.Source.URL,
+				URL:      *orig.Source.URL,
 				Revision: orig.Source.Revision,
 			}
 			if orig.Source.Credentials != nil {
@@ -434,7 +434,7 @@ func getAlphaBuildSource(src BuildSpec) v1alpha1.Source {
 			}
 		}
 		if src.Source.GitSource != nil {
-			source.URL = src.Source.GitSource.URL
+			source.URL = &src.Source.GitSource.URL
 			revision = src.Source.GitSource.Revision
 		}
 
