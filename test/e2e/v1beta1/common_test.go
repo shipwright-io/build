@@ -161,11 +161,6 @@ func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buil
 		return nil, buildRun, err
 	}
 
-	alphaBuild.ConvertTo(testBuild.Context, &obj)
-	jsonData, err = json.Marshal(obj.Object)
-	if err != nil {
-		Logf("Failed to convert the build to v1beta1: %s", err)
-	}
 	var betaBuild buildv1beta1.Build
 	json.Unmarshal(jsonData, &betaBuild)
 
