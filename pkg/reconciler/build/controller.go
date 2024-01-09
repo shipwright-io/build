@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
@@ -62,27 +62,31 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			o := e.ObjectOld.(*build.Build)
 			n := e.ObjectNew.(*build.Build)
 
-			buildRunDeletionAnnotation := false
-			// Check if the AnnotationBuildRunDeletion annotation is updated
-			oldAnnot := o.GetAnnotations()
-			newAnnot := n.GetAnnotations()
-			if !reflect.DeepEqual(oldAnnot, newAnnot) {
-				if oldAnnot[build.AnnotationBuildRunDeletion] != newAnnot[build.AnnotationBuildRunDeletion] {
-					ctxlog.Debug(
-						ctx,
-						"updating predicated passed, the annotation was modified.",
-						namespace,
-						n.GetNamespace(),
-						name,
-						n.GetName(),
-					)
-					buildRunDeletionAnnotation = true
+			buildAtBuildDeletion := false
+
+			// Check if the Build retention AtBuildDeletion is updated
+			oldBuildRetention := o.Spec.Retention
+			newBuildRetention := n.Spec.Retention
+
+			if o.Spec.Retention != nil && n.Spec.Retention != nil {
+				if !reflect.DeepEqual(oldBuildRetention, newBuildRetention) {
+					if o.Spec.Retention.AtBuildDeletion != n.Spec.Retention.AtBuildDeletion {
+						ctxlog.Debug(
+							ctx,
+							"updating predicated passed, the build retention AtBuildDeletion was modified.",
+							namespace,
+							n.GetNamespace(),
+							name,
+							n.GetName(),
+						)
+						buildAtBuildDeletion = true
+					}
 				}
 			}
 
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			// or BuildRunDeletion annotation does not change
-			return o.GetGeneration() != n.GetGeneration() || buildRunDeletionAnnotation
+			return o.GetGeneration() != n.GetGeneration() || buildAtBuildDeletion
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Never reconcile on deletion, there is nothing we have to do
@@ -153,21 +157,16 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		flagReconcile := false
 
 		for _, build := range buildList.Items {
-			if build.Spec.Source.Credentials != nil {
-				if build.Spec.Source.Credentials.Name == secret.Name {
+			if build.GetSourceCredentials() != nil && build.GetSourceCredentials() == &secret.Name {
+				flagReconcile = true
+			}
+
+			if build.Spec.Output.PushSecret != nil {
+				if build.Spec.Output.PushSecret == &secret.Name {
 					flagReconcile = true
 				}
 			}
-			if build.Spec.Output.Credentials != nil {
-				if build.Spec.Output.Credentials.Name == secret.Name {
-					flagReconcile = true
-				}
-			}
-			if build.Spec.Builder != nil && build.Spec.Builder.Credentials != nil {
-				if build.Spec.Builder.Credentials.Name == secret.Name {
-					flagReconcile = true
-				}
-			}
+
 			if flagReconcile {
 				reconcileList = append(reconcileList, reconcile.Request{
 					NamespacedName: types.NamespacedName{

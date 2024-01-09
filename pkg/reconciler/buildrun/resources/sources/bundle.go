@@ -10,19 +10,14 @@ import (
 
 	core "k8s.io/api/core/v1"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 // AppendBundleStep appends the bundle step to the TaskSpec
-func AppendBundleStep(
-	cfg *config.Config,
-	taskSpec *pipelineapi.TaskSpec,
-	source build.Source,
-	name string,
-) {
+func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *build.OCIArtifact, name string) {
 	// append the result
 	taskSpec.Results = append(taskSpec.Results, pipelineapi.TaskResult{
 		Name:        fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name),
@@ -36,7 +31,7 @@ func AppendBundleStep(
 		ImagePullPolicy: cfg.BundleContainerTemplate.ImagePullPolicy,
 		Command:         cfg.BundleContainerTemplate.Command,
 		Args: []string{
-			"--image", source.BundleContainer.Image,
+			"--image", oci.Image,
 			"--target", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
 			"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", prefixParamsResultsVolumes, name),
 		},
@@ -47,14 +42,14 @@ func AppendBundleStep(
 	}
 
 	// add credentials mount, if provided
-	if source.Credentials != nil {
-		AppendSecretVolume(taskSpec, source.Credentials.Name)
+	if oci.PullSecret != nil {
+		AppendSecretVolume(taskSpec, *oci.PullSecret)
 
 		secretMountPath := fmt.Sprintf("/workspace/%s-pull-secret", prefixParamsResultsVolumes)
 
 		// define the volume mount on the container
 		bundleStep.VolumeMounts = append(bundleStep.VolumeMounts, core.VolumeMount{
-			Name:      SanitizeVolumeNameForSecretName(source.Credentials.Name),
+			Name:      SanitizeVolumeNameForSecretName(*oci.PullSecret),
 			MountPath: secretMountPath,
 			ReadOnly:  true,
 		})
@@ -66,7 +61,7 @@ func AppendBundleStep(
 	}
 
 	// add prune flag in when prune after pull is configured
-	if source.BundleContainer.Prune != nil && *source.BundleContainer.Prune == build.PruneAfterPull {
+	if oci.Prune != nil && *oci.Prune == build.PruneAfterPull {
 		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
 
@@ -76,13 +71,9 @@ func AppendBundleStep(
 // AppendBundleResult append bundle source result to build run
 func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipelineapi.TaskRunResult) {
 	imageDigest := findResultValue(results, fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name))
-
 	if strings.TrimSpace(imageDigest) != "" {
-		buildRun.Status.Sources = append(buildRun.Status.Sources, build.SourceResult{
-			Name: name,
-			Bundle: &build.BundleSourceResult{
-				Digest: imageDigest,
-			},
-		})
+		buildRun.Status.Source.OciArtifact = &build.OciArtifactSourceResult{
+			Digest: imageDigest,
+		}
 	}
 }

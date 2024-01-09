@@ -9,7 +9,7 @@ import (
 
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 
-	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
@@ -21,30 +21,24 @@ import (
 var _ = Describe("UpdateSecurityContext", func() {
 
 	var buildStrategySecurityContext *buildapi.BuildStrategySecurityContext
-	var buildStrategySteps []buildapi.BuildStep
+	var buildStrategySteps []buildapi.Step
 	var taskRunSpec *pipelineapi.TaskSpec
 	var taskRunAnnotations map[string]string
 
 	BeforeEach(func() {
-		buildStrategySteps = []buildapi.BuildStep{{
-			Container: corev1.Container{
-				Name: "first-step",
-				SecurityContext: &corev1.SecurityContext{
-					RunAsUser:  pointer.Int64(891),
-					RunAsGroup: pointer.Int64(1210),
-				},
+		buildStrategySteps = []buildapi.Step{{
+			Name: "first-step",
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:  pointer.Int64(891),
+				RunAsGroup: pointer.Int64(1210),
 			},
 		}, {
-			Container: corev1.Container{
-				Name: "second-step",
-				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: pointer.Int64(891),
-				},
+			Name: "second-step",
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser: pointer.Int64(891),
 			},
 		}, {
-			Container: corev1.Container{
-				Name: "third-step",
-			},
+			Name: "third-step",
 		}}
 
 		taskRunSpec = &pipelineapi.TaskSpec{

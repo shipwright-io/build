@@ -11,7 +11,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/git"
 )
@@ -31,22 +31,25 @@ func NewSourceURL(client client.Client, build *build.Build) *SourceURLRef {
 // that the spec.source.url exists. This validation only applies
 // to endpoints that do not require authentication.
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
-	if s.Build.Spec.Source.Credentials == nil && s.Build.Spec.Source.URL != nil {
-		switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
-		case "true":
-			if err := git.ValidateGitURLExists(ctx, *s.Build.Spec.Source.URL); err != nil {
-				s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, err.Error())
-				return err
+	// TODO: double check this new code
+	if s.Build.Spec.Source.Type == build.GitType {
+		gitSource := s.Build.Spec.Source.GitSource
+		if gitSource.CloneSecret == nil && gitSource.URL != "" {
+			switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
+			case "true":
+				if err := git.ValidateGitURLExists(ctx, gitSource.URL); err != nil {
+					s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, err.Error())
+					return err
+				}
+			case "", "false":
+				ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository]), namespace, s.Build.Namespace, name, s.Build.Name)
+
+			default:
+				var annoErr = fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)
+				ctxlog.Error(ctx, annoErr, namespace, s.Build.Namespace, name, s.Build.Name)
+				s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, annoErr.Error())
+				return annoErr
 			}
-
-		case "", "false":
-			ctxlog.Info(ctx, fmt.Sprintf("the annotation %s is set to %s, nothing to do", build.AnnotationBuildVerifyRepository, s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository]), namespace, s.Build.Namespace, name, s.Build.Name)
-
-		default:
-			var annoErr = fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildVerifyRepository)
-			ctxlog.Error(ctx, annoErr, namespace, s.Build.Namespace, name, s.Build.Name)
-			s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, annoErr.Error())
-			return annoErr
 		}
 	}
 

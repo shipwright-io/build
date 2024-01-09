@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
@@ -28,7 +28,6 @@ var validationTypes = [...]string{
 	validate.SourceURL,
 	validate.Secrets,
 	validate.Strategies,
-	validate.Sources,
 	validate.BuildName,
 	validate.Envs,
 	validate.Triggers,

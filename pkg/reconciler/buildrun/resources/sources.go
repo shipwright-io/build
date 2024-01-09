@@ -5,7 +5,7 @@
 package resources
 
 import (
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
@@ -17,19 +17,18 @@ const defaultSourceName = "default"
 // isLocalCopyBuildSource appends all "Sources" in a single slice, and if any entry is typed
 // "LocalCopy" it returns first LocalCopy typed BuildSource found, or nil.
 func isLocalCopyBuildSource(
-	build *buildv1alpha1.Build,
-	buildRun *buildv1alpha1.BuildRun,
-) *buildv1alpha1.BuildSource {
-	sources := []buildv1alpha1.BuildSource{}
+	build *buildv1beta1.Build,
+	buildRun *buildv1beta1.BuildRun,
+) *buildv1beta1.Local {
 
-	sources = append(sources, build.Spec.Sources...)
-	sources = append(sources, buildRun.Spec.Sources...)
-
-	for _, source := range sources {
-		if source.Type == buildv1alpha1.LocalCopy {
-			return &source
-		}
+	if buildRun.Spec.Source != nil && buildRun.Spec.Source.Type == buildv1beta1.LocalType {
+		return buildRun.Spec.Source.LocalSource
 	}
+
+	if build.Spec.Source.Type == buildv1beta1.LocalType {
+		return build.Spec.Source.LocalSource
+	}
+
 	return nil
 }
 
@@ -38,40 +37,33 @@ func isLocalCopyBuildSource(
 func AmendTaskSpecWithSources(
 	cfg *config.Config,
 	taskSpec *pipelineapi.TaskSpec,
-	build *buildv1alpha1.Build,
-	buildRun *buildv1alpha1.BuildRun,
+	build *buildv1beta1.Build,
+	buildRun *buildv1beta1.BuildRun,
 ) {
 	if localCopy := isLocalCopyBuildSource(build, buildRun); localCopy != nil {
 		sources.AppendLocalCopyStep(cfg, taskSpec, localCopy.Timeout)
 	} else {
-		// create the step for spec.source, either Git or Bundle
-		switch {
-		case build.Spec.Source.BundleContainer != nil:
-			sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source, defaultSourceName)
-		case build.Spec.Source.URL != nil:
-			sources.AppendGitStep(cfg, taskSpec, build.Spec.Source, defaultSourceName)
-		}
-	}
 
-	// inspecting .spec.sources looking for "http" typed sources to generate the TaskSpec items
-	// in order to handle remote artifacts
-	for _, source := range build.Spec.Sources {
-		if source.Type == buildv1alpha1.HTTP {
-			sources.AppendHTTPStep(cfg, taskSpec, source)
+		// create the step for spec.source, either Git or Bundle
+		switch build.Spec.Source.Type {
+		case buildv1beta1.OCIArtifactType:
+			if build.Spec.Source.OCIArtifact != nil {
+				sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source.OCIArtifact, defaultSourceName)
+			}
+		case buildv1beta1.GitType:
+			sources.AppendGitStep(cfg, taskSpec, *build.Spec.Source.GitSource, defaultSourceName)
 		}
 	}
 }
 
-func updateBuildRunStatusWithSourceResult(buildrun *buildv1alpha1.BuildRun, results []pipelineapi.TaskRunResult) {
+func updateBuildRunStatusWithSourceResult(buildrun *buildv1beta1.BuildRun, results []pipelineapi.TaskRunResult) {
 	buildSpec := buildrun.Status.BuildSpec
 
 	switch {
-	case buildSpec.Source.BundleContainer != nil:
+	case buildSpec.Source.Type == buildv1beta1.OCIArtifactType && buildSpec.Source.OCIArtifact != nil:
 		sources.AppendBundleResult(buildrun, defaultSourceName, results)
 
-	case buildSpec.Source.URL != nil:
+	case buildSpec.Source.Type == buildv1beta1.GitType && buildSpec.Source.GitSource != nil:
 		sources.AppendGitResult(buildrun, defaultSourceName, results)
 	}
-
-	// no results for HTTP sources yet
 }

@@ -252,8 +252,8 @@ func (c *Catalog) FakeClusterBuildStrategyNotFound(name string) error {
 // StubFunc is used to simulate the status of the Build
 // after a .Status().Update() call in the controller. This
 // receives a parameter to return an specific status state
-func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			Expect(*object.Status.Registered).To(Equal(status))
@@ -334,8 +334,8 @@ func (c *Catalog) StubBuildAndTaskRun(
 }
 
 // StubBuildStatusReason asserts Status fields on a Build resource
-func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
 			if object.Status.Message != nil && *object.Status.Message != "" {
@@ -350,8 +350,8 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
-	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
+	return func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
 			if !tolerateEmptyStatus {
@@ -1000,7 +1000,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			Build: build.ReferencedBuild{
 				Name: &buildName,
 			},
-			ServiceAccount: pointer.String(".generate"),
+			ServiceAccount: pointer.String(".generated"),
 		},
 	}
 }

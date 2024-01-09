@@ -275,3 +275,18 @@ type BuildRetention struct {
 func init() {
 	SchemeBuilder.Register(&Build{}, &BuildList{})
 }
+
+// GetSourceCredentials returns the secret name for a Build Source
+func (b Build) GetSourceCredentials() *string {
+	switch b.Spec.Source.Type {
+	case OCIArtifactType:
+		if b.Spec.Source.OCIArtifact != nil && b.Spec.Source.OCIArtifact.PullSecret != nil {
+			return b.Spec.Source.OCIArtifact.PullSecret
+		}
+	default:
+		if b.Spec.Source.GitSource != nil && b.Spec.Source.GitSource.CloneSecret != nil {
+			return b.Spec.Source.GitSource.CloneSecret
+		}
+	}
+	return nil
+}

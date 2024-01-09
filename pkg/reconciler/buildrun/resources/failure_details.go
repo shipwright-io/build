@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"github.com/tektoncd/pipeline/pkg/result"
@@ -28,7 +28,7 @@ const (
 )
 
 // UpdateBuildRunUsingTaskFailures is extracting failures from taskRun steps and adding them to buildRun (mutates)
-func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, taskRun *pipelineapi.TaskRun) {
+func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, taskRun *pipelineapi.TaskRun) {
 	trCondition := taskRun.Status.GetCondition(apis.ConditionSucceeded)
 
 	// only extract failures when failing condition is present
@@ -91,12 +91,12 @@ func extractFailedPodAndContainer(ctx context.Context, client client.Client, tas
 	return &pod, failedContainer, nil
 }
 
-func extractFailureDetails(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) (failure *buildv1alpha1.FailureDetails) {
-	failure = &buildv1alpha1.FailureDetails{}
+func extractFailureDetails(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) (failure *buildv1beta1.FailureDetails) {
+	failure = &buildv1beta1.FailureDetails{}
 
 	failure.Reason, failure.Message = extractFailureReasonAndMessage(taskRun)
 
-	failure.Location = &buildv1alpha1.FailedAt{Pod: taskRun.Status.PodName}
+	failure.Location = &buildv1beta1.Location{Pod: taskRun.Status.PodName}
 	pod, container, _ := extractFailedPodAndContainer(ctx, client, taskRun)
 
 	if pod != nil && container != nil {

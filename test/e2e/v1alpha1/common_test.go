@@ -6,6 +6,7 @@ package e2e_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,15 +17,18 @@ import (
 
 	. "github.com/onsi/gomega"
 	knativeapis "knative.dev/pkg/apis"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	resources "github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
 )
 
@@ -143,7 +147,7 @@ func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buil
 	}
 
 	var build buildv1alpha1.Build
-	if err := resources.GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, buildRun, &build); err != nil {
+	if err := GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, buildRun, &build); err != nil {
 		Logf("Failed to get Build from BuildRun %s: %s", buildRunName, err)
 		return nil, buildRun, err
 	}
@@ -245,4 +249,52 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 			}
 		}
 	}
+}
+
+// GetBuildObject retrieves an existing Build based on a name and namespace
+func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, build *buildv1alpha1.Build) error {
+	// Option #1: BuildRef is specified
+	// An actual Build resource is specified by name and needs to be looked up in the cluster.
+	if buildRun.Spec.BuildRef.Name != "" {
+		err := client.Get(ctx, types.NamespacedName{Name: buildRun.Spec.BuildName(), Namespace: buildRun.Namespace}, build)
+		if apierrors.IsNotFound(err) {
+			// stop reconciling and mark the BuildRun as Failed
+			// we only reconcile again if the status.Update call fails
+			if updateErr := UpdateConditionWithFalseStatus(ctx, client, buildRun, fmt.Sprintf("build.shipwright.io %q not found", buildRun.Spec.BuildName()), resources.ConditionBuildNotFound); updateErr != nil {
+				return resources.HandleError("build object not found", err, updateErr)
+			}
+		}
+
+		return err
+	}
+
+	// Option #2: BuildSpec is specified
+	// The build specification is embedded in the BuildRun itself, create a transient Build resource.
+	if buildRun.Spec.BuildSpec != nil {
+		build.Name = ""
+		build.Namespace = buildRun.Namespace
+		build.Status = buildv1alpha1.BuildStatus{}
+		buildRun.Spec.BuildSpec.DeepCopyInto(&build.Spec)
+		return nil
+	}
+
+	// Bail out hard in case of an invalid state
+	return fmt.Errorf("invalid BuildRun resource that neither has a BuildRef nor an embedded BuildSpec")
+}
+
+func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, errorMessage string, reason string) error {
+	now := metav1.Now()
+	buildRun.Status.CompletionTime = &now
+	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
+		LastTransitionTime: now,
+		Type:               buildv1alpha1.Succeeded,
+		Status:             corev1.ConditionFalse,
+		Reason:             reason,
+		Message:            errorMessage,
+	})
+	ctxlog.Debug(ctx, "updating buildRun status", "namespace", buildRun.Namespace, "name", buildRun.Name, "reason", reason)
+	if err := client.Status().Update(ctx, buildRun); err != nil {
+		return err
+	}
+	return nil
 }

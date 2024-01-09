@@ -16,7 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	buildfakes "github.com/shipwright-io/build/pkg/controller/fakes"
 )
 
@@ -46,7 +46,7 @@ var _ = Describe("Surfacing errors", func() {
 			followUpStep := pipelineapi.StepState{}
 
 			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep, followUpStep)
-			redBuild := buildv1alpha1.BuildRun{}
+			redBuild := buildv1beta1.BuildRun{}
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &redBuild, &redTaskRun)
 
@@ -67,7 +67,7 @@ var _ = Describe("Surfacing errors", func() {
 			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message)}
 
 			redTaskRun.Status.Steps = append(redTaskRun.Status.Steps, failedStep)
-			redBuild := buildv1alpha1.BuildRun{}
+			redBuild := buildv1beta1.BuildRun{}
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &redBuild, &redTaskRun)
 
@@ -93,7 +93,7 @@ var _ = Describe("Surfacing errors", func() {
 			failedStep.Terminated = &corev1.ContainerStateTerminated{Message: string(message)}
 
 			greenTaskRun.Status.Steps = append(greenTaskRun.Status.Steps, failedStep)
-			greenBuildRun := buildv1alpha1.BuildRun{}
+			greenBuildRun := buildv1beta1.BuildRun{}
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &greenBuildRun, &greenTaskRun)
 
@@ -103,7 +103,7 @@ var _ = Describe("Surfacing errors", func() {
 		It("should not surface errors for a successful TaskRun", func() {
 			greenTaskRun := pipelineapi.TaskRun{}
 			greenTaskRun.Status.Conditions = append(greenTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionSucceeded})
-			greenBuildRun := buildv1alpha1.BuildRun{}
+			greenBuildRun := buildv1beta1.BuildRun{}
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &greenBuildRun, &greenTaskRun)
 
@@ -113,7 +113,7 @@ var _ = Describe("Surfacing errors", func() {
 		It("should not surface errors if the TaskRun does not have a Succeeded condition", func() {
 			unfinishedTaskRun := pipelineapi.TaskRun{}
 			unfinishedTaskRun.Status.Conditions = append(unfinishedTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionReady})
-			unfinishedBuildRun := buildv1alpha1.BuildRun{}
+			unfinishedBuildRun := buildv1beta1.BuildRun{}
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &unfinishedBuildRun, &unfinishedTaskRun)
 			Expect(unfinishedBuildRun.Status.FailureDetails).To(BeNil())
@@ -122,7 +122,7 @@ var _ = Describe("Surfacing errors", func() {
 		It("should not surface errors if the TaskRun is in progress", func() {
 			unknownTaskRun := pipelineapi.TaskRun{}
 			unknownTaskRun.Status.Conditions = append(unknownTaskRun.Status.Conditions, apis.Condition{Type: apis.ConditionSucceeded, Reason: "random"})
-			unknownBuildRun := buildv1alpha1.BuildRun{}
+			unknownBuildRun := buildv1beta1.BuildRun{}
 
 			UpdateBuildRunUsingTaskFailures(ctx, client, &unknownBuildRun, &unknownTaskRun)
 			Expect(unknownBuildRun.Status.FailureDetails).To(BeNil())

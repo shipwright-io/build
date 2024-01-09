@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -24,7 +25,7 @@ const (
 func AppendGitStep(
 	cfg *config.Config,
 	taskSpec *pipelineapi.TaskSpec,
-	source buildv1alpha1.Source,
+	git buildv1alpha1.Git,
 	name string,
 ) {
 	// append the result
@@ -47,7 +48,7 @@ func AppendGitStep(
 		Command:         cfg.GitContainerTemplate.Command,
 		Args: []string{
 			"--url",
-			*source.URL,
+			git.URL,
 			"--target",
 			fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
 			"--result-file-commit-sha",
@@ -68,12 +69,12 @@ func AppendGitStep(
 	}
 
 	// Check if a revision is defined
-	if source.Revision != nil {
+	if git.Revision != nil {
 		// append the argument
 		gitStep.Args = append(
 			gitStep.Args,
 			"--revision",
-			*source.Revision,
+			*git.Revision,
 		)
 	}
 
@@ -82,15 +83,15 @@ func AppendGitStep(
 		gitStep.Args = append(gitStep.Args, "--git-url-rewrite")
 	}
 
-	if source.Credentials != nil {
+	if git.CloneSecret != nil {
 		// ensure the value is there
-		AppendSecretVolume(taskSpec, source.Credentials.Name)
+		AppendSecretVolume(taskSpec, *git.CloneSecret)
 
 		secretMountPath := fmt.Sprintf("/workspace/%s-source-secret", prefixParamsResultsVolumes)
 
 		// define the volume mount on the container
 		gitStep.VolumeMounts = append(gitStep.VolumeMounts, corev1.VolumeMount{
-			Name:      SanitizeVolumeNameForSecretName(source.Credentials.Name),
+			Name:      SanitizeVolumeNameForSecretName(*git.CloneSecret),
 			MountPath: secretMountPath,
 			ReadOnly:  true,
 		})
@@ -114,13 +115,10 @@ func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []pi
 	branchName := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName))
 
 	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" || strings.TrimSpace(branchName) != "" {
-		buildRun.Status.Sources = append(buildRun.Status.Sources, buildv1alpha1.SourceResult{
-			Name: name,
-			Git: &buildv1alpha1.GitSourceResult{
-				CommitAuthor: commitAuthor,
-				CommitSha:    commitSha,
-				BranchName:   branchName,
-			},
-		})
+		buildRun.Status.Source.Git = &v1beta1.GitSourceResult{
+			CommitAuthor: commitAuthor,
+			CommitSha:    commitSha,
+			BranchName:   branchName,
+		}
 	}
 }

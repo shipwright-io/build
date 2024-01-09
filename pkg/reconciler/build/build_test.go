@@ -20,11 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	buildController "github.com/shipwright-io/build/pkg/reconciler/build"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Reconcile Build", func() {
@@ -83,10 +83,9 @@ var _ = Describe("Reconcile Build", func() {
 	Describe("Reconcile", func() {
 		Context("when source secret is specified", func() {
 			It("fails when the secret does not exist", func() {
-				buildSample.Spec.Source.Credentials = &corev1.LocalObjectReference{
-					Name: "non-existing",
-				}
-				buildSample.Spec.Output.Credentials = nil
+				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("non-existing")
+
+				buildSample.Spec.Output.PushSecret = nil
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecSourceSecretRefNotFound, "referenced secret non-existing not found")
 				statusWriter.UpdateCalls(statusCall)
@@ -97,62 +96,8 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("succeeds when the secret exists foobar", func() {
-				buildSample.Spec.Source.Credentials = &corev1.LocalObjectReference{
-					Name: "existing",
-				}
-				buildSample.Spec.Output.Credentials = nil
-
-				// Fake some client Get calls and ensure we populate all
-				// different resources we could get during reconciliation
-				client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
-					switch object := object.(type) {
-					case *build.Build:
-						buildSample.DeepCopyInto(object)
-					case *build.ClusterBuildStrategy:
-						clusterBuildStrategySample.DeepCopyInto(object)
-					case *corev1.Secret:
-						secretSample = ctl.SecretWithoutAnnotation("existing", namespace)
-						secretSample.DeepCopyInto(object)
-					}
-					return nil
-				})
-
-				statusCall := ctl.StubFunc(corev1.ConditionTrue, build.SucceedStatus, "all validations succeeded")
-				statusWriter.UpdateCalls(statusCall)
-
-				result, err := reconciler.Reconcile(context.TODO(), request)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-				Expect(reconcile.Result{}).To(Equal(result))
-			})
-		})
-
-		Context("when builder image secret is specified", func() {
-			It("fails when the secret does not exist", func() {
-				buildSample.Spec.Builder = &build.Image{
-					Image: "busybox",
-					Credentials: &corev1.LocalObjectReference{
-						Name: "non-existing",
-					},
-				}
-				buildSample.Spec.Output.Credentials = nil
-
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SpecBuilderSecretRefNotFound, "referenced secret non-existing not found")
-				statusWriter.UpdateCalls(statusCall)
-
-				_, err := reconciler.Reconcile(context.TODO(), request)
-				Expect(err).To(BeNil())
-				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-			})
-
-			It("succeeds when the secret exists", func() {
-				buildSample.Spec.Builder = &build.Image{
-					Image: "busybox",
-					Credentials: &corev1.LocalObjectReference{
-						Name: "existing",
-					},
-				}
-				buildSample.Spec.Output.Credentials = nil
+				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("existing")
+				buildSample.Spec.Output.PushSecret = nil
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -217,12 +162,8 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when source secret and output secret are specified", func() {
 			It("fails when both secrets do not exist", func() {
-				buildSample.Spec.Source.Credentials = &corev1.LocalObjectReference{
-					Name: "non-existing-source",
-				}
-				buildSample.Spec.Output.Credentials = &corev1.LocalObjectReference{
-					Name: "non-existing-output",
-				}
+				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("non-existing-source")
+				buildSample.Spec.Output.PushSecret = pointer.String("non-existing-output")
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.MultipleSecretRefNotFound, "missing secrets are non-existing-output,non-existing-source")
 				statusWriter.UpdateCalls(statusCall)
@@ -371,7 +312,7 @@ var _ = Describe("Reconcile Build", func() {
 		Context("when source URL is specified", func() {
 			// validate file protocol
 			It("fails when source URL is invalid", func() {
-				buildSample.Spec.Source.URL = pointer.String("foobar")
+				buildSample.Spec.Source.GitSource.URL = "foobar"
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -385,7 +326,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// validate https protocol
 			It("fails when public source URL is unreachable", func() {
-				buildSample.Spec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go-fake")
+				buildSample.Spec.Source.GitSource.URL = "https://github.com/shipwright-io/sample-go-fake"
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -400,7 +341,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// skip validation because of empty sourceURL annotation
 			It("succeed when source URL is invalid because source annotation is empty", func() {
-				buildSample.Spec.Source.URL = pointer.String("foobar")
+				buildSample.Spec.Source.GitSource.URL = "foobar"
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -451,8 +392,8 @@ var _ = Describe("Reconcile Build", func() {
 			// skip validation because build references a sourceURL secret
 			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
 				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
-				buildSample.Spec.Source.URL = pointer.String("https://github.yourco.com/org/build-fake")
-				buildSample.Spec.Source.Credentials.Name = registrySecret
+				buildSample.Spec.Source.GitSource.URL = "https://github.yourco.com/org/build-fake"
+				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String(registrySecret)
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -479,10 +420,8 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when environment variables are specified", func() {
 			JustBeforeEach(func() {
-				buildSample.Spec.Source.Credentials = &corev1.LocalObjectReference{
-					Name: "existing",
-				}
-				buildSample.Spec.Output.Credentials = nil
+				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("existing")
+				buildSample.Spec.Output.PushSecret = nil
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation

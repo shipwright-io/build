@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
@@ -144,7 +143,7 @@ func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buil
 		return nil, nil, err
 	}
 
-	var alphaBuild buildv1alpha1.Build
+	var alphaBuild buildv1beta1.Build
 	var obj unstructured.Unstructured
 
 	buildRun.ConvertTo(testBuild.Context, &obj)
@@ -153,7 +152,7 @@ func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buil
 		Logf("Failed to convert the buildRun to v1alpha1: %s", err)
 	}
 
-	var alphaBuildRun buildv1alpha1.BuildRun
+	var alphaBuildRun buildv1beta1.BuildRun
 	json.Unmarshal(jsonData, &alphaBuildRun)
 
 	if err := resources.GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, &alphaBuildRun, &alphaBuild); err != nil {

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
@@ -35,42 +35,42 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 		return err
 	}
 
-	switch o.Build.GetAnnotations()[build.AnnotationBuildRunDeletion] {
-	case "true":
-		// if the buildRun does not have an ownerreference to the Build, lets add it.
-		for i := range buildRunList.Items {
-			buildRun := buildRunList.Items[i]
+	if o.Build.Spec.Retention != nil && o.Build.Spec.Retention.AtBuildDeletion != nil {
+		switch *o.Build.Spec.Retention.AtBuildDeletion {
+		case true:
+			// if the buildRun does not have an ownerreference to the Build, lets add it.
+			for i := range buildRunList.Items {
+				buildRun := buildRunList.Items[i]
 
-			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
-				if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
-					o.Build.Status.Reason = build.BuildReasonPtr(build.SetOwnerReferenceFailed)
-					o.Build.Status.Message = pointer.String(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
+				if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
+					if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
+						o.Build.Status.Reason = build.BuildReasonPtr(build.SetOwnerReferenceFailed)
+						o.Build.Status.Message = pointer.String(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
+					}
+					if err = o.Client.Update(ctx, &buildRun); err != nil {
+						return err
+					}
+					ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 				}
-				if err = o.Client.Update(ctx, &buildRun); err != nil {
-					return err
-				}
-				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
-		}
-	case "", "false":
-		// if the buildRun have an ownerreference to the Build, lets remove it
-		for i := range buildRunList.Items {
-			buildRun := buildRunList.Items[i]
+		case false:
+			// if the buildRun have an ownerreference to the Build, lets remove it
+			for i := range buildRunList.Items {
+				buildRun := buildRunList.Items[i]
 
-			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index != -1 {
-				buildRun.OwnerReferences = removeOwnerReferenceByIndex(buildRun.OwnerReferences, index)
-				if err := o.Client.Update(ctx, &buildRun); err != nil {
-					return err
+				if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index != -1 {
+					buildRun.OwnerReferences = removeOwnerReferenceByIndex(buildRun.OwnerReferences, index)
+					if err := o.Client.Update(ctx, &buildRun); err != nil {
+						return err
+					}
+					ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 				}
-				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
+		default:
+			ctxlog.Info(ctx, fmt.Sprintln("the build retention AtBuildDeletion was not properly defined"), namespace, o.Build.Namespace, name, o.Build.Name)
+			return fmt.Errorf("the build retention AtBuildDeletion was not properly defined")
 		}
-
-	default:
-		ctxlog.Info(ctx, fmt.Sprintf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion), namespace, o.Build.Namespace, name, o.Build.Name)
-		return fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion)
 	}
-
 	return nil
 }
 

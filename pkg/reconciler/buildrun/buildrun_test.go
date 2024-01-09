@@ -29,12 +29,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/shipwright-io/build/pkg/apis"
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	buildrunctl "github.com/shipwright-io/build/pkg/reconciler/buildrun"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Reconcile BuildRun", func() {
@@ -1329,8 +1329,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 							Name: buildRunName,
 						},
 						Spec: build.BuildRunSpec{
-							BuildRef:  &build.BuildRef{},
-							BuildSpec: &build.BuildSpec{},
+							Build: build.ReferencedBuild{
+								Build: &build.BuildSpec{},
+								Name:  pointer.String("foobar"),
+							},
 						},
 					}
 
@@ -1346,8 +1348,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 							Name: buildRunName,
 						},
 						Spec: build.BuildRunSpec{
-							Output:    &build.Image{Image: "foo:bar"},
-							BuildSpec: &build.BuildSpec{},
+							Output: &build.Image{Image: "foo:bar"},
+							Build: build.ReferencedBuild{
+								Build: &build.BuildSpec{},
+							},
 						},
 					}
 
@@ -1367,7 +1371,9 @@ var _ = Describe("Reconcile BuildRun", func() {
 								Name:        "foo",
 								SingleValue: &build.SingleValue{Value: pointer.String("bar")},
 							}},
-							BuildSpec: &build.BuildSpec{},
+							Build: build.ReferencedBuild{
+								Build: &build.BuildSpec{},
+							},
 						},
 					}
 
@@ -1383,8 +1389,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 							Name: buildRunName,
 						},
 						Spec: build.BuildRunSpec{
-							Env:       []corev1.EnvVar{{Name: "foo", Value: "bar"}},
-							BuildSpec: &build.BuildSpec{},
+							Env: []corev1.EnvVar{{Name: "foo", Value: "bar"}},
+							Build: build.ReferencedBuild{
+								Build: &build.BuildSpec{},
+							},
 						},
 					}
 
@@ -1400,8 +1408,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 							Name: buildRunName,
 						},
 						Spec: build.BuildRunSpec{
-							Timeout:   &metav1.Duration{Duration: time.Second},
-							BuildSpec: &build.BuildSpec{},
+							Timeout: &metav1.Duration{Duration: time.Second},
+							Build: build.ReferencedBuild{
+								Build: &build.BuildSpec{},
+							},
 						},
 					}
 
@@ -1419,22 +1429,24 @@ var _ = Describe("Reconcile BuildRun", func() {
 							Name: buildRunName,
 						},
 						Spec: build.BuildRunSpec{
-							BuildSpec: &build.BuildSpec{
-								Source: build.Source{
-									URL:        pointer.String("https://github.com/shipwright-io/sample-go.git"),
-									ContextDir: pointer.String("source-build"),
-								},
-								Strategy: build.Strategy{
-									Kind: &clusterBuildStrategy,
-									Name: strategyName,
-								},
-								Output: build.Image{
-									Image: "foo/bar:latest",
+							Build: build.ReferencedBuild{
+								Build: &build.BuildSpec{
+									Source: build.Source{
+										GitSource: &build.Git{
+											URL: "https://github.com/shipwright-io/sample-go.git",
+										},
+										ContextDir: pointer.String("source-build"),
+									},
+									Strategy: build.Strategy{
+										Kind: &clusterBuildStrategy,
+										Name: strategyName,
+									},
+									Output: build.Image{
+										Image: "foo/bar:latest",
+									},
 								},
 							},
-							ServiceAccount: &build.ServiceAccount{
-								Generate: pointer.Bool(true),
-							},
+							ServiceAccount: pointer.String(".generated"),
 						},
 					}
 
@@ -1443,7 +1455,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 						case *build.BuildRun:
 							buildRunSample.DeepCopyInto(object)
 							return nil
-
 						case *build.ClusterBuildStrategy:
 							ctl.ClusterBuildStrategy(strategyName).DeepCopyInto(object)
 							return nil
@@ -1468,7 +1479,6 @@ var _ = Describe("Reconcile BuildRun", func() {
 						switch taskRun := o.(type) {
 						case *pipelineapi.TaskRun:
 							taskRunCreates++
-
 							Expect(taskRun.Labels).ToNot(HaveKey(build.LabelBuild), "no build name label is suppose to be set")
 							Expect(taskRun.Labels).ToNot(HaveKey(build.LabelBuildGeneration), "no build generation label is suppose to be set")
 						}
