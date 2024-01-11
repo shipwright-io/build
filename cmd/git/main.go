@@ -46,20 +46,21 @@ func (e ExitError) Error() string {
 }
 
 type settings struct {
-	help                   bool
-	url                    string
-	revision               string
-	depth                  uint
-	target                 string
-	resultFileCommitSha    string
-	resultFileCommitAuthor string
-	resultFileBranchName   string
-	secretPath             string
-	skipValidation         bool
-	gitURLRewrite          bool
-	resultFileErrorMessage string
-	resultFileErrorReason  string
-	verbose                bool
+	help                      bool
+	url                       string
+	revision                  string
+	depth                     uint
+	target                    string
+	resultFileCommitSha       string
+	resultFileCommitAuthor    string
+	resultFileBranchName      string
+	resultFileSourceTimestamp string
+	secretPath                string
+	skipValidation            bool
+	gitURLRewrite             bool
+	resultFileErrorMessage    string
+	resultFileErrorReason     string
+	verbose                   bool
 }
 
 var flagValues settings
@@ -81,6 +82,7 @@ func init() {
 	pflag.StringVar(&flagValues.target, "target", "", "The target directory of the clone operation")
 	pflag.StringVar(&flagValues.resultFileCommitSha, "result-file-commit-sha", "", "A file to write the commit sha to.")
 	pflag.StringVar(&flagValues.resultFileCommitAuthor, "result-file-commit-author", "", "A file to write the commit author to.")
+	pflag.StringVar(&flagValues.resultFileSourceTimestamp, "result-file-source-timestamp", "", "A file to write the source timestamp to.")
 	pflag.StringVar(&flagValues.resultFileBranchName, "result-file-branch-name", "", "A file to write the branch name to.")
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains a secret. Either username and password for basic authentication. Or a SSH private key and optionally a known hosts file. Optional.")
 
@@ -176,6 +178,17 @@ func runGitClone(ctx context.Context) error {
 		}
 
 		if err = os.WriteFile(flagValues.resultFileCommitAuthor, []byte(output), 0644); err != nil {
+			return err
+		}
+	}
+
+	if flagValues.resultFileSourceTimestamp != "" {
+		output, err := git(ctx, "-C", flagValues.target, "show", "--no-patch", "--format=%ct")
+		if err != nil {
+			return err
+		}
+
+		if err = os.WriteFile(flagValues.resultFileSourceTimestamp, []byte(output), 0644); err != nil {
 			return err
 		}
 	}
