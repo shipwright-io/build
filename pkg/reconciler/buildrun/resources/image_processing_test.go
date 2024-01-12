@@ -11,7 +11,7 @@ import (
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
+	utils "github.com/shipwright-io/build/test/utils/v1beta1"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 

@@ -5,20 +5,21 @@
 package integration_test
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	utils "github.com/shipwright-io/build/test/utils/v1beta1"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests Build and TaskRun", func() {
 	var (
-		cbsObject      *v1alpha1.ClusterBuildStrategy
-		buildObject    *v1alpha1.Build
-		buildRunObject *v1alpha1.BuildRun
+		cbsObject      *v1beta1.ClusterBuildStrategy
+		buildObject    *v1beta1.Build
+		buildRunObject *v1beta1.BuildRun
 		buildSample,
 		buildRunSample []byte
 	)
@@ -74,8 +75,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label value as empty string", func() {
@@ -89,8 +90,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with annotation", func() {
@@ -104,8 +105,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label", func() {
@@ -119,8 +120,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
 			})
 
 			It("should be successful with both label and annotation", func() {
@@ -139,13 +140,13 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
 			})
 		})
 
 		Context("when creating the taskrun", func() {
-			It("should contain an image-processing step to mutate the image", func() {
+			FIt("should contain an image-processing step to mutate the image", func() {
 				buildObject.Spec.Output.Annotations =
 					map[string]string{
 						"org.opencontainers.image.url": "https://my-company.com/images",
@@ -163,6 +164,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
+				spew.Dump(tr.Spec.TaskSpec.Steps)
 				Expect(tr.Spec.TaskSpec.Steps[3].Name).To(Equal("image-processing"))
 				Expect(tr.Spec.TaskSpec.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
 				Expect(tr.Spec.TaskSpec.Steps[3].Args).To(Equal([]string{

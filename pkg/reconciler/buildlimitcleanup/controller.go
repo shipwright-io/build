@@ -7,7 +7,7 @@ package buildlimitcleanup
 import (
 	"context"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -49,12 +49,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 
 	pred := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			o := e.Object.(*buildv1alpha1.Build)
+			o := e.Object.(*buildv1beta1.Build)
 			return o.Spec.Retention != nil && (o.Spec.Retention.FailedLimit != nil || o.Spec.Retention.SucceededLimit != nil)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			n := e.ObjectNew.(*buildv1alpha1.Build)
-			o := e.ObjectOld.(*buildv1alpha1.Build)
+			n := e.ObjectNew.(*buildv1beta1.Build)
+			o := e.ObjectOld.(*buildv1beta1.Build)
 
 			// Check to see if there are new retention parameters or whether the
 			// limit values have decreased
@@ -88,16 +88,16 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		},
 		// Reconcile the build the related buildrun has just completed
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			n := e.ObjectNew.(*buildv1alpha1.BuildRun)
+			n := e.ObjectNew.(*buildv1beta1.BuildRun)
 
 			// check if Buildrun is related to a build
-			if n.Spec.BuildRef == nil {
+			if n.Spec.Build.Name == nil {
 				return false
 			}
 
-			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
-			oldCondition := o.Status.GetCondition(buildv1alpha1.Succeeded)
-			newCondition := n.Status.GetCondition(buildv1alpha1.Succeeded)
+			o := e.ObjectOld.(*buildv1beta1.BuildRun)
+			oldCondition := o.Status.GetCondition(buildv1beta1.Succeeded)
+			newCondition := n.Status.GetCondition(buildv1beta1.Succeeded)
 			if newCondition != nil {
 				if (oldCondition == nil || oldCondition.Status == corev1.ConditionUnknown) &&
 					(newCondition.Status == corev1.ConditionFalse || newCondition.Status == corev1.ConditionTrue) {
@@ -113,18 +113,18 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(&source.Kind{Type: &buildv1alpha1.Build{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
+	if err = c.Watch(&source.Kind{Type: &buildv1beta1.Build{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
 		return err
 	}
 
 	// Watch for changes to resource BuildRun
-	return c.Watch(&source.Kind{Type: &buildv1alpha1.BuildRun{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
-		buildRun := o.(*buildv1alpha1.BuildRun)
+	return c.Watch(&source.Kind{Type: &buildv1beta1.BuildRun{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+		buildRun := o.(*buildv1beta1.BuildRun)
 
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
-					Name:      buildRun.Spec.BuildRef.Name,
+					Name:      *buildRun.Spec.Build.Name,
 					Namespace: buildRun.Namespace,
 				},
 			},

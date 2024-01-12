@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +25,7 @@ const (
 func AppendGitStep(
 	cfg *config.Config,
 	taskSpec *pipelineapi.TaskSpec,
-	git buildv1alpha1.Git,
+	git buildv1beta1.Git,
 	name string,
 ) {
 	// append the result
@@ -109,7 +109,7 @@ func AppendGitStep(
 }
 
 // AppendGitResult append git source result to build run
-func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []pipelineapi.TaskRunResult) {
+func AppendGitResult(buildRun *buildv1beta1.BuildRun, name string, results []pipelineapi.TaskRunResult) {
 	commitAuthor := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult))
 	commitSha := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitSHAResult))
 	branchName := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName))

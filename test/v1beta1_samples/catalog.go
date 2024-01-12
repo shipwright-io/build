@@ -1000,7 +1000,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			Build: build.ReferencedBuild{
 				Name: &buildName,
 			},
-			ServiceAccount: pointer.String(".generated"),
+			ServiceAccount: pointer.String(".generate"),
 		},
 	}
 }
