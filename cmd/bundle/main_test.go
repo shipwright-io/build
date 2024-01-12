@@ -188,14 +188,16 @@ var _ = Describe("Bundle Loader", func() {
 		})
 
 		AfterEach(func() {
-			ref, err := name.ParseReference(testImage)
-			Expect(err).ToNot(HaveOccurred())
+			if testImage != "" {
+				ref, err := name.ParseReference(testImage)
+				Expect(err).ToNot(HaveOccurred())
 
-			options, auth, err := image.GetOptions(context.TODO(), ref, true, dockerConfigFile, "test-agent")
-			Expect(err).ToNot(HaveOccurred())
+				options, auth, err := image.GetOptions(context.TODO(), ref, true, dockerConfigFile, "test-agent")
+				Expect(err).ToNot(HaveOccurred())
 
-			// Delete test image (best effort)
-			_ = image.Delete(ref, options, *auth)
+				// Delete test image (best effort)
+				_ = image.Delete(ref, options, *auth)
+			}
 		})
 
 		It("should pull and unpack an image from a private registry", func() {
