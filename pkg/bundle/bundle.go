@@ -26,6 +26,11 @@ import (
 
 const shpIgnoreFilename = ".shpignore"
 
+// UnpackDetails contains details about the files that were unpacked
+type UnpackDetails struct {
+	MostRecentFileTimestamp *time.Time
+}
+
 // PackAndPush a local directory as-is into a container image. See
 // remote.Option for optional options to the image push to the registry, for
 // example to provide the appropriate access credentials.
@@ -35,12 +40,12 @@ func PackAndPush(ref name.Reference, directory string, options ...remote.Option)
 		return name.Digest{}, err
 	}
 
-	image, err := mutate.AppendLayers(empty.Image, bundleLayer)
+	image, err := mutate.Time(empty.Image, time.Unix(0, 0))
 	if err != nil {
 		return name.Digest{}, err
 	}
 
-	image, err = mutate.Time(image, time.Unix(0, 0))
+	image, err = mutate.AppendLayers(image, bundleLayer)
 	if err != nil {
 		return name.Digest{}, err
 	}
@@ -77,7 +82,7 @@ func PullAndUnpack(ref name.Reference, targetPath string, options ...remote.Opti
 	rc := mutate.Extract(image)
 	defer rc.Close()
 
-	if err = Unpack(rc, targetPath); err != nil {
+	if _, err = Unpack(rc, targetPath); err != nil {
 		return nil, err
 	}
 
@@ -224,16 +229,17 @@ func Pack(directory string) (io.ReadCloser, error) {
 
 // Unpack reads a tar stream and writes the content into the local file system
 // with all files and directories.
-func Unpack(in io.Reader, targetPath string) error {
+func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
+	var details = UnpackDetails{}
 	var tr = tar.NewReader(in)
 	for {
 		header, err := tr.Next()
 		switch {
 		case err == io.EOF:
-			return nil
+			return &details, nil
 
 		case err != nil:
-			return err
+			return nil, err
 
 		case header == nil:
 			continue
@@ -241,37 +247,46 @@ func Unpack(in io.Reader, targetPath string) error {
 
 		var target = filepath.Join(targetPath, header.Name)
 		if strings.Contains(target, "/../") {
-			return fmt.Errorf("targetPath validation failed, path contains unexpected special elements")
+			return nil, fmt.Errorf("targetPath validation failed, path contains unexpected special elements")
 		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
-				return err
+				return nil, err
 			}
 
 		case tar.TypeReg:
 			// Edge case in which that tarball did not have a directory entry
 			dir, _ := filepath.Split(target)
 			if err := os.MkdirAll(dir, os.FileMode(0755)); err != nil {
-				return err
+				return nil, err
 			}
 
 			file, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			if _, err := io.Copy(file, tr); err != nil {
 				file.Close()
-				return err
+				return nil, err
 			}
 
-			file.Close()
-			os.Chtimes(target, header.AccessTime, header.ModTime)
+			if err := file.Close(); err != nil {
+				return nil, err
+			}
+
+			if err := os.Chtimes(target, header.AccessTime, header.ModTime); err != nil {
+				return nil, err
+			}
+
+			if details.MostRecentFileTimestamp == nil || details.MostRecentFileTimestamp.Before(header.ModTime) {
+				details.MostRecentFileTimestamp = &header.ModTime
+			}
 
 		default:
-			return fmt.Errorf("provided tarball contains unsupported file type, only directories and regular files are supported")
+			return nil, fmt.Errorf("provided tarball contains unsupported file type, only directories and regular files are supported")
 		}
 	}
 }

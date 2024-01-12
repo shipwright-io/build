@@ -9,25 +9,31 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	. "github.com/shipwright-io/build/cmd/bundle"
-	"github.com/shipwright-io/build/pkg/image"
 
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/registry"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"k8s.io/apimachinery/pkg/util/rand"
+
+	"github.com/shipwright-io/build/pkg/bundle"
+	"github.com/shipwright-io/build/pkg/image"
 )
 
 var _ = Describe("Bundle Loader", func() {
 	const exampleImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
 
-	var run = func(args ...string) error {
+	run := func(args ...string) error {
 		// discard log output
 		log.SetOutput(io.Discard)
 
@@ -40,7 +46,7 @@ var _ = Describe("Bundle Loader", func() {
 		return Do(context.Background())
 	}
 
-	var withTempDir = func(f func(target string)) {
+	withTempDir := func(f func(target string)) {
 		path, err := os.MkdirTemp(os.TempDir(), "bundle")
 		Expect(err).ToNot(HaveOccurred())
 		defer os.RemoveAll(path)
@@ -54,6 +60,24 @@ var _ = Describe("Bundle Loader", func() {
 		defer os.Remove(file.Name())
 
 		f(file.Name())
+	}
+
+	withTempRegistry := func(f func(endpoint string)) {
+		logLogger := log.Logger{}
+		logLogger.SetOutput(GinkgoWriter)
+
+		s := httptest.NewServer(
+			registry.New(
+				registry.Logger(&logLogger),
+				registry.WithReferrersSupport(true),
+			),
+		)
+		defer s.Close()
+
+		u, err := url.Parse(s.URL)
+		Expect(err).ToNot(HaveOccurred())
+
+		f(u.Host)
 	}
 
 	filecontent := func(path string) string {
@@ -231,6 +255,64 @@ var _ = Describe("Bundle Loader", func() {
 
 				_, err = remote.Head(ref, options...)
 				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Context("Result file checks", func() {
+		tmpFile := func(dir string, name string, data []byte, timestamp time.Time) {
+			var path = filepath.Join(dir, name)
+
+			Expect(os.WriteFile(
+				path,
+				data,
+				os.FileMode(0644),
+			)).To(Succeed())
+
+			Expect(os.Chtimes(
+				path,
+				timestamp,
+				timestamp,
+			)).To(Succeed())
+		}
+
+		// Creates a controlled reference image with one file called "file" with modification
+		// timestamp of Friday, February 13, 2009 11:31:30 PM (unix timestamp 1234567890)
+		withReferenceImage := func(f func(dig name.Digest)) {
+			withTempRegistry(func(endpoint string) {
+				withTempDir(func(target string) {
+					timestamp := time.Unix(1234567890, 0)
+
+					ref, err := name.ParseReference(fmt.Sprintf("%s/namespace/image:tag", endpoint))
+					Expect(err).ToNot(HaveOccurred())
+					Expect(ref).ToNot(BeNil())
+
+					tmpFile(target, "file", []byte("foobar"), timestamp)
+
+					dig, err := bundle.PackAndPush(ref, target)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(dig).ToNot(BeNil())
+
+					f(dig)
+				})
+			})
+		}
+
+		It("should store source timestamp in result file", func() {
+			withTempDir(func(target string) {
+				withTempDir(func(result string) {
+					withReferenceImage(func(dig name.Digest) {
+						resultSourceTimestamp := filepath.Join(result, "source-timestamp")
+
+						Expect(run(
+							"--image", dig.String(),
+							"--target", target,
+							"--result-file-source-timestamp", resultSourceTimestamp,
+						)).To(Succeed())
+
+						Expect(filecontent(resultSourceTimestamp)).To(Equal("1234567890"))
+					})
+				})
 			})
 		})
 	})
