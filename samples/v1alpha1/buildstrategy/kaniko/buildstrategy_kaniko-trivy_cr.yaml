@@ -14,7 +14,7 @@ spec:
       emptyDir: {}
   buildSteps:
     - name: kaniko-build
-      image: gcr.io/kaniko-project/executor:v1.19.2
+      image: gcr.io/kaniko-project/executor:v1.20.0
       workingDir: $(params.shp-source-root)
       securityContext:
         capabilities:
