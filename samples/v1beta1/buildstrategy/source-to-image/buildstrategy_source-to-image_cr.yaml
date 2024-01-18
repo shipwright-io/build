@@ -22,7 +22,7 @@ spec:
           name: gen-source
       workingDir: $(params.shp-source-root)
     - name: build-and-push
-      image: gcr.io/kaniko-project/executor:v1.19.2
+      image: gcr.io/kaniko-project/executor:v1.20.0
       command:
         - /kaniko/executor
       args:
