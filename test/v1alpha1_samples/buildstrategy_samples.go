@@ -379,7 +379,7 @@ metadata:
 spec:
   buildSteps:
   - name: store-tarball
-    image: gcr.io/go-containerregistry/crane:v0.17.0
+    image: gcr.io/go-containerregistry/crane:v0.18.0
     command:
     - crane
     args:
