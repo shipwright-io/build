@@ -142,6 +142,7 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 		sourceStatus = &SourceResult{
 			Git:         (*GitSourceResult)(s.Git),
 			OciArtifact: (*OciArtifactSourceResult)(s.Bundle),
+			Timestamp:   s.Timestamp,
 		}
 	}
 

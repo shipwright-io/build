@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
+
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -28,16 +30,20 @@ func AppendGitStep(
 	name string,
 ) {
 	// append the result
-	taskSpec.Results = append(taskSpec.Results, pipelineapi.TaskResult{
-		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitSHAResult),
-		Description: "The commit SHA of the cloned source.",
-	}, pipelineapi.TaskResult{
-		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult),
-		Description: "The author of the last commit of the cloned source.",
-	}, pipelineapi.TaskResult{
-		Name:        fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName),
-		Description: "The name of the branch used of the cloned source.",
-	})
+	taskSpec.Results = append(taskSpec.Results,
+		pipelineapi.TaskResult{
+			Name:        fmt.Sprintf("%s-source-%s-%s", PrefixParamsResultsVolumes, name, commitSHAResult),
+			Description: "The commit SHA of the cloned source.",
+		},
+		pipelineapi.TaskResult{
+			Name:        fmt.Sprintf("%s-source-%s-%s", PrefixParamsResultsVolumes, name, commitAuthorResult),
+			Description: "The author of the last commit of the cloned source.",
+		},
+		pipelineapi.TaskResult{
+			Name:        fmt.Sprintf("%s-source-%s-%s", PrefixParamsResultsVolumes, name, branchName),
+			Description: "The name of the branch used of the cloned source.",
+		},
+	)
 
 	// initialize the step from the template and the build-specific arguments
 	gitStep := pipelineapi.Step{
@@ -46,20 +52,14 @@ func AppendGitStep(
 		ImagePullPolicy: cfg.GitContainerTemplate.ImagePullPolicy,
 		Command:         cfg.GitContainerTemplate.Command,
 		Args: []string{
-			"--url",
-			*source.URL,
-			"--target",
-			fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
-			"--result-file-commit-sha",
-			fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitSHAResult),
-			"--result-file-commit-author",
-			fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, commitAuthorResult),
-			"--result-file-branch-name",
-			fmt.Sprintf("$(results.%s-source-%s-%s.path)", prefixParamsResultsVolumes, name, branchName),
-			"--result-file-error-message",
-			fmt.Sprintf("$(results.%s-error-message.path)", prefixParamsResultsVolumes),
-			"--result-file-error-reason",
-			fmt.Sprintf("$(results.%s-error-reason.path)", prefixParamsResultsVolumes),
+			"--url", *source.URL,
+			"--target", fmt.Sprintf("$(params.%s-%s)", PrefixParamsResultsVolumes, paramSourceRoot),
+			"--result-file-commit-sha", fmt.Sprintf("$(results.%s-source-%s-%s.path)", PrefixParamsResultsVolumes, name, commitSHAResult),
+			"--result-file-commit-author", fmt.Sprintf("$(results.%s-source-%s-%s.path)", PrefixParamsResultsVolumes, name, commitAuthorResult),
+			"--result-file-branch-name", fmt.Sprintf("$(results.%s-source-%s-%s.path)", PrefixParamsResultsVolumes, name, branchName),
+			"--result-file-error-message", fmt.Sprintf("$(results.%s-error-message.path)", PrefixParamsResultsVolumes),
+			"--result-file-error-reason", fmt.Sprintf("$(results.%s-error-reason.path)", PrefixParamsResultsVolumes),
+			"--result-file-source-timestamp", fmt.Sprintf("$(results.%s-source-%s-source-timestamp.path)", PrefixParamsResultsVolumes, name),
 		},
 		Env:              cfg.GitContainerTemplate.Env,
 		ComputeResources: cfg.GitContainerTemplate.Resources,
@@ -86,7 +86,7 @@ func AppendGitStep(
 		// ensure the value is there
 		AppendSecretVolume(taskSpec, source.Credentials.Name)
 
-		secretMountPath := fmt.Sprintf("/workspace/%s-source-secret", prefixParamsResultsVolumes)
+		secretMountPath := fmt.Sprintf("/workspace/%s-source-secret", PrefixParamsResultsVolumes)
 
 		// define the volume mount on the container
 		gitStep.VolumeMounts = append(gitStep.VolumeMounts, corev1.VolumeMount{
@@ -109,9 +109,9 @@ func AppendGitStep(
 
 // AppendGitResult append git source result to build run
 func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []pipelineapi.TaskRunResult) {
-	commitAuthor := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitAuthorResult))
-	commitSha := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, commitSHAResult))
-	branchName := findResultValue(results, fmt.Sprintf("%s-source-%s-%s", prefixParamsResultsVolumes, name, branchName))
+	commitAuthor := FindResultValue(results, name, commitAuthorResult)
+	commitSha := FindResultValue(results, name, commitSHAResult)
+	branchName := FindResultValue(results, name, branchName)
 
 	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" || strings.TrimSpace(branchName) != "" {
 		buildRun.Status.Sources = append(buildRun.Status.Sources, buildv1alpha1.SourceResult{

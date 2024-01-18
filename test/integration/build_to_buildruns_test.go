@@ -39,6 +39,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		Expect(err).To(BeNil())
 
 	})
+
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
 

@@ -7,10 +7,12 @@ package integration_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
+
+	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("Integration tests Build and referenced Source url", func() {

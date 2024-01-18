@@ -1,5 +1,5 @@
 name: Unit, Integration, and E2E Tests
-on: 
+on:
   pull_request:
     branches:
     - main
@@ -7,7 +7,7 @@ on:
     paths-ignore:
     - 'README.md'
     - 'docs/**'
-    branches: 
+    branches:
     - main
 
 jobs:
@@ -114,8 +114,9 @@ jobs:
           # host.docker.internal does not work in a GitHub action
           docker exec kind-control-plane bash -c "echo '172.17.0.1 host.docker.internal' >>/etc/hosts"
 
-          # Build and load the Git image
+          # Build and load the Git and Bundle image
           export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
+          export BUNDLE_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/bundle)"
 
           make test-integration
 

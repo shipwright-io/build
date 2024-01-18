@@ -29,7 +29,7 @@ func AppendHTTPStep(
 		httpStep := pipelineapi.Step{
 			Name:       RemoteArtifactsContainerName,
 			Image:      cfg.RemoteArtifactsContainerImage,
-			WorkingDir: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
+			WorkingDir: fmt.Sprintf("$(params.%s-%s)", PrefixParamsResultsVolumes, paramSourceRoot),
 			Command: []string{
 				"/bin/sh",
 			},

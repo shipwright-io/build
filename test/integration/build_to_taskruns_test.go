@@ -31,6 +31,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 		err = tb.CreateClusterBuildStrategy(cbsObject)
 		Expect(err).To(BeNil())
 	})
+
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
 		_, err = tb.GetBuild(buildObject.Name)

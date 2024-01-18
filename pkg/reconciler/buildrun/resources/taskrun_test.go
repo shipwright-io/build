@@ -84,20 +84,14 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Steps[0].Name).To(Equal("source-default"))
 				Expect(got.Steps[0].Command[0]).To(Equal("/ko-app/git"))
 				Expect(got.Steps[0].Args).To(Equal([]string{
-					"--url",
-					*build.Spec.Source.URL,
-					"--target",
-					"$(params.shp-source-root)",
-					"--result-file-commit-sha",
-					"$(results.shp-source-default-commit-sha.path)",
-					"--result-file-commit-author",
-					"$(results.shp-source-default-commit-author.path)",
-					"--result-file-branch-name",
-					"$(results.shp-source-default-branch-name.path)",
-					"--result-file-error-message",
-					"$(results.shp-error-message.path)",
-					"--result-file-error-reason",
-					"$(results.shp-error-reason.path)",
+					"--url", *build.Spec.Source.URL,
+					"--target", "$(params.shp-source-root)",
+					"--result-file-commit-sha", "$(results.shp-source-default-commit-sha.path)",
+					"--result-file-commit-author", "$(results.shp-source-default-commit-author.path)",
+					"--result-file-branch-name", "$(results.shp-source-default-branch-name.path)",
+					"--result-file-error-message", "$(results.shp-error-message.path)",
+					"--result-file-error-reason", "$(results.shp-error-reason.path)",
+					"--result-file-source-timestamp", "$(results.shp-source-default-source-timestamp.path)",
 				}))
 			})
 

@@ -1123,6 +1123,10 @@ func (in *SourceResult) DeepCopyInto(out *SourceResult) {
 		*out = new(BundleSourceResult)
 		**out = **in
 	}
+	if in.Timestamp != nil {
+		in, out := &in.Timestamp, &out.Timestamp
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 

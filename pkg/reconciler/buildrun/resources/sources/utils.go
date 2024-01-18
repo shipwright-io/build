@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	prefixParamsResultsVolumes = "shp"
+	PrefixParamsResultsVolumes = "shp"
 
 	paramSourceRoot = "source-root"
 )
@@ -56,7 +56,7 @@ func AppendSecretVolume(
 // SanitizeVolumeNameForSecretName creates the name of a Volume for a Secret
 func SanitizeVolumeNameForSecretName(secretName string) string {
 	// remove forbidden characters
-	sanitizedName := dnsLabel1123Forbidden.ReplaceAllString(fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, secretName), "-")
+	sanitizedName := dnsLabel1123Forbidden.ReplaceAllString(fmt.Sprintf("%s-%s", PrefixParamsResultsVolumes, secretName), "-")
 
 	// ensure maximum length
 	if len(sanitizedName) > 63 {
@@ -69,7 +69,16 @@ func SanitizeVolumeNameForSecretName(secretName string) string {
 	return sanitizedName
 }
 
-func findResultValue(results []pipelineapi.TaskRunResult, name string) string {
+func TaskResultName(sourceName, resultName string) string {
+	return fmt.Sprintf("%s-source-%s-%s",
+		PrefixParamsResultsVolumes,
+		sourceName,
+		resultName,
+	)
+}
+
+func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName string) string {
+	var name = TaskResultName(sourceName, resultName)
 	for _, result := range results {
 		if result.Name == name {
 			return result.Value.StringVal

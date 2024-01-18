@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	core "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/config"
@@ -24,10 +24,12 @@ func AppendBundleStep(
 	name string,
 ) {
 	// append the result
-	taskSpec.Results = append(taskSpec.Results, pipelineapi.TaskResult{
-		Name:        fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name),
-		Description: "The digest of the bundle image.",
-	})
+	taskSpec.Results = append(taskSpec.Results,
+		pipelineapi.TaskResult{
+			Name:        fmt.Sprintf("%s-source-%s-image-digest", PrefixParamsResultsVolumes, name),
+			Description: "The digest of the bundle image.",
+		},
+	)
 
 	// initialize the step from the template and the build-specific arguments
 	bundleStep := pipelineapi.Step{
@@ -37,8 +39,9 @@ func AppendBundleStep(
 		Command:         cfg.BundleContainerTemplate.Command,
 		Args: []string{
 			"--image", source.BundleContainer.Image,
-			"--target", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot),
-			"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", prefixParamsResultsVolumes, name),
+			"--target", fmt.Sprintf("$(params.%s-%s)", PrefixParamsResultsVolumes, paramSourceRoot),
+			"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", PrefixParamsResultsVolumes, name),
+			"--result-file-source-timestamp", fmt.Sprintf("$(results.%s-source-%s-source-timestamp.path)", PrefixParamsResultsVolumes, name),
 		},
 		Env:              cfg.BundleContainerTemplate.Env,
 		ComputeResources: cfg.BundleContainerTemplate.Resources,
@@ -50,10 +53,10 @@ func AppendBundleStep(
 	if source.Credentials != nil {
 		AppendSecretVolume(taskSpec, source.Credentials.Name)
 
-		secretMountPath := fmt.Sprintf("/workspace/%s-pull-secret", prefixParamsResultsVolumes)
+		secretMountPath := fmt.Sprintf("/workspace/%s-pull-secret", PrefixParamsResultsVolumes)
 
 		// define the volume mount on the container
-		bundleStep.VolumeMounts = append(bundleStep.VolumeMounts, core.VolumeMount{
+		bundleStep.VolumeMounts = append(bundleStep.VolumeMounts, corev1.VolumeMount{
 			Name:      SanitizeVolumeNameForSecretName(source.Credentials.Name),
 			MountPath: secretMountPath,
 			ReadOnly:  true,
@@ -75,7 +78,7 @@ func AppendBundleStep(
 
 // AppendBundleResult append bundle source result to build run
 func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipelineapi.TaskRunResult) {
-	imageDigest := findResultValue(results, fmt.Sprintf("%s-source-%s-image-digest", prefixParamsResultsVolumes, name))
+	imageDigest := FindResultValue(results, name, "image-digest")
 
 	if strings.TrimSpace(imageDigest) != "" {
 		buildRun.Status.Sources = append(buildRun.Status.Sources, build.SourceResult{
