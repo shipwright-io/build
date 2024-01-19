@@ -5,7 +5,6 @@
 package integration_test
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -146,7 +145,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 		})
 
 		Context("when creating the taskrun", func() {
-			FIt("should contain an image-processing step to mutate the image", func() {
+			It("should contain an image-processing step to mutate the image", func() {
 				buildObject.Spec.Output.Annotations =
 					map[string]string{
 						"org.opencontainers.image.url": "https://my-company.com/images",
@@ -164,7 +163,6 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				spew.Dump(tr.Spec.TaskSpec.Steps)
 				Expect(tr.Spec.TaskSpec.Steps[3].Name).To(Equal("image-processing"))
 				Expect(tr.Spec.TaskSpec.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
 				Expect(tr.Spec.TaskSpec.Steps[3].Args).To(Equal([]string{

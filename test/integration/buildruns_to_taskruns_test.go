@@ -42,7 +42,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		}
 
 		timeout := int64(tb.TimeOut.Seconds())
-		buildRunWatcher, err := tb.BuildClientSet.ShipwrightV1alpha1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{TimeoutSeconds: &timeout})
+		buildRunWatcher, err := tb.BuildClientSet.ShipwrightV1beta1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{TimeoutSeconds: &timeout})
 		Expect(err).To(BeNil())
 
 		buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(BUILD+tb.Namespace, strategyName, buildDef)

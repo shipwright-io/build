@@ -17,7 +17,7 @@ spec:
     - name: buildah-images
       volumeSource:
         emptyDir: {}
-  buildSteps:
+  steps:
     - name: buildah-bud
       image: quay.io/containers/buildah:v1.33.2
       workingDir: $(params.shp-source-root)
@@ -75,7 +75,7 @@ spec:
     - name: buildah-images
       volumeSource:
         emptyDir: {}
-  buildSteps:
+  steps:
     - name: buildah-bud
       image: quay.io/containers/buildah:v1.33.2
       workingDir: $(params.shp-source-root)
@@ -129,7 +129,7 @@ kind: ClusterBuildStrategy
 metadata:
   name: kaniko
 spec:
-  buildSteps:
+  steps:
     - name: step-build-and-push
       image: gcr.io/kaniko-project/executor:v1.19.2
       workingDir: $(params.shp-source-root)
@@ -178,7 +178,7 @@ kind: ClusterBuildStrategy
 metadata:
   name: kaniko
 spec:
-  buildSteps:
+  steps:
     - name: step-build-and-push
       image: gcr.io/kaniko-project/executor:v1.19.2
       workingDir: $(params.shp-source-root)
@@ -229,7 +229,7 @@ spec:
   - name: exit-command
     description: "Exit command for the pod"
     default: "true"
-  buildSteps:
+  steps:
   - name: step-no-and-op
     image: alpine:latest
     workingDir: $(params.shp-source-root)
@@ -269,7 +269,7 @@ kind: ClusterBuildStrategy
 metadata:
   name: noop
 spec:
-  buildSteps:
+  steps:
   - name: sleep30
     image: alpine:latest
     command:
@@ -296,7 +296,7 @@ metadata:
     kubectl.kubernetes.io/last-applied-configuration: anotherValue
   name: kaniko
 spec:
-  buildSteps:
+  steps:
     - name: step-build-and-push
       image: gcr.io/kaniko-project/executor:v1.19.2
       workingDir: $(params.shp-source-root)
@@ -348,7 +348,7 @@ spec:
   - name: sleep-time
     description: "time in seconds for sleeping"
     default: "1"
-  buildSteps:
+  steps:
   - name: sleep30
     image: alpine:latest
     command:

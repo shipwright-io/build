@@ -5,7 +5,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -399,7 +398,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			// we modify the annotation so automatic delete does not take place
-			data := []byte(fmt.Sprintf(`{"spec":{"retention":{"atBuildDeletion":false}}}`))
+			data := []byte(`{"spec":{"retention":{"atBuildDeletion":false}}}`)
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
 			Expect(err).To(BeNil())
 
@@ -428,7 +427,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
 
 			// we modify the annotation for the automatic deletion to not take place
-			data := []byte(fmt.Sprintf(`{"spec":{"retention":{"atBuildDeletion":"false"}}}`))
+			data := []byte(`{"spec":{"retention":{"atBuildDeletion":false}}}`)
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
 			Expect(err).To(BeNil())
 
@@ -440,7 +439,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			// we modify the annotation one more time, to validate that the build should be deleted this time
-			data = []byte(fmt.Sprintf(`{"spec":{"retention":{"atBuildDeletion":"true"}}}`))
+			data = []byte(`{"spec":{"retention":{"atBuildDeletion":true}}}`)
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
 			Expect(err).To(BeNil())
 

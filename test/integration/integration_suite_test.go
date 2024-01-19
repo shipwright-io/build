@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -37,7 +36,6 @@ var (
 
 var _ = BeforeSuite(func() {
 	webhookServer = utils.StartBuildWebhook()
-	spew.Dump("conversion webhook started")
 })
 
 var _ = AfterSuite(func() {

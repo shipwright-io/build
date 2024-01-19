@@ -157,12 +157,12 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		flagReconcile := false
 
 		for _, build := range buildList.Items {
-			if build.GetSourceCredentials() != nil && build.GetSourceCredentials() == &secret.Name {
+			if build.GetSourceCredentials() != nil && *build.GetSourceCredentials() == secret.Name {
 				flagReconcile = true
 			}
 
 			if build.Spec.Output.PushSecret != nil {
-				if build.Spec.Output.PushSecret == &secret.Name {
+				if *build.Spec.Output.PushSecret == secret.Name {
 					flagReconcile = true
 				}
 			}
