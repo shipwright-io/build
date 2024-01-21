@@ -38,6 +38,12 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 
 	src.Spec.ConvertTo(&alphaBuild.Spec)
 
+	alphaBuild.Status = v1alpha1.BuildStatus{
+		Registered: src.Status.Registered,
+		Reason:     (*v1alpha1.BuildReason)(src.Status.Reason),
+		Message:    src.Status.Message,
+	}
+
 	// convert annotation-controlled features
 	if src.Spec.Retention != nil && src.Spec.Retention.AtBuildDeletion != nil {
 		// We must create a new Map as otherwise the addition is not kept
