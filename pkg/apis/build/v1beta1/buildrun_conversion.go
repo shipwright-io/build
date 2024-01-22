@@ -117,9 +117,9 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	}
 
 	if src.Status.Source != nil && src.Status.Source.OciArtifact != nil {
-		sourceStatus[0] = v1alpha1.SourceResult{
+		sourceStatus = append(sourceStatus, v1alpha1.SourceResult{
 			Bundle: (*v1alpha1.BundleSourceResult)(src.Status.Source.OciArtifact),
-		}
+		})
 	}
 
 	conditions := []v1alpha1.Condition{}
