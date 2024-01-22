@@ -135,10 +135,17 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		conditions = append(conditions, ct)
 	}
 
-	var failureDetails v1alpha1.FailureDetails
+	alphaBuildRun.Status = v1alpha1.BuildRunStatus{
+		Sources:          sourceStatus,
+		Output:           (*v1alpha1.Output)(src.Status.Output),
+		Conditions:       conditions,
+		LatestTaskRunRef: src.Status.TaskRunName,
+		StartTime:        src.Status.StartTime,
+		CompletionTime:   src.Status.CompletionTime,
+	}
 
 	if src.Status.FailureDetails != nil {
-		failureDetails = v1alpha1.FailureDetails{
+		alphaBuildRun.Status.FailureDetails = &v1alpha1.FailureDetails{
 			Reason:  src.Status.FailureDetails.Reason,
 			Message: src.Status.FailureDetails.Message,
 			Location: &v1alpha1.FailedAt{
@@ -147,18 +154,6 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 			},
 		}
 	}
-
-	alphaBuildRun.Status = v1alpha1.BuildRunStatus{
-		Sources:          sourceStatus,
-		Output:           (*v1alpha1.Output)(src.Status.Output),
-		Conditions:       conditions,
-		LatestTaskRunRef: src.Status.TaskRunName,
-		StartTime:        src.Status.StartTime,
-		CompletionTime:   src.Status.CompletionTime,
-		FailureDetails:   &failureDetails,
-	}
-
-	// TODO: add test case
 
 	aux := &v1alpha1.BuildSpec{}
 	if src.Status.BuildSpec != nil {
