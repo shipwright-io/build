@@ -214,11 +214,24 @@ jobs:
           if [ "${POD_NAME}" != "" ]; then
             RESTART_COUNT=$(echo "${PODS}" | jq -r ".items[] | select(.metadata.name == \"${POD_NAME}\") | .status.containerStatuses[0].restartCount")
             if [ "${RESTART_COUNT}" != "0" ]; then
-              echo "# Previous logs:"
+              echo "# Build Controller Previous logs:"
               kubectl -n shipwright-build logs "${POD_NAME}" --previous || true
             fi
-            echo "# Logs:"
+            echo "# Build Controller Logs:"
             kubectl -n shipwright-build logs "${POD_NAME}"
+          else
+            echo "# Pod is missing, there are no logs to retrieve, bailing out..."
+          fi
+
+          WEBHOOK_POD_NAME=$(echo "${PODS}" | jq -r '.items[] | select(.metadata.name | startswith("shipwright-build-webhook-")) | .metadata.name')
+          if [ "${WEBHOOK_POD_NAME}" != "" ]; then
+            RESTART_COUNT=$(echo "${PODS}" | jq -r ".items[] | select(.metadata.name == \"${WEBHOOK_POD_NAME}\") | .status.containerStatuses[0].restartCount")
+            if [ "${RESTART_COUNT}" != "0" ]; then
+              echo "# Build Webhook Previous logs:"
+              kubectl -n shipwright-build logs "${WEBHOOK_POD_NAME}" --previous || true
+            fi
+            echo "# Build Webhook Logs:"
+            kubectl -n shipwright-build logs "${WEBHOOK_POD_NAME}"
           else
             echo "# Pod is missing, there are no logs to retrieve, bailing out..."
           fi
