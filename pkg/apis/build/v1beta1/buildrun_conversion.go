@@ -135,8 +135,10 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		conditions = append(conditions, ct)
 	}
 
+	var failureDetails v1alpha1.FailureDetails
+
 	if src.Status.FailureDetails != nil {
-		alphaBuildRun.Status.FailureDetails = &v1alpha1.FailureDetails{
+		failureDetails = v1alpha1.FailureDetails{
 			Reason:  src.Status.FailureDetails.Reason,
 			Message: src.Status.FailureDetails.Message,
 			Location: &v1alpha1.FailedAt{
@@ -153,6 +155,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		LatestTaskRunRef: src.Status.TaskRunName,
 		StartTime:        src.Status.StartTime,
 		CompletionTime:   src.Status.CompletionTime,
+		FailureDetails:   &failureDetails,
 	}
 
 	// TODO: add test case
