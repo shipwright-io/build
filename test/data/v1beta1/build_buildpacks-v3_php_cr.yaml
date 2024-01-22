@@ -5,6 +5,7 @@ metadata:
   name: buildpack-php-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-php
     contextDir: source-build

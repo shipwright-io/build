@@ -5,6 +5,7 @@ metadata:
   name: buildah-golang-build-mutate
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build

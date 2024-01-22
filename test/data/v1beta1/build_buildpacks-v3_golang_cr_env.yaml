@@ -5,6 +5,7 @@ metadata:
   name: buildpack-golang-build
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-go
     contextDir: source-build-with-package

@@ -5,6 +5,7 @@ metadata:
   name: s2i-nodejs-build
 spec:
   source:
+    type: Git
     git:
       url: git@github.com:shipwright-io/sample-nodejs-private.git
   strategy:

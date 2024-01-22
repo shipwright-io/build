@@ -5,6 +5,7 @@ metadata:
   name: build-non-existing-repo
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-nodejs-no-exists
   strategy:

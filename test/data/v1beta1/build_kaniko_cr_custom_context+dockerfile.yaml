@@ -5,6 +5,7 @@ metadata:
   name: kaniko-custom-context-dockerfile
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-nodejs
     contextDir: docker-build

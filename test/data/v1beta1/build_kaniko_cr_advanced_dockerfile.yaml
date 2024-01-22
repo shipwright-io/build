@@ -5,6 +5,7 @@ metadata:
   name: kaniko-advanced-dockerfile
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-java
     contextDir: docker-build
