@@ -31,7 +31,6 @@ func NewSourceURL(client client.Client, build *build.Build) *SourceURLRef {
 // that the spec.source.url exists. This validation only applies
 // to endpoints that do not require authentication.
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
-	// TODO: double check this new code
 	if s.Build.Spec.Source.Type == build.GitType {
 		gitSource := s.Build.Spec.Source.GitSource
 		if gitSource.CloneSecret == nil && gitSource.URL != "" {
