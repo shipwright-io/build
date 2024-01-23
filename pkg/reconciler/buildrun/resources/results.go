@@ -29,7 +29,9 @@ func UpdateBuildRunUsingTaskResults(
 	taskRunResult []pipelineapi.TaskRunResult,
 	request reconcile.Request,
 ) {
+	// Initializing source result
 	buildRun.Status.Source = &build.SourceResult{}
+
 	// Set source results
 	updateBuildRunStatusWithSourceResult(buildRun, taskRunResult)
 

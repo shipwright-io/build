@@ -108,15 +108,20 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		})
 	}
 
+	// BuildRun Status
 	sourceStatus := []v1alpha1.SourceResult{}
 
 	if src.Status.Source != nil && src.Status.Source.Git != nil {
+		// Note: v1alpha contains a Name field under the SourceResult
+		// object, which we dont set here.
 		sourceStatus = append(sourceStatus, v1alpha1.SourceResult{
 			Git: (*v1alpha1.GitSourceResult)(src.Status.Source.Git),
 		})
 	}
 
 	if src.Status.Source != nil && src.Status.Source.OciArtifact != nil {
+		// Note: v1alpha contains a Name field under the SourceResult
+		// object, which we dont set here.
 		sourceStatus = append(sourceStatus, v1alpha1.SourceResult{
 			Bundle: (*v1alpha1.BundleSourceResult)(src.Status.Source.OciArtifact),
 		})
@@ -144,6 +149,8 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		CompletionTime:   src.Status.CompletionTime,
 	}
 
+	// Note: .Status.FailedAt is deprecated, so we do not
+	// convert it, only .Status.FailureDetails
 	if src.Status.FailureDetails != nil {
 		alphaBuildRun.Status.FailureDetails = &v1alpha1.FailureDetails{
 			Reason:  src.Status.FailureDetails.Reason,
