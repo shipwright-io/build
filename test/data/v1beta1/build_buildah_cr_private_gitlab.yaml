@@ -5,6 +5,7 @@ metadata:
   name: buildah-golang-build
 spec:
   source:
+    type: Git
     git:
       url: git@gitlab.com:eduardooli/newtaxi.git
   strategy:

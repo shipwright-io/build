@@ -5,6 +5,7 @@ metadata:
   name: kaniko-golang-build
 spec:
   source:
+    type: Git
     git:
       url: git@github.com:qu1queee/newtaxi.git
   strategy:
