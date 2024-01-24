@@ -18,24 +18,24 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+	utils "github.com/shipwright-io/build/test/utils/v1beta1"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("GenerateTaskrun", func() {
 	var (
-		build                  *buildv1alpha1.Build
-		buildWithEnvs          *buildv1alpha1.Build
-		buildRun               *buildv1alpha1.BuildRun
-		buildRunWithEnvs       *buildv1alpha1.BuildRun
-		buildStrategy          *buildv1alpha1.BuildStrategy
+		build                  *buildv1beta1.Build
+		buildWithEnvs          *buildv1beta1.Build
+		buildRun               *buildv1beta1.BuildRun
+		buildRunWithEnvs       *buildv1beta1.BuildRun
+		buildStrategy          *buildv1beta1.BuildStrategy
 		buildStrategyStepNames map[string]struct{}
-		buildStrategyWithEnvs  *buildv1alpha1.BuildStrategy
-		builderImage           *buildv1alpha1.Image
+		buildStrategyWithEnvs  *buildv1beta1.BuildStrategy
+		builderImage           *buildv1beta1.Image
 		dockerfile, buildpacks string
 		ctl                    test.Catalog
 	)
@@ -52,7 +52,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			err                  error
 		)
 		BeforeEach(func() {
-			builderImage = &buildv1alpha1.Image{
+			builderImage = &buildv1beta1.Image{
 				Image: "quay.io/builder/image",
 			}
 		})
@@ -67,10 +67,10 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
 				Expect(err).To(BeNil())
-				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
 
 				expectedCommandOrArg = []string{
-					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+					"bud", "--tag=$(params.shp-output-image)", "--file=$(params.dockerfile)", "$(params.shp-source-context)",
 				}
 			})
 
@@ -84,7 +84,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Steps[0].Name).To(Equal("source-default"))
 				Expect(got.Steps[0].Command[0]).To(Equal("/ko-app/git"))
 				Expect(got.Steps[0].Args).To(Equal([]string{
-					"--url", *build.Spec.Source.URL,
+					"--url", build.Spec.Source.GitSource.URL,
 					"--target", "$(params.shp-source-root)",
 					"--result-file-commit-sha", "$(results.shp-source-default-commit-sha.path)",
 					"--result-file-commit-author", "$(results.shp-source-default-commit-author.path)",
@@ -141,7 +141,6 @@ var _ = Describe("GenerateTaskrun", func() {
 				// legacy params
 				Expect(got.Params).ToNot(utils.ContainNamedElement("BUILDER_IMAGE")) // test build has no builder image
 				Expect(got.Params).To(utils.ContainNamedElement("CONTEXT_DIR"))
-				Expect(got.Params).To(utils.ContainNamedElement("DOCKERFILE"))
 
 				Expect(len(got.Params)).To(Equal(6))
 			})
@@ -234,9 +233,9 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
 				Expect(err).To(BeNil())
-				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
 				buildStrategyStepNames = make(map[string]struct{})
-				for _, step := range buildStrategy.Spec.BuildSteps {
+				for _, step := range buildStrategy.Spec.Steps {
 					buildStrategyStepNames[step.Name] = struct{}{}
 				}
 
@@ -249,7 +248,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should contain env vars specified in Build in every BuildStrategy step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRun, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 
 				combinedEnvs, err := env.MergeEnvVars(buildRun.Spec.Env, buildWithEnvs.Spec.Env, true)
@@ -266,7 +265,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should contain env vars specified in BuildRun in every step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRunWithEnvs, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 
 				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, build.Spec.Env, true)
@@ -283,7 +282,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should override Build env vars with BuildRun env vars in every step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).To(BeNil())
 
 				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, buildWithEnvs.Spec.Env, true)
@@ -301,7 +300,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should fail attempting to override an env var in a BuildStrategy", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategyWithEnvs.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
+				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategyWithEnvs.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(Equal("error(s) occurred merging environment variables into BuildStrategy \"buildah\" steps: [environment variable \"MY_VAR_1\" already exists, environment variable \"MY_VAR_2\" already exists]"))
 			})
@@ -317,14 +316,14 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
 				Expect(err).To(BeNil())
-				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
 
 				expectedCommandOrArg = []string{
 					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
 				}
 
 				JustBeforeEach(func() {
-					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
 					Expect(err).To(BeNil())
 				})
 
@@ -358,14 +357,14 @@ var _ = Describe("GenerateTaskrun", func() {
 
 				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
 				Expect(err).To(BeNil())
-				buildStrategy.Spec.BuildSteps[0].ImagePullPolicy = "Always"
+				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
 
 				expectedCommandOrArg = []string{
 					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
 				}
 
 				JustBeforeEach(func() {
-					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.BuildSteps, []buildv1alpha1.Parameter{}, buildStrategy.GetVolumes())
+					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
 					Expect(err).To(BeNil())
 				})
 
@@ -414,7 +413,7 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			namespace = "build-test"
 			contextDir = "docker-build"
-			builderImage = &buildv1alpha1.Image{
+			builderImage = &buildv1beta1.Image{
 				Image: "heroku/builder:22",
 			}
 			outputPath = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
@@ -444,10 +443,10 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(strings.Contains(got.GenerateName, buildRun.Name+"-")).To(Equal(true))
 				Expect(got.Namespace).To(Equal(namespace))
 				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
-				Expect(got.Labels[buildv1alpha1.LabelBuild]).To(Equal(build.Name))
-				Expect(got.Labels[buildv1alpha1.LabelBuildRun]).To(Equal(buildRun.Name))
-				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyName]).To(Equal(build.Spec.Strategy.Name))
-				Expect(got.Labels[buildv1alpha1.LabelBuildStrategyGeneration]).To(Equal("0"))
+				Expect(got.Labels[buildv1beta1.LabelBuild]).To(Equal(build.Name))
+				Expect(got.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
+				Expect(got.Labels[buildv1beta1.LabelBuildStrategyName]).To(Equal(build.Spec.Strategy.Name))
+				Expect(got.Labels[buildv1beta1.LabelBuildStrategyGeneration]).To(Equal("0"))
 			})
 
 			It("should filter out certain annotations when propagating them to the TaskRun", func() {
@@ -496,8 +495,8 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(strings.Contains(got.GenerateName, buildRun.Name+"-")).To(Equal(true))
 				Expect(got.Namespace).To(Equal(namespace))
 				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
-				Expect(got.Labels[buildv1alpha1.LabelBuild]).To(Equal(build.Name))
-				Expect(got.Labels[buildv1alpha1.LabelBuildRun]).To(Equal(buildRun.Name))
+				Expect(got.Labels[buildv1beta1.LabelBuild]).To(Equal(build.Name))
+				Expect(got.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
 			})
 
 			It("should ensure generated TaskRun's spec special input params are correct", func() {
@@ -531,11 +530,11 @@ var _ = Describe("GenerateTaskrun", func() {
 						paramOutputInsecureFound = true
 						Expect(param.Value.StringVal).To(Equal("false"))
 
-					case "BUILDER_IMAGE":
+					case "builder-image":
 						paramBuilderImageFound = true
 						Expect(param.Value.StringVal).To(Equal(builderImage.Image))
 
-					case "DOCKERFILE":
+					case "dockerfile":
 						paramDockerfileFound = true
 						Expect(param.Value.StringVal).To(Equal(dockerfile))
 

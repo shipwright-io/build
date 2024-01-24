@@ -8,12 +8,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -30,8 +29,8 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
-				URL: pointer.String("https://github.com/shipwright-io/build"),
+			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+				URL: "https://github.com/shipwright-io/build",
 			}, "default")
 		})
 
@@ -68,11 +67,9 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1alpha1.Source{
-				URL: pointer.String("git@github.com:shipwright-io/build.git"),
-				Credentials: &corev1.LocalObjectReference{
-					Name: "a.secret",
-				},
+			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+				URL:         "git@github.com:shipwright-io/build.git",
+				CloneSecret: pointer.String("a.secret"),
 			}, "default")
 		})
 

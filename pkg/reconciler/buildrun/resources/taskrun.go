@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
@@ -31,8 +31,6 @@ const (
 
 	workspaceSource = "source"
 
-	inputParamBuilder    = "BUILDER_IMAGE"
-	inputParamDockerfile = "DOCKERFILE"
 	inputParamContextDir = "CONTEXT_DIR"
 )
 
@@ -43,9 +41,6 @@ func getStringTransformations(fullText string) string {
 	stringTransformations := map[string]string{
 		// this will be removed, build strategy author should use $(params.shp-output-image) directly
 		"$(build.output.image)": fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
-
-		"$(build.builder.image)": fmt.Sprintf("$(inputs.params.%s)", inputParamBuilder),
-		"$(build.dockerfile)":    fmt.Sprintf("$(inputs.params.%s)", inputParamDockerfile),
 
 		// this will be removed, build strategy author should use $(params.shp-source-context); it is still needed by the ko build
 		// strategy that mis-uses this setting to store the path to the main package; requires strategy parameter support to get rid
@@ -62,22 +57,14 @@ func getStringTransformations(fullText string) string {
 // GenerateTaskSpec creates Tekton TaskRun spec to be used for a build run
 func GenerateTaskSpec(
 	cfg *config.Config,
-	build *buildv1alpha1.Build,
-	buildRun *buildv1alpha1.BuildRun,
-	buildSteps []buildv1alpha1.BuildStep,
-	parameterDefinitions []buildv1alpha1.Parameter,
-	buildStrategyVolumes []buildv1alpha1.BuildStrategyVolume,
+	build *buildv1beta1.Build,
+	buildRun *buildv1beta1.BuildRun,
+	buildSteps []buildv1beta1.Step,
+	parameterDefinitions []buildv1beta1.Parameter,
+	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
 ) (*pipelineapi.TaskSpec, error) {
 	generatedTaskSpec := pipelineapi.TaskSpec{
 		Params: []pipelineapi.ParamSpec{
-			{
-				Description: "Path to the Dockerfile",
-				Name:        inputParamDockerfile,
-				Default: &pipelineapi.ParamValue{
-					Type:      pipelineapi.ParamTypeString,
-					StringVal: "Dockerfile",
-				},
-			},
 			{
 				// CONTEXT_DIR comes from the git source specification
 				// in the Build object
@@ -119,18 +106,6 @@ func GenerateTaskSpec(
 
 	generatedTaskSpec.Results = append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
 
-	if build.Spec.Builder != nil {
-		InputBuilder := pipelineapi.ParamSpec{
-			Description: "Image containing the build tools/logic",
-			Name:        inputParamBuilder,
-			Default: &pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: build.Spec.Builder.Image,
-			},
-		}
-		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilder)
-	}
-
 	// define the results, steps and volumes for sources, or alternatively, wait for user upload
 	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build, buildRun)
 
@@ -145,7 +120,7 @@ func GenerateTaskSpec(
 		switch parameterDefinition.Type {
 		case "": // string is default
 			fallthrough
-		case buildv1alpha1.ParameterTypeString:
+		case buildv1beta1.ParameterTypeString:
 			param.Type = pipelineapi.ParamTypeString
 			if parameterDefinition.Default != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -154,7 +129,7 @@ func GenerateTaskSpec(
 				}
 			}
 
-		case buildv1alpha1.ParameterTypeArray:
+		case buildv1beta1.ParameterTypeArray:
 			param.Type = pipelineapi.ParamTypeArray
 			if parameterDefinition.Defaults != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -239,10 +214,10 @@ func GenerateTaskSpec(
 // GenerateTaskRun creates a Tekton TaskRun to be used for a build run
 func GenerateTaskRun(
 	cfg *config.Config,
-	build *buildv1alpha1.Build,
-	buildRun *buildv1alpha1.BuildRun,
+	build *buildv1beta1.Build,
+	buildRun *buildv1beta1.BuildRun,
 	serviceAccountName string,
-	strategy buildv1alpha1.BuilderStrategy,
+	strategy buildv1beta1.BuilderStrategy,
 ) (*pipelineapi.TaskRun, error) {
 
 	// retrieve expected imageURL form build or buildRun
@@ -274,14 +249,14 @@ func GenerateTaskRun(
 
 	// Add BuildRun name reference to the TaskRun labels
 	taskRunLabels := map[string]string{
-		buildv1alpha1.LabelBuildRun:           buildRun.Name,
-		buildv1alpha1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+		buildv1beta1.LabelBuildRun:           buildRun.Name,
+		buildv1beta1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
 	}
 
 	// Add Build name reference unless it is an embedded Build (empty build name)
 	if build.Name != "" {
-		taskRunLabels[buildv1alpha1.LabelBuild] = build.Name
-		taskRunLabels[buildv1alpha1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+		taskRunLabels[buildv1beta1.LabelBuild] = build.Name
+		taskRunLabels[buildv1beta1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
 	}
 
 	expectedTaskRun := &pipelineapi.TaskRun{
@@ -349,24 +324,7 @@ func GenerateTaskRun(
 			},
 		},
 	}
-	if build.Spec.Builder != nil {
-		params = append(params, pipelineapi.Param{
-			Name: inputParamBuilder,
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: build.Spec.Builder.Image,
-			},
-		})
-	}
-	if build.Spec.Dockerfile != nil && *build.Spec.Dockerfile != "" {
-		params = append(params, pipelineapi.Param{
-			Name: inputParamDockerfile,
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: *build.Spec.Dockerfile,
-			},
-		})
-	}
+
 	if build.Spec.Source.ContextDir != nil {
 		params = append(params, pipelineapi.Param{
 			Name: inputParamContextDir,
@@ -415,14 +373,14 @@ func GenerateTaskRun(
 	// and if the strategy is pushing the image by not using $(params.shp-output-directory)
 	buildRunOutput := buildRun.Spec.Output
 	if buildRunOutput == nil {
-		buildRunOutput = &buildv1alpha1.Image{}
+		buildRunOutput = &buildv1beta1.Image{}
 	}
 	SetupImageProcessing(expectedTaskRun, cfg, build.Spec.Output, *buildRunOutput)
 
 	return expectedTaskRun, nil
 }
 
-func effectiveTimeout(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildRun) *metav1.Duration {
+func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) *metav1.Duration {
 	if buildRun.Spec.Timeout != nil {
 		return buildRun.Spec.Timeout
 
@@ -437,13 +395,13 @@ func effectiveTimeout(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 // also, annotations using our own custom resource domains are filtered out because we have no annotations with a semantic for both TaskRun and Pod
 func isPropagatableAnnotation(key string) bool {
 	return key != "kubectl.kubernetes.io/last-applied-configuration" &&
-		!strings.HasPrefix(key, buildv1alpha1.ClusterBuildStrategyDomain+"/") &&
-		!strings.HasPrefix(key, buildv1alpha1.BuildStrategyDomain+"/") &&
-		!strings.HasPrefix(key, buildv1alpha1.BuildDomain+"/") &&
-		!strings.HasPrefix(key, buildv1alpha1.BuildRunDomain+"/")
+		!strings.HasPrefix(key, buildv1beta1.ClusterBuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildv1beta1.BuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildv1beta1.BuildDomain+"/") &&
+		!strings.HasPrefix(key, buildv1beta1.BuildRunDomain+"/")
 }
 
-func toVolumeMap(strategyVolumes []buildv1alpha1.BuildStrategyVolume) map[string]bool {
+func toVolumeMap(strategyVolumes []buildv1beta1.BuildStrategyVolume) map[string]bool {
 	res := make(map[string]bool)
 	for _, v := range strategyVolumes {
 		res[v.Name] = true

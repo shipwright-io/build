@@ -17,10 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Build Resource", func() {
@@ -39,8 +39,8 @@ var _ = Describe("Build Resource", func() {
 				Namespace: "bar",
 			},
 			Spec: build.BuildRunSpec{
-				BuildRef: &build.BuildRef{
-					Name: buildName,
+				Build: build.ReferencedBuild{
+					Name: &buildName,
 				},
 			},
 		}
@@ -136,8 +136,10 @@ var _ = Describe("Build Resource", func() {
 				Namespace: "bar",
 			},
 			Spec: build.BuildRunSpec{
-				BuildSpec: &build.BuildSpec{
-					Env: []v1.EnvVar{{Name: "foo", Value: "bar"}},
+				Build: build.ReferencedBuild{
+					Build: &build.BuildSpec{
+						Env: []v1.EnvVar{{Name: "foo", Value: "bar"}},
+					},
 				},
 			},
 		}

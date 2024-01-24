@@ -7,7 +7,7 @@ package resources
 import (
 	"context"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/shipwright-io/build/pkg/ctxlog"
@@ -15,8 +15,8 @@ import (
 )
 
 // RetrieveBuildStrategy returns a namespace scoped strategy
-func RetrieveBuildStrategy(ctx context.Context, client client.Client, build *buildv1alpha1.Build) (*buildv1alpha1.BuildStrategy, error) {
-	buildStrategyInstance := &buildv1alpha1.BuildStrategy{}
+func RetrieveBuildStrategy(ctx context.Context, client client.Client, build *buildv1beta1.Build) (*buildv1beta1.BuildStrategy, error) {
+	buildStrategyInstance := &buildv1beta1.BuildStrategy{}
 
 	ctxlog.Debug(ctx, "retrieving BuildStrategy", namespace, build.Namespace, name, build.Name)
 
@@ -25,8 +25,8 @@ func RetrieveBuildStrategy(ctx context.Context, client client.Client, build *bui
 }
 
 // RetrieveClusterBuildStrategy returns a cluster scoped strategy
-func RetrieveClusterBuildStrategy(ctx context.Context, client client.Client, build *buildv1alpha1.Build) (*buildv1alpha1.ClusterBuildStrategy, error) {
-	clusterBuildStrategyInstance := &buildv1alpha1.ClusterBuildStrategy{}
+func RetrieveClusterBuildStrategy(ctx context.Context, client client.Client, build *buildv1beta1.Build) (*buildv1beta1.ClusterBuildStrategy, error) {
+	clusterBuildStrategyInstance := &buildv1beta1.ClusterBuildStrategy{}
 
 	ctxlog.Debug(ctx, "retrieving ClusterBuildStrategy", namespace, build.Namespace, name, build.Name)
 

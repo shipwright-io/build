@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strconv"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -29,6 +29,9 @@ func UpdateBuildRunUsingTaskResults(
 	taskRunResult []pipelineapi.TaskRunResult,
 	request reconcile.Request,
 ) {
+	// Initializing source result
+	buildRun.Status.Source = &build.SourceResult{}
+
 	// Set source results
 	updateBuildRunStatusWithSourceResult(buildRun, taskRunResult)
 
