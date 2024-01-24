@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 )
 
@@ -53,16 +53,16 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 
 	predBuildRun := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			o := e.Object.(*buildv1alpha1.BuildRun)
+			o := e.Object.(*buildv1beta1.BuildRun)
 
 			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have a TaskRun referenced already,
 			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun.
-			return o.Status.LatestTaskRunRef == nil && o.Status.CompletionTime == nil
+			return o.Status.TaskRunName == nil && o.Status.CompletionTime == nil
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
-			o := e.ObjectOld.(*buildv1alpha1.BuildRun)
-			n := e.ObjectNew.(*buildv1alpha1.BuildRun)
+			o := e.ObjectOld.(*buildv1beta1.BuildRun)
+			n := e.ObjectNew.(*buildv1beta1.BuildRun)
 
 			// Only reconcile a BuildRun update when
 			// - it is set to canceled
@@ -107,7 +107,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource BuildRun
-	if err = c.Watch(&source.Kind{Type: &buildv1alpha1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun); err != nil {
+	if err = c.Watch(&source.Kind{Type: &buildv1beta1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun); err != nil {
 		return err
 	}
 
@@ -117,7 +117,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		taskRun := o.(*pipelineapi.TaskRun)
 
 		// check if TaskRun is related to BuildRun
-		if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1alpha1.LabelBuildRun] == "" {
+		if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1beta1.LabelBuildRun] == "" {
 			return []reconcile.Request{}
 		}
 
