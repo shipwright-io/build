@@ -8,23 +8,23 @@ import (
 	"fmt"
 	"strings"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
 // BuildParameters validates that the parameter values specified in Build are suitable for what is defined in the BuildStrategy
-func BuildParameters(parameterDefinitions []buildv1alpha1.Parameter, buildParamValues []buildv1alpha1.ParamValue) (bool, buildv1alpha1.BuildReason, string) {
+func BuildParameters(parameterDefinitions []buildv1beta1.Parameter, buildParamValues []buildv1beta1.ParamValue) (bool, buildv1beta1.BuildReason, string) {
 	valid, reason, message := validateParameters(parameterDefinitions, buildParamValues, true)
-	return valid, buildv1alpha1.BuildReason(reason), message
+	return valid, buildv1beta1.BuildReason(reason), message
 }
 
 // BuildRunParameters validates that the parameter values specified in Build and BuildRun are suitable for what is defined in the BuildStrategy
-func BuildRunParameters(parameterDefinitions []buildv1alpha1.Parameter, buildParamValues []buildv1alpha1.ParamValue, buildRunParamValues []buildv1alpha1.ParamValue) (bool, string, string) {
+func BuildRunParameters(parameterDefinitions []buildv1beta1.Parameter, buildParamValues []buildv1beta1.ParamValue, buildRunParamValues []buildv1beta1.ParamValue) (bool, string, string) {
 	paramValues := resources.OverrideParams(buildParamValues, buildRunParamValues)
 	return validateParameters(parameterDefinitions, paramValues, false)
 }
 
-func validateParameters(parameterDefinitions []buildv1alpha1.Parameter, paramValues []buildv1alpha1.ParamValue, ignoreMissingParameters bool) (bool, string, string) {
+func validateParameters(parameterDefinitions []buildv1beta1.Parameter, paramValues []buildv1beta1.ParamValue, ignoreMissingParameters bool) (bool, string, string) {
 	// list of params that collide with reserved system strategy parameters
 	undesiredParams := []string{}
 
@@ -76,7 +76,7 @@ func validateParameters(parameterDefinitions []buildv1alpha1.Parameter, paramVal
 		switch parameterDefinition.Type {
 		case "": // string is default
 			fallthrough
-		case buildv1alpha1.ParameterTypeString:
+		case buildv1beta1.ParameterTypeString:
 			if paramValue != nil {
 				// check if a string value contains array values
 				if paramValue.Values != nil {
@@ -107,7 +107,7 @@ func validateParameters(parameterDefinitions []buildv1alpha1.Parameter, paramVal
 				continue
 			}
 
-		case buildv1alpha1.ParameterTypeArray:
+		case buildv1beta1.ParameterTypeArray:
 			if paramValue != nil {
 				// check if an array value contains a single value
 				if paramValue.SingleValue != nil {
@@ -180,7 +180,7 @@ func validateParameters(parameterDefinitions []buildv1alpha1.Parameter, paramVal
 }
 
 // hasMoreThanOneValue checks if a SingleValue has more than one value set (plain text, secret, and config map key reference)
-func hasMoreThanOneValue(singleValue buildv1alpha1.SingleValue) bool {
+func hasMoreThanOneValue(singleValue buildv1beta1.SingleValue) bool {
 	if singleValue.Value != nil && (singleValue.ConfigMapValue != nil || singleValue.SecretValue != nil) {
 		return true
 	}
@@ -195,7 +195,7 @@ func hasMoreThanOneValue(singleValue buildv1alpha1.SingleValue) bool {
 }
 
 // hasNoValue checks if a SingleValue has no value set (plain text, secret, and config map key reference)
-func hasNoValue(singleValue buildv1alpha1.SingleValue) bool {
+func hasNoValue(singleValue buildv1beta1.SingleValue) bool {
 	if singleValue.ConfigMapValue == nil && singleValue.SecretValue == nil && singleValue.Value == nil {
 		return true
 	}
@@ -204,7 +204,7 @@ func hasNoValue(singleValue buildv1alpha1.SingleValue) bool {
 }
 
 // hasIncompleteConfigMapValue checks if a SingleValue has a ConfigMap value with an empty name or key
-func hasIncompleteConfigMapValue(singleValue buildv1alpha1.SingleValue) bool {
+func hasIncompleteConfigMapValue(singleValue buildv1beta1.SingleValue) bool {
 	if singleValue.ConfigMapValue != nil && (singleValue.ConfigMapValue.Name == "" || singleValue.ConfigMapValue.Key == "") {
 		return true
 	}
@@ -213,7 +213,7 @@ func hasIncompleteConfigMapValue(singleValue buildv1alpha1.SingleValue) bool {
 }
 
 // hasIncompleteSecretValue checks if a SingleValue has a Secret value with an empty name or key
-func hasIncompleteSecretValue(singleValue buildv1alpha1.SingleValue) bool {
+func hasIncompleteSecretValue(singleValue buildv1beta1.SingleValue) bool {
 	if singleValue.SecretValue != nil && (singleValue.SecretValue.Name == "" || singleValue.SecretValue.Key == "") {
 		return true
 	}

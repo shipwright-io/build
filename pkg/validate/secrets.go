@@ -16,7 +16,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // Credentials contains all required fields
@@ -61,14 +61,12 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 func (s Credentials) buildCredentialserences() map[string]build.BuildReason {
 	// Validate if the referenced secrets exist in the namespace
 	secretRefMap := map[string]build.BuildReason{}
-	if s.Build.Spec.Output.Credentials != nil && s.Build.Spec.Output.Credentials.Name != "" {
-		secretRefMap[s.Build.Spec.Output.Credentials.Name] = build.SpecOutputSecretRefNotFound
+	if s.Build.Spec.Output.PushSecret != nil && *s.Build.Spec.Output.PushSecret != "" {
+		secretRefMap[*s.Build.Spec.Output.PushSecret] = build.SpecOutputSecretRefNotFound
 	}
-	if s.Build.Spec.Source.Credentials != nil && s.Build.Spec.Source.Credentials.Name != "" {
-		secretRefMap[s.Build.Spec.Source.Credentials.Name] = build.SpecSourceSecretRefNotFound
-	}
-	if s.Build.Spec.Builder != nil && s.Build.Spec.Builder.Credentials != nil && s.Build.Spec.Builder.Credentials.Name != "" {
-		secretRefMap[s.Build.Spec.Builder.Credentials.Name] = build.SpecBuilderSecretRefNotFound
+
+	if s.Build.GetSourceCredentials() != nil {
+		secretRefMap[*s.Build.GetSourceCredentials()] = build.SpecSourceSecretRefNotFound
 	}
 	return secretRefMap
 }
