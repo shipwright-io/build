@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -42,42 +42,18 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 			Expect(tb.CreateClusterBuildStrategy(strategy)).To(Succeed())
 
 			// Setup BuildRun with fixed revision where we know the commit details
-			Expect(tb.CreateBR(&v1alpha1.BuildRun{
+			Expect(tb.CreateBR(&v1beta1.BuildRun{
 				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
-				Spec: v1alpha1.BuildRunSpec{
-					BuildSpec: &v1alpha1.BuildSpec{
-						Strategy: v1alpha1.Strategy{Kind: (*v1alpha1.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name},
-						Source: v1alpha1.Source{
-							URL:      pointer.String("https://github.com/shipwright-io/sample-go"),
-							Revision: pointer.String("v0.1.0"),
-						},
-					},
-				},
-			})).ToNot(HaveOccurred())
-
-			buildRun, err := tb.GetBRTillCompletion(buildRunName)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(buildRun).ToNot(BeNil())
-
-			Expect(buildRun.Status.Sources).ToNot(BeEmpty())
-			Expect(buildRun.Status.Sources[0].Timestamp).ToNot(BeNil())
-			Expect(buildRun.Status.Sources[0].Timestamp.Time).To(BeTemporally("==", time.Unix(1619426578, 0)))
-		})
-
-		It("should have the correct source timestamp for Bundle sources", func() {
-			// Use an empty strategy to only have the source step
-			strategy := tb.Catalog.ClusterBuildStrategy(strategyName)
-			Expect(tb.CreateClusterBuildStrategy(strategy)).To(Succeed())
-
-			// Setup BuildRun with fixed image sha where we know the timestamp details
-			Expect(tb.CreateBR(&v1alpha1.BuildRun{
-				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
-				Spec: v1alpha1.BuildRunSpec{
-					BuildSpec: &v1alpha1.BuildSpec{
-						Strategy: v1alpha1.Strategy{Kind: (*v1alpha1.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name},
-						Source: v1alpha1.Source{
-							BundleContainer: &v1alpha1.BundleContainer{
-								Image: "ghcr.io/shipwright-io/sample-go/source-bundle@sha256:9a5e264c19980387b8416e0ffa7460488272fb8a6a56127c657edaa2682daab2",
+				Spec: v1beta1.BuildRunSpec{
+					Build: v1beta1.ReferencedBuild{
+						Build: &v1beta1.BuildSpec{
+							Strategy: v1beta1.Strategy{Kind: (*v1beta1.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name},
+							Source: v1beta1.Source{
+								Type: v1beta1.GitType,
+								GitSource: &v1beta1.Git{
+									URL:      "https://github.com/shipwright-io/sample-go",
+									Revision: pointer.String("v0.1.0"),
+								},
 							},
 						},
 					},
@@ -88,9 +64,42 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(buildRun).ToNot(BeNil())
 
-			Expect(buildRun.Status.Sources).ToNot(BeEmpty())
-			Expect(buildRun.Status.Sources[0].Timestamp).ToNot(BeNil())
-			Expect(buildRun.Status.Sources[0].Timestamp.Time).To(BeTemporally("==", time.Unix(1691650396, 0)))
+			Expect(buildRun.Status.Source).ToNot(BeNil())
+			Expect(buildRun.Status.Source.Timestamp).ToNot(BeNil())
+			Expect(buildRun.Status.Source.Timestamp.Time).To(BeTemporally("==", time.Unix(1619426578, 0)))
+		})
+
+		It("should have the correct source timestamp for Bundle sources", func() {
+			// Use an empty strategy to only have the source step
+			strategy := tb.Catalog.ClusterBuildStrategy(strategyName)
+			Expect(tb.CreateClusterBuildStrategy(strategy)).To(Succeed())
+
+			// Setup BuildRun with fixed image sha where we know the timestamp details
+			Expect(tb.CreateBR(&v1beta1.BuildRun{
+
+				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
+				Spec: v1beta1.BuildRunSpec{
+					Build: v1beta1.ReferencedBuild{
+						Build: &v1beta1.BuildSpec{
+							Strategy: v1beta1.Strategy{Kind: (*v1beta1.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name},
+							Source: v1beta1.Source{
+								Type: v1beta1.OCIArtifactType,
+								OCIArtifact: &v1beta1.OCIArtifact{
+									Image: "ghcr.io/shipwright-io/sample-go/source-bundle@sha256:9a5e264c19980387b8416e0ffa7460488272fb8a6a56127c657edaa2682daab2",
+								},
+							},
+						},
+					},
+				},
+			})).ToNot(HaveOccurred())
+
+			buildRun, err := tb.GetBRTillCompletion(buildRunName)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(buildRun).ToNot(BeNil())
+
+			Expect(buildRun.Status.Source).ToNot(BeNil())
+			Expect(buildRun.Status.Source.Timestamp).ToNot(BeNil())
+			Expect(buildRun.Status.Source.Timestamp.Time).To(BeTemporally("==", time.Unix(1691650396, 0)))
 		})
 	})
 })

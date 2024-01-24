@@ -27,7 +27,7 @@ spec:
       args:
         - bud
         - --tag=$(params.shp-output-image)
-        - --file=$(build.dockerfile)
+        - --file=$(params.dockerfile)
         - $(params.shp-source-context)
       resources:
         limits:
@@ -59,6 +59,11 @@ spec:
       volumeMounts:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
+  parameters:
+    - name: dockerfile
+      description: The path to the Dockerfile to be used for building the image.
+      type: string
+      default: "Dockerfile"
 `
 
 // MinimalBuildahBuildStrategyWithEnvs defines a
@@ -153,7 +158,7 @@ spec:
         - --tls-verify=false
         - --layers
         - -f
-        - $(build.dockerfile)
+        - $(params.dockerfile)
         - -t
         - $(params.shp-output-image)
         - $(params.shp-source-context)
@@ -167,6 +172,11 @@ spec:
       volumeMounts:
         - name: varlibcontainers
           mountPath: /var/lib/containers
+  parameters:
+    - name: dockerfile
+      description: The path to the Dockerfile to be used for building the image.
+      type: string
+      default: "Dockerfile"
 `
 
 // BuildpacksBuildStrategySingleStep defines a
@@ -183,7 +193,7 @@ spec:
       emptyDir: {}
   steps:
     - name: build
-      image: "$(build.builder.image)"
+      image: "$(params.builder-image)"
       workingDir: $(params.shp-source-root)
       command:
         - /cnb/lifecycle/builder
@@ -205,6 +215,14 @@ spec:
       volumeMounts:
         - name: varlibcontainers
           mountPath: /var/lib/containers
+  parameters:
+    - name: dockerfile
+      description: The path to the Dockerfile to be used for building the image.
+      type: string
+      default: "Dockerfile"
+    - name: builder-image
+      description: The builder image.
+      type: string
 `
 
 // BuildStrategyWithParameters is a strategy that uses a
