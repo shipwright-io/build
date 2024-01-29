@@ -1097,6 +1097,10 @@ func (in *SourceResult) DeepCopyInto(out *SourceResult) {
 		*out = new(OciArtifactSourceResult)
 		**out = **in
 	}
+	if in.Timestamp != nil {
+		in, out := &in.Timestamp, &out.Timestamp
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 

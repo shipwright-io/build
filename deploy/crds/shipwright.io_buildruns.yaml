@@ -6334,6 +6334,13 @@ spec:
                     name:
                       description: Name is the name of source
                       type: string
+                    timestamp:
+                      description: Timestamp holds the timestamp of the source, which
+                        depends on the actual source type and could range from being
+                        the commit timestamp or the fileystem timestamp of the most
+                        recent source file in the working directory
+                      format: date-time
+                      type: string
                   required:
                   - name
                   type: object
@@ -12552,6 +12559,13 @@ spec:
                         description: Digest hold the image digest result
                         type: string
                     type: object
+                  timestamp:
+                    description: Timestamp holds the timestamp of the source, which
+                      depends on the actual source type and could range from being
+                      the commit timestamp or the fileystem timestamp of the most
+                      recent source file in the working directory
+                    format: date-time
+                    type: string
                 type: object
               startTime:
                 description: StartTime is the time the build is actually started.

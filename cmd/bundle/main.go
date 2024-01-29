@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/spf13/pflag"
 
 	"github.com/shipwright-io/build/pkg/bundle"
@@ -18,12 +21,13 @@ import (
 )
 
 type settings struct {
-	help                  bool
-	image                 string
-	prune                 bool
-	target                string
-	secretPath            string
-	resultFileImageDigest string
+	help                      bool
+	image                     string
+	prune                     bool
+	target                    string
+	secretPath                string
+	resultFileImageDigest     string
+	resultFileSourceTimestamp string
 }
 
 var flagValues settings
@@ -36,6 +40,7 @@ func init() {
 	pflag.StringVar(&flagValues.image, "image", "", "Location of the bundle image (mandatory)")
 	pflag.StringVar(&flagValues.target, "target", "/workspace/source", "The target directory to place the code")
 	pflag.StringVar(&flagValues.resultFileImageDigest, "result-file-image-digest", "", "A file to write the image digest")
+	pflag.StringVar(&flagValues.resultFileSourceTimestamp, "result-file-source-timestamp", "", "A file to write the source timestamp")
 
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains access credentials (optional)")
 	pflag.BoolVar(&flagValues.prune, "prune", false, "Delete bundle image from registry after it was pulled")
@@ -72,10 +77,20 @@ func Do(ctx context.Context) error {
 	}
 
 	log.Printf("Pulling image %q", ref)
-	img, err := bundle.PullAndUnpack(
-		ref,
-		flagValues.target,
-		options...)
+	desc, err := remote.Get(ref, options...)
+	if err != nil {
+		return err
+	}
+
+	img, err := desc.Image()
+	if err != nil {
+		return err
+	}
+
+	rc := mutate.Extract(img)
+	defer rc.Close()
+
+	unpackDetails, err := bundle.Unpack(rc, flagValues.target)
 	if err != nil {
 		return err
 	}
@@ -90,6 +105,17 @@ func Do(ctx context.Context) error {
 	if flagValues.resultFileImageDigest != "" {
 		if err = os.WriteFile(flagValues.resultFileImageDigest, []byte(digest.String()), 0644); err != nil {
 			return err
+		}
+	}
+
+	if flagValues.resultFileSourceTimestamp != "" {
+		if unpackDetails.MostRecentFileTimestamp != nil {
+			if err = os.WriteFile(flagValues.resultFileSourceTimestamp, []byte(strconv.FormatInt(unpackDetails.MostRecentFileTimestamp.Unix(), 10)), 0644); err != nil {
+				return err
+			}
+
+		} else {
+			log.Printf("Unable to determine source timestamp of content in %s\n", flagValues.target)
 		}
 	}
 

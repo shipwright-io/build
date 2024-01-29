@@ -122,6 +122,14 @@ type SourceResult struct {
 	//
 	// +optional
 	OciArtifact *OciArtifactSourceResult `json:"ociArtifact,omitempty"`
+
+	// Timestamp holds the timestamp of the source, which
+	// depends on the actual source type and could range from
+	// being the commit timestamp or the fileystem timestamp
+	// of the most recent source file in the working directory
+	//
+	// +optional
+	Timestamp *metav1.Time `json:"timestamp,omitempty"`
 }
 
 // OciArtifactSourceResult holds the results emitted from the bundle source

@@ -225,6 +225,9 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 // ClusterBuildStrategy to support tests
 func (c *Catalog) ClusterBuildStrategy(name string) *build.ClusterBuildStrategy {
 	return &build.ClusterBuildStrategy{
+		TypeMeta: metav1.TypeMeta{
+			Kind: string(build.ClusterBuildStrategyKind),
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},

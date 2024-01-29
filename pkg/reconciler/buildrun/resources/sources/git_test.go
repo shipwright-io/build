@@ -47,20 +47,14 @@ var _ = Describe("Git", func() {
 			Expect(taskSpec.Steps[0].Name).To(Equal("source-default"))
 			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.GitContainerTemplate.Image))
 			Expect(taskSpec.Steps[0].Args).To(Equal([]string{
-				"--url",
-				"https://github.com/shipwright-io/build",
-				"--target",
-				"$(params.shp-source-root)",
-				"--result-file-commit-sha",
-				"$(results.shp-source-default-commit-sha.path)",
-				"--result-file-commit-author",
-				"$(results.shp-source-default-commit-author.path)",
-				"--result-file-branch-name",
-				"$(results.shp-source-default-branch-name.path)",
-				"--result-file-error-message",
-				"$(results.shp-error-message.path)",
-				"--result-file-error-reason",
-				"$(results.shp-error-reason.path)",
+				"--url", "https://github.com/shipwright-io/build",
+				"--target", "$(params.shp-source-root)",
+				"--result-file-commit-sha", "$(results.shp-source-default-commit-sha.path)",
+				"--result-file-commit-author", "$(results.shp-source-default-commit-author.path)",
+				"--result-file-branch-name", "$(results.shp-source-default-branch-name.path)",
+				"--result-file-error-message", "$(results.shp-error-message.path)",
+				"--result-file-error-reason", "$(results.shp-error-reason.path)",
+				"--result-file-source-timestamp", "$(results.shp-source-default-source-timestamp.path)",
 			}))
 		})
 	})
@@ -101,22 +95,15 @@ var _ = Describe("Git", func() {
 			Expect(taskSpec.Steps[0].Name).To(Equal("source-default"))
 			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.GitContainerTemplate.Image))
 			Expect(taskSpec.Steps[0].Args).To(Equal([]string{
-				"--url",
-				"git@github.com:shipwright-io/build.git",
-				"--target",
-				"$(params.shp-source-root)",
-				"--result-file-commit-sha",
-				"$(results.shp-source-default-commit-sha.path)",
-				"--result-file-commit-author",
-				"$(results.shp-source-default-commit-author.path)",
-				"--result-file-branch-name",
-				"$(results.shp-source-default-branch-name.path)",
-				"--result-file-error-message",
-				"$(results.shp-error-message.path)",
-				"--result-file-error-reason",
-				"$(results.shp-error-reason.path)",
-				"--secret-path",
-				"/workspace/shp-source-secret",
+				"--url", "git@github.com:shipwright-io/build.git",
+				"--target", "$(params.shp-source-root)",
+				"--result-file-commit-sha", "$(results.shp-source-default-commit-sha.path)",
+				"--result-file-commit-author", "$(results.shp-source-default-commit-author.path)",
+				"--result-file-branch-name", "$(results.shp-source-default-branch-name.path)",
+				"--result-file-error-message", "$(results.shp-error-message.path)",
+				"--result-file-error-reason", "$(results.shp-error-reason.path)",
+				"--result-file-source-timestamp", "$(results.shp-source-default-source-timestamp.path)",
+				"--secret-path", "/workspace/shp-source-secret",
 			}))
 			Expect(len(taskSpec.Steps[0].VolumeMounts)).To(Equal(1))
 			Expect(taskSpec.Steps[0].VolumeMounts[0].Name).To(Equal("shp-a-secret"))

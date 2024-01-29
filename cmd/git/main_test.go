@@ -471,6 +471,21 @@ var _ = Describe("Git Resource", func() {
 				})
 			})
 		})
+
+		It("should store source-timestamp into file specified in --result-file-source-timestamp flag", func() {
+			withTempFile("source-timestamp", func(filename string) {
+				withTempDir(func(target string) {
+					Expect(run(withArgs(
+						"--url", exampleRepo,
+						"--target", target,
+						"--revision", "v0.1.0",
+						"--result-file-source-timestamp", filename,
+					))).ToNot(HaveOccurred())
+
+					Expect(filecontent(filename)).To(Equal("1619426578"))
+				})
+			})
+		})
 	})
 
 	Context("Some tests mutate or depend on git configurations. They must run sequentially to avoid race-conditions.", Ordered, func() {

@@ -54,7 +54,10 @@ var _ = Describe("Bundle", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(r).ToNot(BeNil())
 
-				Expect(Unpack(r, tempDir)).To(Succeed())
+				details, err := Unpack(r, tempDir)
+				Expect(details).ToNot(BeNil())
+				Expect(err).ToNot(HaveOccurred())
+
 				Expect(filepath.Join(tempDir, "README.md")).To(BeAnExistingFile())
 				Expect(filepath.Join(tempDir, ".someToolDir", "config.json")).ToNot(BeAnExistingFile())
 				Expect(filepath.Join(tempDir, "somefile")).To(BeAnExistingFile())
