@@ -362,7 +362,7 @@ metadata:
 spec:
   steps:
   - name: store-tarball
-    image: gcr.io/go-containerregistry/crane:v0.18.0
+    image: gcr.io/go-containerregistry/crane:v0.19.0
     command:
     - crane
     args:
