@@ -58,7 +58,7 @@ spec:
           cpu: 250m
           memory: 65Mi
     - name: trivy-scan
-      image: docker.io/aquasec/trivy:0.48.3
+      image: docker.io/aquasec/trivy:0.49.0
       command:
         - trivy
       args:
