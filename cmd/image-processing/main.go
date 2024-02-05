@@ -37,32 +37,12 @@ type settings struct {
 	help bool
 	push string
 	annotation,
-	label *[]string
+	label []string
 	insecure bool
 	image,
 	resultFileImageDigest,
 	resultFileImageSize,
 	secretPath string
-}
-
-func getAnnotation() []string {
-	var annotation []string
-
-	if flagValues.annotation != nil {
-		return append(annotation, *flagValues.annotation...)
-	}
-
-	return annotation
-}
-
-func getLabel() []string {
-	var label []string
-
-	if flagValues.label != nil {
-		return append(label, *flagValues.label...)
-	}
-
-	return label
 }
 
 var flagValues settings
@@ -79,8 +59,8 @@ func initializeFlag() {
 
 	pflag.StringVar(&flagValues.push, "push", "", "Push the image contained in this directory")
 
-	flagValues.annotation = pflag.StringArray("annotation", nil, "New annotations to add")
-	flagValues.label = pflag.StringArray("label", nil, "New labels to add")
+	pflag.StringArrayVar(&flagValues.annotation, "annotation", nil, "New annotations to add")
+	pflag.StringArrayVar(&flagValues.label, "label", nil, "New labels to add")
 	pflag.StringVar(&flagValues.resultFileImageDigest, "result-file-image-digest", "", "A file to write the image digest to")
 	pflag.StringVar(&flagValues.resultFileImageSize, "result-file-image-size", "", "A file to write the image size to")
 }
@@ -123,13 +103,13 @@ func runImageProcessing(ctx context.Context) error {
 	}
 
 	// parse annotations
-	annotations, err := splitKeyVals(getAnnotation())
+	annotations, err := splitKeyVals(flagValues.annotation)
 	if err != nil {
 		return err
 	}
 
 	// parse labels
-	labels, err := splitKeyVals(getLabel())
+	labels, err := splitKeyVals(flagValues.label)
 	if err != nil {
 		return err
 	}
