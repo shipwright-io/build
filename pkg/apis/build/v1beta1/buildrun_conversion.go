@@ -212,6 +212,9 @@ func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
 
 	if orig.ServiceAccount != nil {
 		dest.ServiceAccount = orig.ServiceAccount.Name
+		if orig.ServiceAccount.Generate != nil && *orig.ServiceAccount.Generate {
+			dest.ServiceAccount = pointer.String(".generate")
+		}
 	}
 
 	dest.Timeout = orig.Timeout
