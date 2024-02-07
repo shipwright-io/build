@@ -157,6 +157,10 @@ install-counterfeiter:
 install-spruce:
 	hack/install-spruce.sh
 
+.PHONY: install-trivy
+install-trivy:
+	hack/install-trivy.sh
+
 # Install golangci-lint via: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 .PHONY: sanity-check
 sanity-check:
