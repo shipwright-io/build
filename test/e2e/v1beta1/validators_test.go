@@ -216,10 +216,13 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1beta1.BuildRun
 func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1beta1.BuildRun) {
 	trueCondition := corev1.ConditionTrue
 	falseCondition := corev1.ConditionFalse
+	var err error
 
 	// Ensure the BuildRun has been created
-	err := testBuild.CreateBR(testBuildRun)
-	Expect(err).ToNot(HaveOccurred(), "Failed to create BuildRun")
+	if _, err := testBuild.GetBR(testBuildRun.Name); err != nil {
+		Expect(testBuild.CreateBR(testBuildRun)).
+			ToNot(HaveOccurred(), "Failed to create BuildRun")
+	}
 
 	// Ensure a BuildRun eventually moves to a succeeded FALSE status
 	nextStatusLog := time.Now().Add(60 * time.Second)

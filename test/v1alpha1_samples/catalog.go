@@ -786,32 +786,6 @@ func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.
 	}
 }
 
-// DefaultBuildRunWithoutBuild returns a minimal BuildRun object without Build reference
-func (c *Catalog) DefaultBuildRunWithoutBuild(buildRunName string) *build.BuildRun {
-	var strategy build.BuildStrategyKind = "ClusterBuildStrategy"
-	return &build.BuildRun{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: buildRunName,
-		},
-		Spec: build.BuildRunSpec{
-			BuildSpec: &build.BuildSpec{
-				Strategy: build.Strategy{
-					Name: "foobar-strategy",
-					Kind: &strategy,
-				},
-			},
-		},
-		Status: build.BuildRunStatus{
-			BuildSpec: &build.BuildSpec{
-				Strategy: build.Strategy{
-					Name: "foobar-strategy",
-					Kind: &strategy,
-				},
-			},
-		},
-	}
-}
-
 // PodWithInitContainerStatus returns a pod with a single
 // entry under the Status field for InitContainer Status
 func (c *Catalog) PodWithInitContainerStatus(podName string, initContainerName string) *corev1.Pod {
