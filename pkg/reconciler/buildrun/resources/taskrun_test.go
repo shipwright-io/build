@@ -154,6 +154,8 @@ var _ = Describe("GenerateTaskrun", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 				}))
 			})
 
@@ -184,6 +186,8 @@ var _ = Describe("GenerateTaskrun", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 				}
 
 				Expect(got.Steps[3].Args).To(HaveLen(len(expected)))

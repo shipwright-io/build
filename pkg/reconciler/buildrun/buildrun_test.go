@@ -342,6 +342,86 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.StatusCallCount()).To(Equal(1))
 			})
 
+			It("updates the BuildRun status with a VulnerabilitiesFound reason if fail on finding is true", func() {
+				taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded")
+
+				buildRunSample.Spec.Output = &build.Image{
+					VulnerabilityScan: &build.VulnerabilityScanOptions{
+						Fail: true,
+					},
+				}
+				vulns := `[{"vulnerabilityID":"CVE-2019-12900","severity":"CRITICAL"},{"vulnerabilityID":"CVE-2019-8457","severity":"CRITICAL"}]`
+				taskRunSample.Status.TaskRunStatusFields.Results = append(taskRunSample.Status.Results, pipelineapi.TaskRunResult{
+					Name: "shp-image-vulnerabilities",
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
+						StringVal: vulns,
+					},
+				})
+
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					"Succeeded",
+					&taskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "VulnerabilitiesFound",
+						Status: corev1.ConditionFalse,
+					},
+					corev1.ConditionTrue,
+					buildSample.Spec,
+					false,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+				Expect(client.GetCallCount()).To(Equal(2))
+				Expect(client.StatusCallCount()).To(Equal(1))
+			})
+
+			It("updates the BuildRun status with a SUCCEEDED reason if fail in vulnerabilities options is false", func() {
+				taskRunSample = ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded")
+
+				buildRunSample.Spec.Output = &build.Image{
+					VulnerabilityScan: &build.VulnerabilityScanOptions{
+						Fail: false,
+					},
+				}
+				vulns := `[{"vulnerabilityID":"CVE-2019-12900","severity":"CRITICAL"},{"vulnerabilityID":"CVE-2019-8457","severity":"CRITICAL"}]`
+				taskRunSample.Status.TaskRunStatusFields.Results = append(taskRunSample.Status.Results, pipelineapi.TaskRunResult{
+					Name: "shp-image-vulnerabilities",
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
+						StringVal: vulns,
+					},
+				})
+
+				// Stub that asserts the BuildRun status fields when
+				// Status updates for a BuildRun take place
+				statusCall := ctl.StubBuildRunStatus(
+					"Succeeded",
+					&taskRunName,
+					build.Condition{
+						Type:   build.Succeeded,
+						Reason: "Succeeded",
+						Status: corev1.ConditionTrue,
+					},
+					corev1.ConditionTrue,
+					buildSample.Spec,
+					false,
+				)
+				statusWriter.UpdateCalls(statusCall)
+
+				result, err := reconciler.Reconcile(context.TODO(), taskRunRequest)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(reconcile.Result{}).To(Equal(result))
+				Expect(client.GetCallCount()).To(Equal(2))
+				Expect(client.StatusCallCount()).To(Equal(1))
+			})
+
 			It("should recognize the BuildRun is canceled", func() {
 				// set cancel
 				buildRunSampleCopy := buildRunSample.DeepCopy()

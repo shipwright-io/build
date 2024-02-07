@@ -466,6 +466,16 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				}
 			}
 
+			if failOnVulnerabilities(buildRun) {
+				return reconcile.Result{}, resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun,
+					fmt.Sprintf(
+						"Vulnerabilities have been found in the output image. For detailed information, check buildrun status or see kubectl --namespace %s logs %s --container step-image-processing",
+						buildRun.Namespace,
+						lastTaskRun.Status.PodName,
+					),
+					buildv1beta1.BuildRunStateVulnerabilitiesFound)
+			}
+
 			ctxlog.Info(ctx, "updating buildRun status", namespace, request.Namespace, name, request.Name)
 			if err := r.client.Status().Update(ctx, buildRun); err != nil {
 				return reconcile.Result{}, err
@@ -595,4 +605,23 @@ func (r *ReconcileBuildRun) patchTaskRun(ctx context.Context, tr *pipelineapi.Ta
 	patch := client.RawPatch(types.JSONPatchType, data)
 	patchOpt := client.PatchOptions{Raw: &opts}
 	return r.client.Patch(ctx, tr, patch, &patchOpt)
+}
+
+func failOnVulnerabilities(buildRun *buildv1beta1.BuildRun) bool {
+	if buildRun.Status.Output == nil || len(buildRun.Status.Output.Vulnerabilities) == 0 {
+		return false
+	}
+	var buildRunOutput, buildOutput buildv1beta1.Image
+	if buildRun.Spec.Output != nil {
+		buildRunOutput = *buildRun.Spec.Output
+	}
+	if buildRun.Spec.Build.Spec != nil {
+		buildOutput = buildRun.Spec.Build.Spec.Output
+	}
+
+	vulnerabilitySettings := resources.GetVulnerabilityScanOptions(buildOutput, buildRunOutput)
+	if vulnerabilitySettings != nil {
+		return vulnerabilitySettings.Fail
+	}
+	return false
 }
