@@ -193,6 +193,34 @@ func (buildSpec *BuildSpec) StrategyName() string {
 	return buildSpec.Strategy.Name
 }
 
+// VulnerabilityIgnoreOptions refers to ignore options for vulnerability scan
+type VulnerabilityIgnoreOptions struct {
+
+	// Issues references the security issues to be ignored in vulnerability scan
+	Issues []string `json:"issues,omitempty"`
+
+	// Severity indicates the severities of security issues to be ignored (comma separated)
+	Severity *string `json:"severity,omitempty"`
+
+	// Unfixed indicates to ignore vulnerabilities for which no fix exists
+	//
+	// +optional
+	Unfixed *bool `json:"unfixed,omitempty"`
+}
+
+// VulnerabilityScanOptions provides configurations about running a scan for your generated image
+type VulnerabilityScanOptions struct {
+
+	// Enabled indicates whether to run vulnerability scan for image
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Fail indicates whether to fail the build run if the vulnerability scan results in vulnerabilities
+	Fail bool `json:"fail,omitempty"`
+
+	// Ignore refers to ignore options for vulnerability scan
+	Ignore *VulnerabilityIgnoreOptions `json:"ignore,omitempty"`
+}
+
 // Image refers to an container image with credentials
 type Image struct {
 	// Image is the reference of the image.
@@ -217,6 +245,11 @@ type Image struct {
 	//
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// VulnerabilityScan provides configurations about running a scan for your generated image
+	//
+	// +optional
+	VulnerabilityScan *VulnerabilityScanOptions `json:"vulnerabilityScan,omitempty"`
 
 	// Timestamp references the optional image timestamp to be set, valid values are:
 	// - "Zero", to set 00:00:00 UTC on 1 January 1970
