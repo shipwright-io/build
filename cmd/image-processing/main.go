@@ -9,16 +9,20 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/image"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/spf13/pflag"
 )
 
@@ -45,7 +49,10 @@ type settings struct {
 	imageTimestampFile,
 	resultFileImageDigest,
 	resultFileImageSize,
+	resultFileImageVulnerabilities,
 	secretPath string
+	vulnerabilitySettings   resources.VulnerablilityScanParams
+	vulnerabilityCountLimit int
 }
 
 var flagValues settings
@@ -70,6 +77,9 @@ func initializeFlag() {
 
 	pflag.StringVar(&flagValues.resultFileImageDigest, "result-file-image-digest", "", "A file to write the image digest to")
 	pflag.StringVar(&flagValues.resultFileImageSize, "result-file-image-size", "", "A file to write the image size to")
+	pflag.StringVar(&flagValues.resultFileImageVulnerabilities, "result-file-image-vulnerabilities", "", "A file to write the image vulnerabilities to")
+	pflag.Var(&flagValues.vulnerabilitySettings, "vuln-settings", "Vulnerability settings json string. One can enable the scan by setting {\"enabled\":true} to this option")
+	pflag.IntVar(&flagValues.vulnerabilityCountLimit, "vuln-count-limit", 50, "vulnerability count limit for the output of vulnerability scan")
 }
 
 func main() {
@@ -143,7 +153,7 @@ func runImageProcessing(ctx context.Context) error {
 	}
 
 	// prepare the registry options
-	options, _, err := image.GetOptions(ctx, imageName, flagValues.insecure, flagValues.secretPath, "Shipwright Build")
+	options, auth, err := image.GetOptions(ctx, imageName, flagValues.insecure, flagValues.secretPath, "Shipwright Build")
 	if err != nil {
 		return err
 	}
@@ -151,12 +161,13 @@ func runImageProcessing(ctx context.Context) error {
 	// load the image or image index (usually multi-platform image)
 	var img containerreg.Image
 	var imageIndex containerreg.ImageIndex
+	var isImageFromTar bool
 	if flagValues.push == "" {
 		log.Printf("Loading the image from the registry %q\n", imageName.String())
 		img, imageIndex, err = image.LoadImageOrImageIndexFromRegistry(imageName, options)
 	} else {
 		log.Printf("Loading the image from the directory %q\n", flagValues.push)
-		img, imageIndex, err = image.LoadImageOrImageIndexFromDirectory(flagValues.push)
+		img, imageIndex, isImageFromTar, err = image.LoadImageOrImageIndexFromDirectory(flagValues.push)
 	}
 	if err != nil {
 		log.Printf("Failed to load the image: %v\n", err)
@@ -179,6 +190,53 @@ func runImageProcessing(ctx context.Context) error {
 		}
 	}
 
+	// check for image vulnerabilities if vulnerability scanning is enabled.
+	var vulns []buildapi.Vulnerability
+
+	if flagValues.vulnerabilitySettings.Enabled {
+		var imageString string
+		var imageInDir bool
+		if flagValues.push != "" {
+			imageString = flagValues.push
+
+			// for single image in a tar file
+			if isImageFromTar {
+				entries, err := os.ReadDir(flagValues.push)
+				if err != nil {
+					return err
+				}
+				imageString = filepath.Join(imageString, entries[0].Name())
+			}
+			imageInDir = true
+		} else {
+			imageString = imageName.String()
+			imageInDir = false
+		}
+		vulns, err = image.RunVulnerabilityScan(ctx, imageString, flagValues.vulnerabilitySettings.VulnerabilityScanOptions, auth, flagValues.insecure, imageInDir, flagValues.vulnerabilityCountLimit)
+		if err != nil {
+			return err
+		}
+
+		// log all the vulnerabilities
+		if len(vulns) > 0 {
+			log.Println("vulnerabilities found in the output image :")
+			for _, vuln := range vulns {
+				log.Printf("ID: %s, Severity: %s\n", vuln.ID, vuln.Severity)
+			}
+		}
+		vulnOuput := serializeVulnerabilities(vulns)
+		if err := os.WriteFile(flagValues.resultFileImageVulnerabilities, vulnOuput, 0640); err != nil {
+			return err
+		}
+	}
+
+	// Don't push the image if fail is set to true for shipwright managed push
+	if flagValues.push != "" {
+		if flagValues.vulnerabilitySettings.FailOnFinding && len(vulns) > 0 {
+			log.Println("vulnerabilities have been found in the output image, exiting with code 22")
+			return &ExitError{Code: 22, Message: "vulnerabilities found, exiting with code 22", Cause: errors.New("vulnerabilities found in the image")}
+		}
+	}
 	// mutate the image timestamp
 	if flagValues.imageTimestamp != "" {
 		sec, err := strconv.ParseInt(flagValues.imageTimestamp, 10, 32)
@@ -233,4 +291,12 @@ func splitKeyVals(kvPairs []string) (map[string]string, error) {
 	}
 
 	return m, nil
+}
+
+func serializeVulnerabilities(Vulnerabilities []buildapi.Vulnerability) []byte {
+	var output []string
+	for _, vuln := range Vulnerabilities {
+		output = append(output, fmt.Sprintf("%s:%c", vuln.ID, vuln.Severity[0]))
+	}
+	return []byte(strings.Join(output, ","))
 }

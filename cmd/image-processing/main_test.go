@@ -11,7 +11,9 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -24,6 +26,8 @@ import (
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -398,5 +402,144 @@ var _ = Describe("Image Processing Resource", func() {
 				})
 			})
 		})
+	})
+
+	Context("vulnerability scanning", func() {
+		var directory string
+		BeforeEach(func() {
+			cwd, err := os.Getwd()
+			Expect(err).ToNot(HaveOccurred())
+			directory = path.Clean(path.Join(cwd, "../..", "test/data/images/vuln-image-in-oci"))
+		})
+
+		It("should run vulnerability scanning if it is enabled and output vulnerabilities equal to the limit defined", func() {
+			vulnOptions := &buildapi.VulnerabilityScanOptions{
+				Enabled: true,
+			}
+			withTempRegistry(func(endpoint string) {
+				tag, err := name.NewTag(fmt.Sprintf("%s/%s:%s", endpoint, "temp-image", rand.String(5)))
+				Expect(err).ToNot(HaveOccurred())
+				vulnSettings := &resources.VulnerablilityScanParams{VulnerabilityScanOptions: *vulnOptions}
+				withTempFile("vuln-scan-result", func(filename string) {
+					Expect(run(
+						"--insecure",
+						"--image", tag.String(),
+						"--push", directory,
+						"--vuln-settings", vulnSettings.String(),
+						"--result-file-image-vulnerabilities", filename,
+						"--vuln-count-limit", "10",
+					)).ToNot(HaveOccurred())
+					output := filecontent(filename)
+					Expect(output).To(ContainSubstring("CVE-2019-8457"))
+					vulnerabilities := strings.Split(output, ",")
+					Expect(vulnerabilities).To(HaveLen(10))
+				})
+			})
+		})
+
+		It("should push the image if vulnerabilities are found and fail is false", func() {
+			vulnOptions := &buildapi.VulnerabilityScanOptions{
+				Enabled:       true,
+				FailOnFinding: false,
+			}
+			withTempRegistry(func(endpoint string) {
+				tag, err := name.NewTag(fmt.Sprintf("%s/%s:%s", endpoint, "temp-image", rand.String(5)))
+				Expect(err).ToNot(HaveOccurred())
+				vulnSettings := &resources.VulnerablilityScanParams{VulnerabilityScanOptions: *vulnOptions}
+				withTempFile("vuln-scan-result", func(filename string) {
+					Expect(run(
+						"--insecure",
+						"--image", tag.String(),
+						"--push", directory,
+						"--vuln-settings", vulnSettings.String(),
+						"--result-file-image-vulnerabilities", filename,
+					)).ToNot(HaveOccurred())
+					output := filecontent(filename)
+					Expect(output).To(ContainSubstring("CVE-2019-8457"))
+				})
+
+				ref, err := name.ParseReference(tag.String())
+				Expect(err).ToNot(HaveOccurred())
+				_, err = remote.Get(ref)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		It("should not push the image if vulnerabilities are found and fail is true", func() {
+			vulnOptions := &buildapi.VulnerabilityScanOptions{
+				Enabled:       true,
+				FailOnFinding: true,
+			}
+			withTempRegistry(func(endpoint string) {
+				tag, err := name.NewTag(fmt.Sprintf("%s/%s:%s", endpoint, "temp-image", rand.String(5)))
+				Expect(err).ToNot(HaveOccurred())
+				vulnSettings := &resources.VulnerablilityScanParams{VulnerabilityScanOptions: *vulnOptions}
+				withTempFile("vuln-scan-result", func(filename string) {
+					Expect(run(
+						"--insecure",
+						"--image", tag.String(),
+						"--push", directory,
+						"--vuln-settings", vulnSettings.String(),
+						"--result-file-image-vulnerabilities", filename,
+					)).To(HaveOccurred())
+					output := filecontent(filename)
+					Expect(output).To(ContainSubstring("CVE-2019-8457"))
+				})
+
+				ref, err := name.ParseReference(tag.String())
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = remote.Get(ref)
+				Expect(err).To(HaveOccurred())
+
+			})
+		})
+
+		It("should run vulnerability scanning on an image that is already pushed by the strategy", func() {
+			ignoreVulnerabilities := "high"
+			vulnOptions := &buildapi.VulnerabilityScanOptions{
+				Enabled:       true,
+				FailOnFinding: true,
+				Ignore: &buildapi.VulnerabilityIgnoreOptions{
+					Severity: &ignoreVulnerabilities,
+				},
+			}
+
+			withTempRegistry(func(endpoint string) {
+				originalImageRef := "ghcr.io/shipwright-io/shipwright-samples/node:12"
+				srcRef, err := name.ParseReference(originalImageRef)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Pull the original image
+				originalImage, err := remote.Image(srcRef)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Tag the image with a new name
+				tag, err := name.NewTag(fmt.Sprintf("%s/%s:%s", endpoint, "temp-image", rand.String(5)))
+				Expect(err).ToNot(HaveOccurred())
+
+				err = remote.Write(tag, originalImage)
+				Expect(err).ToNot(HaveOccurred())
+
+				vulnSettings := &resources.VulnerablilityScanParams{VulnerabilityScanOptions: *vulnOptions}
+				withTempFile("vuln-scan-result", func(filename string) {
+					Expect(run(
+						"--insecure",
+						"--image", tag.String(),
+						"--vuln-settings", vulnSettings.String(),
+						"--result-file-image-vulnerabilities", filename,
+					)).ToNot(HaveOccurred())
+					output := filecontent(filename)
+					Expect(output).To(ContainSubstring("CVE-2019-12900"))
+				})
+
+				ref, err := name.ParseReference(tag.String())
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = remote.Get(ref)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
 	})
 })

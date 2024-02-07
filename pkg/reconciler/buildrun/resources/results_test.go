@@ -108,7 +108,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 		It("should surface the TaskRun results emitting from output step", func() {
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
-
+			vulns := `CVE-2019-12900:C,CVE-2019-8457:H`
 			tr.Status.Results = append(tr.Status.Results,
 				pipelineapi.TaskRunResult{
 					Name: "shp-image-digest",
@@ -123,12 +123,22 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 						Type:      pipelineapi.ParamTypeString,
 						StringVal: "230",
 					},
+				},
+				pipelineapi.TaskRunResult{
+					Name: "shp-image-vulnerabilities",
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
+						StringVal: vulns,
+					},
 				})
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
 			Expect(br.Status.Output.Size).To(Equal(int64(230)))
+			Expect(br.Status.Output.Vulnerabilities).To(HaveLen(2))
+			Expect(br.Status.Output.Vulnerabilities[0].ID).To(Equal("CVE-2019-12900"))
+			Expect(br.Status.Output.Vulnerabilities[0].Severity).To(Equal("critical"))
 		})
 
 		It("should surface the TaskRun results emitting from source and output step", func() {

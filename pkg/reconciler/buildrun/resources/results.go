@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
@@ -17,8 +18,9 @@ import (
 )
 
 const (
-	imageDigestResult = "image-digest"
-	imageSizeResult   = "image-size"
+	imageDigestResult    = "image-digest"
+	imageSizeResult      = "image-size"
+	imageVulnerabilities = "image-vulnerabilities"
 )
 
 // UpdateBuildRunUsingTaskResults surface the task results
@@ -52,6 +54,8 @@ func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.B
 			} else {
 				buildRun.Status.Output.Size = size
 			}
+		case generateOutputResultName(imageVulnerabilities):
+			buildRun.Status.Output.Vulnerabilities = getImageVulnerabilitiesResult(result)
 		}
 	}
 }
@@ -70,5 +74,38 @@ func getTaskSpecResults() []pipelineapi.TaskResult {
 			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, imageSizeResult),
 			Description: "The compressed size of the image",
 		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, imageVulnerabilities),
+			Description: "List of vulnerabilities",
+		},
+	}
+}
+
+func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []build.Vulnerability {
+	vulnerabilities := strings.Split(result.Value.StringVal, ",")
+	var vulns []build.Vulnerability
+	for _, vulnerability := range vulnerabilities {
+		vuln := strings.Split(vulnerability, ":")
+		severity := getSeverity(vuln[1])
+		vulns = append(vulns, build.Vulnerability{
+			ID:       vuln[0],
+			Severity: severity,
+		})
+	}
+	return vulns
+}
+
+func getSeverity(sev string) string {
+	switch sev {
+	case "L":
+		return "low"
+	case "M":
+		return "medium"
+	case "H":
+		return "high"
+	case "C":
+		return "critical"
+	default:
+		return ""
 	}
 }

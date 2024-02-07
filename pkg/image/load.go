@@ -17,18 +17,18 @@ import (
 )
 
 // LoadImageOrImageIndexFromDirectory loads an image or an image index from a directory
-func LoadImageOrImageIndexFromDirectory(directory string) (containerreg.Image, containerreg.ImageIndex, error) {
+func LoadImageOrImageIndexFromDirectory(directory string) (containerreg.Image, containerreg.ImageIndex, bool, error) {
 	// if we have an index.json, then we have an OCI image index
 	fileInfo, err := os.Stat(path.Join(directory, "index.json"))
 	if err == nil && !fileInfo.IsDir() {
 		imageIndex, err := layout.ImageIndexFromPath(directory)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, false, err
 		}
 
 		indexManifest, err := imageIndex.IndexManifest()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, false, err
 		}
 
 		// flatten an index with exactly one entry, in particular if we push an index with an index that contains the images,
@@ -41,17 +41,17 @@ func LoadImageOrImageIndexFromDirectory(directory string) (containerreg.Image, c
 
 			case desc.MediaType.IsImage():
 				image, err := imageIndex.Image(desc.Digest)
-				return image, nil, err
+				return image, nil, false, err
 
 			case desc.MediaType.IsIndex():
 				imageIndex, err = imageIndex.ImageIndex(desc.Digest)
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, false, err
 				}
 
 				indexManifest, err = imageIndex.IndexManifest()
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, false, err
 				}
 
 			default:
@@ -59,21 +59,21 @@ func LoadImageOrImageIndexFromDirectory(directory string) (containerreg.Image, c
 			}
 		}
 
-		return nil, imageIndex, nil
+		return nil, imageIndex, false, nil
 	}
 
 	entries, err := os.ReadDir(directory)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, false, err
 	}
 
 	if len(entries) == 1 {
 		// tag nil is correct here, a tag would be needed if the tarball contains several images
 		// which is not desired to be the case here
 		image, err := tarball.ImageFromPath(path.Join(directory, entries[0].Name()), nil)
-		return image, nil, err
+		return image, nil, true, err
 	}
-	return nil, nil, fmt.Errorf("no image was found at %q", directory)
+	return nil, nil, false, fmt.Errorf("no image was found at %q", directory)
 }
 
 // LoadImageOrImageIndexFromRegistry loads an image or an image index from a registry
