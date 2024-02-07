@@ -193,6 +193,48 @@ func (buildSpec *BuildSpec) StrategyName() string {
 	return buildSpec.Strategy.Name
 }
 
+// VulnerabilityIgnoreOptions refers to ignore options for vulnerability scan
+type VulnerabilityIgnoreOptions struct {
+
+	// ID references the security issues to be ignored in vulnerability scan
+	//
+	// +optional
+	ID []string `json:"id,omitempty"`
+
+	// Timestamp references the optional image timestamp to be set, valid values are:
+	// - "Zero", to set 00:00:00 UTC on 1 January 1970
+	// - "SourceTimestamp", to set the source timestamp dereived from the input source
+	// - "BuildTimestamp", to set the timestamp of the current build itself
+	// - Parsable integer number defined as the epoch seconds
+	// - or nil/empty to not set any specific timestamp
+
+	// Severity denotes the severity levels of security issues to be ignored, valid values are:
+	// - "low": it will exclude low severity vulnerabilities, displaying only medium, high and critical vulnerabilities
+	// - "medium": it will exclude low and medium severity vulnerabilities, displaying only high and critical vulnerabilities
+	// - "high": it will exclude low, medium and high severity vulnerabilities, displaying only the critical vulnerabilities
+	//
+	// +optional
+	Severity *string `json:"severity,omitempty"`
+
+	// Unfixed indicates to ignore vulnerabilities for which no fix exists
+	//
+	// +optional
+	Unfixed *bool `json:"unfixed,omitempty"`
+}
+
+// VulnerabilityScanOptions provides configurations about running a scan for your generated image
+type VulnerabilityScanOptions struct {
+
+	// Enabled indicates whether to run vulnerability scan for image
+	Enabled bool `json:"enabled,omitempty"`
+
+	// FailOnFinding indicates whether to fail the build run if the vulnerability scan results in vulnerabilities
+	FailOnFinding bool `json:"failOnFinding,omitempty"`
+
+	// Ignore refers to ignore options for vulnerability scan
+	Ignore *VulnerabilityIgnoreOptions `json:"ignore,omitempty"`
+}
+
 // Image refers to an container image with credentials
 type Image struct {
 	// Image is the reference of the image.
@@ -217,6 +259,11 @@ type Image struct {
 	//
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// VulnerabilityScan provides configurations about running a scan for your generated image
+	//
+	// +optional
+	VulnerabilityScan *VulnerabilityScanOptions `json:"vulnerabilityScan,omitempty"`
 
 	// Timestamp references the optional image timestamp to be set, valid values are:
 	// - "Zero", to set 00:00:00 UTC on 1 January 1970

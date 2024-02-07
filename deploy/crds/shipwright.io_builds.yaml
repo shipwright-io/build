@@ -2351,6 +2351,44 @@ spec:
                       defined as the epoch seconds - or nil/empty to not set any specific
                       timestamp'
                     type: string
+                  vulnerabilityScan:
+                    description: VulnerabilityScan provides configurations about running
+                      a scan for your generated image
+                    properties:
+                      enabled:
+                        description: Enabled indicates whether to run vulnerability
+                          scan for image
+                        type: boolean
+                      failOnFinding:
+                        description: FailOnFinding indicates whether to fail the build
+                          run if the vulnerability scan results in vulnerabilities
+                        type: boolean
+                      ignore:
+                        description: Ignore refers to ignore options for vulnerability
+                          scan
+                        properties:
+                          id:
+                            description: ID references the security issues to be ignored
+                              in vulnerability scan
+                            items:
+                              type: string
+                            type: array
+                          severity:
+                            description: 'Severity denotes the severity levels of
+                              security issues to be ignored, valid values are: - "low":
+                              it will exclude low severity vulnerabilities, displaying
+                              only medium, high and critical vulnerabilities - "medium":
+                              it will exclude low and medium severity vulnerabilities,
+                              displaying only high and critical vulnerabilities -
+                              "high": it will exclude low, medium and high severity
+                              vulnerabilities, displaying only the critical vulnerabilities'
+                            type: string
+                          unfixed:
+                            description: Unfixed indicates to ignore vulnerabilities
+                              for which no fix exists
+                            type: boolean
+                        type: object
+                    type: object
                 required:
                 - image
                 type: object
