@@ -1096,6 +1096,63 @@ request:
 			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
 		})
 
+		It("converts for spec a generated serviceAccount", func() {
+			// Create the yaml in v1alpha1
+			buildRunTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1alpha1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        buildRef:
+          name: a_build
+        serviceAccount:
+          generate: true
+        output:
+          image: foobar
+`
+			o := fmt.Sprintf(buildRunTemplate, apiVersion, desiredAPIVersion)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Beta1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1beta1 BuildRun
+			desiredBuildRun := v1beta1.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1beta1",
+					Kind:       "BuildRun",
+				},
+				Spec: v1beta1.BuildRunSpec{
+					Build: v1beta1.ReferencedBuild{
+						Name: pointer.String("a_build"),
+					},
+					ServiceAccount: pointer.String(".generate"),
+					Output: &v1beta1.Image{
+						Image: "foobar",
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
+
 		It("converts for spec Build buildref", func() {
 			// Create the yaml in v1alpha1
 			buildTemplate := `kind: ConversionReview
@@ -1215,6 +1272,7 @@ request:
 			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
 		})
 	})
+
 	Context("for a BuildStrategy spec from v1beta1 to v1alpha1", func() {
 		var desiredAPIVersion = "shipwright.io/v1alpha1"
 		It("converts the strategy", func() {
