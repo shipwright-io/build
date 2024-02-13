@@ -40,20 +40,23 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 			// Use an empty strategy to only have the source step
 			strategy := tb.Catalog.ClusterBuildStrategy(strategyName)
 			Expect(tb.CreateClusterBuildStrategy(strategy)).To(Succeed())
-
+			cbs := v1beta1.ClusterBuildStrategyKind
 			// Setup BuildRun with fixed revision where we know the commit details
 			Expect(tb.CreateBR(&v1beta1.BuildRun{
 				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
 				Spec: v1beta1.BuildRunSpec{
 					Build: v1beta1.ReferencedBuild{
 						Build: &v1beta1.BuildSpec{
-							Strategy: v1beta1.Strategy{Kind: (*v1beta1.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name},
 							Source: v1beta1.Source{
 								Type: v1beta1.GitType,
 								GitSource: &v1beta1.Git{
 									URL:      "https://github.com/shipwright-io/sample-go",
 									Revision: pointer.String("v0.1.0"),
 								},
+							},
+							Strategy: v1beta1.Strategy{
+								Kind: &cbs,
+								Name: strategy.Name,
 							},
 						},
 					},
@@ -73,7 +76,7 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 			// Use an empty strategy to only have the source step
 			strategy := tb.Catalog.ClusterBuildStrategy(strategyName)
 			Expect(tb.CreateClusterBuildStrategy(strategy)).To(Succeed())
-
+			cbs := v1beta1.ClusterBuildStrategyKind
 			// Setup BuildRun with fixed image sha where we know the timestamp details
 			Expect(tb.CreateBR(&v1beta1.BuildRun{
 
@@ -81,7 +84,10 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 				Spec: v1beta1.BuildRunSpec{
 					Build: v1beta1.ReferencedBuild{
 						Build: &v1beta1.BuildSpec{
-							Strategy: v1beta1.Strategy{Kind: (*v1beta1.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name},
+							Strategy: v1beta1.Strategy{
+								Kind: &cbs,
+								Name: strategy.Name,
+							},
 							Source: v1beta1.Source{
 								Type: v1beta1.OCIArtifactType,
 								OCIArtifact: &v1beta1.OCIArtifact{
