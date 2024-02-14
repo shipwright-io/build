@@ -108,6 +108,17 @@ const (
 	AnnotationBuildVerifyRepository = BuildDomain + "/verify.repository"
 )
 
+const (
+	// OutputImageZeroTimestamp indicates that the UNIX timestamp 0 is to be used
+	OutputImageZeroTimestamp = "Zero"
+
+	// OutputImageSourceTimestamp indicates that the timestamp of the respective source it to be used
+	OutputImageSourceTimestamp = "SourceTimestamp"
+
+	// OutputImageBuildTimestamp indicates that the current timestamp of the build run itself is to be used
+	OutputImageBuildTimestamp = "BuildTimestamp"
+)
+
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
 	// Source refers to the Git repository containing the

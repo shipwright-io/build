@@ -13,6 +13,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,6 +79,11 @@ func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) SourceGitRevision(revision string) *buildPrototype {
+	b.build.Spec.Source.Revision = pointer.String(revision)
+	return b
+}
+
 func (b *buildPrototype) SourceBundle(image string) *buildPrototype {
 	if b.build.Spec.Source.BundleContainer == nil {
 		b.build.Spec.Source.BundleContainer = &buildv1alpha1.BundleContainer{}
@@ -101,11 +107,6 @@ func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
 
 func (b *buildPrototype) Dockerfile(dockerfile string) *buildPrototype {
 	b.build.Spec.Dockerfile = &dockerfile
-	return b
-}
-
-func (b *buildPrototype) OutputImage(image string) *buildPrototype {
-	b.build.Spec.Output.Image = image
 	return b
 }
 
@@ -207,6 +208,11 @@ func (b *buildPrototype) StringParamValueFromSecret(name string, secretName stri
 	return b
 }
 
+func (b *buildPrototype) OutputImage(image string) *buildPrototype {
+	b.build.Spec.Output.Image = image
+	return b
+}
+
 func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
 	if name != "" {
 		b.build.Spec.Output.Credentials = &core.LocalObjectReference{Name: name}
@@ -218,6 +224,11 @@ func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
 func (b *buildPrototype) OutputImageInsecure(insecure bool) *buildPrototype {
 	b.build.Spec.Output.Insecure = &insecure
 
+	return b
+}
+
+func (b *buildPrototype) OutputTimestamp(timestampString string) *buildPrototype {
+	b.build.Spec.Output.Timestamp = &timestampString
 	return b
 }
 
@@ -388,6 +399,16 @@ func (b *buildRunPrototype) Create() (*buildv1alpha1.BuildRun, error) {
 		ShipwrightV1alpha1().
 		BuildRuns(b.buildRun.Namespace).
 		Create(context.Background(), &b.buildRun, meta.CreateOptions{})
+}
+
+func (b *buildRunPrototype) MustCreate() *buildv1alpha1.BuildRun {
+	GinkgoHelper()
+
+	buildrun, err := b.Create()
+	Expect(err).ToNot(HaveOccurred())
+	Expect(buildrun).ToNot(BeNil())
+
+	return buildrun
 }
 
 // Logf logs data

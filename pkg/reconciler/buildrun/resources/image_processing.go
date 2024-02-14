@@ -6,12 +6,15 @@ package resources
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
+	core "k8s.io/api/core/v1"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	core "k8s.io/api/core/v1"
 )
 
 const (
@@ -21,7 +24,7 @@ const (
 )
 
 // SetupImageProcessing appends the image-processing step to a TaskRun if desired
-func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, buildOutput, buildRunOutput build.Image) {
+func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, creationTimestamp time.Time, buildOutput, buildRunOutput build.Image) error {
 	stepArgs := []string{}
 
 	// Check if any build step references the output-directory system parameter. If that is the case,
@@ -82,6 +85,32 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, buil
 		stepArgs = append(stepArgs, convertMutateArgs("--label", labels)...)
 	}
 
+	// check if we need to set image timestamp
+	if imageTimestamp := getImageTimestamp(buildOutput, buildRunOutput); imageTimestamp != nil {
+		switch *imageTimestamp {
+		case build.OutputImageZeroTimestamp:
+			stepArgs = append(stepArgs, "--image-timestamp", "0")
+
+		case build.OutputImageSourceTimestamp:
+			if !hasTaskSpecResult(taskRun, "shp-source-default-source-timestamp") {
+				return fmt.Errorf("cannot use SourceTimestamp setting, because there is no source timestamp available for this source")
+			}
+
+			stepArgs = append(stepArgs, "--image-timestamp-file", "$(results.shp-source-default-source-timestamp.path)")
+
+		case build.OutputImageBuildTimestamp:
+			stepArgs = append(stepArgs, "--image-timestamp", strconv.FormatInt(creationTimestamp.Unix(), 10))
+
+		default:
+			if _, err := strconv.ParseInt(*imageTimestamp, 10, 64); err != nil {
+				return fmt.Errorf("cannot parse output timestamp %s as a number, must be %s, %s, %s, or a an integer",
+					*imageTimestamp, build.OutputImageZeroTimestamp, build.OutputImageSourceTimestamp, build.OutputImageBuildTimestamp)
+			}
+
+			stepArgs = append(stepArgs, "--image-timestamp", *imageTimestamp)
+		}
+	}
+
 	// check if there is anything to do
 	if len(stepArgs) > 0 {
 		// add the image argument
@@ -138,6 +167,8 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, buil
 		// append the mutate step
 		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}
+
+	return nil
 }
 
 // convertMutateArgs to convert the argument map to comma separated values
@@ -161,4 +192,27 @@ func mergeMaps(first map[string]string, second map[string]string) map[string]str
 		first[k] = v
 	}
 	return first
+}
+
+func getImageTimestamp(buildOutput, buildRunOutput build.Image) *string {
+	switch {
+	case buildRunOutput.Timestamp != nil:
+		return buildRunOutput.Timestamp
+
+	case buildOutput.Timestamp != nil:
+		return buildOutput.Timestamp
+
+	default:
+		return nil
+	}
+}
+
+func hasTaskSpecResult(taskRun *pipelineapi.TaskRun, name string) bool {
+	for _, result := range taskRun.Spec.TaskSpec.Results {
+		if result.Name == name {
+			return true
+		}
+	}
+
+	return false
 }

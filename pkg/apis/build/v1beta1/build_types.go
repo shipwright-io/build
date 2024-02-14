@@ -70,6 +70,10 @@ const (
 	TriggerInvalidImage BuildReason = "TriggerInvalidImage"
 	// TriggerInvalidPipeline indicates the trigger type Pipeline is invalid
 	TriggerInvalidPipeline BuildReason = "TriggerInvalidPipeline"
+	// OutputTimestampNotSupported indicates that an unsupported output timestamp setting was used
+	OutputTimestampNotSupported BuildReason = "OutputTimestampNotSupported"
+	// OutputTimestampNotValid indicates that the output timestamp value is not valid
+	OutputTimestampNotValid BuildReason = "OutputTimestampNotValid"
 
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
@@ -103,6 +107,17 @@ const (
 	// or has a value of 'true', the controller triggers the validation. A value of 'false' means the controller
 	// will bypass checking the remote repository.
 	AnnotationBuildVerifyRepository = BuildDomain + "/verify.repository"
+)
+
+const (
+	// OutputImageZeroTimestamp indicates that the UNIX timestamp 0 is to be used
+	OutputImageZeroTimestamp = "Zero"
+
+	// OutputImageSourceTimestamp indicates that the timestamp of the respective source it to be used
+	OutputImageSourceTimestamp = "SourceTimestamp"
+
+	// OutputImageBuildTimestamp indicates that the current timestamp of the build run itself is to be used
+	OutputImageBuildTimestamp = "BuildTimestamp"
 )
 
 // BuildSpec defines the desired state of Build

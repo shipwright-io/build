@@ -69,6 +69,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`. This value overwrites values defined with the same name in the Build.
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value defined in `Build`. ( Note: other properties of the output, for example, the credentials, cannot be specified in the buildRun spec. )
   - `spec.output.pushSecret` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
+  - `spec.output.timestamp` - Overrides the output timestamp configuration of the referenced build to instruct the build to change the output image creation timestamp to the specified value. When omitted, the respective build strategy tool defines the output image timestamp.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
 
 _Note:_ The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.

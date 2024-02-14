@@ -5,6 +5,9 @@
 package image_test
 
 import (
+	"fmt"
+	"time"
+
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
@@ -155,6 +158,78 @@ var _ = Describe("MutateImageOrImageIndex", func() {
 				Expect(configFile.Config.Labels).To(HaveLen(1))
 				Expect(configFile.Config.Labels["label"]).To(Equal("someLabelValue"))
 			}
+		})
+	})
+
+	Context("mutate creation timestamp", func() {
+		referenceTime := time.Unix(1700000000, 0)
+
+		creationTimeOf := func(img containerreg.Image) time.Time {
+			GinkgoHelper()
+			cfg, err := img.ConfigFile()
+			Expect(err).ToNot(HaveOccurred())
+			return cfg.Created.Time
+		}
+
+		imagesOf := func(index containerreg.ImageIndex) (result []containerreg.Image) {
+			indexManifest, err := index.IndexManifest()
+			Expect(err).ToNot(HaveOccurred())
+
+			for _, desc := range indexManifest.Manifests {
+				img, err := index.Image(desc.Digest)
+				Expect(err).ToNot(HaveOccurred())
+				result = append(result, img)
+			}
+
+			return result
+		}
+
+		Context("mutating timestamp of an image", func() {
+			var img containerreg.Image
+
+			BeforeEach(func() {
+				var err error
+				img, err = random.Image(1024, 1)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(creationTimeOf(img)).ToNot(BeTemporally("==", referenceTime))
+			})
+
+			It("should mutate an image by setting a creation timestamp", func() {
+				img, _, err := image.MutateImageOrImageIndexTimestamp(img, nil, referenceTime)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(creationTimeOf(img)).To(BeTemporally("==", referenceTime))
+			})
+		})
+
+		Context("mutating timestamp of an image index", func() {
+			var index containerreg.ImageIndex
+
+			BeforeEach(func() {
+				var err error
+				index, err = random.Index(1024, 2, 2)
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, img := range imagesOf(index) {
+					fmt.Fprintf(GinkgoWriter, "%v=%v\n",
+						func() string {
+							digest, err := img.Digest()
+							Expect(err).ToNot(HaveOccurred())
+							return digest.String()
+						}(),
+						creationTimeOf(img),
+					)
+					Expect(creationTimeOf(img)).ToNot(BeTemporally("==", referenceTime))
+				}
+			})
+
+			It("should mutate an image by setting a creation timestamp", func() {
+				_, index, err := image.MutateImageOrImageIndexTimestamp(nil, index, referenceTime)
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, img := range imagesOf(index) {
+					Expect(creationTimeOf(img)).To(BeTemporally("==", referenceTime))
+				}
+			})
 		})
 	})
 })

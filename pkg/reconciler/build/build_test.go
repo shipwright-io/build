@@ -552,5 +552,42 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(BeNil())
 			})
 		})
+
+		Context("when build object has output timestamp defined", func() {
+			It("should fail build validation due to unsupported combination of empty source with output image timestamp set to be the source timestamp", func() {
+				buildSample.Spec.Output.Timestamp = pointer.String(build.OutputImageSourceTimestamp)
+				buildSample.Spec.Output.PushSecret = nil
+				buildSample.Spec.Source = &build.Source{}
+
+				statusWriter.UpdateCalls(func(ctx context.Context, o crc.Object, sruo ...crc.SubResourceUpdateOption) error {
+					Expect(o).To(BeAssignableToTypeOf(&build.Build{}))
+					b := o.(*build.Build)
+					Expect(*b.Status.Reason).To(BeEquivalentTo(build.OutputTimestampNotSupported))
+					Expect(*b.Status.Message).To(BeEquivalentTo("cannot use SourceTimestamp output image setting with an empty build source"))
+
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(context.TODO(), request)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should fail when the output timestamp is not a parsable number", func() {
+				buildSample.Spec.Output.Timestamp = pointer.String("forty-two")
+				buildSample.Spec.Output.PushSecret = nil
+
+				statusWriter.UpdateCalls(func(ctx context.Context, o crc.Object, sruo ...crc.SubResourceUpdateOption) error {
+					Expect(o).To(BeAssignableToTypeOf(&build.Build{}))
+					b := o.(*build.Build)
+					Expect(*b.Status.Reason).To(BeEquivalentTo(build.OutputTimestampNotValid))
+					Expect(*b.Status.Message).To(BeEquivalentTo("output timestamp value is invalid, must be Zero, SourceTimestamp, BuildTimestamp, or number"))
+
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(context.TODO(), request)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
 	})
 })
