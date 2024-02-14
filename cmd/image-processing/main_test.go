@@ -12,11 +12,13 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/shipwright-io/build/cmd/image-processing"
 
+	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
@@ -67,6 +69,14 @@ var _ = Describe("Image Processing Resource", func() {
 		f(u.Host)
 	}
 
+	withTempDir := func(f func(target string)) {
+		path, err := os.MkdirTemp(os.TempDir(), "temp-dir")
+		Expect(err).ToNot(HaveOccurred())
+		defer os.RemoveAll(path)
+
+		f(path)
+	}
+
 	withTestImage := func(f func(tag name.Tag)) {
 		withTempRegistry(func(endpoint string) {
 			tag, err := name.NewTag(fmt.Sprintf("%s/%s:%s", endpoint, "temp-image", rand.String(5)))
@@ -74,6 +84,19 @@ var _ = Describe("Image Processing Resource", func() {
 
 			Expect(remote.Write(tag, empty.Image)).To(Succeed())
 			f(tag)
+		})
+	}
+
+	withTestImageAsDirectory := func(f func(path string, tag name.Tag)) {
+		withTempRegistry(func(endpoint string) {
+			withTempDir(func(dir string) {
+				tag, err := name.NewTag(fmt.Sprintf("%s/%s:%s", endpoint, "temp-image", rand.String(5)))
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(crane.SaveOCI(empty.Image, dir)).To(Succeed())
+
+				f(dir, tag)
+			})
 		})
 	}
 
@@ -157,34 +180,70 @@ var _ = Describe("Image Processing Resource", func() {
 		})
 
 		It("should fail in case mandatory arguments are missing", func() {
-			Expect(run()).To(HaveOccurred())
+			Expect(run()).ToNot(Succeed())
 		})
 
 		It("should fail in case --image is empty", func() {
-			Expect(run("--image", "")).To(HaveOccurred())
+			Expect(run(
+				"--image", "",
+			)).To(FailWith("argument must not be empty"))
 		})
 
 		It("should fail in case --image does not exist", func() {
 			Expect(run(
-				"--image", "docker.io/feqlQoDIHc/bcfHFHHXYF",
-			)).To(HaveOccurred())
+				"--image", "docker.io/library/feqlqodihc:bcfhfhhxyf",
+			)).To(FailWith("unexpected status code 401"))
 		})
 
 		It("should fail in case annotation is invalid", func() {
 			withTestImage(func(tag name.Tag) {
 				Expect(run(
+					"--insecure",
 					"--image", tag.String(),
 					"--annotation", "org.opencontainers.image.url*https://my-company.com/images",
-				)).To(HaveOccurred())
+				)).To(FailWith("not enough parts"))
 			})
 		})
 
 		It("should fail in case label is invalid", func() {
 			withTestImage(func(tag name.Tag) {
 				Expect(run(
+					"--insecure",
 					"--image", tag.String(),
 					"--label", " description*image description",
-				)).To(HaveOccurred())
+				)).To(FailWith("not enough parts"))
+			})
+		})
+
+		It("should fail if both --image-timestamp and --image-timestamp-file are used", func() {
+			Expect(run(
+				"--image-timestamp", "1234567890",
+				"--image-timestamp-file", "/tmp/foobar",
+			)).To(FailWith("image timestamp and image timestamp file flag is used"))
+		})
+
+		It("should fail if --image-timestamp-file is used with a non-existing file", func() {
+			Expect("/tmp/does-not-exist").ToNot(BeAnExistingFile())
+			Expect(run(
+				"--image-timestamp-file", "/tmp/does-not-exist",
+			)).To(FailWith("image timestamp file flag references a non-existing file"))
+		})
+
+		It("should fail if --image-timestamp-file referenced file cannot be used", func() {
+			withTempDir(func(wrong string) {
+				Expect(run(
+					"--image-timestamp-file", wrong,
+				)).To(FailWith("failed to read image timestamp from"))
+			})
+		})
+
+		It("should fail in case timestamp is invalid", func() {
+			withTestImage(func(tag name.Tag) {
+				Expect(run(
+					"--insecure",
+					"--image", tag.String(),
+					"--image-timestamp", "foobar",
+				)).To(FailWith("failed to parse image timestamp"))
 			})
 		})
 	})
@@ -264,6 +323,46 @@ var _ = Describe("Image Processing Resource", func() {
 
 				Expect(getImageAnnotation(tag.String(), "org.opencontainers.image.url")).
 					To(Equal("https://my-company.com/images"))
+			})
+		})
+
+		It("should mutate the image timestamp using a provided timestamp", func() {
+			withTestImageAsDirectory(func(path string, tag name.Tag) {
+				Expect(run(
+					"--insecure",
+					"--push", path,
+					"--image", tag.String(),
+					"--image-timestamp", "1234567890",
+				)).ToNot(HaveOccurred())
+
+				image := getImage(tag)
+
+				cfgFile, err := image.ConfigFile()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(cfgFile.Created.Time).To(BeTemporally("==", time.Unix(1234567890, 0)))
+			})
+		})
+
+		It("should mutate the image timestamp using a provided timestamp in a file", func() {
+			withTestImageAsDirectory(func(path string, tag name.Tag) {
+				withTempFile("timestamp", func(filename string) {
+					Expect(os.WriteFile(filename, []byte("1234567890"), os.FileMode(0644)))
+
+					Expect(run(
+						"--insecure",
+						"--push", path,
+						"--image", tag.String(),
+						"--image-timestamp-file", filename,
+					)).ToNot(HaveOccurred())
+
+					image := getImage(tag)
+
+					cfgFile, err := image.ConfigFile()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(cfgFile.Created.Time).To(BeTemporally("==", time.Unix(1234567890, 0)))
+				})
 			})
 		})
 	})

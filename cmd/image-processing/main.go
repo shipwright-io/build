@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
@@ -40,6 +41,8 @@ type settings struct {
 	label []string
 	insecure bool
 	image,
+	imageTimestamp,
+	imageTimestampFile,
 	resultFileImageDigest,
 	resultFileImageSize,
 	secretPath string
@@ -61,6 +64,10 @@ func initializeFlag() {
 
 	pflag.StringArrayVar(&flagValues.annotation, "annotation", nil, "New annotations to add")
 	pflag.StringArrayVar(&flagValues.label, "label", nil, "New labels to add")
+
+	pflag.StringVar(&flagValues.imageTimestamp, "image-timestamp", "", "number to use as Unix timestamp to set image creation timestamp")
+	pflag.StringVar(&flagValues.imageTimestampFile, "image-timestamp-file", "", "path to a file containing a unix timestamp to set as the image timestamp")
+
 	pflag.StringVar(&flagValues.resultFileImageDigest, "result-file-image-digest", "", "A file to write the image digest to")
 	pflag.StringVar(&flagValues.resultFileImageSize, "result-file-image-size", "", "A file to write the image size to")
 }
@@ -87,6 +94,27 @@ func Execute(ctx context.Context) error {
 	if flagValues.help {
 		pflag.Usage()
 		return nil
+	}
+
+	// validate that only one of the image timestamp flags are used
+	if flagValues.imageTimestamp != "" && flagValues.imageTimestampFile != "" {
+		pflag.Usage()
+		return fmt.Errorf("image timestamp and image timestamp file flag is used, they are mutually exclusive, only use one")
+	}
+
+	// validate that image timestamp file exists (if set), and translate it into the imageTimestamp field
+	if flagValues.imageTimestampFile != "" {
+		_, err := os.Stat(flagValues.imageTimestampFile)
+		if err != nil {
+			return fmt.Errorf("image timestamp file flag references a non-existing file: %w", err)
+		}
+
+		data, err := os.ReadFile(flagValues.imageTimestampFile)
+		if err != nil {
+			return fmt.Errorf("failed to read image timestamp from %s: %w", flagValues.imageTimestampFile, err)
+		}
+
+		flagValues.imageTimestamp = string(data)
 	}
 
 	return runImageProcessing(ctx)
@@ -151,6 +179,20 @@ func runImageProcessing(ctx context.Context) error {
 		}
 	}
 
+	// mutate the image timestamp
+	if flagValues.imageTimestamp != "" {
+		sec, err := strconv.ParseInt(flagValues.imageTimestamp, 10, 32)
+		if err != nil {
+			return fmt.Errorf("failed to parse image timestamp value %q as a number: %w", flagValues.imageTimestamp, err)
+		}
+
+		log.Println("Mutating the image timestamp")
+		img, imageIndex, err = image.MutateImageOrImageIndexTimestamp(img, imageIndex, time.Unix(sec, 0))
+		if err != nil {
+			return fmt.Errorf("failed to mutate the timestamp: %w", err)
+		}
+	}
+
 	// push the image and determine the digest and size
 	log.Printf("Pushing the image to registry %q\n", imageName.String())
 	digest, size, err := image.PushImageOrImageIndex(imageName, img, imageIndex, options)
@@ -158,6 +200,8 @@ func runImageProcessing(ctx context.Context) error {
 		log.Printf("Failed to push the image: %v\n", err)
 		return err
 	}
+
+	log.Printf("Image %s@%s pushed\n", imageName.String(), digest)
 
 	// Writing image digest to file
 	if digest != "" && flagValues.resultFileImageDigest != "" {
