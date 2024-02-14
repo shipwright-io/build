@@ -200,6 +200,16 @@ type Image struct {
 	//
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// Timestamp references the optional image timestamp to be set, valid values are:
+	// - "Zero", to set 00:00:00 UTC on 1 January 1970
+	// - "SourceTimestamp", to set the source timestamp dereived from the input source
+	// - "BuildTimestamp", to set the timestamp of the current build itself
+	// - Parsable integer number defined as the epoch seconds
+	// - or nil/empty to not set any specific timestamp
+	//
+	// +optional
+	Timestamp *string `json:"timestamp,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build

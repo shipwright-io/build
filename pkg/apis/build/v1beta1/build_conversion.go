@@ -196,6 +196,7 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 
 	dest.Output.Annotations = orig.Output.Annotations
 	dest.Output.Labels = orig.Output.Labels
+	dest.Output.Timestamp = orig.Output.Timestamp
 
 	// Handle BuildSpec Timeout
 	dest.Timeout = orig.Timeout
@@ -288,6 +289,7 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 	}
 	bs.Output.Annotations = dest.Output.Annotations
 	bs.Output.Labels = dest.Output.Labels
+	bs.Output.Timestamp = dest.Output.Timestamp
 
 	// Handle BuildSpec Timeout
 	bs.Timeout = dest.Timeout

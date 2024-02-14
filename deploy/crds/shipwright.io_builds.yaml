@@ -100,6 +100,15 @@ spec:
                     description: Labels references the additional labels to be applied
                       on the image
                     type: object
+                  timestamp:
+                    description: 'Timestamp references the optional image timestamp
+                      to be set, valid values are: - "Zero", to set 00:00:00 UTC on
+                      1 January 1970 - "SourceTimestamp", to set the source timestamp
+                      dereived from the input source - "BuildTimestamp", to set the
+                      timestamp of the current build itself - Parsable integer number
+                      defined as the epoch seconds - or nil/empty to not set any specific
+                      timestamp'
+                    type: string
                 required:
                 - image
                 type: object
@@ -252,6 +261,15 @@ spec:
                     description: Labels references the additional labels to be applied
                       on the image
                     type: object
+                  timestamp:
+                    description: 'Timestamp references the optional image timestamp
+                      to be set, valid values are: - "Zero", to set 00:00:00 UTC on
+                      1 January 1970 - "SourceTimestamp", to set the source timestamp
+                      dereived from the input source - "BuildTimestamp", to set the
+                      timestamp of the current build itself - Parsable integer number
+                      defined as the epoch seconds - or nil/empty to not set any specific
+                      timestamp'
+                    type: string
                 required:
                 - image
                 type: object
@@ -2323,6 +2341,15 @@ spec:
                   pushSecret:
                     description: Describes the secret name for pushing a container
                       image.
+                    type: string
+                  timestamp:
+                    description: 'Timestamp references the optional image timestamp
+                      to be set, valid values are: - "Zero", to set 00:00:00 UTC on
+                      1 January 1970 - "SourceTimestamp", to set the source timestamp
+                      dereived from the input source - "BuildTimestamp", to set the
+                      timestamp of the current build itself - Parsable integer number
+                      defined as the epoch seconds - or nil/empty to not set any specific
+                      timestamp'
                     type: string
                 required:
                 - image

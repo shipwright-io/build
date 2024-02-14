@@ -89,6 +89,11 @@ The `Build` definition supports the following fields:
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The default is ten minutes. You can overwrite the value in the `BuildRun`.
   - `spec.output.annotations` - Refers to a list of `key/value` that could be used to [annotate](https://github.com/opencontainers/image-spec/blob/main/annotations.md) the output image.
   - `spec.output.labels` - Refers to a list of `key/value` that could be used to label the output image.
+  - `spec.output.timestamp` - Instruct the build to change the output image creation timestamp to the specified value. When omitted, the respective build strategy tool defines the output image timestamp.
+    - Use string `Zero` to set the image timestamp to UNIX epoch timestamp zero.
+    - Use string `SourceTimestamp` to set the image timestamp to the source timestamp, i.e. the timestamp of the Git commit that was used.
+    - Use string `BuildTimestamp` to set the image timestamp to the timestamp of the build run.
+    - Use any valid UNIX epoch seconds number as a string to set this as the image timestamp.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
   - `spec.retention.atBuildDeletion` - Defines if all related BuildRuns needs to be deleted when deleting the Build. The default is false.
   - `spec.retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
