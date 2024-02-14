@@ -88,6 +88,9 @@ func GenerateSA(ctx context.Context, client client.Client, build *buildv1beta1.B
 // DeleteServiceAccount deletes the service account of a completed BuildRun if the service account
 // was generated
 func DeleteServiceAccount(ctx context.Context, client client.Client, completedBuildRun *buildv1beta1.BuildRun) error {
+	if !IsGeneratedServiceAccountUsed(completedBuildRun) {
+		return nil
+	}
 	serviceAccount := &corev1.ServiceAccount{}
 	serviceAccount.Name = GetGeneratedServiceAccountName(completedBuildRun)
 	serviceAccount.Namespace = completedBuildRun.Namespace

@@ -71,8 +71,10 @@ func AmendTaskSpecWithSources(
 				sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source.OCIArtifact, defaultSourceName)
 			}
 		case buildv1beta1.GitType:
-			appendSourceTimestampResult(taskSpec)
-			sources.AppendGitStep(cfg, taskSpec, *build.Spec.Source.GitSource, defaultSourceName)
+			if build.Spec.Source.GitSource != nil {
+				appendSourceTimestampResult(taskSpec)
+				sources.AppendGitStep(cfg, taskSpec, *build.Spec.Source.GitSource, defaultSourceName)
+			}
 		}
 	}
 }

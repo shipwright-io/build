@@ -84,6 +84,7 @@ func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
 	if b.build.Spec.Source.GitSource == nil {
 		b.build.Spec.Source.GitSource = &buildv1beta1.Git{}
 	}
+	b.build.Spec.Source.Type = buildv1beta1.GitType
 	b.build.Spec.Source.GitSource.URL = repository
 	b.build.Spec.Source.OCIArtifact = nil
 	return b
@@ -93,6 +94,7 @@ func (b *buildPrototype) SourceBundle(image string) *buildPrototype {
 	if b.build.Spec.Source.OCIArtifact == nil {
 		b.build.Spec.Source.OCIArtifact = &buildv1beta1.OCIArtifact{}
 	}
+	b.build.Spec.Source.Type = buildv1beta1.OCIArtifactType
 	b.build.Spec.Source.Type = buildv1beta1.OCIArtifactType
 	b.build.Spec.Source.OCIArtifact.Image = image
 	return b

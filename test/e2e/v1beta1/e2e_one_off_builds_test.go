@@ -69,7 +69,6 @@ var _ = Describe("Using One-Off Builds", func() {
 					ClusterBuildStrategy("buildpacks-v3").
 					Namespace(testBuild.Namespace).
 					Name(testID).
-					SourceType("Git").
 					SourceGit("https://github.com/shipwright-io/sample-go.git").
 					SourceContextDir("source-build").
 					OutputImage(outputImage.String()).
@@ -89,7 +88,6 @@ var _ = Describe("Using One-Off Builds", func() {
 					ClusterBuildStrategy("buildah-shipwright-managed-push").
 					Namespace(testBuild.Namespace).
 					Name(testID).
-					SourceType("Git").
 					SourceGit("https://github.com/shipwright-io/sample-go.git").
 					SourceContextDir("docker-build").
 					Dockerfile("Dockerfile").

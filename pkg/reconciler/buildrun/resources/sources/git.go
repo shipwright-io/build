@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 
@@ -115,6 +116,9 @@ func AppendGitResult(buildRun *buildv1beta1.BuildRun, name string, results []pip
 	branchName := FindResultValue(results, name, branchName)
 
 	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" || strings.TrimSpace(branchName) != "" {
+		if buildRun.Status.Source == nil {
+			buildRun.Status.Source = &build.SourceResult{}
+		}
 		buildRun.Status.Source.Git = &v1beta1.GitSourceResult{
 			CommitAuthor: commitAuthor,
 			CommitSha:    commitSha,

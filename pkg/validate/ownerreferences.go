@@ -35,40 +35,34 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 		return err
 	}
 
-	if o.Build.Spec.Retention != nil && o.Build.Spec.Retention.AtBuildDeletion != nil {
-		switch *o.Build.Spec.Retention.AtBuildDeletion {
-		case true:
-			// if the buildRun does not have an ownerreference to the Build, lets add it.
-			for i := range buildRunList.Items {
-				buildRun := buildRunList.Items[i]
+	if o.Build.Spec.Retention != nil && o.Build.Spec.Retention.AtBuildDeletion != nil && *o.Build.Spec.Retention.AtBuildDeletion {
+		// if the buildRun does not have an ownerreference to the Build, lets add it.
+		for i := range buildRunList.Items {
+			buildRun := buildRunList.Items[i]
 
-				if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
-					if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
-						o.Build.Status.Reason = build.BuildReasonPtr(build.SetOwnerReferenceFailed)
-						o.Build.Status.Message = pointer.String(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
-					}
-					if err = o.Client.Update(ctx, &buildRun); err != nil {
-						return err
-					}
-					ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
+			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
+				if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
+					o.Build.Status.Reason = build.BuildReasonPtr(build.SetOwnerReferenceFailed)
+					o.Build.Status.Message = pointer.String(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
 				}
+				if err = o.Client.Update(ctx, &buildRun); err != nil {
+					return err
+				}
+				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
-		case false:
-			// if the buildRun have an ownerreference to the Build, lets remove it
-			for i := range buildRunList.Items {
-				buildRun := buildRunList.Items[i]
+		}
+	} else {
+		// if the buildRun have an ownerreference to the Build, lets remove it
+		for i := range buildRunList.Items {
+			buildRun := buildRunList.Items[i]
 
-				if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index != -1 {
-					buildRun.OwnerReferences = removeOwnerReferenceByIndex(buildRun.OwnerReferences, index)
-					if err := o.Client.Update(ctx, &buildRun); err != nil {
-						return err
-					}
-					ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
+			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index != -1 {
+				buildRun.OwnerReferences = removeOwnerReferenceByIndex(buildRun.OwnerReferences, index)
+				if err := o.Client.Update(ctx, &buildRun); err != nil {
+					return err
 				}
+				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
-		default:
-			ctxlog.Info(ctx, fmt.Sprintln("the build retention AtBuildDeletion was not properly defined"), namespace, o.Build.Namespace, name, o.Build.Name)
-			return fmt.Errorf("the build retention AtBuildDeletion was not properly defined")
 		}
 	}
 	return nil

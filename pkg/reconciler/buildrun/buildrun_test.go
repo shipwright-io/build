@@ -1323,7 +1323,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					})
 				})
 
-				It("should mark BuildRun as invalid if BuildRef and BuildSpec are used", func() {
+				It("should mark BuildRun as invalid if Build name and BuildSpec are used", func() {
 					buildRunSample = &build.BuildRun{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: buildRunName,
@@ -1432,6 +1432,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 							Build: build.ReferencedBuild{
 								Build: &build.BuildSpec{
 									Source: build.Source{
+										Type: build.GitType,
 										GitSource: &build.Git{
 											URL: "https://github.com/shipwright-io/sample-go.git",
 										},

@@ -75,6 +75,9 @@ func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipelin
 	imageDigest := FindResultValue(results, name, "image-digest")
 
 	if strings.TrimSpace(imageDigest) != "" {
+		if buildRun.Status.Source == nil {
+			buildRun.Status.Source = &build.SourceResult{}
+		}
 		buildRun.Status.Source.OciArtifact = &build.OciArtifactSourceResult{
 			Digest: imageDigest,
 		}

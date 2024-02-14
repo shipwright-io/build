@@ -23,7 +23,7 @@ const (
 	// SourceURL for validating the source URL in Build objects
 	SourceURL = "sourceurl"
 	// Sources for validating `spec.sources` entries
-	Sources = "sources"
+	Source = "source"
 	// BuildName for validating `metadata.name` entry
 	BuildName = "buildname"
 	// Envs for validating `spec.env` entries
@@ -63,6 +63,8 @@ func NewValidation(
 		return &SourceURLRef{Build: build, Client: client}, nil
 	case OwnerReferences:
 		return &OwnerRef{Build: build, Client: client, Scheme: scheme}, nil
+	case Source:
+		return &SourceRef{Build: build}, nil
 	case BuildName:
 		return &BuildNameRef{Build: build}, nil
 	case Envs:

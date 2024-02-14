@@ -411,6 +411,42 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
 
 		})
+
+		It("does not deletes the buildrun if retention atBuildDeletion is removed", func() {
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			autoDeleteBuildRun, err := tb.Catalog.LoadBRWithNameAndRef(
+				BUILDRUN+tb.Namespace,
+				BUILD+tb.Namespace,
+				[]byte(test.MinimalBuildRun),
+			)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
+
+			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
+			Expect(err).To(BeNil())
+
+			buildObject.Spec.Retention = nil
+			err = tb.UpdateBuild(buildObject)
+			Expect(err).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			err = tb.DeleteBuild(BUILD + tb.Namespace)
+			Expect(err).To(BeNil())
+
+			br, err := tb.GetBRTillNotOwner(BUILDRUN+tb.Namespace, buildObject.Name)
+			Expect(err).To(BeNil())
+			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
+
+		})
+
 		It("does delete the buildrun after several modifications of the annotation", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())

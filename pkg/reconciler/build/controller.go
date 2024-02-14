@@ -68,18 +68,27 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			oldBuildRetention := o.Spec.Retention
 			newBuildRetention := n.Spec.Retention
 
-			if o.Spec.Retention != nil && n.Spec.Retention != nil {
-				if !reflect.DeepEqual(oldBuildRetention, newBuildRetention) {
-					if o.Spec.Retention.AtBuildDeletion != n.Spec.Retention.AtBuildDeletion {
-						ctxlog.Debug(
-							ctx,
-							"updating predicated passed, the build retention AtBuildDeletion was modified.",
-							namespace,
-							n.GetNamespace(),
-							name,
-							n.GetName(),
-						)
-						buildAtBuildDeletion = true
+			logAndEnableDeletion := func() {
+				ctxlog.Debug(
+					ctx,
+					"updating predicated passed, the build retention AtBuildDeletion was modified.",
+					namespace,
+					n.GetNamespace(),
+					name,
+					n.GetName(),
+				)
+				buildAtBuildDeletion = true
+			}
+
+			if !reflect.DeepEqual(oldBuildRetention, newBuildRetention) {
+				switch {
+				case o.Spec.Retention == nil && n.Spec.Retention != nil:
+					if n.Spec.Retention.AtBuildDeletion != nil {
+						logAndEnableDeletion()
+					}
+				case o.Spec.Retention != nil && n.Spec.Retention == nil:
+					if o.Spec.Retention.AtBuildDeletion != nil {
+						logAndEnableDeletion()
 					}
 				}
 			}

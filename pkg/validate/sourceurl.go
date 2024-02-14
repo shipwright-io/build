@@ -33,7 +33,7 @@ func NewSourceURL(client client.Client, build *build.Build) *SourceURLRef {
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 	if s.Build.Spec.Source.Type == build.GitType {
 		gitSource := s.Build.Spec.Source.GitSource
-		if gitSource.CloneSecret == nil && gitSource.URL != "" {
+		if gitSource.CloneSecret == nil {
 			switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
 			case "true":
 				if err := git.ValidateGitURLExists(ctx, gitSource.URL); err != nil {

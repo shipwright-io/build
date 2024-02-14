@@ -29,20 +29,18 @@ func UpdateBuildRunUsingTaskResults(
 	taskRunResult []pipelineapi.TaskRunResult,
 	request reconcile.Request,
 ) {
-	// Initializing source result
-	buildRun.Status.Source = &build.SourceResult{}
-
 	// Set source results
 	updateBuildRunStatusWithSourceResult(buildRun, taskRunResult)
-
-	// Initializing output result
-	buildRun.Status.Output = &build.Output{}
 
 	// Set output results
 	updateBuildRunStatusWithOutputResult(ctx, buildRun, taskRunResult, request)
 }
 
 func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.BuildRun, taskRunResult []pipelineapi.TaskRunResult, request reconcile.Request) {
+	if buildRun.Status.Output == nil {
+		buildRun.Status.Output = &build.Output{}
+	}
+
 	for _, result := range taskRunResult {
 		switch result.Name {
 		case generateOutputResultName(imageDigestResult):

@@ -28,6 +28,7 @@ var validationTypes = [...]string{
 	validate.SourceURL,
 	validate.Secrets,
 	validate.Strategies,
+	validate.Source,
 	validate.BuildName,
 	validate.Envs,
 	validate.Triggers,

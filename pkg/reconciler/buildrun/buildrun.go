@@ -157,6 +157,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						validate.NewSourceURL(r.client, build),
 						validate.NewCredentials(r.client, build),
 						validate.NewStrategies(r.client, build),
+						validate.NewSourceRef(build),
 						validate.NewBuildName(build),
 						validate.NewEnv(build),
 					)

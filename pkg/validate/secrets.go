@@ -61,7 +61,7 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 func (s Credentials) buildCredentialserences() map[string]build.BuildReason {
 	// Validate if the referenced secrets exist in the namespace
 	secretRefMap := map[string]build.BuildReason{}
-	if s.Build.Spec.Output.PushSecret != nil && *s.Build.Spec.Output.PushSecret != "" {
+	if s.Build.Spec.Output.PushSecret != nil {
 		secretRefMap[*s.Build.Spec.Output.PushSecret] = build.SpecOutputSecretRefNotFound
 	}
 

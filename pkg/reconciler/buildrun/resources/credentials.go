@@ -22,31 +22,31 @@ func ApplyCredentials(ctx context.Context, build *buildv1beta1.Build, buildRun *
 	// if output is overridden by buildrun, and if this override has credentials,
 	// it should be added to the sa
 	if buildRun.Spec.Output != nil && buildRun.Spec.Output.PushSecret != nil {
-		modified = updateServiceAccountIfSecretNotLinked(ctx, buildRun.Spec.Output.PushSecret, serviceAccount) || modified
+		modified = updateServiceAccountIfSecretNotLinked(ctx, *buildRun.Spec.Output.PushSecret, serviceAccount) || modified
 	} else {
 		// otherwise, if buildrun does not override the output credentials,
 		// we should use the ones provided by the build
 		if build.Spec.Output.PushSecret != nil {
-			modified = updateServiceAccountIfSecretNotLinked(ctx, build.Spec.Output.PushSecret, serviceAccount) || modified
+			modified = updateServiceAccountIfSecretNotLinked(ctx, *build.Spec.Output.PushSecret, serviceAccount) || modified
 		}
 	}
 
 	return modified
 }
 
-func updateServiceAccountIfSecretNotLinked(ctx context.Context, sourceSecret *string, serviceAccount *corev1.ServiceAccount) bool {
+func updateServiceAccountIfSecretNotLinked(ctx context.Context, sourceSecret string, serviceAccount *corev1.ServiceAccount) bool {
 	isSecretPresent := false
 	for _, credentialSecret := range serviceAccount.Secrets {
-		if credentialSecret.Name == *sourceSecret {
+		if credentialSecret.Name == sourceSecret {
 			isSecretPresent = true
 			break
 		}
 	}
 
 	if !isSecretPresent {
-		ctxlog.Debug(ctx, "adding secret to serviceAccount", "secret", *sourceSecret, "serviceAccount", serviceAccount.Name)
+		ctxlog.Debug(ctx, "adding secret to serviceAccount", "secret", sourceSecret, "serviceAccount", serviceAccount.Name)
 		serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{
-			Name: *sourceSecret,
+			Name: sourceSecret,
 		})
 		return true
 	}
