@@ -82,6 +82,10 @@ request:
         strategy:
           name: %s
           kind: %s
+      status:
+        message: "all validations succeeded"
+        reason: Succeeded
+        registered: "True"
 `
 			o := fmt.Sprintf(buildTemplate, apiVersion,
 				desiredAPIVersion, strategyName, strategyKind)
@@ -121,6 +125,11 @@ request:
 						Name: strategyName,
 						Kind: (*v1alpha1.BuildStrategyKind)(&strategyKind),
 					},
+				},
+				Status: v1alpha1.BuildStatus{
+					Message:    pointer.String("all validations succeeded"),
+					Reason:     v1alpha1.BuildReasonPtr(v1alpha1.SucceedStatus),
+					Registered: v1alpha1.ConditionStatusPtr(corev1.ConditionTrue),
 				},
 			}
 
@@ -1022,6 +1031,154 @@ request:
 					},
 					ServiceAccount: &v1alpha1.ServiceAccount{
 						Name: &sa,
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
+
+		It("converts for status", func() {
+			// Create the yaml in v1beta1
+			buildTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1beta1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        build:
+          name: a_build
+        source:
+          type: Local
+          local:
+            name: foobar_local
+            timeout: 1m
+      status:
+        buildSpec:
+          output:
+            image: somewhere
+            pushSecret: some-secret
+          paramValues:
+            - name: dockerfile
+              value: Dockerfile
+          source:
+            git:
+              url: https://github.com/shipwright-io/sample-go
+            type: Git
+          strategy:
+            kind: ClusterBuildStrategy
+            name: buildkit
+          timeout: 10m0s
+        completionTime: "2023-10-17T07:35:10Z"
+        conditions:
+          - lastTransitionTime: "2023-10-17T07:35:10Z"
+            message: All Steps have completed executing
+            reason: Succeeded
+            status: "True"
+            type: Succeeded
+        output:
+          digest: sha256:9befa6f5f7142a5bf92174b54bb6e0a1dd04e5252aa9dc8f6962f6da966f68a8
+        source:
+          git:
+            commitAuthor: somebody
+            commitSha: 6a45e68454ca0f319b1a82c65bea09a10fa9eec6
+        startTime: "2023-10-17T07:31:55Z"
+        taskRunName: buildkit-run-n5sxr
+`
+			o := fmt.Sprintf(buildTemplate, apiVersion,
+				desiredAPIVersion)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Alpha1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1alpha1 BuildRun
+			completionTime, err := time.Parse(time.RFC3339, "2023-10-17T07:35:10Z")
+			Expect(err).To(BeNil())
+			startTime, err := time.Parse(time.RFC3339, "2023-10-17T07:31:55Z")
+			Expect(err).To(BeNil())
+			buildStrategyKind := v1alpha1.BuildStrategyKind(v1alpha1.ClusterBuildStrategyKind)
+			desiredBuildRun := v1alpha1.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1alpha1",
+					Kind:       "BuildRun",
+				},
+				Spec: v1alpha1.BuildRunSpec{
+					BuildRef: &v1alpha1.BuildRef{
+						Name: "a_build",
+					},
+					Sources: []v1alpha1.BuildSource{
+						{
+							Name: "foobar_local",
+							Type: v1alpha1.LocalCopy,
+							Timeout: &v1.Duration{
+								Duration: 1 * time.Minute,
+							},
+						},
+					},
+					ServiceAccount: &v1alpha1.ServiceAccount{},
+				},
+				Status: v1alpha1.BuildRunStatus{
+					BuildSpec: &v1alpha1.BuildSpec{
+						Source: v1alpha1.Source{
+							URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+						},
+						Dockerfile: pointer.String("Dockerfile"),
+						Output: v1alpha1.Image{
+							Image: "somewhere",
+							Credentials: &corev1.LocalObjectReference{
+								Name: "some-secret",
+							},
+						},
+						Strategy: v1alpha1.Strategy{
+							Kind: &buildStrategyKind,
+							Name: "buildkit",
+						},
+						Timeout: &v1.Duration{
+							Duration: 10 * time.Minute,
+						},
+					},
+					CompletionTime: &v1.Time{
+						Time: completionTime,
+					},
+					Conditions: v1alpha1.Conditions{{
+						LastTransitionTime: v1.Time{
+							Time: completionTime,
+						},
+						Message: "All Steps have completed executing",
+						Reason:  "Succeeded",
+						Status:  corev1.ConditionTrue,
+						Type:    v1alpha1.Succeeded,
+					}},
+					LatestTaskRunRef: pointer.String("buildkit-run-n5sxr"),
+					Output: &v1alpha1.Output{
+						Digest: "sha256:9befa6f5f7142a5bf92174b54bb6e0a1dd04e5252aa9dc8f6962f6da966f68a8",
+					},
+					Sources: []v1alpha1.SourceResult{{
+						Name: "default",
+						Git: &v1alpha1.GitSourceResult{
+							CommitAuthor: "somebody",
+							CommitSha:    "6a45e68454ca0f319b1a82c65bea09a10fa9eec6",
+						},
+					}},
+					StartTime: &v1.Time{
+						Time: startTime,
 					},
 				},
 			}
