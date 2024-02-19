@@ -144,11 +144,6 @@ spec:
   strategy:
     name: buildpacks-v3
     kind: ClusterBuildStrategy
-  paramValues:
-  - name: dockerfile
-    value: Dockerfile
-  - name: builder-image
-    value: heroku/builder:22
   output:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
   timeout: 30s

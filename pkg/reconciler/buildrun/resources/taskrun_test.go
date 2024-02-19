@@ -35,14 +35,12 @@ var _ = Describe("GenerateTaskrun", func() {
 		buildStrategy          *buildv1beta1.BuildStrategy
 		buildStrategyStepNames map[string]struct{}
 		buildStrategyWithEnvs  *buildv1beta1.BuildStrategy
-		builderImage           *buildv1beta1.Image
-		dockerfile, buildpacks string
+		buildpacks             string
 		ctl                    test.Catalog
 	)
 
 	BeforeEach(func() {
 		buildpacks = "buildpacks-v3"
-		dockerfile = "Dockerfile"
 	})
 
 	Describe("Generate the TaskSpec", func() {
@@ -51,11 +49,6 @@ var _ = Describe("GenerateTaskrun", func() {
 			got                  *pipelineapi.TaskSpec
 			err                  error
 		)
-		BeforeEach(func() {
-			builderImage = &buildv1beta1.Image{
-				Image: "quay.io/builder/image",
-			}
-		})
 
 		Context("when the task spec is generated", func() {
 			BeforeEach(func() {
@@ -413,9 +406,6 @@ var _ = Describe("GenerateTaskrun", func() {
 
 			namespace = "build-test"
 			contextDir = "docker-build"
-			builderImage = &buildv1beta1.Image{
-				Image: "heroku/builder:22",
-			}
 			outputPath = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
 			outputPathBuildRun = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2"
 			serviceAccountName = buildpacks + "-serviceaccount"
@@ -508,8 +498,6 @@ var _ = Describe("GenerateTaskrun", func() {
 				paramOutputInsecureFound := false
 
 				// legacy params
-				paramBuilderImageFound := false
-				paramDockerfileFound := false
 				paramContextDirFound := false
 
 				for _, param := range params {
@@ -530,14 +518,6 @@ var _ = Describe("GenerateTaskrun", func() {
 						paramOutputInsecureFound = true
 						Expect(param.Value.StringVal).To(Equal("false"))
 
-					case "builder-image":
-						paramBuilderImageFound = true
-						Expect(param.Value.StringVal).To(Equal(builderImage.Image))
-
-					case "dockerfile":
-						paramDockerfileFound = true
-						Expect(param.Value.StringVal).To(Equal(dockerfile))
-
 					case "CONTEXT_DIR":
 						paramContextDirFound = true
 						Expect(param.Value.StringVal).To(Equal(contextDir))
@@ -551,9 +531,6 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(paramSourceContextFound).To(BeTrue())
 				Expect(paramOutputImageFound).To(BeTrue())
 				Expect(paramOutputInsecureFound).To(BeTrue())
-
-				Expect(paramBuilderImageFound).To(BeTrue())
-				Expect(paramDockerfileFound).To(BeTrue())
 				Expect(paramContextDirFound).To(BeTrue())
 			})
 

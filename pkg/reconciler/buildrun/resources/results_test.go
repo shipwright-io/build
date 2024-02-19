@@ -75,7 +75,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
-			Expect(br.Status.Source).ToNot(Equal(nil))
+			Expect(br.Status.Source).ToNot(BeNil())
 			Expect(br.Status.Source.Git.CommitSha).To(Equal(commitSha))
 			Expect(br.Status.Source.Git.CommitAuthor).To(Equal("foo bar"))
 		})
@@ -102,7 +102,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
-			Expect(br.Status.Source).ToNot(Equal(nil))
+			Expect(br.Status.Source).ToNot(BeNil())
 			Expect(br.Status.Source.OciArtifact.Digest).To(Equal(bundleImageDigest))
 		})
 
@@ -175,8 +175,8 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
-			Expect(br.Status.Source).ToNot(Equal(nil))
-			Expect(br.Status.Source.Git).ToNot(Equal(nil))
+			Expect(br.Status.Source).ToNot(BeNil())
+			Expect(br.Status.Source.Git).ToNot(BeNil())
 			Expect(br.Status.Source.Git.CommitSha).To(Equal(commitSha))
 			Expect(br.Status.Source.Git.CommitAuthor).To(Equal("foo bar"))
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))

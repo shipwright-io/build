@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -80,14 +81,28 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 				buildAtBuildDeletion = true
 			}
 
+			xorBuildRetentions := func(oldDeletion, newDeletion *bool) bool {
+				if oldDeletion == nil {
+					oldDeletion = pointer.Bool(false)
+				}
+				if newDeletion == nil {
+					newDeletion = pointer.Bool(false)
+				}
+				return (*oldDeletion || *newDeletion) && !(*oldDeletion && *newDeletion)
+			}
+
 			if !reflect.DeepEqual(oldBuildRetention, newBuildRetention) {
 				switch {
 				case o.Spec.Retention == nil && n.Spec.Retention != nil:
-					if n.Spec.Retention.AtBuildDeletion != nil {
+					if n.Spec.Retention.AtBuildDeletion != nil && *n.Spec.Retention.AtBuildDeletion {
 						logAndEnableDeletion()
 					}
 				case o.Spec.Retention != nil && n.Spec.Retention == nil:
-					if o.Spec.Retention.AtBuildDeletion != nil {
+					if o.Spec.Retention.AtBuildDeletion != nil && *o.Spec.Retention.AtBuildDeletion {
+						logAndEnableDeletion()
+					}
+				case o.Spec.Retention != nil && n.Spec.Retention != nil:
+					if xorBuildRetentions(o.Spec.Retention.AtBuildDeletion, n.Spec.Retention.AtBuildDeletion) {
 						logAndEnableDeletion()
 					}
 				}

@@ -215,14 +215,6 @@ spec:
       volumeMounts:
         - name: varlibcontainers
           mountPath: /var/lib/containers
-  parameters:
-    - name: dockerfile
-      description: The path to the Dockerfile to be used for building the image.
-      type: string
-      default: "Dockerfile"
-    - name: builder-image
-      description: The builder image.
-      type: string
 `
 
 // BuildStrategyWithParameters is a strategy that uses a

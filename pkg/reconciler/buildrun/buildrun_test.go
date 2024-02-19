@@ -1173,7 +1173,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				)
 
 				// Ensure the BuildRun gets an ownershipReference when
-				// the buildv1beta1.AnnotationBuildRunDeletion is set to true
+				// the spec.Retention.AtBuildDeletion is set to true
 				// in the build
 				clientUpdateCalls := ctl.StubBuildUpdateOwnerReferences("Build",
 					buildName,

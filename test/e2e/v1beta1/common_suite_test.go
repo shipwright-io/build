@@ -95,7 +95,6 @@ func (b *buildPrototype) SourceBundle(image string) *buildPrototype {
 		b.build.Spec.Source.OCIArtifact = &buildv1beta1.OCIArtifact{}
 	}
 	b.build.Spec.Source.Type = buildv1beta1.OCIArtifactType
-	b.build.Spec.Source.Type = buildv1beta1.OCIArtifactType
 	b.build.Spec.Source.OCIArtifact.Image = image
 	return b
 }

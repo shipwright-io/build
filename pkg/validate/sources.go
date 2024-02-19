@@ -37,15 +37,15 @@ func (s *SourceRef) validateSourceEntry(source build.Source) error {
 
 	switch source.Type {
 	case "Git":
-		if source.GitSource == nil {
+		if source.GitSource == nil || source.OCIArtifact != nil || source.LocalSource != nil {
 			return fmt.Errorf("type does not match the source")
 		}
 	case "OCI":
-		if source.OCIArtifact == nil {
+		if source.OCIArtifact == nil || source.GitSource != nil || source.LocalSource != nil {
 			return fmt.Errorf("type does not match the source")
 		}
 	case "Local":
-		if source.LocalSource == nil {
+		if source.LocalSource == nil || source.OCIArtifact != nil || source.GitSource != nil {
 			return fmt.Errorf("type does not match the source")
 		}
 	case "":
