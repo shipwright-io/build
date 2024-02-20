@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strconv"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -32,14 +32,15 @@ func UpdateBuildRunUsingTaskResults(
 	// Set source results
 	updateBuildRunStatusWithSourceResult(buildRun, taskRunResult)
 
-	// Initializing output result
-	buildRun.Status.Output = &build.Output{}
-
 	// Set output results
 	updateBuildRunStatusWithOutputResult(ctx, buildRun, taskRunResult, request)
 }
 
 func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.BuildRun, taskRunResult []pipelineapi.TaskRunResult, request reconcile.Request) {
+	if buildRun.Status.Output == nil {
+		buildRun.Status.Output = &build.Output{}
+	}
+
 	for _, result := range taskRunResult {
 		switch result.Name {
 		case generateOutputResultName(imageDigestResult):

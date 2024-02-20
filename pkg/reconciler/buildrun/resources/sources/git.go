@@ -10,7 +10,9 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -26,7 +28,7 @@ const (
 func AppendGitStep(
 	cfg *config.Config,
 	taskSpec *pipelineapi.TaskSpec,
-	source buildv1alpha1.Source,
+	source buildv1beta1.Git,
 	name string,
 ) {
 	// append the result
@@ -52,7 +54,7 @@ func AppendGitStep(
 		ImagePullPolicy: cfg.GitContainerTemplate.ImagePullPolicy,
 		Command:         cfg.GitContainerTemplate.Command,
 		Args: []string{
-			"--url", *source.URL,
+			"--url", source.URL,
 			"--target", fmt.Sprintf("$(params.%s-%s)", PrefixParamsResultsVolumes, paramSourceRoot),
 			"--result-file-commit-sha", fmt.Sprintf("$(results.%s-source-%s-%s.path)", PrefixParamsResultsVolumes, name, commitSHAResult),
 			"--result-file-commit-author", fmt.Sprintf("$(results.%s-source-%s-%s.path)", PrefixParamsResultsVolumes, name, commitAuthorResult),
@@ -82,15 +84,15 @@ func AppendGitStep(
 		gitStep.Args = append(gitStep.Args, "--git-url-rewrite")
 	}
 
-	if source.Credentials != nil {
+	if source.CloneSecret != nil {
 		// ensure the value is there
-		AppendSecretVolume(taskSpec, source.Credentials.Name)
+		AppendSecretVolume(taskSpec, *source.CloneSecret)
 
 		secretMountPath := fmt.Sprintf("/workspace/%s-source-secret", PrefixParamsResultsVolumes)
 
 		// define the volume mount on the container
 		gitStep.VolumeMounts = append(gitStep.VolumeMounts, corev1.VolumeMount{
-			Name:      SanitizeVolumeNameForSecretName(source.Credentials.Name),
+			Name:      SanitizeVolumeNameForSecretName(*source.CloneSecret),
 			MountPath: secretMountPath,
 			ReadOnly:  true,
 		})
@@ -108,19 +110,19 @@ func AppendGitStep(
 }
 
 // AppendGitResult append git source result to build run
-func AppendGitResult(buildRun *buildv1alpha1.BuildRun, name string, results []pipelineapi.TaskRunResult) {
+func AppendGitResult(buildRun *buildv1beta1.BuildRun, name string, results []pipelineapi.TaskRunResult) {
 	commitAuthor := FindResultValue(results, name, commitAuthorResult)
 	commitSha := FindResultValue(results, name, commitSHAResult)
 	branchName := FindResultValue(results, name, branchName)
 
 	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" || strings.TrimSpace(branchName) != "" {
-		buildRun.Status.Sources = append(buildRun.Status.Sources, buildv1alpha1.SourceResult{
-			Name: name,
-			Git: &buildv1alpha1.GitSourceResult{
-				CommitAuthor: commitAuthor,
-				CommitSha:    commitSha,
-				BranchName:   branchName,
-			},
-		})
+		if buildRun.Status.Source == nil {
+			buildRun.Status.Source = &build.SourceResult{}
+		}
+		buildRun.Status.Source.Git = &v1beta1.GitSourceResult{
+			CommitAuthor: commitAuthor,
+			CommitSha:    commitSha,
+			BranchName:   branchName,
+		}
 	}
 }

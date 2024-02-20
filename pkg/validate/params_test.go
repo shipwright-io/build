@@ -9,46 +9,46 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/utils/pointer"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
 var _ = Describe("ValidateBuildRunParameters", func() {
 	Context("for a set of parameter definitions", func() {
-		parameterDefinitions := []buildv1alpha1.Parameter{
+		parameterDefinitions := []buildv1beta1.Parameter{
 			{
 				Name: "string-param-no-default",
 			},
 			{
 				Name:    "string-param-with-default",
-				Type:    buildv1alpha1.ParameterTypeString,
+				Type:    buildv1beta1.ParameterTypeString,
 				Default: pointer.String("default value"),
 			},
 			{
 				Name: "array-param-no-defaults",
-				Type: buildv1alpha1.ParameterTypeArray,
+				Type: buildv1beta1.ParameterTypeArray,
 			},
 			{
 				Name:     "array-param-with-defaults",
-				Type:     buildv1alpha1.ParameterTypeArray,
+				Type:     buildv1beta1.ParameterTypeArray,
 				Defaults: &[]string{},
 			},
 		}
 
 		Context("for parameters just for the required fields", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String("a value"),
 					},
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name:   "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{},
+					Values: []buildv1beta1.SingleValue{},
 				},
 			}
 
@@ -59,11 +59,11 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for parameter values from different sources", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
-						ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+					SingleValue: &buildv1beta1.SingleValue{
+						ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 							Name: "a-config-map",
 							Key:  "some-key",
 						},
@@ -72,16 +72,16 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "string-param-with-default",
 					// This is invalid but will be corrected in the BuildRun
-					Values: []buildv1alpha1.SingleValue{},
+					Values: []buildv1beta1.SingleValue{},
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{
+					Values: []buildv1beta1.SingleValue{
 						{
-							SecretValue: &buildv1alpha1.ObjectKeyRef{
+							SecretValue: &buildv1beta1.ObjectKeyRef{
 								Name: "a-secret",
 								Key:  "my-credential-key",
 							},
@@ -90,7 +90,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				},
 				{
 					Name: "string-param-with-default",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String(""),
 					},
 				},
@@ -105,7 +105,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		Context("for parameter values that are missing", func() {
 
 			It("validates with the correct validation error", func() {
-				valid, reason, message := validate.BuildRunParameters(parameterDefinitions, []buildv1alpha1.ParamValue{}, []buildv1alpha1.ParamValue{})
+				valid, reason, message := validate.BuildRunParameters(parameterDefinitions, []buildv1beta1.ParamValue{}, []buildv1beta1.ParamValue{})
 				Expect(valid).To(BeFalse())
 				Expect(reason).To(Equal("MissingParameterValues"))
 				Expect(message).To(HavePrefix("The following parameters are required but no value has been provided:"))
@@ -115,17 +115,17 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for a parameter value that is defined but contains no value", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name:        "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{},
+					SingleValue: &buildv1beta1.SingleValue{},
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name:   "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{},
+					Values: []buildv1beta1.SingleValue{},
 				},
 			}
 
@@ -138,23 +138,23 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for parameter values that contain a value for a system parameter", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String("a value"),
 					},
 				},
 				{
 					Name:   "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{},
+					Values: []buildv1beta1.SingleValue{},
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "shp-source-context",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String("/my-source"),
 					},
 				},
@@ -169,27 +169,27 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for parameter values that are not defined in the build strategy", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String("a value"),
 					},
 				},
 				{
 					Name:   "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{},
+					Values: []buildv1beta1.SingleValue{},
 				},
 				{
 					Name:   "non-existing-parameter-on-build",
-					Values: []buildv1alpha1.SingleValue{},
+					Values: []buildv1beta1.SingleValue{},
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "non-existing-parameter",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String("my value"),
 					},
 				},
@@ -206,12 +206,12 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for parameter values that contain more than one value", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String("a value"),
-						ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+						ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 							Name: "a-config-map",
 							Key:  "a-key",
 						},
@@ -219,19 +219,19 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{
+					Values: []buildv1beta1.SingleValue{
 						{
 							Value: pointer.String("a good item"),
 						},
 						{
-							ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+							ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 								Name: "a-config-map",
 								Key:  "a-key",
 							},
-							SecretValue: &buildv1alpha1.ObjectKeyRef{
+							SecretValue: &buildv1beta1.ObjectKeyRef{
 								Name: "a-secret",
 								Key:  "a-key",
 							},
@@ -251,15 +251,15 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for parameter values that use the wrong type", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					Values: []buildv1alpha1.SingleValue{
+					Values: []buildv1beta1.SingleValue{
 						{
 							Value: pointer.String("an item"),
 						},
 						{
-							ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+							ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 								Name: "a-config-map",
 								Key:  "a-key",
 							},
@@ -268,10 +268,10 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "array-param-no-defaults",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String("a value"),
 					},
 				},
@@ -288,16 +288,16 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for array parameter values that contain empty items", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
+					SingleValue: &buildv1beta1.SingleValue{
 						Value: pointer.String(" some value"),
 					},
 				},
 				{
 					Name: "array-param-with-defaults",
-					Values: []buildv1alpha1.SingleValue{
+					Values: []buildv1beta1.SingleValue{
 						{
 							// the bad item without any value
 						},
@@ -305,10 +305,10 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{
+					Values: []buildv1beta1.SingleValue{
 						{
 							Value: pointer.String("a good item"),
 						},
@@ -316,7 +316,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 							// the bad item without any value
 						},
 						{
-							ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+							ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 								Name: "a-configmap",
 								Key:  "a-key",
 							},
@@ -336,26 +336,26 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for parameter values that contain incomplete configMapValues", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
-						ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+					SingleValue: &buildv1beta1.SingleValue{
+						ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 							Name: "a-config-map",
 						},
 					},
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{
+					Values: []buildv1beta1.SingleValue{
 						{
 							Value: pointer.String("an item"),
 						},
 						{
-							ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+							ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 								Key: "a-key",
 							},
 						},
@@ -374,26 +374,26 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 		})
 
 		Context("for parameter values that contain incomplete secretValues", func() {
-			buildParamValues := []buildv1alpha1.ParamValue{
+			buildParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "string-param-no-default",
-					SingleValue: &buildv1alpha1.SingleValue{
-						SecretValue: &buildv1alpha1.ObjectKeyRef{
+					SingleValue: &buildv1beta1.SingleValue{
+						SecretValue: &buildv1beta1.ObjectKeyRef{
 							Name: "a-secret",
 						},
 					},
 				},
 			}
 
-			buildRunParamValues := []buildv1alpha1.ParamValue{
+			buildRunParamValues := []buildv1beta1.ParamValue{
 				{
 					Name: "array-param-no-defaults",
-					Values: []buildv1alpha1.SingleValue{
+					Values: []buildv1beta1.SingleValue{
 						{
 							Value: pointer.String("an item"),
 						},
 						{
-							SecretValue: &buildv1alpha1.ObjectKeyRef{
+							SecretValue: &buildv1beta1.ObjectKeyRef{
 								Key: "a-key",
 							},
 						},

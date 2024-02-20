@@ -7,7 +7,7 @@ package resources
 import (
 	"fmt"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -117,14 +117,14 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, buil
 			})
 		}
 
-		if buildOutput.Credentials != nil {
-			sources.AppendSecretVolume(taskRun.Spec.TaskSpec, buildOutput.Credentials.Name)
+		if buildOutput.PushSecret != nil {
+			sources.AppendSecretVolume(taskRun.Spec.TaskSpec, *buildOutput.PushSecret)
 
 			secretMountPath := fmt.Sprintf("/workspace/%s-push-secret", prefixParamsResultsVolumes)
 
 			// define the volume mount on the container
 			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
-				Name:      sources.SanitizeVolumeNameForSecretName(buildOutput.Credentials.Name),
+				Name:      sources.SanitizeVolumeNameForSecretName(*buildOutput.PushSecret),
 				MountPath: secretMountPath,
 				ReadOnly:  true,
 			})

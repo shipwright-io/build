@@ -27,6 +27,16 @@ func (t *TestBuild) CreateBuild(build *v1beta1.Build) error {
 	return err
 }
 
+// UpdateBR updates a BuildRun on the current test namespace
+func (t *TestBuild) UpdateBuild(build *v1beta1.Build) error {
+	brInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
+	_, err := brInterface.Update(context.TODO(), build, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // DeleteBuild deletes a Build on the desired namespace
 func (t *TestBuild) DeleteBuild(name string) error {
 	bInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)

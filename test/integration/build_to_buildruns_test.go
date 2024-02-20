@@ -5,7 +5,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -14,18 +13,17 @@ import (
 	. "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 	var (
-		cbsObject      *v1alpha1.ClusterBuildStrategy
-		buildObject    *v1alpha1.Build
-		buildRunObject *v1alpha1.BuildRun
+		cbsObject      *v1beta1.ClusterBuildStrategy
+		buildObject    *v1beta1.Build
+		buildRunObject *v1beta1.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
 	)
@@ -84,9 +82,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
 	})
 
@@ -108,9 +106,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
 
 		It("should be able to override the build output", func() {
@@ -194,9 +192,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBR(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).To(BeNil())
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Type).To(Equal(v1alpha1.Succeeded))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionUnknown))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Type).To(Equal(v1beta1.Succeeded))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionUnknown))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(
 				// BuildRun reason can be ExceededNodeResources
 				// if the Tekton TaskRun Pod is queued due to
 				// insufficient cluster resources.
@@ -226,9 +224,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBR(buildRunObject.Name)
 			Expect(err).To(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(Equal("BuildNotFound"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Message).To(ContainSubstring("not found"))
 
 		})
 	})
@@ -252,9 +250,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildRegistrationFailed"))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("Build is not registered correctly"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(Equal("BuildRegistrationFailed"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Message).To(ContainSubstring("Build is not registered correctly"))
 		})
 	})
 
@@ -284,9 +282,9 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 			Expect(br.Status.CompletionTime).ToNot(BeNil())
 			Expect(br.Status.StartTime).To(BeNil())
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Reason).To(Equal("BuildNotFound"))
-			Expect(br.Status.GetCondition(v1alpha1.Succeeded).Message).To(ContainSubstring("not found"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(Equal("BuildNotFound"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Message).To(ContainSubstring("not found"))
 		})
 	})
 
@@ -382,8 +380,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		})
 
-		It("does not deletes the buildrun if the annotation is changed", func() {
-
+		It("does not deletes the buildrun if retention atBuildDeletion is changed", func() {
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
@@ -402,7 +399,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			// we modify the annotation so automatic delete does not take place
-			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"false"}}}`, v1alpha1.AnnotationBuildRunDeletion))
+			data := []byte(`{"spec":{"retention":{"atBuildDeletion":false}}}`)
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
 			Expect(err).To(BeNil())
 
@@ -414,7 +411,8 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
 
 		})
-		It("does not deletes the buildrun if the annotation is removed", func() {
+
+		It("does not deletes the buildrun if retention atBuildDeletion is removed", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
@@ -433,9 +431,11 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
 			Expect(err).To(BeNil())
 
-			// we remove the annotation so automatic delete does not take place, "/" is escaped by "~1" in a JSON pointer
-			data := []byte(fmt.Sprintf(`[{"op":"remove","path":"/metadata/annotations/%s"}]`, strings.ReplaceAll(v1alpha1.AnnotationBuildRunDeletion, "/", "~1")))
-			_, err = tb.PatchBuildWithPatchType(BUILD+tb.Namespace, data, types.JSONPatchType)
+			buildObject.Spec.Retention = nil
+			err = tb.UpdateBuild(buildObject)
+			Expect(err).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 			Expect(err).To(BeNil())
 
 			err = tb.DeleteBuild(BUILD + tb.Namespace)
@@ -446,6 +446,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
 
 		})
+
 		It("does delete the buildrun after several modifications of the annotation", func() {
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
@@ -463,25 +464,25 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
 
 			// we modify the annotation for the automatic deletion to not take place
-			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"false"}}}`, v1alpha1.AnnotationBuildRunDeletion))
+			data := []byte(`{"spec":{"retention":{"atBuildDeletion":false}}}`)
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
 			Expect(err).To(BeNil())
 
 			patchedBuild, err := tb.GetBuild(BUILD + tb.Namespace)
 			Expect(err).To(BeNil())
-			Expect(patchedBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]).To(Equal("false"))
+			Expect(*patchedBuild.Spec.Retention.AtBuildDeletion).To(Equal(false))
 
 			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
 			Expect(err).To(BeNil())
 
 			// we modify the annotation one more time, to validate that the build should be deleted this time
-			data = []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"true"}}}`, v1alpha1.AnnotationBuildRunDeletion))
+			data = []byte(`{"spec":{"retention":{"atBuildDeletion":true}}}`)
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
 			Expect(err).To(BeNil())
 
 			patchedBuild, err = tb.GetBuild(BUILD + tb.Namespace)
 			Expect(err).To(BeNil())
-			Expect(patchedBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]).To(Equal("true"))
+			Expect(*patchedBuild.Spec.Retention.AtBuildDeletion).To(Equal(true))
 
 			br, err := tb.GetBRTillOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
@@ -510,7 +511,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.BuildNameInvalid))
+			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.BuildNameInvalid))
 			Expect(*buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
 		})
 	})
@@ -536,8 +537,8 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1alpha1.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal(v1alpha1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
 		})
 	})
 })

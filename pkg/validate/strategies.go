@@ -13,7 +13,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 

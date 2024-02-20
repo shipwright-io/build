@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
@@ -35,8 +35,7 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 		return err
 	}
 
-	switch o.Build.GetAnnotations()[build.AnnotationBuildRunDeletion] {
-	case "true":
+	if o.Build.Spec.Retention != nil && o.Build.Spec.Retention.AtBuildDeletion != nil && *o.Build.Spec.Retention.AtBuildDeletion {
 		// if the buildRun does not have an ownerreference to the Build, lets add it.
 		for i := range buildRunList.Items {
 			buildRun := buildRunList.Items[i]
@@ -52,7 +51,7 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
 		}
-	case "", "false":
+	} else {
 		// if the buildRun have an ownerreference to the Build, lets remove it
 		for i := range buildRunList.Items {
 			buildRun := buildRunList.Items[i]
@@ -65,12 +64,7 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 				ctxlog.Info(ctx, fmt.Sprintf("successfully updated BuildRun %s", buildRun.Name), namespace, buildRun.Namespace, name, buildRun.Name)
 			}
 		}
-
-	default:
-		ctxlog.Info(ctx, fmt.Sprintf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion), namespace, o.Build.Namespace, name, o.Build.Name)
-		return fmt.Errorf("the annotation %s was not properly defined, supported values are true or false", build.AnnotationBuildRunDeletion)
 	}
-
 	return nil
 }
 

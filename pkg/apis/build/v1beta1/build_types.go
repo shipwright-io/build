@@ -220,6 +220,7 @@ type BuildStatus struct {
 
 // Build is the Schema representing a Build definition
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 // +kubebuilder:resource:path=builds,scope=Namespaced
 // +kubebuilder:printcolumn:name="Registered",type="string",JSONPath=".status.registered",description="The register status of the Build"
 // +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.reason",description="The reason of the registered Build, either an error or succeed message"
@@ -273,4 +274,19 @@ type BuildRetention struct {
 
 func init() {
 	SchemeBuilder.Register(&Build{}, &BuildList{})
+}
+
+// GetSourceCredentials returns the secret name for a Build Source
+func (b Build) GetSourceCredentials() *string {
+	switch b.Spec.Source.Type {
+	case OCIArtifactType:
+		if b.Spec.Source.OCIArtifact != nil && b.Spec.Source.OCIArtifact.PullSecret != nil {
+			return b.Spec.Source.OCIArtifact.PullSecret
+		}
+	default:
+		if b.Spec.Source.GitSource != nil && b.Spec.Source.GitSource.CloneSecret != nil {
+			return b.Spec.Source.GitSource.CloneSecret
+		}
+	}
+	return nil
 }

@@ -75,10 +75,16 @@ func (b *buildPrototype) SourceCredentials(name string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) SourceType(sourceType string) *buildPrototype {
+	b.build.Spec.Source.Type = buildv1beta1.BuildSourceType(sourceType)
+	return b
+}
+
 func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
 	if b.build.Spec.Source.GitSource == nil {
 		b.build.Spec.Source.GitSource = &buildv1beta1.Git{}
 	}
+	b.build.Spec.Source.Type = buildv1beta1.GitType
 	b.build.Spec.Source.GitSource.URL = repository
 	b.build.Spec.Source.OCIArtifact = nil
 	return b

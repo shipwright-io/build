@@ -8,21 +8,15 @@ import (
 	"fmt"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
-
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
+	corev1 "k8s.io/api/core/v1"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 // AppendBundleStep appends the bundle step to the TaskSpec
-func AppendBundleStep(
-	cfg *config.Config,
-	taskSpec *pipelineapi.TaskSpec,
-	source build.Source,
-	name string,
-) {
+func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *build.OCIArtifact, name string) {
 	// append the result
 	taskSpec.Results = append(taskSpec.Results,
 		pipelineapi.TaskResult{
@@ -38,7 +32,7 @@ func AppendBundleStep(
 		ImagePullPolicy: cfg.BundleContainerTemplate.ImagePullPolicy,
 		Command:         cfg.BundleContainerTemplate.Command,
 		Args: []string{
-			"--image", source.BundleContainer.Image,
+			"--image", oci.Image,
 			"--target", fmt.Sprintf("$(params.%s-%s)", PrefixParamsResultsVolumes, paramSourceRoot),
 			"--result-file-image-digest", fmt.Sprintf("$(results.%s-source-%s-image-digest.path)", PrefixParamsResultsVolumes, name),
 			"--result-file-source-timestamp", fmt.Sprintf("$(results.%s-source-%s-source-timestamp.path)", PrefixParamsResultsVolumes, name),
@@ -50,14 +44,14 @@ func AppendBundleStep(
 	}
 
 	// add credentials mount, if provided
-	if source.Credentials != nil {
-		AppendSecretVolume(taskSpec, source.Credentials.Name)
+	if oci.PullSecret != nil {
+		AppendSecretVolume(taskSpec, *oci.PullSecret)
 
 		secretMountPath := fmt.Sprintf("/workspace/%s-pull-secret", PrefixParamsResultsVolumes)
 
 		// define the volume mount on the container
 		bundleStep.VolumeMounts = append(bundleStep.VolumeMounts, corev1.VolumeMount{
-			Name:      SanitizeVolumeNameForSecretName(source.Credentials.Name),
+			Name:      SanitizeVolumeNameForSecretName(*oci.PullSecret),
 			MountPath: secretMountPath,
 			ReadOnly:  true,
 		})
@@ -69,7 +63,7 @@ func AppendBundleStep(
 	}
 
 	// add prune flag in when prune after pull is configured
-	if source.BundleContainer.Prune != nil && *source.BundleContainer.Prune == build.PruneAfterPull {
+	if oci.Prune != nil && *oci.Prune == build.PruneAfterPull {
 		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
 
@@ -81,11 +75,11 @@ func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipelin
 	imageDigest := FindResultValue(results, name, "image-digest")
 
 	if strings.TrimSpace(imageDigest) != "" {
-		buildRun.Status.Sources = append(buildRun.Status.Sources, build.SourceResult{
-			Name: name,
-			Bundle: &build.BundleSourceResult{
-				Digest: imageDigest,
-			},
-		})
+		if buildRun.Status.Source == nil {
+			buildRun.Status.Source = &build.SourceResult{}
+		}
+		buildRun.Status.Source.OciArtifact = &build.OciArtifactSourceResult{
+			Digest: imageDigest,
+		}
 	}
 }

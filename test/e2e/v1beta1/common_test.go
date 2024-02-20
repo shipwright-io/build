@@ -19,12 +19,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
@@ -138,38 +136,20 @@ func amendBuild(identifier string, b *buildv1beta1.Build) {
 
 // retrieveBuildAndBuildRun will retrieve the build and buildRun
 func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1beta1.Build, *buildv1beta1.BuildRun, error) {
-	buildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
+	var build *buildv1beta1.Build
+
+	buildrun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get BuildRun %q: %s", buildRunName, err)
 		return nil, nil, err
 	}
 
-	var alphaBuild buildv1alpha1.Build
-	var obj unstructured.Unstructured
-
-	buildRun.ConvertTo(testBuild.Context, &obj)
-	jsonData, err := json.Marshal(obj.Object)
-	if err != nil {
-		Logf("Failed to convert the buildRun to v1alpha1: %s", err)
-	}
-
-	var alphaBuildRun buildv1alpha1.BuildRun
-	json.Unmarshal(jsonData, &alphaBuildRun)
-
-	if err := resources.GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, &alphaBuildRun, &alphaBuild); err != nil {
+	if err := resources.GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, buildrun, build); err != nil {
 		Logf("Failed to get Build from BuildRun %s: %s", buildRunName, err)
-		return nil, buildRun, err
+		return nil, buildrun, err
 	}
 
-	alphaBuild.ConvertTo(testBuild.Context, &obj)
-	jsonData, err = json.Marshal(obj.Object)
-	if err != nil {
-		Logf("Failed to convert the build to v1beta1: %s", err)
-	}
-	var betaBuild buildv1beta1.Build
-	json.Unmarshal(jsonData, &betaBuild)
-
-	return &betaBuild, buildRun, nil
+	return build, buildrun, nil
 }
 
 // printTestFailureDebugInfo will output the status of Build, BuildRun, TaskRun and Pod, also print logs of Pod

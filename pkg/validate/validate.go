@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
@@ -23,7 +23,7 @@ const (
 	// SourceURL for validating the source URL in Build objects
 	SourceURL = "sourceurl"
 	// Sources for validating `spec.sources` entries
-	Sources = "sources"
+	Source = "source"
 	// BuildName for validating `metadata.name` entry
 	BuildName = "buildname"
 	// Envs for validating `spec.env` entries
@@ -63,8 +63,8 @@ func NewValidation(
 		return &SourceURLRef{Build: build, Client: client}, nil
 	case OwnerReferences:
 		return &OwnerRef{Build: build, Client: client, Scheme: scheme}, nil
-	case Sources:
-		return &SourcesRef{Build: build}, nil
+	case Source:
+		return &SourceRef{Build: build}, nil
 	case BuildName:
 		return &BuildNameRef{Build: build}, nil
 	case Envs:
@@ -90,13 +90,13 @@ func All(ctx context.Context, validations ...BuildPath) error {
 // BuildRunFields runs field validations against a BuildRun to detect
 // disallowed field combinations
 func BuildRunFields(buildRun *build.BuildRun) (string, string) {
-	if buildRun.Spec.BuildSpec == nil && buildRun.Spec.BuildRef == nil {
+	if buildRun.Spec.Build.Build == nil && buildRun.Spec.Build.Name == nil {
 		return resources.BuildRunNoRefOrSpec,
 			"no build referenced or specified, either 'buildRef' or 'buildSpec' has to be set"
 	}
 
-	if buildRun.Spec.BuildSpec != nil {
-		if buildRun.Spec.BuildRef != nil {
+	if buildRun.Spec.Build.Build != nil {
+		if buildRun.Spec.Build.Name != nil {
 			return resources.BuildRunAmbiguousBuild,
 				"fields 'buildRef' and 'buildSpec' are mutually exclusive"
 		}
@@ -121,7 +121,7 @@ func BuildRunFields(buildRun *build.BuildRun) (string, string) {
 				"cannot use 'timeout' override and 'buildSpec' simultaneously"
 		}
 
-		if buildRun.Spec.BuildSpec.Trigger != nil {
+		if buildRun.Spec.Build.Build.Trigger != nil {
 			return resources.BuildRunBuildFieldOverrideForbidden,
 				"cannot use 'triggers' override in the 'BuildRun', only allowed in the 'Build'"
 		}

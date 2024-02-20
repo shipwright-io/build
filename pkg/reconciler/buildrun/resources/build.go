@@ -13,19 +13,19 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // GetBuildObject retrieves an existing Build based on a name and namespace
-func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, build *buildv1alpha1.Build) error {
+func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, build *buildv1beta1.Build) error {
 	// Option #1: BuildRef is specified
 	// An actual Build resource is specified by name and needs to be looked up in the cluster.
-	if buildRun.Spec.BuildRef != nil {
+	if buildRun.Spec.Build.Name != nil {
 		err := client.Get(ctx, types.NamespacedName{Name: buildRun.Spec.BuildName(), Namespace: buildRun.Namespace}, build)
 		if apierrors.IsNotFound(err) {
 			// stop reconciling and mark the BuildRun as Failed
 			// we only reconcile again if the status.Update call fails
-			if updateErr := UpdateConditionWithFalseStatus(ctx, client, buildRun, fmt.Sprintf("build.shipwright.io %q not found", buildRun.Spec.BuildRef.Name), ConditionBuildNotFound); updateErr != nil {
+			if updateErr := UpdateConditionWithFalseStatus(ctx, client, buildRun, fmt.Sprintf("build.shipwright.io %q not found", *buildRun.Spec.Build.Name), ConditionBuildNotFound); updateErr != nil {
 				return HandleError("build object not found", err, updateErr)
 			}
 		}
@@ -35,11 +35,11 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 
 	// Option #2: BuildSpec is specified
 	// The build specification is embedded in the BuildRun itself, create a transient Build resource.
-	if buildRun.Spec.BuildSpec != nil {
+	if buildRun.Spec.Build.Build != nil {
 		build.Name = ""
 		build.Namespace = buildRun.Namespace
-		build.Status = buildv1alpha1.BuildStatus{}
-		buildRun.Spec.BuildSpec.DeepCopyInto(&build.Spec)
+		build.Status = buildv1beta1.BuildStatus{}
+		buildRun.Spec.Build.Build.DeepCopyInto(&build.Spec)
 		return nil
 	}
 
@@ -48,7 +48,7 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 }
 
 // IsOwnedByBuild checks if the controllerReferences contains a well known owner Kind
-func IsOwnedByBuild(build *buildv1alpha1.Build, controlledReferences []metav1.OwnerReference) bool {
+func IsOwnedByBuild(build *buildv1beta1.Build, controlledReferences []metav1.OwnerReference) bool {
 	for _, ref := range controlledReferences {
 		if ref.Kind == build.Kind && ref.Name == build.Name {
 			return true

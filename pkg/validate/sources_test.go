@@ -10,23 +10,24 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
 var _ = Describe("SourcesRef", func() {
 	Context("ValidatePath", func() {
-		It("should successfully validate an empty sources slice", func() {
-			srcRef := validate.NewSourcesRef(&build.Build{})
+		It("should successfully validate an empty source", func() {
+			srcRef := validate.NewSourceRef(&build.Build{})
 
 			Expect(srcRef.ValidatePath(context.TODO())).To(BeNil())
 		})
 
-		It("should successfully validate a build with a valid URL", func() {
-			srcRef := validate.NewSourcesRef(&build.Build{
+		It("should successfully validate a build with source", func() {
+			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
-					Sources: []build.BuildSource{
-						{Name: "name", URL: "https://github.com/shipwright-io/build"},
+					Source: build.Source{
+						Type:      "Git",
+						GitSource: &build.Git{},
 					},
 				},
 			})
@@ -34,11 +35,11 @@ var _ = Describe("SourcesRef", func() {
 			Expect(srcRef.ValidatePath(context.TODO())).To(BeNil())
 		})
 
-		It("should fail to validate if the name is not informed", func() {
-			srcRef := validate.NewSourcesRef(&build.Build{
+		It("should fail to validate if the type is not defined", func() {
+			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
-					Sources: []build.BuildSource{
-						{Name: ""},
+					Source: build.Source{
+						GitSource: &build.Git{},
 					},
 				},
 			})
@@ -46,23 +47,12 @@ var _ = Describe("SourcesRef", func() {
 			Expect(srcRef.ValidatePath(context.TODO())).To(HaveOccurred())
 		})
 
-		It("should fail to validate if the URL is not informed", func() {
-			srcRef := validate.NewSourcesRef(&build.Build{
+		It("should fail to validate if the type does not match the source git", func() {
+			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
-					Sources: []build.BuildSource{
-						{Name: "name", URL: ""},
-					},
-				},
-			})
-
-			Expect(srcRef.ValidatePath(context.TODO())).To(HaveOccurred())
-		})
-
-		It("should fail to validate a build with an invalid URL", func() {
-			srcRef := validate.NewSourcesRef(&build.Build{
-				Spec: build.BuildSpec{
-					Sources: []build.BuildSource{
-						{Name: "name", URL: "invalid URL"},
+					Source: build.Source{
+						Type:      "OCI",
+						GitSource: &build.Git{},
 					},
 				},
 			})

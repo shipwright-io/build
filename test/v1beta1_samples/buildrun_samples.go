@@ -134,6 +134,7 @@ spec:
   build:
     spec:
       source:
+        type: Git
         git:
           url: "https://github.com/shipwright-io/sample-go"
         contextDir: docker-build

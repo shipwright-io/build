@@ -10,13 +10,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -50,8 +49,14 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 		It("should surface the TaskRun results emitting from default(git) source step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
-			br.Status.BuildSpec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go")
-
+			br.Status.BuildSpec = &build.BuildSpec{
+				Source: build.Source{
+					Type: build.GitType,
+					GitSource: &build.Git{
+						URL: "https://github.com/shipwright-io/sample-go",
+					},
+				},
+			}
 			tr.Status.Results = append(tr.Status.Results,
 				pipelineapi.TaskRunResult{
 					Name: "shp-source-default-commit-sha",
@@ -70,15 +75,20 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
-			Expect(len(br.Status.Sources)).To(Equal(1))
-			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))
-			Expect(br.Status.Sources[0].Git.CommitAuthor).To(Equal("foo bar"))
+			Expect(br.Status.Source).ToNot(BeNil())
+			Expect(br.Status.Source.Git.CommitSha).To(Equal(commitSha))
+			Expect(br.Status.Source.Git.CommitAuthor).To(Equal("foo bar"))
 		})
 
 		It("should surface the TaskRun results emitting from default(bundle) source step", func() {
 			bundleImageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
-			br.Status.BuildSpec.Source.BundleContainer = &build.BundleContainer{
-				Image: "ghcr.io/shipwright-io/sample-go/source-bundle:latest",
+			br.Status.BuildSpec = &build.BuildSpec{
+				Source: build.Source{
+					Type: build.OCIArtifactType,
+					OCIArtifact: &build.OCIArtifact{
+						Image: "ghcr.io/shipwright-io/sample-go/source-bundle:latest",
+					},
+				},
 			}
 
 			tr.Status.Results = append(tr.Status.Results,
@@ -92,8 +102,8 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
-			Expect(len(br.Status.Sources)).To(Equal(1))
-			Expect(br.Status.Sources[0].Bundle.Digest).To(Equal(bundleImageDigest))
+			Expect(br.Status.Source).ToNot(BeNil())
+			Expect(br.Status.Source.OciArtifact.Digest).To(Equal(bundleImageDigest))
 		})
 
 		It("should surface the TaskRun results emitting from output step", func() {
@@ -124,7 +134,14 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from source and output step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
-			br.Status.BuildSpec.Source.URL = pointer.String("https://github.com/shipwright-io/sample-go")
+			br.Status.BuildSpec = &build.BuildSpec{
+				Source: build.Source{
+					Type: build.GitType,
+					GitSource: &build.Git{
+						URL: "https://github.com/shipwright-io/sample-go",
+					},
+				},
+			}
 
 			tr.Status.Results = append(tr.Status.Results,
 				pipelineapi.TaskRunResult{
@@ -158,9 +175,10 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
 
-			Expect(len(br.Status.Sources)).To(Equal(1))
-			Expect(br.Status.Sources[0].Git.CommitSha).To(Equal(commitSha))
-			Expect(br.Status.Sources[0].Git.CommitAuthor).To(Equal("foo bar"))
+			Expect(br.Status.Source).ToNot(BeNil())
+			Expect(br.Status.Source.Git).ToNot(BeNil())
+			Expect(br.Status.Source.Git.CommitSha).To(Equal(commitSha))
+			Expect(br.Status.Source.Git.CommitAuthor).To(Equal("foo bar"))
 			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
 			Expect(br.Status.Output.Size).To(Equal(int64(230)))
 		})

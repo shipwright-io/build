@@ -8,12 +8,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	corev1 "k8s.io/api/core/v1"
-
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
+	utils "github.com/shipwright-io/build/test/utils/v1beta1"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
@@ -38,9 +36,9 @@ var _ = Describe("Image Processing overrides", func() {
 		Context("for a build without labels and annotation in the output", func() {
 			BeforeEach(func() {
 				processedTaskRun = taskRun.DeepCopy()
-				resources.SetupImageProcessing(processedTaskRun, config, buildv1alpha1.Image{
+				resources.SetupImageProcessing(processedTaskRun, config, buildv1beta1.Image{
 					Image: "some-registry/some-namespace/some-image",
-				}, buildv1alpha1.Image{})
+				}, buildv1beta1.Image{})
 			})
 
 			It("does not add the image-processing step", func() {
@@ -52,12 +50,12 @@ var _ = Describe("Image Processing overrides", func() {
 		Context("for a build with a label in the output", func() {
 			BeforeEach(func() {
 				processedTaskRun = taskRun.DeepCopy()
-				resources.SetupImageProcessing(processedTaskRun, config, buildv1alpha1.Image{
+				resources.SetupImageProcessing(processedTaskRun, config, buildv1beta1.Image{
 					Image: "some-registry/some-namespace/some-image",
 					Labels: map[string]string{
 						"aKey": "aLabel",
 					},
-				}, buildv1alpha1.Image{})
+				}, buildv1beta1.Image{})
 			})
 
 			It("adds the image-processing step", func() {
@@ -103,12 +101,12 @@ var _ = Describe("Image Processing overrides", func() {
 			Context("for a build with label and annotation in the output", func() {
 				BeforeEach(func() {
 					processedTaskRun = taskRun.DeepCopy()
-					resources.SetupImageProcessing(processedTaskRun, config, buildv1alpha1.Image{
+					resources.SetupImageProcessing(processedTaskRun, config, buildv1beta1.Image{
 						Image: "some-registry/some-namespace/some-image",
 						Labels: map[string]string{
 							"a-label": "a-value",
 						},
-					}, buildv1alpha1.Image{
+					}, buildv1beta1.Image{
 						Annotations: map[string]string{
 							"an-annotation": "some-value",
 						},
@@ -151,9 +149,9 @@ var _ = Describe("Image Processing overrides", func() {
 			Context("for a build without labels and annotation in the output", func() {
 				BeforeEach(func() {
 					processedTaskRun = taskRun.DeepCopy()
-					resources.SetupImageProcessing(processedTaskRun, config, buildv1alpha1.Image{
+					resources.SetupImageProcessing(processedTaskRun, config, buildv1beta1.Image{
 						Image: "some-registry/some-namespace/some-image",
-					}, buildv1alpha1.Image{})
+					}, buildv1beta1.Image{})
 				})
 
 				It("adds the output-directory parameter", func() {
@@ -189,12 +187,11 @@ var _ = Describe("Image Processing overrides", func() {
 		Context("for a build with an output with a secret", func() {
 			BeforeEach(func() {
 				processedTaskRun = taskRun.DeepCopy()
-				resources.SetupImageProcessing(processedTaskRun, config, buildv1alpha1.Image{
-					Image: "some-registry/some-namespace/some-image",
-					Credentials: &corev1.LocalObjectReference{
-						Name: "some-secret",
-					},
-				}, buildv1alpha1.Image{})
+				someSecret := "some-secret"
+				resources.SetupImageProcessing(processedTaskRun, config, buildv1beta1.Image{
+					Image:      "some-registry/some-namespace/some-image",
+					PushSecret: &someSecret,
+				}, buildv1beta1.Image{})
 			})
 
 			It("adds the output-directory parameter", func() {
