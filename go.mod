@@ -16,7 +16,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.47.4
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	k8s.io/api v0.26.9
 	k8s.io/apiextensions-apiserver v0.26.9
 	k8s.io/apimachinery v0.26.9
