@@ -50,9 +50,9 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from default(git) source step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
 			br.Status.BuildSpec = &build.BuildSpec{
-				Source: build.Source{
+				Source: &build.Source{
 					Type: build.GitType,
-					GitSource: &build.Git{
+					Git: &build.Git{
 						URL: "https://github.com/shipwright-io/sample-go",
 					},
 				},
@@ -83,7 +83,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from default(bundle) source step", func() {
 			bundleImageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
 			br.Status.BuildSpec = &build.BuildSpec{
-				Source: build.Source{
+				Source: &build.Source{
 					Type: build.OCIArtifactType,
 					OCIArtifact: &build.OCIArtifact{
 						Image: "ghcr.io/shipwright-io/sample-go/source-bundle:latest",
@@ -135,9 +135,9 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
 			br.Status.BuildSpec = &build.BuildSpec{
-				Source: build.Source{
+				Source: &build.Source{
 					Type: build.GitType,
-					GitSource: &build.Git{
+					Git: &build.Git{
 						URL: "https://github.com/shipwright-io/sample-go",
 					},
 				},

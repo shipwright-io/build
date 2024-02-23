@@ -47,9 +47,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "http://github.com/shipwright-io/sample-go",
 				},
 			}
@@ -77,9 +77,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "http://github.com/shipwright-io/sample-go-fake",
 				},
 			}
@@ -108,9 +108,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
 			}
@@ -138,9 +138,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "https://github.com/shipwright-io/sample-go-fake",
 				},
 			}
@@ -169,9 +169,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "foobar",
 				},
 			}
@@ -201,9 +201,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "false"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "foobar",
 				},
 			}
@@ -232,9 +232,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "https://github.yourco.com/org/build-fake",
 				},
 			}
@@ -263,15 +263,15 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL:         "https://github.yourco.com/org/build-fake",
 					CloneSecret: pointer.String("foobar"),
 				},
 			}
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.GitSource.CloneSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
@@ -300,9 +300,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "git@github.com:shipwright-io/build-fake.git",
 				},
 			}
@@ -333,9 +333,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.ObjectMeta.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = v1beta1.Source{
+			buildObject.Spec.Source = &v1beta1.Source{
 				Type: v1beta1.GitType,
-				GitSource: &v1beta1.Git{
+				Git: &v1beta1.Git{
 					URL: "ssh://github.com/shipwright-io/build-fake.git",
 				},
 			}

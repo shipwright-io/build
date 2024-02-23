@@ -6402,7 +6402,7 @@ spec:
                     description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
                     type: string
                   spec:
-                    description: Build refers to an embedded build specification
+                    description: Spec refers to an embedded build specification
                     properties:
                       env:
                         description: Env contains additional environment variables
@@ -6695,7 +6695,8 @@ spec:
                               repo. Optional.
                             type: string
                           git:
-                            description: GitSource
+                            description: Git contains the details for the source of
+                              type Git
                             properties:
                               cloneSecret:
                                 description: CloneSecret references a Secret that
@@ -6714,7 +6715,8 @@ spec:
                             - url
                             type: object
                           local:
-                            description: LocalSource
+                            description: Local contains the details for the source
+                              of type Local
                             properties:
                               name:
                                 description: Name of the local step
@@ -6725,7 +6727,8 @@ spec:
                                 type: string
                             type: object
                           ociArtifact:
-                            description: OCIArtifact
+                            description: OCIArtifact contains the details for the
+                              source of type OCIArtifact
                             properties:
                               image:
                                 description: Image reference, i.e. quay.io/org/image:tag
@@ -6746,8 +6749,10 @@ spec:
                             type: object
                           type:
                             description: Type is the BuildSource qualifier, the type
-                              of the data-source.
+                              of the source.
                             type: string
+                        required:
+                        - type
                         type: object
                       strategy:
                         description: Strategy references the BuildStrategy to use
@@ -8543,7 +8548,6 @@ spec:
                         type: array
                     required:
                     - output
-                    - source
                     - strategy
                     type: object
                 type: object
@@ -8812,7 +8816,8 @@ spec:
                   this could only be a local source
                 properties:
                   local:
-                    description: LocalSource
+                    description: Local contains the details for the source of type
+                      Local
                     properties:
                       name:
                         description: Name of the local step
@@ -8824,8 +8829,10 @@ spec:
                     type: object
                   type:
                     description: Type is the BuildRunSource qualifier, the type of
-                      the data-source. Only LocalType is supported.
+                      the source. Only Local is supported.
                     type: string
+                required:
+                - type
                 type: object
               state:
                 description: State is used for canceling a buildrun (and maybe more
@@ -10690,7 +10697,8 @@ spec:
                           Optional.
                         type: string
                       git:
-                        description: GitSource
+                        description: Git contains the details for the source of type
+                          Git
                         properties:
                           cloneSecret:
                             description: CloneSecret references a Secret that contains
@@ -10708,7 +10716,8 @@ spec:
                         - url
                         type: object
                       local:
-                        description: LocalSource
+                        description: Local contains the details for the source of
+                          type Local
                         properties:
                           name:
                             description: Name of the local step
@@ -10719,7 +10728,8 @@ spec:
                             type: string
                         type: object
                       ociArtifact:
-                        description: OCIArtifact
+                        description: OCIArtifact contains the details for the source
+                          of type OCIArtifact
                         properties:
                           image:
                             description: Image reference, i.e. quay.io/org/image:tag
@@ -10740,8 +10750,10 @@ spec:
                         type: object
                       type:
                         description: Type is the BuildSource qualifier, the type of
-                          the data-source.
+                          the source.
                         type: string
+                    required:
+                    - type
                     type: object
                   strategy:
                     description: Strategy references the BuildStrategy to use to build
@@ -12461,7 +12473,6 @@ spec:
                     type: array
                 required:
                 - output
-                - source
                 - strategy
                 type: object
               completionTime:

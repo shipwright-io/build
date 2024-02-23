@@ -65,11 +65,19 @@ func (b *buildPrototype) ClusterBuildStrategy(name string) *buildPrototype {
 }
 
 func (b *buildPrototype) SourceCredentials(name string) *buildPrototype {
-	if name != "" {
-		if b.build.Spec.Source.GitSource == nil {
-			b.build.Spec.Source.GitSource = &buildv1beta1.Git{}
+	if name != "" && b.build.Spec.Source != nil {
+		switch b.build.Spec.Source.Type {
+		case buildv1beta1.OCIArtifactType:
+			if b.build.Spec.Source.OCIArtifact == nil {
+				b.build.Spec.Source.OCIArtifact = &buildv1beta1.OCIArtifact{}
+			}
+			b.build.Spec.Source.OCIArtifact.PullSecret = &name
+		case buildv1beta1.GitType:
+			if b.build.Spec.Source.Git == nil {
+				b.build.Spec.Source.Git = &buildv1beta1.Git{}
+			}
+			b.build.Spec.Source.Git.CloneSecret = &name
 		}
-		b.build.Spec.Source.GitSource.CloneSecret = &name
 	}
 
 	return b
@@ -81,21 +89,28 @@ func (b *buildPrototype) SourceType(sourceType string) *buildPrototype {
 }
 
 func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
-	if b.build.Spec.Source.GitSource == nil {
-		b.build.Spec.Source.GitSource = &buildv1beta1.Git{}
+	if b.build.Spec.Source == nil {
+		b.build.Spec.Source = &buildv1beta1.Source{}
+	}
+	if b.build.Spec.Source.Git == nil {
+		b.build.Spec.Source.Git = &buildv1beta1.Git{}
 	}
 	b.build.Spec.Source.Type = buildv1beta1.GitType
-	b.build.Spec.Source.GitSource.URL = repository
+	b.build.Spec.Source.Git.URL = repository
 	b.build.Spec.Source.OCIArtifact = nil
 	return b
 }
 
 func (b *buildPrototype) SourceBundle(image string) *buildPrototype {
+	if b.build.Spec.Source == nil {
+		b.build.Spec.Source = &buildv1beta1.Source{}
+	}
 	if b.build.Spec.Source.OCIArtifact == nil {
 		b.build.Spec.Source.OCIArtifact = &buildv1beta1.OCIArtifact{}
 	}
 	b.build.Spec.Source.Type = buildv1beta1.OCIArtifactType
 	b.build.Spec.Source.OCIArtifact.Image = image
+	b.build.Spec.Source.Git = nil
 	return b
 }
 
@@ -292,7 +307,7 @@ func (b *buildRunPrototype) ForBuild(build *buildv1beta1.Build) *buildRunPrototy
 }
 
 func (b *buildRunPrototype) WithBuildSpec(buildSpec *buildv1beta1.BuildSpec) *buildRunPrototype {
-	b.buildRun.Spec.Build.Build = buildSpec
+	b.buildRun.Spec.Build.Spec = buildSpec
 	return b
 }
 

@@ -2464,7 +2464,7 @@ spec:
                     description: ContextDir is a path to subfolder in the repo. Optional.
                     type: string
                   git:
-                    description: GitSource
+                    description: Git contains the details for the source of type Git
                     properties:
                       cloneSecret:
                         description: CloneSecret references a Secret that contains
@@ -2482,7 +2482,8 @@ spec:
                     - url
                     type: object
                   local:
-                    description: LocalSource
+                    description: Local contains the details for the source of type
+                      Local
                     properties:
                       name:
                         description: Name of the local step
@@ -2493,7 +2494,8 @@ spec:
                         type: string
                     type: object
                   ociArtifact:
-                    description: OCIArtifact
+                    description: OCIArtifact contains the details for the source of
+                      type OCIArtifact
                     properties:
                       image:
                         description: Image reference, i.e. quay.io/org/image:tag
@@ -2514,8 +2516,10 @@ spec:
                     type: object
                   type:
                     description: Type is the BuildSource qualifier, the type of the
-                      data-source.
+                      source.
                     type: string
+                required:
+                - type
                 type: object
               strategy:
                 description: Strategy references the BuildStrategy to use to build
@@ -4174,7 +4178,6 @@ spec:
                 type: array
             required:
             - output
-            - source
             - strategy
             type: object
           status:

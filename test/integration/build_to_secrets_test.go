@@ -222,7 +222,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			)
 			Expect(err).To(BeNil())
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.GitSource.CloneSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
 
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
@@ -236,14 +236,14 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			Expect(*buildObject.Status.Message).To(Equal("all validations succeeded"))
 
 			// delete a secret
-			Expect(tb.DeleteSecret(*buildObject.Spec.Source.GitSource.CloneSecret)).To(BeNil())
+			Expect(tb.DeleteSecret(*buildObject.Spec.Source.Git.CloneSecret)).To(BeNil())
 
 			// assert that the validation happened one more time
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
 			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecSourceSecretRefNotFound))
-			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Source.GitSource.CloneSecret)))
+			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Source.Git.CloneSecret)))
 		})
 
 		It("should validate when a missing secret is recreated", func() {
@@ -265,7 +265,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			// Status reason sometimes returns message "there are no secrets in namespace..."
 			// Expect(buildObject.Status.Reason).To(Equal(fmt.Sprintf("secret %s does not exist", buildObject.Spec.Source.Credentials.Name)))
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.GitSource.CloneSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
 
 			// generate resources
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
@@ -299,7 +299,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			)
 			Expect(err).To(BeNil())
 
-			specSourceSecret := tb.Catalog.SecretWithAnnotation(*firstBuildObject.Spec.Source.GitSource.CloneSecret, firstBuildObject.Namespace)
+			specSourceSecret := tb.Catalog.SecretWithAnnotation(*firstBuildObject.Spec.Source.Git.CloneSecret, firstBuildObject.Namespace)
 
 			Expect(tb.CreateSecret(specSourceSecret)).To(BeNil())
 
@@ -325,14 +325,14 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionFalse))
 			Expect(*o.Status.Reason).To(Equal(v1beta1.SpecSourceSecretRefNotFound))
-			Expect(*o.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *firstBuildObject.Spec.Source.GitSource.CloneSecret)))
+			Expect(*o.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *firstBuildObject.Spec.Source.Git.CloneSecret)))
 
 			// assert that the validation happened one more time
 			o, err = tb.GetBuildTillRegistration(secondBuildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionFalse))
 			Expect(*o.Status.Reason).To(Equal(v1beta1.SpecSourceSecretRefNotFound))
-			Expect(*o.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *secondBuildObject.Spec.Source.GitSource.CloneSecret)))
+			Expect(*o.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *secondBuildObject.Spec.Source.Git.CloneSecret)))
 		})
 		It("should validate the Builds when a missing secret is recreated", func() {
 			// populate Build related vars
@@ -365,7 +365,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
 
-			specSourceSecret := tb.Catalog.SecretWithAnnotation(*firstBuildObject.Spec.Source.GitSource.CloneSecret, firstBuildObject.Namespace)
+			specSourceSecret := tb.Catalog.SecretWithAnnotation(*firstBuildObject.Spec.Source.Git.CloneSecret, firstBuildObject.Namespace)
 
 			// generate resources
 			Expect(tb.CreateSecret(specSourceSecret)).To(BeNil())

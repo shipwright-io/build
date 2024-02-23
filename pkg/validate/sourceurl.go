@@ -31,12 +31,12 @@ func NewSourceURL(client client.Client, build *build.Build) *SourceURLRef {
 // that the spec.source.url exists. This validation only applies
 // to endpoints that do not require authentication.
 func (s SourceURLRef) ValidatePath(ctx context.Context) error {
-	if s.Build.Spec.Source.Type == build.GitType {
-		gitSource := s.Build.Spec.Source.GitSource
-		if gitSource.CloneSecret == nil {
+	if s.Build.Spec.Source != nil && s.Build.Spec.Source.Type == build.GitType && s.Build.Spec.Source.Git != nil {
+		Git := s.Build.Spec.Source.Git
+		if Git.CloneSecret == nil {
 			switch s.Build.GetAnnotations()[build.AnnotationBuildVerifyRepository] {
 			case "true":
-				if err := git.ValidateGitURLExists(ctx, gitSource.URL); err != nil {
+				if err := git.ValidateGitURLExists(ctx, Git.URL); err != nil {
 					s.MarkBuildStatus(s.Build, build.RemoteRepositoryUnreachable, err.Error())
 					return err
 				}

@@ -37,9 +37,9 @@ var _ = Describe("Credentials", func() {
 		BeforeEach(func() {
 			build = &buildv1beta1.Build{
 				Spec: buildv1beta1.BuildSpec{
-					Source: buildv1beta1.Source{
+					Source: &buildv1beta1.Source{
 						Type: buildv1beta1.GitType,
-						GitSource: &buildv1beta1.Git{
+						Git: &buildv1beta1.Git{
 							URL:         "a/b/c",
 							CloneSecret: pointer.String("secret_a"),
 						},
@@ -83,9 +83,9 @@ var _ = Describe("Credentials", func() {
 		BeforeEach(func() {
 			build = &buildv1beta1.Build{
 				Spec: buildv1beta1.BuildSpec{
-					Source: buildv1beta1.Source{
+					Source: &buildv1beta1.Source{
 						Type: buildv1beta1.GitType,
-						GitSource: &buildv1beta1.Git{
+						Git: &buildv1beta1.Git{
 							URL: "a/b/c",
 						},
 					},
@@ -121,9 +121,9 @@ var _ = Describe("Credentials", func() {
 		BeforeEach(func() {
 			build = &buildv1beta1.Build{
 				Spec: buildv1beta1.BuildSpec{
-					Source: buildv1beta1.Source{
+					Source: &buildv1beta1.Source{
 						Type: buildv1beta1.GitType,
-						GitSource: &buildv1beta1.Git{
+						Git: &buildv1beta1.Git{
 							URL:         "a/b/c",
 							CloneSecret: nil,
 						},

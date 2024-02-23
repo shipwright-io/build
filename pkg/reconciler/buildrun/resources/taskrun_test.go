@@ -77,7 +77,7 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Steps[0].Name).To(Equal("source-default"))
 				Expect(got.Steps[0].Command[0]).To(Equal("/ko-app/git"))
 				Expect(got.Steps[0].Args).To(Equal([]string{
-					"--url", build.Spec.Source.GitSource.URL,
+					"--url", build.Spec.Source.Git.URL,
 					"--target", "$(params.shp-source-root)",
 					"--result-file-commit-sha", "$(results.shp-source-default-commit-sha.path)",
 					"--result-file-commit-author", "$(results.shp-source-default-commit-author.path)",
@@ -131,11 +131,11 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(got.Params).To(utils.ContainNamedElement("shp-output-image"))
 				Expect(got.Params).To(utils.ContainNamedElement("shp-output-insecure"))
 
-				// legacy params
-				Expect(got.Params).ToNot(utils.ContainNamedElement("BUILDER_IMAGE")) // test build has no builder image
-				Expect(got.Params).To(utils.ContainNamedElement("CONTEXT_DIR"))
+				// legacy params have been removed
+				Expect(got.Params).ToNot(utils.ContainNamedElement("BUILDER_IMAGE"))
+				Expect(got.Params).ToNot(utils.ContainNamedElement("CONTEXT_DIR"))
 
-				Expect(len(got.Params)).To(Equal(6))
+				Expect(len(got.Params)).To(Equal(5))
 			})
 
 			It("should contain a step to mutate the image with single mutate args", func() {
@@ -382,15 +382,44 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 		})
 
+		Context("when Build and BuildRun have no source", func() {
+
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.BuildBSMinimalNoSource))
+				Expect(err).ToNot(HaveOccurred())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
+				Expect(err).ToNot(HaveOccurred())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			JustBeforeEach(func() {
+				taskRun, err := resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, "", buildStrategy)
+				Expect(err).ToNot(HaveOccurred())
+				got = taskRun.Spec.TaskSpec
+			})
+
+			It("should not contain a source step", func() {
+				sourceStepFound := false
+				for _, step := range got.Steps {
+					if strings.HasPrefix(step.Name, "source") {
+						sourceStepFound = true
+					}
+				}
+				Expect(sourceStepFound).To(BeFalse(), "Found unexpected source step")
+			})
+		})
 	})
 
 	Describe("Generate the TaskRun", func() {
 		var (
-			k8sDuration30s                                                            *metav1.Duration
-			k8sDuration1m                                                             *metav1.Duration
-			namespace, contextDir, outputPath, outputPathBuildRun, serviceAccountName string
-			got                                                                       *pipelineapi.TaskRun
-			err                                                                       error
+			k8sDuration30s                                                *metav1.Duration
+			k8sDuration1m                                                 *metav1.Duration
+			namespace, outputPath, outputPathBuildRun, serviceAccountName string
+			got                                                           *pipelineapi.TaskRun
+			err                                                           error
 		)
 		BeforeEach(func() {
 			duration, err := time.ParseDuration("30s")
@@ -405,7 +434,6 @@ var _ = Describe("GenerateTaskrun", func() {
 			}
 
 			namespace = "build-test"
-			contextDir = "docker-build"
 			outputPath = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
 			outputPathBuildRun = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2"
 			serviceAccountName = buildpacks + "-serviceaccount"
@@ -497,9 +525,6 @@ var _ = Describe("GenerateTaskrun", func() {
 				paramOutputImageFound := false
 				paramOutputInsecureFound := false
 
-				// legacy params
-				paramContextDirFound := false
-
 				for _, param := range params {
 					switch param.Name {
 					case "shp-source-root":
@@ -518,10 +543,6 @@ var _ = Describe("GenerateTaskrun", func() {
 						paramOutputInsecureFound = true
 						Expect(param.Value.StringVal).To(Equal("false"))
 
-					case "CONTEXT_DIR":
-						paramContextDirFound = true
-						Expect(param.Value.StringVal).To(Equal(contextDir))
-
 					default:
 						Fail(fmt.Sprintf("Unexpected param found: %s", param.Name))
 					}
@@ -531,7 +552,6 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(paramSourceContextFound).To(BeTrue())
 				Expect(paramOutputImageFound).To(BeTrue())
 				Expect(paramOutputInsecureFound).To(BeTrue())
-				Expect(paramContextDirFound).To(BeTrue())
 			})
 
 			It("should ensure resource replacements happen when needed", func() {

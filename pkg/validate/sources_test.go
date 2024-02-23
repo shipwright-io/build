@@ -25,9 +25,9 @@ var _ = Describe("SourcesRef", func() {
 		It("should successfully validate a build with source", func() {
 			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
-					Source: build.Source{
-						Type:      "Git",
-						GitSource: &build.Git{},
+					Source: &build.Source{
+						Type: "Git",
+						Git:  &build.Git{},
 					},
 				},
 			})
@@ -38,8 +38,8 @@ var _ = Describe("SourcesRef", func() {
 		It("should fail to validate if the type is not defined", func() {
 			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
-					Source: build.Source{
-						GitSource: &build.Git{},
+					Source: &build.Source{
+						Git: &build.Git{},
 					},
 				},
 			})
@@ -50,9 +50,9 @@ var _ = Describe("SourcesRef", func() {
 		It("should fail to validate if the type does not match the source git", func() {
 			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
-					Source: build.Source{
-						Type:      "OCI",
-						GitSource: &build.Git{},
+					Source: &build.Source{
+						Type: "OCI",
+						Git:  &build.Git{},
 					},
 				},
 			})

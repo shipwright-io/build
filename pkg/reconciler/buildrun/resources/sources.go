@@ -28,13 +28,12 @@ func isLocalCopyBuildSource(
 	build *buildv1beta1.Build,
 	buildRun *buildv1beta1.BuildRun,
 ) *buildv1beta1.Local {
-
 	if buildRun.Spec.Source != nil && buildRun.Spec.Source.Type == buildv1beta1.LocalType {
-		return buildRun.Spec.Source.LocalSource
+		return buildRun.Spec.Source.Local
 	}
 
-	if build.Spec.Source.Type == buildv1beta1.LocalType {
-		return build.Spec.Source.LocalSource
+	if build.Spec.Source != nil && build.Spec.Source.Type == buildv1beta1.LocalType {
+		return build.Spec.Source.Local
 	}
 
 	return nil
@@ -59,7 +58,7 @@ func AmendTaskSpecWithSources(
 ) {
 	if localCopy := isLocalCopyBuildSource(build, buildRun); localCopy != nil {
 		sources.AppendLocalCopyStep(cfg, taskSpec, localCopy.Timeout)
-	} else {
+	} else if build.Spec.Source != nil {
 
 		// create the step for spec.source, either Git or Bundle
 		switch build.Spec.Source.Type {
@@ -69,9 +68,9 @@ func AmendTaskSpecWithSources(
 				sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source.OCIArtifact, defaultSourceName)
 			}
 		case buildv1beta1.GitType:
-			if build.Spec.Source.GitSource != nil {
+			if build.Spec.Source.Git != nil {
 				appendSourceTimestampResult(taskSpec)
-				sources.AppendGitStep(cfg, taskSpec, *build.Spec.Source.GitSource, defaultSourceName)
+				sources.AppendGitStep(cfg, taskSpec, *build.Spec.Source.Git, defaultSourceName)
 			}
 		}
 	}
@@ -80,12 +79,15 @@ func AmendTaskSpecWithSources(
 func updateBuildRunStatusWithSourceResult(buildrun *buildv1beta1.BuildRun, results []pipelineapi.TaskRunResult) {
 	buildSpec := buildrun.Status.BuildSpec
 
-	// no results for HTTP sources yet
+	if buildSpec.Source == nil {
+		return
+	}
+
 	switch {
 	case buildSpec.Source.Type == buildv1beta1.OCIArtifactType && buildSpec.Source.OCIArtifact != nil:
 		sources.AppendBundleResult(buildrun, defaultSourceName, results)
 
-	case buildSpec.Source.Type == buildv1beta1.GitType && buildSpec.Source.GitSource != nil:
+	case buildSpec.Source.Type == buildv1beta1.GitType && buildSpec.Source.Git != nil:
 		sources.AppendGitResult(buildrun, defaultSourceName, results)
 	}
 

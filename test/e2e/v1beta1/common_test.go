@@ -96,20 +96,20 @@ func amendOutputCredentials(b *buildv1beta1.Build, secretName string) {
 	Logf("Amended object: name='%s', secret-ref='%s'", b.Name, secretName)
 }
 
-// amendSourceSecretName patch Build source.Credentials with secret name.
+// amendSourceSecretName patch Build source.Git.CloneSecret with secret name.
 func amendSourceSecretName(b *buildv1beta1.Build, secretName string) {
 	if secretName == "" {
 		return
 	}
-	b.Spec.Source.GitSource.CloneSecret = &secretName
+	b.Spec.Source.Git.CloneSecret = &secretName
 }
 
-// amendSourceURL patch Build source.URL with informed string.
+// amendSourceURL patch Build source.Git.URL with informed string.
 func amendSourceURL(b *buildv1beta1.Build, sourceURL string) {
 	if sourceURL == "" {
 		return
 	}
-	b.Spec.Source.GitSource.URL = sourceURL
+	b.Spec.Source.Git.URL = sourceURL
 }
 
 // amendBuild make changes on build object.

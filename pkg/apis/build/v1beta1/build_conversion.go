@@ -54,14 +54,6 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 		alphaBuild.ObjectMeta.Annotations[v1alpha1.AnnotationBuildRunDeletion] = strconv.FormatBool(*src.Spec.Retention.AtBuildDeletion)
 	}
 
-	// convert OCIArtifact to Bundle
-	if src.Spec.Source.OCIArtifact != nil {
-		alphaBuild.Spec.Source.BundleContainer = &v1alpha1.BundleContainer{
-			Image: src.Spec.Source.OCIArtifact.Image,
-			Prune: (*v1alpha1.PruneOption)(src.Spec.Source.OCIArtifact.Prune),
-		}
-	}
-
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&alphaBuild)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed structuring the newObject")
@@ -111,40 +103,44 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 
 func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 	// Handle BuildSpec Source
-	specSource := Source{}
 
 	// only interested on spec.sources as long as an item of the list
 	// is of the type LocalCopy. Otherwise, we move into bundle or git types.
 	index, isLocal := v1alpha1.IsLocalCopyType(orig.Sources)
 	if isLocal {
-		specSource.Type = LocalType
-		specSource.LocalSource = &Local{
-			Name:    orig.Sources[index].Name,
-			Timeout: orig.Sources[index].Timeout,
+		dest.Source = &Source{
+			Type: LocalType,
+			Local: &Local{
+				Name:    orig.Sources[index].Name,
+				Timeout: orig.Sources[index].Timeout,
+			},
+			ContextDir: orig.Source.ContextDir,
 		}
-	} else {
-		if orig.Source.BundleContainer != nil {
-			specSource.Type = OCIArtifactType
-			specSource.OCIArtifact = &OCIArtifact{
+	} else if orig.Source.BundleContainer != nil {
+		dest.Source = &Source{
+			Type: OCIArtifactType,
+			OCIArtifact: &OCIArtifact{
 				Image: orig.Source.BundleContainer.Image,
 				Prune: (*PruneOption)(orig.Source.BundleContainer.Prune),
-			}
-			if orig.Source.Credentials != nil {
-				specSource.OCIArtifact.PullSecret = &orig.Source.Credentials.Name
-			}
-		} else if orig.Source.URL != nil {
-			specSource.Type = GitType
-			specSource.GitSource = &Git{
+			},
+			ContextDir: orig.Source.ContextDir,
+		}
+		if orig.Source.Credentials != nil {
+			dest.Source.OCIArtifact.PullSecret = &orig.Source.Credentials.Name
+		}
+	} else if orig.Source.URL != nil {
+		dest.Source = &Source{
+			Type: GitType,
+			Git: &Git{
 				URL:      *orig.Source.URL,
 				Revision: orig.Source.Revision,
-			}
-			if orig.Source.Credentials != nil {
-				specSource.GitSource.CloneSecret = &orig.Source.Credentials.Name
-			}
+			},
+			ContextDir: orig.Source.ContextDir,
+		}
+		if orig.Source.Credentials != nil {
+			dest.Source.Git.CloneSecret = &orig.Source.Credentials.Name
 		}
 	}
-	specSource.ContextDir = orig.Source.ContextDir
-	dest.Source = specSource
 
 	// Handle BuildSpec Triggers
 	if orig.Trigger != nil {
@@ -232,11 +228,11 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 
 func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 	// Handle BuildSpec Sources or Source
-	if dest.Source.Type == LocalType && dest.Source.LocalSource != nil {
+	if dest.Source != nil && dest.Source.Type == LocalType && dest.Source.Local != nil {
 		bs.Sources = append(bs.Sources, v1alpha1.BuildSource{
-			Name:    dest.Source.LocalSource.Name,
+			Name:    dest.Source.Local.Name,
 			Type:    v1alpha1.LocalCopy,
-			Timeout: dest.Source.LocalSource.Timeout,
+			Timeout: dest.Source.Local.Timeout,
 		})
 	} else {
 		bs.Source = getAlphaBuildSource(*dest)
@@ -419,6 +415,11 @@ func convertToBetaTriggers(orig *v1alpha1.TriggerWhen) TriggerWhen {
 
 func getAlphaBuildSource(src BuildSpec) v1alpha1.Source {
 	source := v1alpha1.Source{}
+
+	if src.Source == nil {
+		return source
+	}
+
 	var credentials corev1.LocalObjectReference
 	var revision *string
 
@@ -434,14 +435,14 @@ func getAlphaBuildSource(src BuildSpec) v1alpha1.Source {
 			Prune: (*v1alpha1.PruneOption)(src.Source.OCIArtifact.Prune),
 		}
 	default:
-		if src.Source.GitSource != nil && src.Source.GitSource.CloneSecret != nil {
+		if src.Source.Git != nil && src.Source.Git.CloneSecret != nil {
 			credentials = corev1.LocalObjectReference{
-				Name: *src.Source.GitSource.CloneSecret,
+				Name: *src.Source.Git.CloneSecret,
 			}
 		}
-		if src.Source.GitSource != nil {
-			source.URL = &src.Source.GitSource.URL
-			revision = src.Source.GitSource.Revision
+		if src.Source.Git != nil {
+			source.URL = &src.Source.Git.URL
+			revision = src.Source.Git.Revision
 		}
 
 	}

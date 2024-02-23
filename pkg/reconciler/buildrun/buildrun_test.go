@@ -1330,8 +1330,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 						},
 						Spec: build.BuildRunSpec{
 							Build: build.ReferencedBuild{
-								Build: &build.BuildSpec{},
-								Name:  pointer.String("foobar"),
+								Spec: &build.BuildSpec{},
+								Name: pointer.String("foobar"),
 							},
 						},
 					}
@@ -1350,7 +1350,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						Spec: build.BuildRunSpec{
 							Output: &build.Image{Image: "foo:bar"},
 							Build: build.ReferencedBuild{
-								Build: &build.BuildSpec{},
+								Spec: &build.BuildSpec{},
 							},
 						},
 					}
@@ -1372,7 +1372,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 								SingleValue: &build.SingleValue{Value: pointer.String("bar")},
 							}},
 							Build: build.ReferencedBuild{
-								Build: &build.BuildSpec{},
+								Spec: &build.BuildSpec{},
 							},
 						},
 					}
@@ -1391,7 +1391,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						Spec: build.BuildRunSpec{
 							Env: []corev1.EnvVar{{Name: "foo", Value: "bar"}},
 							Build: build.ReferencedBuild{
-								Build: &build.BuildSpec{},
+								Spec: &build.BuildSpec{},
 							},
 						},
 					}
@@ -1410,7 +1410,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						Spec: build.BuildRunSpec{
 							Timeout: &metav1.Duration{Duration: time.Second},
 							Build: build.ReferencedBuild{
-								Build: &build.BuildSpec{},
+								Spec: &build.BuildSpec{},
 							},
 						},
 					}
@@ -1430,10 +1430,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 						},
 						Spec: build.BuildRunSpec{
 							Build: build.ReferencedBuild{
-								Build: &build.BuildSpec{
-									Source: build.Source{
+								Spec: &build.BuildSpec{
+									Source: &build.Source{
 										Type: build.GitType,
-										GitSource: &build.Git{
+										Git: &build.Git{
 											URL: "https://github.com/shipwright-io/sample-go.git",
 										},
 										ContextDir: pointer.String("source-build"),
