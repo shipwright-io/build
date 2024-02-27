@@ -31,12 +31,13 @@ func isLocalCopyBuildSource(
 
 	// Note: In v1alpha1 we will append all sources across builds and buildruns, and then return
 	// the first source of type Local.
-	if build.Spec.Source.Type == buildv1beta1.LocalType {
-		return build.Spec.Source.LocalSource
-	}
-
+	
 	if buildRun.Spec.Source != nil && buildRun.Spec.Source.Type == buildv1beta1.LocalType {
 		return buildRun.Spec.Source.LocalSource
+	}
+
+	if build.Spec.Source.Type == buildv1beta1.LocalType {
+		return build.Spec.Source.LocalSource
 	}
 
 	return nil
