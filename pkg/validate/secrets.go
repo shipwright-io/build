@@ -36,7 +36,7 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 	var missingSecrets []string
 	secret := &corev1.Secret{}
 
-	secretNames := s.buildCredentialserences()
+	secretNames := s.buildCredentialReferences()
 
 	for refSecret, secretType := range secretNames {
 		if err := s.Client.Get(ctx, types.NamespacedName{Name: refSecret, Namespace: s.Build.Namespace}, secret); err != nil && !apierrors.IsNotFound(err) {
@@ -58,7 +58,7 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 	return nil
 }
 
-func (s Credentials) buildCredentialserences() map[string]build.BuildReason {
+func (s Credentials) buildCredentialReferences() map[string]build.BuildReason {
 	// Validate if the referenced secrets exist in the namespace
 	secretRefMap := map[string]build.BuildReason{}
 	if s.Build.Spec.Output.PushSecret != nil {
