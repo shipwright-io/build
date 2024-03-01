@@ -12,7 +12,6 @@ import (
 	v1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -23,9 +22,9 @@ type FakeClusterBuildStrategies struct {
 	Fake *FakeShipwrightV1beta1
 }
 
-var clusterbuildstrategiesResource = schema.GroupVersionResource{Group: "shipwright.io", Version: "v1beta1", Resource: "clusterbuildstrategies"}
+var clusterbuildstrategiesResource = v1beta1.SchemeGroupVersion.WithResource("clusterbuildstrategies")
 
-var clusterbuildstrategiesKind = schema.GroupVersionKind{Group: "shipwright.io", Version: "v1beta1", Kind: "ClusterBuildStrategy"}
+var clusterbuildstrategiesKind = v1beta1.SchemeGroupVersion.WithKind("ClusterBuildStrategy")
 
 // Get takes name of the clusterBuildStrategy, and returns the corresponding clusterBuildStrategy object, and an error if there is any.
 func (c *FakeClusterBuildStrategies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ClusterBuildStrategy, err error) {

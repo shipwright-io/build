@@ -59,6 +59,9 @@ const (
 	defaultResolverTypeKey               = "default-resolver-type"
 )
 
+// DefaultConfig holds all the default configurations for the config.
+var DefaultConfig, _ = NewDefaultsFromMap(map[string]string{})
+
 // Defaults holds the default configurations
 // +k8s:deepcopy-gen=true
 type Defaults struct {
@@ -67,7 +70,7 @@ type Defaults struct {
 	DefaultManagedByLabelValue        string
 	DefaultPodTemplate                *pod.Template
 	DefaultAAPodTemplate              *pod.AffinityAssistantTemplate
-	DefaultCloudEventsSink            string
+	DefaultCloudEventsSink            string // Deprecated. Use the events package instead
 	DefaultTaskRunWorkspaceBinding    string
 	DefaultMaxMatrixCombinationsCount int
 	DefaultForbiddenEnv               []string

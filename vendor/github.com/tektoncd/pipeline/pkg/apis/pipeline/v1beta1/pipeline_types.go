@@ -39,10 +39,12 @@ const (
 // +genclient:noStatus
 // +genreconciler:krshapedlogic=false
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
 
 // Pipeline describes a list of Tasks to execute. It expresses how outputs
 // of tasks feed into inputs of subsequent tasks.
-// +k8s:openapi-gen=true
+//
+// Deprecated: Please use v1.Pipeline instead.
 type Pipeline struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -215,7 +217,6 @@ type PipelineTask struct {
 	Workspaces []WorkspacePipelineTaskBinding `json:"workspaces,omitempty"`
 
 	// Time after which the TaskRun times out. Defaults to 1 hour.
-	// Specified TaskRun timeout should be less than 24h.
 	// Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration
 	// +optional
 	Timeout *metav1.Duration `json:"timeout,omitempty"`

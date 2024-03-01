@@ -680,7 +680,7 @@
       }
     },
     "v1beta1.Pipeline": {
-      "description": "Pipeline describes a list of Tasks to execute. It expresses how outputs of tasks feed into inputs of subsequent tasks.",
+      "description": "Pipeline describes a list of Tasks to execute. It expresses how outputs of tasks feed into inputs of subsequent tasks.\n\nDeprecated: Please use v1.Pipeline instead.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -834,7 +834,7 @@
       }
     },
     "v1beta1.PipelineRun": {
-      "description": "PipelineRun represents a single execution of a Pipeline. PipelineRuns are how the graph of Tasks declared in a Pipeline are executed; they specify inputs to Pipelines such as parameter values and capture operational aspects of the Tasks execution such as service account and tolerations. Creating a PipelineRun creates TaskRuns for Tasks in the referenced Pipeline.",
+      "description": "PipelineRun represents a single execution of a Pipeline. PipelineRuns are how the graph of Tasks declared in a Pipeline are executed; they specify inputs to Pipelines such as parameter values and capture operational aspects of the Tasks execution such as service account and tolerations. Creating a PipelineRun creates TaskRuns for Tasks in the referenced Pipeline.\n\nDeprecated: Please use v1.PipelineRun instead.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -1314,7 +1314,7 @@
           "$ref": "#/definitions/v1beta1.EmbeddedTask"
         },
         "timeout": {
-          "description": "Time after which the TaskRun times out. Defaults to 1 hour. Specified TaskRun timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
+          "description": "Time after which the TaskRun times out. Defaults to 1 hour. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
           "$ref": "#/definitions/v1.Duration"
         },
         "when": {
@@ -1630,7 +1630,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/v1beta1.Param"
+            "$ref": "#/definitions/v1.Param"
           },
           "x-kubernetes-list-type": "atomic"
         }
@@ -1675,11 +1675,11 @@
         },
         "refSource": {
           "description": "RefSource is the source reference of the remote data that records the url, digest and the entrypoint.",
-          "$ref": "#/definitions/v1beta1.RefSource"
+          "$ref": "#/definitions/v1.RefSource"
         },
         "source": {
           "description": "Deprecated: Use RefSource instead",
-          "$ref": "#/definitions/v1beta1.ConfigSource"
+          "$ref": "#/definitions/v1.RefSource"
         }
       }
     },
@@ -1699,11 +1699,11 @@
         },
         "refSource": {
           "description": "RefSource is the source reference of the remote data that records the url, digest and the entrypoint.",
-          "$ref": "#/definitions/v1beta1.RefSource"
+          "$ref": "#/definitions/v1.RefSource"
         },
         "source": {
           "description": "Deprecated: Use RefSource instead",
-          "$ref": "#/definitions/v1beta1.ConfigSource"
+          "$ref": "#/definitions/v1.RefSource"
         }
       }
     },
@@ -2329,7 +2329,7 @@
       }
     },
     "v1beta1.Task": {
-      "description": "Task represents a collection of sequential steps that are run as part of a Pipeline using a set of inputs and producing a set of outputs. Tasks execute when TaskRuns are created that provide the input parameters and resources and output resources the Task requires.",
+      "description": "Task represents a collection of sequential steps that are run as part of a Pipeline using a set of inputs and producing a set of outputs. Tasks execute when TaskRuns are created that provide the input parameters and resources and output resources the Task requires.\n\nDeprecated: Please use v1.Task instead.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -2515,7 +2515,7 @@
       }
     },
     "v1beta1.TaskRun": {
-      "description": "TaskRun represents a single execution of a Task. TaskRuns are how the steps specified in a Task are executed; they specify the parameters and resources used to run the steps in a Task.",
+      "description": "TaskRun represents a single execution of a Task. TaskRuns are how the steps specified in a Task are executed; they specify the parameters and resources used to run the steps in a Task.\n\nDeprecated: Please use v1.TaskRun instead.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -2756,7 +2756,7 @@
           "$ref": "#/definitions/v1beta1.TaskSpec"
         },
         "timeout": {
-          "description": "Time after which one retry attempt times out. Defaults to 1 hour. Specified build timeout should be less than 24h. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
+          "description": "Time after which one retry attempt times out. Defaults to 1 hour. Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
           "$ref": "#/definitions/v1.Duration"
         },
         "workspaces": {

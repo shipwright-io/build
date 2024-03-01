@@ -57,8 +57,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.25.16
-          - v1.28.6
+          - v1.27.11
+          - v1.29.2
       max-parallel: 2
     runs-on: ubuntu-latest
     steps:
@@ -73,7 +73,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.15.1
+          version: v0.15.2
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -81,7 +81,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.21.0
+          version: v0.22.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           wait: 120s
@@ -125,8 +125,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.25.16
-          - v1.28.6
+          - v1.27.11
+          - v1.29.2
       max-parallel: 2
     runs-on: ubuntu-latest
     steps:
@@ -155,7 +155,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.21.0
+          version: v0.22.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           config: test/kind/config.yaml
@@ -191,7 +191,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.6
         with:
-          version: v0.15.1
+          version: v0.15.2
       - name: Install Shipwright Build
         run: |
           make install-controller-kind

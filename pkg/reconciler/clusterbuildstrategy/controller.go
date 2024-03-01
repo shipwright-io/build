@@ -40,5 +40,5 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource ClusterBuildStrategy
-	return c.Watch(&source.Kind{Type: &buildv1beta1.ClusterBuildStrategy{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.ClusterBuildStrategy{}), &handler.EnqueueRequestForObject{})
 }

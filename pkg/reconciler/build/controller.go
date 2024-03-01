@@ -119,7 +119,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(&source.Kind{Type: &build.Build{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &build.Build{}), &handler.EnqueueRequestForObject{}, pred); err != nil {
 		return err
 	}
 
@@ -157,7 +157,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		},
 	}
 
-	return c.Watch(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 		secret := o.(*corev1.Secret)
 
 		buildList := &build.BuildList{}
