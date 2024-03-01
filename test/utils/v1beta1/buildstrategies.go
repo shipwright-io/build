@@ -5,8 +5,6 @@
 package utils
 
 import (
-	"context"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -18,7 +16,7 @@ import (
 func (t *TestBuild) CreateBuildStrategy(bs *v1beta1.BuildStrategy) error {
 	bsInterface := t.BuildClientSet.ShipwrightV1beta1().BuildStrategies(t.Namespace)
 
-	_, err := bsInterface.Create(context.TODO(), bs, metav1.CreateOptions{})
+	_, err := bsInterface.Create(t.Context, bs, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -29,5 +27,5 @@ func (t *TestBuild) CreateBuildStrategy(bs *v1beta1.BuildStrategy) error {
 func (t *TestBuild) DeleteBuildStrategy(name string) error {
 	bsInterface := t.BuildClientSet.ShipwrightV1beta1().BuildStrategies(t.Namespace)
 
-	return bsInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
+	return bsInterface.Delete(t.Context, name, metav1.DeleteOptions{})
 }

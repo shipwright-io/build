@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -22,51 +23,51 @@ import (
 )
 
 func (t *TestBuild) LookupSecret(entity types.NamespacedName) (*corev1.Secret, error) {
-	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
+	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.Clientset.
 			CoreV1().
 			Secrets(entity.Namespace).
-			Get(t.Context, entity.Name, metav1.GetOptions{})
+			Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*corev1.Secret), err
 }
 
 func (t *TestBuild) LookupPod(entity types.NamespacedName) (*corev1.Pod, error) {
-	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
+	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.Clientset.
 			CoreV1().
 			Pods(entity.Namespace).
-			Get(t.Context, entity.Name, metav1.GetOptions{})
+			Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*corev1.Pod), err
 }
 
 func (t *TestBuild) LookupBuild(entity types.NamespacedName) (*buildv1alpha1.Build, error) {
-	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
+	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.BuildClientSet.ShipwrightV1alpha1().
-			Builds(entity.Namespace).Get(t.Context, entity.Name, metav1.GetOptions{})
+			Builds(entity.Namespace).Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*buildv1alpha1.Build), err
 }
 
 func (t *TestBuild) LookupBuildRun(entity types.NamespacedName) (*buildv1alpha1.BuildRun, error) {
-	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
+	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.BuildClientSet.ShipwrightV1alpha1().
-			BuildRuns(entity.Namespace).Get(t.Context, entity.Name, metav1.GetOptions{})
+			BuildRuns(entity.Namespace).Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*buildv1alpha1.BuildRun), err
 }
 
 func (t *TestBuild) LookupTaskRun(entity types.NamespacedName) (*pipelineapi.TaskRun, error) {
-	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
+	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.PipelineClientSet.
 			TektonV1().
 			TaskRuns(entity.Namespace).
-			Get(t.Context, entity.Name, metav1.GetOptions{})
+			Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*pipelineapi.TaskRun), err
@@ -81,11 +82,11 @@ func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1alpha1.BuildRun)
 		return t.LookupTaskRun(types.NamespacedName{Namespace: buildRun.Namespace, Name: *buildRun.Status.LatestTaskRunRef})
 	}
 
-	tmp, err := lookupRuntimeObject(func() (runtime.Object, error) {
+	tmp, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.PipelineClientSet.
 			TektonV1().
 			TaskRuns(buildRun.Namespace).
-			List(t.Context, metav1.ListOptions{
+			List(ctx, metav1.ListOptions{
 				LabelSelector: labels.SelectorFromSet(
 					map[string]string{
 						buildv1alpha1.LabelBuildRun: buildRun.Name,
@@ -111,19 +112,19 @@ func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1alpha1.BuildRun)
 }
 
 func (t *TestBuild) LookupServiceAccount(entity types.NamespacedName) (*corev1.ServiceAccount, error) {
-	result, err := lookupRuntimeObject(func() (runtime.Object, error) {
+	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.Clientset.
 			CoreV1().
 			ServiceAccounts(entity.Namespace).
-			Get(t.Context, entity.Name, metav1.GetOptions{})
+			Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
 	return result.(*corev1.ServiceAccount), err
 }
 
-func lookupRuntimeObject(f func() (runtime.Object, error)) (result runtime.Object, err error) {
-	err = wait.PollImmediate(4*time.Second, 60*time.Second, func() (bool, error) {
-		result, err = f()
+func (t *TestBuild) lookupRuntimeObject(f func(ctx context.Context) (runtime.Object, error)) (result runtime.Object, err error) {
+	err = wait.PollUntilContextTimeout(t.Context, 4*time.Second, 60*time.Second, true, func(ctx context.Context) (bool, error) {
+		result, err = f(ctx)
 		if err != nil {
 			// check if we have an error that we want to retry
 			if isRetryableError(err) {

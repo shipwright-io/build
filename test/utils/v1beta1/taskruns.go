@@ -26,7 +26,7 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*pipelineapi.Ta
 
 	trInterface := t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace)
 
-	trList, err := trInterface.List(context.TODO(), metav1.ListOptions{
+	trList, err := trInterface.List(t.Context, metav1.ListOptions{
 		LabelSelector: taskRunLabelSelector,
 	})
 	if err != nil {
@@ -55,7 +55,7 @@ func (t *TestBuild) UpdateTaskRun(name string, apply func(tr *pipelineapi.TaskRu
 
 		apply(tr)
 
-		tr, err = t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace).Update(context.TODO(), tr, metav1.UpdateOptions{})
+		tr, err = t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace).Update(t.Context, tr, metav1.UpdateOptions{})
 		if err == nil {
 			return tr, nil
 		}
@@ -87,7 +87,7 @@ func (t *TestBuild) GetTRReason(buildRunName string) (string, error) {
 // GetTRTillDesiredReason polls until a TaskRun matches a desired Reason
 // or it exits if an error happen or a timeout is reach.
 func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) (trReason string, err error) {
-	err = wait.PollImmediate(t.Interval, t.TimeOut, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, func(_ context.Context) (bool, error) {
 		trReason, err = t.GetTRReason(buildRunName)
 		if err != nil {
 			return false, err
@@ -107,7 +107,7 @@ func (t *TestBuild) GetTRTillDesiredReason(buildRunName string, reason string) (
 func (t *TestBuild) DeleteTR(name string) error {
 	trInterface := t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace)
 
-	if err := trInterface.Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
+	if err := trInterface.Delete(t.Context, name, metav1.DeleteOptions{}); err != nil {
 		return err
 	}
 

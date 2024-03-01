@@ -24,17 +24,17 @@ func (t *TestBuild) CreateNamespace() error {
 			Name: t.Namespace,
 		},
 	}
-	_, err := client.Create(context.TODO(), ns, metav1.CreateOptions{})
+	_, err := client.Create(t.Context, ns, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
 	// wait for the default service account to exist
-	pollServiceAccount := func() (bool, error) {
+	pollServiceAccount := func(ctx context.Context) (bool, error) {
 
 		serviceAccountInterface := t.Clientset.CoreV1().ServiceAccounts(t.Namespace)
 
-		_, err := serviceAccountInterface.Get(context.TODO(), "default", metav1.GetOptions{})
+		_, err := serviceAccountInterface.Get(ctx, "default", metav1.GetOptions{})
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return false, err
@@ -45,14 +45,14 @@ func (t *TestBuild) CreateNamespace() error {
 		return true, nil
 	}
 
-	return wait.PollImmediate(t.Interval, t.TimeOut, pollServiceAccount)
+	return wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollServiceAccount)
 }
 
 // DeleteNamespace deletes the namespace with the current test name
 func (t *TestBuild) DeleteNamespace() error {
 	client := t.Clientset.CoreV1().Namespaces()
 
-	if err := client.Delete(context.TODO(), t.Namespace, metav1.DeleteOptions{}); err != nil {
+	if err := client.Delete(t.Context, t.Namespace, metav1.DeleteOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
@@ -60,14 +60,14 @@ func (t *TestBuild) DeleteNamespace() error {
 	}
 
 	// wait for the namespace to be deleted
-	pollNamespace := func() (bool, error) {
+	pollNamespace := func(ctx context.Context) (bool, error) {
 
-		if _, err := client.Get(context.TODO(), t.Namespace, metav1.GetOptions{}); err != nil && apierrors.IsNotFound(err) {
+		if _, err := client.Get(ctx, t.Namespace, metav1.GetOptions{}); err != nil && apierrors.IsNotFound(err) {
 			return true, nil
 		}
 
 		return false, nil
 	}
 
-	return wait.PollImmediate(t.Interval, 5*time.Second, pollNamespace)
+	return wait.PollUntilContextTimeout(t.Context, t.Interval, 5*time.Second, true, pollNamespace)
 }
