@@ -110,7 +110,9 @@ type BuildSpec struct {
 	// Source refers to the location where the source code is,
 	// this could be a git repository, a local source or an oci
 	// artifact
-	Source Source `json:"source"`
+	//
+	// +optional
+	Source *Source `json:"source"`
 
 	// Trigger defines the scenarios where a new build should be triggered.
 	//
@@ -137,6 +139,7 @@ type BuildSpec struct {
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 
 	// Env contains additional environment variables that should be passed to the build container
+	//
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
@@ -147,6 +150,7 @@ type BuildSpec struct {
 
 	// Volumes contains volume Overrides of the BuildStrategy volumes in case those are allowed
 	// to be overridden. Must only contain volumes that exist in the corresponding BuildStrategy
+	//
 	// +optional
 	Volumes []BuildVolume `json:"volumes,omitempty"`
 }
@@ -278,14 +282,18 @@ func init() {
 
 // GetSourceCredentials returns the secret name for a Build Source
 func (b Build) GetSourceCredentials() *string {
+	if b.Spec.Source == nil {
+		return nil
+	}
+
 	switch b.Spec.Source.Type {
 	case OCIArtifactType:
 		if b.Spec.Source.OCIArtifact != nil && b.Spec.Source.OCIArtifact.PullSecret != nil {
 			return b.Spec.Source.OCIArtifact.PullSecret
 		}
 	default:
-		if b.Spec.Source.GitSource != nil && b.Spec.Source.GitSource.CloneSecret != nil {
-			return b.Spec.Source.GitSource.CloneSecret
+		if b.Spec.Source.Git != nil && b.Spec.Source.Git.CloneSecret != nil {
+			return b.Spec.Source.Git.CloneSecret
 		}
 	}
 	return nil

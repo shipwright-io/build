@@ -30,9 +30,9 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	alphaBuildRun.ObjectMeta = src.ObjectMeta
 
 	// BuildRunSpec BuildSpec
-	if src.Spec.Build.Build != nil {
+	if src.Spec.Build.Spec != nil {
 		newBuildSpec := v1alpha1.BuildSpec{}
-		if err := src.Spec.Build.Build.ConvertTo(&newBuildSpec); err != nil {
+		if err := src.Spec.Build.Spec.ConvertTo(&newBuildSpec); err != nil {
 			return err
 		}
 		alphaBuildRun.Spec.BuildSpec = &newBuildSpec
@@ -43,11 +43,11 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	}
 
 	// BuildRunSpec Sources
-	if src.Spec.Source != nil && src.Spec.Source.Type == LocalType && src.Spec.Source.LocalSource != nil {
+	if src.Spec.Source != nil && src.Spec.Source.Type == LocalType && src.Spec.Source.Local != nil {
 		alphaBuildRun.Spec.Sources = append(alphaBuildRun.Spec.Sources, v1alpha1.BuildSource{
-			Name:    src.Spec.Source.LocalSource.Name,
+			Name:    src.Spec.Source.Local.Name,
 			Type:    v1alpha1.LocalCopy,
-			Timeout: src.Spec.Source.LocalSource.Timeout,
+			Timeout: src.Spec.Source.Local.Timeout,
 		})
 	}
 
@@ -255,8 +255,8 @@ func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
 
 	// BuildRunSpec BuildSpec
 	if orig.BuildSpec != nil {
-		dest.Build.Build = &BuildSpec{}
-		dest.Build.Build.ConvertFrom(orig.BuildSpec)
+		dest.Build.Spec = &BuildSpec{}
+		dest.Build.Spec.ConvertFrom(orig.BuildSpec)
 	}
 	if orig.BuildRef != nil {
 		dest.Build.Name = &orig.BuildRef.Name
@@ -268,7 +268,7 @@ func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
 	if isLocal {
 		dest.Source = &BuildRunSource{
 			Type: LocalType,
-			LocalSource: &Local{
+			Local: &Local{
 				Name:    orig.Sources[index].Name,
 				Timeout: orig.Sources[index].Timeout,
 			},

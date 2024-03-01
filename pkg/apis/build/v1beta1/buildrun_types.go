@@ -21,10 +21,10 @@ const (
 )
 
 type ReferencedBuild struct {
-	// Build refers to an embedded build specification
+	// Spec refers to an embedded build specification
 	//
 	// +optional
-	Build *BuildSpec `json:"spec,omitempty"`
+	Spec *BuildSpec `json:"spec,omitempty"`
 
 	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
 	//

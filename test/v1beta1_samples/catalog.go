@@ -98,8 +98,8 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 			Annotations: map[string]string{build.AnnotationBuildVerifyRepository: "false"},
 		},
 		Spec: build.BuildSpec{
-			Source: build.Source{
-				GitSource: &build.Git{
+			Source: &build.Source{
+				Git: &build.Git{
 					URL: "foobar",
 				},
 				Type: build.GitType,
@@ -124,8 +124,8 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.Source{
-				GitSource: &build.Git{
+			Source: &build.Source{
+				Git: &build.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
 				Type: build.GitType,
@@ -152,8 +152,8 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.Source{
-				GitSource: &build.Git{
+			Source: &build.Source{
+				Git: &build.Git{
 					URL:         "https://github.com/shipwright-io/sample-go",
 					CloneSecret: &secret,
 				},
@@ -179,8 +179,8 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.Source{
-				GitSource: &build.Git{
+			Source: &build.Source{
+				Git: &build.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
 				Type: build.GitType,
@@ -201,8 +201,8 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.Source{
-				GitSource: &build.Git{
+			Source: &build.Source{
+				Git: &build.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
 				Type: build.GitType,
@@ -222,8 +222,8 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 			Namespace: ns,
 		},
 		Spec: build.BuildSpec{
-			Source: build.Source{
-				GitSource: &build.Git{
+			Source: &build.Source{
+				Git: &build.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
 				Type: build.GitType,
@@ -1071,7 +1071,7 @@ func (c *Catalog) LoadStandAloneBuildRunWithNameAndStrategy(name string, strateg
 		return nil, err
 	}
 	b.Name = name
-	b.Spec.Build.Build.Strategy = build.Strategy{Kind: (*build.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name}
+	b.Spec.Build.Spec.Strategy = build.Strategy{Kind: (*build.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name}
 
 	return b, nil
 }

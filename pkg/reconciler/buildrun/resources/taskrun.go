@@ -30,29 +30,7 @@ const (
 	paramSourceContext  = "source-context"
 
 	workspaceSource = "source"
-
-	inputParamContextDir = "CONTEXT_DIR"
 )
-
-// getStringTransformations gets us MANDATORY replacements using
-// a poor man's templating mechanism - TODO: Use golang templating
-func getStringTransformations(fullText string) string {
-
-	stringTransformations := map[string]string{
-		// this will be removed, build strategy author should use $(params.shp-output-image) directly
-		"$(build.output.image)": fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage),
-
-		// this will be removed, build strategy author should use $(params.shp-source-context); it is still needed by the ko build
-		// strategy that mis-uses this setting to store the path to the main package; requires strategy parameter support to get rid
-		"$(build.source.contextDir)": fmt.Sprintf("$(inputs.params.%s)", inputParamContextDir),
-	}
-
-	// Run the text through all possible replacements
-	for k, v := range stringTransformations {
-		fullText = strings.ReplaceAll(fullText, k, v)
-	}
-	return fullText
-}
 
 // GenerateTaskSpec creates Tekton TaskRun spec to be used for a build run
 func GenerateTaskSpec(
@@ -65,16 +43,6 @@ func GenerateTaskSpec(
 ) (*pipelineapi.TaskSpec, error) {
 	generatedTaskSpec := pipelineapi.TaskSpec{
 		Params: []pipelineapi.ParamSpec{
-			{
-				// CONTEXT_DIR comes from the git source specification
-				// in the Build object
-				Description: "The root of the code",
-				Name:        inputParamContextDir,
-				Default: &pipelineapi.ParamValue{
-					Type:      pipelineapi.ParamTypeString,
-					StringVal: ".",
-				},
-			},
 			{
 				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
 				Description: "The URL of the image that the build produces",
@@ -157,18 +125,6 @@ func GenerateTaskSpec(
 	// define the steps coming from the build strategy
 	for _, containerValue := range buildSteps {
 
-		var taskCommand []string
-		for _, buildStrategyCommandPart := range containerValue.Command {
-			taskCommand = append(taskCommand, getStringTransformations(buildStrategyCommandPart))
-		}
-
-		var taskArgs []string
-		for _, buildStrategyArgPart := range containerValue.Args {
-			taskArgs = append(taskArgs, getStringTransformations(buildStrategyArgPart))
-		}
-
-		taskImage := getStringTransformations(containerValue.Image)
-
 		// Any collision between the env vars in the Container step and those in the Build/BuildRun
 		// will result in an error and cause a failed TaskRun
 		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
@@ -177,12 +133,12 @@ func GenerateTaskSpec(
 		}
 
 		step := pipelineapi.Step{
-			Image:            taskImage,
+			Image:            containerValue.Image,
 			ImagePullPolicy:  containerValue.ImagePullPolicy,
 			Name:             containerValue.Name,
 			VolumeMounts:     containerValue.VolumeMounts,
-			Command:          taskCommand,
-			Args:             taskArgs,
+			Command:          containerValue.Command,
+			Args:             containerValue.Args,
 			SecurityContext:  containerValue.SecurityContext,
 			WorkingDir:       containerValue.WorkingDir,
 			ComputeResources: containerValue.Resources,
@@ -325,14 +281,7 @@ func GenerateTaskRun(
 		},
 	}
 
-	if build.Spec.Source.ContextDir != nil {
-		params = append(params, pipelineapi.Param{
-			Name: inputParamContextDir,
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: *build.Spec.Source.ContextDir,
-			},
-		})
+	if build.Spec.Source != nil && build.Spec.Source.ContextDir != nil {
 		params = append(params, pipelineapi.Param{
 			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
 			Value: pipelineapi.ParamValue{

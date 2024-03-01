@@ -152,7 +152,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 				// When the build(spec) is embedded in the buildrun, the now
 				// transient/volatile build resource needs to be validated first
-				case buildRun.Spec.Build.Build != nil:
+				case buildRun.Spec.Build.Spec != nil:
 					err := validate.All(ctx,
 						validate.NewSourceURL(r.client, build),
 						validate.NewCredentials(r.client, build),

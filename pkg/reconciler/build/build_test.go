@@ -83,7 +83,7 @@ var _ = Describe("Reconcile Build", func() {
 	Describe("Reconcile", func() {
 		Context("when source secret is specified", func() {
 			It("fails when the secret does not exist", func() {
-				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("non-existing")
+				buildSample.Spec.Source.Git.CloneSecret = pointer.String("non-existing")
 
 				buildSample.Spec.Output.PushSecret = nil
 
@@ -96,7 +96,7 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("succeeds when the secret exists foobar", func() {
-				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("existing")
+				buildSample.Spec.Source.Git.CloneSecret = pointer.String("existing")
 				buildSample.Spec.Output.PushSecret = nil
 
 				// Fake some client Get calls and ensure we populate all
@@ -162,7 +162,7 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when source secret and output secret are specified", func() {
 			It("fails when both secrets do not exist", func() {
-				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("non-existing-source")
+				buildSample.Spec.Source.Git.CloneSecret = pointer.String("non-existing-source")
 				buildSample.Spec.Output.PushSecret = pointer.String("non-existing-output")
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.MultipleSecretRefNotFound, "missing secrets are non-existing-output,non-existing-source")
@@ -312,7 +312,7 @@ var _ = Describe("Reconcile Build", func() {
 		Context("when source URL is specified", func() {
 			// validate file protocol
 			It("fails when source URL is invalid", func() {
-				buildSample.Spec.Source.GitSource.URL = "foobar"
+				buildSample.Spec.Source.Git.URL = "foobar"
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -326,7 +326,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// validate https protocol
 			It("fails when public source URL is unreachable", func() {
-				buildSample.Spec.Source.GitSource.URL = "https://github.com/shipwright-io/sample-go-fake"
+				buildSample.Spec.Source.Git.URL = "https://github.com/shipwright-io/sample-go-fake"
 				buildSample.SetAnnotations(map[string]string{
 					build.AnnotationBuildVerifyRepository: "true",
 				})
@@ -341,7 +341,7 @@ var _ = Describe("Reconcile Build", func() {
 
 			// skip validation because of empty sourceURL annotation
 			It("succeed when source URL is invalid because source annotation is empty", func() {
-				buildSample.Spec.Source.GitSource.URL = "foobar"
+				buildSample.Spec.Source.Git.URL = "foobar"
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -392,8 +392,8 @@ var _ = Describe("Reconcile Build", func() {
 			// skip validation because build references a sourceURL secret
 			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
 				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
-				buildSample.Spec.Source.GitSource.URL = "https://github.yourco.com/org/build-fake"
-				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String(registrySecret)
+				buildSample.Spec.Source.Git.URL = "https://github.yourco.com/org/build-fake"
+				buildSample.Spec.Source.Git.CloneSecret = pointer.String(registrySecret)
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -420,7 +420,7 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when environment variables are specified", func() {
 			JustBeforeEach(func() {
-				buildSample.Spec.Source.GitSource.CloneSecret = pointer.String("existing")
+				buildSample.Spec.Source.Git.CloneSecret = pointer.String("existing")
 				buildSample.Spec.Output.PushSecret = nil
 
 				// Fake some client Get calls and ensure we populate all

@@ -137,7 +137,7 @@ var _ = Describe("Build Resource", func() {
 			},
 			Spec: build.BuildRunSpec{
 				Build: build.ReferencedBuild{
-					Build: &build.BuildSpec{
+					Spec: &build.BuildSpec{
 						Env: []v1.EnvVar{{Name: "foo", Value: "bar"}},
 					},
 				},

@@ -46,10 +46,10 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
 				Spec: v1beta1.BuildRunSpec{
 					Build: v1beta1.ReferencedBuild{
-						Build: &v1beta1.BuildSpec{
-							Source: v1beta1.Source{
+						Spec: &v1beta1.BuildSpec{
+							Source: &v1beta1.Source{
 								Type: v1beta1.GitType,
-								GitSource: &v1beta1.Git{
+								Git: &v1beta1.Git{
 									URL:      "https://github.com/shipwright-io/sample-go",
 									Revision: pointer.String("v0.1.0"),
 								},
@@ -83,12 +83,12 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
 				Spec: v1beta1.BuildRunSpec{
 					Build: v1beta1.ReferencedBuild{
-						Build: &v1beta1.BuildSpec{
+						Spec: &v1beta1.BuildSpec{
 							Strategy: v1beta1.Strategy{
 								Kind: &cbs,
 								Name: strategy.Name,
 							},
-							Source: v1beta1.Source{
+							Source: &v1beta1.Source{
 								Type: v1beta1.OCIArtifactType,
 								OCIArtifact: &v1beta1.OCIArtifact{
 									Image: "ghcr.io/shipwright-io/sample-go/source-bundle@sha256:9a5e264c19980387b8416e0ffa7460488272fb8a6a56127c657edaa2682daab2",

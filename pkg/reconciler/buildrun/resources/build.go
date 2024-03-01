@@ -35,11 +35,11 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 
 	// Option #2: BuildSpec is specified
 	// The build specification is embedded in the BuildRun itself, create a transient Build resource.
-	if buildRun.Spec.Build.Build != nil {
+	if buildRun.Spec.Build.Spec != nil {
 		build.Name = ""
 		build.Namespace = buildRun.Namespace
 		build.Status = buildv1beta1.BuildStatus{}
-		buildRun.Spec.Build.Build.DeepCopyInto(&build.Spec)
+		buildRun.Spec.Build.Spec.DeepCopyInto(&build.Spec)
 		return nil
 	}
 

@@ -242,7 +242,7 @@ request:
 			// Use ComparableTo and assert the whole object
 			Expect(build).To(BeComparableTo(desiredBuild))
 		})
-		It("converts for spec source GitSource type, strategy, params and output", func() {
+		It("converts for spec source Git type, strategy, params and output", func() {
 			// Create the yaml in v1beta1
 			buildTemplate := `kind: ConversionReview
 apiVersion: %s
@@ -367,7 +367,7 @@ request:
 			// Use ComparableTo and assert the whole object
 			Expect(build).To(BeComparableTo(desiredBuild))
 		})
-		It("converts for spec source GitSource type, strategy, retention and volumes", func() {
+		It("converts for spec source Git type, strategy, retention and volumes", func() {
 			limit := uint(10)
 			// Create the yaml in v1beta1
 			buildTemplate := `kind: ConversionReview
@@ -525,9 +525,9 @@ request:
 					Name: "buildkit-build",
 				},
 				Spec: v1beta1.BuildSpec{
-					Source: v1beta1.Source{
+					Source: &v1beta1.Source{
 						Type: v1beta1.LocalType,
-						LocalSource: &v1beta1.Local{
+						Local: &v1beta1.Local{
 							Name: "foobar_local",
 							Timeout: &v1.Duration{
 								Duration: 1 * time.Minute,
@@ -620,7 +620,7 @@ request:
 					Name: "buildkit-build",
 				},
 				Spec: v1beta1.BuildSpec{
-					Source: v1beta1.Source{
+					Source: &v1beta1.Source{
 						Type:       v1beta1.OCIArtifactType,
 						ContextDir: &ctxDir,
 						OCIArtifact: &v1beta1.OCIArtifact{
@@ -737,10 +737,10 @@ request:
 					Name: "buildkit-build",
 				},
 				Spec: v1beta1.BuildSpec{
-					Source: v1beta1.Source{
+					Source: &v1beta1.Source{
 						Type:       v1beta1.GitType,
 						ContextDir: &ctxDir,
-						GitSource: &v1beta1.Git{
+						Git: &v1beta1.Git{
 							URL:         url,
 							Revision:    &revision,
 							CloneSecret: &secretName,
@@ -1239,7 +1239,7 @@ request:
 					},
 					Source: &v1beta1.BuildRunSource{
 						Type: v1beta1.LocalType,
-						LocalSource: &v1beta1.Local{
+						Local: &v1beta1.Local{
 							Name: "foobar_local",
 							Timeout: &v1.Duration{
 								Duration: 1 * time.Minute,

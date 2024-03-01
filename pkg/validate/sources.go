@@ -18,34 +18,33 @@ type SourceRef struct {
 
 // ValidatePath executes the validation routine, inspecting the `build.spec.source` path
 func (s *SourceRef) ValidatePath(_ context.Context) error {
-
-	if err := s.validateSourceEntry(s.Build.Spec.Source); err != nil {
-		return err
+	if s.Build.Spec.Source != nil {
+		return s.validateSourceEntry(s.Build.Spec.Source)
 	}
 
 	return nil
 }
 
 // validateSourceEntry inspect informed entry, probes all required attributes.
-func (s *SourceRef) validateSourceEntry(source build.Source) error {
+func (s *SourceRef) validateSourceEntry(source *build.Source) error {
 
 	// dont bail out if the Source object is empty, we preserve the old behaviour as in v1alpha1
-	if source.Type == "" && source.GitSource == nil &&
-		source.OCIArtifact == nil && source.LocalSource == nil {
+	if source.Type == "" && source.Git == nil &&
+		source.OCIArtifact == nil && source.Local == nil {
 		return nil
 	}
 
 	switch source.Type {
 	case "Git":
-		if source.GitSource == nil || source.OCIArtifact != nil || source.LocalSource != nil {
+		if source.Git == nil || source.OCIArtifact != nil || source.Local != nil {
 			return fmt.Errorf("type does not match the source")
 		}
 	case "OCI":
-		if source.OCIArtifact == nil || source.GitSource != nil || source.LocalSource != nil {
+		if source.OCIArtifact == nil || source.Git != nil || source.Local != nil {
 			return fmt.Errorf("type does not match the source")
 		}
 	case "Local":
-		if source.LocalSource == nil || source.OCIArtifact != nil || source.GitSource != nil {
+		if source.Local == nil || source.OCIArtifact != nil || source.Git != nil {
 			return fmt.Errorf("type does not match the source")
 		}
 	case "":
