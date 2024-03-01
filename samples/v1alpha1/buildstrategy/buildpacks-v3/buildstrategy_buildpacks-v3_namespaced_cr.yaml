@@ -10,7 +10,7 @@ spec:
   parameters:
     - name: platform-api-version
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
-      default: "0.7"
+      default: "0.12"
   buildSteps:
     - name: build-and-push
       image: docker.io/paketobuildpacks/builder-jammy-full:latest

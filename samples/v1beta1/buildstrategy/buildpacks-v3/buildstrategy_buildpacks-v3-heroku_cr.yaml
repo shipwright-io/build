@@ -16,7 +16,7 @@ spec:
       default: "x86_64"
     - name: platform-api-version
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
-      default: "0.7"
+      default: "0.12"
   steps:
     - name: build-and-push
       image: heroku/builder:22
