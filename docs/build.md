@@ -79,7 +79,7 @@ The `Build` definition supports the following fields:
   - [`apiVersion`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the API version, for example `shipwright.io/v1beta1`.
   - [`kind`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Specifies the Kind type, for example `Build`.
   - [`metadata`](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields) - Metadata that identify the custom resource instance, especially the name of the `Build`, and in which [namespace](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) you place it. **Note**: You should use your own namespace, and not put your builds into the shipwright-build namespace where Shipwright's system components run.
-  - `spec.source` - Refers to the location of the source code, for example a Git repository or source bundle image.
+  - `spec.source` - Refers to the location of the source code, for example a Git repository or OCI artifact image.
   - `spec.strategy` - Refers to the `BuildStrategy` to be used, see the [examples](../samples/v1beta1/buildstrategy)
   - `spec.output`- Refers to the location where the generated image would be pushed.
   - `spec.output.pushSecret`- Reference an existing secret to get access to the container registry.
@@ -98,9 +98,9 @@ The `Build` definition supports the following fields:
 
 ### Defining the Source
 
-A `Build` resource can specify a Git repository or bundle image source, together with other parameters like:
+A `Build` resource can specify a source type, such as a Git repository or an OCI artifact, together with other parameters like:
 
-- `source.type` - Specify the type of the data-source. Currently, the supported types are "Git", "OCI", and "Local".
+- `source.type` - Specify the type of the data-source. Currently, the supported types are "Git", "OCIArtifact", and "Local".
 - `source.git.url` - Specify the source location using a Git repository.
 - `source.git.cloneSecret` - For private repositories or registries, the name references a secret in the namespace that contains the SSH private key or Docker access credentials, respectively.
 - `source.git.revision` - A specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fallback to the Git repository default branch.
@@ -425,8 +425,6 @@ Here, we pass three items in the `build-args` array:
 **NOTE**: The logging output of BuildKit contains expanded `ARG`s in `RUN` commands. Also, such information ends up in the final container image if you use such args in the [final stage of your Dockerfile](https://docs.docker.com/develop/develop-images/multistage-build/). An alternative approach to pass secrets is using [secret mounts](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The BuildKit sample strategy supports them using the `secrets` parameter.
 
 ### Defining the Builder or Dockerfile
-
-**Note: Builder and Dockerfile options are deprecated, and will be removed in a future release.**
 
 In the `Build` resource, you use the parameters (`spec.paramValues`) to specify the image that contains the tools to build the final image. For example, the following Build definition specifies a `Dockerfile` image.
 
