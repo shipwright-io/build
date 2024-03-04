@@ -13,3 +13,12 @@ updates:
   - dependency-name: github.com/tektoncd/pipeline
   - dependency-name: k8s.io/*
   - dependency-name: sigs.k8s.io/*
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+    interval: daily
+    time: "06:00"
+  labels:
+  - kind/dependency-change
+  - release-note-none
+  open-pull-requests-limit: 10
