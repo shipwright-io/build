@@ -30,7 +30,7 @@ jobs:
     - uses: ko-build/setup-ko@v0.6
       with:
         version: v0.15.1
-    - uses: imjasonh/setup-crane@e82f1b9a8007d399333baba4d75915558e9fb6a4
+    - uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c
     - uses: sigstore/cosign-installer@v3
 
     - name: Get current date
