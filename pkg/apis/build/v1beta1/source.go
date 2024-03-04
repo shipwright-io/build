@@ -82,7 +82,7 @@ type OCIArtifact struct {
 	PullSecret *string `json:"pullSecret,omitempty"`
 }
 
-// Source describes the Git source repository to fetch.
+// Source describes the build source type to fetch.
 type Source struct {
 	// Type is the BuildSource qualifier, the type of the source.
 	Type BuildSourceType `json:"type"`

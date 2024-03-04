@@ -270,7 +270,7 @@ We have two controllers that ensure that buildruns can be deleted automatically 
 - Buildrun TTL parameters: These are used to make sure that buildruns exist for a fixed duration of time after completiion.
   - `buildrun.spec.retention.ttlAfterFailed`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has failed.
   - `buildrun.spec.retention.ttlAfterSucceeded`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has succeeded.
-- Build TTL parameters: These are used to make sure that related buildruns exist for a fixed duration of time after completiion.
+- Build TTL parameters: These are used to make sure that related buildruns exist for a fixed duration of time after completion.
   - `build.spec.retention.ttlAfterFailed`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has failed.
   - `build.spec.retention.ttlAfterSucceeded`: The buildrun is deleted if the mentioned duration of time has passed and the buildrun has succeeded.
 - Build Limit parameters: These are used to make sure that related buildruns exist for a fixed duration of time after completiion.
@@ -464,7 +464,7 @@ status:
       branchName: main
 ```
 
-Another example of a `BuildRun` with surfaced results for local source code(`bundle`) source:
+Another example of a `BuildRun` with surfaced results for local source code(`ociArtifact`) source:
 
 ```yaml
 # [...]
@@ -476,7 +476,7 @@ status:
     size: 1989004
   sources:
   - name: default
-    bundle:
+    ociArtifact:
       digest: sha256:0f5e2070b534f9b880ed093a537626e3c7fdd28d5328a8d6df8d29cd3da760c7
 ```
 
