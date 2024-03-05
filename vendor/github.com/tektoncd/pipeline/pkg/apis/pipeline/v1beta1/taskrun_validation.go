@@ -62,8 +62,6 @@ func (ts *TaskRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	}
 	// Validate TaskSpec if it's present.
 	if ts.TaskSpec != nil {
-		// skip validation of parameter and workspaces variables since we validate them via taskrunspec below.
-		ctx = config.SkipValidationDueToPropagatedParametersAndWorkspaces(ctx, true)
 		errs = errs.Also(ts.TaskSpec.Validate(ctx).ViaField("taskSpec"))
 	}
 
@@ -143,7 +141,8 @@ func (ts *TaskRunSpec) validateInlineParameters(ctx context.Context) (errs *apis
 	}
 	if ts.TaskSpec != nil && ts.TaskSpec.Steps != nil {
 		errs = errs.Also(ValidateParameterTypes(ctx, paramSpec))
-		errs = errs.Also(ValidateParameterVariables(config.SkipValidationDueToPropagatedParametersAndWorkspaces(ctx, false), ts.TaskSpec.Steps, paramSpec))
+		errs = errs.Also(ValidateParameterVariables(ctx, ts.TaskSpec.Steps, paramSpec))
+		errs = errs.Also(ValidateUsageOfDeclaredParameters(ctx, ts.TaskSpec.Steps, paramSpec))
 	}
 	return errs
 }
@@ -243,11 +242,6 @@ func ValidateWorkspaceBindings(ctx context.Context, wb []WorkspaceBinding) (errs
 func ValidateParameters(ctx context.Context, params Params) (errs *apis.FieldError) {
 	var names []string
 	for _, p := range params {
-		if p.Value.Type == ParamTypeObject {
-			// Object type parameter is a beta feature and will fail validation if it's used in a taskrun spec
-			// when the enable-api-fields feature gate is not "alpha" or "beta".
-			errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "object type parameter", config.BetaAPIFields))
-		}
 		names = append(names, p.Name)
 	}
 	return errs.Also(validateNoDuplicateNames(names, false))

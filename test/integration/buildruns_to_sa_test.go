@@ -5,6 +5,7 @@
 package integration_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -151,7 +152,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			Expect(contains(sa.Secrets, *buildObject.Spec.Output.PushSecret)).To(BeTrue())
 
 			// cancel the br
-			err = wait.PollImmediate(1*time.Second, 4*time.Second, func() (done bool, err error) {
+			err = wait.PollUntilContextTimeout(tb.Context, 1*time.Second, 4*time.Second, true, func(_ context.Context) (done bool, err error) {
 				bro, err = tb.GetBRTillStartTime(buildRunObject.Name)
 				if err != nil {
 					GinkgoT().Logf("error on br get: %s\n", err.Error())

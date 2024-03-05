@@ -23,14 +23,14 @@ import (
 func (t *TestBuild) CreateBuild(build *v1beta1.Build) error {
 	bInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
 
-	_, err := bInterface.Create(context.TODO(), build, metav1.CreateOptions{})
+	_, err := bInterface.Create(t.Context, build, metav1.CreateOptions{})
 	return err
 }
 
 // UpdateBR updates a BuildRun on the current test namespace
 func (t *TestBuild) UpdateBuild(build *v1beta1.Build) error {
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
-	_, err := brInterface.Update(context.TODO(), build, metav1.UpdateOptions{})
+	_, err := brInterface.Update(t.Context, build, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (t *TestBuild) UpdateBuild(build *v1beta1.Build) error {
 func (t *TestBuild) DeleteBuild(name string) error {
 	bInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
 
-	err := bInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
+	err := bInterface.Delete(t.Context, name, metav1.DeleteOptions{})
 
 	return err
 }
@@ -50,7 +50,7 @@ func (t *TestBuild) DeleteBuild(name string) error {
 // Deprecated: Use LookupBuild instead
 func (t *TestBuild) GetBuild(name string) (*v1beta1.Build, error) {
 	return t.BuildClientSet.ShipwrightV1beta1().
-		Builds(t.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		Builds(t.Namespace).Get(t.Context, name, metav1.GetOptions{})
 }
 
 // ListBuilds returns existing Builds from the desired namespace
@@ -66,7 +66,7 @@ func (t *TestBuild) PatchBuild(buildName string, data []byte) (*v1beta1.Build, e
 // PatchBuildWithPatchType patches an existing Build and allows specifying the patch type
 func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt types.PatchType) (*v1beta1.Build, error) {
 	bInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
-	b, err := bInterface.Patch(context.TODO(), buildName, pt, data, metav1.PatchOptions{})
+	b, err := bInterface.Patch(t.Context, buildName, pt, data, metav1.PatchOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt ty
 // it´s registered field. If timeout is reached or an error is found, it will
 // return with an error
 func (t *TestBuild) GetBuildTillValidation(name string) (build *v1beta1.Build, err error) {
-	err = wait.PollImmediate(t.Interval, t.TimeOut, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, func(_ context.Context) (bool, error) {
 		build, err = t.LookupBuild(types.NamespacedName{Namespace: t.Namespace, Name: name})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return false, err
@@ -100,11 +100,11 @@ func (t *TestBuild) GetBuildTillValidation(name string) (build *v1beta1.Build, e
 func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.ConditionStatus) (*v1beta1.Build, error) {
 
 	var (
-		pollBuildTillRegistration = func() (bool, error) {
+		pollBuildTillRegistration = func(ctx context.Context) (bool, error) {
 
 			bInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
 
-			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -119,11 +119,11 @@ func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.Condi
 
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
 
-	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBuildTillRegistration); err != nil {
+	if err := wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollBuildTillRegistration); err != nil {
 		return nil, err
 	}
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return brInterface.Get(t.Context, name, metav1.GetOptions{})
 }
 
 // GetBuildTillMessageContainsSubstring polls until a Build message contains the desired
@@ -132,11 +132,11 @@ func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.Condi
 func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMessage string) (*v1beta1.Build, error) {
 
 	var (
-		pollBuildTillMessageContainsSubString = func() (bool, error) {
+		pollBuildTillMessageContainsSubString = func(ctx context.Context) (bool, error) {
 
 			bInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
 
-			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -151,9 +151,9 @@ func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMess
 
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().Builds(t.Namespace)
 
-	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBuildTillMessageContainsSubString); err != nil {
+	if err := wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollBuildTillMessageContainsSubString); err != nil {
 		return nil, err
 	}
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return brInterface.Get(t.Context, name, metav1.GetOptions{})
 }

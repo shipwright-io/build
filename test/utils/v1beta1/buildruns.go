@@ -24,7 +24,7 @@ import (
 func (t *TestBuild) CreateBR(buildRun *v1beta1.BuildRun) error {
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-	_, err := brInterface.Create(context.TODO(), buildRun, metav1.CreateOptions{})
+	_, err := brInterface.Create(t.Context, buildRun, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (t *TestBuild) CreateBR(buildRun *v1beta1.BuildRun) error {
 // UpdateBR updates a BuildRun on the current test namespace
 func (t *TestBuild) UpdateBR(buildRun *v1beta1.BuildRun) error {
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
-	_, err := brInterface.Update(context.TODO(), buildRun, metav1.UpdateOptions{})
+	_, err := brInterface.Update(t.Context, buildRun, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (t *TestBuild) UpdateBR(buildRun *v1beta1.BuildRun) error {
 func (t *TestBuild) GetBR(name string) (*v1beta1.BuildRun, error) {
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-	br, err := brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	br, err := brInterface.Get(t.Context, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (t *TestBuild) GetBR(name string) (*v1beta1.BuildRun, error) {
 func (t *TestBuild) DeleteBR(name string) error {
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-	if err := brInterface.Delete(context.TODO(), name, metav1.DeleteOptions{}); err != nil {
+	if err := brInterface.Delete(t.Context, name, metav1.DeleteOptions{}); err != nil {
 		return err
 	}
 
@@ -83,11 +83,11 @@ func (t *TestBuild) GetBRReason(name string) (string, error) {
 func (t *TestBuild) GetBRTillCompletion(name string) (*v1beta1.BuildRun, error) {
 
 	var (
-		pollBRTillCompletion = func() (bool, error) {
+		pollBRTillCompletion = func(ctx context.Context) (bool, error) {
 
 			bInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -101,22 +101,22 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1beta1.BuildRun, error) 
 
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-	err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillCompletion)
+	err := wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollBRTillCompletion)
 	if err != nil {
 		return nil, err
 	}
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return brInterface.Get(t.Context, name, metav1.GetOptions{})
 }
 
 // GetBRTillNotFound waits for the buildrun to get deleted. It returns an error if BuildRun is not found
 func (t *TestBuild) GetBRTillNotFound(name string, interval time.Duration, timeout time.Duration) (*v1beta1.BuildRun, error) {
 
 	var (
-		GetBRTillNotFound = func() (bool, error) {
+		GetBRTillNotFound = func(ctx context.Context) (bool, error) {
 
 			bInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
-			_, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			_, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && apierrors.IsNotFound(err) {
 				return true, err
 			}
@@ -126,12 +126,12 @@ func (t *TestBuild) GetBRTillNotFound(name string, interval time.Duration, timeo
 
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-	err := wait.PollImmediate(interval, timeout, GetBRTillNotFound)
+	err := wait.PollUntilContextTimeout(t.Context, interval, timeout, true, GetBRTillNotFound)
 	if err != nil {
 		return nil, err
 	}
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return brInterface.Get(t.Context, name, metav1.GetOptions{})
 }
 
 // GetBRTillNotOwner returns a BuildRun that has not an owner.
@@ -142,9 +142,9 @@ func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*v1beta1.Build
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
 	var (
-		pollBRTillNotOwner = func() (bool, error) {
+		pollBRTillNotOwner = func(ctx context.Context) (bool, error) {
 
-			buildRun, err := brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			buildRun, err := brInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -159,11 +159,11 @@ func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*v1beta1.Build
 		}
 	)
 
-	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillNotOwner); err != nil {
+	if err := wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollBRTillNotOwner); err != nil {
 		return nil, err
 	}
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return brInterface.Get(t.Context, name, metav1.GetOptions{})
 }
 
 // GetBRTillOwner returns a BuildRun that has an owner.
@@ -174,9 +174,9 @@ func (t *TestBuild) GetBRTillOwner(name string, owner string) (*v1beta1.BuildRun
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
 	var (
-		pollBRTillOwner = func() (bool, error) {
+		pollBRTillOwner = func(ctx context.Context) (bool, error) {
 
-			buildRun, err := brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			buildRun, err := brInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -191,11 +191,11 @@ func (t *TestBuild) GetBRTillOwner(name string, owner string) (*v1beta1.BuildRun
 		}
 	)
 
-	if err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillOwner); err != nil {
+	if err := wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollBRTillOwner); err != nil {
 		return nil, err
 	}
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return brInterface.Get(t.Context, name, metav1.GetOptions{})
 }
 
 // GetBRTillStartTime returns a BuildRun that have a StartTime set.
@@ -204,11 +204,11 @@ func (t *TestBuild) GetBRTillOwner(name string, owner string) (*v1beta1.BuildRun
 func (t *TestBuild) GetBRTillStartTime(name string) (*v1beta1.BuildRun, error) {
 
 	var (
-		pollBRTillCompletion = func() (bool, error) {
+		pollBRTillCompletion = func(ctx context.Context) (bool, error) {
 
 			bInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-			buildRun, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			buildRun, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				return false, err
 			}
@@ -231,18 +231,18 @@ func (t *TestBuild) GetBRTillStartTime(name string) (*v1beta1.BuildRun, error) {
 
 	brInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-	err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillCompletion)
+	err := wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollBRTillCompletion)
 	if err != nil {
 		return nil, err
 	}
 
-	return brInterface.Get(context.TODO(), name, metav1.GetOptions{})
+	return brInterface.Get(t.Context, name, metav1.GetOptions{})
 }
 
 // GetBRTillDesiredReason polls until a BuildRun gets a particular Reason
 // it exit if an error happens or the timeout is reached
 func (t *TestBuild) GetBRTillDesiredReason(buildRunname string, reason string) (currentReason string, err error) {
-	err = wait.PollImmediate(t.Interval, t.TimeOut, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, func(_ context.Context) (bool, error) {
 		currentReason, err = t.GetBRReason(buildRunname)
 		if err != nil {
 			return false, err
@@ -262,11 +262,11 @@ func (t *TestBuild) GetBRTillDesiredReason(buildRunname string, reason string) (
 func (t *TestBuild) GetBRTillDeletion(name string) (bool, error) {
 
 	var (
-		pollBRTillCompletion = func() (bool, error) {
+		pollBRTillCompletion = func(ctx context.Context) (bool, error) {
 
 			bInterface := t.BuildClientSet.ShipwrightV1beta1().BuildRuns(t.Namespace)
 
-			_, err := bInterface.Get(context.TODO(), name, metav1.GetOptions{})
+			_, err := bInterface.Get(ctx, name, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
@@ -274,7 +274,7 @@ func (t *TestBuild) GetBRTillDeletion(name string) (bool, error) {
 		}
 	)
 
-	err := wait.PollImmediate(t.Interval, t.TimeOut, pollBRTillCompletion)
+	err := wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, pollBRTillCompletion)
 	if err != nil {
 		return false, err
 	}

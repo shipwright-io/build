@@ -42,7 +42,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		}
 
 		timeout := int64(tb.TimeOut.Seconds())
-		buildRunWatcher, err := tb.BuildClientSet.ShipwrightV1beta1().BuildRuns(tb.Namespace).Watch(context.TODO(), metav1.ListOptions{TimeoutSeconds: &timeout})
+		buildRunWatcher, err := tb.BuildClientSet.ShipwrightV1beta1().BuildRuns(tb.Namespace).Watch(tb.Context, metav1.ListOptions{TimeoutSeconds: &timeout})
 		Expect(err).To(BeNil())
 
 		buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(BUILD+tb.Namespace, strategyName, buildDef)
@@ -401,7 +401,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
-			err := wait.PollImmediate(1*time.Second, 4*time.Second, func() (done bool, err error) {
+			err := wait.PollUntilContextTimeout(tb.Context, 1*time.Second, 4*time.Second, true, func(_ context.Context) (done bool, err error) {
 				bro, err := tb.GetBRTillStartTime(buildRunObject.Name)
 				if err != nil {
 					GinkgoT().Logf("error on br get: %s\n", err.Error())

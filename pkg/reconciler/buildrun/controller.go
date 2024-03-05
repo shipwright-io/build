@@ -107,13 +107,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource BuildRun
-	if err = c.Watch(&source.Kind{Type: &buildv1beta1.BuildRun{}}, &handler.EnqueueRequestForObject{}, predBuildRun); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}), &handler.EnqueueRequestForObject{}, predBuildRun); err != nil {
 		return err
 	}
 
 	// enqueue Reconciles requests only for events where a TaskRun already exists and that is related
 	// to a BuildRun
-	return c.Watch(&source.Kind{Type: &pipelineapi.TaskRun{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+	return c.Watch(source.Kind(mgr.GetCache(), &pipelineapi.TaskRun{}), handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
 		taskRun := o.(*pipelineapi.TaskRun)
 
 		// check if TaskRun is related to BuildRun

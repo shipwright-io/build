@@ -16,17 +16,9 @@ package v1
 import (
 	"context"
 	"fmt"
-	"regexp"
 
-	"github.com/tektoncd/pipeline/pkg/apis/config"
-	"github.com/tektoncd/pipeline/pkg/apis/version"
 	"knative.dev/pkg/apis"
 )
-
-// ResultNameFormat Constant used to define the regex Result.Name should follow
-const ResultNameFormat = `^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`
-
-var resultNameFormatRegex = regexp.MustCompile(ResultNameFormat)
 
 // Validate implements apis.Validatable
 func (tr TaskResult) Validate(ctx context.Context) (errs *apis.FieldError) {
@@ -35,15 +27,11 @@ func (tr TaskResult) Validate(ctx context.Context) (errs *apis.FieldError) {
 	}
 
 	switch {
-	// Object results is beta feature - check if the feature flag is set to "beta" or "alpha"
 	case tr.Type == ResultsTypeObject:
 		errs := validateObjectResult(tr)
-		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "results type", config.BetaAPIFields))
 		return errs
-	// Array results is a beta feature - check if the feature flag is set to "beta" or "alpha"
 	case tr.Type == ResultsTypeArray:
-		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "results type", config.BetaAPIFields))
-		return errs
+		return nil
 	// Resources created before the result. Type was introduced may not have Type set
 	// and should be considered valid
 	case tr.Type == "":

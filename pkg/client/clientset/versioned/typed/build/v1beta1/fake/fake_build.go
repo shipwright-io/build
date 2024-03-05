@@ -12,7 +12,6 @@ import (
 	v1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -24,9 +23,9 @@ type FakeBuilds struct {
 	ns   string
 }
 
-var buildsResource = schema.GroupVersionResource{Group: "shipwright.io", Version: "v1beta1", Resource: "builds"}
+var buildsResource = v1beta1.SchemeGroupVersion.WithResource("builds")
 
-var buildsKind = schema.GroupVersionKind{Group: "shipwright.io", Version: "v1beta1", Kind: "Build"}
+var buildsKind = v1beta1.SchemeGroupVersion.WithKind("Build")
 
 // Get takes name of the build, and returns the corresponding build object, and an error if there is any.
 func (c *FakeBuilds) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.Build, err error) {

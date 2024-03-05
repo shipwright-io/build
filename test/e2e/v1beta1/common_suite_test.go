@@ -269,7 +269,7 @@ func (b buildPrototype) Create() (build *buildv1beta1.Build, err error) {
 		return nil, err
 	}
 
-	err = wait.PollImmediate(pollCreateInterval, pollCreateTimeout, func() (done bool, err error) {
+	err = wait.PollUntilContextTimeout(ctx, pollCreateInterval, pollCreateTimeout, true, func(ctx context.Context) (done bool, err error) {
 		build, err = testBuild.BuildClientSet.ShipwrightV1beta1().Builds(b.build.Namespace).Get(ctx, b.build.Name, meta.GetOptions{})
 		if err != nil {
 			return false, err

@@ -5,8 +5,6 @@
 package utils
 
 import (
-	"context"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -18,7 +16,7 @@ import (
 func (t *TestBuild) CreateClusterBuildStrategy(cbs *v1alpha1.ClusterBuildStrategy) error {
 	cbsInterface := t.BuildClientSet.ShipwrightV1alpha1().ClusterBuildStrategies()
 
-	_, err := cbsInterface.Create(context.TODO(), cbs, metav1.CreateOptions{})
+	_, err := cbsInterface.Create(t.Context, cbs, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -29,7 +27,7 @@ func (t *TestBuild) CreateClusterBuildStrategy(cbs *v1alpha1.ClusterBuildStrateg
 func (t *TestBuild) DeleteClusterBuildStrategy(name string) error {
 	cbsInterface := t.BuildClientSet.ShipwrightV1alpha1().ClusterBuildStrategies()
 
-	err := cbsInterface.Delete(context.TODO(), name, metav1.DeleteOptions{})
+	err := cbsInterface.Delete(t.Context, name, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}

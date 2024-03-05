@@ -90,7 +90,7 @@ You must install these tools:
 1. Follow the instructions in the Kubernetes doc to [Set up a kubernetes cluster](https://kubernetes.io/docs/setup/)
 1. Set up a container image repository for pushing images. Any container image registry that is accessible to your cluster can be used for your repository. This can be a public registry like [Docker Hub](https://docs.docker.com/docker-hub/), [quay.io](https://quay.io), or a container registry runs by your cloud provider
 
-**Note**: We support Kubernetes version 1.25 to 1.28. 1 cluster worker node for basic usage, 2+ cluster worker nodes for HA
+**Note**: We support Kubernetes version 1.27 to 1.29. 1 cluster worker node for basic usage, 2+ cluster worker nodes for HA
 
 ## Environment Setup
 
@@ -165,4 +165,3 @@ To look at the controller logs, run:
 ```sh
 kubectl -n shipwright-build logs $(kubectl -n shipwright-build get pods -l name=shipwright-build-controller -o name)
 ```
-

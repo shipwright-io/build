@@ -113,12 +113,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(&source.Kind{Type: &buildv1beta1.Build{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.Build{}), &handler.EnqueueRequestForObject{}, pred); err != nil {
 		return err
 	}
 
 	// Watch for changes to resource BuildRun
-	return c.Watch(&source.Kind{Type: &buildv1beta1.BuildRun{}}, handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}), handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
 		buildRun := o.(*buildv1beta1.BuildRun)
 
 		return []reconcile.Request{
