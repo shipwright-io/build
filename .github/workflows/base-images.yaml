@@ -21,7 +21,7 @@ jobs:
       max-parallel: 1
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
