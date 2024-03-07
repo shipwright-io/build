@@ -20,7 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 var _ = Describe("Test local source code (bundle) functionality", func() {
@@ -37,8 +37,8 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 		testID string
 		err    error
 
-		build    *buildv1beta1.Build
-		buildRun *buildv1beta1.BuildRun
+		build    *buildapi.Build
+		buildRun *buildapi.BuildRun
 	)
 
 	AfterEach(func() {
@@ -245,7 +245,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 					Name(testID).
 					Namespace(testBuild.Namespace).
 					SourceBundle(tmpImage).
-					SourceBundlePrune(buildv1beta1.PruneAfterPull).
+					SourceBundlePrune(buildapi.PruneAfterPull).
 					SourceCredentials(secretName).
 					SourceContextDir("docker-build").
 					Dockerfile("Dockerfile").

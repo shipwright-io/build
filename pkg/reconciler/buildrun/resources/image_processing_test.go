@@ -100,7 +100,7 @@ var _ = Describe("Image Processing overrides", func() {
 		Context("for a build with a vulnerability scan options in the output", func() {
 			BeforeEach(func() {
 				processedTaskRun = taskRun.DeepCopy()
-				resources.SetupImageProcessing(processedTaskRun, config, buildapi.Image{
+				resources.SetupImageProcessing(processedTaskRun, config, refTimestamp, buildapi.Image{
 					Image: "some-registry/some-namespace/some-image",
 					VulnerabilityScan: &buildapi.VulnerabilityScanOptions{
 						Enabled: true,

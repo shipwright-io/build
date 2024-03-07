@@ -13,18 +13,18 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // Strategy contains all required fields
 // to validate a Build spec strategy definition
 type Strategy struct {
-	Build  *build.Build
+	Build  *buildapi.Build
 	Client client.Client
 }
 
-func NewStrategies(client client.Client, build *build.Build) *Strategy {
+func NewStrategies(client client.Client, build *buildapi.Build) *Strategy {
 	return &Strategy{build, client}
 }
 
@@ -33,33 +33,33 @@ func NewStrategies(client client.Client, build *build.Build) *Strategy {
 // namespaced or cluster scoped strategies
 func (s Strategy) ValidatePath(ctx context.Context) error {
 	switch s.kind(ctx) {
-	case build.NamespacedBuildStrategyKind:
+	case buildapi.NamespacedBuildStrategyKind:
 		return s.validateBuildStrategy(ctx, s.Build.Spec.Strategy.Name)
 
-	case build.ClusterBuildStrategyKind:
+	case buildapi.ClusterBuildStrategyKind:
 		return s.validateClusterBuildStrategy(ctx, s.Build.Spec.Strategy.Name)
 
 	default:
-		s.Build.Status.Reason = build.BuildReasonPtr(build.UnknownBuildStrategyKind)
+		s.Build.Status.Reason = buildapi.BuildReasonPtr(buildapi.UnknownBuildStrategyKind)
 		s.Build.Status.Message = pointer.String(fmt.Sprintf("unknown strategy kind %s used, must be one of %s, or %s",
 			*s.Build.Spec.Strategy.Kind,
-			build.NamespacedBuildStrategyKind,
-			build.ClusterBuildStrategyKind))
+			buildapi.NamespacedBuildStrategyKind,
+			buildapi.ClusterBuildStrategyKind))
 		return nil
 	}
 }
 
-func (s Strategy) kind(ctx context.Context) build.BuildStrategyKind {
+func (s Strategy) kind(ctx context.Context) buildapi.BuildStrategyKind {
 	if s.Build.Spec.Strategy.Kind == nil {
 		ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind", namespace, s.Build.Namespace, name, s.Build.Name)
-		return build.NamespacedBuildStrategyKind
+		return buildapi.NamespacedBuildStrategyKind
 	}
 
 	return *s.Build.Spec.Strategy.Kind
 }
 
 func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string) error {
-	buildStrategy := &build.BuildStrategy{}
+	buildStrategy := &buildapi.BuildStrategy{}
 	err := s.Client.Get(ctx, types.NamespacedName{Name: strategyName, Namespace: s.Build.Namespace}, buildStrategy)
 	if err == nil {
 		s.validateBuildParams(buildStrategy.GetParameters())
@@ -68,7 +68,7 @@ func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string
 	}
 
 	if apierrors.IsNotFound(err) {
-		s.Build.Status.Reason = build.BuildReasonPtr(build.BuildStrategyNotFound)
+		s.Build.Status.Reason = buildapi.BuildReasonPtr(buildapi.BuildStrategyNotFound)
 		s.Build.Status.Message = pointer.String(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", strategyName, s.Build.Namespace))
 		return nil
 	}
@@ -77,7 +77,7 @@ func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string
 }
 
 func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName string) error {
-	clusterBuildStrategy := &build.ClusterBuildStrategy{}
+	clusterBuildStrategy := &buildapi.ClusterBuildStrategy{}
 	err := s.Client.Get(ctx, types.NamespacedName{Name: strategyName}, clusterBuildStrategy)
 	if err == nil {
 		s.validateBuildParams(clusterBuildStrategy.GetParameters())
@@ -86,7 +86,7 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 	}
 
 	if apierrors.IsNotFound(err) {
-		s.Build.Status.Reason = build.BuildReasonPtr(build.ClusterBuildStrategyNotFound)
+		s.Build.Status.Reason = buildapi.BuildReasonPtr(buildapi.ClusterBuildStrategyNotFound)
 		s.Build.Status.Message = pointer.String(fmt.Sprintf("clusterBuildStrategy %s does not exist", strategyName))
 		return nil
 	}
@@ -94,18 +94,18 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 	return err
 }
 
-func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
+func (s Strategy) validateBuildParams(parameterDefinitions []buildapi.Parameter) {
 	valid, reason, message := BuildParameters(parameterDefinitions, s.Build.Spec.ParamValues)
 	if !valid {
-		s.Build.Status.Reason = build.BuildReasonPtr(reason)
+		s.Build.Status.Reason = buildapi.BuildReasonPtr(reason)
 		s.Build.Status.Message = pointer.String(message)
 	}
 }
 
-func (s Strategy) validateBuildVolumes(strategyVolumes []build.BuildStrategyVolume) {
+func (s Strategy) validateBuildVolumes(strategyVolumes []buildapi.BuildStrategyVolume) {
 	valid, reason, message := BuildVolumes(strategyVolumes, s.Build.Spec.Volumes)
 	if !valid {
-		s.Build.Status.Reason = build.BuildReasonPtr(reason)
+		s.Build.Status.Reason = buildapi.BuildReasonPtr(reason)
 		s.Build.Status.Message = pointer.String(message)
 	}
 }

@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
@@ -33,25 +33,25 @@ var _ = Describe("Build Resource", func() {
 		// init vars
 		buildName := "foobuild"
 		client = &fakes.FakeClient{}
-		buildRun := &build.BuildRun{
+		buildRun := &buildapi.BuildRun{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "foo",
 				Namespace: "bar",
 			},
-			Spec: build.BuildRunSpec{
-				Build: build.ReferencedBuild{
+			Spec: buildapi.BuildRunSpec{
+				Build: buildapi.ReferencedBuild{
 					Name: &buildName,
 				},
 			},
 		}
 
 		It("should be able to retrieve a build object if exists", func() {
-			buildSample := ctl.DefaultBuild(buildName, "foostrategy", build.ClusterBuildStrategyKind)
+			buildSample := ctl.DefaultBuild(buildName, "foostrategy", buildapi.ClusterBuildStrategyKind)
 
 			// stub a GET API call with buildSample contents
 			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				switch object := object.(type) {
-				case *build.Build:
+				case *buildapi.Build:
 					buildSample.DeepCopyInto(object)
 					return nil
 				}
@@ -61,7 +61,7 @@ var _ = Describe("Build Resource", func() {
 			// fake the calls with the above stub definition
 			client.GetCalls(getClientStub)
 
-			buildObject := &build.Build{}
+			buildObject := &buildapi.Build{}
 			Expect(resources.GetBuildObject(context.TODO(), client, buildRun, buildObject)).To(BeNil())
 		})
 
@@ -75,14 +75,14 @@ var _ = Describe("Build Resource", func() {
 				return &fakes.FakeStatusWriter{}
 			})
 
-			build := &build.Build{}
+			build := &buildapi.Build{}
 			Expect(resources.GetBuildObject(context.TODO(), client, buildRun, build)).ToNot(BeNil())
 		})
 
 		It("should be able to verify valid ownerships", func() {
 			managingController := true
 
-			buildSample := &build.Build{
+			buildSample := &buildapi.Build{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "fakekind",
 				},
@@ -106,7 +106,7 @@ var _ = Describe("Build Resource", func() {
 		It("should be able to verify invalid ownerships", func() {
 			managingController := true
 
-			buildSample := &build.Build{
+			buildSample := &buildapi.Build{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "notthatkind",
 				},
@@ -130,14 +130,14 @@ var _ = Describe("Build Resource", func() {
 
 	Context("Operating on embedded Build(Spec) resources", func() {
 		client = &fakes.FakeClient{}
-		buildRun := &build.BuildRun{
+		buildRun := &buildapi.BuildRun{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "foo",
 				Namespace: "bar",
 			},
-			Spec: build.BuildRunSpec{
-				Build: build.ReferencedBuild{
-					Spec: &build.BuildSpec{
+			Spec: buildapi.BuildRunSpec{
+				Build: buildapi.ReferencedBuild{
+					Spec: &buildapi.BuildSpec{
 						Env: []v1.EnvVar{{Name: "foo", Value: "bar"}},
 					},
 				},
@@ -145,7 +145,7 @@ var _ = Describe("Build Resource", func() {
 		}
 
 		It("should be able to retrieve an embedded build object if it exists", func() {
-			build := &build.Build{}
+			build := &buildapi.Build{}
 			err := resources.GetBuildObject(context.TODO(), client, buildRun, build)
 
 			Expect(err).To(BeNil())

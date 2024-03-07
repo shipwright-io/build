@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/volumes"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -58,7 +58,7 @@ func createVolumeSource(vt volumeType, vsName string) *corev1.VolumeSource {
 	return vs
 }
 
-func createBuildStrategyVolume(name string, description string, vt volumeType, vsName string, overridable bool) buildv1beta1.BuildStrategyVolume {
+func createBuildStrategyVolume(name string, description string, vt volumeType, vsName string, overridable bool) buildapi.BuildStrategyVolume {
 	vs := createVolumeSource(vt, vsName)
 
 	var descr *string
@@ -66,7 +66,7 @@ func createBuildStrategyVolume(name string, description string, vt volumeType, v
 		descr = &description
 	}
 
-	bv := buildv1beta1.BuildStrategyVolume{
+	bv := buildapi.BuildStrategyVolume{
 		Name:         name,
 		Description:  descr,
 		VolumeSource: *vs,
@@ -75,7 +75,7 @@ func createBuildStrategyVolume(name string, description string, vt volumeType, v
 	return bv
 }
 
-func createBuildStrategyVolumeEmptyOverridable(name string, description string, vt volumeType, vsName string) buildv1beta1.BuildStrategyVolume {
+func createBuildStrategyVolumeEmptyOverridable(name string, description string, vt volumeType, vsName string) buildapi.BuildStrategyVolume {
 	vs := createVolumeSource(vt, vsName)
 
 	var descr *string
@@ -83,7 +83,7 @@ func createBuildStrategyVolumeEmptyOverridable(name string, description string, 
 		descr = &description
 	}
 
-	bv := buildv1beta1.BuildStrategyVolume{
+	bv := buildapi.BuildStrategyVolume{
 		Name:         name,
 		Description:  descr,
 		VolumeSource: *vs,
@@ -91,10 +91,10 @@ func createBuildStrategyVolumeEmptyOverridable(name string, description string, 
 	return bv
 }
 
-func createBuildVolume(name string, vt volumeType, vsName string) buildv1beta1.BuildVolume {
+func createBuildVolume(name string, vt volumeType, vsName string) buildapi.BuildVolume {
 	vs := createVolumeSource(vt, vsName)
 
-	bv := buildv1beta1.BuildVolume{
+	bv := buildapi.BuildVolume{
 		Name:         name,
 		VolumeSource: *vs,
 	}
@@ -105,90 +105,90 @@ func TestMergeVolumes(t *testing.T) {
 
 	testingData := []struct {
 		name      string
-		into      []buildv1beta1.BuildStrategyVolume
-		mergers   []buildv1beta1.BuildVolume
-		expected  []buildv1beta1.BuildStrategyVolume
+		into      []buildapi.BuildStrategyVolume
+		mergers   []buildapi.BuildVolume
+		expected  []buildapi.BuildStrategyVolume
 		expectErr bool
 	}{
 		{
 			name:      "both empty",
-			into:      []buildv1beta1.BuildStrategyVolume{},
-			mergers:   []buildv1beta1.BuildVolume{},
-			expected:  []buildv1beta1.BuildStrategyVolume{},
+			into:      []buildapi.BuildStrategyVolume{},
+			mergers:   []buildapi.BuildVolume{},
+			expected:  []buildapi.BuildStrategyVolume{},
 			expectErr: false,
 		},
 		{
 			name: "mergers empty",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "ConfigMap", "my-config", true),
 			},
-			mergers: []buildv1beta1.BuildVolume{},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			mergers: []buildapi.BuildVolume{},
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "ConfigMap", "my-config", true),
 			},
 			expectErr: false,
 		},
 		{
 			name: "into empty must fail",
-			into: []buildv1beta1.BuildStrategyVolume{},
-			mergers: []buildv1beta1.BuildVolume{
+			into: []buildapi.BuildStrategyVolume{},
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname", "ConfigMap", "my-config"),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "ConfigMap", "my-config", true),
 			},
 			expectErr: true,
 		},
 		{
 			name: "override one emptyDir with secret",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", true),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname", "ConfigMap", "my-config"),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "ConfigMap", "my-config", true),
 			},
 			expectErr: false,
 		},
 		{
 			name: "connot override - not overridable, expecting error",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", false),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname", "ConfigMap", "my-config"),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "ConfigMap", "my-config", true),
 			},
 			expectErr: true,
 		},
 		{
 			name: "connot override - volume does not exist, must produce err",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", true),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname2", "ConfigMap", "my-config"),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", true),
 			},
 			expectErr: true,
 		},
 		{
 			name: "override second",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", false),
 				createBuildStrategyVolume("bvname2", "bv description 2", "ConfigMap", "config-name", true),
 				createBuildStrategyVolume("bvname3", "bv description 3", "Secret", "very-secret-name", true),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname2", "Secret", "secret-name"),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", false),
 				createBuildStrategyVolume("bvname2", "bv description 2", "Secret", "secret-name", true),
 				createBuildStrategyVolume("bvname3", "bv description 3", "Secret", "very-secret-name", true),
@@ -197,15 +197,15 @@ func TestMergeVolumes(t *testing.T) {
 		},
 		{
 			name: "override first",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", true),
 				createBuildStrategyVolume("bvname2", "bv description 2", "ConfigMap", "config-name", false),
 				createBuildStrategyVolume("bvname3", "bv description 3", "Secret", "very-secret-name", false),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname", "Secret", "secret-name"),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "Secret", "secret-name", true),
 				createBuildStrategyVolume("bvname2", "bv description 2", "ConfigMap", "config-name", false),
 				createBuildStrategyVolume("bvname3", "bv description 3", "Secret", "very-secret-name", false),
@@ -214,15 +214,15 @@ func TestMergeVolumes(t *testing.T) {
 		},
 		{
 			name: "override third",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", true),
 				createBuildStrategyVolume("bvname2", "bv description 2", "ConfigMap", "config-name", false),
 				createBuildStrategyVolume("bvname3", "bv description 3", "Secret", "very-secret-name", true),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname3", "EmptyDir", ""),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", true),
 				createBuildStrategyVolume("bvname2", "bv description 2", "ConfigMap", "config-name", false),
 				createBuildStrategyVolume("bvname3", "bv description 3", "EmptyDir", "", true),
@@ -231,16 +231,16 @@ func TestMergeVolumes(t *testing.T) {
 		},
 		{
 			name: "override second and third",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", false),
 				createBuildStrategyVolume("bvname2", "bv description 2", "ConfigMap", "config-name", true),
 				createBuildStrategyVolume("bvname3", "bv description 3", "Secret", "very-secret-name", true),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname2", "Secret", "very-very-secret"),
 				createBuildVolume("bvname3", "EmptyDir", ""),
 			},
-			expected: []buildv1beta1.BuildStrategyVolume{
+			expected: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolume("bvname", "bv description", "EmptyDir", "", false),
 				createBuildStrategyVolume("bvname2", "bv description 2", "Secret", "very-very-secret", true),
 				createBuildStrategyVolume("bvname3", "bv description 3", "EmptyDir", "", true),
@@ -249,15 +249,15 @@ func TestMergeVolumes(t *testing.T) {
 		},
 		{
 			name: "empty overridable cant be ovirriden",
-			into: []buildv1beta1.BuildStrategyVolume{
+			into: []buildapi.BuildStrategyVolume{
 				createBuildStrategyVolumeEmptyOverridable("bvname", "desc", "EmptyDir", ""),
 				createBuildStrategyVolume("bvname2", "bv description 2", "ConfigMap", "config-name", true),
 			},
-			mergers: []buildv1beta1.BuildVolume{
+			mergers: []buildapi.BuildVolume{
 				createBuildVolume("bvname", "Secret", "very-very-secret"),
 				createBuildVolume("bvname2", "Secret", "very-secret-2"),
 			},
-			expected:  []buildv1beta1.BuildStrategyVolume{},
+			expected:  []buildapi.BuildStrategyVolume{},
 			expectErr: true,
 		},
 	}
@@ -302,8 +302,8 @@ func TestMergeVolumes(t *testing.T) {
 	}
 }
 
-func toVolMap(expected []buildv1beta1.BuildStrategyVolume) map[string]buildv1beta1.BuildStrategyVolume {
-	res := make(map[string]buildv1beta1.BuildStrategyVolume)
+func toVolMap(expected []buildapi.BuildStrategyVolume) map[string]buildapi.BuildStrategyVolume {
+	res := make(map[string]buildapi.BuildStrategyVolume)
 
 	for _, v := range expected {
 		res[v.Name] = v

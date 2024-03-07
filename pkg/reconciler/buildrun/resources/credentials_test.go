@@ -13,14 +13,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
 var _ = Describe("Credentials", func() {
 	var (
-		build                       *buildv1beta1.Build
-		buildRun                    *buildv1beta1.BuildRun
+		build                       *buildapi.Build
+		buildRun                    *buildapi.BuildRun
 		beforeServiceAccount        *corev1.ServiceAccount
 		expectedAfterServiceAccount *corev1.ServiceAccount
 	)
@@ -35,25 +35,25 @@ var _ = Describe("Credentials", func() {
 
 	Context("when secrets were not present in the service account", func() {
 		BeforeEach(func() {
-			build = &buildv1beta1.Build{
-				Spec: buildv1beta1.BuildSpec{
-					Source: &buildv1beta1.Source{
-						Type: buildv1beta1.GitType,
-						Git: &buildv1beta1.Git{
+			build = &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type: buildapi.GitType,
+						Git: &buildapi.Git{
 							URL:         "a/b/c",
 							CloneSecret: pointer.String("secret_a"),
 						},
 					},
-					Output: buildv1beta1.Image{
+					Output: buildapi.Image{
 						Image:      "quay.io/namespace/image",
 						PushSecret: pointer.String("secret_quay.io"),
 					},
 				},
 			}
 
-			buildRun = &buildv1beta1.BuildRun{
-				Spec: buildv1beta1.BuildRunSpec{
-					Output: &buildv1beta1.Image{
+			buildRun = &buildapi.BuildRun{
+				Spec: buildapi.BuildRunSpec{
+					Output: &buildapi.Image{
 						Image:      "quay.io/namespace/brImage",
 						PushSecret: pointer.String("secret_buildrun.io"),
 					},
@@ -81,15 +81,15 @@ var _ = Describe("Credentials", func() {
 
 	Context("when secrets were already in the service account", func() {
 		BeforeEach(func() {
-			build = &buildv1beta1.Build{
-				Spec: buildv1beta1.BuildSpec{
-					Source: &buildv1beta1.Source{
-						Type: buildv1beta1.GitType,
-						Git: &buildv1beta1.Git{
+			build = &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type: buildapi.GitType,
+						Git: &buildapi.Git{
 							URL: "a/b/c",
 						},
 					},
-					Output: buildv1beta1.Image{
+					Output: buildapi.Image{
 						PushSecret: pointer.String("secret_b"),
 					},
 				},
@@ -97,9 +97,9 @@ var _ = Describe("Credentials", func() {
 
 			// This is just a placeholder BuildRun with no
 			// SecretRef added to the ones from the Build
-			buildRun = &buildv1beta1.BuildRun{
-				Spec: buildv1beta1.BuildRunSpec{
-					Output: &buildv1beta1.Image{
+			buildRun = &buildapi.BuildRun{
+				Spec: buildapi.BuildRunSpec{
+					Output: &buildapi.Image{
 						Image: "https://image.url/",
 					},
 				},
@@ -119,11 +119,11 @@ var _ = Describe("Credentials", func() {
 
 	Context("when build does not reference any secret", func() {
 		BeforeEach(func() {
-			build = &buildv1beta1.Build{
-				Spec: buildv1beta1.BuildSpec{
-					Source: &buildv1beta1.Source{
-						Type: buildv1beta1.GitType,
-						Git: &buildv1beta1.Git{
+			build = &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type: buildapi.GitType,
+						Git: &buildapi.Git{
 							URL:         "a/b/c",
 							CloneSecret: nil,
 						},
@@ -133,9 +133,9 @@ var _ = Describe("Credentials", func() {
 
 			// This is just a placeholder BuildRun with no
 			// SecretRef added to the ones from the Build
-			buildRun = &buildv1beta1.BuildRun{
-				Spec: buildv1beta1.BuildRunSpec{
-					Output: &buildv1beta1.Image{
+			buildRun = &buildapi.BuildRun{
+				Spec: buildapi.BuildRunSpec{
+					Output: &buildapi.Image{
 						Image: "https://image.url/",
 					},
 				},

@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 
@@ -25,7 +25,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 	Context("when a BuildRun complete successfully", func() {
 		var (
 			taskRunRequest reconcile.Request
-			br             *build.BuildRun
+			br             *buildapi.BuildRun
 			tr             *pipelineapi.TaskRun
 		)
 
@@ -49,10 +49,10 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 		It("should surface the TaskRun results emitting from default(git) source step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
-			br.Status.BuildSpec = &build.BuildSpec{
-				Source: &build.Source{
-					Type: build.GitType,
-					Git: &build.Git{
+			br.Status.BuildSpec = &buildapi.BuildSpec{
+				Source: &buildapi.Source{
+					Type: buildapi.GitType,
+					Git: &buildapi.Git{
 						URL: "https://github.com/shipwright-io/sample-go",
 					},
 				},
@@ -82,10 +82,10 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 
 		It("should surface the TaskRun results emitting from default(bundle) source step", func() {
 			bundleImageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
-			br.Status.BuildSpec = &build.BuildSpec{
-				Source: &build.Source{
-					Type: build.OCIArtifactType,
-					OCIArtifact: &build.OCIArtifact{
+			br.Status.BuildSpec = &buildapi.BuildSpec{
+				Source: &buildapi.Source{
+					Type: buildapi.OCIArtifactType,
+					OCIArtifact: &buildapi.OCIArtifact{
 						Image: "ghcr.io/shipwright-io/sample-go/source-bundle:latest",
 					},
 				},
@@ -142,10 +142,10 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 		It("should surface the TaskRun results emitting from source and output step", func() {
 			commitSha := "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
-			br.Status.BuildSpec = &build.BuildSpec{
-				Source: &build.Source{
-					Type: build.GitType,
-					Git: &build.Git{
+			br.Status.BuildSpec = &buildapi.BuildSpec{
+				Source: &buildapi.Source{
+					Type: buildapi.GitType,
+					Git: &buildapi.Git{
 						URL: "https://github.com/shipwright-io/sample-go",
 					},
 				},

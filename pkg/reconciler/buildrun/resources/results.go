@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strconv"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -27,7 +27,7 @@ const (
 // to the buildrun
 func UpdateBuildRunUsingTaskResults(
 	ctx context.Context,
-	buildRun *build.BuildRun,
+	buildRun *buildapi.BuildRun,
 	taskRunResult []pipelineapi.TaskRunResult,
 	request reconcile.Request,
 ) {
@@ -38,9 +38,9 @@ func UpdateBuildRunUsingTaskResults(
 	updateBuildRunStatusWithOutputResult(ctx, buildRun, taskRunResult, request)
 }
 
-func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.BuildRun, taskRunResult []pipelineapi.TaskRunResult, request reconcile.Request) {
+func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *buildapi.BuildRun, taskRunResult []pipelineapi.TaskRunResult, request reconcile.Request) {
 	if buildRun.Status.Output == nil {
-		buildRun.Status.Output = &build.Output{}
+		buildRun.Status.Output = &buildapi.Output{}
 	}
 
 	for _, result := range taskRunResult {

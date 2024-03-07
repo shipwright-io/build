@@ -22,7 +22,7 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 
 	"github.com/shipwright-io/build/pkg/apis"
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
 )
 
@@ -111,7 +111,7 @@ func createContainerRegistrySecret(testBuild *utils.TestBuild) {
 }
 
 // validateBuildRunToSucceed creates the build run and watches its flow until it succeeds.
-func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1beta1.BuildRun) *buildv1beta1.BuildRun {
+func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildapi.BuildRun) *buildapi.BuildRun {
 	trueCondition := corev1.ConditionTrue
 	falseCondition := corev1.ConditionFalse
 
@@ -127,11 +127,11 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 		testBuildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
-		if testBuildRun.Status.GetCondition(buildv1beta1.Succeeded) == nil {
+		if testBuildRun.Status.GetCondition(buildapi.Succeeded) == nil {
 			return corev1.ConditionUnknown
 		}
 
-		Expect(testBuildRun.Status.GetCondition(buildv1beta1.Succeeded).Status).ToNot(Equal(falseCondition), "BuildRun status doesn't move to Succeeded")
+		Expect(testBuildRun.Status.GetCondition(buildapi.Succeeded).Status).ToNot(Equal(falseCondition), "BuildRun status doesn't move to Succeeded")
 
 		now := time.Now()
 		if now.After(nextStatusLog) {
@@ -139,7 +139,7 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 			nextStatusLog = time.Now().Add(60 * time.Second)
 		}
 
-		return testBuildRun.Status.GetCondition(buildv1beta1.Succeeded).Status
+		return testBuildRun.Status.GetCondition(buildapi.Succeeded).Status
 
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(trueCondition), "BuildRun did not succeed")
 
@@ -153,7 +153,7 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	return testBuildRun
 }
 
-func validateBuildRunResultsFromGitSource(testBuildRun *buildv1beta1.BuildRun) {
+func validateBuildRunResultsFromGitSource(testBuildRun *buildapi.BuildRun) {
 	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -186,7 +186,7 @@ func validateBuildRunResultsFromGitSource(testBuildRun *buildv1beta1.BuildRun) {
 	}
 }
 
-func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1beta1.BuildRun) {
+func validateBuildRunResultsFromBundleSource(testBuildRun *buildapi.BuildRun) {
 	testBuildRun, err := testBuild.GetBR(testBuildRun.Name)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -213,7 +213,7 @@ func validateBuildRunResultsFromBundleSource(testBuildRun *buildv1beta1.BuildRun
 }
 
 // validateBuildRunToFail creates the build run and watches its flow until it fails.
-func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1beta1.BuildRun) {
+func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildapi.BuildRun) {
 	trueCondition := corev1.ConditionTrue
 	falseCondition := corev1.ConditionFalse
 	var err error
@@ -230,11 +230,11 @@ func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1bet
 		testBuildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: testBuildRun.Name, Namespace: testBuild.Namespace})
 		Expect(err).ToNot(HaveOccurred(), "Error retrieving a buildRun")
 
-		if testBuildRun.Status.GetCondition(buildv1beta1.Succeeded) == nil {
+		if testBuildRun.Status.GetCondition(buildapi.Succeeded) == nil {
 			return corev1.ConditionUnknown
 		}
 
-		Expect(testBuildRun.Status.GetCondition(buildv1beta1.Succeeded).Status).NotTo(Equal(trueCondition), "BuildRun status moves to Succeeded")
+		Expect(testBuildRun.Status.GetCondition(buildapi.Succeeded).Status).NotTo(Equal(trueCondition), "BuildRun status moves to Succeeded")
 
 		now := time.Now()
 		if now.After(nextStatusLog) {
@@ -242,7 +242,7 @@ func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1bet
 			nextStatusLog = time.Now().Add(60 * time.Second)
 		}
 
-		return testBuildRun.Status.GetCondition(buildv1beta1.Succeeded).Status
+		return testBuildRun.Status.GetCondition(buildapi.Succeeded).Status
 
 	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 5*time.Second).Should(Equal(falseCondition), "BuildRun did not succeed")
 
@@ -254,8 +254,8 @@ func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1bet
 
 // validateServiceAccountDeletion validates that a service account is correctly deleted after the end of
 // a build run and depending on the state of the build run
-func validateServiceAccountDeletion(buildRun *buildv1beta1.BuildRun, namespace string) {
-	buildRunCondition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+func validateServiceAccountDeletion(buildRun *buildapi.BuildRun, namespace string) {
+	buildRunCondition := buildRun.Status.GetCondition(buildapi.Succeeded)
 	if buildRunCondition != nil {
 		if buildRunCondition.Status == "" || buildRunCondition.Status == corev1.ConditionUnknown {
 			Logf("Skipping validation of service account deletion because build run did not end.")
@@ -295,25 +295,25 @@ func readAndDecode(filePath string) (runtime.Object, error) {
 }
 
 // buildStrategyTestData gets the us the BuildStrategy test data set up
-func buildStrategyTestData(ns string, buildStrategyCRPath string) (*buildv1beta1.BuildStrategy, error) {
+func buildStrategyTestData(ns string, buildStrategyCRPath string) (*buildapi.BuildStrategy, error) {
 	obj, err := readAndDecode(buildStrategyCRPath)
 	if err != nil {
 		return nil, err
 	}
 
-	buildStrategy := obj.(*buildv1beta1.BuildStrategy)
+	buildStrategy := obj.(*buildapi.BuildStrategy)
 	buildStrategy.SetNamespace(ns)
 
 	return buildStrategy, err
 }
 
-func buildTestData(namespace string, identifier string, filePath string) (*buildv1beta1.Build, error) {
+func buildTestData(namespace string, identifier string, filePath string) (*buildapi.Build, error) {
 	obj, err := readAndDecode(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	build, ok := obj.(*buildv1beta1.Build)
+	build, ok := obj.(*buildapi.Build)
 	if !ok {
 		return nil, fmt.Errorf("failed to use the content of %s as a Build runtime object", filePath)
 	}
@@ -324,13 +324,13 @@ func buildTestData(namespace string, identifier string, filePath string) (*build
 }
 
 // buildTestData gets the us the Build test data set up
-func buildRunTestData(ns string, identifier string, filePath string) (*buildv1beta1.BuildRun, error) {
+func buildRunTestData(ns string, identifier string, filePath string) (*buildapi.BuildRun, error) {
 	obj, err := readAndDecode(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	buildRun, ok := obj.(*buildv1beta1.BuildRun)
+	buildRun, ok := obj.(*buildapi.BuildRun)
 	if !ok {
 		return nil, fmt.Errorf("failed to use the content of %s as a BuildRun runtime object", filePath)
 	}
@@ -350,13 +350,13 @@ func buildRunTestData(ns string, identifier string, filePath string) (*buildv1be
 	return buildRun, nil
 }
 
-func appendRegistryInsecureParamValue(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) {
+func appendRegistryInsecureParamValue(build *buildapi.Build, buildRun *buildapi.BuildRun) {
 	if strings.Contains(build.Spec.Output.Image, "cluster.local") {
 		parts := strings.Split(build.Spec.Output.Image, "/")
 		host := parts[0]
-		buildRun.Spec.ParamValues = append(buildRun.Spec.ParamValues, buildv1beta1.ParamValue{
+		buildRun.Spec.ParamValues = append(buildRun.Spec.ParamValues, buildapi.ParamValue{
 			Name: "registries-insecure",
-			Values: []buildv1beta1.SingleValue{
+			Values: []buildapi.SingleValue{
 				{
 					Value: &host,
 				},

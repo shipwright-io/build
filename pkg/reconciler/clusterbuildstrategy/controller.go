@@ -7,14 +7,13 @@ package clusterbuildstrategy
 import (
 	"context"
 
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
 )
 
 // Add creates a new ClusterBuildStrategy Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -40,5 +39,5 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource ClusterBuildStrategy
-	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.ClusterBuildStrategy{}), &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &buildapi.ClusterBuildStrategy{}), &handler.EnqueueRequestForObject{})
 }

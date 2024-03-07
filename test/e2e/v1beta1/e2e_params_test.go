@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,9 +20,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		testID string
 		err    error
 
-		build         *buildv1beta1.Build
-		buildRun      *buildv1beta1.BuildRun
-		buildStrategy *buildv1beta1.BuildStrategy
+		build         *buildapi.Build
+		buildRun      *buildapi.BuildRun
+		buildStrategy *buildapi.BuildStrategy
 		configMap     *corev1.ConfigMap
 		secret        *corev1.Secret
 	)

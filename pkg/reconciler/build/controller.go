@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
@@ -60,8 +60,8 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			o := e.ObjectOld.(*build.Build)
-			n := e.ObjectNew.(*build.Build)
+			o := e.ObjectOld.(*buildapi.Build)
+			n := e.ObjectNew.(*buildapi.Build)
 
 			buildAtBuildDeletion := false
 
@@ -119,7 +119,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(source.Kind(mgr.GetCache(), &build.Build{}), &handler.EnqueueRequestForObject{}, pred); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &buildapi.Build{}), &handler.EnqueueRequestForObject{}, pred); err != nil {
 		return err
 	}
 
@@ -160,7 +160,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 		secret := o.(*corev1.Secret)
 
-		buildList := &build.BuildList{}
+		buildList := &buildapi.BuildList{}
 
 		// List all builds in the namespace of the current secret
 		if err := mgr.GetClient().List(ctx, buildList, &client.ListOptions{Namespace: secret.Namespace}); err != nil {
@@ -205,7 +205,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 }
 
 func buildCredentialsAnnotationExist(annotation map[string]string) (string, bool) {
-	if val, ok := annotation[build.AnnotationBuildRefSecret]; ok {
+	if val, ok := annotation[buildapi.AnnotationBuildRefSecret]; ok {
 		return val, true
 	}
 	return "", false

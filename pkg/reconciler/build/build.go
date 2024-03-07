@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
@@ -64,7 +64,7 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 
 	ctxlog.Debug(ctx, "start reconciling Build", namespace, request.Namespace, name, request.Name)
 
-	b := &build.Build{}
+	b := &buildapi.Build{}
 	if err := r.client.Get(ctx, request.NamespacedName, b); err != nil {
 		if apierrors.IsNotFound(err) {
 			ctxlog.Debug(ctx, "finish reconciling build. build was not found", namespace, request.Namespace, name, request.Name)
@@ -75,8 +75,8 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	// Populate the status struct with default values
-	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionFalse)
-	b.Status.Reason = build.BuildReasonPtr(build.SucceedStatus)
+	b.Status.Registered = buildapi.ConditionStatusPtr(corev1.ConditionFalse)
+	b.Status.Reason = buildapi.BuildReasonPtr(buildapi.SucceedStatus)
 
 	// trigger all current validations
 	for _, validationType := range validationTypes {
@@ -104,7 +104,7 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 			}
 		}
 
-		if b.Status.Reason == nil || *b.Status.Reason != build.SucceedStatus {
+		if b.Status.Reason == nil || *b.Status.Reason != buildapi.SucceedStatus {
 			if err := r.client.Status().Update(ctx, b); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -113,8 +113,8 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 		}
 	}
 
-	b.Status.Registered = build.ConditionStatusPtr(corev1.ConditionTrue)
-	b.Status.Message = pointer.String(build.AllValidationsSucceeded)
+	b.Status.Registered = buildapi.ConditionStatusPtr(corev1.ConditionTrue)
+	b.Status.Message = pointer.String(buildapi.AllValidationsSucceeded)
 	if err := r.client.Status().Update(ctx, b); err != nil {
 		return reconcile.Result{}, err
 	}

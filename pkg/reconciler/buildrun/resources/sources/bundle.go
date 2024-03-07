@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 
@@ -16,7 +16,7 @@ import (
 )
 
 // AppendBundleStep appends the bundle step to the TaskSpec
-func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *build.OCIArtifact, name string) {
+func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *buildapi.OCIArtifact, name string) {
 	// append the result
 	taskSpec.Results = append(taskSpec.Results,
 		pipelineapi.TaskResult{
@@ -63,7 +63,7 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 	}
 
 	// add prune flag in when prune after pull is configured
-	if oci.Prune != nil && *oci.Prune == build.PruneAfterPull {
+	if oci.Prune != nil && *oci.Prune == buildapi.PruneAfterPull {
 		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
 
@@ -71,14 +71,14 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 }
 
 // AppendBundleResult append bundle source result to build run
-func AppendBundleResult(buildRun *build.BuildRun, name string, results []pipelineapi.TaskRunResult) {
+func AppendBundleResult(buildRun *buildapi.BuildRun, name string, results []pipelineapi.TaskRunResult) {
 	imageDigest := FindResultValue(results, name, "image-digest")
 
 	if strings.TrimSpace(imageDigest) != "" {
 		if buildRun.Status.Source == nil {
-			buildRun.Status.Source = &build.SourceResult{}
+			buildRun.Status.Source = &buildapi.SourceResult{}
 		}
-		buildRun.Status.Source.OciArtifact = &build.OciArtifactSourceResult{
+		buildRun.Status.Source.OciArtifact = &buildapi.OciArtifactSourceResult{
 			Digest: imageDigest,
 		}
 	}

@@ -12,7 +12,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
@@ -31,7 +31,7 @@ var (
 
 // OverrideParams allows to override an existing list of parameters with a second list,
 // as long as their entry names matches
-func OverrideParams(originalParams []buildv1beta1.ParamValue, overrideParams []buildv1beta1.ParamValue) []buildv1beta1.ParamValue {
+func OverrideParams(originalParams []buildapi.ParamValue, overrideParams []buildapi.ParamValue) []buildapi.ParamValue {
 	if len(overrideParams) == 0 {
 		return originalParams
 	}
@@ -41,7 +41,7 @@ func OverrideParams(originalParams []buildv1beta1.ParamValue, overrideParams []b
 	}
 
 	// Build a map from originalParams
-	originalMap := make(map[string]buildv1beta1.ParamValue)
+	originalMap := make(map[string]buildapi.ParamValue)
 	for _, p := range originalParams {
 		originalMap[p.Name] = p
 	}
@@ -53,7 +53,7 @@ func OverrideParams(originalParams []buildv1beta1.ParamValue, overrideParams []b
 	}
 
 	// drop results on a slice and return
-	paramsList := []buildv1beta1.ParamValue{}
+	paramsList := []buildapi.ParamValue{}
 
 	for k := range originalMap {
 		paramsList = append(paramsList, originalMap[k])
@@ -68,7 +68,7 @@ func IsSystemReservedParameter(param string) bool {
 }
 
 // FindParameterByName returns the first entry in a Parameter array with a specified name, or nil
-func FindParameterByName(parameters []buildv1beta1.Parameter, name string) *buildv1beta1.Parameter {
+func FindParameterByName(parameters []buildapi.Parameter, name string) *buildapi.Parameter {
 	for _, candidate := range parameters {
 		if candidate.Name == name {
 			return &candidate
@@ -79,7 +79,7 @@ func FindParameterByName(parameters []buildv1beta1.Parameter, name string) *buil
 }
 
 // FindParamValueByName returns the first entry in a ParamValue array with a specified name, or nil
-func FindParamValueByName(paramValues []buildv1beta1.ParamValue, name string) *buildv1beta1.ParamValue {
+func FindParamValueByName(paramValues []buildapi.ParamValue, name string) *buildapi.ParamValue {
 	for _, candidate := range paramValues {
 		if candidate.Name == name {
 			return &candidate
@@ -90,7 +90,7 @@ func FindParamValueByName(paramValues []buildv1beta1.ParamValue, name string) *b
 }
 
 // HandleTaskRunParam makes the necessary changes to a TaskRun for a parameter
-func HandleTaskRunParam(taskRun *pipelineapi.TaskRun, parameterDefinition *buildv1beta1.Parameter, paramValue buildv1beta1.ParamValue) error {
+func HandleTaskRunParam(taskRun *pipelineapi.TaskRun, parameterDefinition *buildapi.Parameter, paramValue buildapi.ParamValue) error {
 	taskRunParam := pipelineapi.Param{
 		Name:  paramValue.Name,
 		Value: pipelineapi.ParamValue{},
@@ -99,7 +99,7 @@ func HandleTaskRunParam(taskRun *pipelineapi.TaskRun, parameterDefinition *build
 	switch parameterDefinition.Type {
 	case "": // string is default
 		fallthrough
-	case buildv1beta1.ParameterTypeString:
+	case buildapi.ParameterTypeString:
 		taskRunParam.Value.Type = pipelineapi.ParamTypeString
 
 		switch {
@@ -145,7 +145,7 @@ func HandleTaskRunParam(taskRun *pipelineapi.TaskRun, parameterDefinition *build
 
 		}
 
-	case buildv1beta1.ParameterTypeArray:
+	case buildapi.ParameterTypeArray:
 		taskRunParam.Value.Type = pipelineapi.ParamTypeArray
 
 		switch {

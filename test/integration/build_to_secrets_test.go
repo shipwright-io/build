@@ -9,7 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -17,8 +17,8 @@ import (
 var _ = Describe("Integration tests Build and referenced Secrets", func() {
 
 	var (
-		cbsObject   *v1beta1.ClusterBuildStrategy
-		buildObject *v1beta1.Build
+		cbsObject   *buildapi.ClusterBuildStrategy
+		buildObject *buildapi.Build
 	)
 	// Load the ClusterBuildStrategies before each test case
 	BeforeEach(func() {
@@ -57,7 +57,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err := tb.GetBuildTillValidation(buildName)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 			// delete a secret
 			Expect(tb.DeleteSecret(*buildObject.Spec.Output.PushSecret)).To(BeNil())
@@ -66,7 +66,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecOutputSecretRefNotFound))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Output.PushSecret)))
 		})
 
@@ -86,7 +86,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err := tb.GetBuildTillValidation(buildName)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecOutputSecretRefNotFound))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Output.PushSecret)))
 
 			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
@@ -98,7 +98,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 		})
 	})
 
@@ -124,7 +124,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err := tb.GetBuildTillValidation(buildName)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 			// delete a secret
 			Expect(tb.DeleteSecret(*buildObject.Spec.Output.PushSecret)).To(BeNil())
@@ -151,7 +151,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err := tb.GetBuildTillValidation(buildName)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecOutputSecretRefNotFound))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Output.PushSecret)))
 
 			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
@@ -163,7 +163,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecOutputSecretRefNotFound))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Output.PushSecret)))
 		})
 
@@ -183,7 +183,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err := tb.GetBuildTillValidation(buildName)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecOutputSecretRefNotFound))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", "fake-secret")))
 
 			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
@@ -192,11 +192,11 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 			// validate build status again
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecOutputSecretRefNotFound))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", "fake-secret")))
 
 			// we modify the annotation so automatic delete does not take place
-			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"true"}}}`, v1beta1.AnnotationBuildRefSecret))
+			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"true"}}}`, buildapi.AnnotationBuildRefSecret))
 
 			_, err = tb.PatchSecret(*buildObject.Spec.Output.PushSecret, data)
 			Expect(err).To(BeNil())
@@ -205,7 +205,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 			Expect(*buildObject.Status.Message).To(Equal("all validations succeeded"))
 		})
 	})
@@ -232,7 +232,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err := tb.GetBuildTillValidation(buildName)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 			Expect(*buildObject.Status.Message).To(Equal("all validations succeeded"))
 
 			// delete a secret
@@ -242,7 +242,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SpecSourceSecretRefNotFound))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecSourceSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Source.Git.CloneSecret)))
 		})
 
@@ -274,7 +274,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 		})
 	})
 
@@ -310,12 +310,12 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			o, err := tb.GetBuildTillValidation(firstBuildName)
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*o.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*o.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 			o, err = tb.GetBuildTillValidation(secondBuildName)
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*o.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*o.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 			// delete a secret
 			Expect(tb.DeleteSecret(specSourceSecret.Name)).To(BeNil())
@@ -324,14 +324,14 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			o, err = tb.GetBuildTillRegistration(firstBuildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*o.Status.Reason).To(Equal(v1beta1.SpecSourceSecretRefNotFound))
+			Expect(*o.Status.Reason).To(Equal(buildapi.SpecSourceSecretRefNotFound))
 			Expect(*o.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *firstBuildObject.Spec.Source.Git.CloneSecret)))
 
 			// assert that the validation happened one more time
 			o, err = tb.GetBuildTillRegistration(secondBuildName, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*o.Status.Reason).To(Equal(v1beta1.SpecSourceSecretRefNotFound))
+			Expect(*o.Status.Reason).To(Equal(buildapi.SpecSourceSecretRefNotFound))
 			Expect(*o.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *secondBuildObject.Spec.Source.Git.CloneSecret)))
 		})
 		It("should validate the Builds when a missing secret is recreated", func() {
@@ -374,12 +374,12 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			o, err := tb.GetBuildTillRegistration(firstBuildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*o.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*o.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 			o, err = tb.GetBuildTillRegistration(secondBuildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
 			Expect(*o.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*o.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+			Expect(*o.Status.Reason).To(Equal(buildapi.SucceedStatus))
 		})
 	})
 })

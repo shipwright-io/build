@@ -7,13 +7,13 @@ package utils
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // This class is intended to host all CRUD calls for testing BuildStrategy CRDs resources
 
 // CreateBuildStrategy generates a BuildStrategy on the current test namespace
-func (t *TestBuild) CreateBuildStrategy(bs *v1beta1.BuildStrategy) error {
+func (t *TestBuild) CreateBuildStrategy(bs *buildapi.BuildStrategy) error {
 	bsInterface := t.BuildClientSet.ShipwrightV1beta1().BuildStrategies(t.Namespace)
 
 	_, err := bsInterface.Create(t.Context, bs, metav1.CreateOptions{})

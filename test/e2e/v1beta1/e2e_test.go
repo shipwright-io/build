@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	shpgit "github.com/shipwright-io/build/pkg/git"
 )
 
@@ -22,8 +22,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		testID string
 		err    error
 
-		build    *buildv1beta1.Build
-		buildRun *buildv1beta1.BuildRun
+		build    *buildapi.Build
+		buildRun *buildapi.BuildRun
 	)
 
 	AfterEach(func() {
@@ -139,7 +139,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	})
 
 	Context("when a heroku Buildpacks build is defined using a namespaced strategy", func() {
-		var buildStrategy *buildv1beta1.BuildStrategy
+		var buildStrategy *buildapi.BuildStrategy
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-heroku-namespaced")
@@ -197,7 +197,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	})
 
 	Context("when a Buildpacks v3 build is defined using a namespaced strategy", func() {
-		var buildStrategy *buildv1beta1.BuildStrategy
+		var buildStrategy *buildapi.BuildStrategy
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-namespaced")
