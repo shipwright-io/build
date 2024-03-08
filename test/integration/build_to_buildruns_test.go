@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
@@ -251,7 +252,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 			Expect(err).To(BeNil())
 
 			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(Equal("BuildRegistrationFailed"))
+			Expect(br.Status.GetCondition(v1beta1.Succeeded).Reason).To(Equal(resources.ConditionBuildRegistrationFailed))
 			Expect(br.Status.GetCondition(v1beta1.Succeeded).Message).To(ContainSubstring("Build is not registered correctly"))
 		})
 	})

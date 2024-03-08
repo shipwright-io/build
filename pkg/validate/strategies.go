@@ -32,69 +32,70 @@ func NewStrategies(client client.Client, build *build.Build) *Strategy {
 // that the referenced strategy exists. This applies to both
 // namespaced or cluster scoped strategies
 func (s Strategy) ValidatePath(ctx context.Context) error {
-	var (
-		builderStrategy build.BuilderStrategy
-		strategyExists  bool
-		err             error
-	)
+	switch s.kind(ctx) {
+	case build.NamespacedBuildStrategyKind:
+		return s.validateBuildStrategy(ctx, s.Build.Spec.Strategy.Name)
 
-	if s.Build.Spec.Strategy.Kind != nil {
-		switch *s.Build.Spec.Strategy.Kind {
-		case build.NamespacedBuildStrategyKind:
-			buildStrategy := &build.BuildStrategy{}
-			strategyExists, err = s.validateBuildStrategy(ctx, s.Build.Spec.Strategy.Name, buildStrategy)
-			builderStrategy = buildStrategy
-		case build.ClusterBuildStrategyKind:
-			clusterBuildStrategy := &build.ClusterBuildStrategy{}
-			strategyExists, err = s.validateClusterBuildStrategy(ctx, s.Build.Spec.Strategy.Name, clusterBuildStrategy)
-			builderStrategy = clusterBuildStrategy
-		default:
-			return fmt.Errorf("unknown strategy kind: %v", *s.Build.Spec.Strategy.Kind)
-		}
-	} else {
-		ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind", namespace, s.Build.Namespace, name, s.Build.Name)
-		buildStrategy := &build.BuildStrategy{}
-		strategyExists, err = s.validateBuildStrategy(ctx, s.Build.Spec.Strategy.Name, buildStrategy)
-		builderStrategy = buildStrategy
+	case build.ClusterBuildStrategyKind:
+		return s.validateClusterBuildStrategy(ctx, s.Build.Spec.Strategy.Name)
+
+	default:
+		s.Build.Status.Reason = build.BuildReasonPtr(build.UnknownBuildStrategyKind)
+		s.Build.Status.Message = pointer.String(fmt.Sprintf("unknown strategy kind %s used, must be one of %s, or %s",
+			*s.Build.Spec.Strategy.Kind,
+			build.NamespacedBuildStrategyKind,
+			build.ClusterBuildStrategyKind))
+		return nil
 	}
-
-	if err != nil {
-		return err
-	}
-
-	if strategyExists {
-		s.validateBuildParams(builderStrategy.GetParameters())
-		s.validateBuildVolumes(builderStrategy.GetVolumes())
-	}
-
-	return nil
 }
 
-func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string, buildStrategy *build.BuildStrategy) (bool, error) {
-	if err := s.Client.Get(ctx, types.NamespacedName{Name: strategyName, Namespace: s.Build.Namespace}, buildStrategy); err != nil && !apierrors.IsNotFound(err) {
-		return false, err
-	} else if apierrors.IsNotFound(err) {
+func (s Strategy) kind(ctx context.Context) build.BuildStrategyKind {
+	if s.Build.Spec.Strategy.Kind == nil {
+		ctxlog.Info(ctx, "buildStrategy kind is nil, use default NamespacedBuildStrategyKind", namespace, s.Build.Namespace, name, s.Build.Name)
+		return build.NamespacedBuildStrategyKind
+	}
+
+	return *s.Build.Spec.Strategy.Kind
+}
+
+func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string) error {
+	buildStrategy := &build.BuildStrategy{}
+	err := s.Client.Get(ctx, types.NamespacedName{Name: strategyName, Namespace: s.Build.Namespace}, buildStrategy)
+	if err == nil {
+		s.validateBuildParams(buildStrategy.GetParameters())
+		s.validateBuildVolumes(buildStrategy.GetVolumes())
+		return nil
+	}
+
+	if apierrors.IsNotFound(err) {
 		s.Build.Status.Reason = build.BuildReasonPtr(build.BuildStrategyNotFound)
 		s.Build.Status.Message = pointer.String(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", s.Build.Spec.Strategy.Name, s.Build.Namespace))
-		return false, nil
+		return nil
 	}
-	return true, nil
+
+	return err
 }
 
-func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName string, clusterBuildStrategy *build.ClusterBuildStrategy) (bool, error) {
-	if err := s.Client.Get(ctx, types.NamespacedName{Name: strategyName}, clusterBuildStrategy); err != nil && !apierrors.IsNotFound(err) {
-		return false, err
-	} else if apierrors.IsNotFound(err) {
+func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName string) error {
+	clusterBuildStrategy := &build.ClusterBuildStrategy{}
+	err := s.Client.Get(ctx, types.NamespacedName{Name: strategyName}, clusterBuildStrategy)
+	if err == nil {
+		s.validateBuildParams(clusterBuildStrategy.GetParameters())
+		s.validateBuildVolumes(clusterBuildStrategy.GetVolumes())
+		return nil
+	}
+
+	if apierrors.IsNotFound(err) {
 		s.Build.Status.Reason = build.BuildReasonPtr(build.ClusterBuildStrategyNotFound)
 		s.Build.Status.Message = pointer.String(fmt.Sprintf("clusterBuildStrategy %s does not exist", s.Build.Spec.Strategy.Name))
-		return false, nil
+		return nil
 	}
-	return true, nil
+
+	return err
 }
 
 func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
 	valid, reason, message := BuildParameters(parameterDefinitions, s.Build.Spec.ParamValues)
-
 	if !valid {
 		s.Build.Status.Reason = build.BuildReasonPtr(reason)
 		s.Build.Status.Message = pointer.String(message)
@@ -103,7 +104,6 @@ func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
 
 func (s Strategy) validateBuildVolumes(strategyVolumes []build.BuildStrategyVolume) {
 	valid, reason, message := BuildVolumes(strategyVolumes, s.Build.Spec.Volumes)
-
 	if !valid {
 		s.Build.Status.Reason = build.BuildReasonPtr(reason)
 		s.Build.Status.Message = pointer.String(message)

@@ -1036,7 +1036,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					emptyTaskRunName,
 					build.Condition{
 						Type:   build.Succeeded,
-						Reason: "BuildRegistrationFailed",
+						Reason: resources.ConditionBuildRegistrationFailed,
 						Status: corev1.ConditionFalse,
 					},
 					corev1.ConditionFalse,
@@ -1491,6 +1491,48 @@ var _ = Describe("Reconcile BuildRun", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(statusWriter.UpdateCallCount()).To(Equal(2))
 					Expect(taskRunCreates).To(Equal(1))
+				})
+
+				It("should validate the embedded BuildSpec to identify that the strategy kind is unknown", func() {
+					client.GetCalls(func(_ context.Context, nn types.NamespacedName, o crc.Object, _ ...crc.GetOption) error {
+						switch object := o.(type) {
+						case *build.BuildRun:
+							(&build.BuildRun{
+								ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
+								Spec: build.BuildRunSpec{
+									Build: build.ReferencedBuild{
+										Spec: &build.BuildSpec{
+											Source: &build.Source{
+												Type: build.GitType,
+												Git:  &build.Git{URL: "https://github.com/shipwright-io/sample-go.git"},
+											},
+											Strategy: build.Strategy{
+												Kind: (*build.BuildStrategyKind)(pointer.String("foo")), // problematic value
+												Name: strategyName,
+											},
+											Output: build.Image{Image: "foo/bar:latest"},
+										},
+									},
+								},
+							}).DeepCopyInto(object)
+							return nil
+						}
+
+						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+					})
+
+					statusWriter.UpdateCalls(func(ctx context.Context, o crc.Object, sruo ...crc.SubResourceUpdateOption) error {
+						Expect(o).To(BeAssignableToTypeOf(&build.BuildRun{}))
+						condition := o.(*build.BuildRun).Status.GetCondition(build.Succeeded)
+						Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+						Expect(condition.Reason).To(Equal(resources.ConditionBuildRegistrationFailed))
+						Expect(condition.Message).To(ContainSubstring("unknown strategy kind"))
+						return nil
+					})
+
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(statusWriter.UpdateCallCount()).ToNot(BeZero())
 				})
 			})
 		})

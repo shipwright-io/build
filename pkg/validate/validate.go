@@ -88,7 +88,7 @@ func All(ctx context.Context, validations ...BuildPath) error {
 }
 
 // BuildRunFields runs field validations against a BuildRun to detect
-// disallowed field combinations
+// disallowed field combinations and issues
 func BuildRunFields(buildRun *build.BuildRun) (string, string) {
 	if buildRun.Spec.Build.Spec == nil && buildRun.Spec.Build.Name == nil {
 		return resources.BuildRunNoRefOrSpec,

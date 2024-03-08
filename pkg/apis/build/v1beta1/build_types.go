@@ -16,6 +16,8 @@ type BuildReason string
 const (
 	// SucceedStatus indicates that all validations Succeeded
 	SucceedStatus BuildReason = "Succeeded"
+	// UnknownBuildStrategyKind indicates that neither namespace-scope or cluster-scope strategy kind was used
+	UnknownBuildStrategyKind BuildReason = "UnknownBuildStrategyKind"
 	// BuildStrategyNotFound indicates that a namespaced-scope strategy was not found in the namespace
 	BuildStrategyNotFound BuildReason = "BuildStrategyNotFound"
 	// ClusterBuildStrategyNotFound indicates that a cluster-scope strategy was not found
