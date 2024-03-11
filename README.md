@@ -88,21 +88,22 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   ```bash
   REGISTRY_ORG=<your_registry_org>
   cat <<EOF | kubectl apply -f -
-  apiVersion: shipwright.io/v1alpha1
+  apiVersion: shipwright.io/v1beta1
   kind: Build
   metadata:
     name: buildpack-nodejs-build
   spec:
     source:
-      url: https://github.com/shipwright-io/sample-nodejs
+      type: Git
+      git:
+        url: https://github.com/shipwright-io/sample-nodejs
       contextDir: source-build
     strategy:
       name: buildpacks-v3
       kind: ClusterBuildStrategy
     output:
       image: docker.io/${REGISTRY_ORG}/sample-nodejs:latest
-      credentials:
-        name: push-secret
+      pushSecret: push-secret
   EOF
   ```
 
@@ -119,12 +120,12 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
   ```bash
   cat <<EOF | kubectl create -f -
-  apiVersion: shipwright.io/v1alpha1
+  apiVersion: shipwright.io/v1beta1
   kind: BuildRun
   metadata:
     generateName: buildpack-nodejs-buildrun-
   spec:
-    buildRef:
+    build:
       name: buildpack-nodejs-build
   EOF
   ```
