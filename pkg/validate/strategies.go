@@ -69,7 +69,7 @@ func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string
 
 	if apierrors.IsNotFound(err) {
 		s.Build.Status.Reason = build.BuildReasonPtr(build.BuildStrategyNotFound)
-		s.Build.Status.Message = pointer.String(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", s.Build.Spec.Strategy.Name, s.Build.Namespace))
+		s.Build.Status.Message = pointer.String(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", strategyName, s.Build.Namespace))
 		return nil
 	}
 
@@ -87,7 +87,7 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 
 	if apierrors.IsNotFound(err) {
 		s.Build.Status.Reason = build.BuildReasonPtr(build.ClusterBuildStrategyNotFound)
-		s.Build.Status.Message = pointer.String(fmt.Sprintf("clusterBuildStrategy %s does not exist", s.Build.Spec.Strategy.Name))
+		s.Build.Status.Message = pointer.String(fmt.Sprintf("clusterBuildStrategy %s does not exist", strategyName))
 		return nil
 	}
 
