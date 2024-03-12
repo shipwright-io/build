@@ -29,6 +29,7 @@ var validationTypes = [...]string{
 	validate.Secrets,
 	validate.Strategies,
 	validate.Source,
+	validate.Output,
 	validate.BuildName,
 	validate.Envs,
 	validate.Triggers,

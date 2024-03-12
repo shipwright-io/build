@@ -6,11 +6,31 @@ package image
 
 import (
 	"errors"
+	"time"
 
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 )
+
+// replaceManifestIn replaces a manifest in an index, because there is no
+// mutate.ReplaceManifests, so therefore, it removes the old one first,
+// and then add the new one
+func replaceManifestIn(imageIndex containerreg.ImageIndex, descriptor containerreg.Descriptor, replacement mutate.Appendable) containerreg.ImageIndex {
+	imageIndex = mutate.RemoveManifests(imageIndex, func(ref containerreg.Descriptor) bool {
+		return ref.Digest.String() == descriptor.Digest.String()
+	})
+
+	return mutate.AppendManifests(imageIndex, mutate.IndexAddendum{
+		Add: replacement,
+		Descriptor: containerreg.Descriptor{
+			Annotations: descriptor.Annotations,
+			MediaType:   descriptor.MediaType,
+			Platform:    descriptor.Platform,
+			URLs:        descriptor.URLs,
+		},
+	})
+}
 
 // MutateImageOrImageIndex mutates an image or image index with additional annotations and labels
 func MutateImageOrImageIndex(image containerreg.Image, imageIndex containerreg.ImageIndex, annotations map[string]string, labels map[string]string) (containerreg.Image, containerreg.ImageIndex, error) {
@@ -22,12 +42,9 @@ func MutateImageOrImageIndex(image containerreg.Image, imageIndex containerreg.I
 
 		if len(labels) > 0 || len(annotations) > 0 {
 			for _, descriptor := range indexManifest.Manifests {
-				digest := descriptor.Digest
-				var appendable mutate.Appendable
-
 				switch descriptor.MediaType {
 				case types.OCIImageIndex, types.DockerManifestList:
-					childImageIndex, err := imageIndex.ImageIndex(digest)
+					childImageIndex, err := imageIndex.ImageIndex(descriptor.Digest)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -36,9 +53,10 @@ func MutateImageOrImageIndex(image containerreg.Image, imageIndex containerreg.I
 						return nil, nil, err
 					}
 
-					appendable = childImageIndex
+					imageIndex = replaceManifestIn(imageIndex, descriptor, childImageIndex)
+
 				case types.OCIManifestSchema1, types.DockerManifestSchema2:
-					image, err := imageIndex.Image(digest)
+					image, err := imageIndex.Image(descriptor.Digest)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -48,25 +66,8 @@ func MutateImageOrImageIndex(image containerreg.Image, imageIndex containerreg.I
 						return nil, nil, err
 					}
 
-					appendable = image
-				default:
-					continue
+					imageIndex = replaceManifestIn(imageIndex, descriptor, image)
 				}
-
-				// there is no mutate.ReplaceManifests, therefore, remove the old one first, and then add the new one
-				imageIndex = mutate.RemoveManifests(imageIndex, func(desc containerreg.Descriptor) bool {
-					return desc.Digest.String() == digest.String()
-				})
-
-				imageIndex = mutate.AppendManifests(imageIndex, mutate.IndexAddendum{
-					Add: appendable,
-					Descriptor: containerreg.Descriptor{
-						Annotations: descriptor.Annotations,
-						MediaType:   descriptor.MediaType,
-						Platform:    descriptor.Platform,
-						URLs:        descriptor.URLs,
-					},
-				})
 			}
 		}
 
@@ -119,4 +120,62 @@ func mutateImage(image containerreg.Image, annotations map[string]string, labels
 	}
 
 	return image, nil
+}
+
+func MutateImageOrImageIndexTimestamp(image containerreg.Image, imageIndex containerreg.ImageIndex, timestamp time.Time) (containerreg.Image, containerreg.ImageIndex, error) {
+	if image != nil {
+		image, err := mutateImageTimestamp(image, timestamp)
+		return image, nil, err
+	}
+
+	imageIndex, err := mutateImageIndexTimestamp(imageIndex, timestamp)
+	return nil, imageIndex, err
+}
+
+func mutateImageTimestamp(image containerreg.Image, timestamp time.Time) (containerreg.Image, error) {
+	image, err := mutate.Time(image, timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	return image, nil
+}
+
+func mutateImageIndexTimestamp(imageIndex containerreg.ImageIndex, timestamp time.Time) (containerreg.ImageIndex, error) {
+	indexManifest, err := imageIndex.IndexManifest()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, desc := range indexManifest.Manifests {
+		switch desc.MediaType {
+		case types.OCIImageIndex, types.DockerManifestList:
+			childImageIndex, err := imageIndex.ImageIndex(desc.Digest)
+			if err != nil {
+				return nil, err
+			}
+
+			childImageIndex, err = mutateImageIndexTimestamp(childImageIndex, timestamp)
+			if err != nil {
+				return nil, err
+			}
+
+			imageIndex = replaceManifestIn(imageIndex, desc, childImageIndex)
+
+		case types.OCIManifestSchema1, types.DockerManifestSchema2:
+			image, err := imageIndex.Image(desc.Digest)
+			if err != nil {
+				return nil, err
+			}
+
+			image, err = mutateImageTimestamp(image, timestamp)
+			if err != nil {
+				return nil, err
+			}
+
+			imageIndex = replaceManifestIn(imageIndex, desc, image)
+		}
+	}
+
+	return imageIndex, nil
 }

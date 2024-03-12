@@ -9,8 +9,8 @@ SPDX-License-Identifier: Apache-2.0
 - [Overview](#overview)
 - [BuildRun Controller](#buildrun-controller)
 - [Configuring a BuildRun](#configuring-a-buildrun)
-  - [Defining the Build Reference](#defining-the-buildref)
-  - [Defining the Build Specification](#defining-the-buildspec)
+  - [Defining the Build Reference](#defining-the-build-reference)
+  - [Defining the Build Specification](#defining-the-build-specification)
   - [Defining ParamValues](#defining-paramvalues)
   - [Defining the ServiceAccount](#defining-the-serviceaccount)
   - [Defining Retention Parameters](#defining-retention-parameters)
@@ -67,11 +67,12 @@ The `BuildRun` definition supports the following fields:
   - `spec.serviceAccount` - Refers to the SA to use when building the image. (_defaults to the `default` SA_)
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example, `5m`. The value overwrites the value that is defined in the `Build`.
   - `spec.paramValues` - Refers to a name-value(s) list to specify values for `parameters` defined in the `BuildStrategy`. This value overwrites values defined with the same name in the Build.
-  - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value defined in `Build`. ( Note: other properties of the output, for example, the credentials, cannot be specified in the buildRun spec. )
+  - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value defined in `Build`. (**Note**: other properties of the output, for example, the credentials, cannot be specified in the buildRun spec. )
   - `spec.output.pushSecret` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
+  - `spec.output.timestamp` - Overrides the output timestamp configuration of the referenced build to instruct the build to change the output image creation timestamp to the specified value. When omitted, the respective build strategy tool defines the output image timestamp.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
 
-_Note:_ The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
+**Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
 
 ### Defining the Build Reference
 
@@ -113,9 +114,7 @@ spec:
 
 ### Defining the Build Source
 
-BuildRun's support the specification of a Local type source. This is useful for working on development
-mode, without forcing a user to commit/push changes to their related version control system. For more information please
-refer to [SHIP 0016 - enabling local source code](https://github.com/shipwright-io/community/blob/main/ships/0016-enable-local-source-code-support.md).
+BuildRun's support the specification of a Local type source. This is useful for working on development mode, without forcing a user to commit/push changes to their related version control system. For more information please refer to [SHIP 0016 - enabling local source code](https://github.com/shipwright-io/community/blob/main/ships/0016-enable-local-source-code-support.md).
 
 ```yaml
 apiVersion: shipwright.io/v1beta1
@@ -190,7 +189,7 @@ spec:
 
 You can also set the value of `spec.serviceAccount` to `".generate"`. This will generate the service account during runtime for you. The name of the generated service account is the same as that of the BuildRun.
 
-_**Note**_: When the service account is not defined, the `BuildRun` uses the `pipeline` service account if it exists in the namespace, and falls back to the `default` service account.
+**Note**: When the service account is not defined, the `BuildRun` uses the `pipeline` service account if it exists in the namespace, and falls back to the `default` service account.
 
 ### Defining Retention Parameters
 
@@ -216,18 +215,15 @@ spec:
     ttlAfterSucceeded: 10m
 ```
 
-**NOTE** In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
+**Note**: In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
 
 ### Defining Volumes
 
-`BuildRuns` can declare `volumes`. They must override `volumes` defined by the according `BuildStrategy`. If a `volume`
-is not `overridable` then the `BuildRun` will eventually fail.
+`BuildRuns` can declare `volumes`. They must override `volumes` defined by the according `BuildStrategy`. If a `volume` is not `overridable` then the `BuildRun` will eventually fail.
 
-In case `Build` and `BuildRun` that refers to this `Build` override the same `volume`, one that is defined in the `BuildRun`
-is the one used eventually.
+In case `Build` and `BuildRun` that refers to this `Build` override the same `volume`, one that is defined in the `BuildRun` is the one used eventually.
 
-`Volumes` follow the declaration of [Pod Volumes](https://kubernetes.io/docs/concepts/storage/volumes/), so 
-all the usual `volumeSource` types are supported.
+`Volumes` follow the declaration of [Pod Volumes](https://kubernetes.io/docs/concepts/storage/volumes/), so all the usual `volumeSource` types are supported.
 
 Here is an example of `BuildRun` object that overrides `volumes`:
 
@@ -296,8 +292,7 @@ spec:
       value: "example-value-2"
 ```
 
-Example of a `BuildRun` that uses the Kubernetes Downward API to
-expose a `Pod` field as an environment variable:
+Example of a `BuildRun` that uses the Kubernetes Downward API to expose a `Pod` field as an environment variable:
 
 ```yaml
 apiVersion: shipwright.io/v1beta1
@@ -314,8 +309,7 @@ spec:
           fieldPath: metadata.name
 ```
 
-Example of a `BuildRun` that uses the Kubernetes Downward API to
-expose a `Container` field as an environment variable:
+Example of a `BuildRun` that uses the Kubernetes Downward API to expose a `Container` field as an environment variable:
 
 ```yaml
 apiVersion: shipwright.io/v1beta1
@@ -365,40 +359,40 @@ The `status.conditions` hosts different fields, like `status`, `reason` and `mes
 
 The following table illustrates the different states a BuildRun can have under its `status.conditions`:
 
-| Status   | Reason                                  | CompletionTime is set | Description |
-| ---      | ---                                     | --- | --- |
-| Unknown  | Pending                                 | No  | The BuildRun is waiting on a Pod in status Pending. |
-| Unknown  | Running                                 | No  | The BuildRun has been validated and started to perform its work. |
-| Unknown  | Running                                 | No  | The BuildRun has been validated and started to perform its work. |
-| Unknown  | BuildRunCanceled                        | No  | The user requested the BuildRun to be canceled.  This results in the BuildRun controller requesting the TaskRun be canceled.  Cancellation has not been done yet. |
-| True     | Succeeded                               | Yes | The BuildRun Pod is done. |
-| False    | Failed                                  | Yes | The BuildRun failed in one of the steps. |
-| False    | BuildRunTimeout                         | Yes | The BuildRun timed out. |
-| False    | UnknownStrategyKind                     | Yes | The Build specified strategy Kind is unknown. (_options: ClusterBuildStrategy or BuildStrategy_) |
-| False    | ClusterBuildStrategyNotFound            | Yes | The referenced cluster strategy was not found in the cluster. |
-| False    | BuildStrategyNotFound                   | Yes | The referenced namespaced strategy was not found in the cluster. |
-| False    | SetOwnerReferenceFailed                 | Yes | Setting ownerreferences from the BuildRun to the related TaskRun failed.  |
-| False    | TaskRunIsMissing                        | Yes | The BuildRun related TaskRun was not found. |
-| False    | TaskRunGenerationFailed                 | Yes | The generation of a TaskRun spec failed. |
-| False    | MissingParameterValues                  | Yes | No value has been provided for some parameters that are defined in the build strategy without any default. Values for those parameters must be provided through the Build or the BuildRun. |
-| False    | RestrictedParametersInUse               | Yes | A value for a system parameter was provided. This is not allowed. |
-| False    | UndefinedParameter                      | Yes | A value for a parameter was provided that is not defined in the build strategy. |
-| False    | WrongParameterValueType                 | Yes | A value was provided for a build strategy parameter using the wrong type. The parameter is defined as `array` or `string` in the build strategy. Depending on that, you must provide `values` or a direct value. |
-| False    | InconsistentParameterValues             | Yes | A value for a parameter contained more than one of `value`, `configMapValue`, and `secretValue`. Any values including array items must only provide one of them. |
-| False    | EmptyArrayItemParameterValues           | Yes | An item inside the `values` of an array parameter contained none of `value`, `configMapValue`, and `secretValue`. Exactly one of them must be provided. Null array items are not allowed. |
-| False    | IncompleteConfigMapValueParameterValues | Yes | A value for a parameter contained a `configMapValue` where the `name` or the `value` were empty. You must specify them to point to an existing ConfigMap key in your namespace. |
-| False    | IncompleteSecretValueParameterValues    | Yes | A value for a parameter contained a `secretValue` where the `name` or the `value` were empty. You must specify them to point to an existing Secret key in your namespace. |
-| False    | ServiceAccountNotFound                  | Yes | The referenced service account was not found in the cluster. |
-| False    | BuildRegistrationFailed                 | Yes | The related Build in the BuildRun is in a Failed state. |
-| False    | BuildNotFound                           | Yes | The related Build in the BuildRun was not found. |
-| False    | BuildRunCanceled                        | Yes | The BuildRun and underlying TaskRun were canceled successfully. |
-| False    | BuildRunNameInvalid                     | Yes | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
-| False    | BuildRunNoRefOrSpec                     | Yes | BuildRun does not have either `spec.build.name` or `spec.build.spec` defined. There is no connection to a Build specification. |
-| False    | BuildRunAmbiguousBuild                  | Yes | The defined `BuildRun` uses both `spec.build.name` and `spec.build.spec`. Only one of them is allowed at the same time.|
-| False    | BuildRunBuildFieldOverrideForbidden     | Yes | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, or `env`) in combination with `spec.build.spec`, which is not allowed. Use the `spec.build.spec` to directly specify the respective value. |
-| False    | PodEvicted                              | Yes | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
+| Status  | Reason                                  | CompletionTime is set | Description                                                                                                                                                                                                                                                                                           |
+|---------|-----------------------------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Unknown | Pending                                 | No                    | The BuildRun is waiting on a Pod in status Pending.                                                                                                                                                                                                                                                   |
+| Unknown | Running                                 | No                    | The BuildRun has been validated and started to perform its work.                                                                                                                                                                                                                                      |
+| Unknown | Running                                 | No                    | The BuildRun has been validated and started to perform its work.                                                                                                                                                                                                                                      |
+| Unknown | BuildRunCanceled                        | No                    | The user requested the BuildRun to be canceled. This results in the BuildRun controller requesting the TaskRun be canceled. Cancellation has not been done yet.                                                                                                                                       |
+| True    | Succeeded                               | Yes                   | The BuildRun Pod is done.                                                                                                                                                                                                                                                                             |
+| False   | Failed                                  | Yes                   | The BuildRun failed in one of the steps.                                                                                                                                                                                                                                                              |
+| False   | BuildRunTimeout                         | Yes                   | The BuildRun timed out.                                                                                                                                                                                                                                                                               |
+| False   | UnknownStrategyKind                     | Yes                   | The Build specified strategy Kind is unknown. (_options: ClusterBuildStrategy or BuildStrategy_)                                                                                                                                                                                                      |
+| False   | ClusterBuildStrategyNotFound            | Yes                   | The referenced cluster strategy was not found in the cluster.                                                                                                                                                                                                                                         |
+| False   | BuildStrategyNotFound                   | Yes                   | The referenced namespaced strategy was not found in the cluster.                                                                                                                                                                                                                                      |
+| False   | SetOwnerReferenceFailed                 | Yes                   | Setting ownerreferences from the BuildRun to the related TaskRun failed.                                                                                                                                                                                                                              |
+| False   | TaskRunIsMissing                        | Yes                   | The BuildRun related TaskRun was not found.                                                                                                                                                                                                                                                           |
+| False   | TaskRunGenerationFailed                 | Yes                   | The generation of a TaskRun spec failed.                                                                                                                                                                                                                                                              |
+| False   | MissingParameterValues                  | Yes                   | No value has been provided for some parameters that are defined in the build strategy without any default. Values for those parameters must be provided through the Build or the BuildRun.                                                                                                            |
+| False   | RestrictedParametersInUse               | Yes                   | A value for a system parameter was provided. This is not allowed.                                                                                                                                                                                                                                     |
+| False   | UndefinedParameter                      | Yes                   | A value for a parameter was provided that is not defined in the build strategy.                                                                                                                                                                                                                       |
+| False   | WrongParameterValueType                 | Yes                   | A value was provided for a build strategy parameter using the wrong type. The parameter is defined as `array` or `string` in the build strategy. Depending on that, you must provide `values` or a direct value.                                                                                      |
+| False   | InconsistentParameterValues             | Yes                   | A value for a parameter contained more than one of `value`, `configMapValue`, and `secretValue`. Any values including array items must only provide one of them.                                                                                                                                      |
+| False   | EmptyArrayItemParameterValues           | Yes                   | An item inside the `values` of an array parameter contained none of `value`, `configMapValue`, and `secretValue`. Exactly one of them must be provided. Null array items are not allowed.                                                                                                             |
+| False   | IncompleteConfigMapValueParameterValues | Yes                   | A value for a parameter contained a `configMapValue` where the `name` or the `value` were empty. You must specify them to point to an existing ConfigMap key in your namespace.                                                                                                                       |
+| False   | IncompleteSecretValueParameterValues    | Yes                   | A value for a parameter contained a `secretValue` where the `name` or the `value` were empty. You must specify them to point to an existing Secret key in your namespace.                                                                                                                             |
+| False   | ServiceAccountNotFound                  | Yes                   | The referenced service account was not found in the cluster.                                                                                                                                                                                                                                          |
+| False   | BuildRegistrationFailed                 | Yes                   | The related Build in the BuildRun is in a Failed state.                                                                                                                                                                                                                                               |
+| False   | BuildNotFound                           | Yes                   | The related Build in the BuildRun was not found.                                                                                                                                                                                                                                                      |
+| False   | BuildRunCanceled                        | Yes                   | The BuildRun and underlying TaskRun were canceled successfully.                                                                                                                                                                                                                                       |
+| False   | BuildRunNameInvalid                     | Yes                   | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set).                                                                                    |
+| False   | BuildRunNoRefOrSpec                     | Yes                   | BuildRun does not have either `spec.build.name` or `spec.build.spec` defined. There is no connection to a Build specification.                                                                                                                                                                        |
+| False   | BuildRunAmbiguousBuild                  | Yes                   | The defined `BuildRun` uses both `spec.build.name` and `spec.build.spec`. Only one of them is allowed at the same time.                                                                                                                                                                               |
+| False   | BuildRunBuildFieldOverrideForbidden     | Yes                   | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, or `env`) in combination with `spec.build.spec`, which is not allowed. Use the `spec.build.spec` to directly specify the respective value.                                                                          |
+| False   | PodEvicted                              | Yes                   | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
 
-_Note_: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
+**Note**: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
 
 ### Understanding failed BuildRuns
 
@@ -428,17 +422,17 @@ status:
 All git-related operations support error reporting via `status.failureDetails`. The following table explains the possible
 error reasons:
 
-| Reason |  Description |
-| --- |  --- |
-| `GitAuthInvalidUserOrPass` | Basic authentication has failed. Check your username or password. Note: GitHub requires a personal access token instead of your regular password. |
-| `GitAuthInvalidKey` | The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
-| `GitRevisionNotFound` | The remote revision does not exist. Check the revision specified in your Build. |
-| `GitRemoteRepositoryNotFound`| The source repository does not exist, or you have insufficient permissions to access it. |
-| `GitRemoteRepositoryPrivate` | You are trying to access a non-existing or private repository without having sufficient permissions to access it via HTTPS. |
-| `GitBasicAuthIncomplete`| Basic Auth incomplete: Both username and password must be configured. |
-| `GitSSHAuthUnexpected`| Credential/URL inconsistency: SSH credentials were provided, but the URL is not an SSH Git URL. |
-| `GitSSHAuthExpected`| Credential/URL inconsistency: No SSH credentials provided, but the URL is an SSH Git URL. |
-| `GitError` | The specific error reason is unknown. Check the error message for more information. |
+| Reason                        | Description                                                                                                                                                        |
+|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `GitAuthInvalidUserOrPass`    | Basic authentication has failed. Check your username or password. **Note**: GitHub requires a personal access token instead of your regular password.              |
+| `GitAuthInvalidKey`           | The key is invalid for the specified target. Please make sure that the Git repository exists, you have sufficient permissions, and the key is in the right format. |
+| `GitRevisionNotFound`         | The remote revision does not exist. Check the revision specified in your Build.                                                                                    |
+| `GitRemoteRepositoryNotFound` | The source repository does not exist, or you have insufficient permissions to access it.                                                                           |
+| `GitRemoteRepositoryPrivate`  | You are trying to access a non-existing or private repository without having sufficient permissions to access it via HTTPS.                                        |
+| `GitBasicAuthIncomplete`      | Basic Auth incomplete: Both username and password must be configured.                                                                                              |
+| `GitSSHAuthUnexpected`        | Credential/URL inconsistency: SSH credentials were provided, but the URL is not an SSH Git URL.                                                                    |
+| `GitSSHAuthExpected`          | Credential/URL inconsistency: No SSH credentials provided, but the URL is an SSH Git URL.                                                                          |
+| `GitError`                    | The specific error reason is unknown. Check the error message for more information.                                                                                |
 
 ### Step Results in BuildRun Status
 

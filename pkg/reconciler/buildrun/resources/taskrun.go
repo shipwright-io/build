@@ -324,7 +324,12 @@ func GenerateTaskRun(
 	if buildRunOutput == nil {
 		buildRunOutput = &buildv1beta1.Image{}
 	}
-	SetupImageProcessing(expectedTaskRun, cfg, build.Spec.Output, *buildRunOutput)
+
+	// Make sure that image-processing is setup in case it is needed, which can fail with an error
+	// in case some assumptions cannot be met, i.e. illegal combination of fields
+	if err := SetupImageProcessing(expectedTaskRun, cfg, buildRun.CreationTimestamp.Time, build.Spec.Output, *buildRunOutput); err != nil {
+		return nil, err
+	}
 
 	return expectedTaskRun, nil
 }

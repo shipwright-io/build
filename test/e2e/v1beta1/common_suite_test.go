@@ -13,6 +13,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,6 +99,14 @@ func (b *buildPrototype) SourceGit(repository string) *buildPrototype {
 	b.build.Spec.Source.Type = buildv1beta1.GitType
 	b.build.Spec.Source.Git.URL = repository
 	b.build.Spec.Source.OCIArtifact = nil
+	return b
+}
+
+func (b *buildPrototype) SourceGitRevision(revision string) *buildPrototype {
+	if b.build.Spec.Source.Git == nil {
+		b.build.Spec.Source.Git = &buildv1beta1.Git{}
+	}
+	b.build.Spec.Source.Git.Revision = &revision
 	return b
 }
 
@@ -253,6 +262,11 @@ func (b *buildPrototype) OutputImageCredentials(name string) *buildPrototype {
 func (b *buildPrototype) OutputImageInsecure(insecure bool) *buildPrototype {
 	b.build.Spec.Output.Insecure = &insecure
 
+	return b
+}
+
+func (b *buildPrototype) OutputTimestamp(timestampString string) *buildPrototype {
+	b.build.Spec.Output.Timestamp = &timestampString
 	return b
 }
 
@@ -423,6 +437,16 @@ func (b *buildRunPrototype) Create() (*buildv1beta1.BuildRun, error) {
 		ShipwrightV1beta1().
 		BuildRuns(b.buildRun.Namespace).
 		Create(context.Background(), &b.buildRun, meta.CreateOptions{})
+}
+
+func (b *buildRunPrototype) MustCreate() *buildv1beta1.BuildRun {
+	GinkgoHelper()
+
+	buildrun, err := b.Create()
+	Expect(err).ToNot(HaveOccurred())
+	Expect(buildrun).ToNot(BeNil())
+
+	return buildrun
 }
 
 // Logf logs data

@@ -244,9 +244,13 @@ github.com/google/go-containerregistry/internal/redact
 github.com/google/go-containerregistry/internal/retry
 github.com/google/go-containerregistry/internal/retry/wait
 github.com/google/go-containerregistry/internal/verify
+github.com/google/go-containerregistry/internal/windows
 github.com/google/go-containerregistry/internal/zstd
 github.com/google/go-containerregistry/pkg/authn
 github.com/google/go-containerregistry/pkg/compression
+github.com/google/go-containerregistry/pkg/crane
+github.com/google/go-containerregistry/pkg/legacy
+github.com/google/go-containerregistry/pkg/legacy/tarball
 github.com/google/go-containerregistry/pkg/logs
 github.com/google/go-containerregistry/pkg/name
 github.com/google/go-containerregistry/pkg/registry
