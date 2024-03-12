@@ -51,25 +51,42 @@ When the controller reconciles it:
 
 ## Build Validations
 
-**Note: reported validations in build status are deprecated, and will be removed in a future release.**
+**Note**: reported validations in build status are deprecated, and will be removed in a future release.
 
-To prevent users from triggering `BuildRuns` (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `status.reason`. However, if any validations fail, users can rely on the `status.reason` and `status.message` fields to understand the root cause.
+To prevent users from triggering `BuildRun`s (_execution of a Build_) that will eventually fail because of wrong or missing dependencies or configuration settings, the Build controller will validate them in advance. If all validations are successful, users can expect a `Succeeded` `status.reason`. However, if any validations fail, users can rely on the `status.reason` and `status.message` fields to understand the root cause.
 
-| Status.Reason | Description |
-| --- | --- |
-| BuildStrategyNotFound   | The referenced namespace-scope strategy doesn't exist. |
-| ClusterBuildStrategyNotFound   | The referenced cluster-scope strategy doesn't exist. |
-| SetOwnerReferenceFailed   | Setting ownerreferences between a Build and a BuildRun failed. This status is triggered when you set the `spec.retention.atBuildDeletion` to true in a Build. |
-| SpecSourceSecretRefNotFound | The secret used to authenticate to git doesn't exist. |
-| SpecOutputSecretRefNotFound | The secret used to authenticate to the container registry doesn't exist. |
-| SpecBuilderSecretRefNotFound | The secret used to authenticate the container registry doesn't exist.|
-| MultipleSecretRefNotFound | More than one secret is missing. At the moment, only three paths on a Build can specify a secret. |
-| RestrictedParametersInUse | One or many defined `paramValues` are colliding with Shipwright reserved parameters. See [Defining Params](#defining-paramvalues) for more information. |
-| UndefinedParameter | One or many defined `paramValues` are not defined in the referenced strategy. Please ensure that the strategy defines them under its `spec.parameters` list. |
-| RemoteRepositoryUnreachable | The defined `spec.source.git.url` was not found. This validation only takes place for HTTP/HTTPS protocols. |
-| BuildNameInvalid | The defined `Build` name (`metadata.name`) is invalid. The `Build` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
-| SpecEnvNameCanNotBeBlank | Indicates that the name for a user-provided environment variable is blank. |
-| SpecEnvValueCanNotBeBlank | Indicates that the value for a user-provided environment variable is blank. |
+| Status.Reason                                   | Description                                                                                                                                                                                                  |
+|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| BuildStrategyNotFound                           | The referenced namespace-scope strategy doesn't exist.                                                                                                                                                       |
+| ClusterBuildStrategyNotFound                    | The referenced cluster-scope strategy doesn't exist.                                                                                                                                                         |
+| SetOwnerReferenceFailed                         | Setting ownerreferences between a Build and a BuildRun failed. This status is triggered when you set the `spec.retention.atBuildDeletion` to true in a Build.                                                |
+| SpecSourceSecretRefNotFound                     | The secret used to authenticate to git doesn't exist.                                                                                                                                                        |
+| SpecOutputSecretRefNotFound                     | The secret used to authenticate to the container registry doesn't exist.                                                                                                                                     |
+| SpecBuilderSecretRefNotFound                    | The secret used to authenticate the container registry doesn't exist.                                                                                                                                        |
+| MultipleSecretRefNotFound                       | More than one secret is missing. At the moment, only three paths on a Build can specify a secret.                                                                                                            |
+| RestrictedParametersInUse                       | One or many defined `paramValues` are colliding with Shipwright reserved parameters. See [Defining Params](#defining-paramvalues) for more information.                                                      |
+| UndefinedParameter                              | One or many defined `paramValues` are not defined in the referenced strategy. Please ensure that the strategy defines them under its `spec.parameters` list.                                                 |
+| RemoteRepositoryUnreachable                     | The defined `spec.source.git.url` was not found. This validation only takes place for HTTP/HTTPS protocols.                                                                                                  |
+| BuildNameInvalid                                | The defined `Build` name (`metadata.name`) is invalid. The `Build` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
+| SpecEnvNameCanNotBeBlank                        | The name for a user-provided environment variable is blank.                                                                                                                                                  |
+| SpecEnvValueCanNotBeBlank                       | The value for a user-provided environment variable is blank.                                                                                                                                                 |
+| SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified | Both value and valueFrom were specified, which are mutually exclusive.                                                                                                                                       |
+| RuntimePathsCanNotBeEmpty                       | The `spec.runtime` feature is used but the paths were not specified.                                                                                                                                         |
+| WrongParameterValueType                         | A single value was provided for an array parameter, or vice-versa.                                                                                                                                           |
+| InconsistentParameterValues                     | Parameter values have more than one of _configMapValue_, _secretValue_, or _value_ set.                                                                                                                      |
+| EmptyArrayItemParameterValues                   | Array parameters contain an item where none of _configMapValue_, _secretValue_, or _value_ is set.                                                                                                           |
+| IncompleteConfigMapValueParameterValues         | A _configMapValue_ is specified where the name or the key is empty.                                                                                                                                          |
+| IncompleteSecretValueParameterValues            | A _secretValue_ is specified where the name or the key is empty.                                                                                                                                             |
+| VolumeDoesNotExist                              | Volume referenced by the Build does not exist, therefore Build cannot be run.                                                                                                                                |
+| VolumeNotOverridable                            | Volume defined by build is not set as overridable in the strategy.                                                                                                                                           |
+| UndefinedVolume                                 | Volume defined by build is not found in the strategy.                                                                                                                                                        |
+| TriggerNameCanNotBeBlank                        | Trigger condition does not have a name.                                                                                                                                                                      |
+| TriggerInvalidType                              | Trigger type is invalid.                                                                                                                                                                                     |
+| TriggerInvalidGitHubWebHook                     | Trigger type GitHub is invalid.                                                                                                                                                                              |
+| TriggerInvalidImage                             | Trigger type Image is invalid.                                                                                                                                                                               |
+| TriggerInvalidPipeline                          | Trigger type Pipeline is invalid.                                                                                                                                                                            |
+| OutputTimestampNotSupported                     | An unsupported output timestamp setting was used.                                                                                                                                                            |
+| OutputTimestampNotValid                         | The output timestamp value is not valid.                                                                                                                                                                     |
 
 ## Configuring a Build
 
@@ -130,7 +147,7 @@ spec:
     contextDir: docker-build
 ```
 
-_Note_: The Build controller only validates two scenarios. The first one is when the endpoint uses an `http/https` protocol. The second one is when an `ssh` protocol such as `git@` has been defined but a referenced secret, such as `source.git.cloneSecret`, has not been provided.
+**Note**: The Build controller only validates two scenarios. The first one is when the endpoint uses an `http/https` protocol. The second one is when an `ssh` protocol such as `git@` has been defined but a referenced secret, such as `source.git.cloneSecret`, has not been provided.
 
 Example of a `Build` with a source with **credentials** defined by the user.
 
@@ -198,8 +215,7 @@ spec:
       value: "example-value-2"
 ```
 
-Example of a `Build` that uses the Kubernetes Downward API to
-expose a `Pod` field as an environment variable:
+Example of a `Build` that uses the Kubernetes Downward API to expose a `Pod` field as an environment variable:
 
 ```yaml
 apiVersion: shipwright.io/v1beta1
@@ -219,8 +235,7 @@ spec:
           fieldPath: metadata.name
 ```
 
-Example of a `Build` that uses the Kubernetes Downward API to
-expose a `Container` field as an environment variable:
+Example of a `Build` that uses the Kubernetes Downward API to expose a `Container` field as an environment variable:
 
 ```yaml
 apiVersion: shipwright.io/v1beta1
@@ -427,7 +442,7 @@ Here, we pass three items in the `build-args` array:
 2. The second item is just a hard-coded value.
 3. The third item references a Secret, the same as with ConfigMaps.
 
-**NOTE**: The logging output of BuildKit contains expanded `ARG`s in `RUN` commands. Also, such information ends up in the final container image if you use such args in the [final stage of your Dockerfile](https://docs.docker.com/develop/develop-images/multistage-build/). An alternative approach to pass secrets is using [secret mounts](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The BuildKit sample strategy supports them using the `secrets` parameter.
+**Note**: The logging output of BuildKit contains expanded `ARG`s in `RUN` commands. Also, such information ends up in the final container image if you use such args in the [final stage of your Dockerfile](https://docs.docker.com/develop/develop-images/multistage-build/). An alternative approach to pass secrets is using [secret mounts](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information). The BuildKit sample strategy supports them using the `secrets` parameter.
 
 ### Defining the Builder or Dockerfile
 
@@ -475,9 +490,9 @@ spec:
 
 ### Defining the Output
 
-A `Build` resource can specify the output where it should push the image. For external private registries, it is recommended to specify a secret with the related data to access it. An option is available to specify the annotation and labels for the output image. The annotations and labels mentioned here are specific to the container image and do not relate to the `Build` annotations.
+A `Build` resource can specify the output where it should push the image. For external private registries, it is recommended to specify a secret with the related data to access it. An option is available to specify the annotation and labels for the output image. The annotations and labels mentioned here are specific to the container image and do not relate to the `Build` annotations. Analogous, the timestamp refers to the timestamp of the output image.
 
-**NOTE**: When you specify annotations or labels, the output image will get pushed twice. The first push comes from the build strategy. Then, a follow-on update changes the image configuration to add the annotations and labels. If you have automation based on push events in your container registry, be aware of this behavior.
+**Note**: When you specify annotations, labels, or timestamp, the output image **may** get pushed twice, depending on the respective strategy. For example, strategies that push the image to the registry as part of their build step will lead to an additional push of the image in case image processing like labels is configured. If you have automation based on push events in your container registry, be aware of this behavior.
 
 For example, the user specifies a public registry:
 
@@ -555,16 +570,38 @@ spec:
       "description": "This is my cool image"
 ```
 
+Example of user specified image timestamp set to `SourceTimestamp` to set the output timestamp to match the timestamp of the Git commit used for the build:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: sample-go-build
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: source-build
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  output:
+    image: some.registry.com/namespace/image:tag
+    pushSecret: credentials
+    timestamp: SourceTimestamp
+```
+
 Annotations added to the output image can be verified by running the command:
 
 ```sh
-  docker manifest inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".annotations"
+docker manifest inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".annotations"
 ```
 
 You can verify which labels were added to the output image that is available on the host machine by running the command:
 
 ```sh
-  docker inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".[].Config.Labels"
+docker inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".[].Config.Labels"
 ```
 
 ### Defining Retention Parameters
@@ -603,14 +640,14 @@ An example of a user using both TTL and Limit retention fields. In case of such 
       succeededLimit: 20
 ```
 
-**NOTE**: When changes are made to `retention.failedLimit` and `retention.succeededLimit` values, they come into effect as soon as the build is applied, thereby enforcing the new limits. On the other hand, changing the `retention.ttlAfterFailed` and `retention.ttlAfterSucceeded` values will only affect new buildruns. Old buildruns will adhere to the old TTL retention values. In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
+**Note**: When changes are made to `retention.failedLimit` and `retention.succeededLimit` values, they come into effect as soon as the build is applied, thereby enforcing the new limits. On the other hand, changing the `retention.ttlAfterFailed` and `retention.ttlAfterSucceeded` values will only affect new buildruns. Old buildruns will adhere to the old TTL retention values. In case TTL values are defined in buildrun specifications as well as build specifications, priority will be given to the values defined in the buildrun specifications.
 
 ### Defining Volumes
 
 `Builds` can declare `volumes`. They must override `volumes` defined by the according `BuildStrategy`. If a `volume`
 is not `overridable` then the `BuildRun` will eventually fail.
 
-`Volumes` follow the declaration of [Pod Volumes](https://kubernetes.io/docs/concepts/storage/volumes/), so 
+`Volumes` follow the declaration of [Pod Volumes](https://kubernetes.io/docs/concepts/storage/volumes/), so
 all the usual `volumeSource` types are supported.
 
 Here is an example of `Build` object that overrides `volumes`:
