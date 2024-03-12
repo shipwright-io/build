@@ -56,7 +56,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   To install the latest nightly release, run:
 
   ```bash
-  kubectl apply --filename "https://github.com/shipwright-io/build/releases/download/nightly/nightly-$(curl --silent https://github.com/shipwright-io/build/releases/download/nightly/latest.txt).yaml" --server-side
+  kubectl apply --filename "https://github.com/shipwright-io/build/releases/download/nightly/nightly-$(curl --silent --location https://github.com/shipwright-io/build/releases/download/nightly/latest.txt).yaml" --server-side
   curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/main/hack/setup-webhook-cert.sh | bash
   ```
 
@@ -69,7 +69,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   To install the latest nightly release, run:
 
   ```bash
-  kubectl apply --filename "https://github.com/shipwright-io/build/releases/download/nightly/nightly-$(curl --silent https://github.com/shipwright-io/build/releases/download/nightly/latest.txt)-sample-strategies.yaml" --server-side
+  kubectl apply --filename "https://github.com/shipwright-io/build/releases/download/nightly/nightly-$(curl --silent --location https://github.com/shipwright-io/build/releases/download/nightly/latest.txt)-sample-strategies.yaml" --server-side
   ```
 
 - Generate a secret to access your container registry, such as one on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io/):
