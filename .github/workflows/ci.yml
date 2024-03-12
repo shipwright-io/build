@@ -75,7 +75,7 @@ jobs:
         with:
           version: v0.15.2
       - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: ${{ matrix.kubernetes }}
       - name: Create kind cluster
@@ -149,7 +149,7 @@ jobs:
           cache: true
           check-latest: true
       - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: ${{ matrix.kubernetes }}
       - name: Create kind cluster
