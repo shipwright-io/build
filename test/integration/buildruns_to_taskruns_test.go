@@ -305,7 +305,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 			reason, err := tb.GetBRReason(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(reason).To(Equal("BuildRegistrationFailed"))
+			Expect(reason).To(Equal(resources.ConditionBuildRegistrationFailed))
 
 			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).ToNot(BeNil())

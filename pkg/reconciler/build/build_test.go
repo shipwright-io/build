@@ -134,6 +134,7 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
+
 			It("succeed when the secret exists", func() {
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -176,7 +177,6 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when spec strategy ClusterBuildStrategy is specified", func() {
 			It("fails when the strategy does not exists", func() {
-
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
 				client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
@@ -199,8 +199,8 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
-			It("succeed when the strategy exists", func() {
 
+			It("succeed when the strategy exists", func() {
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
 				client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
@@ -235,7 +235,6 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("fails when the strategy does not exists", func() {
-
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildStrategyNotFound, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
@@ -243,8 +242,8 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
-			It("succeed when the strategy exists", func() {
 
+			It("succeed when the strategy exists", func() {
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
 				client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
@@ -275,16 +274,16 @@ var _ = Describe("Reconcile Build", func() {
 				// Override the buildSample to use a BuildStrategy instead of the Cluster one, although the build strategy kind is nil
 				buildSample = ctl.BuildWithNilBuildStrategyKind(buildName, namespace, buildStrategyName)
 			})
-			It("default to BuildStrategy and fails when the strategy does not exists", func() {
 
+			It("default to BuildStrategy and fails when the strategy does not exists", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildStrategyNotFound, fmt.Sprintf("buildStrategy %s does not exist in namespace %s", buildStrategyName, namespace))
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).To(BeNil())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
-
 			})
+
 			It("default to BuildStrategy and succeed if the strategy exists", func() {
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -306,6 +305,30 @@ var _ = Describe("Reconcile Build", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 				Expect(reconcile.Result{}).To(Equal(result))
+			})
+		})
+
+		Context("when spec strategy kind is unknown", func() {
+			JustBeforeEach(func() {
+				buildStrategyKind := build.BuildStrategyKind("abc")
+				buildStrategyName = "xyz"
+				buildName = "build-name"
+				buildSample = ctl.BuildWithNilBuildStrategyKind(buildName, namespace, buildStrategyName)
+				buildSample.Spec.Strategy.Kind = &buildStrategyKind
+			})
+
+			It("should fail validation and update the status to indicate that the strategy kind is unknown", func() {
+				statusWriter.UpdateCalls(func(ctx context.Context, o crc.Object, sruo ...crc.SubResourceUpdateOption) error {
+					Expect(o).To(BeAssignableToTypeOf(&build.Build{}))
+					b := o.(*build.Build)
+					Expect(b.Status.Reason).ToNot(BeNil())
+					Expect(*b.Status.Reason).To(Equal(build.UnknownBuildStrategyKind))
+					return nil
+				})
+
+				_, err := reconciler.Reconcile(context.TODO(), request)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
 		})
 
@@ -438,6 +461,7 @@ var _ = Describe("Reconcile Build", func() {
 					return nil
 				})
 			})
+
 			It("fails when the name is blank", func() {
 				buildSample.Spec.Env = []corev1.EnvVar{
 					{
