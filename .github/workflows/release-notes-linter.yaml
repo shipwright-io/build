@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
       - main
+      - "release-v*" # release branches
 
 jobs:
   release-note-linter:
