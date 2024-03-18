@@ -3,12 +3,14 @@ on:
   pull_request:
     branches:
     - main
+    - "release-v*" # release branches
   push:
     paths-ignore:
     - 'README.md'
     - 'docs/**'
     branches:
     - main
+    - "release-v*" # release branches
 
 jobs:
   unit:
