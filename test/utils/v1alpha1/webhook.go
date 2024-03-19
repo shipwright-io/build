@@ -55,9 +55,8 @@ func StartBuildWebhook() *http.Server {
 		Transport: &http.Transport{
 			IdleConnTimeout:       5 * time.Second,
 			ResponseHeaderTimeout: 5 * time.Second,
-			// #nosec:G402 test code
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: true, // #nosec G402
 			},
 			TLSHandshakeTimeout: 5 * time.Second,
 		},
@@ -85,9 +84,8 @@ func StopBuildWebhook(webhookServer *http.Server) {
 		Transport: &http.Transport{
 			IdleConnTimeout:       5 * time.Second,
 			ResponseHeaderTimeout: 5 * time.Second,
-			// #nosec:G402 test code
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: true, // #nosec G402
 			},
 			TLSHandshakeTimeout: 5 * time.Second,
 		},

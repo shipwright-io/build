@@ -84,7 +84,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			// or BuildRunDeletion annotation does not change
 			return o.GetGeneration() != n.GetGeneration() || buildRunDeletionAnnotation
 		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
+		DeleteFunc: func(_ event.DeleteEvent) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},

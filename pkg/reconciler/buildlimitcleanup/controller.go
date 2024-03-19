@@ -75,14 +75,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			}
 			return false
 		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
+		DeleteFunc: func(_ event.DeleteEvent) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 
 	predBuildRun := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
+		CreateFunc: func(_ event.CreateEvent) bool {
 			// Never reconcile in case of create buildrun event
 			return false
 		},
@@ -106,7 +106,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			}
 			return false
 		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
+		DeleteFunc: func(_ event.DeleteEvent) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
