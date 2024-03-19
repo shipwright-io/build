@@ -54,9 +54,8 @@ func GetOptions(ctx context.Context, imageName name.Reference, insecure bool, do
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	if insecure {
-		// #nosec:G402 explicitly requested by user to use insecure registry
 		transport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, // #nosec G402 explicitly requested by user to use insecure registry
 		}
 	} else {
 		transport.TLSClientConfig = &tls.Config{
