@@ -6,9 +6,11 @@ on:
       - '**'
     branches:
       - main
+      - "release-v*" # release branches
   pull_request:
     branches:
       - main
+      - "release-v*" # release branches
 
 permissions:
   contents: read
