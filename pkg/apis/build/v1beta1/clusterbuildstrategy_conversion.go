@@ -19,7 +19,7 @@ var _ webhook.Conversion = (*ClusterBuildStrategy)(nil)
 
 // ConvertTo converts this object to its v1alpha1 equivalent
 func (src *ClusterBuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
-	ctxlog.Debug(ctx, "Converting ClusterBuildStrategy from beta to alpha", "namespace", src.Namespace, "name", src.Name)
+	ctxlog.Info(ctx, "converting ClusterBuildStrategy from beta to alpha", "namespace", src.Namespace, "name", src.Name)
 
 	var bs v1alpha1.ClusterBuildStrategy
 	bs.TypeMeta = src.TypeMeta
@@ -47,7 +47,7 @@ func (src *ClusterBuildStrategy) ConvertFrom(ctx context.Context, obj *unstructu
 		ctxlog.Error(ctx, err, "failed unstructuring the buildrun convertedObject")
 	}
 
-	ctxlog.Debug(ctx, "Converting ClusterBuildStrategy from alpha to beta", "namespace", cbs.Namespace, "name", cbs.Name)
+	ctxlog.Info(ctx, "converting ClusterBuildStrategy from alpha to beta", "namespace", cbs.Namespace, "name", cbs.Name)
 
 	src.ObjectMeta = cbs.ObjectMeta
 	src.TypeMeta = cbs.TypeMeta
