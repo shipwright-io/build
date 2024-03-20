@@ -28,7 +28,7 @@ const (
 // convertSHPCR takes an unstructured object with certain CR apiversion, parses it to a known Object type,
 // modify the type to a desired version of that type, and converts it back to unstructured
 func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVersion string) (*unstructured.Unstructured, metav1.Status) {
-	ctxlog.Info(ctx, "converting custom resource")
+	ctxlog.Debug(ctx, "converting custom resource")
 
 	convertedObject := Object.DeepCopy()
 	fromVersion := Object.GetAPIVersion()
@@ -44,7 +44,6 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 
 		case alphaGroupVersion:
 			if convertedObject.Object[KIND] == buildKind {
-
 				unstructured := convertedObject.UnstructuredContent()
 				var build v1beta1.Build
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &build)

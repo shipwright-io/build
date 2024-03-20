@@ -83,7 +83,7 @@ func serve(ctx context.Context, w http.ResponseWriter, r *http.Request, convert 
 		return
 	}
 
-	ctxlog.Info(ctx, "handling request")
+	ctxlog.Debug(ctx, "handling request")
 
 	obj, gvk, err := serializer.Decode(body, nil, nil)
 	if err != nil {
@@ -104,9 +104,10 @@ func serve(ctx context.Context, w http.ResponseWriter, r *http.Request, convert 
 			http.Error(w, msg, http.StatusBadRequest)
 			return
 		}
+		ctxlog.Info(ctx, "conversion request", "uid", convertReview.Request.UID)
 		convertReview.Response = doConversion(ctx, convertReview.Request, convert)
 		convertReview.Response.UID = convertReview.Request.UID
-		ctxlog.Info(ctx, fmt.Sprintf("sending response: %v", convertReview.Response))
+		ctxlog.Info(ctx, "conversion response", "status", convertReview.Response.Result.Status, "uid", convertReview.Response.UID)
 
 		convertReview.Request = &v1.ConversionRequest{}
 		responseObj = convertReview
