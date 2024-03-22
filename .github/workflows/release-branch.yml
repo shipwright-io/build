@@ -1,0 +1,23 @@
+# Release branch starter workflow
+# See SHIP-0038: https://github.com/shipwright-io/community/pull/194
+name: Create Release Branch
+on:
+  workflow_dispatch:
+    inputs:
+      release-version:
+        required: true
+        type: string
+        description: "Semantic version for the release branch (vX.Y format)"
+      git-ref:
+        required: true
+        type: string
+        description: "Git ref to create the release branch from (defaults to main)"
+        default: "main"
+jobs:
+  create-release-branch:
+    permissions:
+      contents: write
+    uses: shipwright-io/.github/.github/workflows/release-branch.yml@main
+    with:
+      release-version: ${{ inputs.release-version }}
+      git-ref: ${{ inputs.git-ref }}
