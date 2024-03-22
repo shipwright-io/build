@@ -9,6 +9,9 @@ on:
       tags:
         description: 'Previous tag'
         required: true
+      git-ref:
+        description: 'Git reference to checkout. Use an appropriate release-v* branch name, tag, or commit SHA.'
+        required: true
 
 jobs:
   release:
@@ -22,11 +25,12 @@ jobs:
     env:
       IMAGE_HOST: ghcr.io
       IMAGE_NAMESPACE: ${{ github.repository }}
-      TAG: ${{ github.event.inputs.release }}
+      TAG: ${{ inputs.release }}
 
     steps:
     - uses: actions/checkout@v4
       with:
+        ref: ${{ inputs.git-ref }}
         fetch-depth: 0  # Fetch all history, needed for release note generation.
     - uses: actions/setup-go@v5
       with:
@@ -43,7 +47,7 @@ jobs:
     - name: Build Release Changelog
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PREVIOUS_TAG: ${{ github.event.inputs.tags }}
+        PREVIOUS_TAG: ${{ inputs.tags }}
       run: |
         # might not be necessary but make sure
         chmod +x "${GITHUB_WORKSPACE}/.github/draft_release_notes.sh"
@@ -55,8 +59,8 @@ jobs:
       id: draft_release
       uses: actions/create-release@v1
       with:
-        release_name: "Shipwright Build release ${{ github.event.inputs.release }}"
-        tag_name: ${{ github.event.inputs.release }}
+        release_name: "Shipwright Build release ${{ inputs.release }}"
+        tag_name: ${{ inputs.release }}
         body_path: Changes.md
         draft: true
         prerelease: true
@@ -82,8 +86,8 @@ jobs:
 
     - name: Update docs after release creation
       env:
-        PREVIOUS_TAG: ${{ github.event.inputs.tags }}
-        NEW_TAG: ${{ github.event.inputs.release }}
+        PREVIOUS_TAG: ${{ inputs.tags }}
+        NEW_TAG: ${{ inputs.release }}
       run: |
         # Update README.md with new tag
 
@@ -96,7 +100,7 @@ jobs:
         git config user.name ${{ github.actor }}
         git config user.email ${{ github.actor }}@users.noreply.github.com
         git add README.md
-        git commit -m "Update Readme with new Tag ${{ github.event.inputs.release }}"
+        git commit -m "Update Readme with new Tag ${{ inputs.release }}"
         git clean -f
     - name: Create Readme PR
       uses: peter-evans/create-pull-request@v6
@@ -113,7 +117,7 @@ jobs:
           Update README.md
           # Changes
 
-          - Bump tag references to ${{ github.event.inputs.release }}
+          - Bump tag references to ${{ inputs.release }}
 
           # Submitter Checklist
 
