@@ -6,11 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 <p align="center">
     <img alt="Work in Progress" src="https://img.shields.io/badge/Status-Work%20in%20Progress-informational">
-    <a alt="GoReport" href="https://goreportcard.com/report/github.com/shipwright-io/build">
-        <img src="https://goreportcard.com/badge/github.com/shipwright-io/build">
-    </a>
-    <img alt="License" src="https://img.shields.io/github/license/shipwright-io/build">
-    <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"> <img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
+    <a alt="GoReport" href="https://goreportcard.com/report/github.com/shipwright-io/build"><img src="https://goreportcard.com/badge/github.com/shipwright-io/build"></a>
+    <a href="https://github.com/shipwright-io/build/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/shipwright-io/build"></a>
+    <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"><img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
     <a href="https://bestpractices.coreinfrastructure.org/projects/5315"><img src="https://bestpractices.coreinfrastructure.org/projects/5315/badge"></a>
 </p>
 
