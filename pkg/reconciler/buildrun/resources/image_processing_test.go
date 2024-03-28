@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
@@ -46,8 +47,8 @@ var _ = Describe("Image Processing overrides", func() {
 					processedTaskRun,
 					config,
 					refTimestamp,
-					buildv1beta1.Image{Image: "some-registry/some-namespace/some-image"},
-					buildv1beta1.Image{},
+					buildapi.Image{Image: "some-registry/some-namespace/some-image"},
+					buildapi.Image{},
 				)).To(Succeed())
 			})
 
@@ -64,13 +65,13 @@ var _ = Describe("Image Processing overrides", func() {
 					processedTaskRun,
 					config,
 					refTimestamp,
-					buildv1beta1.Image{
+					buildapi.Image{
 						Image: "some-registry/some-namespace/some-image",
 						Labels: map[string]string{
 							"aKey": "aLabel",
 						},
 					},
-					buildv1beta1.Image{},
+					buildapi.Image{},
 				)).To(Succeed())
 			})
 
@@ -89,10 +90,46 @@ var _ = Describe("Image Processing overrides", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 				}))
 				Expect(processedTaskRun.Spec.TaskSpec.Steps[1].VolumeMounts).ToNot(utils.ContainNamedElement("shp-output-directory"))
 			})
 		})
+
+		Context("for a build with a vulnerability scan options in the output", func() {
+			BeforeEach(func() {
+				processedTaskRun = taskRun.DeepCopy()
+				resources.SetupImageProcessing(processedTaskRun, config, refTimestamp, buildapi.Image{
+					Image: "some-registry/some-namespace/some-image",
+					VulnerabilityScan: &buildapi.VulnerabilityScanOptions{
+						Enabled: true,
+					},
+				}, buildapi.Image{})
+			})
+
+			It("adds the image-processing step", func() {
+				Expect(processedTaskRun.Spec.TaskSpec.Steps).To(HaveLen(2))
+				Expect(processedTaskRun.Spec.TaskSpec.Steps[1].Name).To(Equal("image-processing"))
+				Expect(processedTaskRun.Spec.TaskSpec.Steps[1].Image).To(Equal(config.ImageProcessingContainerTemplate.Image))
+				Expect(processedTaskRun.Spec.TaskSpec.Steps[1].Command).To(Equal(config.ImageProcessingContainerTemplate.Command))
+				Expect(processedTaskRun.Spec.TaskSpec.Steps[1].Args).To(Equal([]string{
+					"--vuln-settings",
+					"{\"enabled\":true}",
+					"--image",
+					"$(params.shp-output-image)",
+					"--insecure=$(params.shp-output-insecure)",
+					"--result-file-image-digest",
+					"$(results.shp-image-digest.path)",
+					"--result-file-image-size",
+					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
+				}))
+				Expect(processedTaskRun.Spec.TaskSpec.Steps[1].VolumeMounts).ToNot(utils.ContainNamedElement("shp-output-directory"))
+			})
+		})
+
 	})
 
 	Context("for a TaskRun that references the output directory", func() {
@@ -163,6 +200,8 @@ var _ = Describe("Image Processing overrides", func() {
 						"$(results.shp-image-digest.path)",
 						"--result-file-image-size",
 						"$(results.shp-image-size.path)",
+						"--result-file-image-vulnerabilities",
+						"$(results.shp-image-vulnerabilities.path)",
 					}))
 					Expect(processedTaskRun.Spec.TaskSpec.Steps[1].VolumeMounts).To(utils.ContainNamedElement("shp-output-directory"))
 				})
@@ -204,6 +243,8 @@ var _ = Describe("Image Processing overrides", func() {
 						"$(results.shp-image-digest.path)",
 						"--result-file-image-size",
 						"$(results.shp-image-size.path)",
+						"--result-file-image-vulnerabilities",
+						"$(results.shp-image-vulnerabilities.path)",
 					}))
 					Expect(processedTaskRun.Spec.TaskSpec.Steps[1].VolumeMounts).To(utils.ContainNamedElement("shp-output-directory"))
 				})
@@ -254,6 +295,8 @@ var _ = Describe("Image Processing overrides", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 					"--secret-path",
 					"/workspace/shp-push-secret",
 				}))

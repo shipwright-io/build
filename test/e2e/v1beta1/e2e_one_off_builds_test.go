@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 var _ = Describe("Using One-Off Builds", func() {
@@ -30,7 +30,7 @@ var _ = Describe("Using One-Off Builds", func() {
 		testID string
 		err    error
 
-		buildRun *buildv1beta1.BuildRun
+		buildRun *buildapi.BuildRun
 	)
 
 	AfterEach(func() {

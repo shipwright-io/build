@@ -111,6 +111,7 @@ The `Build` definition supports the following fields:
     - Use string `SourceTimestamp` to set the image timestamp to the source timestamp, i.e. the timestamp of the Git commit that was used.
     - Use string `BuildTimestamp` to set the image timestamp to the timestamp of the build run.
     - Use any valid UNIX epoch seconds number as a string to set this as the image timestamp.
+  - `spec.output.vulnerabilityScan` to provides configurations about running a scan for your generated image. Furthur options in vulnerability scanning are defined [here](#defining-the-vulnerabilityscan)
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
   - `spec.retention.atBuildDeletion` - Defines if all related BuildRuns needs to be deleted when deleting the Build. The default is false.
   - `spec.retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
@@ -590,6 +591,44 @@ spec:
     image: some.registry.com/namespace/image:tag
     pushSecret: credentials
     timestamp: SourceTimestamp
+```
+
+### Defining the vulnerabilityScan
+
+`vulnerabilityScan` provides configurations about running a scan for your generated image.
+- `vulnerabilityScan.enabled` - Specify whether to run vulnerability scan for image. The supported types are true and false.
+- `vulnerabilityScan.fail` - indicates whether to fail the build run if the vulnerability scan results in vulnerabilities. The supported types are true and false.
+- `vulnerabilityScan.ignore.issues` - references the security issues to be ignored in vulnerability scan
+- `vulnerabilityScan.ignore.severity` - indicates the severities of security issues to be ignored (comma separated). Supported types are : Low, Medium, High, Critical.
+- `vulnerabilityScan.ignore.unfixed` - indicates to ignore vulnerabilities for which no fix exists. The supported types are true and false.
+
+Example of user specified image vulnerability scanning options:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: sample-go-build
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: source-build
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  output:
+    image: some.registry.com/namespace/image:tag
+    pushSecret: credentials
+    vulnerabilityScan:
+      enabled: true
+      fail: true
+      ignore:
+        issues:
+          - CVE-2022-12345
+        severity: Low
+        unfixed: true
 ```
 
 Annotations added to the output image can be verified by running the command:

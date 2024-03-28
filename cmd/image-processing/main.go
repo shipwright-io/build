@@ -9,16 +9,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/image"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	"github.com/spf13/pflag"
 )
 
@@ -45,7 +49,9 @@ type settings struct {
 	imageTimestampFile,
 	resultFileImageDigest,
 	resultFileImageSize,
+	resultFileImageVulnerabilities,
 	secretPath string
+	vulnerabilitySettings resources.VulnerablilityScanParams
 }
 
 var flagValues settings
@@ -70,6 +76,8 @@ func initializeFlag() {
 
 	pflag.StringVar(&flagValues.resultFileImageDigest, "result-file-image-digest", "", "A file to write the image digest to")
 	pflag.StringVar(&flagValues.resultFileImageSize, "result-file-image-size", "", "A file to write the image size to")
+	pflag.StringVar(&flagValues.resultFileImageVulnerabilities, "result-file-image-vulnerabilities", "", "A file to write the image vulnerabilities to")
+	pflag.Var(&flagValues.vulnerabilitySettings, "vuln-settings", "Vulnerability Settings")
 }
 
 func main() {
@@ -143,7 +151,7 @@ func runImageProcessing(ctx context.Context) error {
 	}
 
 	// prepare the registry options
-	options, _, err := image.GetOptions(ctx, imageName, flagValues.insecure, flagValues.secretPath, "Shipwright Build")
+	options, auth, err := image.GetOptions(ctx, imageName, flagValues.insecure, flagValues.secretPath, "Shipwright Build")
 	if err != nil {
 		return err
 	}
@@ -177,6 +185,44 @@ func runImageProcessing(ctx context.Context) error {
 			log.Printf("Failed to mutate the image: %v\n", err)
 			return err
 		}
+	}
+
+	// check for image vulnerabilities if vulnerability scanning is enabled.
+	var vulns []buildapi.Vulnerability
+	if flagValues.vulnerabilitySettings.Enabled {
+		var imageString string
+		if flagValues.push != "" {
+			imageString = flagValues.push
+			// for single image in a tar file
+			if img != nil {
+				entries, err := os.ReadDir(flagValues.push)
+				if err != nil {
+					return err
+				}
+				imageString = filepath.Join(imageString, entries[0].Name())
+			}
+			auth = nil
+			flagValues.insecure = false
+		} else {
+			imageString = imageName.String()
+		}
+		vulns, err = image.RunVulnerabilityScan(ctx, imageString, flagValues.vulnerabilitySettings.VulnerabilityScanOptions, auth, flagValues.insecure)
+		if err != nil {
+			return err
+		}
+		vulnsData, err := json.Marshal(vulns)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(flagValues.resultFileImageVulnerabilities, vulnsData, 0640); err != nil {
+			return err
+		}
+	}
+
+	if flagValues.vulnerabilitySettings.Fail && len(vulns) > 0 {
+		log.Println("vulnerabilities have been found in the output image")
+		// if fail is set to true then no need to push the image
+		return nil
 	}
 
 	// mutate the image timestamp

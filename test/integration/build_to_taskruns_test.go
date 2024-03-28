@@ -9,16 +9,16 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests Build and TaskRun", func() {
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		buildSample,
 		buildRunSample []byte
 	)
@@ -75,8 +75,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label value as empty string", func() {
@@ -90,8 +90,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with annotation", func() {
@@ -105,8 +105,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label", func() {
@@ -120,8 +120,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with both label and annotation", func() {
@@ -140,8 +140,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 		})
 
@@ -176,6 +176,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 				}))
 			})
 

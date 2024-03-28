@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -19,9 +19,9 @@ import (
 
 var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 	var (
-		bsObject       *v1beta1.BuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		bsObject       *buildapi.BuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		secret         *corev1.Secret
 		configMap      *corev1.ConfigMap
 		buildSample    []byte
@@ -144,7 +144,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			}
 		}
 
-		var constructBuildObjectAndWait = func(b *v1beta1.Build) {
+		var constructBuildObjectAndWait = func(b *buildapi.Build) {
 			// Create the Build object in-cluster
 			Expect(tb.CreateBuild(b)).To(BeNil())
 
@@ -153,7 +153,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			Expect(err).To(BeNil())
 		}
 
-		var constructBuildRunObjectAndWait = func(br *v1beta1.BuildRun) {
+		var constructBuildRunObjectAndWait = func(br *buildapi.BuildRun) {
 			// Create the BuildRun object in-cluster
 			Expect(tb.CreateBR(br)).To(BeNil())
 
@@ -309,9 +309,9 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObjectWithReservedParams.Name)
 			Expect(err).To(BeNil())
 
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).GetReason()).To(Equal("RestrictedParametersInUse"))
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).GetMessage()).To(HavePrefix("The following parameters are restricted and cannot be set"))
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).GetMessage()).To(ContainSubstring("shp-sleep-time"))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).GetReason()).To(Equal("RestrictedParametersInUse"))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).GetMessage()).To(HavePrefix("The following parameters are restricted and cannot be set"))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).GetMessage()).To(ContainSubstring("shp-sleep-time"))
 		})
 
 		It("add params from buildRun if they are not defined in the Build", func() {
@@ -356,7 +356,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.RestrictedParametersInUse))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.RestrictedParametersInUse))
 			Expect(*buildObject.Status.Message).To(HavePrefix("The following parameters are restricted and cannot be set:"))
 			Expect(*buildObject.Status.Message).To(ContainSubstring("shp-something"))
 		})
@@ -377,7 +377,7 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.UndefinedParameter))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.UndefinedParameter))
 			Expect(*buildObject.Status.Message).To(Equal("The following parameters are not defined in the build strategy: sleep-not"))
 		})
 
@@ -483,9 +483,9 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).GetReason()).To(Equal("MissingParameterValues"))
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).GetMessage()).To(HavePrefix("The following parameters are required but no value has been provided:"))
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).GetMessage()).To(ContainSubstring("sleep-time"))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).GetReason()).To(Equal("MissingParameterValues"))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).GetMessage()).To(HavePrefix("The following parameters are required but no value has been provided:"))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).GetMessage()).To(ContainSubstring("sleep-time"))
 		})
 
 		Context("when a taskrun fails with an error result", func() {
@@ -588,6 +588,8 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 				}))
 			})
 		})
@@ -644,6 +646,8 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 					"--secret-path",
 					"/workspace/shp-push-secret",
 				}))

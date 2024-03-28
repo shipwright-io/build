@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
@@ -29,7 +29,7 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL: "https://github.com/shipwright-io/build",
 			}, "default")
 		})
@@ -67,7 +67,7 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL:         "git@github.com:shipwright-io/build.git",
 				CloneSecret: pointer.String("a.secret"),
 			}, "default")

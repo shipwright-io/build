@@ -8,16 +8,16 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
 var _ = Describe("ValidateBuildTriggers", func() {
 	Context("trigger name is not informed", func() {
-		b := &build.Build{
-			Spec: build.BuildSpec{
-				Trigger: &build.Trigger{
-					When: []build.TriggerWhen{{
+		b := &buildapi.Build{
+			Spec: buildapi.BuildSpec{
+				Trigger: &buildapi.Trigger{
+					When: []buildapi.TriggerWhen{{
 						Name: "",
 					}},
 				},
@@ -32,12 +32,12 @@ var _ = Describe("ValidateBuildTriggers", func() {
 
 	Context("trigger type github", func() {
 		It("should error when github attribute is not set", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "github",
-							Type: build.GitHubWebHookTrigger,
+							Type: buildapi.GitHubWebHookTrigger,
 						}},
 					},
 				},
@@ -48,14 +48,14 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should error when github events attribute is empty", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "github",
-							Type: build.GitHubWebHookTrigger,
-							GitHub: &build.WhenGitHub{
-								Events: []build.GitHubEventName{},
+							Type: buildapi.GitHubWebHookTrigger,
+							GitHub: &buildapi.WhenGitHub{
+								Events: []buildapi.GitHubEventName{},
 							},
 						}},
 					},
@@ -67,15 +67,15 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should pass when github type is complete", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "github",
-							Type: build.GitHubWebHookTrigger,
-							GitHub: &build.WhenGitHub{
-								Events: []build.GitHubEventName{
-									build.GitHubPushEvent,
+							Type: buildapi.GitHubWebHookTrigger,
+							GitHub: &buildapi.WhenGitHub{
+								Events: []buildapi.GitHubEventName{
+									buildapi.GitHubPushEvent,
 								},
 							},
 						}},
@@ -90,12 +90,12 @@ var _ = Describe("ValidateBuildTriggers", func() {
 
 	Context("trigger type image", func() {
 		It("should error when image attribute is not set", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "image",
-							Type: build.ImageTrigger,
+							Type: buildapi.ImageTrigger,
 						}},
 					},
 				},
@@ -106,13 +106,13 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should error when image names attribute is empty", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "image",
-							Type: build.ImageTrigger,
-							Image: &build.WhenImage{
+							Type: buildapi.ImageTrigger,
+							Image: &buildapi.WhenImage{
 								Names: []string{},
 							},
 						}},
@@ -125,13 +125,13 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should pass when github type is complete", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "image",
-							Type: build.ImageTrigger,
-							Image: &build.WhenImage{
+							Type: buildapi.ImageTrigger,
+							Image: &buildapi.WhenImage{
 								Names: []string{
 									"ghcr.io/shipwright-io/build:latest",
 								},
@@ -148,12 +148,12 @@ var _ = Describe("ValidateBuildTriggers", func() {
 
 	Context("trigger type pipeline", func() {
 		It("should error when objectRef attribute is not set", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "pipeline",
-							Type: build.PipelineTrigger,
+							Type: buildapi.PipelineTrigger,
 						}},
 					},
 				},
@@ -164,13 +164,13 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should error when status attribute is empty", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "pipeline",
-							Type: build.PipelineTrigger,
-							ObjectRef: &build.WhenObjectRef{
+							Type: buildapi.PipelineTrigger,
+							ObjectRef: &buildapi.WhenObjectRef{
 								Status: []string{},
 							},
 						}},
@@ -183,13 +183,13 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should error when missing required attributes", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "pipeline",
-							Type: build.PipelineTrigger,
-							ObjectRef: &build.WhenObjectRef{
+							Type: buildapi.PipelineTrigger,
+							ObjectRef: &buildapi.WhenObjectRef{
 								Status: []string{"Succeed"},
 							},
 						}},
@@ -204,13 +204,13 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should error when declaring conflicting attributes", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "pipeline",
-							Type: build.PipelineTrigger,
-							ObjectRef: &build.WhenObjectRef{
+							Type: buildapi.PipelineTrigger,
+							ObjectRef: &buildapi.WhenObjectRef{
 								Status: []string{"Succeed"},
 								Name:   "name",
 								Selector: map[string]string{
@@ -229,13 +229,13 @@ var _ = Describe("ValidateBuildTriggers", func() {
 		})
 
 		It("should pass when objectRef type is complete", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "pipeline",
-							Type: build.PipelineTrigger,
-							ObjectRef: &build.WhenObjectRef{
+							Type: buildapi.PipelineTrigger,
+							ObjectRef: &buildapi.WhenObjectRef{
 								Status: []string{"Succeed"},
 								Name:   "name",
 							},
@@ -251,13 +251,13 @@ var _ = Describe("ValidateBuildTriggers", func() {
 
 	Context("invalid trigger type", func() {
 		It("should error when declaring a invalid trigger type", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
-					Trigger: &build.Trigger{
-						When: []build.TriggerWhen{{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{{
 							Name: "pipeline",
-							Type: build.TriggerType("invalid"),
-							ObjectRef: &build.WhenObjectRef{
+							Type: buildapi.TriggerType("invalid"),
+							ObjectRef: &buildapi.WhenObjectRef{
 								Name: "name",
 							},
 						}},

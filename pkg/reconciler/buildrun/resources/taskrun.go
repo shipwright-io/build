@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
@@ -35,11 +35,11 @@ const (
 // GenerateTaskSpec creates Tekton TaskRun spec to be used for a build run
 func GenerateTaskSpec(
 	cfg *config.Config,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
-	buildSteps []buildv1beta1.Step,
-	parameterDefinitions []buildv1beta1.Parameter,
-	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
+	buildSteps []buildapi.Step,
+	parameterDefinitions []buildapi.Parameter,
+	buildStrategyVolumes []buildapi.BuildStrategyVolume,
 ) (*pipelineapi.TaskSpec, error) {
 	generatedTaskSpec := pipelineapi.TaskSpec{
 		Params: []pipelineapi.ParamSpec{
@@ -88,7 +88,7 @@ func GenerateTaskSpec(
 		switch parameterDefinition.Type {
 		case "": // string is default
 			fallthrough
-		case buildv1beta1.ParameterTypeString:
+		case buildapi.ParameterTypeString:
 			param.Type = pipelineapi.ParamTypeString
 			if parameterDefinition.Default != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -97,7 +97,7 @@ func GenerateTaskSpec(
 				}
 			}
 
-		case buildv1beta1.ParameterTypeArray:
+		case buildapi.ParameterTypeArray:
 			param.Type = pipelineapi.ParamTypeArray
 			if parameterDefinition.Defaults != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -170,10 +170,10 @@ func GenerateTaskSpec(
 // GenerateTaskRun creates a Tekton TaskRun to be used for a build run
 func GenerateTaskRun(
 	cfg *config.Config,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
 	serviceAccountName string,
-	strategy buildv1beta1.BuilderStrategy,
+	strategy buildapi.BuilderStrategy,
 ) (*pipelineapi.TaskRun, error) {
 
 	// retrieve expected imageURL form build or buildRun
@@ -205,14 +205,14 @@ func GenerateTaskRun(
 
 	// Add BuildRun name reference to the TaskRun labels
 	taskRunLabels := map[string]string{
-		buildv1beta1.LabelBuildRun:           buildRun.Name,
-		buildv1beta1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+		buildapi.LabelBuildRun:           buildRun.Name,
+		buildapi.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
 	}
 
 	// Add Build name reference unless it is an embedded Build (empty build name)
 	if build.Name != "" {
-		taskRunLabels[buildv1beta1.LabelBuild] = build.Name
-		taskRunLabels[buildv1beta1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+		taskRunLabels[buildapi.LabelBuild] = build.Name
+		taskRunLabels[buildapi.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
 	}
 
 	expectedTaskRun := &pipelineapi.TaskRun{
@@ -322,7 +322,7 @@ func GenerateTaskRun(
 	// and if the strategy is pushing the image by not using $(params.shp-output-directory)
 	buildRunOutput := buildRun.Spec.Output
 	if buildRunOutput == nil {
-		buildRunOutput = &buildv1beta1.Image{}
+		buildRunOutput = &buildapi.Image{}
 	}
 
 	// Make sure that image-processing is setup in case it is needed, which can fail with an error
@@ -334,7 +334,7 @@ func GenerateTaskRun(
 	return expectedTaskRun, nil
 }
 
-func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) *metav1.Duration {
+func effectiveTimeout(build *buildapi.Build, buildRun *buildapi.BuildRun) *metav1.Duration {
 	if buildRun.Spec.Timeout != nil {
 		return buildRun.Spec.Timeout
 
@@ -349,13 +349,13 @@ func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun
 // also, annotations using our own custom resource domains are filtered out because we have no annotations with a semantic for both TaskRun and Pod
 func isPropagatableAnnotation(key string) bool {
 	return key != "kubectl.kubernetes.io/last-applied-configuration" &&
-		!strings.HasPrefix(key, buildv1beta1.ClusterBuildStrategyDomain+"/") &&
-		!strings.HasPrefix(key, buildv1beta1.BuildStrategyDomain+"/") &&
-		!strings.HasPrefix(key, buildv1beta1.BuildDomain+"/") &&
-		!strings.HasPrefix(key, buildv1beta1.BuildRunDomain+"/")
+		!strings.HasPrefix(key, buildapi.ClusterBuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildapi.BuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildapi.BuildDomain+"/") &&
+		!strings.HasPrefix(key, buildapi.BuildRunDomain+"/")
 }
 
-func toVolumeMap(strategyVolumes []buildv1beta1.BuildStrategyVolume) map[string]bool {
+func toVolumeMap(strategyVolumes []buildapi.BuildStrategyVolume) map[string]bool {
 	res := make(map[string]bool)
 	for _, v := range strategyVolumes {
 		res[v.Name] = true

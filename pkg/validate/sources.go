@@ -8,12 +8,12 @@ import (
 	"context"
 	"fmt"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // SourcesRef implements RuntimeRef interface to add validations for `build.spec.source`.
 type SourceRef struct {
-	Build *build.Build // build instance for analysis
+	Build *buildapi.Build // build instance for analysis
 }
 
 // ValidatePath executes the validation routine, inspecting the `build.spec.source` path
@@ -26,7 +26,7 @@ func (s *SourceRef) ValidatePath(_ context.Context) error {
 }
 
 // validateSourceEntry inspect informed entry, probes all required attributes.
-func (s *SourceRef) validateSourceEntry(source *build.Source) error {
+func (s *SourceRef) validateSourceEntry(source *buildapi.Source) error {
 
 	// dont bail out if the Source object is empty, we preserve the old behaviour as in v1alpha1
 	if source.Type == "" && source.Git == nil &&
@@ -54,6 +54,6 @@ func (s *SourceRef) validateSourceEntry(source *build.Source) error {
 }
 
 // NewSourcesRef instantiate a new SourcesRef passing the build object pointer along.
-func NewSourceRef(b *build.Build) *SourceRef {
+func NewSourceRef(b *buildapi.Build) *SourceRef {
 	return &SourceRef{Build: b}
 }

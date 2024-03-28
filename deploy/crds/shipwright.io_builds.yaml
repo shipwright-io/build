@@ -2351,6 +2351,38 @@ spec:
                       defined as the epoch seconds - or nil/empty to not set any specific
                       timestamp'
                     type: string
+                  vulnerabilityScan:
+                    description: VulnerabilityScan provides configurations about running
+                      a scan for your generated image
+                    properties:
+                      enabled:
+                        description: Enabled indicates whether to run vulnerability
+                          scan for image
+                        type: boolean
+                      fail:
+                        description: Fail indicates whether to fail the build run
+                          if the vulnerability scan results in vulnerabilities
+                        type: boolean
+                      ignore:
+                        description: Ignore refers to ignore options for vulnerability
+                          scan
+                        properties:
+                          issues:
+                            description: Issues references the security issues to
+                              be ignored in vulnerability scan
+                            items:
+                              type: string
+                            type: array
+                          severity:
+                            description: Severity indicates the severities of security
+                              issues to be ignored (comma separated)
+                            type: string
+                          unfixed:
+                            description: Unfixed indicates to ignore vulnerabilities
+                              for which no fix exists
+                            type: boolean
+                        type: object
+                    type: object
                 required:
                 - image
                 type: object

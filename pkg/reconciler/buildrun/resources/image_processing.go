@@ -5,15 +5,17 @@
 package resources
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 
 	core "k8s.io/api/core/v1"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
+	"github.com/spf13/pflag"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
@@ -23,8 +25,30 @@ const (
 	paramOutputDirectory         = "output-directory"
 )
 
+type VulnerablilityScanParams struct {
+	buildapi.VulnerabilityScanOptions
+}
+
+var _ pflag.Value = &VulnerablilityScanParams{}
+
+func (v *VulnerablilityScanParams) Set(s string) error {
+	return json.Unmarshal([]byte(s), v)
+}
+
+func (v *VulnerablilityScanParams) String() string {
+	data, err := json.Marshal(*v)
+	if err != nil {
+		panic(err.Error())
+	}
+	return string(data)
+}
+
+func (v *VulnerablilityScanParams) Type() string {
+	return "vulnerability-scan-params"
+}
+
 // SetupImageProcessing appends the image-processing step to a TaskRun if desired
-func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, creationTimestamp time.Time, buildOutput, buildRunOutput build.Image) error {
+func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, creationTimestamp time.Time, buildOutput, buildRunOutput buildapi.Image) error {
 	stepArgs := []string{}
 
 	// Check if any build step references the output-directory system parameter. If that is the case,
@@ -85,26 +109,34 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 		stepArgs = append(stepArgs, convertMutateArgs("--label", labels)...)
 	}
 
+	vulnerabilitySettings := GetVulnerabilityScanOptions(buildOutput, buildRunOutput)
+
+	// check if we need to add vulnerability scan arguments
+	if vulnerabilitySettings != nil {
+		vulnerablilityScanParams := &VulnerablilityScanParams{*vulnerabilitySettings}
+		stepArgs = append(stepArgs, "--vuln-settings", vulnerablilityScanParams.String())
+	}
+
 	// check if we need to set image timestamp
 	if imageTimestamp := getImageTimestamp(buildOutput, buildRunOutput); imageTimestamp != nil {
 		switch *imageTimestamp {
-		case build.OutputImageZeroTimestamp:
+		case buildapi.OutputImageZeroTimestamp:
 			stepArgs = append(stepArgs, "--image-timestamp", "0")
 
-		case build.OutputImageSourceTimestamp:
+		case buildapi.OutputImageSourceTimestamp:
 			if !hasTaskSpecResult(taskRun, "shp-source-default-source-timestamp") {
 				return fmt.Errorf("cannot use SourceTimestamp setting, because there is no source timestamp available for this source")
 			}
 
 			stepArgs = append(stepArgs, "--image-timestamp-file", "$(results.shp-source-default-source-timestamp.path)")
 
-		case build.OutputImageBuildTimestamp:
+		case buildapi.OutputImageBuildTimestamp:
 			stepArgs = append(stepArgs, "--image-timestamp", strconv.FormatInt(creationTimestamp.Unix(), 10))
 
 		default:
 			if _, err := strconv.ParseInt(*imageTimestamp, 10, 64); err != nil {
 				return fmt.Errorf("cannot parse output timestamp %s as a number, must be %s, %s, %s, or a an integer",
-					*imageTimestamp, build.OutputImageZeroTimestamp, build.OutputImageSourceTimestamp, build.OutputImageBuildTimestamp)
+					*imageTimestamp, buildapi.OutputImageZeroTimestamp, buildapi.OutputImageSourceTimestamp, buildapi.OutputImageBuildTimestamp)
 			}
 
 			stepArgs = append(stepArgs, "--image-timestamp", *imageTimestamp)
@@ -122,6 +154,7 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 		// add the result arguments
 		stepArgs = append(stepArgs, "--result-file-image-digest", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageDigestResult))
 		stepArgs = append(stepArgs, "--result-file-image-size", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageSizeResult))
+		stepArgs = append(stepArgs, "--result-file-image-vulnerabilities", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageVulnerabilities))
 
 		// add the push step
 
@@ -194,7 +227,18 @@ func mergeMaps(first map[string]string, second map[string]string) map[string]str
 	return first
 }
 
-func getImageTimestamp(buildOutput, buildRunOutput build.Image) *string {
+func GetVulnerabilityScanOptions(buildOutput, buildRunOutput buildapi.Image) *buildapi.VulnerabilityScanOptions {
+	switch {
+	case buildRunOutput.VulnerabilityScan != nil:
+		return buildRunOutput.VulnerabilityScan
+	case buildOutput.VulnerabilityScan != nil:
+		return buildOutput.VulnerabilityScan
+	default:
+		return nil
+	}
+}
+
+func getImageTimestamp(buildOutput, buildRunOutput buildapi.Image) *string {
 	switch {
 	case buildRunOutput.Timestamp != nil:
 		return buildRunOutput.Timestamp

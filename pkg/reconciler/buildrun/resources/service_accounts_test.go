@@ -10,7 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
@@ -26,7 +26,7 @@ var _ = Describe("Operating service accounts", func() {
 		client                  *fakes.FakeClient
 		ctl                     test.Catalog
 		buildName, buildRunName string
-		buildRunSample          *buildv1beta1.BuildRun
+		buildRunSample          *buildapi.BuildRun
 	)
 
 	BeforeEach(func() {
@@ -113,7 +113,7 @@ var _ = Describe("Operating service accounts", func() {
 				statusWriter := &fakes.FakeStatusWriter{}
 				statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.SubResourceUpdateOption) error {
 					switch object.(type) {
-					case *buildv1beta1.BuildRun:
+					case *buildapi.BuildRun:
 						return fmt.Errorf("failed")
 					}
 					return nil
@@ -147,7 +147,7 @@ var _ = Describe("Operating service accounts", func() {
 				case *corev1.ServiceAccount:
 					Expect(len(object.Secrets)).To(Equal(1))
 					Expect(len(object.OwnerReferences)).To(Equal(1))
-					Expect(object.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRunName))
+					Expect(object.Labels[buildapi.LabelBuildRun]).To(Equal(buildRunName))
 					Expect(object.Secrets[0].Name).To(Equal("foosecret"))
 					Expect(object.AutomountServiceAccountToken).To(Equal(&mountTokenVal))
 				}

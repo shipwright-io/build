@@ -16,15 +16,15 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
 	var (
 		err      error
 		testID   string
-		build    *buildv1beta1.Build
-		buildRun *buildv1beta1.BuildRun
+		build    *buildapi.Build
+		buildRun *buildapi.BuildRun
 	)
 
 	annotationsOf := func(img containerreg.Image) map[string]string {
@@ -120,7 +120,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		Context("when using BuildKit based Dockerfile build", func() {
-			var sampleBuildRun = func(outputTimestamp string) *buildv1beta1.BuildRun {
+			var sampleBuildRun = func(outputTimestamp string) *buildapi.BuildRun {
 				return NewBuildRunPrototype().
 					Namespace(testBuild.Namespace).
 					Name(testID).
@@ -141,19 +141,19 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			}
 
 			It("should create an image with creation timestamp set to unix epoch timestamp zero", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1beta1.OutputImageZeroTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapi.OutputImageZeroTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(0, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the source timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1beta1.OutputImageSourceTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapi.OutputImageSourceTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(1699261787, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the build timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1beta1.OutputImageBuildTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapi.OutputImageBuildTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", buildRun.CreationTimestamp.Time))
 			})
@@ -166,7 +166,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		Context("when using Buildpacks build", func() {
-			var sampleBuildRun = func(outputTimestamp string) *buildv1beta1.BuildRun {
+			var sampleBuildRun = func(outputTimestamp string) *buildapi.BuildRun {
 				return NewBuildRunPrototype().
 					Namespace(testBuild.Namespace).
 					Name(testID).
@@ -186,19 +186,19 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			}
 
 			It("should create an image with creation timestamp set to unix epoch timestamp zero", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1beta1.OutputImageZeroTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapi.OutputImageZeroTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(0, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the source timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1beta1.OutputImageSourceTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapi.OutputImageSourceTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(1699261787, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the build timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1beta1.OutputImageBuildTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapi.OutputImageBuildTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", buildRun.CreationTimestamp.Time))
 			})
@@ -222,7 +222,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 						OutputImage(outputImage.String()).
 						OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
 						OutputImageInsecure(insecure).
-						OutputTimestamp(buildv1beta1.OutputImageSourceTimestamp).
+						OutputTimestamp(buildapi.OutputImageSourceTimestamp).
 						BuildSpec()).
 					MustCreate()
 
@@ -231,7 +231,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = testBuild.GetBRTillCompletion(buildRun.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				condition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+				condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition).ToNot(BeNil())
 				Expect(condition.Reason).To(ContainSubstring("TaskRunGenerationFailed"))
 				Expect(condition.Message).To(ContainSubstring("cannot use SourceTimestamp setting"))
@@ -261,7 +261,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = testBuild.GetBRTillCompletion(buildRun.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				condition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+				condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition).ToNot(BeNil())
 				Expect(condition.Reason).To(ContainSubstring("Failed"))
 				Expect(condition.Message).To(ContainSubstring("cannot parse output timestamp"))

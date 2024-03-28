@@ -13,11 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // GetBuildObject retrieves an existing Build based on a name and namespace
-func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, build *buildv1beta1.Build) error {
+func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildapi.BuildRun, build *buildapi.Build) error {
 	// Option #1: BuildRef is specified
 	// An actual Build resource is specified by name and needs to be looked up in the cluster.
 	if buildRun.Spec.Build.Name != nil {
@@ -38,7 +38,7 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 	if buildRun.Spec.Build.Spec != nil {
 		build.Name = ""
 		build.Namespace = buildRun.Namespace
-		build.Status = buildv1beta1.BuildStatus{}
+		build.Status = buildapi.BuildStatus{}
 		buildRun.Spec.Build.Spec.DeepCopyInto(&build.Spec)
 		return nil
 	}
@@ -48,7 +48,7 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 }
 
 // IsOwnedByBuild checks if the controllerReferences contains a well known owner Kind
-func IsOwnedByBuild(build *buildv1beta1.Build, controlledReferences []metav1.OwnerReference) bool {
+func IsOwnedByBuild(build *buildapi.Build, controlledReferences []metav1.OwnerReference) bool {
 	for _, ref := range controlledReferences {
 		if ref.Kind == build.Kind && ref.Name == build.Name {
 			return true
