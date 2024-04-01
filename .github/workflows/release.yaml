@@ -28,6 +28,9 @@ jobs:
       TAG: ${{ inputs.release }}
 
     steps:
+    - name: Setup release ${{ inputs.release }}
+      run: |
+        echo "Creating release ${{ inputs.release }} from previous tag ${{ inputs.tags }} with ref ${{ inputs.git-ref }}"
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.git-ref }}
@@ -57,6 +60,8 @@ jobs:
 
     - name: Draft release
       id: draft_release
+      # TODO: This action is no longer mainained. We should use a different action
+      # or the gh command line directly.
       uses: actions/create-release@v1
       with:
         release_name: "Shipwright Build release ${{ inputs.release }}"
@@ -64,6 +69,10 @@ jobs:
         body_path: Changes.md
         draft: true
         prerelease: true
+        # create-release assumes one fo two things if commitish is not set
+        # 1. Release is from the "latest commit" on the repo's default branch.
+        # 2. Release is for an existing tag with the same name
+        commitish: ${{ inputs.git-ref }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -78,9 +87,13 @@ jobs:
         gh release upload ${TAG} sample-strategies.yaml
 
     - name: Sign released images
+      # Updated to use the git SHA of the checked out commit. The SHA for
+      # workflow_dispatch events is the latest SHA of the _branch_ where the
+      # action was invoked.
       run: |
+        gitsha=$(git rev-parse --verify HEAD)
         grep -o "ghcr.io[^\"]*" release.yaml | xargs cosign sign --yes \
-            -a sha=${{ github.sha }} \
+            -a sha=${gitsha} \
             -a run_id=${{ github.run_id }} \
             -a run_attempt=${{ github.run_attempt }}
 
