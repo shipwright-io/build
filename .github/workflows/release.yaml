@@ -69,7 +69,7 @@ jobs:
         body_path: Changes.md
         draft: true
         prerelease: true
-        # create-release assumes one fo two things if commitish is not set
+        # create-release assumes one of two things if commitish is not set
         # 1. Release is from the "latest commit" on the repo's default branch.
         # 2. Release is for an existing tag with the same name
         commitish: ${{ inputs.git-ref }}
