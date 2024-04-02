@@ -160,7 +160,8 @@ func HandleTaskRunParam(taskRun *pipelineapi.TaskRun, parameterDefinition *build
 			return nil
 
 		default:
-			for index, value := range paramValue.Values {
+			for index := range paramValue.Values {
+				value := paramValue.Values[index]
 				switch {
 				case value.ConfigMapValue != nil:
 					envVarName, err := addConfigMapEnvVar(taskRun, paramValue.Name, value.ConfigMapValue.Name, value.ConfigMapValue.Key)
