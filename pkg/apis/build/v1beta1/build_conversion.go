@@ -166,7 +166,7 @@ func (dest *BuildSpec) ConvertFrom(orig *v1alpha1.BuildSpec) error {
 	}
 
 	//handle spec.Dockerfile migration
-	if orig.Dockerfile != nil {
+	if orig.Dockerfile != nil && *orig.Dockerfile != "" {
 		dockerfileParam := ParamValue{
 			Name: "dockerfile",
 			SingleValue: &SingleValue{
