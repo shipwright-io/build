@@ -111,6 +111,7 @@ The `Build` definition supports the following fields:
     - Use string `SourceTimestamp` to set the image timestamp to the source timestamp, i.e. the timestamp of the Git commit that was used.
     - Use string `BuildTimestamp` to set the image timestamp to the timestamp of the build run.
     - Use any valid UNIX epoch seconds number as a string to set this as the image timestamp.
+  - `spec.output.vulnerabilityScan` to enable a security vulnerability scan for your generated image. Further options in vulnerability scanning are defined [here](#defining-the-vulnerabilityscan)
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
   - `spec.retention.atBuildDeletion` - Defines if all related BuildRuns needs to be deleted when deleting the Build. The default is false.
   - `spec.retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
@@ -590,6 +591,47 @@ spec:
     image: some.registry.com/namespace/image:tag
     pushSecret: credentials
     timestamp: SourceTimestamp
+```
+
+### Defining the vulnerabilityScan
+
+`vulnerabilityScan` provides configurations to run a scan for your generated image.
+- `vulnerabilityScan.enabled` - Specify whether to run vulnerability scan for image. The supported values are true and false.
+- `vulnerabilityScan.failOnFinding` - indicates whether to fail the build run if the vulnerability scan results in vulnerabilities. The supported values are true and false. This field is optional and false by default.
+- `vulnerabilityScan.ignore.issues` - references the security issues to be ignored in vulnerability scan
+- `vulnerabilityScan.ignore.severity` - denotes the severity levels of security issues to be ignored, valid values are:
+  - `low`: it will exclude low severity vulnerabilities, displaying only medium, high and critical vulnerabilities
+  - `medium`: it will exclude low and medium severity vulnerabilities, displaying only high and critical vulnerabilities
+  - `high`: it will exclude low, medium and high severity vulnerabilities, displaying only the critical vulnerabilities
+- `vulnerabilityScan.ignore.unfixed` - indicates to ignore vulnerabilities for which no fix exists. The supported types are true and false.
+
+Example of user specified image vulnerability scanning options:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: sample-go-build
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: source-build
+  strategy:
+    name: buildkit
+    kind: ClusterBuildStrategy
+  output:
+    image: some.registry.com/namespace/image:tag
+    pushSecret: credentials
+    vulnerabilityScan:
+      enabled: true
+      failOnFinding: true
+      ignore:
+        issues:
+          - CVE-2022-12345
+        severity: Low
+        unfixed: true
 ```
 
 Annotations added to the output image can be verified by running the command:
