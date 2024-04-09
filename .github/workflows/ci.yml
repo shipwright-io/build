@@ -121,6 +121,7 @@ jobs:
           # Build and load the Git and Bundle image
           export GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
           export BUNDLE_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/bundle)"
+          export IMAGE_PROCESSING_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/image-processing)"
 
           make test-integration
 

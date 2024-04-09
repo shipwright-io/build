@@ -493,6 +493,45 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
 
+// BuildWithVulnerabilityScanOptions defines a Build with vulnerability scan options
+const BuildWithVulnerabilityScanOptions = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    vulnerabilityScan:
+      enabled: true
+      failOnFinding: true
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithVulnerabilityScanOptions defines a Build with vulnerability scan options
+const BuildWithDisableVulnerabilityScan = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    vulnerabilityScan:
+      enabled: false
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// BuildWithRestrictedParam defines a Build using params that are reserved only
+// for shipwright
+const MinimalBuild = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
 // BuildWithUndefinedParameter defines a param that was not declared under the
 // strategy parameters
 const BuildWithUndefinedParam = `

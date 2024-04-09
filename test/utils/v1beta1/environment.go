@@ -90,7 +90,7 @@ func NewTestBuild() (*TestBuild, error) {
 	return &TestBuild{
 		// TODO: interval and timeout can be configured via ENV vars
 		Interval:                 time.Second * 3,
-		TimeOut:                  time.Second * 180,
+		TimeOut:                  time.Second * 300,
 		KubeConfig:               restConfig,
 		Clientset:                kubeConfig,
 		Namespace:                testNamespace,
