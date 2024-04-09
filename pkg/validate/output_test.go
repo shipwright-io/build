@@ -140,7 +140,7 @@ var _ = Describe("BuildSpecOutputValidator", func() {
 			}
 		})
 
-		It("should fail for invalid severities", func() {
+		It("should fail for invvalid severities", func() {
 			severities := "LOWE"
 			vulnerabilitySettings := VulnerabilityScanOptions{
 				Ignore: &VulnerabilityIgnoreOptions{

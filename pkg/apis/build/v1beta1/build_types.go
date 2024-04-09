@@ -76,6 +76,8 @@ const (
 	OutputTimestampNotSupported BuildReason = "OutputTimestampNotSupported"
 	// OutputTimestampNotValid indicates that the output timestamp value is not valid
 	OutputTimestampNotValid BuildReason = "OutputTimestampNotValid"
+	// VulnerabilityScanSeverityNotValid indicates that the output vulnerability scan severity is not valid
+	VulnerabilityScanSeverityNotValid BuildReason = "VulnerabilityScanSeverityNotValid"
 
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
