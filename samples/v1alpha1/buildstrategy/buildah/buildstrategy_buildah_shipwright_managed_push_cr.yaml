@@ -6,7 +6,7 @@ metadata:
 spec:
   buildSteps:
     - name: build
-      image: quay.io/containers/buildah:v1.35.0
+      image: quay.io/containers/buildah:v1.35.3
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
