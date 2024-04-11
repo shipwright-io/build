@@ -832,7 +832,7 @@ If we will apply the following resources:
 
   ```yaml
     - name: buildah-bud
-      image: quay.io/containers/buildah:v1.35.0
+      image: quay.io/containers/buildah:v1.35.3
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -854,7 +854,7 @@ If we will apply the following resources:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/containers/buildah:v1.35.0
+      image: quay.io/containers/buildah:v1.35.3
       securityContext:
         privileged: true
       command:
