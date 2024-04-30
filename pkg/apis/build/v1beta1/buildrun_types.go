@@ -106,6 +106,9 @@ const (
 	// BuildRunStatePodEvicted indicates that if the pods got evicted
 	// due to some reason. (Probably ran out of ephemeral storage)
 	BuildRunStatePodEvicted = "PodEvicted"
+
+	// BuildRunStateStepOutOfMemory indicates that a step failed because it went out of memory.
+	BuildRunStateStepOutOfMemory = "StepOutOfMemory"
 )
 
 // SourceResult holds the results emitted from the different sources

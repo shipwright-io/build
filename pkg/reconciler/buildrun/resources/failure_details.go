@@ -64,31 +64,34 @@ func extractFailureReasonAndMessage(taskRun *pipelineapi.TaskRun) (errorReason s
 	return errorReason, errorMessage
 }
 
-func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) (*corev1.Pod, *corev1.Container, error) {
+func extractFailedPodAndContainer(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) (*corev1.Pod, *corev1.Container, *corev1.ContainerStatus, error) {
 	var pod corev1.Pod
 	if err := client.Get(ctx, types.NamespacedName{Namespace: taskRun.Namespace, Name: taskRun.Status.PodName}, &pod); err != nil {
 		ctxlog.Error(ctx, err, "failed to get pod for failure extraction", namespace, taskRun.Namespace, name, taskRun.Status.PodName)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	failures := make(map[string]struct{})
+	failures := make(map[string]*corev1.ContainerStatus)
 	// Find the names of all containers with failure status
-	for _, containerStatus := range pod.Status.ContainerStatuses {
+	for i := range pod.Status.ContainerStatuses {
+		containerStatus := pod.Status.ContainerStatuses[i]
 		if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode != 0 {
-			failures[containerStatus.Name] = struct{}{}
+			failures[containerStatus.Name] = &containerStatus
 		}
 	}
 
 	// Find the first container that has a failure status
 	var failedContainer *corev1.Container
+	var failedContainerStatus *corev1.ContainerStatus
 	for i, container := range pod.Spec.Containers {
-		if _, has := failures[container.Name]; has {
+		if containerStatus, has := failures[container.Name]; has {
 			failedContainer = &pod.Spec.Containers[i]
+			failedContainerStatus = containerStatus
 			break
 		}
 	}
 
-	return &pod, failedContainer, nil
+	return &pod, failedContainer, failedContainerStatus, nil
 }
 
 func extractFailureDetails(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) (failure *buildv1beta1.FailureDetails) {
@@ -97,7 +100,7 @@ func extractFailureDetails(ctx context.Context, client client.Client, taskRun *p
 	failure.Reason, failure.Message = extractFailureReasonAndMessage(taskRun)
 
 	failure.Location = &buildv1beta1.Location{Pod: taskRun.Status.PodName}
-	pod, container, _ := extractFailedPodAndContainer(ctx, client, taskRun)
+	pod, container, _, _ := extractFailedPodAndContainer(ctx, client, taskRun)
 
 	if pod != nil && container != nil {
 		failure.Location.Pod = pod.Name

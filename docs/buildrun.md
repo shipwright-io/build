@@ -391,6 +391,7 @@ The following table illustrates the different states a BuildRun can have under i
 | False   | BuildRunAmbiguousBuild                  | Yes                   | The defined `BuildRun` uses both `spec.build.name` and `spec.build.spec`. Only one of them is allowed at the same time.                                                                                                                                                                               |
 | False   | BuildRunBuildFieldOverrideForbidden     | Yes                   | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, or `env`) in combination with `spec.build.spec`, which is not allowed. Use the `spec.build.spec` to directly specify the respective value.                                                                          |
 | False   | PodEvicted                              | Yes                   | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
+| False   | StepOutOfMemory                         | Yes                   | The BuildRun Pod failed because a step went out of memory. |
 
 **Note**: We heavily rely on the Tekton TaskRun [Conditions](https://github.com/tektoncd/pipeline/blob/main/docs/taskruns.md#monitoring-execution-status) for populating the BuildRun ones, with some exceptions.
 

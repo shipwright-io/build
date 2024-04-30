@@ -187,7 +187,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					condition := buildRun.Status.GetCondition(v1beta1.Succeeded)
 					Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 					Expect(condition.Reason).To(Equal("Failed"))
-					Expect(condition.Message).To(ContainSubstring("buildrun step %s failed in pod %s", "step-step-build-and-push", taskRun.Status.PodName))
+					Expect(condition.Message).To(ContainSubstring("buildrun step %s failed", "step-step-build-and-push"))
 				})
 			})
 		})

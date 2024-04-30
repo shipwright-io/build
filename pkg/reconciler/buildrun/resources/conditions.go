@@ -81,7 +81,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 
 	case pipelineapi.TaskRunReasonFailed:
 		if taskRun.Status.CompletionTime != nil {
-			pod, failedContainer, err := extractFailedPodAndContainer(ctx, client, taskRun)
+			pod, failedContainer, failedContainerStatus, err := extractFailedPodAndContainer(ctx, client, taskRun)
 			if err != nil {
 				// when trying to customize the Condition Message field, ensure the Message cover the case
 				// when a Pod is deleted.
@@ -105,19 +105,27 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 				message = pod.Status.Message
 				reason = buildv1beta1.BuildRunStatePodEvicted
 				if failedContainer != nil {
-					//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
 					buildRun.Status.FailureDetails.Location.Container = failedContainer.Name
 				}
 			} else if failedContainer != nil {
-				//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
 				buildRun.Status.FailureDetails.Location.Container = failedContainer.Name
-				message = fmt.Sprintf("buildrun step %s failed in pod %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
-					failedContainer.Name,
-					pod.Name,
-					pod.Namespace,
-					pod.Name,
-					failedContainer.Name,
-				)
+
+				if failedContainerStatus != nil && failedContainerStatus.State.Terminated != nil && failedContainerStatus.State.Terminated.Reason == "OOMKilled" {
+					reason = buildv1beta1.BuildRunStateStepOutOfMemory
+					message = fmt.Sprintf("buildrun step %s failed due to out-of-memory, for detailed information: kubectl --namespace %s logs %s --container=%s",
+						failedContainer.Name,
+						pod.Namespace,
+						pod.Name,
+						failedContainer.Name,
+					)
+				} else {
+					message = fmt.Sprintf("buildrun step %s failed, for detailed information: kubectl --namespace %s logs %s --container=%s",
+						failedContainer.Name,
+						pod.Namespace,
+						pod.Name,
+						failedContainer.Name,
+					)
+				}
 			} else {
 				message = fmt.Sprintf("buildrun failed due to an unexpected error in pod %s: for detailed information: kubectl --namespace %s logs %s --all-containers",
 					pod.Name,
