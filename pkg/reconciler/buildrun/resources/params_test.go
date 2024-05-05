@@ -674,5 +674,78 @@ var _ = Describe("HandleTaskRunParam", func() {
 				},
 			}))
 		})
+
+		It("adds multiple environment variables correctly", func() {
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+				Name: "array-parameter",
+				Values: []buildv1beta1.SingleValue{
+					{
+						Value: pointer.String("first entry"),
+					},
+					{
+						SecretValue: &buildv1beta1.ObjectKeyRef{
+							Name: "secret-name",
+							Key:  "secret-key-1",
+						},
+					},
+					{
+						SecretValue: &buildv1beta1.ObjectKeyRef{
+							Name:   "secret-name",
+							Key:    "secret-key-2",
+							Format: pointer.String("The secret value is ${SECRET_VALUE}"),
+						},
+					},
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify the environment variable that is only added to the second step
+			Expect(len(taskRun.Spec.TaskSpec.Steps[0].Env)).To(Equal(0))
+
+			Expect(len(taskRun.Spec.TaskSpec.Steps[1].Env)).To(Equal(2))
+
+			envVarName1 := taskRun.Spec.TaskSpec.Steps[1].Env[0].Name
+			Expect(envVarName1).To(HavePrefix("SHP_SECRET_PARAM_"))
+			Expect(taskRun.Spec.TaskSpec.Steps[1].Env[0]).To(BeEquivalentTo(corev1.EnvVar{
+				Name: envVarName1,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "secret-name",
+						},
+						Key: "secret-key-2",
+					},
+				},
+			}))
+
+			envVarName2 := taskRun.Spec.TaskSpec.Steps[1].Env[1].Name
+			Expect(envVarName2).To(HavePrefix("SHP_SECRET_PARAM_"))
+			Expect(taskRun.Spec.TaskSpec.Steps[1].Env[1]).To(BeEquivalentTo(corev1.EnvVar{
+				Name: envVarName2,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "secret-name",
+						},
+						Key: "secret-key-1",
+					},
+				},
+			}))
+
+			// Verify the parameters
+			Expect(taskRun.Spec.Params).To(BeEquivalentTo([]pipelineapi.Param{
+				{
+					Name: "array-parameter",
+					Value: pipelineapi.ParamValue{
+						Type: pipelineapi.ParamTypeArray,
+						ArrayVal: []string{
+							"first entry",
+							fmt.Sprintf("$(%s)", envVarName2),
+							fmt.Sprintf("The secret value is $(%s)", envVarName1),
+						},
+					},
+				},
+			}))
+		})
 	})
 })
