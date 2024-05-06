@@ -242,6 +242,7 @@ var _ = Describe("Conditions", func() {
 					},
 				},
 				Status: corev1.PodStatus{
+					Phase:  corev1.PodFailed,
 					Reason: "Evicted",
 				},
 			}
@@ -279,6 +280,68 @@ var _ = Describe("Conditions", func() {
 			Expect(br.Status.GetCondition(
 				build.Succeeded).Reason,
 			).To(Equal(build.BuildRunStatePodEvicted))
+		})
+
+		It("updates BuildRun condition when TaskRun fails and container is out of memory", func() {
+			// Generate a pod with the status to out of memory
+			failedTaskRunOOMContainer := corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "evilpod",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "evilpod-container",
+						},
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodFailed,
+					ContainerStatuses: []corev1.ContainerStatus{{
+						Name: "evilpod-container",
+						State: corev1.ContainerState{
+							Terminated: &corev1.ContainerStateTerminated{
+								ExitCode: 1,
+								Reason:   "OOMKilled",
+							},
+						},
+					}},
+				},
+			}
+
+			// stub a GET API call with to pass the created pod
+			getClientStub := func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
+				switch object := object.(type) {
+				case *corev1.Pod:
+					failedTaskRunOOMContainer.DeepCopyInto(object)
+					return nil
+				}
+				return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+			}
+
+			// fake the calls with the above stub
+			client.GetCalls(getClientStub)
+
+			// Now we need to create a fake failed taskrun so that it hits the code
+			fakeTRCondition := &apis.Condition{
+				Type:    apis.ConditionSucceeded,
+				Reason:  "Failed",
+				Message: "not relevant",
+			}
+
+			// We call the function with all the info
+			Expect(resources.UpdateBuildRunUsingTaskRunCondition(
+				context.TODO(),
+				client,
+				br,
+				tr,
+				fakeTRCondition,
+			)).To(BeNil())
+
+			// Finally, check the output of the buildRun
+			Expect(br.Status.GetCondition(
+				build.Succeeded).Reason,
+			).To(Equal(build.BuildRunStateStepOutOfMemory))
 		})
 
 		It("updates a BuildRun condition when the related TaskRun fails and pod containers are not available", func() {
