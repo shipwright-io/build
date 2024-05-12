@@ -22,6 +22,7 @@ spec:
           mountPath: /s2i
     - name: buildah
       image: quay.io/containers/buildah:v1.35.3
+      imagePullPolicy: Always
       workingDir: /s2i
       securityContext:
         privileged: true
