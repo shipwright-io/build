@@ -46,7 +46,7 @@ function update() {
         # Determine the latest tag
         QUERY=".tag_name"
         if [[ ${IMAGE} == *buildah* ]]; then
-                QUERY=".tags | sort_by(.name) | reverse | .[0].name"
+                QUERY="[.tags[] | select(.name | endswith(\"immutable\") | not) ] | sort_by(.name) | reverse | .[0].name"
         fi
         LATEST_TAG="$(curl --silent --retry 3 "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")"
 
