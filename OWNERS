@@ -2,19 +2,21 @@
 
 approvers:
 - adambkaplan
-- otaviof
 - qu1queee
 - SaschaSchwarze0
 - HeavyWombat
+- apoorvajagtap
 
 reviewers:
 - adambkaplan
-- otaviof
+- apoorvajagtap
 - qu1queee
 - SaschaSchwarze0
 - HeavyWombat
+- karanibm6
 
 emeritus_approvers:
+- otaviof # 2024-05-24
 - sbose78 # 2022-08-15
 - gabemontero # 2022-08-15
 - ImJasonH # 2023-01-07
