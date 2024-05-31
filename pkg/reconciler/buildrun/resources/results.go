@@ -95,17 +95,17 @@ func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []build.Vul
 	return vulns
 }
 
-func getSeverity(sev string) string {
+func getSeverity(sev string) build.VulnerabilitySeverity {
 	switch sev {
 	case "L":
-		return "low"
+		return build.Low
 	case "M":
-		return "medium"
+		return build.Medium
 	case "H":
-		return "high"
+		return build.High
 	case "C":
-		return "critical"
+		return build.Critical
 	default:
-		return ""
+		return build.Unknown
 	}
 }

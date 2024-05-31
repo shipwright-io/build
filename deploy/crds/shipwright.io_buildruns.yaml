@@ -6640,6 +6640,10 @@ spec:
                                       vulnerabilities - "high": it will exclude low,
                                       medium and high severity vulnerabilities, displaying
                                       only the critical vulnerabilities'
+                                    enum:
+                                    - low
+                                    - medium
+                                    - high
                                     type: string
                                   unfixed:
                                     description: Unfixed indicates to ignore vulnerabilities
@@ -8826,6 +8830,10 @@ spec:
                               displaying only high and critical vulnerabilities -
                               "high": it will exclude low, medium and high severity
                               vulnerabilities, displaying only the critical vulnerabilities'
+                            enum:
+                            - low
+                            - medium
+                            - high
                             type: string
                           unfixed:
                             description: Unfixed indicates to ignore vulnerabilities
@@ -10739,6 +10747,10 @@ spec:
                                   vulnerabilities - "high": it will exclude low, medium
                                   and high severity vulnerabilities, displaying only
                                   the critical vulnerabilities'
+                                enum:
+                                - low
+                                - medium
+                                - high
                                 type: string
                               unfixed:
                                 description: Unfixed indicates to ignore vulnerabilities
@@ -12745,6 +12757,8 @@ spec:
                         id:
                           type: string
                         severity:
+                          description: VulnerabilitySeverity is an enum for the possible
+                            values for severity of a vulnerability
                           type: string
                       type: object
                     type: array

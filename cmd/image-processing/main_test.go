@@ -496,7 +496,7 @@ var _ = Describe("Image Processing Resource", func() {
 		})
 
 		It("should run vulnerability scanning on an image that is already pushed by the strategy", func() {
-			ignoreVulnerabilities := "high"
+			ignoreVulnerabilities := buildapi.IgnoredHigh
 			vulnOptions := &buildapi.VulnerabilityScanOptions{
 				Enabled:       true,
 				FailOnFinding: true,

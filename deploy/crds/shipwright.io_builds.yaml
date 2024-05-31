@@ -2382,6 +2382,10 @@ spec:
                               displaying only high and critical vulnerabilities -
                               "high": it will exclude low, medium and high severity
                               vulnerabilities, displaying only the critical vulnerabilities'
+                            enum:
+                            - low
+                            - medium
+                            - high
                             type: string
                           unfixed:
                             description: Unfixed indicates to ignore vulnerabilities
