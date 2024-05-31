@@ -115,6 +115,8 @@ var _ = Describe("Image Processing overrides", func() {
 				Expect(processedTaskRun.Spec.TaskSpec.Steps[1].Args).To(Equal([]string{
 					"--vuln-settings",
 					"{\"enabled\":true}",
+					"--vuln-count-limit",
+					"50",
 					"--image",
 					"$(params.shp-output-image)",
 					"--insecure=$(params.shp-output-insecure)",
