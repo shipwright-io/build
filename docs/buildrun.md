@@ -420,7 +420,8 @@ status:
 ```
 
 ### Understanding failed BuildRuns due to VulnerabilitiesFound
-A buildrun can be failed, if the vulnerability scan finds vulnerabilities in the generated image and fail is set to true in the vulnerabilityScan. For setting vulnerabilityScan, see [here](build.md#defining-the-vulnerabilityscan).
+
+A buildrun can be failed, if the vulnerability scan finds vulnerabilities in the generated image and `failOnFinding` is set to true in the `vulnerabilityScan`. For setting `vulnerabilityScan`, see [here](build.md#defining-the-vulnerabilityscan).
 
 Example of failed BuildRun due to vulnerabilities present in the image:
 
@@ -435,7 +436,6 @@ status:
     reason: VulnerabilitiesFound
     message: "Vulnerabilities have been found in the output image. For detailed information, check buildrun status or see kubectl --namespace default logs vuln-s6skc-v7wd2-pod --container step-image-processing"
 ```
-
 
 #### Understanding failed git-source step
 
@@ -497,6 +497,7 @@ status:
 **Note**: The digest and size of the output image are only included if the build strategy provides them. See [System results](buildstrategies.md#system-results).
 
 Another example of a `BuildRun` with surfaced results for vulnerability scanning.
+
 ```yaml
 # [...]
 status:
@@ -512,7 +513,8 @@ status:
     - id: CVE-2021-54321
       severity: medium
 ```
-**Note**: The vulnerability scan will only run if it is specified in the build or buildrun spec. See [Defining the vulnerabilityScan](build.md#defining-the-vulnerabilityscan).
+
+**Note**: The vulnerability scan will only run if it is specified in the build or buildrun spec. See [Defining the `vulnerabilityScan`](build.md#defining-the-vulnerabilityscan).
 
 ### Build Snapshot
 

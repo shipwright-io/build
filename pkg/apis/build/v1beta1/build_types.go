@@ -76,11 +76,23 @@ const (
 	OutputTimestampNotSupported BuildReason = "OutputTimestampNotSupported"
 	// OutputTimestampNotValid indicates that the output timestamp value is not valid
 	OutputTimestampNotValid BuildReason = "OutputTimestampNotValid"
-	// VulnerabilityScanSeverityNotValid indicates that the output vulnerability scan severity is not valid
-	VulnerabilityScanSeverityNotValid BuildReason = "VulnerabilityScanSeverityNotValid"
 
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
+)
+
+// IgnoredVulnerabilitySeverity is an enum for the possible values for the ignored severity
+type IgnoredVulnerabilitySeverity string
+
+const (
+	// High indicates that high, medium, and low severity vulnerabilities should be ignored
+	IgnoredHigh IgnoredVulnerabilitySeverity = "high"
+
+	// Medium indicates that medium, and low severity vulnerabilities should be ignored
+	IgnoredMedium IgnoredVulnerabilitySeverity = "medium"
+
+	// High indicates that low severity vulnerabilities should be ignored
+	IgnoredLow IgnoredVulnerabilitySeverity = "low"
 )
 
 // BuildReasonPtr returns a pointer to the passed BuildReason.
@@ -216,7 +228,8 @@ type VulnerabilityIgnoreOptions struct {
 	// - "high": it will exclude low, medium and high severity vulnerabilities, displaying only the critical vulnerabilities
 	//
 	// +optional
-	Severity *string `json:"severity,omitempty"`
+	// +kubebuilder:validation:Enum=low;medium;high
+	Severity *IgnoredVulnerabilitySeverity `json:"severity,omitempty"`
 
 	// Unfixed indicates to ignore vulnerabilities for which no fix exists
 	//

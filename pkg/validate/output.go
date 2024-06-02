@@ -48,18 +48,6 @@ func (b *BuildSpecOutputValidator) ValidatePath(_ context.Context) error {
 		}
 	}
 
-	if b.Build.Spec.Output.VulnerabilityScan != nil {
-		if b.Build.Spec.Output.VulnerabilityScan.Ignore != nil {
-			if b.Build.Spec.Output.VulnerabilityScan.Ignore.Severity != nil {
-				severityStr := *b.Build.Spec.Output.VulnerabilityScan.Ignore.Severity
-				if !isValidSeverity(severityStr) {
-					b.Build.Status.Reason = build.BuildReasonPtr(build.VulnerabilityScanSeverityNotValid)
-					b.Build.Status.Message = pointer.String("output vulnerability scan severity is invalid. Allowed values are: low, medium and high")
-				}
-			}
-		}
-	}
-
 	return nil
 }
 

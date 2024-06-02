@@ -36,7 +36,7 @@ The following environment variables are available:
 | `CLUSTERBUILDSTRATEGY_MAX_CONCURRENT_RECONCILES` | The number of concurrent reconciles by the ClusterBuildStrategy controller. A value of 0 or lower will use the default from the [controller-runtime controller Options]. Default is 0. |
 | `KUBE_API_BURST` | Burst to use for the Kubernetes API client. See [Config.Burst]. A value of 0 or lower will use the default from client-go, which currently is 10. Default is 0. |
 | `KUBE_API_QPS` | QPS to use for the Kubernetes API client. See [Config.QPS]. A value of 0 or lower will use the default from client-go, which currently is 5. Default is 0. |
-| `VULNERABILITY_COUNT_LIMIT` | holds vulnerability count limit if vulnerability scan is enabled for the output image. If it is defined as 10, then it will output only 10 vulnerabilities sorted by severity in the buildrun status.Output. |
+| `VULNERABILITY_COUNT_LIMIT` | holds vulnerability count limit if vulnerability scan is enabled for the output image. If it is defined as 10, then it will output only 10 vulnerabilities sorted by severity in the buildrun status.Output. Default is 50. |
 
 [^1]: The `runAsUser` and `runAsGroup` are dynamically overwritten depending on the build strategy that is used. See [Security Contexts](buildstrategies.md#security-contexts) for more information.
 

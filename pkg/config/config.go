@@ -162,6 +162,7 @@ func NewDefaultConfig() *Config {
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
 		TerminationLogPath:            terminationLogPathDefault,
 		GitRewriteRule:                false,
+		VulnerabilityCountLimit:       50,
 
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,

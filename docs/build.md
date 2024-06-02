@@ -596,6 +596,7 @@ spec:
 ### Defining the vulnerabilityScan
 
 `vulnerabilityScan` provides configurations to run a scan for your generated image.
+
 - `vulnerabilityScan.enabled` - Specify whether to run vulnerability scan for image. The supported values are true and false.
 - `vulnerabilityScan.failOnFinding` - indicates whether to fail the build run if the vulnerability scan results in vulnerabilities. The supported values are true and false. This field is optional and false by default.
 - `vulnerabilityScan.ignore.issues` - references the security issues to be ignored in vulnerability scan

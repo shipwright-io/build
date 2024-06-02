@@ -138,7 +138,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			Expect(br.Status.Output.Size).To(Equal(int64(230)))
 			Expect(br.Status.Output.Vulnerabilities).To(HaveLen(2))
 			Expect(br.Status.Output.Vulnerabilities[0].ID).To(Equal("CVE-2019-12900"))
-			Expect(br.Status.Output.Vulnerabilities[0].Severity).To(Equal("critical"))
+			Expect(br.Status.Output.Vulnerabilities[0].Severity).To(Equal(build.Critical))
 		})
 
 		It("should surface the TaskRun results emitting from source and output step", func() {

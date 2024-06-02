@@ -112,13 +112,13 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 	vulnerabilitySettings := GetVulnerabilityScanOptions(buildOutput, buildRunOutput)
 
 	// check if we need to add vulnerability scan arguments
-	if vulnerabilitySettings != nil {
+	if vulnerabilitySettings != nil && vulnerabilitySettings.Enabled {
 		vulnerablilityScanParams := &VulnerablilityScanParams{*vulnerabilitySettings}
 		stepArgs = append(stepArgs, "--vuln-settings", vulnerablilityScanParams.String())
-	}
 
-	if cfg.VulnerabilityCountLimit > 0 {
-		stepArgs = append(stepArgs, "--vuln-count-limit", strconv.Itoa(cfg.VulnerabilityCountLimit))
+		if cfg.VulnerabilityCountLimit > 0 {
+			stepArgs = append(stepArgs, "--vuln-count-limit", strconv.Itoa(cfg.VulnerabilityCountLimit))
+		}
 	}
 
 	// check if we need to set image timestamp
