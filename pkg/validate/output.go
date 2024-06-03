@@ -7,7 +7,6 @@ package validate
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"k8s.io/utils/pointer"
@@ -54,14 +53,4 @@ func (b *BuildSpecOutputValidator) ValidatePath(_ context.Context) error {
 func (b *BuildSpecOutputValidator) isEmptySource() bool {
 	return b.Build.Spec.Source == nil ||
 		b.Build.Spec.Source.Git == nil && b.Build.Spec.Source.OCIArtifact == nil && b.Build.Spec.Source.Local == nil
-}
-
-func isValidSeverity(severity string) bool {
-	switch strings.ToLower(severity) {
-	case "low", "medium", "high":
-		return true
-	default:
-		return false
-	}
-
 }
