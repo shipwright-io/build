@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/docker/cli v26.1.2+incompatible
 	github.com/go-git/go-git/v5 v5.12.0
-	github.com/go-logr/logr v1.4.1
+	github.com/go-logr/logr v1.4.2
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-containerregistry v0.19.1
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
