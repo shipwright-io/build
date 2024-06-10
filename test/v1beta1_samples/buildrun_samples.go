@@ -213,6 +213,39 @@ spec:
     name: foobar
 `
 
+// MinimalBuildRunWithVulnerabilityScan defines a BuildRun with
+// an override for the Build Output
+const MinimalBuildRunWithVulnerabilityScan = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+    vulnerabilityScan:
+      enabled: true
+      failOnFinding: true
+  build:
+    name: foobar
+`
+
+// MinimalBuildRunWithVulnerabilityScan defines a BuildRun with
+// an override for the Build Output
+const OneOffBuildRunWithVulnerabilityScan = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    spec:
+      strategy:
+        kind: ClusterBuildStrategy
+        name: buildah
+      output:
+        image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+        vulnerabilityScan:
+          enabled: true
+          failOnFinding: true
+`
+
 // MinimalBuildRunRetention defines a minimal BuildRun
 // with a reference used to test retention fields
 const MinimalBuildRunRetention = `

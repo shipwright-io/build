@@ -70,6 +70,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.output.image` - Refers to a custom location where the generated image would be pushed. The value will overwrite the `output.image` value defined in `Build`. (**Note**: other properties of the output, for example, the credentials, cannot be specified in the buildRun spec. )
   - `spec.output.pushSecret` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
   - `spec.output.timestamp` - Overrides the output timestamp configuration of the referenced build to instruct the build to change the output image creation timestamp to the specified value. When omitted, the respective build strategy tool defines the output image timestamp.
+  - `spec.output.vulnerabilityScan` - Overrides the output vulnerabilityScan configuration of the referenced build to run the vulnerability scan for the generated image.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
 
 **Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
@@ -418,6 +419,24 @@ status:
     reason: GitRemotePrivate
 ```
 
+### Understanding failed BuildRuns due to VulnerabilitiesFound
+
+A buildrun can be failed, if the vulnerability scan finds vulnerabilities in the generated image and `failOnFinding` is set to true in the `vulnerabilityScan`. For setting `vulnerabilityScan`, see [here](build.md#defining-the-vulnerabilityscan).
+
+Example of failed BuildRun due to vulnerabilities present in the image:
+
+```yaml
+# [...]
+status:
+  # [...]
+  conditions:
+  - type: Succeeded
+    lastTransitionTime: "2024-03-12T20:00:38Z"
+    status: "False"
+    reason: VulnerabilitiesFound
+    message: "Vulnerabilities have been found in the output image. For detailed information, check buildrun status or see kubectl --namespace default logs vuln-s6skc-v7wd2-pod --container step-image-processing"
+```
+
 #### Understanding failed git-source step
 
 All git-related operations support error reporting via `status.failureDetails`. The following table explains the possible
@@ -476,6 +495,26 @@ status:
 ```
 
 **Note**: The digest and size of the output image are only included if the build strategy provides them. See [System results](buildstrategies.md#system-results).
+
+Another example of a `BuildRun` with surfaced results for vulnerability scanning.
+
+```yaml
+# [...]
+status:
+  buildSpec:
+    # [...]
+  status:
+  output:
+    digest: sha256:1023103
+    size: 12310380
+    vulnerabilities:
+    - id: CVE-2022-12345
+      severity: high
+    - id: CVE-2021-54321
+      severity: medium
+```
+
+**Note**: The vulnerability scan will only run if it is specified in the build or buildrun spec. See [Defining the `vulnerabilityScan`](build.md#defining-the-vulnerabilityscan).
 
 ### Build Snapshot
 

@@ -176,6 +176,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 					"$(results.shp-image-digest.path)",
 					"--result-file-image-size",
 					"$(results.shp-image-size.path)",
+					"--result-file-image-vulnerabilities",
+					"$(results.shp-image-vulnerabilities.path)",
 				}))
 			})
 

@@ -76,6 +76,9 @@ const (
 
 	// environment variable for the Git rewrite setting
 	useGitRewriteRule = "GIT_ENABLE_REWRITE_RULE"
+
+	// environment variable to hold vulnerability count limit
+	VulnerabilityCountLimitEnvVar = "VULNERABILITY_COUNT_LIMIT"
 )
 
 var (
@@ -103,6 +106,7 @@ type Config struct {
 	Controllers                      Controllers
 	KubeAPIOptions                   KubeAPIOptions
 	GitRewriteRule                   bool
+	VulnerabilityCountLimit          int
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -158,6 +162,7 @@ func NewDefaultConfig() *Config {
 		RemoteArtifactsContainerImage: remoteArtifactsDefaultImage,
 		TerminationLogPath:            terminationLogPathDefault,
 		GitRewriteRule:                false,
+		VulnerabilityCountLimit:       50,
 
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
@@ -337,6 +342,15 @@ func (c *Config) SetConfigFromEnv() error {
 	// what is defined in the image processing container template
 	if imageProcessingImage := os.Getenv(imageProcessingImageEnvVar); imageProcessingImage != "" {
 		c.ImageProcessingContainerTemplate.Image = imageProcessingImage
+	}
+
+	// set environment variable for vulnerability count limit
+	if vcStr := os.Getenv(VulnerabilityCountLimitEnvVar); vcStr != "" {
+		vc, err := strconv.Atoi(vcStr)
+		if err != nil {
+			return err
+		}
+		c.VulnerabilityCountLimit = vc
 	}
 
 	// Mark that the Git wrapper is suppose to use Git rewrite rule

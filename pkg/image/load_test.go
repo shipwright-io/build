@@ -75,10 +75,11 @@ var _ = Describe("For a local directory", func() {
 		})
 
 		It("LoadImageOrImageIndexFromDirectory returns an error", func() {
-			img, imageIndex, err := image.LoadImageOrImageIndexFromDirectory(directory)
+			img, imageIndex, isImageFromTar, err := image.LoadImageOrImageIndexFromDirectory(directory)
 			Expect(err).To(HaveOccurred())
 			Expect(imageIndex).To(BeNil())
 			Expect(img).To(BeNil())
+			Expect(isImageFromTar).To(BeFalse())
 		})
 	})
 
@@ -89,10 +90,11 @@ var _ = Describe("For a local directory", func() {
 		directory := path.Clean(path.Join(cwd, "../..", "test/data/images/multi-platform-image-in-oci"))
 
 		It("LoadImageOrImageIndexFromDirectory returns an ImageIndex", func() {
-			img, imageIndex, err := image.LoadImageOrImageIndexFromDirectory(directory)
+			img, imageIndex, isImageFromTar, err := image.LoadImageOrImageIndexFromDirectory(directory)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(imageIndex).ToNot(BeNil())
 			Expect(img).To(BeNil())
+			Expect(isImageFromTar).To(BeFalse())
 		})
 	})
 
@@ -103,10 +105,11 @@ var _ = Describe("For a local directory", func() {
 		directory := path.Clean(path.Join(cwd, "../..", "test/data/images/single-image"))
 
 		It("LoadImageOrImageIndexFromDirectory returns an Image", func() {
-			img, imageIndex, err := image.LoadImageOrImageIndexFromDirectory(directory)
+			img, imageIndex, isImageFromTar, err := image.LoadImageOrImageIndexFromDirectory(directory)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(imageIndex).To(BeNil())
 			Expect(img).ToNot(BeNil())
+			Expect(isImageFromTar).To(BeTrue())
 		})
 	})
 
@@ -117,10 +120,11 @@ var _ = Describe("For a local directory", func() {
 		directory := path.Clean(path.Join(cwd, "../..", "test/data/images/single-image-in-oci"))
 
 		It("LoadImageOrImageIndexFromDirectory returns an Image", func() {
-			img, imageIndex, err := image.LoadImageOrImageIndexFromDirectory(directory)
+			img, imageIndex, isImageFromTar, err := image.LoadImageOrImageIndexFromDirectory(directory)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(imageIndex).To(BeNil())
 			Expect(img).ToNot(BeNil())
+			Expect(isImageFromTar).To(BeFalse())
 		})
 	})
 })

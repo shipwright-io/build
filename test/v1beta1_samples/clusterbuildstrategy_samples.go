@@ -120,6 +120,41 @@ spec:
           mountPath: /var/lib/containers/storage
 `
 
+// ClusterBuildStrategyForVulnerabilityScanning is a strategy that does nothing and has no dependencies
+const ClusterBuildStrategyForVulnerabilityScanning = `
+apiVersion: shipwright.io/v1beta1
+kind: ClusterBuildStrategy
+metadata:
+  name: crane-pull
+spec:
+  steps:
+  - name: crane-pull
+    image: gcr.io/go-containerregistry/crane:latest
+    workingDir: $(params.shp-source-root)
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+    env:
+    - name: DOCKER_CONFIG
+      value: /tekton/home/.docker
+    - name: HOME
+      value: /tekton/home
+    command:
+    - crane
+    args:
+    - pull
+    - "--format=tarball"
+    - "ghcr.io/shipwright-io/shipwright-samples/node:12"
+    - "$(params.shp-output-directory)/image.tar"
+    resources:
+      limits:
+        cpu: 250m
+        memory: 128Mi
+      requests:
+        cpu: 250m
+        memory: 128Mi
+`
+
 // ClusterBuildStrategySingleStepKaniko is a cluster build strategy based on
 // Kaniko, which is very close to the actual Kaniko build strategy example in
 // the project

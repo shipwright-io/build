@@ -20,6 +20,26 @@ const (
 	LabelBuildRunGeneration = BuildRunDomain + "/generation"
 )
 
+// VulnerabilitySeverity is an enum for the possible values for severity of a vulnerability
+type VulnerabilitySeverity string
+
+const (
+	// Critical indicates a critical severity
+	Critical VulnerabilitySeverity = "critical"
+
+	// High indicates a high severity
+	High VulnerabilitySeverity = "high"
+
+	// Medium indicates a medium severity
+	Medium VulnerabilitySeverity = "medium"
+
+	// Low indicates a low severity
+	Low VulnerabilitySeverity = "low"
+
+	// Unknown indicates an unknown severity
+	Unknown VulnerabilitySeverity = "unknown"
+)
+
 type ReferencedBuild struct {
 	// Spec refers to an embedded build specification
 	//
@@ -103,6 +123,9 @@ const (
 	// if not already canceled or terminated
 	BuildRunStateCancel = "BuildRunCanceled"
 
+	// BuildRunStateVulnerabilitiesFound indicates that unignored vulnerabilities were found in the image that was built
+	BuildRunStateVulnerabilitiesFound = "VulnerabilitiesFound"
+
 	// BuildRunStatePodEvicted indicates that if the pods got evicted
 	// due to some reason. (Probably ran out of ephemeral storage)
 	BuildRunStatePodEvicted = "PodEvicted"
@@ -156,6 +179,12 @@ type GitSourceResult struct {
 	BranchName string `json:"branchName,omitempty"`
 }
 
+// Vulnerability defines a vulnerability by its ID and severity
+type Vulnerability struct {
+	ID       string                `json:"id,omitempty"`
+	Severity VulnerabilitySeverity `json:"severity,omitempty"`
+}
+
 // Output holds the information about the container image that the BuildRun built
 type Output struct {
 	// Digest holds the digest of output image
@@ -167,6 +196,11 @@ type Output struct {
 	//
 	// +optional
 	Size int64 `json:"size,omitempty"`
+
+	// Vulnerabilities holds the list of vulnerabilities detected in the image
+	//
+	// +optional
+	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun
