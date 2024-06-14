@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-var _ = Describe("Image Processing Resource", func() {
+var _ = Describe("Image Processing Resource", Ordered, func() {
 	run := func(args ...string) error {
 		log.SetOutput(GinkgoWriter)
 
