@@ -82,8 +82,12 @@ func getTaskSpecResults() []pipelineapi.TaskResult {
 }
 
 func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []build.Vulnerability {
-	vulnerabilities := strings.Split(result.Value.StringVal, ",")
 	var vulns []build.Vulnerability
+	if len(result.Value.StringVal) == 0 {
+		return vulns
+	}
+
+	vulnerabilities := strings.Split(result.Value.StringVal, ",")
 	for _, vulnerability := range vulnerabilities {
 		vuln := strings.Split(vulnerability, ":")
 		severity := getSeverity(vuln[1])
@@ -96,7 +100,7 @@ func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []build.Vul
 }
 
 func getSeverity(sev string) build.VulnerabilitySeverity {
-	switch sev {
+	switch strings.ToUpper(sev) {
 	case "L":
 		return build.Low
 	case "M":

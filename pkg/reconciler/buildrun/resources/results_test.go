@@ -106,9 +106,8 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			Expect(br.Status.Source.OciArtifact.Digest).To(Equal(bundleImageDigest))
 		})
 
-		It("should surface the TaskRun results emitting from output step", func() {
+		It("should surface the TaskRun results emitting from output step with image vulnerabilities", func() {
 			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
-			vulns := `CVE-2019-12900:C,CVE-2019-8457:H`
 			tr.Status.Results = append(tr.Status.Results,
 				pipelineapi.TaskRunResult{
 					Name: "shp-image-digest",
@@ -128,7 +127,7 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 					Name: "shp-image-vulnerabilities",
 					Value: pipelineapi.ParamValue{
 						Type:      pipelineapi.ParamTypeString,
-						StringVal: vulns,
+						StringVal: "CVE-2019-12900:c,CVE-2019-8457:h",
 					},
 				})
 
@@ -139,6 +138,38 @@ var _ = Describe("TaskRun results to BuildRun", func() {
 			Expect(br.Status.Output.Vulnerabilities).To(HaveLen(2))
 			Expect(br.Status.Output.Vulnerabilities[0].ID).To(Equal("CVE-2019-12900"))
 			Expect(br.Status.Output.Vulnerabilities[0].Severity).To(Equal(build.Critical))
+		})
+
+		It("should surface the TaskRun results emitting from output step without image vulnerabilities", func() {
+			imageDigest := "sha256:fe1b73cd25ac3f11dec752755e2"
+			tr.Status.Results = append(tr.Status.Results,
+				pipelineapi.TaskRunResult{
+					Name: "shp-image-digest",
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
+						StringVal: imageDigest,
+					},
+				},
+				pipelineapi.TaskRunResult{
+					Name: "shp-image-size",
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
+						StringVal: "230",
+					},
+				},
+				pipelineapi.TaskRunResult{
+					Name: "shp-image-vulnerabilities",
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
+						StringVal: "",
+					},
+				})
+
+			resources.UpdateBuildRunUsingTaskResults(ctx, br, tr.Status.Results, taskRunRequest)
+
+			Expect(br.Status.Output.Digest).To(Equal(imageDigest))
+			Expect(br.Status.Output.Size).To(Equal(int64(230)))
+			Expect(br.Status.Output.Vulnerabilities).To(HaveLen(0))
 		})
 
 		It("should surface the TaskRun results emitting from source and output step", func() {
