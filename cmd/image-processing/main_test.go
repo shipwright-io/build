@@ -405,12 +405,7 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 	})
 
 	Context("vulnerability scanning", func() {
-		var directory string
-		BeforeEach(func() {
-			cwd, err := os.Getwd()
-			Expect(err).ToNot(HaveOccurred())
-			directory = path.Clean(path.Join(cwd, "../..", "test/data/images/vuln-image-in-oci"))
-		})
+		directory := path.Join("..", "..", "test", "data", "images", "vuln-image-in-oci")
 
 		It("should run vulnerability scanning if it is enabled and output vulnerabilities equal to the limit defined", func() {
 			vulnOptions := &buildapi.VulnerabilityScanOptions{
@@ -491,7 +486,6 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 
 				_, err = remote.Get(ref)
 				Expect(err).To(HaveOccurred())
-
 			})
 		})
 
@@ -540,6 +534,5 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
-
 	})
 })
