@@ -49,8 +49,9 @@ import (
 // Other registries:
 // Use standard spec delete API request to delete the provided tag.
 func Delete(ref name.Reference, options []remote.Option, auth authn.AuthConfig) error {
+	var registry = ref.Context().RegistryStr()
 	switch {
-	case strings.Contains(ref.Context().RegistryStr(), "docker.io"):
+	case isDockerHubEndpoint(registry):
 		list, err := remote.List(ref.Context(), options...)
 		if err != nil {
 			return err
@@ -70,7 +71,7 @@ func Delete(ref name.Reference, options []remote.Option, auth authn.AuthConfig) 
 			return dockerHubRepoDelete(token, ref)
 
 		default:
-			log.Printf("Removing a specific image tag is not supported on %q, the respective image tag will be overwritten with an empty image.\n", ref.Context().RegistryStr())
+			log.Printf("Removing a specific image tag is not supported on %q, the respective image tag will be overwritten with an empty image.\n", registry)
 
 			// In case the input argument included a digest, the reference
 			// needs to be updated to exclude the digest for the empty image
@@ -90,8 +91,8 @@ func Delete(ref name.Reference, options []remote.Option, auth authn.AuthConfig) 
 			)
 		}
 
-	case strings.Contains(ref.Context().RegistryStr(), "icr.io"):
-		token, accountID, err := icrLogin(ref.Context().RegistryStr(), auth.Username, auth.Password)
+	case isIcrEndpoint(registry):
+		token, accountID, err := icrLogin(registry, auth.Username, auth.Password)
 		if err != nil {
 			return err
 		}
@@ -110,6 +111,21 @@ func httpClient() *http.Client {
 	return &http.Client{
 		Timeout: 30 * time.Second,
 	}
+}
+
+func isDockerHubEndpoint(registry string) bool {
+	return strings.Contains(registry, "docker.io") ||
+		strings.Contains(registry, "registry.hub.docker.com")
+}
+
+func isIcrEndpoint(registry string) bool {
+	return strings.Contains(registry, "icr.io") ||
+		strings.Contains(registry, "bluemix.net")
+}
+
+func isIcrStageEndpoint(registry string) bool {
+	return strings.Contains(registry, "stg.icr.io") ||
+		strings.Contains(registry, "stage1.ng.bluemix.net")
 }
 
 func dockerHubLogin(username string, password string) (string, error) {
@@ -201,7 +217,7 @@ func icrLogin(registry, username, apikey string) (string, string, error) {
 	}
 
 	iamEndpoint := "https://iam.cloud.ibm.com/identity/token"
-	if strings.Contains(registry, "stg.icr.io") {
+	if isIcrStageEndpoint(registry) {
 		iamEndpoint = "https://iam.test.cloud.ibm.com/identity/token"
 	}
 
