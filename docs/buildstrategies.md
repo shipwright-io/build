@@ -15,7 +15,6 @@ SPDX-License-Identifier: Apache-2.0
   - [Installing Buildpacks v3 Strategy](#installing-buildpacks-v3-strategy)
 - [Kaniko](#kaniko)
   - [Installing Kaniko Strategy](#installing-kaniko-strategy)
-    - [Scanning with Trivy](#scanning-with-trivy)
 - [BuildKit](#buildkit)
   - [Cache Exporters](#cache-exporters)
   - [Build-args and secrets](#build-args-and-secrets)
@@ -129,7 +128,7 @@ kubectl apply -f samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_build
 
 ## Kaniko
 
-The `kaniko` ClusterBuildStrategy is composed by Kaniko's `executor` [kaniko], with the objective of building a container-image, out of a `Dockerfile` and context directory. The `kaniko-trivy` ClusterBuildStrategy adds [trivy](https://github.com/aquasecurity/trivy) scanning and refuses to push images with critical vulnerabilities.
+The `kaniko` ClusterBuildStrategy is composed by Kaniko's `executor` [kaniko], with the objective of building a container-image, out of a `Dockerfile` and context directory.
 
 ### Installing Kaniko Strategy
 
@@ -138,18 +137,6 @@ To install the cluster scope strategy, use:
 ```sh
 kubectl apply -f samples/v1beta1/buildstrategy/kaniko/buildstrategy_kaniko_cr.yaml
 ```
-
-#### Scanning with Trivy
-
-You can also incorporate scanning into the ClusterBuildStrategy. The `kaniko-trivy` ClusterBuildStrategy builds the image with `kaniko`, then scans with [trivy](https://github.com/aquasecurity/trivy). The BuildRun will then exit with an error if there is a critical vulnerability, instead of pushing the vulnerable image into the container registry.
-
-To install the cluster scope strategy, use:
-
-```sh
-kubectl apply -f samples/v1beta1/buildstrategy/kaniko/buildstrategy_kaniko-trivy_cr.yaml
-```
-
-*Note: doing image scanning is not a substitute for trusting the Dockerfile you are building. The build process itself is also susceptible if the Dockerfile has a vulnerability. Frameworks/strategies such as build-packs or source-to-image (which avoid directly building a Dockerfile) should be considered if you need guardrails around the code you want to build.*
 
 ---
 
