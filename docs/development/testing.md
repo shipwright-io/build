@@ -34,14 +34,14 @@ For all the testing levels, we rely on Gingko as the testing framework for defin
 
 ## Verifying your code
 
-Our CI builds verify that your code conforms to project standards and that all generated code is up to date.
+Our CI builds verify that your code conforms to project standards and that all generated code is up-to-date.
 When adding files or updating APIs, please run `make generate` before submitting your code.
 
 ### Counterfeiter
 
 Counterfeiter is used to generate and update fake implementations of objects. Currently only used for the `manager` and `client` package interface of the `sigs.k8s.io/controller-runtime`.
 
-This allow us to use test doubles in the unit tests, from where we can instantiate the fakes and then stub return values. This is very useful, for example we can mock all **client** calls that happened during the k8s controllers reconciliation and stub the result. Same case for the **manager** when creating controllers.
+This allows us to use test doubles in the unit tests, from where we can instantiate the fakes and then stub return values. This is very useful, for example we can mock all **client** calls that happened during the k8s controllers reconciliation and stub the result. Same case for the **manager** when creating controllers.
 
 Counterfeiter is required by the code generator scripts. Run `make install-counterfeiter` to add counterfeiter to your `GOPATH`.
 
@@ -67,11 +67,11 @@ Unit tests are designed based on the following:
 - Unit tests must pass in different OS distributions( e.g. linux, macOS ).
 - Unit tests should be run in parallel.
 
-Because we use Ginkgo for this, each controller [package](https://github.com/shipwright-io/build/tree/main/pkg/reconciler) requires a `suite_test.go` file and a relative controller test file. You can generate a suite by running `ginkgo bootstrap` under the package directory. For testing an specific controller class, you can generate the testing class by running `ginkgo generate` under the package directory.
+Because we use Ginkgo for this, each controller [package](https://github.com/shipwright-io/build/tree/main/pkg/reconciler) requires a `suite_test.go` file and a relative controller test file. You can generate a suite by running `ginkgo bootstrap` under the package directory. For testing a specific controller class, you can generate the testing class by running `ginkgo generate` under the package directory.
 
 When building unit-tests, try to follow:
 
-- Test DRY. Therefore we use the `catalog.go` helper class under the `test` directory, to avoid code repetition.
+- Test DRY. Therefore, we use the `catalog.go` helper class under the `test` directory, to avoid code repetition.
 - Use counterfeiter to generate fakes.
 - Tests happen on a separate `_test` file.
 - Assert all errors.
@@ -114,12 +114,12 @@ We use e2e tests as the last signal to ensure the controllers behaviour in the c
 
 The following table contains a set of environment variables that control the behavior of the e2e tests.
 
-| Environment Variable            | Default                                                                                          | Description                                                   |
-|---------------------------------|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `TEST_NAMESPACE`                | `default`                                                                                        | Target namespace to execute tests upon, default is `default`. |
+| Environment Variable            | Default                                                                                          | Description                                                                                                                                                                         |
+|---------------------------------|--------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `TEST_NAMESPACE`                | `default`                                                                                        | Target namespace to execute tests upon, default is `default`.                                                                                                                       |
 | `TEST_E2E_FLAGS`                | `-failFast -flakeAttempts=2 -p -randomizeAllSpecs -slowSpecThreshold=300 -timeout=20m -trace -v` | Ginkgo flags. See all Ginkgo flags here: [The Ginkgo CLI](https://onsi.github.io/ginkgo/#the-ginkgo-cli). Especially of interest are `--focus` and `--skip` to run selective tests. |
-| `TEST_E2E_TIMEOUT_MULTIPLIER`   | `1`                                                                                              | Multiplier for timeouts in the e2e tests to run them on slower systems. |
-| `TEST_E2E_VERIFY_TEKTONOBJECTS` | `true`                                                                                           | Boolean, if false, the verification code will not try to verify the TaskRun object status |
+| `TEST_E2E_TIMEOUT_MULTIPLIER`   | `1`                                                                                              | Multiplier for timeouts in the e2e tests to run them on slower systems.                                                                                                             |
+| `TEST_E2E_VERIFY_TEKTONOBJECTS` | `true`                                                                                           | Boolean, if false, the verification code will not try to verify the TaskRun object status                                                                                           |
 
 ### Build override parameters
 
@@ -144,20 +144,20 @@ When both `TEST_IMAGE_REPO_SECRET` and `TEST_IMAGE_REPO_DOCKERCONFIGJSON` are in
 
 The following table contains a list of environment variables that will override specific paths under the **BuildRun** CRD.
 
-| Environment Variable          | Path                   | Description |
-|--------------------------------|-----------------------|-------------|
+| Environment Variable           | Path                  | Description                                                                                                                                                                                                                                       |
+|--------------------------------|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `TEST_E2E_SERVICEACCOUNT_NAME` | `spec.serviceAccount` | The name of the service account used by the build runs, the code will try to create the service account but not fail if it already exists. Special value is `generated`, which will lead to using the auto-generation feature for each build run. |
 
 ### Private Git override parameters
 
 End-to-end tests can also be executed with the context of private Git repositories, using the following environment variables to configure it.
 
-| Environment Variable  | Path                           | Description                           |
-|-----------------------|--------------------------------|---------------------------------------|
-| `TEST_PRIVATE_REPO`   | _none_                         | Enable private repository e2e tests   |
-| `TEST_PRIVATE_GITHUB` | `spec.source.git.url`              | Private URL, like `git@github.com`    |
-| `TEST_PRIVATE_GITLAB` | `spec.source.git.url`              | Private URL, like `git@gitlab.com`    |
-| `TEST_SOURCE_SECRET`  | `spec.source.git.cloneSecret` | Private repository credentials        |
+| Environment Variable  | Path                          | Description                         |
+|-----------------------|-------------------------------|-------------------------------------|
+| `TEST_PRIVATE_REPO`   | _none_                        | Enable private repository e2e tests |
+| `TEST_PRIVATE_GITHUB` | `spec.source.git.url`         | Private URL, like `git@github.com`  |
+| `TEST_PRIVATE_GITLAB` | `spec.source.git.url`         | Private URL, like `git@gitlab.com`  |
+| `TEST_SOURCE_SECRET`  | `spec.source.git.cloneSecret` | Private repository credentials      |
 
 On using `TEST_SOURCE_SECRET`, the environment variable must contain the name of the Kubernetes Secret containing SSH private key, for given private Git repository. See the [docs](authentication.md) for more information about authentication methods in the Build.
 
