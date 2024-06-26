@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add issue to project
-        uses: actions/add-to-project@v1.0.1
+        uses: actions/add-to-project@v1.0.2
         with:
           project-url: https://github.com/orgs/shipwright-io/projects/6
           github-token: ${{ secrets.ADD_TO_PROJECT_TOKEN }}
