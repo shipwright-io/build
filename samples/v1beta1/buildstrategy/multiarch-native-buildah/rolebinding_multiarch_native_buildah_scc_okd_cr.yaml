@@ -1,0 +1,14 @@
+# NOTE: This is needed secifically in OKD/OpenShift environments.
+# The pipeline service account should be allowed running pods that require
+# the privileged SecurityContextConstraint.
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: multiarch-native-buildah-pipeline-scc-privileged
+subjects:
+  - kind: ServiceAccount
+    name: pipeline
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 'system:openshift:scc:privileged'

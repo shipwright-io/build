@@ -1,0 +1,545 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: ClusterBuildStrategy
+metadata:
+  name: multiarch-native-buildah
+spec:
+  volumes:
+    - name: oci-archive-storage
+      emptyDir: {}
+      overridable: true
+    - name: additional-bins
+      emptyDir: {}
+  steps:
+    - name: prepare-build
+      image: quay.io/centos/centos:stream9
+      workingDir: $(params.shp-source-root)
+      volumeMounts:
+        - mountPath: /usr/local/bin
+          name: additional-bins
+      resources:
+        requests:
+          cpu: 100m
+          memory: 16Mi
+        limits:
+          memory: 256Mi
+      command:
+        - /bin/bash
+      args:
+        - -c
+        - |
+          #!/bin/bash
+          set -Eueo pipefail
+          trap 'CHILDREN=$(jobs -p); if test -n "${CHILDREN}"; then kill ${CHILDREN} && wait; fi' TERM ERR
+
+          # Parse parameters
+          context="" dockerfile="" runtime_stage_from_image="" image="" status=""
+          registriesBlock="" registriesInsecure="" registriesSearch=""
+          request_cpu="" request_memory="" limit_cpu="" limit_memory=""
+          declare -a architectures buildArgs
+
+          while [[ $# -gt 0 ]]; do
+            arg="$1"
+            shift
+            if [ "${arg}" == "--context" ]; then
+              status=
+              context="$1"
+              shift
+            elif [ "${arg}" == "--dockerfile" ]; then
+              status=
+              dockerfile="$1"
+              shift
+            elif [ "${arg}" == "--image" ]; then
+              status=
+              image="$1"
+              shift
+            elif [ "${arg}" == "--request-cpu" ]; then
+              status=
+              [ "${#1}" -gt 0 ] && request_cpu="${1}"
+              shift
+            elif [ "${arg}" == "--request-memory" ]; then
+              status=
+              [ "${#1}" -gt 0 ] && request_memory="${1}"
+              shift
+            elif [ "${arg}" == "--limit-cpu" ]; then
+              status=
+              [ "${#1}" -gt 0 ] && limit_cpu="${1}"
+              shift
+            elif [ "${arg}" == "--limit-memory" ]; then
+              status=
+              [ "${#1}" -gt 0 ] && limit_memory="${1}"
+              shift
+            elif [ "${arg}" == "--from" ]; then
+              status=
+              [ "${#1}" -gt 0 ] && buildArgs+=("--from" "$1")
+              shift
+            elif [ "${arg}" == "--runtime-stage-from" ]; then
+              status=
+              runtime_stage_from_image="$1"
+              shift
+            elif [ "${arg}" == "--architectures" ]; then
+              status="parse_architectures"
+            elif [ "${arg}" == "--build-args" ]; then
+              status="parse_build_args"
+            elif [ "${arg}" == "--build-contexts" ]; then
+              status="parse_build_contexts"
+            elif [ "${arg}" == "--registries-block" ]; then
+              status="parse_registries_block"
+            elif [ "${arg}" == "--registries-insecure" ]; then
+              status="parse_registries_insecure"
+            elif [ "${arg}" == "--registries-search" ]; then
+              status="parse_registries_search"
+            elif [[ "${arg}" == --* ]]; then
+              echo "[ERROR] Invalid usage"
+              exit 1
+            elif [ "${status}" == "parse_architectures" ]; then
+              architectures+=("${arg}")
+            elif [ "${status}" == "parse_build_args" ]; then
+              buildArgs+=("--build-arg" "${arg}")
+            elif [ "${status}" == "parse_build_contexts" ]; then
+              buildArgs+=("--build-context" "${arg}")
+            elif [ "${status}" == "parse_registries_block" ]; then
+              registriesBlock="${registriesBlock}'${arg}', "
+            elif [ "${status}" == "parse_registries_insecure" ]; then
+              registriesInsecure="${registriesInsecure}'${arg}', "
+            elif [ "${status}" == "parse_registries_search" ]; then
+              registriesSearch="${registriesSearch}'${arg}', "
+            else
+              echo "[ERROR] Invalid usage"
+              exit 1
+            fi
+          done
+
+          # Verify the existence of the context directory
+          if [ ! -d "${context}" ]; then
+            echo -e "[ERROR] The context directory '${context}' does not exist."
+            echo -n "ContextDirNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The context directory '${context}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+          cd "${context}"
+
+          # Verify the existence of the Dockerfile
+          if [ ! -f "${dockerfile}" ]; then
+            echo -e "[ERROR] The Dockerfile '${dockerfile}' does not exist."
+            echo -n "DockerfileNotFound" > '$(results.shp-error-reason.path)'
+            echo -n "The Dockerfile '${dockerfile}' does not exist." > '$(results.shp-error-message.path)'
+            exit 1
+          fi
+          echo "[INFO] Creating registries config file..."
+          touch /tmp/registries.conf
+          if [ "${registriesSearch}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.search]
+          registries = [${registriesSearch::-2}]
+          EOF
+          fi
+          if [ "${registriesInsecure}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.insecure]
+          registries = [${registriesInsecure::-2}]
+          EOF
+          fi
+          if [ "${registriesBlock}" != "" ]; then
+            cat <<EOF >>/tmp/registries.conf
+          [registries.block]
+          registries = [${registriesBlock::-2}]
+          EOF
+          fi
+
+          if [ "${#runtime_stage_from_image}" -gt 0 ]; then
+            echo "[INFO] Replacing the runtime stage image to extend from"
+            buildArgs+=("--build-context" "$(tac "${dockerfile}" | grep -m1 -i -E '^[ ]*FROM' | \
+              sed -n '0,/p/s/^[ ]*from[ ]\+\([^ ]*\)[ ]*\(as.*$\)\{0,1\}$/\1/Ip')=${runtime_stage_from_image}")
+          fi
+          # TODO: what image including kubectl can we use?
+          echo "[INFO] Downloading kubectl..."
+          kube_version=$(curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+            "https:${KUBERNETES_PORT#tcp:}/version" | sed -n 's/^.*gitVersion.*"v\(.*\)\+".*$/\1/p' | cut -f1 -d'+')
+          arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          curl -L -o /usr/local/bin/kubectl \
+            "https://storage.googleapis.com/kubernetes-release/release/v${kube_version}/bin/linux/${arch}/kubectl"
+          chmod +x /usr/local/bin/kubectl
+          task_run_pod=${HOSTNAME}
+          task_run_name=${task_run_pod%-pod}
+          name=${task_run_name}-job
+          namespace=$(</var/run/secrets/kubernetes.io/serviceaccount/namespace)
+          task_run_uid=$(kubectl get pod/"${task_run_pod}" -o jsonpath='{.metadata.ownerReferences[0].uid}')
+
+          for arch in "${architectures[@]}"; do
+            echo "[INFO] Creating the ${arch} build job"
+            kubectl create -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${name}-${arch}
+            namespace: ${namespace}
+            ownerReferences:
+              - apiVersion: tekton.dev/v1beta1
+                kind: TaskRun
+                name: ${task_run_name}
+                uid: ${task_run_uid}
+                controller: true
+            labels:
+              clusterbuildstrategy.shipwright.io/arch: "${arch}"
+          spec:
+            backoffLimit: 1
+            completions: 1
+            ttlSecondsAfterFinished: 86400
+            template:
+              spec:
+                serviceAccountName: pipeline
+                nodeSelector:
+                  kubernetes.io/arch: ${arch}
+                restartPolicy: Never
+                containers:
+                  - name: build
+                    image: quay.io/containers/buildah:v1.28.0
+                    volumeMounts:
+                      - mountPath: /var/workdir
+                        name: workdir
+                    securityContext:
+                      privileged: true
+                    command:
+                      - bash
+                    resources:
+                      requests:
+                        ${request_cpu:+"cpu: '${request_cpu}'"}
+                        ${request_memory:+"memory: '${request_memory}'"}
+                      limits:
+                        ${limit_cpu:+"cpu: '${limit_cpu}'"}
+                        ${limit_memory:+"memory: '${limit_memory}'"}
+                    args:
+                      - -c
+                      - |
+                        #!/bin/bash
+                        set -Eueo pipefail
+
+                        echo "[INFO] Build started on \$(date)"
+                        mkdir -p /var/workdir/context
+                        mkfifo /tmp/pipe
+
+                        echo "[INFO] Waiting for the assets to be copied... "
+                        timeout 30m cat /tmp/pipe || { echo "[ERROR] Timeout while waiting for the assets to be copied."; exit 1; }
+
+                        cd /var/workdir/context
+                        # Building the image
+                        echo "[INFO] Building image ${image}"
+                        # No need to use double quotes for the buildArgs array, because we are expanding it in the heredoc
+                        set -x; buildah bud ${buildArgs[@]} \
+                          --registries-conf=/var/workdir/registries.conf \
+                          --tag="${image}" \
+                          --file="${dockerfile}" .; set +x
+                        # Create the oci-archive
+                        echo "[INFO] Storing the image ${image} as an oci-archive"
+                        buildah push \
+                          "${image}" \
+                          "oci-archive:/tmp/image-${arch}.tar.gz"
+                        echo "[INFO] Waiting for the image download to start..."
+                        timeout 5m cat /tmp/pipe || { echo "[ERROR] The image download did not start"; exit 1; }
+                        echo "[INFO] Waiting for the image download to finish..."
+                        timeout 30m cat /tmp/pipe || { echo "[ERROR] The image download did not finish"; exit 1; }
+                        echo "[INFO] Build completed on \$(date)"
+                volumes:
+                - name: workdir
+                  emptyDir: {}
+          EOF
+          done
+
+          declare -a failure_pids success_pids
+          finished_job=""
+          for arch in "${architectures[@]}"; do
+             kubectl wait job/"${name}-${arch}" --timeout=10m --for=condition=Failed &
+             failure_pids+=($!)
+             kubectl wait job/"${name}-${arch}" --timeout=5m --for=jsonpath='{.status.active}'=1 && \
+               kubectl wait pod --timeout=10m -l "job-name=${name}-${arch}" --for=condition=Ready &
+             success_pids+=($!)
+             kubectl wait job/"${name}-${arch}" --timeout=5m --for=jsonpath='{.status.active}'=1 && \
+               kubectl wait pod --timeout=10m -l "job-name=${name}-${arch}" --for=condition=PodScheduled=false &
+             failure_pids+=($!)
+          done
+          ret=0
+          while [ ${ret} -eq 0 ]; do
+            wait -p finished_job -n "${failure_pids[@]}" "${success_pids[@]}" 2>/dev/null || ret=$?
+            if printf '%s\0' "${failure_pids[@]}" | grep -Fxqz -- "${finished_job}"; then
+              echo "[ERROR] A failure condition has been met while waiting for the jobs to initialize"
+              exit 1
+            elif printf '%s\0' "${success_pids[@]}" | grep -Fxqz -- "${finished_job}"; then
+              # shellcheck disable=SC2206
+              # It's safe to ignore the double quotes here, as the array keeps the ids of the jobs and ignoring them 
+              # allows us to ignore the empty array
+              success_pids=( ${success_pids[@]/${finished_job}} )
+            fi
+            [ ${#success_pids[@]} -eq 0 ] && break
+          done
+          echo "[INFO] All the jobs' pods started"
+          echo "[INFO] Uploading the assets to the build pods"
+
+          function upload_assets {
+            pod_name=$(kubectl get pod -l "job-name=$1" -o jsonpath='{.items[0].metadata.name}')
+            tar czpf - . | kubectl exec -i "$pod_name" -- tar xzpf - -C /var/workdir/context/
+            kubectl cp /tmp/registries.conf "$pod_name":/var/workdir/registries.conf
+            kubectl exec "$pod_name" -- bash -c "echo -n > /tmp/pipe"
+          }
+
+          success_pids=()
+
+          for arch in "${architectures[@]}"; do
+             upload_assets "${name}-${arch}" &
+             success_pids+=($!)
+          done
+          ret=0
+          while [ ${ret} -eq 0 ]; do
+            wait -n "${success_pids[@]}" 2>/dev/null || ret=$?
+            if [ ${ret} -ne 0 ] && [ "${ret}" -ne 127 ]; then
+              echo "[ERROR] An error occurred while uploading the assets"
+              exit 1
+            fi
+          done
+          echo "[INFO] All the assets have been uploaded. Continuing."
+        - --
+        - --context
+        - $(params.shp-source-context)
+        - --dockerfile
+        - $(params.dockerfile)
+        - --image
+        - $(params.shp-output-image)
+        - --build-args
+        - $(params.build-args[*])
+        - --registries-block
+        - $(params.registries-block[*])
+        - --registries-insecure
+        - $(params.registries-insecure[*])
+        - --registries-search
+        - $(params.registries-search[*])
+        - --architectures
+        - $(params.architectures[*])
+        - --from
+        - $(params.from)
+        - --runtime-stage-from
+        - $(params.runtime-stage-from)
+        - --build-contexts
+        - $(params.build-contexts[*])
+        - --request-cpu
+        - '$(params.request-cpu)'
+        - --request-memory
+        - '$(params.request-memory)'
+        - --limit-cpu
+        - '$(params.limit-cpu)'
+        - --limit-memory
+        - '$(params.limit-memory)'
+    - name: wait-manifests-complete
+      image: quay.io/centos/centos:stream9
+      workingDir: /tmp
+      volumeMounts:
+        - mountPath: /var/oci-archive-storage
+          name: oci-archive-storage
+        - mountPath: /usr/local/bin
+          name: additional-bins
+      resources:
+        requests:
+          cpu: 50m
+          memory: 16Mi
+        limits:
+          memory: 256Mi
+      command:
+        - bash
+      args:
+        - -c
+        - |
+          #!/bin/bash
+          set -Eueo pipefail
+          trap 'CHILDREN=$(jobs -p); if test -n "${CHILDREN}"; then kill ${CHILDREN} && wait; fi' TERM ERR
+
+          declare -a architectures
+          inArchitectures=false
+
+          while [[ $# -gt 0 ]]; do
+            arg="$1"
+            shift
+            if [ "${arg}" == "--architectures" ]; then
+              inArchitectures=true
+            elif [[ "${arg}" =~ --* ]]; then
+              inArchitectures=false
+              break
+            elif [ "${inArchitectures}" == "true" ]; then
+              architectures+=("${arg}")
+            fi
+          done
+          task_run_pod=${HOSTNAME}
+          name=${task_run_pod%-pod}-job
+          declare -a success_pids failure_pids
+          finished_job=""
+
+          function download_images {
+            pod_name=$(kubectl get pod -l "job-name=${1}-${2}" -o jsonpath='{.items[0].metadata.name}')
+            # Trigger the image download start event
+            kubectl exec -c build "${pod_name}" -- bash -c 'echo "done" > /tmp/pipe'
+            # Download the image
+            kubectl cp "${pod_name}:/tmp/image-${2}.tar.gz" "/var/oci-archive-storage/image-${2}.tar.gz"
+            # Trigger the image download complete event
+            kubectl exec -c build "${pod_name}" -- bash -c 'echo "done" > /tmp/pipe'
+          }
+
+          for arch in "${architectures[@]}"; do
+            echo "[INFO] Waiting for the ${arch} build job to complete"
+            kubectl wait job/"${name}-${arch}" --timeout=-1s --for=condition=Complete &
+            success_pids+=($!)
+            kubectl wait job/"${name}-${arch}" --timeout=-1s --for=condition=Failed &
+            failure_pids+=($!)
+            download_images "${name}" "${arch}" &
+            success_pids+=($!)
+            kubectl wait job/"${name}-${arch}" --timeout=5m --for=jsonpath='{.status.active}'=1 && \
+              kubectl wait pod --timeout=10m -l "job-name=${name}-${arch}" --for=condition=ContainersReady && \
+              kubectl logs -c build -l "job-name=${name}-${arch}" -f --tail=-1 |& sed -u "s/^/[${arch}] /" || true &
+          done
+
+          ret=0
+          while [ ${ret} -eq 0 ]; do
+            wait -p finished_job -n "${failure_pids[@]}" "${success_pids[@]}" 2>/dev/null || true
+            ret=$?
+            if printf '%s\0' "${failure_pids[@]}" | grep -Fxqz -- "${finished_job}"; then
+              echo "[ERROR] A failure condition has been met while waiting for the builds jobs to complete"
+              exit 1
+            elif printf '%s\0' "${success_pids[@]}" | grep -Fxqz -- "${finished_job}"; then
+              success_pids=( ${success_pids[@]/${finished_job}} )
+            fi
+            [ ${#success_pids[@]} -eq 0 ] && break
+          done
+          echo "[INFO] All the jobs completed successfully"
+          ls -lh /var/oci-archive-storage/
+        - --
+        - --architectures
+        - $(params.architectures[*])
+    - name: package-manifest-list-and-push
+      image: quay.io/containers/buildah:v1.28.0
+      securityContext:
+        privileged: true
+      workingDir: /var/oci-archive-storage
+      resources:
+        requests:
+          cpu: 50m
+          memory: 16Mi
+        limits:
+          memory: 256Mi
+      volumeMounts:
+        - mountPath: /var/oci-archive-storage
+          name: oci-archive-storage
+      command:
+        - bash
+      args:
+        - -c
+        - |
+          #!/bin/bash
+          set -Eueo pipefail
+          ls -lh
+
+          image="" registriesInsecure="" status="" tlsVerify=true
+
+          while [[ $# -gt 0 ]]; do
+            arg="$1"
+            shift
+            if [ "${arg}" == "--image" ]; then
+              image="$1"
+              status=
+              shift
+            elif [ "${arg}" == "--registries-insecure" ]; then
+              status="parse_registries_insecure"
+            elif [[ "${arg}" == --* ]]; then
+              echo "[ERROR] Invalid usage"
+              exit 1      
+            elif [ "${status}" == "parse_registries_insecure" ]; then
+              registriesInsecure="${registriesInsecure}'${arg}', "
+              # This assumes that the image is passed before the insecure registries which is fair in this context
+              if [[ ${image} == ${arg}/* ]]; then
+                tlsVerify=false
+              fi
+            else
+              echo "[ERROR] Invalid usage"
+              exit 1               
+            fi
+          done
+
+          image_name_tag="$(basename ${image})"
+          echo "[INFO] Creating manifest list"
+          buildah manifest create "${image_name_tag}"
+
+          for f in image-*.tar.gz; do
+            echo "[INFO] Adding the $(echo ${f%.tar.gz} | sed 's/^.*-//') manifest to the manifest list"
+            [[ -e "$f" ]] || { echo "[ERROR] no oci-archive available for the manifest"; exit 1; } # handle case of no files available
+            buildah manifest add "${image_name_tag}" "oci-archive:$f"
+          done
+          
+          echo "[INFO] Pushing the manifest list ${image_name_tag} to the registry as ${image}"
+          buildah manifest push --all --digestfile '$(results.shp-image-digest.path)' \
+            --tls-verify=${tlsVerify} "${image_name_tag}" "docker://${image}"
+          echo "[INFO] Manifest list pushed successfully. BuildRun succeeded."
+
+        - --
+        - --image
+        - $(params.shp-output-image)
+        - --registries-insecure
+        - $(params.registries-insecure[*])
+  parameters:
+    - name: architectures
+      description: The list of architectures to build the image for
+      type: array
+      defaults:
+        - amd64
+    - name: build-args
+      description: The values for the args in the Dockerfile. Values must be in the format KEY=VALUE.
+      type: array
+      defaults: [ ]
+    - name: dockerfile
+      description: The path to the Dockerfile to be used for building the image.
+      type: string
+      default: "Dockerfile"
+    - name: from
+      type: string
+      description: Image name used to replace the value in the first FROM instruction in the Dockerfile
+      default: ""
+    - name: runtime-stage-from
+      description: Image name used to replace the value in the last FROM instruction in the Dockerfile
+      type: string
+      default: ""
+    - name: build-contexts
+      description: >-
+        Specify an additional build context using its short name and its location. 
+        Additional build contexts can be referenced in the same manner as we access 
+        different stages in COPY instruction. Use values in the form "name=value".
+        See man buildah-build.
+      type: array
+      defaults: [ ]
+    - name: registries-block
+      description: The registries that need to block pull access.
+      type: array
+      defaults: [ ]
+    - name: registries-insecure
+      description: The fully-qualified name of insecure registries. An insecure registry is one that does not have a valid SSL certificate or only supports HTTP.
+      type: array
+      defaults: [ ]
+    - name: registries-search
+      description: The registries for searching short name images such as `golang:latest`.
+      type: array
+      defaults:
+        - docker.io
+        - quay.io
+    - name: request-cpu
+      description: The amount of CPU requested for the build pod.
+      type: string
+      default: 250m
+    - name: request-memory
+      description: The amount of memory requested for the build pod.
+      type: string
+      default: 64Mi
+    - name: limit-cpu
+      description: The amount of CPU limit for the build pod.
+      type: string
+      default: ""
+    - name: limit-memory
+      description: The amount of memory limit for the build pod.
+      type: string
+      default: 2Gi
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
