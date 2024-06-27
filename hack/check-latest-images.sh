@@ -50,11 +50,6 @@ function update() {
         fi
         LATEST_TAG="$(curl --silent --retry 3 "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")"
 
-        # Trivy image tag (0.31.3) is different from release tag name (v0.31.3)
-        if [[ ${IMAGE} == *trivy* ]]; then
-                LATEST_TAG="${LATEST_TAG:1}"
-        fi
-
         echo "[INFO] Determined latest tag ${LATEST_TAG}"
 
         # Search and modify the image tag with the latest

@@ -13,12 +13,8 @@ jobs:
         include:
           - image: gcr.io/kaniko-project/executor
             latest-release-url: https://api.github.com/repos/GoogleContainerTools/kaniko/releases/latest
-          - image: docker.io/aquasec/trivy
-            latest-release-url: https://api.github.com/repos/aquasecurity/trivy/releases/latest
           - image: quay.io/containers/buildah
             latest-release-url: https://quay.io/api/v1/repository/containers/buildah/tag/
-          - image: gcr.io/go-containerregistry/crane
-            latest-release-url: https://api.github.com/repos/google/go-containerregistry/releases/latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
