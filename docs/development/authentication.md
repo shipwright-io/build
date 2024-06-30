@@ -21,7 +21,7 @@ The following document provides an introduction around the different authenticat
 
 ## Overview
 
-There are two places where users might need to define authentication when building images. Authentication to a container registry is the most common one, but also users might have the need to define authentications for pulling source-code from Git. Overall, the authentication is done via the definition of [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in which the require sensitive data will be stored.
+There are two places where users might need to define authentication when building images. Authentication to a container registry is the most common one, but also users might have the need to define authentications for pulling source-code from Git. Overall, the authentication is done via the definition of [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in which the required sensitive data will be stored.
 
 ## Build Secrets Annotation
 

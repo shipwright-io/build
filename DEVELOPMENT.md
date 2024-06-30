@@ -11,16 +11,16 @@ Documentation inspired from https://github.com/tektoncd/pipeline/blob/ce7591acec
 
 ## Getting started
 
-1.  [Ramp up on kubernetes and CRDs](#ramp-up)
-1.  Create [a GitHub account](https://github.com/join)
-1.  Setup
+1. [Ramp up on kubernetes and CRDs](#ramp-up)
+2. Create [a GitHub account](https://github.com/join)
+3. Setup
     [GitHub access via SSH](https://help.github.com/articles/connecting-to-github-with-ssh/)
-1.  [Create and checkout a repo fork](#checkout-your-fork)
-1.  Install [requirements](#requirements)
-1.  [Set up a Kubernetes cluster](#create-a-cluster-and-a-repo)
-1.  Set up your [shell environment](#environment-setup)
-1.  [Configure kubectl to use your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
-1.  [Install Shipwright Build in your cluster](#install-shipwright-build)
+4. [Create and checkout a repo fork](#checkout-your-fork)
+5. Install [requirements](#requirements)
+6. [Set up a Kubernetes cluster](#create-a-cluster-and-a-repo)
+7. Set up your [shell environment](#environment-setup)
+8. [Configure kubectl to use your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
+9. [Install Shipwright Build in your cluster](#install-shipwright-build)
 
 ### Ramp up
 
@@ -58,9 +58,9 @@ The Go tools require that you clone the repository to the
 
 To check out this repository:
 
-1.  Create your own
+1. Create your own
     [fork of this repo](https://help.github.com/articles/fork-a-repo/)
-1.  Clone it to your machine:
+2. Clone it to your machine:
 
 ```shell
 mkdir -p ${GOPATH}/src/github.com/shipwright-io
@@ -78,17 +78,17 @@ _Adding the `upstream` remote sets you up nicely for regularly
 
 You must install these tools:
 
-1.  [`go`](https://golang.org/doc/install): The language Shipwright Build is
+1. [`go`](https://golang.org/doc/install): The language Shipwright Build is
     built in
-1.  [`git`](https://help.github.com/articles/set-up-git/): For source control
-1   [`ko`](https://github.com/ko-build/ko): To build and deploy changes.
-1.  [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/): For
+2. [`git`](https://help.github.com/articles/set-up-git/): For source control
+3. [`ko`](https://github.com/ko-build/ko): To build and deploy changes.
+4. [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/): For
     interacting with your kube cluster
 
 ### Create a cluster and a repo
 
 1. Follow the instructions in the Kubernetes doc to [Set up a kubernetes cluster](https://kubernetes.io/docs/setup/)
-1. Set up a container image repository for pushing images. Any container image registry that is accessible to your cluster can be used for your repository. This can be a public registry like [Docker Hub](https://docs.docker.com/docker-hub/), [quay.io](https://quay.io), or a container registry runs by your cloud provider
+2. Set up a container image repository for pushing images. Any container image registry that is accessible to your cluster can be used for your repository. This can be a public registry like [Docker Hub](https://docs.docker.com/docker-hub/), [quay.io](https://quay.io), or a container registry runs by your cloud provider
 
 **Note**: We support Kubernetes version 1.27 to 1.29. 1 cluster worker node for basic usage, 2+ cluster worker nodes for HA
 
@@ -96,9 +96,9 @@ You must install these tools:
 
 To run your controller, you'll need to set these environment variables (we recommend adding them to your `.bashrc`):
 
-1.  `GOPATH`: If you don't have one, simply pick a directory and add `export
+1. `GOPATH`: If you don't have one, simply pick a directory and add `export
     GOPATH=...`
-1.  `$GOPATH/bin` on `PATH`: This is so that tooling installed via `go get` will
+2. `$GOPATH/bin` on `PATH`: This is so that tooling installed via `go get` will
     work properly.
 
 `.bashrc` example:
@@ -126,11 +126,11 @@ The following set of steps highlight how to deploy a Build controller pod into a
     ./hack/install-tekton.sh
     ```
 
-1. Set your `KO_DOCKER_REPO` environment variable. This will be the container
+2. Set your `KO_DOCKER_REPO` environment variable. This will be the container
    image registry you push to, or `kind.local` if you're using
 [KinD](https://kind.sigs.k8s.io).
 
-1. Build and deploy the controller from source, from within the root of the repo:
+3. Build and deploy the controller from source, from within the root of the repo:
 
    ```sh
    ko apply -P -R -f deploy/
