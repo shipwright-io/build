@@ -475,6 +475,25 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Multiarch Native Buildah build is defined", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildah-multi-arch-native")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/v1beta1/build_multiarch_native_buildah_cr.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_multiarch_native_buildah_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+		})
+	})
 	Context("when a s2i build is defined", func() {
 
 		BeforeEach(func() {

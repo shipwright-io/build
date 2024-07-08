@@ -1,11 +1,13 @@
 ---
-apiVersion: shipwright.io/v1alpha1
+apiVersion: shipwright.io/v1beta1
 kind: Build
 metadata:
   name: multiarch-native-buildah-ex
 spec:
   source:
-    url: https://github.com/shipwright-io/sample-go
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
     contextDir: docker-build
   strategy:
     name: multiarch-native-buildah
@@ -24,6 +26,7 @@ spec:
     # The runtime-stage-from implements the logic to replace the last stage FROM image of a Dockerfile
     - name: runtime-stage-from
       value: docker://gcr.io/distroless/static:nonroot
-  dockerfile: Dockerfile
+    - name: dockerfile
+      value: Dockerfile
   output:
     image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
