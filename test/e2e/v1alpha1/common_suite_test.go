@@ -110,6 +110,14 @@ func (b *buildPrototype) Dockerfile(dockerfile string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) Env(key string, value string) *buildPrototype {
+	b.build.Spec.Env = append(b.build.Spec.Env, core.EnvVar{
+		Name:  key,
+		Value: value,
+	})
+	return b
+}
+
 func (b *buildPrototype) determineParameterIndex(name string) int {
 	index := -1
 	for i, paramValue := range b.build.Spec.ParamValues {

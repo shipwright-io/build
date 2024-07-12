@@ -154,6 +154,14 @@ func (b *buildPrototype) OutputImage(image string) *buildPrototype {
 	return b
 }
 
+func (b *buildPrototype) Env(key string, value string) *buildPrototype {
+	b.build.Spec.Env = append(b.build.Spec.Env, core.EnvVar{
+		Name:  key,
+		Value: value,
+	})
+	return b
+}
+
 func (b *buildPrototype) OutputVulnerabilitySettings(settings buildv1beta1.VulnerabilityScanOptions) *buildPrototype {
 	b.build.Spec.Output.VulnerabilityScan = &settings
 	return b

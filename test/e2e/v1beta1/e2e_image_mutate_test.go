@@ -181,6 +181,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 						OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
 						OutputImageInsecure(insecure).
 						OutputTimestamp(outputTimestamp).
+						Env("BP_NODE_VERSION", "~20").
 						BuildSpec()).
 					MustCreate()
 			}
