@@ -27,7 +27,7 @@ spec:
         runAsNonRoot: true
       serviceAccountName: shipwright-build-webhook
       containers:
-      - name:  shp-build-webhook
+      - name:  shipwright-build-webhook
         image: ko://github.com/shipwright-io/build/cmd/shipwright-build-webhook
         volumeMounts:
         - name: webhook-certs
