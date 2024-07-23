@@ -63,7 +63,12 @@ jobs:
         kubernetes:
           - v1.27.11
           - v1.29.2
-      max-parallel: 2
+        tekton:
+          # oldest LTS that exists at the time of our planned next release
+          - v0.53.5
+          # newest LTS that exists at the time of our planned next release
+          - v0.59.2
+      max-parallel: 4
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -109,6 +114,8 @@ jobs:
             exit 1
           fi
       - name: Install Tekton
+        env:
+          TEKTON_VERSION: ${{ matrix.tekton }}
         run: |
           make kind-tekton
           kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
@@ -132,7 +139,12 @@ jobs:
         kubernetes:
           - v1.27.11
           - v1.29.2
-      max-parallel: 2
+        tekton:
+          # oldest LTS that exists at the time of our planned next release
+          - v0.53.5
+          # newest LTS that exists at the time of our planned next release
+          - v0.59.2
+      max-parallel: 4
     runs-on: ubuntu-latest
     steps:
       - name: Maximize build space
@@ -185,6 +197,8 @@ jobs:
             exit 1
           fi
       - name: Install Tekton
+        env:
+          TEKTON_VERSION: ${{ matrix.tekton }}
         run: |
           make kind-tekton
           kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
