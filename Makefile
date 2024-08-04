@@ -274,7 +274,8 @@ install-controller-kind: install-apis
 
 .PHONY: install-strategies
 install-strategies: install-apis
-	kubectl apply -R -f samples/v1beta1/buildstrategy/
+	[ -n "${TEST_NAMESPACE}" ] && ADDITIONAL_PARAMS="-n ${TEST_NAMESPACE}"; \
+	kubectl apply $$ADDITIONAL_PARAMS -R -f samples/v1beta1/buildstrategy/
 
 .PHONY: local
 local: install-strategies

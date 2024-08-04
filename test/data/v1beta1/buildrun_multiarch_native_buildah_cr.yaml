@@ -1,0 +1,8 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: multiarch-native-buildah-ex
+spec:
+  build:
+    name: multiarch-native-buildah-ex

@@ -1,0 +1,32 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: multiarch-native-buildah-ex
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  strategy:
+    name: multiarch-native-buildah
+    kind: ClusterBuildStrategy
+  paramValues:
+    - name: architectures
+      values:
+        # Setting only to amd64 for the tests  to run on amd64 only clusters
+        - value: "amd64"
+    - name: build-contexts
+      values:
+        - value: "ghcr.io/shipwright-io/shipwright-samples/golang:1.18=docker://ghcr.io/shipwright-io/shipwright-samples/golang:1.18"
+    # The buildah `--from` replaces the first FROM statement
+    - name: from
+      value: "" # Using the build-contexts for this example
+    # The runtime-stage-from implements the logic to replace the last stage FROM image of a Dockerfile
+    - name: runtime-stage-from
+      value: docker://gcr.io/distroless/static:nonroot
+    - name: dockerfile
+      value: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app

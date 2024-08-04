@@ -139,16 +139,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	})
 
 	Context("when a heroku Buildpacks build is defined using a namespaced strategy", func() {
-		var buildStrategy *buildv1beta1.BuildStrategy
-
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-heroku-namespaced")
-
-			buildStrategy, err = buildStrategyTestData(testBuild.Namespace, "samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_namespaced_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testBuild.CreateBuildStrategy(buildStrategy)
-			Expect(err).ToNot(HaveOccurred())
 
 			// create the build definition
 			build = createBuild(
@@ -168,7 +160,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		AfterEach(func() {
-			err = testBuild.DeleteBuildStrategy(buildStrategy.Name)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -197,16 +188,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	})
 
 	Context("when a Buildpacks v3 build is defined using a namespaced strategy", func() {
-		var buildStrategy *buildv1beta1.BuildStrategy
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-namespaced")
-
-			buildStrategy, err = buildStrategyTestData(testBuild.Namespace, "samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_namespaced_cr.yaml")
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testBuild.CreateBuildStrategy(buildStrategy)
-			Expect(err).ToNot(HaveOccurred())
 
 			// create the build definition
 			build = createBuild(
@@ -225,7 +209,6 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		AfterEach(func() {
-			err = testBuild.DeleteBuildStrategy(buildStrategy.Name)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -475,6 +458,25 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Multiarch Native Buildah build is defined", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildah-multi-arch-native")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/v1beta1/build_multiarch_native_buildah_cr.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_multiarch_native_buildah_cr.yaml")
+			Expect(err).ToNot(HaveOccurred())
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+		})
+	})
 	Context("when a s2i build is defined", func() {
 
 		BeforeEach(func() {

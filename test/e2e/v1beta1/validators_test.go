@@ -294,19 +294,6 @@ func readAndDecode(filePath string) (runtime.Object, error) {
 	return obj, err
 }
 
-// buildStrategyTestData gets the us the BuildStrategy test data set up
-func buildStrategyTestData(ns string, buildStrategyCRPath string) (*buildv1beta1.BuildStrategy, error) {
-	obj, err := readAndDecode(buildStrategyCRPath)
-	if err != nil {
-		return nil, err
-	}
-
-	buildStrategy := obj.(*buildv1beta1.BuildStrategy)
-	buildStrategy.SetNamespace(ns)
-
-	return buildStrategy, err
-}
-
 func buildTestData(namespace string, identifier string, filePath string) (*buildv1beta1.Build, error) {
 	obj, err := readAndDecode(filePath)
 	if err != nil {

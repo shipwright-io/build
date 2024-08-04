@@ -1,0 +1,28 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: multiarch-native-buildah-pipeline
+rules:
+  - verbs:
+      - get
+      - list
+      - watch
+    resources:
+      - pods
+    apiGroups:
+      - ""
+  - verbs:
+      - create
+    resources:
+      - pods/exec
+    apiGroups:
+      - ""
+  - verbs:
+      - get
+      - list
+      - create
+      - watch
+    resources:
+      - jobs
+    apiGroups:
+      - batch
