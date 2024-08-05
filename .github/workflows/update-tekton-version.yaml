@@ -1,0 +1,53 @@
+---
+name: Update Tekton version
+on:
+  schedule:
+  - cron: '0 0 * * *'
+  issue_comment:
+    types: [created, edited]
+jobs:
+  check-new-versions:
+    if: contains(github.event.comment.body, '/rebase') || github.event_name == 'schedule'
+    permissions:
+      pull-requests: write # To be able to create pull requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+          cache: true
+          check-latest: true
+
+      - name: Update Tekton version
+        id: update-tekton
+        run: ./.github/bump-tekton-lts.sh --output "${GITHUB_OUTPUT}"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: Bump Tekton Pipeline from ${{ steps.update-tekton.outputs.OLD_VERSION }} to ${{ steps.update-tekton.outputs.NEW_VERSION }}
+          title: Bump Tekton Pipeline from ${{ steps.update-tekton.outputs.OLD_VERSION }} to ${{ steps.update-tekton.outputs.NEW_VERSION }}
+          body: |
+            # Changes
+
+            Bumps Tekton Pipeline from ${{ steps.update-tekton.outputs.OLD_VERSION }} to ${{ steps.update-tekton.outputs.NEW_VERSION }}
+
+            You can trigger a rebase manually by commenting `/rebase` and resolve any conflicts with this PR.
+
+            # Submitter Checklist
+            - [ ] Includes tests if functionality changed/was added
+            - [ ] Includes docs if changes are user-facing
+            - [x] [Set a kind label on this PR](https://prow.k8s.io/command-help#kind)
+            - [x] Release notes block has been filled in, or marked NONE
+
+            # Release Notes
+
+            ```release-note
+            Update the the new latest Tekton LTS release ${{ steps.update-tekton.outputs.NEW_VERSION }}
+            ```
+          labels: kind/dependency-change
+          branch: bump-tekton-pipeline
+          delete-branch: true
