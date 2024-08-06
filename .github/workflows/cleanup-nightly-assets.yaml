@@ -26,7 +26,7 @@ jobs:
       run: |
         WORK_DIR=`mktemp -d -p "$DIR"`
         gh release download nightly -D ${WORK_DIR}
-        
+
         ASSETS_TOTAL=$(ls $WORK_DIR | wc -l)
         echo "[INFO] Currently ${ASSETS_TOTAL} assets for nightly release"
 
@@ -48,4 +48,3 @@ jobs:
 
         rm -rf "$WORK_DIR"
         echo "[INFO] Deleted temporary directory ${WORK_DIR}"
-  
