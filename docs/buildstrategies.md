@@ -11,6 +11,8 @@ SPDX-License-Identifier: Apache-2.0
 - [Available BuildStrategies](#available-buildstrategies)
 - [Buildah](#buildah)
   - [Installing Buildah Strategy](#installing-buildah-strategy)
+- [Multi-arch Native Buildah](#multi-arch-native-buildah)
+  - [Installing Multi-arch Native Buildah Strategy](#installing-multi-arch-native-buildah-strategy) 
 - [Buildpacks v3](#buildpacks-v3)
   - [Installing Buildpacks v3 Strategy](#installing-buildpacks-v3-strategy)
 - [Kaniko](#kaniko)
@@ -56,6 +58,7 @@ Well-known strategies can be bootstrapped from [here](../samples/v1beta1/buildst
 | Name                                                                                                              | Supported platforms |
 |-------------------------------------------------------------------------------------------------------------------|---------------------|
 | [buildah](../samples/v1beta1/buildstrategy/buildah)                                                               | all                 |
+| [multiarch-native-buildah](../samples/v1beta1/buildstrategy/multiarch-native-buildah)                             | all                 |
 | [BuildKit](../samples/v1beta1/buildstrategy/buildkit/buildstrategy_buildkit_cr.yaml)                              | all                 |
 | [buildpacks-v3-heroku](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3-heroku_cr.yaml) | linux/amd64 only    |
 | [buildpacks-v3](../samples/v1beta1/buildstrategy/buildpacks-v3/buildstrategy_buildpacks-v3_cr.yaml)               | linux/amd64 only    |
@@ -92,6 +95,111 @@ To install use:
 ```sh
 kubectl apply -f samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_shipwright_managed_push_cr.yaml
 kubectl apply -f samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml
+```
+
+---
+
+## Multi-arch Native buildah
+
+The [`multiarch-native-buildah` ClusterBuildStrategy](https://github.com/shipwright-io/build/blob/17d516a160/samples/v1beta1/buildstrategy/multiarch-native-buildah/buildstrategy_multiarch_native_buildah_cr.yaml) uses [`buildah`](https://github.com/containers/buildah) 
+to build and push a container image, out of a `Dockerfile`. 
+
+The strategy will build the image for the platforms that are listed in the `architectures` parameter of a `Build` object
+that refers it.
+The strategy will require the cluster to have the necessary infrastructure to run the builds: worker nodes
+for each architecture that is listed in the `architectures` parameter. 
+
+The ClusterBuildStrategy runs a main orchestrator pod. 
+The orchestrator pod will create one auxiliary job for each architecture requested by the Build. 
+The auxiliary jobs are responsible for building the container image and 
+coordinate with the orchestrator pod.
+
+When all the builds are completed, the orchestrator pod will compose a manifest-list image and push it to the target registry.
+
+The service account that runs the strategy must be bound to a role able to `create`, `list`, `get` and `watch` 
+`batch/v1` `jobs` and `core/v1` `pods` resources. 
+The role also needs to allow the `create` verb for the `pods/exec` resource.
+Finally, when running in OKD or OpenShift clusters, the service account must be able to use the 
+`privileged` SecurityContextConstraint.
+
+### Installing Multi-arch Native buildah Strategy
+
+To install the cluster-scoped strategy, use:
+
+```sh
+kubectl apply -f samples/v1beta1/buildstrategy/multiarch-native-buildah/buildstrategy_multiarch_native_buildah_cr.yaml
+```
+
+For each namespace where you want to use the strategy, you also need to apply the RBAC rules that allow the service
+account to run the strategy. If the service account is named `pipeline` (default), you can use:
+
+```sh
+kubectl apply -n <namespace> -f  samples/v1beta1/buildstrategy/multiarch-native-buildah/
+```
+
+### Parameters
+
+The build strategy provides the following parameters that you can set in a Build or BuildRun to control its behavior:
+
+| Parameter             | Description                                                                                                                                                                                                                                              | Default      |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| `architectures`       | The list of architectures to build the image for                                                                                                                                                                                                         | \[ "amd64" ] |
+| `build-args`          | The values for the args in the Dockerfile. Values must be in the format KEY=VALUE.                                                                                                                                                                       | empty array  |
+| `dockerfile`          | The path to the Dockerfile to be used for building the image.                                                                                                                                                                                            | `Dockerfile` |
+| `from`                | Image name used to replace the value in the first FROM instruction in the Dockerfile.                                                                                                                                                                    | empty string |
+| `runtime-stage-from`  | Image name used to replace the value in the last FROM instruction in the Dockerfile.                                                                                                                                                                     | empty string |
+| `build-contexts`      | Specify an additional build context using its short name and its location. Additional build contexts can be referenced in the same manner as we access different stages in COPY instruction. Use values in the form "name=value". See man buildah-build. | empty array  |
+| `registries-block`    | A list of registries to block. Images from these registries will not be pulled during the build.                                                                                                                                                         | empty array  |
+| `registries-insecure` | A list of registries that are insecure. Images from these registries will be pulled without verifying the TLS certificate.                                                                                                                               | empty array  |
+| `registries-search`   | A list of registries to search for short name images. Images missing the fully-qualified name of a registry will be looked up in these registries.                                                                                                       | empty array  |
+| `request-cpu`         | The CPU request to set for the auxiliary jobs.                                                                                                                                                                                                           | `250m`       |
+| `request-memory`      | The memory request to set for the auxiliary jobs.                                                                                                                                                                                                        | `64Mi`       |
+| `limit-cpu`           | The CPU limit to set for the auxiliary jobs.                                                                                                                                                                                                             | no limit     |
+| `limit-memory`        | The memory limit to set for the auxiliary jobs.                                                                                                                                                                                                          | `2Gi`        |
+
+### Volumes
+
+| Volume              | Description                                                                                                                                                                                                                                                                                                                                |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| oci-archive-storage | Volume to contain the temporary single-arch images manifests in OCI format. It can be set to a persistent volume, e.g., for large images. The default is an emptyDir volume which means that the cached data is discarded at the end of a BuildRun and will make use of ephemeral storage (according to the cluster infrastructure setup). |
+
+### Example build
+
+```yaml
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: multiarch-native-buildah-ex
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  strategy:
+    name: multiarch-native-buildah
+    kind: ClusterBuildStrategy
+  paramValues:
+    - name: architectures
+      values:
+        # This will require a cluster with both arm64 and amd64 nodes
+        - value: "amd64"
+        - value: "arm64"
+    - name: build-contexts
+      values:
+        - value: "ghcr.io/shipwright-io/shipwright-samples/golang:1.18=docker://ghcr.io/shipwright-io/shipwright-samples/golang:1.18"
+    # The buildah `--from` replaces the first FROM statement
+    - name: from
+      value: "" # Using the build-contexts for this example
+    # The runtime-stage-from implements the logic to replace the last stage FROM image of a Dockerfile
+    - name: runtime-stage-from
+      value: docker://gcr.io/distroless/static:nonroot
+    - name: dockerfile
+      value: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/taxi-app
+
 ```
 
 ---
