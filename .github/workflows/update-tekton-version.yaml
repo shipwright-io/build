@@ -1,4 +1,9 @@
 ---
+# This workflow updates the Tekton version insight Shipwright Build to the latest LTS.
+# As part of that it uses a Personal Access Token that is stored as secret in shipwrigh-io/build
+# using the name SHIPWRIGHT_BUILD_WRITE_WORKFLOWS. The token expires every 90 days. Instructions
+# to renew it can be found in the "HOW TO update SHIPWRIGHT_BUILD_WRITE_WORKFLOWS" note in the
+# 1Password store that Shipwright Administrators have access to.
 name: Update Tekton version
 on:
   schedule:
@@ -8,12 +13,12 @@ on:
 jobs:
   check-new-versions:
     if: contains(github.event.comment.body, '/rebase') || github.event_name == 'schedule'
-    permissions:
-      pull-requests: write # To be able to create pull requests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SHIPWRIGHT_BUILD_WRITE_WORKFLOWS }}
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -28,6 +33,8 @@ jobs:
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.SHIPWRIGHT_BUILD_WRITE_WORKFLOWS }}
+
           commit-message: Bump Tekton Pipeline from ${{ steps.update-tekton.outputs.OLD_VERSION }} to ${{ steps.update-tekton.outputs.NEW_VERSION }}
           title: Bump Tekton Pipeline from ${{ steps.update-tekton.outputs.OLD_VERSION }} to ${{ steps.update-tekton.outputs.NEW_VERSION }}
           body: |
