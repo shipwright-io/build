@@ -194,7 +194,7 @@ spec:
                 restartPolicy: Never
                 containers:
                   - name: build
-                    image: quay.io/containers/buildah:v1.36.0
+                    image: quay.io/containers/buildah:v1.37.0
                     volumeMounts:
                       - mountPath: /var/workdir
                         name: workdir
@@ -412,7 +412,7 @@ spec:
         - --architectures
         - $(params.architectures[*])
     - name: package-manifest-list-and-push
-      image: quay.io/containers/buildah:v1.36.0
+      image: quay.io/containers/buildah:v1.37.0
       securityContext:
         privileged: true
       workingDir: /var/oci-archive-storage
