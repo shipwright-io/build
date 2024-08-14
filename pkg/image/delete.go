@@ -7,6 +7,7 @@ package image
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -173,7 +174,7 @@ func dockerHubLogin(username string, password string) (string, error) {
 		return fmt.Sprintf("JWT %s", loginToken.Token), nil
 
 	default:
-		return "", fmt.Errorf(string(bodyData))
+		return "", errors.New(string(bodyData))
 	}
 }
 
