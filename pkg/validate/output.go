@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // BuildSpecOutputValidator implements validation interface to add validations for `build.spec.output`.
@@ -31,8 +31,8 @@ func (b *BuildSpecOutputValidator) ValidatePath(_ context.Context) error {
 		case build.OutputImageSourceTimestamp:
 			// check that there is a source defined that can be used in combination with source timestamp
 			if b.isEmptySource() {
-				b.Build.Status.Reason = build.BuildReasonPtr(build.OutputTimestampNotSupported)
-				b.Build.Status.Message = pointer.String("cannot use SourceTimestamp output image setting with an empty build source")
+				b.Build.Status.Reason = ptr.To[build.BuildReason](build.OutputTimestampNotSupported)
+				b.Build.Status.Message = ptr.To("cannot use SourceTimestamp output image setting with an empty build source")
 			}
 
 		case build.OutputImageBuildTimestamp:
@@ -41,8 +41,8 @@ func (b *BuildSpecOutputValidator) ValidatePath(_ context.Context) error {
 		default:
 			// check that value is parsable integer
 			if _, err := strconv.ParseInt(*b.Build.Spec.Output.Timestamp, 10, 64); err != nil {
-				b.Build.Status.Reason = build.BuildReasonPtr(build.OutputTimestampNotValid)
-				b.Build.Status.Message = pointer.String("output timestamp value is invalid, must be Zero, SourceTimestamp, BuildTimestamp, or number")
+				b.Build.Status.Reason = ptr.To[build.BuildReason](build.OutputTimestampNotValid)
+				b.Build.Status.Message = ptr.To("output timestamp value is invalid, must be Zero, SourceTimestamp, BuildTimestamp, or number")
 			}
 		}
 	}

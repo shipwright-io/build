@@ -11,7 +11,7 @@ import (
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -24,7 +24,7 @@ var (
 	dnsLabel1123Forbidden = regexp.MustCompile("[^a-zA-Z0-9-]+")
 
 	// secrets are volumes and volumes are mounted as root, as we run as non-root, we must use 0444 to allow non-root to read it
-	secretMountMode = pointer.Int32(0444)
+	secretMountMode = ptr.To[int32](0444)
 )
 
 // AppendSecretVolume checks if a volume for a secret already exists, if not it appends it to the TaskSpec

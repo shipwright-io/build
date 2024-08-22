@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -83,10 +83,10 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 
 			xorBuildRetentions := func(oldDeletion, newDeletion *bool) bool {
 				if oldDeletion == nil {
-					oldDeletion = pointer.Bool(false)
+					oldDeletion = ptr.To(false)
 				}
 				if newDeletion == nil {
-					newDeletion = pointer.Bool(false)
+					newDeletion = ptr.To(false)
 				}
 				return (*oldDeletion || *newDeletion) && !(*oldDeletion && *newDeletion)
 			}

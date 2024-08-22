@@ -13,7 +13,7 @@ import (
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("Git", func() {
@@ -69,7 +69,7 @@ var _ = Describe("Git", func() {
 		JustBeforeEach(func() {
 			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
 				URL:         "git@github.com:shipwright-io/build.git",
-				CloneSecret: pointer.String("a.secret"),
+				CloneSecret: ptr.To("a.secret"),
 			}, "default")
 		})
 

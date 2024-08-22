@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -57,6 +57,6 @@ func (s SourceURLRef) ValidatePath(ctx context.Context) error {
 
 // MarkBuildStatus updates a Build Status fields
 func (s SourceURLRef) MarkBuildStatus(b *build.Build, reason build.BuildReason, msg string) {
-	b.Status.Reason = build.BuildReasonPtr(reason)
-	b.Status.Message = pointer.String(msg)
+	b.Status.Reason = ptr.To[build.BuildReason](reason)
+	b.Status.Message = ptr.To(msg)
 }

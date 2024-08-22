@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -83,7 +83,7 @@ var _ = Describe("Reconcile Build", func() {
 	Describe("Reconcile", func() {
 		Context("when source secret is specified", func() {
 			It("fails when the secret does not exist", func() {
-				buildSample.Spec.Source.Git.CloneSecret = pointer.String("non-existing")
+				buildSample.Spec.Source.Git.CloneSecret = ptr.To("non-existing")
 
 				buildSample.Spec.Output.PushSecret = nil
 
@@ -96,7 +96,7 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("succeeds when the secret exists foobar", func() {
-				buildSample.Spec.Source.Git.CloneSecret = pointer.String("existing")
+				buildSample.Spec.Source.Git.CloneSecret = ptr.To("existing")
 				buildSample.Spec.Output.PushSecret = nil
 
 				// Fake some client Get calls and ensure we populate all
@@ -163,8 +163,8 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when source secret and output secret are specified", func() {
 			It("fails when both secrets do not exist", func() {
-				buildSample.Spec.Source.Git.CloneSecret = pointer.String("non-existing-source")
-				buildSample.Spec.Output.PushSecret = pointer.String("non-existing-output")
+				buildSample.Spec.Source.Git.CloneSecret = ptr.To("non-existing-source")
+				buildSample.Spec.Output.PushSecret = ptr.To("non-existing-output")
 
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.MultipleSecretRefNotFound, "missing secrets are non-existing-output,non-existing-source")
 				statusWriter.UpdateCalls(statusCall)
@@ -416,7 +416,7 @@ var _ = Describe("Reconcile Build", func() {
 			It("succeed when source URL is fake private URL because build reference a sourceURL secret", func() {
 				buildSample := ctl.BuildWithClusterBuildStrategyAndSourceSecret(buildName, namespace, buildStrategyName)
 				buildSample.Spec.Source.Git.URL = "https://github.yourco.com/org/build-fake"
-				buildSample.Spec.Source.Git.CloneSecret = pointer.String(registrySecret)
+				buildSample.Spec.Source.Git.CloneSecret = ptr.To(registrySecret)
 
 				// Fake some client Get calls and ensure we populate all
 				// different resources we could get during reconciliation
@@ -443,7 +443,7 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when environment variables are specified", func() {
 			JustBeforeEach(func() {
-				buildSample.Spec.Source.Git.CloneSecret = pointer.String("existing")
+				buildSample.Spec.Source.Git.CloneSecret = ptr.To("existing")
 				buildSample.Spec.Output.PushSecret = nil
 
 				// Fake some client Get calls and ensure we populate all
@@ -579,7 +579,7 @@ var _ = Describe("Reconcile Build", func() {
 
 		Context("when build object has output timestamp defined", func() {
 			It("should fail build validation due to unsupported combination of empty source with output image timestamp set to be the source timestamp", func() {
-				buildSample.Spec.Output.Timestamp = pointer.String(build.OutputImageSourceTimestamp)
+				buildSample.Spec.Output.Timestamp = ptr.To(build.OutputImageSourceTimestamp)
 				buildSample.Spec.Output.PushSecret = nil
 				buildSample.Spec.Source = &build.Source{}
 
@@ -597,7 +597,7 @@ var _ = Describe("Reconcile Build", func() {
 			})
 
 			It("should fail when the output timestamp is not a parsable number", func() {
-				buildSample.Spec.Output.Timestamp = pointer.String("forty-two")
+				buildSample.Spec.Output.Timestamp = ptr.To("forty-two")
 				buildSample.Spec.Output.PushSecret = nil
 
 				statusWriter.UpdateCalls(func(ctx context.Context, o crc.Object, sruo ...crc.SubResourceUpdateOption) error {

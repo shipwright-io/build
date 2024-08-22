@@ -10,7 +10,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -40,8 +40,8 @@ func (s Strategy) ValidatePath(ctx context.Context) error {
 		return s.validateClusterBuildStrategy(ctx, s.Build.Spec.Strategy.Name)
 
 	default:
-		s.Build.Status.Reason = build.BuildReasonPtr(build.UnknownBuildStrategyKind)
-		s.Build.Status.Message = pointer.String(fmt.Sprintf("unknown strategy kind %s used, must be one of %s, or %s",
+		s.Build.Status.Reason = ptr.To[build.BuildReason](build.UnknownBuildStrategyKind)
+		s.Build.Status.Message = ptr.To(fmt.Sprintf("unknown strategy kind %s used, must be one of %s, or %s",
 			*s.Build.Spec.Strategy.Kind,
 			build.NamespacedBuildStrategyKind,
 			build.ClusterBuildStrategyKind))
@@ -68,8 +68,8 @@ func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string
 	}
 
 	if apierrors.IsNotFound(err) {
-		s.Build.Status.Reason = build.BuildReasonPtr(build.BuildStrategyNotFound)
-		s.Build.Status.Message = pointer.String(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", strategyName, s.Build.Namespace))
+		s.Build.Status.Reason = ptr.To[build.BuildReason](build.BuildStrategyNotFound)
+		s.Build.Status.Message = ptr.To(fmt.Sprintf("buildStrategy %s does not exist in namespace %s", strategyName, s.Build.Namespace))
 		return nil
 	}
 
@@ -86,8 +86,8 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 	}
 
 	if apierrors.IsNotFound(err) {
-		s.Build.Status.Reason = build.BuildReasonPtr(build.ClusterBuildStrategyNotFound)
-		s.Build.Status.Message = pointer.String(fmt.Sprintf("clusterBuildStrategy %s does not exist", strategyName))
+		s.Build.Status.Reason = ptr.To[build.BuildReason](build.ClusterBuildStrategyNotFound)
+		s.Build.Status.Message = ptr.To(fmt.Sprintf("clusterBuildStrategy %s does not exist", strategyName))
 		return nil
 	}
 
@@ -97,15 +97,15 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
 	valid, reason, message := BuildParameters(parameterDefinitions, s.Build.Spec.ParamValues)
 	if !valid {
-		s.Build.Status.Reason = build.BuildReasonPtr(reason)
-		s.Build.Status.Message = pointer.String(message)
+		s.Build.Status.Reason = ptr.To[build.BuildReason](reason)
+		s.Build.Status.Message = ptr.To(message)
 	}
 }
 
 func (s Strategy) validateBuildVolumes(strategyVolumes []build.BuildStrategyVolume) {
 	valid, reason, message := BuildVolumes(strategyVolumes, s.Build.Spec.Volumes)
 	if !valid {
-		s.Build.Status.Reason = build.BuildReasonPtr(reason)
-		s.Build.Status.Message = pointer.String(message)
+		s.Build.Status.Reason = ptr.To[build.BuildReason](reason)
+		s.Build.Status.Message = ptr.To(message)
 	}
 }

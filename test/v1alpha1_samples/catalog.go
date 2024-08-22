@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -99,7 +99,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.String("foobar"),
+				URL: ptr.To("foobar"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -122,7 +122,7 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+				URL: ptr.To("https://github.com/shipwright-io/sample-go"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -148,7 +148,7 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+				URL: ptr.To("https://github.com/shipwright-io/sample-go"),
 				Credentials: &corev1.LocalObjectReference{
 					Name: "foobar",
 				},
@@ -174,7 +174,7 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+				URL: ptr.To("https://github.com/shipwright-io/sample-go"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -193,7 +193,7 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+				URL: ptr.To("https://github.com/shipwright-io/sample-go"),
 			},
 			Strategy: build.Strategy{
 				Name: strategyName,
@@ -211,7 +211,7 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 		},
 		Spec: build.BuildSpec{
 			Source: build.Source{
-				URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+				URL: ptr.To("https://github.com/shipwright-io/sample-go"),
 			},
 			Output: build.Image{
 				Credentials: &corev1.LocalObjectReference{
@@ -686,7 +686,7 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To[corev1.ConditionStatus](corev1.ConditionTrue),
 		},
 	}
 }
@@ -703,7 +703,7 @@ func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To[corev1.ConditionStatus](corev1.ConditionTrue),
 		},
 	}
 }
@@ -723,7 +723,7 @@ func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName stri
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To[corev1.ConditionStatus](corev1.ConditionTrue),
 		},
 	}
 }
@@ -744,7 +744,7 @@ func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategy
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To[corev1.ConditionStatus](corev1.ConditionTrue),
 		},
 	}
 }
@@ -762,8 +762,8 @@ func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionFalse),
-			Reason:     build.BuildReasonPtr("something bad happened"),
+			Registered: ptr.To[corev1.ConditionStatus](corev1.ConditionFalse),
+			Reason:     ptr.To[build.BuildReason]("something bad happened"),
 		},
 	}
 }
@@ -956,7 +956,7 @@ func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName s
 			},
 			ServiceAccount: &build.ServiceAccount{
 				Name:     &saName,
-				Generate: pointer.Bool(false),
+				Generate: ptr.To(false),
 			},
 		},
 		Status: build.BuildRunStatus{},
@@ -974,7 +974,7 @@ func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *buil
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
-				Generate: pointer.Bool(false),
+				Generate: ptr.To(false),
 			},
 		},
 	}
@@ -992,7 +992,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 				Name: buildName,
 			},
 			ServiceAccount: &build.ServiceAccount{
-				Generate: pointer.Bool(true),
+				Generate: ptr.To(true),
 			},
 		},
 	}

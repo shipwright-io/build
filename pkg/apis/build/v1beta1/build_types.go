@@ -95,16 +95,6 @@ const (
 	IgnoredLow IgnoredVulnerabilitySeverity = "low"
 )
 
-// BuildReasonPtr returns a pointer to the passed BuildReason.
-func BuildReasonPtr(s BuildReason) *BuildReason {
-	return &s
-}
-
-// ConditionStatusPtr returns a pointer to the passed ConditionStatus.
-func ConditionStatusPtr(s corev1.ConditionStatus) *corev1.ConditionStatus {
-	return &s
-}
-
 const (
 	// BuildDomain is the domain used for all labels and annotations for this resource
 	BuildDomain = "build.shipwright.io"

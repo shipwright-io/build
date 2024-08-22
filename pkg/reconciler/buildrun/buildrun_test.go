@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	knativeapi "knative.dev/pkg/apis"
 	knativev1 "knative.dev/pkg/apis/duck/v1"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
@@ -1053,8 +1053,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 			It("delays creation if the registered status of the build is not yet set", func() {
 				buildSample = ctl.DefaultBuild(buildName, strategyName, build.ClusterBuildStrategyKind)
-				buildSample.Status.Registered = build.ConditionStatusPtr("")
-				buildSample.Status.Reason = build.BuildReasonPtr("")
+				buildSample.Status.Registered = ptr.To[corev1.ConditionStatus]("")
+				buildSample.Status.Reason = ptr.To[build.BuildReason]("")
 
 				client.GetCalls(ctl.StubBuildRunGetWithoutSA(buildSample, buildRunSample))
 
@@ -1177,8 +1177,8 @@ var _ = Describe("Reconcile BuildRun", func() {
 				// in the build
 				clientUpdateCalls := ctl.StubBuildUpdateOwnerReferences("Build",
 					buildName,
-					pointer.Bool(true),
-					pointer.Bool(true),
+					ptr.To(true),
+					ptr.To(true),
 				)
 				client.UpdateCalls(clientUpdateCalls)
 
@@ -1331,7 +1331,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						Spec: build.BuildRunSpec{
 							Build: build.ReferencedBuild{
 								Spec: &build.BuildSpec{},
-								Name: pointer.String("foobar"),
+								Name: ptr.To("foobar"),
 							},
 						},
 					}
@@ -1369,7 +1369,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 						Spec: build.BuildRunSpec{
 							ParamValues: []build.ParamValue{{
 								Name:        "foo",
-								SingleValue: &build.SingleValue{Value: pointer.String("bar")},
+								SingleValue: &build.SingleValue{Value: ptr.To("bar")},
 							}},
 							Build: build.ReferencedBuild{
 								Spec: &build.BuildSpec{},
@@ -1436,7 +1436,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 										Git: &build.Git{
 											URL: "https://github.com/shipwright-io/sample-go.git",
 										},
-										ContextDir: pointer.String("source-build"),
+										ContextDir: ptr.To("source-build"),
 									},
 									Strategy: build.Strategy{
 										Kind: &clusterBuildStrategy,
@@ -1447,7 +1447,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 									},
 								},
 							},
-							ServiceAccount: pointer.String(".generate"),
+							ServiceAccount: ptr.To(".generate"),
 						},
 					}
 
@@ -1507,7 +1507,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 												Git:  &build.Git{URL: "https://github.com/shipwright-io/sample-go.git"},
 											},
 											Strategy: build.Strategy{
-												Kind: (*build.BuildStrategyKind)(pointer.String("foo")), // problematic value
+												Kind: (*build.BuildStrategyKind)(ptr.To("foo")), // problematic value
 												Name: strategyName,
 											},
 											Output: build.Image{Image: "foo/bar:latest"},
