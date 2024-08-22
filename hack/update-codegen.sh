@@ -21,7 +21,7 @@ echo "The code-generator package is imported via the pkg/kubecodegen dir"
 echo "To modify the current version, please modify this in the go.mod"
 echo ""
 
-GOFLAGS="" GOPATH=${GOPATH} /bin/bash ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
+GOFLAGS="" GOPATH=${GOPATH} /bin/bash ${CODEGEN_PKG}/kube_codegen.sh "deepcopy,client,informer,lister" \
   github.com/shipwright-io/build/pkg/client \
   github.com/shipwright-io/build/pkg/apis \
   "build:v1alpha1,v1beta1" \
