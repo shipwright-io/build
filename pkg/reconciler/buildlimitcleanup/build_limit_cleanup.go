@@ -99,13 +99,15 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 
 	// Check limits and delete oldest buildruns if limit is reached.
 	if b.Spec.Retention.SucceededLimit != nil {
-		if len(buildRunSucceeded) > int(*b.Spec.Retention.SucceededLimit) {
+		// #nosec G115, is validated in the type
+		succeededLimit := int(*b.Spec.Retention.SucceededLimit)
+		if len(buildRunSucceeded) > succeededLimit {
 			// Sort buildruns with oldest one at the beginning
 			sort.Slice(buildRunSucceeded, func(i, j int) bool {
 				return buildRunSucceeded[i].ObjectMeta.CreationTimestamp.Before(&buildRunSucceeded[j].ObjectMeta.CreationTimestamp)
 			})
 			lenOfList := len(buildRunSucceeded)
-			for i := 0; i < lenOfList-int(*b.Spec.Retention.SucceededLimit); i++ {
+			for i := 0; i < lenOfList-succeededLimit; i++ {
 				ctxlog.Info(ctx, "Deleting succeeded buildrun as cleanup limit has been reached.", namespace, request.Namespace, name, buildRunSucceeded[i].Name)
 				err := r.client.Delete(ctx, &buildRunSucceeded[i], &client.DeleteOptions{})
 				if err != nil {
@@ -120,13 +122,15 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	if b.Spec.Retention.FailedLimit != nil {
-		if len(buildRunFailed) > int(*b.Spec.Retention.FailedLimit) {
+		// #nosec G115, is validated in the type
+		failedLimit := int(*b.Spec.Retention.FailedLimit)
+		if len(buildRunFailed) > failedLimit {
 			// Sort buildruns with oldest one at the beginning
 			sort.Slice(buildRunFailed, func(i, j int) bool {
 				return buildRunFailed[i].ObjectMeta.CreationTimestamp.Before(&buildRunFailed[j].ObjectMeta.CreationTimestamp)
 			})
 			lenOfList := len(buildRunFailed)
-			for i := 0; i < lenOfList-int(*b.Spec.Retention.FailedLimit); i++ {
+			for i := 0; i < lenOfList-failedLimit; i++ {
 				ctxlog.Info(ctx, "Deleting failed buildrun as cleanup limit has been reached.", namespace, request.Namespace, name, buildRunFailed[i].Name)
 				err := r.client.Delete(ctx, &buildRunFailed[i], &client.DeleteOptions{})
 				if err != nil {

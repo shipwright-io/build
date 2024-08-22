@@ -6768,11 +6768,13 @@ spec:
                           failedLimit:
                             description: FailedLimit defines the maximum number of
                               failed buildruns that should exist.
+                            maximum: 10000
                             minimum: 1
                             type: integer
                           succeededLimit:
                             description: SucceededLimit defines the maximum number
                               of succeeded buildruns that should exist.
+                            maximum: 10000
                             minimum: 1
                             type: integer
                           ttlAfterFailed:
@@ -10874,11 +10876,13 @@ spec:
                       failedLimit:
                         description: FailedLimit defines the maximum number of failed
                           buildruns that should exist.
+                        maximum: 10000
                         minimum: 1
                         type: integer
                       succeededLimit:
                         description: SucceededLimit defines the maximum number of
                           succeeded buildruns that should exist.
+                        maximum: 10000
                         minimum: 1
                         type: integer
                       ttlAfterFailed:

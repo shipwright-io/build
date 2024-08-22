@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -252,7 +253,7 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
+			if err := os.MkdirAll(target, fileMode(header)); err != nil {
 				return nil, err
 			}
 
@@ -263,7 +264,7 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 				return nil, err
 			}
 
-			file, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			file, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, fileMode(header))
 			if err != nil {
 				return nil, err
 			}
@@ -289,4 +290,14 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 			return nil, fmt.Errorf("provided tarball contains unsupported file type, only directories and regular files are supported")
 		}
 	}
+}
+
+func fileMode(tarHeader *tar.Header) os.FileMode {
+	mode := tarHeader.Mode
+	if mode < 0 || mode > math.MaxUint32 {
+		return 0
+	}
+
+	// #nosec G115 was checked above
+	return os.FileMode(mode)
 }

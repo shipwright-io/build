@@ -67,8 +67,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 					return true
 				} else if n.Spec.Retention.SucceededLimit != nil && o.Spec.Retention.SucceededLimit == nil {
 					return true
+					// #nosec G115, is validated in the type
 				} else if n.Spec.Retention.FailedLimit != nil && o.Spec.Retention.FailedLimit != nil && int(*n.Spec.Retention.FailedLimit) < int(*o.Spec.Retention.FailedLimit) {
 					return true
+					// #nosec G115, is validated in the type
 				} else if n.Spec.Retention.SucceededLimit != nil && o.Spec.Retention.SucceededLimit != nil && int(*n.Spec.Retention.SucceededLimit) < int(*o.Spec.Retention.SucceededLimit) {
 					return true
 				}

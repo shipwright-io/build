@@ -343,11 +343,13 @@ type BuildRetention struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10000
 	FailedLimit *uint `json:"failedLimit,omitempty"`
 	// SucceededLimit defines the maximum number of succeeded buildruns that should exist.
 	//
 	// +optional
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10000
 	SucceededLimit *uint `json:"succeededLimit,omitempty"`
 	// TTLAfterFailed defines the maximum duration of time the failed buildrun should exist.
 	//
