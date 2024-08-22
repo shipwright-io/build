@@ -120,8 +120,12 @@ jobs:
           TEKTON_VERSION: ${{ matrix.tekton }}
         run: |
           make kind-tekton
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
+          if ! kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=3m; then
+            echo "[ERROR] Tekton installation did not complete. Debug info:"
+            kubectl -n tekton-pipelines get pod -o wide
+            exit 1
+          fi
+          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=3m
       - name: Test
         run: |
           # host.docker.internal does not work in a GitHub action
@@ -203,8 +207,12 @@ jobs:
           TEKTON_VERSION: ${{ matrix.tekton }}
         run: |
           make kind-tekton
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
+          if ! kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=3m; then
+            echo "[ERROR] Tekton installation did not complete. Debug info:"
+            kubectl -n tekton-pipelines get pod -o wide
+            exit 1
+          fi
+          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=3m
       - name: Install Registry
         run: |
           kubectl apply -f test/data/registry.yaml
