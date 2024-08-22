@@ -63,8 +63,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.27.11
-          - v1.29.2
+          - v1.28.13
+          - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
           - v0.53.5
@@ -143,8 +143,8 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.27.11
-          - v1.29.2
+          - v1.28.13
+          - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
           - v0.53.5
