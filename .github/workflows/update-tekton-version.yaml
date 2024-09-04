@@ -31,7 +31,7 @@ jobs:
         run: ./.github/bump-tekton-lts.sh --output "${GITHUB_OUTPUT}"
 
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.SHIPWRIGHT_BUILD_WRITE_WORKFLOWS }}
 
