@@ -220,17 +220,22 @@ We host weekly meetings for users, contributors, maintainers and anyone interest
 
 We are so excited to have you!
 
-- See [CONTRIBUTING.md](https://github.com/shipwright-io/.github/blob/main/CONTRIBUTING.md) for an overview of our processes
-- See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started
+- See [CONTRIBUTING.md](https://github.com/shipwright-io/.github/blob/main/CONTRIBUTING.md) for an overview of our processes.
+- This community has a [Code of Conduct](https://github.com/shipwright-io/.github/blob/main/CODE_OF_CONDUCT.md), please make sure to follow it.
+- See [DEVELOPMENT.md](DEVELOPMENT.md) for how to get started.
 - See [HACK.md](HACK.md) for how to build, test & run
-  (advanced reading material)
+  (advanced reading material).
 - Look at our
   [good first issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   and our
-  [help wanted issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+  [help wanted issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 - Contact us:
-  - Kubernetes Slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright)
+  - Kubernetes Slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright).
   - Users can discuss help, feature requests, or potential bugs at [shipwright-users@lists.shipwright.io](https://lists.shipwright.io/archives/list/shipwright-users@lists.shipwright.io/).
   Click [here](https://lists.shipwright.io/admin/lists/shipwright-users.lists.shipwright.io/) to join.
   - Contributors can discuss active development topics at [shipwright-dev@lists.shipwright.io](https://lists.shipwright.io/archives/list/shipwright-dev@lists.shipwright.io/).
   Click [here](https://lists.shipwright.io/admin/lists/shipwright-dev.lists.shipwright.io/) to join.
+
+---
+
+Shipwright is a [Cloud Native Computing Foundation (CNCF) Sandbox project](https://www.cncf.io/sandbox-projects/).
