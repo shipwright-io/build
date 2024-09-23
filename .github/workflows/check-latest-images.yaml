@@ -30,7 +30,7 @@ jobs:
           echo "TO=$(git diff --unified=0 | grep '^[+].*image: .*/.*/.*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
         id: image-diff
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: Bump ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}
           title: Bump ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}
