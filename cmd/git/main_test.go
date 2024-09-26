@@ -410,7 +410,7 @@ var _ = Describe("Git Resource", func() {
 	})
 
 	Context("cloning repositories with submodules", func() {
-		const exampleRepo = "https://github.com/shipwright-io/website"
+		const exampleRepo = "https://github.com/shipwright-io/sample-submodule"
 
 		It("should Git clone a repository with a submodule", func() {
 			withTempDir(func(target string) {
@@ -420,7 +420,7 @@ var _ = Describe("Git Resource", func() {
 				))).ToNot(HaveOccurred())
 
 				Expect(filepath.Join(target, "README.md")).To(BeAnExistingFile())
-				Expect(filepath.Join(target, "themes", "docsy", "README.md")).To(BeAnExistingFile())
+				Expect(filepath.Join(target, "src", "sample-go", "README.md")).To(BeAnExistingFile())
 			})
 		})
 	})
