@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+      - name: Login to container registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.repository_owner }} --password-stdin ghcr.io
       - name: Install Go
         uses: actions/setup-go@v5
         with:
