@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/tektoncd/pipeline/pkg/apis/config"
-	apisconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
+	pipelineErrors "github.com/tektoncd/pipeline/pkg/apis/pipeline/errors"
 	pod "github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	runv1beta1 "github.com/tektoncd/pipeline/pkg/apis/run/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -117,7 +117,7 @@ func (pr *PipelineRun) TasksTimeout() *metav1.Duration {
 		return t.Tasks
 	}
 	if t.Pipeline != nil && t.Finally != nil {
-		if t.Pipeline.Duration == apisconfig.NoTimeoutDuration || t.Finally.Duration == apisconfig.NoTimeoutDuration {
+		if t.Pipeline.Duration == config.NoTimeoutDuration || t.Finally.Duration == config.NoTimeoutDuration {
 			return nil
 		}
 		return &metav1.Duration{Duration: (t.Pipeline.Duration - t.Finally.Duration)}
@@ -136,7 +136,7 @@ func (pr *PipelineRun) FinallyTimeout() *metav1.Duration {
 		return t.Finally
 	}
 	if t.Pipeline != nil && t.Tasks != nil {
-		if t.Pipeline.Duration == apisconfig.NoTimeoutDuration || t.Tasks.Duration == apisconfig.NoTimeoutDuration {
+		if t.Pipeline.Duration == config.NoTimeoutDuration || t.Tasks.Duration == config.NoTimeoutDuration {
 			return nil
 		}
 		return &metav1.Duration{Duration: (t.Pipeline.Duration - t.Tasks.Duration)}
@@ -249,6 +249,8 @@ func (pr *PipelineRun) HasVolumeClaimTemplate() bool {
 type PipelineRunSpec struct {
 	// +optional
 	PipelineRef *PipelineRef `json:"pipelineRef,omitempty"`
+	// Specifying PipelineSpec can be disabled by setting
+	// `disable-inline-spec` feature flag..
 	// +optional
 	PipelineSpec *PipelineSpec `json:"pipelineSpec,omitempty"`
 	// Params is a list of parameter names and values.
@@ -351,7 +353,76 @@ const (
 	// PipelineRunReasonStoppedRunningFinally indicates that pipeline has been gracefully stopped
 	// and no new Tasks will be scheduled by the controller, but final tasks are now running
 	PipelineRunReasonStoppedRunningFinally PipelineRunReason = "StoppedRunningFinally"
+	// ReasonCouldntGetPipeline indicates that the reason for the failure status is that the
+	// associated Pipeline couldn't be retrieved
+	PipelineRunReasonCouldntGetPipeline PipelineRunReason = "CouldntGetPipeline"
+	// ReasonInvalidBindings indicates that the reason for the failure status is that the
+	// PipelineResources bound in the PipelineRun didn't match those declared in the Pipeline
+	PipelineRunReasonInvalidBindings PipelineRunReason = "InvalidPipelineResourceBindings"
+	// ReasonInvalidWorkspaceBinding indicates that a Pipeline expects a workspace but a
+	// PipelineRun has provided an invalid binding.
+	PipelineRunReasonInvalidWorkspaceBinding PipelineRunReason = "InvalidWorkspaceBindings"
+	// ReasonInvalidTaskRunSpec indicates that PipelineRun.Spec.TaskRunSpecs[].PipelineTaskName is defined with
+	// a not exist taskName in pipelineSpec.
+	PipelineRunReasonInvalidTaskRunSpec PipelineRunReason = "InvalidTaskRunSpecs"
+	// ReasonParameterTypeMismatch indicates that the reason for the failure status is that
+	// parameter(s) declared in the PipelineRun do not have the some declared type as the
+	// parameters(s) declared in the Pipeline that they are supposed to override.
+	PipelineRunReasonParameterTypeMismatch PipelineRunReason = "ParameterTypeMismatch"
+	// ReasonObjectParameterMissKeys indicates that the object param value provided from PipelineRun spec
+	// misses some keys required for the object param declared in Pipeline spec.
+	PipelineRunReasonObjectParameterMissKeys PipelineRunReason = "ObjectParameterMissKeys"
+	// ReasonParamArrayIndexingInvalid indicates that the use of param array indexing is out of bound.
+	PipelineRunReasonParamArrayIndexingInvalid PipelineRunReason = "ParamArrayIndexingInvalid"
+	// ReasonCouldntGetTask indicates that the reason for the failure status is that the
+	// associated Pipeline's Tasks couldn't all be retrieved
+	PipelineRunReasonCouldntGetTask PipelineRunReason = "CouldntGetTask"
+	// ReasonParameterMissing indicates that the reason for the failure status is that the
+	// associated PipelineRun didn't provide all the required parameters
+	PipelineRunReasonParameterMissing PipelineRunReason = "ParameterMissing"
+	// ReasonFailedValidation indicates that the reason for failure status is
+	// that pipelinerun failed runtime validation
+	PipelineRunReasonFailedValidation PipelineRunReason = "PipelineValidationFailed"
+	// PipelineRunReasonCouldntGetPipelineResult indicates that the pipeline fails to retrieve the
+	// referenced result. This could be due to failed TaskRuns or Runs that were supposed to produce
+	// the results
+	PipelineRunReasonCouldntGetPipelineResult PipelineRunReason = "CouldntGetPipelineResult"
+	// ReasonInvalidGraph indicates that the reason for the failure status is that the
+	// associated Pipeline is an invalid graph (a.k.a wrong order, cycle, …)
+	PipelineRunReasonInvalidGraph PipelineRunReason = "PipelineInvalidGraph"
+	// ReasonCouldntCancel indicates that a PipelineRun was cancelled but attempting to update
+	// all of the running TaskRuns as cancelled failed.
+	PipelineRunReasonCouldntCancel PipelineRunReason = "PipelineRunCouldntCancel"
+	// ReasonCouldntTimeOut indicates that a PipelineRun was timed out but attempting to update
+	// all of the running TaskRuns as timed out failed.
+	PipelineRunReasonCouldntTimeOut PipelineRunReason = "PipelineRunCouldntTimeOut"
+	// ReasonInvalidMatrixParameterTypes indicates a matrix contains invalid parameter types
+	PipelineRunReasonInvalidMatrixParameterTypes PipelineRunReason = "InvalidMatrixParameterTypes"
+	// ReasonInvalidTaskResultReference indicates a task result was declared
+	// but was not initialized by that task
+	PipelineRunReasonInvalidTaskResultReference PipelineRunReason = "InvalidTaskResultReference"
+	// PipelineRunReasonInvalidPipelineResultReference indicates a pipeline result was declared
+	// by the pipeline but not initialized in the pipelineTask
+	PipelineRunReasonInvalidPipelineResultReference PipelineRunReason = "InvalidPipelineResultReference"
+	// ReasonRequiredWorkspaceMarkedOptional indicates an optional workspace
+	// has been passed to a Task that is expecting a non-optional workspace
+	PipelineRunReasonRequiredWorkspaceMarkedOptional PipelineRunReason = "RequiredWorkspaceMarkedOptional"
+	// ReasonResolvingPipelineRef indicates that the PipelineRun is waiting for
+	// its pipelineRef to be asynchronously resolved.
+	PipelineRunReasonResolvingPipelineRef PipelineRunReason = "ResolvingPipelineRef"
+	// ReasonResourceVerificationFailed indicates that the pipeline fails the trusted resource verification,
+	// it could be the content has changed, signature is invalid or public key is invalid
+	PipelineRunReasonResourceVerificationFailed PipelineRunReason = "ResourceVerificationFailed"
+	// ReasonCreateRunFailed indicates that the pipeline fails to create the taskrun or other run resources
+	PipelineRunReasonCreateRunFailed PipelineRunReason = "CreateRunFailed"
+	// ReasonCELEvaluationFailed indicates the pipeline fails the CEL evaluation
+	PipelineRunReasonCELEvaluationFailed PipelineRunReason = "CELEvaluationFailed"
+	// PipelineRunReasonInvalidParamValue indicates that the PipelineRun Param input value is not allowed.
+	PipelineRunReasonInvalidParamValue PipelineRunReason = "InvalidParamValue"
 )
+
+// PipelineTaskOnErrorAnnotation is used to pass the failure strategy to TaskRun pods from PipelineTask OnError field
+const PipelineTaskOnErrorAnnotation = "pipeline.tekton.dev/pipeline-task-on-error"
 
 func (t PipelineRunReason) String() string {
 	return string(t)
@@ -399,6 +470,7 @@ func (pr *PipelineRunStatus) MarkSucceeded(reason, messageFormat string, message
 
 // MarkFailed changes the Succeeded condition to False with the provided reason and message.
 func (pr *PipelineRunStatus) MarkFailed(reason, messageFormat string, messageA ...interface{}) {
+	messageFormat = pipelineErrors.LabelUserError(messageFormat, messageA)
 	pipelineRunCondSet.Manage(pr).MarkFalse(apis.ConditionSucceeded, reason, messageFormat, messageA...)
 	succeeded := pr.GetCondition(apis.ConditionSucceeded)
 	pr.CompletionTime = &succeeded.LastTransitionTime.Inner
@@ -414,6 +486,9 @@ type ChildStatusReference struct {
 	runtime.TypeMeta `json:",inline"`
 	// Name is the name of the TaskRun or Run this is referencing.
 	Name string `json:"name,omitempty"`
+	// DisplayName is a user-facing name of the pipelineTask that may be
+	// used to populate a UI.
+	DisplayName string `json:"displayName,omitempty"`
 	// PipelineTaskName is the name of the PipelineTask this is referencing.
 	PipelineTaskName string `json:"pipelineTaskName,omitempty"`
 

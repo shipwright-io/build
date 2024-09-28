@@ -18,11 +18,7 @@ package v1
 
 import (
 	"context"
-	"strings"
 
-	"github.com/tektoncd/pipeline/pkg/apis/config"
-	"github.com/tektoncd/pipeline/pkg/apis/version"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"knative.dev/pkg/apis"
 )
 
@@ -30,34 +26,7 @@ import (
 // correctly. No errors are returned for a nil TaskRef.
 func (ref *TaskRef) Validate(ctx context.Context) (errs *apis.FieldError) {
 	if ref == nil {
-		return
+		return errs
 	}
-
-	switch {
-	case ref.Resolver != "" || ref.Params != nil:
-		if ref.Resolver != "" {
-			errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "resolver", config.BetaAPIFields).ViaField("resolver"))
-			if ref.Name != "" {
-				errs = errs.Also(apis.ErrMultipleOneOf("name", "resolver"))
-			}
-		}
-		if ref.Params != nil {
-			errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "resolver params", config.BetaAPIFields).ViaField("params"))
-			if ref.Name != "" {
-				errs = errs.Also(apis.ErrMultipleOneOf("name", "params"))
-			}
-			if ref.Resolver == "" {
-				errs = errs.Also(apis.ErrMissingField("resolver"))
-			}
-			errs = errs.Also(ValidateParameters(ctx, ref.Params))
-		}
-	case ref.Name != "":
-		// TaskRef name must be a valid k8s name
-		if errSlice := validation.IsQualifiedName(ref.Name); len(errSlice) != 0 {
-			errs = errs.Also(apis.ErrInvalidValue(strings.Join(errSlice, ","), "name"))
-		}
-	default:
-		errs = errs.Also(apis.ErrMissingField("name"))
-	}
-	return errs
+	return validateRef(ctx, ref.Name, ref.Resolver, ref.Params)
 }
