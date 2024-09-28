@@ -24,17 +24,19 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/config"
 	pod "github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	"github.com/tektoncd/pipeline/pkg/apis/validate"
-	"github.com/tektoncd/pipeline/pkg/apis/version"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/strings/slices"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/webhook/resourcesemantics"
 )
 
-var _ apis.Validatable = (*TaskRun)(nil)
-var _ resourcesemantics.VerbLimited = (*TaskRun)(nil)
+var (
+	_ apis.Validatable              = (*TaskRun)(nil)
+	_ resourcesemantics.VerbLimited = (*TaskRun)(nil)
+)
 
 // SupportedVerbs returns the operations that validation should be called for
 func (tr *TaskRun) SupportedVerbs() []admissionregistrationv1.OperationType {
@@ -49,6 +51,9 @@ func (tr *TaskRun) Validate(ctx context.Context) *apis.FieldError {
 
 // Validate taskrun spec
 func (ts *TaskRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
+	// Validate the spec changes
+	errs = errs.Also(ts.ValidateUpdate(ctx))
+
 	// Must have exactly one of taskRef and taskSpec.
 	if ts.TaskRef == nil && ts.TaskSpec == nil {
 		errs = errs.Also(apis.ErrMissingOneOf("taskRef", "taskSpec"))
@@ -62,6 +67,10 @@ func (ts *TaskRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	}
 	// Validate TaskSpec if it's present.
 	if ts.TaskSpec != nil {
+		if slices.Contains(strings.Split(
+			config.FromContextOrDefaults(ctx).FeatureFlags.DisableInlineSpec, ","), "taskrun") {
+			errs = errs.Also(apis.ErrDisallowedFields("taskSpec"))
+		}
 		errs = errs.Also(ts.TaskSpec.Validate(ctx).ViaField("taskSpec"))
 	}
 
@@ -71,19 +80,19 @@ func (ts *TaskRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	errs = errs.Also(ts.validateInlineParameters(ctx))
 	errs = errs.Also(ValidateWorkspaceBindings(ctx, ts.Workspaces).ViaField("workspaces"))
 	if ts.Debug != nil {
-		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "debug", config.AlphaAPIFields).ViaField("debug"))
+		errs = errs.Also(config.ValidateEnabledAPIFields(ctx, "debug", config.AlphaAPIFields).ViaField("debug"))
 		errs = errs.Also(validateDebug(ts.Debug).ViaField("debug"))
 	}
 	if ts.StepOverrides != nil {
-		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "stepOverrides", config.AlphaAPIFields).ViaField("stepOverrides"))
+		errs = errs.Also(config.ValidateEnabledAPIFields(ctx, "stepOverrides", config.BetaAPIFields).ViaField("stepOverrides"))
 		errs = errs.Also(validateStepOverrides(ts.StepOverrides).ViaField("stepOverrides"))
 	}
 	if ts.SidecarOverrides != nil {
-		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "sidecarOverrides", config.AlphaAPIFields).ViaField("sidecarOverrides"))
+		errs = errs.Also(config.ValidateEnabledAPIFields(ctx, "sidecarOverrides", config.BetaAPIFields).ViaField("sidecarOverrides"))
 		errs = errs.Also(validateSidecarOverrides(ts.SidecarOverrides).ViaField("sidecarOverrides"))
 	}
 	if ts.ComputeResources != nil {
-		errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "computeResources", config.AlphaAPIFields).ViaField("computeResources"))
+		errs = errs.Also(config.ValidateEnabledAPIFields(ctx, "computeResources", config.BetaAPIFields).ViaField("computeResources"))
 		errs = errs.Also(validateTaskRunComputeResources(ts.ComputeResources, ts.StepOverrides))
 	}
 
@@ -101,7 +110,7 @@ func (ts *TaskRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	if ts.Timeout != nil {
 		// timeout should be a valid duration of at least 0.
 		if ts.Timeout.Duration < 0 {
-			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s should be >= 0", ts.Timeout.Duration.String()), "timeout"))
+			errs = errs.Also(apis.ErrInvalidValue(ts.Timeout.Duration.String()+" should be >= 0", "timeout"))
 		}
 	}
 	if ts.PodTemplate != nil {
@@ -111,6 +120,34 @@ func (ts *TaskRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 		errs = errs.Also(apis.ErrDisallowedFields("resources"))
 	}
 	return errs
+}
+
+// ValidateUpdate validates the update of a TaskRunSpec
+func (ts *TaskRunSpec) ValidateUpdate(ctx context.Context) (errs *apis.FieldError) {
+	if !apis.IsInUpdate(ctx) {
+		return
+	}
+	oldObj, ok := apis.GetBaseline(ctx).(*TaskRun)
+	if !ok || oldObj == nil {
+		return
+	}
+	old := &oldObj.Spec
+
+	// If already in the done state, the spec cannot be modified.
+	// Otherwise, only the status, statusMessage field can be modified.
+	tips := "Once the TaskRun is complete, no updates are allowed"
+	if !oldObj.IsDone() {
+		old = old.DeepCopy()
+		old.Status = ts.Status
+		old.StatusMessage = ts.StatusMessage
+		tips = "Once the TaskRun has started, only status and statusMessage updates are allowed"
+	}
+
+	if !equality.Semantic.DeepEqual(old, ts) {
+		errs = errs.Also(apis.ErrInvalidValue(tips, ""))
+	}
+
+	return
 }
 
 // validateInlineParameters validates that any parameters called in the
@@ -192,14 +229,14 @@ func combineParamSpec(p ParamSpec, paramSpecForValidation map[string]ParamSpec) 
 			}
 			// If Default values of object type are provided then Properties must also be fully declared.
 			if p.Properties == nil {
-				return paramSpecForValidation, apis.ErrMissingField(fmt.Sprintf("%s.properties", p.Name))
+				return paramSpecForValidation, apis.ErrMissingField(p.Name + ".properties")
 			}
 		}
 
 		// Properties must be defined if paramSpec is of object Type
 		if pSpec.Type == ParamTypeObject {
 			if p.Properties == nil {
-				return paramSpecForValidation, apis.ErrMissingField(fmt.Sprintf("%s.properties", p.Name))
+				return paramSpecForValidation, apis.ErrMissingField(p.Name + ".properties")
 			}
 			// Expect Properties to be complete
 			pSpec.Properties = p.Properties
@@ -213,16 +250,19 @@ func combineParamSpec(p ParamSpec, paramSpecForValidation map[string]ParamSpec) 
 	return paramSpecForValidation, nil
 }
 
-// validateDebug
+// validateDebug validates the debug section of the TaskRun.
+// if set, onFailure breakpoint must be "enabled"
 func validateDebug(db *TaskRunDebug) (errs *apis.FieldError) {
-	breakpointOnFailure := "onFailure"
-	validBreakpoints := sets.NewString()
-	validBreakpoints.Insert(breakpointOnFailure)
+	if db == nil || db.Breakpoints == nil {
+		return errs
+	}
 
-	for _, b := range db.Breakpoint {
-		if !validBreakpoints.Has(b) {
-			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("%s is not a valid breakpoint. Available valid breakpoints include %s", b, validBreakpoints.List()), "breakpoint"))
-		}
+	if db.Breakpoints.OnFailure == "" {
+		errs = errs.Also(apis.ErrInvalidValue("onFailure breakpoint is empty, it is only allowed to be set as enabled", "breakpoints.onFailure"))
+	}
+
+	if db.Breakpoints.OnFailure != "" && db.Breakpoints.OnFailure != EnabledOnFailureBreakpoint {
+		errs = errs.Also(apis.ErrInvalidValue(db.Breakpoints.OnFailure+" is not a valid onFailure breakpoint value, onFailure breakpoint is only allowed to be set as enabled", "breakpoints.onFailure"))
 	}
 	return errs
 }

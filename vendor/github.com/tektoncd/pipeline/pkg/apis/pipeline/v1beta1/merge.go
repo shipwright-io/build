@@ -47,6 +47,11 @@ func MergeStepsWithStepTemplate(template *StepTemplate, steps []Step) ([]Step, e
 	}
 
 	for i, s := range steps {
+		// If the stepaction has not been fetched yet then do not merge.
+		// Skip over to the next one
+		if s.Ref != nil {
+			continue
+		}
 		merged := corev1.Container{}
 		err := mergeObjWithTemplateBytes(md, s.ToK8sContainer(), &merged)
 		if err != nil {
@@ -61,7 +66,7 @@ func MergeStepsWithStepTemplate(template *StepTemplate, steps []Step) ([]Step, e
 		amendConflictingContainerFields(&merged, s)
 
 		// Pass through original step Script, for later conversion.
-		newStep := Step{Script: s.Script, OnError: s.OnError, Timeout: s.Timeout, StdoutConfig: s.StdoutConfig, StderrConfig: s.StderrConfig}
+		newStep := Step{Script: s.Script, OnError: s.OnError, Timeout: s.Timeout, StdoutConfig: s.StdoutConfig, StderrConfig: s.StderrConfig, When: s.When}
 		newStep.SetContainerFields(merged)
 		steps[i] = newStep
 	}

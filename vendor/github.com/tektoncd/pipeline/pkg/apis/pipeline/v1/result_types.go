@@ -32,6 +32,30 @@ type TaskResult struct {
 	// Description is a human-readable description of the result
 	// +optional
 	Description string `json:"description,omitempty"`
+
+	// Value the expression used to retrieve the value of the result from an underlying Step.
+	// +optional
+	Value *ResultValue `json:"value,omitempty"`
+}
+
+// StepResult used to describe the Results of a Step.
+//
+// This is field is at an BETA stability level and gated by "enable-step-actions" feature flag.
+type StepResult struct {
+	// Name the given name
+	Name string `json:"name"`
+
+	// The possible types are 'string', 'array', and 'object', with 'string' as the default.
+	// +optional
+	Type ResultsType `json:"type,omitempty"`
+
+	// Properties is the JSON Schema properties to support key-value pairs results.
+	// +optional
+	Properties map[string]PropertySpec `json:"properties,omitempty"`
+
+	// Description is a human-readable description of the result
+	// +optional
+	Description string `json:"description,omitempty"`
 }
 
 // TaskRunResult used to describe the results of a task
@@ -47,6 +71,9 @@ type TaskRunResult struct {
 	// Value the given value of the result
 	Value ResultValue `json:"value"`
 }
+
+// TaskRunStepResult is a type alias of TaskRunResult
+type TaskRunStepResult = TaskRunResult
 
 // ResultValue is a type alias of ParamValue
 type ResultValue = ParamValue

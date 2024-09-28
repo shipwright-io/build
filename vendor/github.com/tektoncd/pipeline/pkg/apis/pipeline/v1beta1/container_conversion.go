@@ -22,6 +22,20 @@ import (
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
+func (r Ref) convertTo(ctx context.Context, sink *v1.Ref) {
+	sink.Name = r.Name
+	new := v1.ResolverRef{}
+	r.ResolverRef.convertTo(ctx, &new)
+	sink.ResolverRef = new
+}
+
+func (r *Ref) convertFrom(ctx context.Context, source v1.Ref) {
+	r.Name = source.Name
+	new := ResolverRef{}
+	new.convertFrom(ctx, source.ResolverRef)
+	r.ResolverRef = new
+}
+
 func (s Step) convertTo(ctx context.Context, sink *v1.Step) {
 	sink.Name = s.Name
 	sink.Image = s.Image
@@ -47,6 +61,22 @@ func (s Step) convertTo(ctx context.Context, sink *v1.Step) {
 	sink.OnError = (v1.OnErrorType)(s.OnError)
 	sink.StdoutConfig = (*v1.StepOutputConfig)(s.StdoutConfig)
 	sink.StderrConfig = (*v1.StepOutputConfig)(s.StderrConfig)
+	if s.Ref != nil {
+		sink.Ref = &v1.Ref{}
+		s.Ref.convertTo(ctx, sink.Ref)
+	}
+	sink.Params = nil
+	for _, p := range s.Params {
+		new := v1.Param{}
+		p.convertTo(ctx, &new)
+		sink.Params = append(sink.Params, new)
+	}
+	sink.Results = s.Results
+	for _, w := range s.When {
+		new := v1.WhenExpression{}
+		w.convertTo(ctx, &new)
+		sink.When = append(sink.When, new)
+	}
 }
 
 func (s *Step) convertFrom(ctx context.Context, source v1.Step) {
@@ -74,6 +104,23 @@ func (s *Step) convertFrom(ctx context.Context, source v1.Step) {
 	s.OnError = (OnErrorType)(source.OnError)
 	s.StdoutConfig = (*StepOutputConfig)(source.StdoutConfig)
 	s.StderrConfig = (*StepOutputConfig)(source.StderrConfig)
+	if source.Ref != nil {
+		newRef := Ref{}
+		newRef.convertFrom(ctx, *source.Ref)
+		s.Ref = &newRef
+	}
+	s.Params = nil
+	for _, p := range source.Params {
+		new := Param{}
+		new.ConvertFrom(ctx, p)
+		s.Params = append(s.Params, new)
+	}
+	s.Results = source.Results
+	for _, w := range source.When {
+		new := WhenExpression{}
+		new.convertFrom(ctx, w)
+		s.When = append(s.When, new)
+	}
 }
 
 func (s StepTemplate) convertTo(ctx context.Context, sink *v1.StepTemplate) {
