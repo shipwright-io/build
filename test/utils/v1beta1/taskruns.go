@@ -54,6 +54,7 @@ func (t *TestBuild) UpdateTaskRun(name string, apply func(tr *pipelineapi.TaskRu
 		}
 
 		apply(tr)
+		tr.Status = pipelineapi.TaskRunStatus{}
 
 		tr, err = t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace).Update(t.Context, tr, metav1.UpdateOptions{})
 		if err == nil {
