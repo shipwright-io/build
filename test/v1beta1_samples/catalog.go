@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -696,7 +696,7 @@ func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKi
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
@@ -713,7 +713,7 @@ func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
@@ -731,11 +731,11 @@ func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName stri
 				Kind: &strategyKind,
 			},
 			Retention: &build.BuildRetention{
-				AtBuildDeletion: pointer.Bool(true),
+				AtBuildDeletion: ptr.To(true),
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
@@ -754,11 +754,11 @@ func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategy
 				Kind: &strategyKind,
 			},
 			Retention: &build.BuildRetention{
-				AtBuildDeletion: pointer.Bool(true),
+				AtBuildDeletion: ptr.To(true),
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionTrue),
+			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
@@ -776,8 +776,8 @@ func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName
 			},
 		},
 		Status: build.BuildStatus{
-			Registered: build.ConditionStatusPtr(corev1.ConditionFalse),
-			Reason:     build.BuildReasonPtr("something bad happened"),
+			Registered: ptr.To(corev1.ConditionFalse),
+			Reason:     ptr.To[build.BuildReason]("something bad happened"),
 		},
 	}
 }
@@ -1000,7 +1000,7 @@ func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) 
 			Build: build.ReferencedBuild{
 				Name: &buildName,
 			},
-			ServiceAccount: pointer.String(".generate"),
+			ServiceAccount: ptr.To(".generate"),
 		},
 	}
 }

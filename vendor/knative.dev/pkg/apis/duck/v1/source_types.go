@@ -84,6 +84,20 @@ type SourceStatus struct {
 	// as part of its CloudEvents.
 	// +optional
 	CloudEventAttributes []CloudEventAttributes `json:"ceAttributes,omitempty"`
+
+	// SinkCACerts are Certification Authority (CA) certificates in PEM format
+	// according to https://www.rfc-editor.org/rfc/rfc7468.
+	// +optional
+	SinkCACerts *string `json:"sinkCACerts,omitempty"`
+
+	// SinkAudience is the OIDC audience of the sink.
+	// +optional
+	SinkAudience *string `json:"sinkAudience,omitempty"`
+
+	// Auth defines the attributes that provide the generated service account
+	// name in the resource status.
+	// +optional
+	Auth *AuthStatus `json:"auth,omitempty"`
 }
 
 // CloudEventAttributes specifies the attributes that a Source

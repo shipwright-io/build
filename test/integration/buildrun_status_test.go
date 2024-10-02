@@ -15,7 +15,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("Checking BuildRun Status fields", func() {
@@ -51,7 +51,7 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 								Type: v1beta1.GitType,
 								Git: &v1beta1.Git{
 									URL:      "https://github.com/shipwright-io/sample-go",
-									Revision: pointer.String("v0.1.0"),
+									Revision: ptr.To("v0.1.0"),
 								},
 							},
 							Strategy: v1beta1.Strategy{

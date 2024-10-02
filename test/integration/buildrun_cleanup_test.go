@@ -12,7 +12,7 @@ import (
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("Integration tests for retention limits and ttls for succeeded buildruns.", func() {
@@ -111,7 +111,7 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 
 		It("Should not find the buildrun few seconds after it fails", func() {
 
-			buildRunObject.Spec.Build.Name = pointer.String("non-existent-buildref")
+			buildRunObject.Spec.Build.Name = ptr.To("non-existent-buildref")
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())

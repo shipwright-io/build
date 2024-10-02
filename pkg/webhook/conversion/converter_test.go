@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func getConversionReview(o string) (apiextensionsv1.ConversionReview, error) {
@@ -127,7 +127,7 @@ request:
 					},
 				},
 				Status: v1alpha1.BuildStatus{
-					Message:    pointer.String("all validations succeeded"),
+					Message:    ptr.To("all validations succeeded"),
 					Reason:     v1alpha1.BuildReasonPtr(v1alpha1.SucceedStatus),
 					Registered: v1alpha1.ConditionStatusPtr(corev1.ConditionTrue),
 				},
@@ -638,7 +638,7 @@ request:
 						},
 					},
 					Retention: &v1beta1.BuildRetention{
-						AtBuildDeletion: pointer.Bool(true),
+						AtBuildDeletion: ptr.To(true),
 					},
 					Trigger: &v1beta1.Trigger{
 						When: []v1beta1.TriggerWhen{
@@ -1137,9 +1137,9 @@ request:
 				Status: v1alpha1.BuildRunStatus{
 					BuildSpec: &v1alpha1.BuildSpec{
 						Source: v1alpha1.Source{
-							URL: pointer.String("https://github.com/shipwright-io/sample-go"),
+							URL: ptr.To("https://github.com/shipwright-io/sample-go"),
 						},
-						Dockerfile: pointer.String("Dockerfile"),
+						Dockerfile: ptr.To("Dockerfile"),
 						Output: v1alpha1.Image{
 							Image: "somewhere",
 							Credentials: &corev1.LocalObjectReference{
@@ -1166,7 +1166,7 @@ request:
 						Status:  corev1.ConditionTrue,
 						Type:    v1alpha1.Succeeded,
 					}},
-					LatestTaskRunRef: pointer.String("buildkit-run-n5sxr"),
+					LatestTaskRunRef: ptr.To("buildkit-run-n5sxr"),
 					Output: &v1alpha1.Output{
 						Digest: "sha256:9befa6f5f7142a5bf92174b54bb6e0a1dd04e5252aa9dc8f6962f6da966f68a8",
 					},
@@ -1235,7 +1235,7 @@ request:
 				},
 				Spec: v1beta1.BuildRunSpec{
 					Build: v1beta1.ReferencedBuild{
-						Name: pointer.String("a_build"),
+						Name: ptr.To("a_build"),
 					},
 					Source: &v1beta1.BuildRunSource{
 						Type: v1beta1.LocalType,
@@ -1297,9 +1297,9 @@ request:
 				},
 				Spec: v1beta1.BuildRunSpec{
 					Build: v1beta1.ReferencedBuild{
-						Name: pointer.String("a_build"),
+						Name: ptr.To("a_build"),
 					},
-					ServiceAccount: pointer.String(".generate"),
+					ServiceAccount: ptr.To(".generate"),
 					Output: &v1beta1.Image{
 						Image: "foobar",
 					},
@@ -1375,7 +1375,7 @@ request:
 				},
 				Spec: v1beta1.BuildRunSpec{
 					Build: v1beta1.ReferencedBuild{
-						Name: pointer.String("a_build"),
+						Name: ptr.To("a_build"),
 					},
 					ServiceAccount: &sa,
 					Timeout: &v1.Duration{
@@ -1633,7 +1633,7 @@ request:
 							Name:        "dockerfile",
 							Description: "The Dockerfile to be built.",
 							Type:        v1beta1.ParameterTypeString,
-							Default:     pointer.String("Dockerfile"),
+							Default:     ptr.To("Dockerfile"),
 						},
 					},
 					SecurityContext: &v1beta1.BuildStrategySecurityContext{

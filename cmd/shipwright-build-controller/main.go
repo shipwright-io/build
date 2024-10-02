@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	buildconfig "github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/controller"
@@ -90,8 +91,9 @@ func main() {
 		LeaseDuration:           buildCfg.ManagerOptions.LeaseDuration,
 		RenewDeadline:           buildCfg.ManagerOptions.RenewDeadline,
 		RetryPeriod:             buildCfg.ManagerOptions.RetryPeriod,
-		Namespace:               "",
-		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+		Metrics: server.Options{
+			BindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+		},
 	})
 	if err != nil {
 		ctxlog.Error(ctx, err, "")
@@ -122,7 +124,7 @@ func main() {
 	// Add optionally configured extra handlers to metrics endpoint
 	for path, handler := range buildMetrics.ExtraHandlers() {
 		ctxlog.Info(ctx, "Adding metrics extra handler path", "path", path)
-		if err := mgr.AddMetricsExtraHandler(path, handler); err != nil {
+		if err := mgr.AddMetricsServerExtraHandler(path, handler); err != nil {
 			ctxlog.Error(ctx, err, "")
 			os.Exit(2)
 		}

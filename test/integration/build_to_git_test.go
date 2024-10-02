@@ -10,7 +10,7 @@ import (
 	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("Integration tests Build and referenced Source url", func() {
@@ -267,7 +267,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 				Type: v1beta1.GitType,
 				Git: &v1beta1.Git{
 					URL:         "https://github.yourco.com/org/build-fake",
-					CloneSecret: pointer.String("foobar"),
+					CloneSecret: ptr.To("foobar"),
 				},
 			}
 

@@ -21,9 +21,7 @@ func (t *TestBuild) StartBuildControllers() error {
 	c.SetConfigFromEnv()
 
 	mgr, err := controller.NewManager(t.Context, c, t.KubeConfig, manager.Options{
-		Namespace:          t.Namespace,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+		LeaderElection: false,
 	})
 	if err != nil {
 		return err

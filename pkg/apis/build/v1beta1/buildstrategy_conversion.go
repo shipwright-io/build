@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // ensure v1beta1 implements the Conversion interface
@@ -252,7 +252,7 @@ func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
 			Name:        "dockerfile",
 			Description: "The Dockerfile to be built.",
 			Type:        ParameterTypeString,
-			Default:     pointer.String("Dockerfile"),
+			Default:     ptr.To("Dockerfile"),
 		})
 	}
 

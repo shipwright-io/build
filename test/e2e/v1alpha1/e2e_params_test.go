@@ -12,7 +12,7 @@ import (
 	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
@@ -101,7 +101,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 						OutputImage("dummy").
 						// The parameters
 						StringParamValue("env1", "13").
-						StringParamValueFromConfigMap("env2", "a-configmap", "number1", pointer.String("2${CONFIGMAP_VALUE}")).
+						StringParamValueFromConfigMap("env2", "a-configmap", "number1", ptr.To("2${CONFIGMAP_VALUE}")).
 						ArrayParamValueFromConfigMap("commands", "a-configmap", "shell", nil).
 						ArrayParamValue("commands", "-c").
 						Create()
@@ -115,7 +115,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 						GenerateServiceAccount().
 						StringParamValue("image", "registry.access.redhat.com/ubi9/ubi-minimal").
 						StringParamValueFromSecret("env3", "a-secret", "number2", nil).
-						ArrayParamValueFromSecret("args", "a-secret", "number3", pointer.String("${SECRET_VALUE}9")).
+						ArrayParamValueFromSecret("args", "a-secret", "number3", ptr.To("${SECRET_VALUE}9")).
 						ArrayParamValue("args", "47").
 						Create()
 					Expect(err).ToNot(HaveOccurred())

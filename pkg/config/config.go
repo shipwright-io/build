@@ -13,7 +13,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -87,8 +87,8 @@ var (
 	metricBuildRunEstablishDurationBuckets  = []float64{0, 1, 2, 3, 5, 7, 10, 15, 20, 30}
 	metricBuildRunRampUpDurationBuckets     = prometheus.LinearBuckets(0, 1, 10)
 
-	root    = pointer.Int64(0)
-	nonRoot = pointer.Int64(1000)
+	root    = ptr.To[int64](0)
+	nonRoot = ptr.To[int64](1000)
 )
 
 // Config hosts different parameters that
@@ -177,7 +177,7 @@ func NewDefaultConfig() *Config {
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				AllowPrivilegeEscalation: ptr.To(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
@@ -201,7 +201,7 @@ func NewDefaultConfig() *Config {
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				AllowPrivilegeEscalation: ptr.To(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
@@ -230,7 +230,7 @@ func NewDefaultConfig() *Config {
 			// in all possible scenarios, we run this step as root with DAC_OVERRIDE
 			// capability.
 			SecurityContext: &corev1.SecurityContext{
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				AllowPrivilegeEscalation: ptr.To(false),
 				RunAsUser:                root,
 				RunAsGroup:               root,
 				Capabilities: &corev1.Capabilities{
@@ -260,7 +260,7 @@ func NewDefaultConfig() *Config {
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				AllowPrivilegeEscalation: ptr.To(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",

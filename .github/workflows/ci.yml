@@ -23,7 +23,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21.x'
+          go-version: '1.22.x'
           cache: true
           check-latest: true
       - name: Install Trivy
@@ -63,13 +63,13 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.27.11
-          - v1.29.2
+          - v1.28.13
+          - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
           - v0.53.5
           # newest LTS that exists at the time of our planned next release
-          - v0.59.2 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v0.62.3 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -78,7 +78,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21.x'
+          go-version: '1.22.x'
           cache: true
           check-latest: true
       - name: Install Ko
@@ -120,8 +120,12 @@ jobs:
           TEKTON_VERSION: ${{ matrix.tekton }}
         run: |
           make kind-tekton
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
+          if ! kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=3m; then
+            echo "[ERROR] Tekton installation did not complete. Debug info:"
+            kubectl -n tekton-pipelines get pod -o wide
+            exit 1
+          fi
+          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=3m
       - name: Test
         run: |
           # host.docker.internal does not work in a GitHub action
@@ -139,13 +143,13 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.27.11
-          - v1.29.2
+          - v1.28.13
+          - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
           - v0.53.5
           # newest LTS that exists at the time of our planned next release
-          - v0.59.2 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v0.62.3 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -164,7 +168,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21.x'
+          go-version: '1.22.x'
           cache: true
           check-latest: true
       - name: Install kubectl
@@ -203,8 +207,12 @@ jobs:
           TEKTON_VERSION: ${{ matrix.tekton }}
         run: |
           make kind-tekton
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=1m
-          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=1m
+          if ! kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=3m; then
+            echo "[ERROR] Tekton installation did not complete. Debug info:"
+            kubectl -n tekton-pipelines get pod -o wide
+            exit 1
+          fi
+          kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=3m
       - name: Install Registry
         run: |
           kubectl apply -f test/data/registry.yaml

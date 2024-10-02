@@ -7,7 +7,7 @@ package validate_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
@@ -22,7 +22,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 			{
 				Name:    "string-param-with-default",
 				Type:    buildv1beta1.ParameterTypeString,
-				Default: pointer.String("default value"),
+				Default: ptr.To("default value"),
 			},
 			{
 				Name: "array-param-no-defaults",
@@ -40,7 +40,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "string-param-no-default",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String("a value"),
+						Value: ptr.To("a value"),
 					},
 				},
 			}
@@ -91,7 +91,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "string-param-with-default",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String(""),
+						Value: ptr.To(""),
 					},
 				},
 			}
@@ -142,7 +142,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "string-param-no-default",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String("a value"),
+						Value: ptr.To("a value"),
 					},
 				},
 				{
@@ -155,7 +155,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "shp-source-context",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String("/my-source"),
+						Value: ptr.To("/my-source"),
 					},
 				},
 			}
@@ -173,7 +173,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "string-param-no-default",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String("a value"),
+						Value: ptr.To("a value"),
 					},
 				},
 				{
@@ -190,7 +190,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "non-existing-parameter",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String("my value"),
+						Value: ptr.To("my value"),
 					},
 				},
 			}
@@ -210,7 +210,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "string-param-no-default",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String("a value"),
+						Value: ptr.To("a value"),
 						ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 							Name: "a-config-map",
 							Key:  "a-key",
@@ -224,7 +224,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 					Name: "array-param-no-defaults",
 					Values: []buildv1beta1.SingleValue{
 						{
-							Value: pointer.String("a good item"),
+							Value: ptr.To("a good item"),
 						},
 						{
 							ConfigMapValue: &buildv1beta1.ObjectKeyRef{
@@ -256,7 +256,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 					Name: "string-param-no-default",
 					Values: []buildv1beta1.SingleValue{
 						{
-							Value: pointer.String("an item"),
+							Value: ptr.To("an item"),
 						},
 						{
 							ConfigMapValue: &buildv1beta1.ObjectKeyRef{
@@ -272,7 +272,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "array-param-no-defaults",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String("a value"),
+						Value: ptr.To("a value"),
 					},
 				},
 			}
@@ -292,7 +292,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 				{
 					Name: "string-param-no-default",
 					SingleValue: &buildv1beta1.SingleValue{
-						Value: pointer.String(" some value"),
+						Value: ptr.To(" some value"),
 					},
 				},
 				{
@@ -310,7 +310,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 					Name: "array-param-no-defaults",
 					Values: []buildv1beta1.SingleValue{
 						{
-							Value: pointer.String("a good item"),
+							Value: ptr.To("a good item"),
 						},
 						{
 							// the bad item without any value
@@ -352,7 +352,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 					Name: "array-param-no-defaults",
 					Values: []buildv1beta1.SingleValue{
 						{
-							Value: pointer.String("an item"),
+							Value: ptr.To("an item"),
 						},
 						{
 							ConfigMapValue: &buildv1beta1.ObjectKeyRef{
@@ -390,7 +390,7 @@ var _ = Describe("ValidateBuildRunParameters", func() {
 					Name: "array-param-no-defaults",
 					Values: []buildv1beta1.SingleValue{
 						{
-							Value: pointer.String("an item"),
+							Value: ptr.To("an item"),
 						},
 						{
 							SecretValue: &buildv1beta1.ObjectKeyRef{

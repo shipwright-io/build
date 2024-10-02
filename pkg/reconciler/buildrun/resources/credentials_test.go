@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
@@ -41,12 +41,12 @@ var _ = Describe("Credentials", func() {
 						Type: buildv1beta1.GitType,
 						Git: &buildv1beta1.Git{
 							URL:         "a/b/c",
-							CloneSecret: pointer.String("secret_a"),
+							CloneSecret: ptr.To("secret_a"),
 						},
 					},
 					Output: buildv1beta1.Image{
 						Image:      "quay.io/namespace/image",
-						PushSecret: pointer.String("secret_quay.io"),
+						PushSecret: ptr.To("secret_quay.io"),
 					},
 				},
 			}
@@ -55,7 +55,7 @@ var _ = Describe("Credentials", func() {
 				Spec: buildv1beta1.BuildRunSpec{
 					Output: &buildv1beta1.Image{
 						Image:      "quay.io/namespace/brImage",
-						PushSecret: pointer.String("secret_buildrun.io"),
+						PushSecret: ptr.To("secret_buildrun.io"),
 					},
 				},
 			}
@@ -90,7 +90,7 @@ var _ = Describe("Credentials", func() {
 						},
 					},
 					Output: buildv1beta1.Image{
-						PushSecret: pointer.String("secret_b"),
+						PushSecret: ptr.To("secret_b"),
 					},
 				},
 			}

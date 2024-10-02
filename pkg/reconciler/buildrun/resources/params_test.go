@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega/types"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -28,22 +28,22 @@ var _ = Describe("Params overrides", func() {
 		Entry("override a single parameter",
 			[]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 			}, []buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("3"),
+					Value: ptr.To("3"),
 				}},
 			}, ContainElements([]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("3"),
+					Value: ptr.To("3"),
 				}},
 			})),
 
 		Entry("override two parameters",
 			[]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
 					SecretValue: &buildv1beta1.ObjectKeyRef{
@@ -53,7 +53,7 @@ var _ = Describe("Params overrides", func() {
 				}},
 			}, []buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("3"),
+					Value: ptr.To("3"),
 				}},
 				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
 					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
@@ -63,7 +63,7 @@ var _ = Describe("Params overrides", func() {
 				}},
 			}, ContainElements([]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("3"),
+					Value: ptr.To("3"),
 				}},
 				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
 					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
@@ -76,43 +76,43 @@ var _ = Describe("Params overrides", func() {
 		Entry("override multiple parameters",
 			[]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 			}, []buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 			}, ContainElements([]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 			})),
 
 		Entry("dont override when second list is empty",
 			[]buildv1beta1.ParamValue{
 				{Name: "t", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "z", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "g", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 			},
 			[]buildv1beta1.ParamValue{
@@ -120,13 +120,13 @@ var _ = Describe("Params overrides", func() {
 			},
 			ContainElements([]buildv1beta1.ParamValue{
 				{Name: "t", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "z", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 				{Name: "g", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 			})),
 
@@ -135,56 +135,56 @@ var _ = Describe("Params overrides", func() {
 				// no original values
 			}, []buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 			}, ContainElements([]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("6"),
+					Value: ptr.To("6"),
 				}},
 			})),
 
 		Entry("override multiple parameters if the match and add them if not present in first list",
 			[]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("2"),
+					Value: ptr.To("2"),
 				}},
 			}, []buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("22"),
+					Value: ptr.To("22"),
 				}},
 				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("20"),
+					Value: ptr.To("20"),
 				}},
 				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("10"),
+					Value: ptr.To("10"),
 				}},
 				{Name: "d", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("8"),
+					Value: ptr.To("8"),
 				}},
 				{Name: "e", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("4"),
+					Value: ptr.To("4"),
 				}},
 			}, ContainElements([]buildv1beta1.ParamValue{
 				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("22"),
+					Value: ptr.To("22"),
 				}},
 				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("20"),
+					Value: ptr.To("20"),
 				}},
 				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("10"),
+					Value: ptr.To("10"),
 				}},
 				{Name: "d", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("8"),
+					Value: ptr.To("8"),
 				}},
 				{Name: "e", SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("4"),
+					Value: ptr.To("4"),
 				}},
 			})),
 	)
@@ -244,13 +244,13 @@ var _ = Describe("FindParamValueByName", func() {
 		paramValues := []buildv1beta1.ParamValue{{
 			Name: "some-parameter",
 			SingleValue: &buildv1beta1.SingleValue{
-				Value: pointer.String("some-value"),
+				Value: ptr.To("some-value"),
 			},
 		}, {
 			Name: "another-parameter",
 			Values: []buildv1beta1.SingleValue{
 				{
-					Value: pointer.String("item"),
+					Value: ptr.To("item"),
 				},
 				{
 					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
@@ -262,7 +262,7 @@ var _ = Describe("FindParamValueByName", func() {
 		}, {
 			Name: "last-parameter",
 			SingleValue: &buildv1beta1.SingleValue{
-				Value: pointer.String("last-value"),
+				Value: ptr.To("last-value"),
 			},
 		}}
 
@@ -277,7 +277,7 @@ var _ = Describe("FindParamValueByName", func() {
 				Name: "another-parameter",
 				Values: []buildv1beta1.SingleValue{
 					{
-						Value: pointer.String("item"),
+						Value: ptr.To("item"),
 					},
 					{
 						ConfigMapValue: &buildv1beta1.ObjectKeyRef{
@@ -383,7 +383,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
 				Name: "string-parameter",
 				SingleValue: &buildv1beta1.SingleValue{
-					Value: pointer.String("My value"),
+					Value: ptr.To("My value"),
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -449,7 +449,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
 						Name:   "config-map-name",
 						Key:    "my-key",
-						Format: pointer.String("The value from the config map is '${CONFIGMAP_VALUE}'."),
+						Format: ptr.To("The value from the config map is '${CONFIGMAP_VALUE}'."),
 					},
 				},
 			})
@@ -536,7 +536,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 					SecretValue: &buildv1beta1.ObjectKeyRef{
 						Name:   "secret-name",
 						Key:    "secret-key",
-						Format: pointer.String("secret-value: ${SECRET_VALUE}"),
+						Format: ptr.To("secret-value: ${SECRET_VALUE}"),
 					},
 				},
 			})
@@ -586,13 +586,13 @@ var _ = Describe("HandleTaskRunParam", func() {
 				Name: "array-parameter",
 				Values: []buildv1beta1.SingleValue{
 					{
-						Value: pointer.String("first entry"),
+						Value: ptr.To("first entry"),
 					},
 					{
-						Value: pointer.String(""),
+						Value: ptr.To(""),
 					},
 					{
-						Value: pointer.String("third entry"),
+						Value: ptr.To("third entry"),
 					},
 				},
 			})
@@ -621,7 +621,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 				Name: "array-parameter",
 				Values: []buildv1beta1.SingleValue{
 					{
-						Value: pointer.String("first entry"),
+						Value: ptr.To("first entry"),
 					},
 					{
 						SecretValue: &buildv1beta1.ObjectKeyRef{
@@ -633,7 +633,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 						SecretValue: &buildv1beta1.ObjectKeyRef{
 							Name:   "secret-name",
 							Key:    "secret-key",
-							Format: pointer.String("The secret value is ${SECRET_VALUE}"),
+							Format: ptr.To("The secret value is ${SECRET_VALUE}"),
 						},
 					},
 				},
@@ -680,7 +680,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 				Name: "array-parameter",
 				Values: []buildv1beta1.SingleValue{
 					{
-						Value: pointer.String("first entry"),
+						Value: ptr.To("first entry"),
 					},
 					{
 						SecretValue: &buildv1beta1.ObjectKeyRef{
@@ -692,7 +692,7 @@ var _ = Describe("HandleTaskRunParam", func() {
 						SecretValue: &buildv1beta1.ObjectKeyRef{
 							Name:   "secret-name",
 							Key:    "secret-key-2",
-							Format: pointer.String("The secret value is ${SECRET_VALUE}"),
+							Format: ptr.To("The secret value is ${SECRET_VALUE}"),
 						},
 					},
 				},

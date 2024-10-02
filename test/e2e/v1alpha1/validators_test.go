@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/shipwright-io/build/pkg/apis"
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
@@ -327,7 +327,7 @@ func buildRunTestData(ns string, identifier string, filePath string) (*buildv1al
 	serviceAccountName := os.Getenv(EnvVarServiceAccountName)
 	if serviceAccountName == "generated" {
 		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{
-			Generate: pointer.Bool(true),
+			Generate: ptr.To(true),
 		}
 	} else {
 		buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{

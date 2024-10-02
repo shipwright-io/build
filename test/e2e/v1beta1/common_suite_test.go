@@ -18,7 +18,7 @@ import (
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
@@ -132,7 +132,7 @@ func (b *buildPrototype) SourceBundlePrune(prune buildv1beta1.PruneOption) *buil
 }
 
 func (b *buildPrototype) SourceContextDir(contextDir string) *buildPrototype {
-	b.build.Spec.Source.ContextDir = pointer.String(contextDir)
+	b.build.Spec.Source.ContextDir = ptr.To(contextDir)
 	return b
 }
 

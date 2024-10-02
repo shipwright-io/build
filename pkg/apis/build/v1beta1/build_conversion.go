@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -88,7 +88,7 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 		if src.Spec.Retention == nil {
 			src.Spec.Retention = &BuildRetention{}
 		}
-		src.Spec.Retention.AtBuildDeletion = pointer.Bool(value == "true")
+		src.Spec.Retention.AtBuildDeletion = ptr.To(value == "true")
 		delete(src.ObjectMeta.Annotations, v1alpha1.AnnotationBuildRunDeletion)
 	}
 
