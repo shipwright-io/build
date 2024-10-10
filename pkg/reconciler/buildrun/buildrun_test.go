@@ -1631,5 +1631,19 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
 		})
+
+		Context("when nodeSelector is specified", func() {
+			It("fails when the nodeSelector is invalid", func() {
+				// set nodeSelector to be invalid
+				buildSample.Spec.NodeSelector = map[string]string{strings.Repeat("s", 64): "amd64"}
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.NodeSelectorNotValid, "must be no more than 63 characters")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+		})
 	})
 })

@@ -56,6 +56,20 @@ spec:
     name: buildah
 `
 
+// MinimalBuildahBuildRunWithNodeSelector defines a simple
+// BuildRun with a referenced Build and nodeSelector
+const MinimalBuildahBuildRunWithNodeSelector = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: buildah-run
+spec:
+  build:
+    name: buildah
+  nodeSelector:
+    kubernetes.io/arch: amd64
+`
+
 // BuildahBuildRunWithSA defines a BuildRun
 // with a service-account
 const BuildahBuildRunWithSA = `
@@ -211,6 +225,19 @@ spec:
     image: foobar.registry.com
   build:
     name: foobar
+`
+
+// MinimalBuildRunWithNodeSelector defines a minimal BuildRun
+// with a reference to a not existing Build,
+// and a nodeSelector
+const MinimalBuildRunWithNodeSelector = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    name: foobar
+  nodeSelector:
+    kubernetes.io/arch: amd64
 `
 
 // MinimalBuildRunWithVulnerabilityScan defines a BuildRun with
