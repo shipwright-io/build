@@ -76,6 +76,8 @@ const (
 	OutputTimestampNotSupported BuildReason = "OutputTimestampNotSupported"
 	// OutputTimestampNotValid indicates that the output timestamp value is not valid
 	OutputTimestampNotValid BuildReason = "OutputTimestampNotValid"
+	// NodeSelectorNotValid indicates that the nodeSelector value is not valid
+	NodeSelectorNotValid BuildReason = "NodeSelectorNotValid"
 
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
@@ -174,6 +176,13 @@ type BuildSpec struct {
 	//
 	// +optional
 	Volumes []BuildVolume `json:"volumes,omitempty"`
+
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	//
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // BuildVolume is a volume that will be mounted in build pod during build step

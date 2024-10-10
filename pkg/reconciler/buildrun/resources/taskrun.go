@@ -18,6 +18,7 @@ import (
 	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 	"github.com/shipwright-io/build/pkg/volumes"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
@@ -232,6 +233,14 @@ func GenerateTaskRun(
 				},
 			},
 		},
+	}
+
+	// Merge Build and BuildRun NodeSelectors, giving preference to BuildRun NodeSelector
+	taskRunNodeSelector := mergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
+	if len(taskRunNodeSelector) > 0 {
+		expectedTaskRun.Spec.PodTemplate = &pod.PodTemplate{
+			NodeSelector: taskRunNodeSelector,
+		}
 	}
 
 	// assign the annotations from the build strategy, filter out those that should not be propagated

@@ -35,6 +35,8 @@ const (
 	OwnerReferences = "ownerreferences"
 	// Triggers for validating the `.spec.triggers` entries
 	Triggers = "triggers"
+	// NodeSelector for validating `spec.nodeSelector` entry
+	NodeSelector = "nodeselector"
 )
 
 const (
@@ -75,6 +77,8 @@ func NewValidation(
 		return &Env{Build: build}, nil
 	case Triggers:
 		return &Trigger{build: build}, nil
+	case NodeSelector:
+		return &NodeSelectorRef{Build: build}, nil
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}
