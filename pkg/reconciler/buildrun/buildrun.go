@@ -160,6 +160,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						validate.NewSourceRef(build),
 						validate.NewBuildName(build),
 						validate.NewEnv(build),
+						validate.NewNodeSelector(build),
 					)
 
 					// an internal/technical error during validation happened
