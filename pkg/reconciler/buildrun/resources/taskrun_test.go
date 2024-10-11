@@ -632,5 +632,27 @@ var _ = Describe("GenerateTaskrun", func() {
 				Expect(paramOutputImageFound).To(BeTrue())
 			})
 		})
+
+		Context("when the build and buildrun both specify a nodeSelector", func() {
+			BeforeEach(func() {
+				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildRunWithNodeSelector))
+				Expect(err).To(BeNil())
+
+				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildRunWithNodeSelector))
+				Expect(err).To(BeNil())
+
+				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.ClusterBuildStrategyNoOp))
+				Expect(err).To(BeNil())
+			})
+
+			JustBeforeEach(func() {
+				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
+				Expect(err).To(BeNil())
+			})
+
+			It("should give precedence to the nodeSelector specified in the buildRun", func() {
+				Expect(got.Spec.PodTemplate.NodeSelector).To(Equal(buildRun.Spec.NodeSelector))
+			})
+		})
 	})
 })
