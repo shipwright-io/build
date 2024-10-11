@@ -6,19 +6,25 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build
 
-- [Overview](#overview)
-- [Build Controller](#build-controller)
-- [Build Validations](#build-validations)
-- [Configuring a Build](#configuring-a-build)
-  - [Defining the Source](#defining-the-source)
-  - [Defining the Strategy](#defining-the-strategy)
-  - [Defining ParamValues](#defining-paramvalues)
-  - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
-  - [Defining the Output](#defining-the-output)
-  - [Defining Retention Parameters](#defining-retention-parameters)
-  - [Defining Volumes](#defining-volumes)
-  - [Defining Triggers](#defining-triggers)
-- [BuildRun deletion](#buildrun-deletion)
+- [Build](#build)
+  - [Overview](#overview)
+  - [Build Controller](#build-controller)
+  - [Build Validations](#build-validations)
+  - [Configuring a Build](#configuring-a-build)
+    - [Defining the Source](#defining-the-source)
+    - [Defining the Strategy](#defining-the-strategy)
+    - [Defining ParamValues](#defining-paramvalues)
+      - [Example](#example)
+    - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
+    - [Defining the Output](#defining-the-output)
+    - [Defining the vulnerabilityScan](#defining-the-vulnerabilityscan)
+    - [Defining Retention Parameters](#defining-retention-parameters)
+    - [Defining Volumes](#defining-volumes)
+    - [Defining Triggers](#defining-triggers)
+      - [GitHub](#github)
+      - [Image](#image)
+      - [Tekton Pipeline](#tekton-pipeline)
+  - [BuildRun Deletion](#buildrun-deletion)
 
 ## Overview
 
@@ -33,6 +39,7 @@ A `Build` resource allows the user to define:
 - env
 - retention
 - volumes
+- nodeSelector
 
 A `Build` is available within a namespace.
 
@@ -118,6 +125,7 @@ The `Build` definition supports the following fields:
   - `spec.retention.ttlAfterSucceeded` - Specifies the duration for which a successful buildrun can exist.
   - `spec.retention.failedLimit` - Specifies the number of failed buildrun that can exist.
   - `spec.retention.succeededLimit` - Specifies the number of successful buildrun can exist.
+  - `spec.nodeSelector` - Specifies a selector which must match a node's labels for the build pod to be scheduled on that node.
 
 ### Defining the Source
 
