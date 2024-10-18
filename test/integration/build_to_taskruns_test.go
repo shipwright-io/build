@@ -5,6 +5,8 @@
 package integration_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -199,6 +201,48 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(tr.Spec.TaskSpec.Steps).ToNot(utils.ContainNamedElement("image-processing"))
+			})
+		})
+	})
+
+	Context("when a build with nodeSelector is defined", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.MinimalBuildWithNodeSelector)
+			buildRunSample = []byte(test.MinimalBuildRun)
+		})
+
+		Context("when the TaskRun is created", func() {
+			It("should have the nodeSelector specified in the PodTemplate", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(buildObject.Spec.NodeSelector).To(Equal(tr.Spec.PodTemplate.NodeSelector))
+			})
+		})
+
+		Context("when the nodeSelector is invalid", func() {
+			It("fails the build with a proper error in Reason", func() {
+				// set nodeSelector label to be invalid
+				buildObject.Spec.NodeSelector = map[string]string{strings.Repeat("s", 64): ""}
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.NodeSelectorNotValid))
 			})
 		})
 	})
