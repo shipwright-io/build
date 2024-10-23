@@ -7,6 +7,7 @@ package build_test
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -611,6 +612,21 @@ var _ = Describe("Reconcile Build", func() {
 
 				_, err := reconciler.Reconcile(context.TODO(), request)
 				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("when nodeSelector is specified", func() {
+			It("should fail to validate when the nodeSelector is invalid", func() {
+				// set nodeSelector to be invalid
+				buildSample.Spec.NodeSelector = map[string]string{strings.Repeat("s", 64): "amd64"}
+				buildSample.Spec.Output.PushSecret = nil
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.NodeSelectorNotValid, "name part must be no more than 63 characters")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(context.TODO(), request)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
 		})
 	})

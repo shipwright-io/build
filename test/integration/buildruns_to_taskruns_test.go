@@ -536,4 +536,50 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Context("when a buildrun is created with a nodeSelector defined", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.MinimalBuild)
+			buildRunSample = []byte(test.MinimalBuildRunWithNodeSelector)
+		})
+
+		Context("when the taskrun is created", func() {
+			It("should have the nodeSelector specified in the PodTemplate", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(br.Spec.NodeSelector).To(Equal(tr.Spec.PodTemplate.NodeSelector))
+			})
+		})
+
+		Context("when the nodeSelector is invalid", func() {
+			It("fails the buildrun with a proper error in Reason", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				// set nodeSelector label to be invalid
+				buildRunObject.Spec.NodeSelector = map[string]string{strings.Repeat("s", 64): "amd64"}
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal("PodCreationFailed"))
+				Expect(condition.Message).To(ContainSubstring("must be no more than 63 characters"))
+			})
+		})
+	})
 })

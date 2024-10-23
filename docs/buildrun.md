@@ -6,25 +6,28 @@ SPDX-License-Identifier: Apache-2.0
 
 # BuildRun
 
-- [Overview](#overview)
-- [BuildRun Controller](#buildrun-controller)
-- [Configuring a BuildRun](#configuring-a-buildrun)
-  - [Defining the Build Reference](#defining-the-build-reference)
-  - [Defining the Build Specification](#defining-the-build-specification)
-  - [Defining ParamValues](#defining-paramvalues)
-  - [Defining the ServiceAccount](#defining-the-serviceaccount)
-  - [Defining Retention Parameters](#defining-retention-parameters)
-  - [Defining Volumes](#defining-volumes)
-- [Canceling a `BuildRun`](#canceling-a-buildrun)
-- [Automatic `BuildRun` deletion](#automatic-buildrun-deletion)
-- [Specifying Environment Variables](#specifying-environment-variables)
-- [BuildRun Status](#buildrun-status)
-  - [Understanding the state of a BuildRun](#understanding-the-state-of-a-buildrun)
-  - [Understanding failed BuildRuns](#understanding-failed-buildruns)
-    - [Understanding failed git-source step](#understanding-failed-git-source-step)
-  - [Step Results in BuildRun Status](#step-results-in-buildrun-status)
-  - [Build Snapshot](#build-snapshot)
-- [Relationship with Tekton Tasks](#relationship-with-tekton-tasks)
+- [BuildRun](#buildrun)
+  - [Overview](#overview)
+  - [BuildRun Controller](#buildrun-controller)
+  - [Configuring a BuildRun](#configuring-a-buildrun)
+    - [Defining the Build Reference](#defining-the-build-reference)
+    - [Defining the Build Specification](#defining-the-build-specification)
+    - [Defining the Build Source](#defining-the-build-source)
+    - [Defining ParamValues](#defining-paramvalues)
+    - [Defining the ServiceAccount](#defining-the-serviceaccount)
+    - [Defining Retention Parameters](#defining-retention-parameters)
+    - [Defining Volumes](#defining-volumes)
+  - [Canceling a `BuildRun`](#canceling-a-buildrun)
+  - [Automatic `BuildRun` deletion](#automatic-buildrun-deletion)
+  - [Specifying Environment Variables](#specifying-environment-variables)
+  - [BuildRun Status](#buildrun-status)
+    - [Understanding the state of a BuildRun](#understanding-the-state-of-a-buildrun)
+    - [Understanding failed BuildRuns](#understanding-failed-buildruns)
+    - [Understanding failed BuildRuns due to VulnerabilitiesFound](#understanding-failed-buildruns-due-to-vulnerabilitiesfound)
+      - [Understanding failed git-source step](#understanding-failed-git-source-step)
+    - [Step Results in BuildRun Status](#step-results-in-buildrun-status)
+    - [Build Snapshot](#build-snapshot)
+  - [Relationship with Tekton Tasks](#relationship-with-tekton-tasks)
 
 ## Overview
 
@@ -72,6 +75,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.output.timestamp` - Overrides the output timestamp configuration of the referenced build to instruct the build to change the output image creation timestamp to the specified value. When omitted, the respective build strategy tool defines the output image timestamp.
   - `spec.output.vulnerabilityScan` - Overrides the output vulnerabilityScan configuration of the referenced build to run the vulnerability scan for the generated image.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
+  - `spec.nodeSelector` - Specifies a selector which must match a node's labels for the build pod to be scheduled on that node.
 
 **Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
 

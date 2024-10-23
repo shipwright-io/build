@@ -6916,6 +6916,14 @@ spec:
                           - name
                           type: object
                         type: array
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          NodeSelector is a selector which must be true for the pod to fit on a node.
+                          Selector which must match a node's labels for the pod to be scheduled on that node.
+                          More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+                        type: object
                       output:
                         description: Output refers to the location where the built
                           image would be pushed.
@@ -9120,6 +9128,14 @@ spec:
                   - name
                   type: object
                 type: array
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: |-
+                  NodeSelector is a selector which must be true for the pod to fit on a node.
+                  Selector which must match a node's labels for the pod to be scheduled on that node.
+                  More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+                type: object
               output:
                 description: |-
                   Output refers to the location where the generated
@@ -11161,6 +11177,14 @@ spec:
                       - name
                       type: object
                     type: array
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      NodeSelector is a selector which must be true for the pod to fit on a node.
+                      Selector which must match a node's labels for the pod to be scheduled on that node.
+                      More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+                    type: object
                   output:
                     description: Output refers to the location where the built image
                       would be pushed.

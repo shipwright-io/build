@@ -51,6 +51,25 @@ spec:
     value: Dockerfile
 `
 
+// MinimalBuildahBuildWithNodeSelector defines a simple
+// Build with a source, strategy, and nodeSelector
+const MinimalBuildahBuildWithNodeSelector = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildah
+spec:
+  source:
+    type: Git
+    git:
+      url: "https://github.com/shipwright-io/sample-go"
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  nodeSelector:
+    kubernetes.io/arch: amd64
+`
+
 // BuildahBuildWithOutput defines a simple
 // Build with a source, strategy and output
 const BuildahBuildWithOutput = `
@@ -520,8 +539,8 @@ spec:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
 `
 
-// BuildWithRestrictedParam defines a Build using params that are reserved only
-// for shipwright
+// MinimalBuild defines a simple
+// Build with a strategy output
 const MinimalBuild = `
 apiVersion: shipwright.io/v1beta1
 kind: Build
@@ -530,6 +549,20 @@ spec:
     kind: ClusterBuildStrategy
   output:
     image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+`
+
+// MinimalBuildWithNodeSelector defines a simple
+// Build with a strategy, output, and NodeSelector
+const MinimalBuildWithNodeSelector = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  nodeSelector:
+    kubernetes.io/arch: amd64
 `
 
 // BuildWithUndefinedParameter defines a param that was not declared under the
