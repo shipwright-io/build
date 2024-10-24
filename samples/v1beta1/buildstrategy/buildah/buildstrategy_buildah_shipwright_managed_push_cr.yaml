@@ -6,7 +6,7 @@ metadata:
 spec:
   steps:
     - name: build
-      image: quay.io/containers/buildah:v1.37.1
+      image: quay.io/containers/buildah:v1.37.3
       imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
       securityContext:
