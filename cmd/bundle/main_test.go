@@ -7,7 +7,6 @@ package main_test
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http/httptest"
 	"net/url"
@@ -34,8 +33,7 @@ var _ = Describe("Bundle Loader", func() {
 	const exampleImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
 
 	run := func(args ...string) error {
-		// discard log output
-		log.SetOutput(io.Discard)
+		log.SetOutput(GinkgoWriter)
 
 		// discard stderr output
 		var tmp = os.Stderr
@@ -313,6 +311,18 @@ var _ = Describe("Bundle Loader", func() {
 						Expect(filecontent(resultSourceTimestamp)).To(Equal("1234567890"))
 					})
 				})
+			})
+		})
+	})
+
+	Context("Using show listing flag", func() {
+		It("should run without issues", func() {
+			withTempDir(func(target string) {
+				Expect(run(
+					"--image", exampleImage,
+					"--target", target,
+					"--show-listing",
+				)).To(Succeed())
 			})
 		})
 	})

@@ -13,9 +13,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	shpgit "github.com/shipwright-io/build/pkg/git"
+	"github.com/shipwright-io/build/pkg/util"
 	"github.com/spf13/pflag"
 )
 
@@ -61,6 +63,7 @@ type settings struct {
 	resultFileErrorMessage    string
 	resultFileErrorReason     string
 	verbose                   bool
+	showListing               bool
 }
 
 var flagValues settings
@@ -99,6 +102,7 @@ func init() {
 	pflag.BoolVar(&flagValues.skipValidation, "skip-validation", false, "skip pre-requisite validation")
 	pflag.BoolVar(&flagValues.gitURLRewrite, "git-url-rewrite", false, "set Git config to use url-insteadOf setting based on Git repository URL")
 	pflag.BoolVar(&flagValues.verbose, "verbose", false, "Verbose logging")
+	pflag.BoolVar(&flagValues.showListing, "show-listing", false, "Print file listing of files cloned from the Git repository")
 }
 
 func main() {
@@ -122,6 +126,10 @@ func main() {
 func Execute(ctx context.Context) error {
 	flagValues = settings{depth: 1}
 	pflag.Parse()
+
+	if val, ok := os.LookupEnv("GIT_SHOW_LISTING"); ok {
+		flagValues.showListing, _ = strconv.ParseBool(val)
+	}
 
 	if flagValues.help {
 		pflag.Usage()
@@ -158,6 +166,11 @@ func runGitClone(ctx context.Context) error {
 
 	if err := clone(ctx); err != nil {
 		return err
+	}
+
+	if flagValues.showListing {
+		// ignore any errors when walking through the file system, the listing is only for informational purposes
+		_ = util.ListFiles(log.Writer(), flagValues.target)
 	}
 
 	if flagValues.resultFileCommitSha != "" {

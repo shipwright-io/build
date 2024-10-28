@@ -668,4 +668,21 @@ var _ = Describe("Git Resource", func() {
 			})
 		})
 	})
+
+	Context("Using show listing flag", func() {
+		const exampleRepo = "https://github.com/shipwright-io/sample-go"
+
+		It("should run without issues", func() {
+			withTempDir(func(target string) {
+				Expect(run(
+					withLogOutput(io.Discard),
+					withArgs(
+						"--url", exampleRepo,
+						"--target", target,
+						"--show-listing",
+					),
+				)).To(Succeed())
+			})
+		})
+	})
 })
