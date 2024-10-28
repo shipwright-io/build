@@ -55,13 +55,34 @@ var _ = Describe("Bundle", func() {
 				Expect(r).ToNot(BeNil())
 
 				details, err := Unpack(r, tempDir)
-				Expect(details).ToNot(BeNil())
 				Expect(err).ToNot(HaveOccurred())
+				Expect(details).ToNot(BeNil())
 
 				Expect(filepath.Join(tempDir, "README.md")).To(BeAnExistingFile())
 				Expect(filepath.Join(tempDir, ".someToolDir", "config.json")).ToNot(BeAnExistingFile())
 				Expect(filepath.Join(tempDir, "somefile")).To(BeAnExistingFile())
 				Expect(filepath.Join(tempDir, "linktofile")).To(BeAnExistingFile())
+			})
+		})
+
+		It("should pack and unpack a directory including all files even if a sub-directory is non-writable", func() {
+			withTempDir(func(source string) {
+				// Setup a case where there are files in a directory, which is non-writable
+				Expect(os.Mkdir(filepath.Join(source, "some-dir"), os.FileMode(0777))).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(source, "some-dir", "some-file"), []byte(`foobar`), os.FileMode(0644))).To(Succeed())
+				Expect(os.Chmod(filepath.Join(source, "some-dir"), os.FileMode(0555))).To(Succeed())
+
+				r, err := Pack(source)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(r).ToNot(BeNil())
+
+				withTempDir(func(target string) {
+					details, err := Unpack(r, target)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(details).ToNot(BeNil())
+
+					Expect(filepath.Join(target, "some-dir", "some-file")).To(BeAnExistingFile())
+				})
 			})
 		})
 	})
