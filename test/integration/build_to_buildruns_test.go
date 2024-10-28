@@ -6,6 +6,7 @@ package integration_test
 
 import (
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -381,7 +382,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 		})
 
-		It("does not deletes the buildrun if retention atBuildDeletion is changed", func() {
+		It("does not delete the buildrun if retention atBuildDeletion is changed to false", func() {
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
@@ -396,25 +397,33 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
+			// verify that the BuildRun is owned by the bulild
+			br, err := tb.GetBRTillOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
+			Expect(ownerReferenceNames(br.OwnerReferences)).Should(ContainElement(buildObject.Name))
 
-			// we modify the annotation so automatic delete does not take place
+			// we modify the atBuildDeletion property so that automatic deletion does not take place
 			data := []byte(`{"spec":{"retention":{"atBuildDeletion":false}}}`)
 			_, err = tb.PatchBuild(BUILD+tb.Namespace, data)
 			Expect(err).To(BeNil())
 
-			err = tb.DeleteBuild(BUILD + tb.Namespace)
-			Expect(err).To(BeNil())
-
-			br, err := tb.GetBRTillNotOwner(BUILDRUN+tb.Namespace, buildObject.Name)
+			// wait for the BuildRun to not have an owner anymore
+			br, err = tb.GetBRTillNotOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
 			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
 
+			// delete the Build
+			err = tb.DeleteBuild(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			// verify that the BuildRun continues to exist
+			Consistently(func() error {
+				_, err := tb.GetBR(BUILDRUN + tb.Namespace)
+				return err
+			}).WithTimeout(5 + time.Second).WithPolling(1 * time.Second).ShouldNot(HaveOccurred())
 		})
 
 		It("does not deletes the buildrun if retention atBuildDeletion is removed", func() {
-
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
@@ -429,23 +438,30 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(tb.CreateBR(autoDeleteBuildRun)).To(BeNil())
 
-			_, err = tb.GetBRTillStartTime(autoDeleteBuildRun.Name)
+			// verify that the BuildRun is owned by the bulild
+			br, err := tb.GetBRTillOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
+			Expect(ownerReferenceNames(br.OwnerReferences)).Should(ContainElement(buildObject.Name))
 
+			// remove the whole retention section
 			buildObject.Spec.Retention = nil
 			err = tb.UpdateBuild(buildObject)
 			Expect(err).To(BeNil())
 
-			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
-			Expect(err).To(BeNil())
-
-			err = tb.DeleteBuild(BUILD + tb.Namespace)
-			Expect(err).To(BeNil())
-
-			br, err := tb.GetBRTillNotOwner(BUILDRUN+tb.Namespace, buildObject.Name)
+			// wait for the BuildRun to not have an owner anymore
+			br, err = tb.GetBRTillNotOwner(BUILDRUN+tb.Namespace, buildObject.Name)
 			Expect(err).To(BeNil())
 			Expect(ownerReferenceNames(br.OwnerReferences)).ShouldNot(ContainElement(buildObject.Name))
 
+			// delete the Build
+			err = tb.DeleteBuild(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			// verify that the BuildRun continues to exist
+			Consistently(func() error {
+				_, err := tb.GetBR(BUILDRUN + tb.Namespace)
+				return err
+			}).WithTimeout(5 + time.Second).WithPolling(1 * time.Second).ShouldNot(HaveOccurred())
 		})
 
 		It("does delete the buildrun after several modifications of the annotation", func() {
