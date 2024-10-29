@@ -69,7 +69,7 @@ jobs:
           # oldest LTS that exists at the time of our planned next release
           - v0.53.5
           # newest LTS that exists at the time of our planned next release
-          - v0.62.4 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v0.65.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -149,7 +149,7 @@ jobs:
           # oldest LTS that exists at the time of our planned next release
           - v0.53.5
           # newest LTS that exists at the time of our planned next release
-          - v0.62.4 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v0.65.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
