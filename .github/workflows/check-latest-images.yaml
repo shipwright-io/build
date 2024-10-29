@@ -32,7 +32,17 @@ jobs:
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
         with:
+          # Branch details:
+          branch: ${{ matrix.image }}
+          delete-branch: true
+
+          # Commit details
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           commit-message: Bump ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}
+          sign-commits: true
+          signoff: true
+
+          # PR details
           title: Bump ${{ matrix.image }} from ${{ steps.image-diff.outputs.FROM }} to ${{ steps.image-diff.outputs.TO }}
           body: |
             # Changes
@@ -51,5 +61,3 @@ jobs:
             NONE
             ```
           labels: kind/dependency-change
-          branch: ${{ matrix.image }}
-          delete-branch: true
