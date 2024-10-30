@@ -1,7 +1,6 @@
 module github.com/shipwright-io/build
 
-go 1.22
-toolchain go1.22.5
+go 1.22.0
 
 require (
 	github.com/docker/cli v27.3.1+incompatible
