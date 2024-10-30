@@ -1,0 +1,35 @@
+---
+# This workflow downloads the latest release and checks it for OS and Go vulnerabilities.
+# An issue is opened with a summary    
+name: Report release vulnerabilities
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch: {}
+jobs:
+  report-vulnerabilities:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          cache: true
+          check-latest: true
+      - name: Install Retry
+        run: curl --silent --location https://raw.githubusercontent.com/homeport/retry/main/hack/download.sh | bash
+      - name: Install Trivy
+        run: make install-trivy
+      - name: Update Trivy database
+        env:
+          TRIVY_USERNAME: ${{ github.repository_owner }}
+          TRIVY_PASSWORD: ${{ github.token }}
+        run: retry trivy image --download-db-only
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Run vulnerability check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./.github/report-release-vulnerabilities.sh
