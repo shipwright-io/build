@@ -18,6 +18,7 @@ import (
 
 	"github.com/shipwright-io/build/pkg/bundle"
 	"github.com/shipwright-io/build/pkg/image"
+	"github.com/shipwright-io/build/pkg/util"
 )
 
 type settings struct {
@@ -28,6 +29,7 @@ type settings struct {
 	secretPath                string
 	resultFileImageDigest     string
 	resultFileSourceTimestamp string
+	showListing               bool
 }
 
 var flagValues settings
@@ -44,6 +46,7 @@ func init() {
 
 	pflag.StringVar(&flagValues.secretPath, "secret-path", "", "A directory that contains access credentials (optional)")
 	pflag.BoolVar(&flagValues.prune, "prune", false, "Delete bundle image from registry after it was pulled")
+	pflag.BoolVar(&flagValues.showListing, "show-listing", false, "Print file listing of files unpacked from the bundle")
 }
 
 func main() {
@@ -56,6 +59,10 @@ func main() {
 func Do(ctx context.Context) error {
 	flagValues = settings{}
 	pflag.Parse()
+
+	if val, ok := os.LookupEnv("BUNDLE_SHOW_LISTING"); ok {
+		flagValues.showListing, _ = strconv.ParseBool(val)
+	}
 
 	if flagValues.help {
 		pflag.Usage()
@@ -96,6 +103,10 @@ func Do(ctx context.Context) error {
 	}
 
 	log.Printf("Image content was extracted to %s\n", flagValues.target)
+	if flagValues.showListing {
+		// ignore any errors when walking through the file system, the listing is only for informational purposes
+		_ = util.ListFiles(log.Writer(), flagValues.target)
+	}
 
 	digest, err := img.Digest()
 	if err != nil {
