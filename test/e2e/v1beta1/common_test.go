@@ -136,14 +136,13 @@ func amendBuild(identifier string, b *buildv1beta1.Build) {
 
 // retrieveBuildAndBuildRun will retrieve the build and buildRun
 func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1beta1.Build, *buildv1beta1.BuildRun, error) {
-	var build *buildv1beta1.Build
-
 	buildrun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get BuildRun %q: %s", buildRunName, err)
 		return nil, nil, err
 	}
 
+	build := &buildv1beta1.Build{}
 	if err := resources.GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, buildrun, build); err != nil {
 		Logf("Failed to get Build from BuildRun %s: %s", buildRunName, err)
 		return nil, buildrun, err
