@@ -404,7 +404,7 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 		})
 	})
 
-	Context("vulnerability scanning", func() {
+	Context("Vulnerability Scanning", func() {
 		directory := path.Join("..", "..", "test", "data", "images", "vuln-image-in-oci")
 
 		It("should run vulnerability scanning if it is enabled and output vulnerabilities equal to the limit defined", func() {
