@@ -13,11 +13,13 @@ set -eu
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # kind version
-KIND_VERSION="${KIND_VERSION:-v0.22.0}"
+KIND_VERSION="${KIND_VERSION:-v0.24.0}"
 
 if ! hash kind > /dev/null 2>&1 ; then
     echo "# Installing KinD..."
     go install "sigs.k8s.io/kind@${KIND_VERSION}"
+    readonly PATH_TO_KIND="$(go env GOPATH)/bin"
+    export PATH="$PATH:$PATH_TO_KIND"
 fi
 
 # print kind version
