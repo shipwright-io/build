@@ -18,7 +18,8 @@ KIND_VERSION="${KIND_VERSION:-v0.24.0}"
 if ! hash kind > /dev/null 2>&1 ; then
     echo "# Installing KinD..."
     go install "sigs.k8s.io/kind@${KIND_VERSION}"
-    export PATH=$PATH:$(go env GOPATH)/bin
+    readonly PATH_TO_KIND="$(go env GOPATH)/bin"
+    export PATH="$PATH:$PATH_TO_KIND"
 fi
 
 # print kind version
