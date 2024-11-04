@@ -21,13 +21,28 @@ import (
 
 // ListFiles prints all files in a given directory to the provided writer
 func ListFiles(w io.Writer, dir string) error {
+	var totalBytes int64
+	var totalFiles int
+
 	t := table.NewWriter()
-	defer t.Render()
+	defer func() {
+		t.AppendSeparator()
+		t.AppendRow(
+			table.Row{
+				"", "", "", "",
+				humanReadableSize(totalBytes),
+				fmt.Sprintf("%d files", totalFiles),
+			},
+		)
+
+		t.Render()
+	}()
 
 	t.SetOutputMirror(w)
 	t.SetColumnConfigs([]table.ColumnConfig{{Number: 5, Align: text.AlignRight}})
 	t.Style().Options.DrawBorder = false
 	t.Style().Options.SeparateColumns = false
+	t.Style().Box.MiddleHorizontal = "─"
 
 	return filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -53,12 +68,16 @@ func ListFiles(w io.Writer, dir string) error {
 			nlink = strconv.FormatUint(uint64(stat.Nlink), 10)
 		}
 
+		var size = info.Size()
+		totalBytes += size
+		totalFiles++
+
 		t.AppendRow(table.Row{
 			filemode(info),
 			nlink,
 			user,
 			group,
-			humanReadableSize(info.Size()),
+			humanReadableSize(size),
 			path,
 		})
 
