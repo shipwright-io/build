@@ -67,7 +67,7 @@ jobs:
           - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
-          - v0.53.5
+          - v0.56.8
           # newest LTS that exists at the time of our planned next release
           - v0.65.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
@@ -147,7 +147,7 @@ jobs:
           - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
-          - v0.53.5
+          - v0.56.8
           # newest LTS that exists at the time of our planned next release
           - v0.65.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
