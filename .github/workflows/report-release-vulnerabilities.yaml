@@ -18,6 +18,8 @@ jobs:
           go-version: '1.22.x'
           cache: true
           check-latest: true
+      - name: Install crane
+        run: curl --location --silent "https://github.com/google/go-containerregistry/releases/download/$(curl -s https://api.github.com/repos/google/go-containerregistry/releases/latest | jq -r '.tag_name')/go-containerregistry_$(uname -s)_$(uname -m | sed -e 's/aarch64/arm64/').tar.gz" | sudo tar -xzf - -C /usr/local/bin crane
       - name: Install Retry
         run: curl --silent --location https://raw.githubusercontent.com/homeport/retry/main/hack/download.sh | bash
       - name: Install Trivy
