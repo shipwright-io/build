@@ -165,7 +165,15 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 	}
 
 	if build != nil {
-		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, *build.Status.Registered, *build.Status.Reason)
+		registered := "nil"
+		if build.Status.Registered != nil {
+			registered = string(*build.Status.Registered)
+		}
+		reason := "nil"
+		if build.Status.Reason != nil {
+			reason = string(*build.Status.Reason)
+		}
+		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, registered, reason)
 		if buildJSON, err := json.Marshal(build); err == nil {
 			Logf("The full Build: %s", string(buildJSON))
 		}
@@ -255,7 +263,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, build *buildv1alpha1.Build) error {
 	// Option #1: BuildRef is specified
 	// An actual Build resource is specified by name and needs to be looked up in the cluster.
-	if buildRun.Spec.BuildRef.Name != "" {
+	if buildRun.Spec.BuildRef != nil && buildRun.Spec.BuildRef.Name != "" {
 		err := client.Get(ctx, types.NamespacedName{Name: buildRun.Spec.BuildName(), Namespace: buildRun.Namespace}, build)
 		if apierrors.IsNotFound(err) {
 			// stop reconciling and mark the BuildRun as Failed

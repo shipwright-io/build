@@ -161,7 +161,15 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 	}
 
 	if build != nil {
-		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, *build.Status.Registered, *build.Status.Reason)
+		registered := "nil"
+		if build.Status.Registered != nil {
+			registered = string(*build.Status.Registered)
+		}
+		reason := "nil"
+		if build.Status.Reason != nil {
+			reason = string(*build.Status.Reason)
+		}
+		Logf("The status of Build %s: registered=%s, reason=%s", build.Name, registered, reason)
 		if buildJSON, err := json.Marshal(build); err == nil {
 			Logf("The full Build: %s", string(buildJSON))
 		}
