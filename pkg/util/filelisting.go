@@ -19,21 +19,34 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 )
 
+type details struct {
+	name  string
+	count int
+	size  int64
+}
+
 // ListFiles prints all files in a given directory to the provided writer
 func ListFiles(w io.Writer, dir string) error {
 	var totalBytes int64
 	var totalFiles int
+	var footerDetails = map[string]details{}
 
 	t := table.NewWriter()
 	defer func() {
 		t.AppendSeparator()
-		t.AppendRow(
-			table.Row{
+		for _, specialDir := range footerDetails {
+			t.AppendRow(table.Row{
 				"", "", "", "",
-				humanReadableSize(totalBytes),
-				fmt.Sprintf("%d files", totalFiles),
-			},
-		)
+				humanReadableSize(specialDir.size),
+				fmt.Sprintf("%d files in %s", specialDir.count, specialDir.name),
+			})
+		}
+
+		t.AppendRow(table.Row{
+			"", "", "", "",
+			humanReadableSize(totalBytes),
+			fmt.Sprintf("%d files in total", totalFiles),
+		})
 
 		t.Render()
 	}()
@@ -60,6 +73,24 @@ func ListFiles(w io.Writer, dir string) error {
 			path = l
 		}
 
+		// update the total count and size
+		totalBytes += info.Size()
+		totalFiles++
+
+		// special handling for the .git directory, which would otherwise
+		// mostly clutter the output with potentially useless information
+		if strings.HasPrefix(path, ".git/") || path == ".git" {
+			dotGitDetails, ok := footerDetails[".git"]
+			if !ok {
+				dotGitDetails = details{name: ".git"}
+			}
+
+			dotGitDetails.size += info.Size()
+			dotGitDetails.count++
+			footerDetails[".git"] = dotGitDetails
+			return nil
+		}
+
 		// if possible, try to obtain nlink count and user/group details
 		var nlink, user, group string = "?", "?", "?"
 		if stat, ok := info.Sys().(*syscall.Stat_t); ok {
@@ -68,16 +99,12 @@ func ListFiles(w io.Writer, dir string) error {
 			nlink = strconv.FormatUint(uint64(stat.Nlink), 10)
 		}
 
-		var size = info.Size()
-		totalBytes += size
-		totalFiles++
-
 		t.AppendRow(table.Row{
 			filemode(info),
 			nlink,
 			user,
 			group,
-			humanReadableSize(size),
+			humanReadableSize(info.Size()),
 			path,
 		})
 
