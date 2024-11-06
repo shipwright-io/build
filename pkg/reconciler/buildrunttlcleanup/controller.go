@@ -95,47 +95,42 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		return err
 	}
 
-	predBuildRun := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			// Reconcile if TTL values are set
-			o := e.Object.(*buildv1beta1.BuildRun)
-
+	predBuildRun := predicate.TypedFuncs[*buildv1beta1.BuildRun]{
+		CreateFunc: func(e event.TypedCreateEvent[*buildv1beta1.BuildRun]) bool {
 			// ignore a running BuildRun
-			condition := o.Status.GetCondition(buildv1beta1.Succeeded)
+			condition := e.Object.Status.GetCondition(buildv1beta1.Succeeded)
 			if condition == nil || condition.Status == corev1.ConditionUnknown {
 				return false
 			}
 
-			return reconcileCompletedBuildRun(condition, o)
+			return reconcileCompletedBuildRun(condition, e.Object)
 		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.BuildRun]) bool {
 			// check if the updated object is completed
-			n := e.ObjectNew.(*buildv1beta1.BuildRun)
-			newCondition := n.Status.GetCondition(buildv1beta1.Succeeded)
+			newCondition := e.ObjectNew.Status.GetCondition(buildv1beta1.Succeeded)
 			if newCondition == nil || newCondition.Status == corev1.ConditionUnknown {
 				return false
 			}
 
-			o := e.ObjectOld.(*buildv1beta1.BuildRun)
-			oldCondition := o.Status.GetCondition(buildv1beta1.Succeeded)
+			oldCondition := e.ObjectOld.Status.GetCondition(buildv1beta1.Succeeded)
 
 			// for objects that failed or just completed, check if a matching TTL is set
 			if oldCondition == nil || oldCondition.Status == corev1.ConditionUnknown {
-				return reconcileCompletedBuildRun(newCondition, n)
+				return reconcileCompletedBuildRun(newCondition, e.ObjectNew)
 			}
 
 			// for objects that were already complete, check if the TTL was lowered or introduced
 			if oldCondition != nil && oldCondition.Status != corev1.ConditionUnknown {
-				return reconcileAlreadyCompletedBuildRun(newCondition, n, o)
+				return reconcileAlreadyCompletedBuildRun(newCondition, e.ObjectNew, e.ObjectOld)
 			}
 
 			return false
 		},
-		DeleteFunc: func(_ event.DeleteEvent) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildv1beta1.BuildRun]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 	// Watch for changes to primary resource BuildRun
-	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}), &handler.EnqueueRequestForObject{}, predBuildRun)
+	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}, &handler.TypedEnqueueRequestForObject[*buildv1beta1.BuildRun]{}, predBuildRun))
 }

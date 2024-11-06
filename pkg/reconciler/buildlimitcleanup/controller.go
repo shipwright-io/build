@@ -11,7 +11,6 @@ import (
 	"github.com/shipwright-io/build/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -47,14 +46,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		return err
 	}
 
-	pred := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			o := e.Object.(*buildv1beta1.Build)
+	pred := predicate.TypedFuncs[*buildv1beta1.Build]{
+		CreateFunc: func(e event.TypedCreateEvent[*buildv1beta1.Build]) bool {
+			o := e.Object
 			return o.Spec.Retention != nil && (o.Spec.Retention.FailedLimit != nil || o.Spec.Retention.SucceededLimit != nil)
 		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			n := e.ObjectNew.(*buildv1beta1.Build)
-			o := e.ObjectOld.(*buildv1beta1.Build)
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.Build]) bool {
+			n := e.ObjectNew
+			o := e.ObjectOld
 
 			// Check to see if there are new retention parameters or whether the
 			// limit values have decreased
@@ -77,27 +76,27 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			}
 			return false
 		},
-		DeleteFunc: func(_ event.DeleteEvent) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildv1beta1.Build]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 
-	predBuildRun := predicate.Funcs{
-		CreateFunc: func(_ event.CreateEvent) bool {
+	predBuildRun := predicate.TypedFuncs[*buildv1beta1.BuildRun]{
+		CreateFunc: func(_ event.TypedCreateEvent[*buildv1beta1.BuildRun]) bool {
 			// Never reconcile in case of create buildrun event
 			return false
 		},
 		// Reconcile the build the related buildrun has just completed
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			n := e.ObjectNew.(*buildv1beta1.BuildRun)
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.BuildRun]) bool {
+			n := e.ObjectNew
 
 			// check if Buildrun is related to a build
 			if n.Spec.Build.Name == nil {
 				return false
 			}
 
-			o := e.ObjectOld.(*buildv1beta1.BuildRun)
+			o := e.ObjectOld
 			oldCondition := o.Status.GetCondition(buildv1beta1.Succeeded)
 			newCondition := n.Status.GetCondition(buildv1beta1.Succeeded)
 			if newCondition != nil {
@@ -108,21 +107,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			}
 			return false
 		},
-		DeleteFunc: func(_ event.DeleteEvent) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildv1beta1.BuildRun]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.Build{}), &handler.EnqueueRequestForObject{}, pred); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.Build{}, &handler.TypedEnqueueRequestForObject[*buildv1beta1.Build]{}, pred)); err != nil {
 		return err
 	}
 
 	// Watch for changes to resource BuildRun
-	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}), handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
-		buildRun := o.(*buildv1beta1.BuildRun)
-
+	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}, handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, buildRun *buildv1beta1.BuildRun) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -131,5 +128,5 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 				},
 			},
 		}
-	}), predBuildRun)
+	}), predBuildRun))
 }

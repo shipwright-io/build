@@ -33,7 +33,7 @@ const (
 	name      string = "name"
 )
 
-type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
+type setOwnerReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme, opts ...controllerutil.OwnerReferenceOption) error
 
 // Add creates a new Build Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -58,10 +58,10 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		return err
 	}
 
-	pred := predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			o := e.ObjectOld.(*build.Build)
-			n := e.ObjectNew.(*build.Build)
+	pred := predicate.TypedFuncs[*build.Build]{
+		UpdateFunc: func(e event.TypedUpdateEvent[*build.Build]) bool {
+			o := e.ObjectOld
+			n := e.ObjectNew
 
 			buildAtBuildDeletion := false
 
@@ -112,20 +112,20 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			// or BuildRunDeletion annotation does not change
 			return o.GetGeneration() != n.GetGeneration() || buildAtBuildDeletion
 		},
-		DeleteFunc: func(_ event.DeleteEvent) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*build.Build]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(source.Kind(mgr.GetCache(), &build.Build{}), &handler.EnqueueRequestForObject{}, pred); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &build.Build{}, &handler.TypedEnqueueRequestForObject[*build.Build]{}, pred)); err != nil {
 		return err
 	}
 
-	preSecret := predicate.Funcs{
+	preSecret := predicate.TypedFuncs[*corev1.Secret]{
 		// Only filter events where the secret have the Build specific annotation
-		CreateFunc: func(e event.CreateEvent) bool {
+		CreateFunc: func(e event.TypedCreateEvent[*corev1.Secret]) bool {
 			objectAnnotations := e.Object.GetAnnotations()
 			if _, ok := buildCredentialsAnnotationExist(objectAnnotations); ok {
 				return true
@@ -135,7 +135,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 
 		// Only filter events where the secret have the Build specific annotation,
 		// but only if the Build specific annotation changed
-		UpdateFunc: func(e event.UpdateEvent) bool {
+		UpdateFunc: func(e event.TypedUpdateEvent[*corev1.Secret]) bool {
 			oldAnnotations := e.ObjectOld.GetAnnotations()
 			newAnnotations := e.ObjectNew.GetAnnotations()
 
@@ -148,7 +148,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		},
 
 		// Only filter events where the secret have the Build specific annotation
-		DeleteFunc: func(e event.DeleteEvent) bool {
+		DeleteFunc: func(e event.TypedDeleteEvent[*corev1.Secret]) bool {
 			objectAnnotations := e.Object.GetAnnotations()
 			if _, ok := buildCredentialsAnnotationExist(objectAnnotations); ok {
 				return true
@@ -157,9 +157,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		},
 	}
 
-	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-		secret := o.(*corev1.Secret)
-
+	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}, handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, secret *corev1.Secret) []reconcile.Request {
 		buildList := &build.BuildList{}
 
 		// List all builds in the namespace of the current secret
@@ -201,7 +199,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			}
 		}
 		return reconcileList
-	}), preSecret)
+	}), preSecret))
 }
 
 func buildCredentialsAnnotationExist(annotation map[string]string) (string, bool) {
