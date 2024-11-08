@@ -63,13 +63,13 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.28.13
+          - v1.29.8
           - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
           - v0.56.8
           # newest LTS that exists at the time of our planned next release
-          - v0.65.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v0.65.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -84,7 +84,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.7
         with:
-          version: v0.15.2
+          version: v0.17.1
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
@@ -92,7 +92,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.22.0
+          version: v0.24.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           wait: 120s
@@ -143,13 +143,13 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.28.13
+          - v1.29.8
           - v1.31.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
           - v0.56.8
           # newest LTS that exists at the time of our planned next release
-          - v0.65.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v0.65.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -178,7 +178,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.22.0
+          version: v0.24.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           config: test/kind/config.yaml
@@ -220,7 +220,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.7
         with:
-          version: v0.15.2
+          version: v0.17.1
       - name: Install Shipwright Build
         run: |
           make install-controller-kind

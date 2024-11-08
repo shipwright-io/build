@@ -946,7 +946,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				statusWriter.UpdateCalls(statusCall)
 
 				reconciler = buildrunctl.NewReconciler(config.NewDefaultConfig(), manager,
-					func(owner, object metav1.Object, scheme *runtime.Scheme) error {
+					func(owner, object metav1.Object, scheme *runtime.Scheme, _ ...controllerutil.OwnerReferenceOption) error {
 						return fmt.Errorf("foobar error")
 					})
 

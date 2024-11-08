@@ -15,16 +15,16 @@ package mapper
 
 import (
 	"fmt"
-	"io/ioutil"
+	"log/slog"
+	"os"
 	"regexp"
 	"sync"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/promslog"
 	"gopkg.in/yaml.v2"
 
-	"github.com/prometheus/statsd_exporter/pkg/level"
 	"github.com/prometheus/statsd_exporter/pkg/mapper/fsm"
 )
 
@@ -43,7 +43,7 @@ var (
 
 type MetricMapper struct {
 	Registerer prometheus.Registerer
-	Defaults   mapperConfigDefaults `yaml:"defaults"`
+	Defaults   MapperConfigDefaults `yaml:"defaults"`
 	Mappings   []MetricMapping      `yaml:"mappings"`
 	FSM        *fsm.FSM
 	doFSM      bool
@@ -53,26 +53,28 @@ type MetricMapper struct {
 
 	MappingsCount prometheus.Gauge
 
-	Logger log.Logger
+	Logger *slog.Logger
 }
 
 type SummaryOptions struct {
-	Quantiles  []metricObjective `yaml:"quantiles"`
+	Quantiles  []MetricObjective `yaml:"quantiles"`
 	MaxAge     time.Duration     `yaml:"max_age"`
 	AgeBuckets uint32            `yaml:"age_buckets"`
 	BufCap     uint32            `yaml:"buf_cap"`
 }
 
 type HistogramOptions struct {
-	Buckets []float64 `yaml:"buckets"`
+	Buckets                     []float64 `yaml:"buckets"`
+	NativeHistogramBucketFactor float64   `yaml:"native_histogram_bucket_factor"`
+	NativeHistogramMaxBuckets   uint32    `yaml:"native_histogram_max_buckets"`
 }
 
-type metricObjective struct {
+type MetricObjective struct {
 	Quantile float64 `yaml:"quantile"`
 	Error    float64 `yaml:"error"`
 }
 
-var defaultQuantiles = []metricObjective{
+var defaultQuantiles = []MetricObjective{
 	{Quantile: 0.5, Error: 0.05},
 	{Quantile: 0.9, Error: 0.01},
 	{Quantile: 0.99, Error: 0.001},
@@ -87,6 +89,12 @@ func (m *MetricMapper) InitFromYAMLString(fileContents string) error {
 
 	if len(n.Defaults.HistogramOptions.Buckets) == 0 {
 		n.Defaults.HistogramOptions.Buckets = prometheus.DefBuckets
+	}
+	if n.Defaults.HistogramOptions.NativeHistogramBucketFactor == 0 {
+		n.Defaults.HistogramOptions.NativeHistogramBucketFactor = 1.1
+	}
+	if n.Defaults.HistogramOptions.NativeHistogramMaxBuckets <= 0 {
+		n.Defaults.HistogramOptions.NativeHistogramMaxBuckets = 256
 	}
 
 	if len(n.Defaults.SummaryOptions.Quantiles) == 0 {
@@ -166,12 +174,12 @@ func (m *MetricMapper) InitFromYAMLString(fileContents string) error {
 
 		if currentMapping.LegacyQuantiles != nil &&
 			(currentMapping.SummaryOptions == nil || currentMapping.SummaryOptions.Quantiles != nil) {
-			level.Warn(m.Logger).Log("msg", "using the top level quantiles is deprecated.  Please use quantiles in the summary_options hierarchy")
+			m.Logger.Warn("using the top level quantiles is deprecated.  Please use quantiles in the summary_options hierarchy")
 		}
 
 		if currentMapping.LegacyBuckets != nil &&
 			(currentMapping.HistogramOptions == nil || currentMapping.HistogramOptions.Buckets != nil) {
-			level.Warn(m.Logger).Log("msg", "using the top level buckets is deprecated.  Please use buckets in the histogram_options hierarchy")
+			m.Logger.Warn("using the top level buckets is deprecated.  Please use buckets in the histogram_options hierarchy")
 		}
 
 		if currentMapping.SummaryOptions != nil &&
@@ -193,10 +201,10 @@ func (m *MetricMapper) InitFromYAMLString(fileContents string) error {
 			if currentMapping.HistogramOptions == nil {
 				currentMapping.HistogramOptions = &HistogramOptions{}
 			}
-			if currentMapping.LegacyBuckets != nil && len(currentMapping.LegacyBuckets) != 0 {
+			if len(currentMapping.LegacyBuckets) != 0 {
 				currentMapping.HistogramOptions.Buckets = currentMapping.LegacyBuckets
 			}
-			if currentMapping.HistogramOptions.Buckets == nil || len(currentMapping.HistogramOptions.Buckets) == 0 {
+			if len(currentMapping.HistogramOptions.Buckets) == 0 {
 				currentMapping.HistogramOptions.Buckets = n.Defaults.HistogramOptions.Buckets
 			}
 		}
@@ -208,10 +216,10 @@ func (m *MetricMapper) InitFromYAMLString(fileContents string) error {
 			if currentMapping.SummaryOptions == nil {
 				currentMapping.SummaryOptions = &SummaryOptions{}
 			}
-			if currentMapping.LegacyQuantiles != nil && len(currentMapping.LegacyQuantiles) != 0 {
+			if len(currentMapping.LegacyQuantiles) != 0 {
 				currentMapping.SummaryOptions.Quantiles = currentMapping.LegacyQuantiles
 			}
-			if currentMapping.SummaryOptions.Quantiles == nil || len(currentMapping.SummaryOptions.Quantiles) == 0 {
+			if len(currentMapping.SummaryOptions.Quantiles) == 0 {
 				currentMapping.SummaryOptions.Quantiles = n.Defaults.SummaryOptions.Quantiles
 			}
 			if currentMapping.SummaryOptions.MaxAge == 0 {
@@ -232,6 +240,10 @@ func (m *MetricMapper) InitFromYAMLString(fileContents string) error {
 
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+
+	if m.Logger == nil {
+		m.Logger = promslog.NewNopLogger()
+	}
 
 	m.Defaults = n.Defaults
 	m.Mappings = n.Mappings
@@ -259,15 +271,11 @@ func (m *MetricMapper) InitFromYAMLString(fileContents string) error {
 		m.MappingsCount.Set(float64(len(n.Mappings)))
 	}
 
-	if m.Logger == nil {
-		m.Logger = log.NewNopLogger()
-	}
-
 	return nil
 }
 
 func (m *MetricMapper) InitFromFile(fileName string) error {
-	mappingStr, err := ioutil.ReadFile(fileName)
+	mappingStr, err := os.ReadFile(fileName)
 	if err != nil {
 		return err
 	}
