@@ -69,11 +69,11 @@ func isReadOnlyVolume(strategyVolume *buildv1beta1.BuildStrategyVolume) bool {
 // MergeBuildVolumes merges Build Volumes from one list into the other. It only allows to merge those that have property
 // Overridable set to true. In case it is empty or false, it is not allowed to be overridden, so Volume cannot be merged
 // Merging in this context means copying the VolumeSource from one object to the other.
-func MergeBuildVolumes(into []buildv1beta1.BuildStrategyVolume, new []buildv1beta1.BuildVolume) ([]buildv1beta1.BuildStrategyVolume, error) {
-	if len(new) == 0 && len(into) == 0 {
+func MergeBuildVolumes(into []buildv1beta1.BuildStrategyVolume, from []buildv1beta1.BuildVolume) ([]buildv1beta1.BuildStrategyVolume, error) {
+	if len(from) == 0 && len(into) == 0 {
 		return []buildv1beta1.BuildStrategyVolume{}, nil
 	}
-	if len(new) == 0 {
+	if len(from) == 0 {
 		return into, nil
 	}
 
@@ -87,7 +87,7 @@ func MergeBuildVolumes(into []buildv1beta1.BuildStrategyVolume, new []buildv1bet
 		mergeMap[vol.Name] = *vol.DeepCopy()
 	}
 
-	for _, merger := range new {
+	for _, merger := range from {
 		original, ok := mergeMap[merger.Name]
 		if !ok {
 			errors = append(errors, fmt.Errorf("Build Volume %q is not found in the BuildStrategy", merger.Name))
