@@ -13,6 +13,8 @@ jobs:
         include:
           - image: gcr.io/kaniko-project/executor
             latest-release-url: https://api.github.com/repos/GoogleContainerTools/kaniko/releases/latest
+          - image: moby/buildkit
+            latest-release-url: https://api.github.com/repos/moby/buildkit/releases/latest
           - image: quay.io/containers/buildah
             latest-release-url: https://quay.io/api/v1/repository/containers/buildah/tag/
     steps:

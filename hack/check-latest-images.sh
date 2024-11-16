@@ -36,7 +36,7 @@ function update() {
         echo "[INFO] Processing directory ${DIRECTORY}"
 
         # Search the image URL recursively and parse the current image tag
-        CURRENT_TAG="$( (grep --no-filename --recursive "${IMAGE}:" "${DIRECTORY}" || true) | head --lines=1 | sed -E "s#.*${IMAGE}:([v\.0-9]*).*?#\1#")"
+        CURRENT_TAG="$( (grep --no-filename --recursive "${IMAGE}:" "${DIRECTORY}" || true) | head --lines=1 | sed -E "s#.*${IMAGE}:([v\.0-9]*(-rootless)?).*?#\1#")"
         if [ "${CURRENT_TAG}" == "" ]; then
                 echo "[INFO] No image reference found"
                 return
@@ -49,6 +49,10 @@ function update() {
                 QUERY="[.tags[] | select(.name | endswith(\"immutable\") | not) ] | sort_by(.name) | reverse | .[0].name"
         fi
         LATEST_TAG="$(curl --silent --retry 3 "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")"
+
+        if [[ ${IMAGE} == *buildkit* ]]; then
+                LATEST_TAG="${LATEST_TAG}-rootless"
+        fi
 
         echo "[INFO] Determined latest tag ${LATEST_TAG}"
 
