@@ -41,6 +41,8 @@ spec:
         - --no-push
         - --tar-path
         - $(params.shp-output-directory)/image.tar
+        - --target
+        - $(params.target)
         # https://github.com/GoogleContainerTools/kaniko/issues/2164
         - --ignore-path
         - /product_uuid
@@ -52,10 +54,14 @@ spec:
           cpu: 250m
           memory: 65Mi
   parameters:
-  - name: dockerfile
-    description: The path to the Dockerfile to be used for building the image.
-    type: string
-    default: "Dockerfile"
+    - name: dockerfile
+      description: The path to the Dockerfile to be used for building the image.
+      type: string
+      default: "Dockerfile"
+    - name: target
+      description: "Sets the target stage to be built."
+      type: string
+      default: ""
   securityContext:
     runAsUser: 0
     runAsGroup: 0
