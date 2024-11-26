@@ -1,0 +1,23 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: kaniko-target-stage
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build-with-broken-final-stage
+  strategy:
+    name: kaniko
+    kind: ClusterBuildStrategy
+  paramValues:
+  - name: dockerfile
+    value: Dockerfile
+  - name: target
+    value: working-final
+  retention:
+    atBuildDeletion: false
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/advanced-dockerfile

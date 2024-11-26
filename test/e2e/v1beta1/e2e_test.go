@@ -116,6 +116,28 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a BuildAh build runs with a custom target stage", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildah-custom-target-stage")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/v1beta1/build_buildah_cr_target_stage.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_buildah_cr_target_stage.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
+		})
+	})
+
 	Context("when a heroku Buildpacks build is defined using a cluster strategy", func() {
 
 		BeforeEach(func() {
@@ -426,6 +448,28 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when a Kaniko build runs with a custom target stage", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("kaniko-custom-target-stage")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/v1beta1/build_kaniko_cr_target_stage.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_kaniko_cr_target_stage.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
+		})
+	})
+
 	Context("when a Buildkit build with a contextDir and a path to a Dockerfile is defined", func() {
 
 		BeforeEach(func() {
@@ -455,6 +499,28 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 					OS:           "linux",
 				},
 			})
+		})
+	})
+
+	Context("when a BuildKit build runs with a custom target stage", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("buildkit-custom-target-stage")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/v1beta1/build_buildkit_cr_target_stage.yaml",
+			)
+		})
+
+		It("successfully runs a build", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_buildkit_cr_target_stage.yaml")
+			Expect(err).ToNot(HaveOccurred())
+
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
 		})
 	})
 
