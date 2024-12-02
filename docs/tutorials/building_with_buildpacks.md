@@ -66,6 +66,7 @@ metadata:
   name: ruby-tutorial
 spec:
   source:
+    type: Git
     git:
       url: https://github.com/shipwright-io/sample-ruby
     contextDir: source-build
