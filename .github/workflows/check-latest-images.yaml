@@ -28,8 +28,8 @@ jobs:
           for directory in docs pkg samples test; do hack/check-latest-images.sh ${IMAGE} ${LATEST_RELEASE_URL} ${directory}; done
       - name: Check image change
         run: |
-          echo "FROM=$(git diff --unified=0 | grep '^[-].*image: .*/.*/.*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
-          echo "TO=$(git diff --unified=0 | grep '^[+].*image: .*/.*/.*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
+          echo "FROM=$(git diff --unified=0 | grep '^[-].*image: .*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
+          echo "TO=$(git diff --unified=0 | grep '^[+].*image: .*:' | head --lines=1 | cut --delimiter=':' --fields='3' | sed 's/[^[[:digit:].]//g')" >> $GITHUB_OUTPUT
         id: image-diff
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
