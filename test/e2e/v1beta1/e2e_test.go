@@ -15,6 +15,8 @@ import (
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	shpgit "github.com/shipwright-io/build/pkg/git"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
@@ -706,4 +708,54 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
+	Context("when tolerations are specified", func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("tolerations")
+
+			// create the build definition
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/v1beta1/build_buildah_tolerations_cr.yaml",
+			)
+
+			// Add a taint to both of the kind worker nodes
+			nodes, err := testBuild.GetNodes()
+			Expect(err).ToNot(HaveOccurred())
+			for _, node := range nodes.Items {
+				if node.Name == "kind-worker" || node.Name == "kind-worker2" {
+					taint := corev1.Taint{Key: "test-key", Value: "test-vaue", Effect: "NoSchedule"}
+					testBuild.AddNodeTaint(node.Name, &taint)
+				}
+			}
+		})
+
+		AfterEach(func() {
+			err := testBuild.RemoveNodeTaints("kind-worker")
+			Expect(err).ToNot(HaveOccurred())
+			err = testBuild.RemoveNodeTaints("kind-worker2")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("successfully runs a build when it tolerates the node taint", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_buildah_tolerations_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
+		})
+
+		It("fails to schedule when the build does not tolerate the node taint", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_buildah_tolerations_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			buildRun.Spec.Tolerations[0].Key = "untolerated"
+
+			validateBuildRunToFail(testBuild, buildRun)
+			buildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: buildRun.Name, Namespace: testBuild.Namespace})
+
+			Expect(buildRun.Status.FailureDetails.Message).To(Equal(shpgit.AuthPrompted.ToMessage()))
+			Expect(buildRun.Status.FailureDetails.Reason).To(Equal(shpgit.AuthPrompted.String()))
+		})
+	})
 })
