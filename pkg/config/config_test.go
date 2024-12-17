@@ -131,7 +131,10 @@ var _ = Describe("Config", func() {
 					Command: []string{
 						"/ko-app/git",
 					},
-					Env: []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}},
+					Env: []corev1.EnvVar{
+						{Name: "HOME", Value: "/shared-home"},
+						{Name: "GIT_SHOW_LISTING", Value: "false"},
+					},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: ptr.To(false),
 						Capabilities: &corev1.Capabilities{

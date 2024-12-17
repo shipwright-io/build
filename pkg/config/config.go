@@ -175,6 +175,10 @@ func NewDefaultConfig() *Config {
 					Name:  "HOME",
 					Value: "/shared-home",
 				},
+				{
+					Name:  "GIT_SHOW_LISTING",
+					Value: "false",
+				},
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
@@ -198,6 +202,10 @@ func NewDefaultConfig() *Config {
 				{
 					Name:  "HOME",
 					Value: "/shared-home",
+				},
+				{
+					Name:  "BUNDLE_SHOW_LISTING",
+					Value: "false",
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
