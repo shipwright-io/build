@@ -4,7 +4,7 @@
 name: Report release vulnerabilities
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '15 3 * * *' # 3:15 am UTC = 15 minutes after base image build
   workflow_dispatch: {}
 jobs:
   report-vulnerabilities:
@@ -20,8 +20,12 @@ jobs:
           check-latest: true
       - name: Install crane
         run: curl --location --silent "https://github.com/google/go-containerregistry/releases/download/$(curl -s https://api.github.com/repos/google/go-containerregistry/releases/latest | jq -r '.tag_name')/go-containerregistry_$(uname -s)_$(uname -m | sed -e 's/aarch64/arm64/').tar.gz" | sudo tar -xzf - -C /usr/local/bin crane
+      - name: Install dyff
+        run: curl --silent --location https://raw.githubusercontent.com/homeport/dyff/main/scripts/download-latest.sh | bash
       - name: Install Retry
-        run: curl --silent --location https://raw.githubusercontent.com/homeport/retry/main/hack/download.sh | bash
+        run: curl --location --silent  https://raw.githubusercontent.com/homeport/retry/main/hack/download.sh | bash
+      - name: Install semver
+        run: go install gitlab.com/usvc/utils/semver/cmd/semver@latest
       - name: Install Trivy
         run: make install-trivy
       - name: Update Trivy database
@@ -31,7 +35,27 @@ jobs:
         run: retry trivy image --download-db-only
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
-      - name: Run vulnerability check
+      - name: Download latest release
+        id: download-latest-release
         env:
           GH_TOKEN: ${{ github.token }}
+        run: ./.github/download-latest-release.sh
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          path: /tmp/release-branch
+          ref: ${{ steps.download-latest-release.release-branch }}
+      - name: Install Go version of latest release
+        uses: actions/setup-go@v5
+        with:
+          go-version: "${{ steps.download-latest-release.go-version }}.x"
+          cache: true
+          check-latest: true
+      - name: Report vulnerabilities
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BRANCH: ${{ steps.download-latest-release.release-branch }}
+          RELEASE_TAG: ${{ steps.download-latest-release.release-tag }}
+          RELEASE_YAML: ${{ steps.download-latest-release.release-yaml }}
+          REPOSITORY: /tmp/release-branch
         run: ./.github/report-release-vulnerabilities.sh
