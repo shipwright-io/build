@@ -6,6 +6,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-git/go-git/v5/config"
@@ -45,7 +46,7 @@ func ValidateGitURLExists(ctx context.Context, urlPath string) error {
 			// path doesn't exist, func will return `authentication required`,
 			// this is maybe misleading. So convert this error message to:
 			// `remote repository unreachable`
-			if err == transport.ErrAuthenticationRequired {
+			if errors.Is(err, transport.ErrAuthenticationRequired) {
 				return fmt.Errorf("remote repository unreachable")
 			}
 
