@@ -40,7 +40,7 @@ func ExtractHostnamePort(url string) (string, int, error) {
 			port = 443
 
 		default:
-			return "", 0, fmt.Errorf("Unknown protocol: %s", scheme)
+			return "", 0, fmt.Errorf("unknown protocol: %s", scheme)
 		}
 	}
 

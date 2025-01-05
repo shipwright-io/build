@@ -73,7 +73,7 @@ func Do(ctx context.Context) error {
 		return fmt.Errorf("mandatory flag --image is not set")
 	}
 
-	// sanity-check the endpoint, if hostname extraction fails, ignore that failure
+	// check the endpoint, if hostname extraction fails, ignore that failure
 	if hostname, port, err := image.ExtractHostnamePort(flagValues.image); err == nil {
 		if !util.TestConnection(hostname, port, 9) {
 			log.Printf("Warning: a connection test to %s:%d failed. The operation will likely fail.\n", hostname, port)
