@@ -164,6 +164,13 @@ func runGitClone(ctx context.Context) error {
 		return &ExitError{Code: 101, Message: "the 'target' argument must not be empty"}
 	}
 
+	// check the endpoint, if hostname extraction fails, ignore that failure
+	if hostname, port, err := shpgit.ExtractHostnamePort(flagValues.url); err == nil {
+		if !util.TestConnection(hostname, port, 9) {
+			log.Printf("Warning: a connection test to %s:%d failed. The operation will likely fail.\n", hostname, port)
+		}
+	}
+
 	if err := clone(ctx); err != nil {
 		return err
 	}

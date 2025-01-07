@@ -24,6 +24,32 @@ const (
 	gitProtocol   = "ssh"
 )
 
+// ExtractHostnamePort extracts the hostname and port of the provided Git URL
+func ExtractHostnamePort(url string) (string, int, error) {
+	endpoint, err := transport.NewEndpoint(url)
+	if err != nil {
+		return "", 0, err
+	}
+
+	port := endpoint.Port
+
+	if port == 0 {
+		switch endpoint.Protocol {
+		case httpProtocol:
+			port = 80
+		case httpsProtocol:
+			port = 443
+		case gitProtocol:
+			port = 22
+
+		default:
+			return "", 0, fmt.Errorf("unknown protocol: %s", endpoint.Protocol)
+		}
+	}
+
+	return endpoint.Host, port, nil
+}
+
 // ValidateGitURLExists validate if a source URL exists or not
 // Note: We have an upcoming PR for the Build Status, where we
 // intend to define a single Status.Reason in the form of 'remoteRepositoryUnreachable',
