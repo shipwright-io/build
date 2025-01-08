@@ -255,6 +255,18 @@ spec:
       value: "buildrun-test-value"
 `
 
+// MinimalBuildRunWithSchedulerName defines a minimal BuildRun
+// with a reference to a not existing Build,
+// and a SchedulerName specified
+const MinimalBuildRunWithSchedulerName = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    name: foobar
+  schedulerName: "buildrun-test-schedulername"
+`
+
 // MinimalBuildRunWithVulnerabilityScan defines a BuildRun with
 // an override for the Build Output
 const MinimalBuildRunWithVulnerabilityScan = `
