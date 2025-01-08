@@ -107,10 +107,10 @@ for image in "${images[@]}"; do
 done
 
 # check if issue exists, if yes, update description, otherwise create one, or close it if vulnerabilities are gone
+assignees="$(dyff json OWNERS | jq -r '.approvers | join(",")')"
 issues="$(gh issue list --label release-vulnerabilities --json number)"
 
 if [ "$(jq length <<<"${issues}")" == "0" ]; then
-  assignees="$(dyff json OWNERS | jq -r '.approvers | join(",")')"
 
   if [ "${hasVulnerabilities}" == "true" ]; then
     # create new issue
@@ -130,7 +130,7 @@ else
     # update issue
     echo "[INFO] Updating existing issue ${issueNumber}"
     gh issue edit "${issueNumber}" \
-      --assignee "${assignees}" \
+      --add-assignee "${assignees}" \
       --body-file /tmp/report.md
   else
     gh issue close --reason "No vulnerabilities found in the latest release ${RELEASE_TAG}"
