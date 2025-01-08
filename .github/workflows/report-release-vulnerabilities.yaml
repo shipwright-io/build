@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: main
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -22,12 +24,17 @@ jobs:
         run: curl --location --silent "https://github.com/google/go-containerregistry/releases/download/$(curl -s https://api.github.com/repos/google/go-containerregistry/releases/latest | jq -r '.tag_name')/go-containerregistry_$(uname -s)_$(uname -m | sed -e 's/aarch64/arm64/').tar.gz" | sudo tar -xzf - -C /usr/local/bin crane
       - name: Install dyff
         run: curl --silent --location https://raw.githubusercontent.com/homeport/dyff/main/scripts/download-latest.sh | bash
+      - name: Install Ko
+        uses: ko-build/setup-ko@v0.7
+        with:
+          version: v0.17.1
       - name: Install Retry
         run: curl --location --silent  https://raw.githubusercontent.com/homeport/retry/main/hack/download.sh | bash
       - name: Install semver
         run: go install gitlab.com/usvc/utils/semver/cmd/semver@latest
       - name: Install Trivy
         run: make install-trivy
+        working-directory: ${{ github.workspace }}/main
       - name: Update Trivy database
         env:
           TRIVY_USERNAME: ${{ github.repository_owner }}
@@ -40,22 +47,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./.github/download-latest-release.sh
+        working-directory: ${{ github.workspace }}/main
       - name: Checkout release branch
         uses: actions/checkout@v4
         with:
-          path: /tmp/release-branch
-          ref: ${{ steps.download-latest-release.release-branch }}
+          path: release-branch
+          ref: ${{ steps.download-latest-release.outputs.release-branch }}
       - name: Install Go version of latest release
         uses: actions/setup-go@v5
         with:
-          go-version: "${{ steps.download-latest-release.go-version }}.x"
+          go-version: "${{ steps.download-latest-release.outputs.go-version }}.x"
           cache: true
           check-latest: true
       - name: Report vulnerabilities
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_BRANCH: ${{ steps.download-latest-release.release-branch }}
-          RELEASE_TAG: ${{ steps.download-latest-release.release-tag }}
-          RELEASE_YAML: ${{ steps.download-latest-release.release-yaml }}
-          REPOSITORY: /tmp/release-branch
+          RELEASE_BRANCH: ${{ steps.download-latest-release.outputs.release-branch }}
+          RELEASE_TAG: ${{ steps.download-latest-release.outputs.release-tag }}
+          RELEASE_YAML: ${{ steps.download-latest-release.outputs.release-yaml }}
+          REPOSITORY: ${{ github.workspace }}/release-branch
         run: ./.github/report-release-vulnerabilities.sh
+        working-directory: ${{ github.workspace }}/main
