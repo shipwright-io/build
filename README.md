@@ -214,8 +214,10 @@ Our sample build strategies are all functional on linux/amd64. Their support on 
 
 We host weekly meetings for users, contributors, maintainers and anyone interested in the project. The weekly meetings take place on Mondays at 1pm UTC.
 
-- Meeting [minutes](https://github.com/shipwright-io/community/issues?q=is%3Aissue+label%3Acommunity+label%3Ameeting)
-- Public calendar [invite](https://calendar.google.com/calendar/u/0/embed?src=shipwright-admin@lists.shipwright.io&ctz=America/New_York)
+- [Agenda](https://docs.google.com/document/d/10tDPl_t2-7NcxmI1Iy50dIGPIRIdIUh8v6qp1iH3wLc/edit?usp=sharing)
+- [Shipwright Public Calendar](https://zoom-lfx.platform.linuxfoundation.org/meetings/shipwright)
+
+_Note:_ To have a calendar invite, you can self-register via the Public Calendar meetings.
 
 ### Want to contribute
 
@@ -232,10 +234,10 @@ We are so excited to have you!
   [help wanted issues](https://github.com/shipwright-io/build/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 - Contact us:
   - Kubernetes Slack: [#shipwright](https://kubernetes.slack.com/messages/shipwright).
-  - Users can discuss help, feature requests, or potential bugs at [shipwright-users@lists.shipwright.io](https://lists.shipwright.io/archives/list/shipwright-users@lists.shipwright.io/).
-  Click [here](https://lists.shipwright.io/admin/lists/shipwright-users.lists.shipwright.io/) to join.
-  - Contributors can discuss active development topics at [shipwright-dev@lists.shipwright.io](https://lists.shipwright.io/archives/list/shipwright-dev@lists.shipwright.io/).
-  Click [here](https://lists.shipwright.io/admin/lists/shipwright-dev.lists.shipwright.io/) to join.
+  - Users can discuss help, feature requests, or potential bugs at [shipwright-users Mailing List](https://lists.cncf.io/g/shipwright-users/messages).
+  Click [here](https://lists.cncf.io/g/shipwright-users/join) to join.
+  - Contributors can discuss active development topics at [shipwright-dev Mailing List](https://lists.cncf.io/g/shipwright-dev/messages).
+  Click [here](https://lists.cncf.io/g/shipwright-dev/join) to join.
 
 ---
 
