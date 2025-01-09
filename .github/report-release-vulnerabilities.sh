@@ -148,10 +148,11 @@ if [ "${hasVulnerabilities}" == "true" ] && [ "${allVulnerabilitiesFixedByRebuil
   else
     echo "[INFO] Triggering build of release ${nextTag} for branch ${RELEASE_BRANCH}"
     gh workflow run release.yaml \
+      --ref "${RELEASE_BRANCH}" \
       --raw-field "git-ref=${RELEASE_BRANCH}" \
       --raw-field "tags=${RELEASE_TAG}" \
       --raw-field "release=${nextTag}"
 
-    gh issue comment "${issueNumber}" --body "Triggered a release build in branch ${RELEASE_BRANCH} for ${RELEASE_TAG}. Please check whether this succeeded. A maintainer must release this."
+    gh issue comment "${issueNumber}" --body "Triggered a release build in branch ${RELEASE_BRANCH} for ${nextTag}. Please check whether this succeeded. A maintainer must release this."
   fi
 fi
