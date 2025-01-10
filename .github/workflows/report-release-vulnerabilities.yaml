@@ -5,6 +5,10 @@ name: Report release vulnerabilities
 on:
   schedule:
     - cron: '0 4 * * *' # 4:00 am UTC = 1 hour after base image build
+  release:
+    types:
+      - edited
+      - published
   workflow_dispatch: {}
 jobs:
   report-vulnerabilities:

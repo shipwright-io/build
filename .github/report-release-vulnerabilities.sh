@@ -111,7 +111,6 @@ assignees="$(dyff json OWNERS | jq -r '.approvers | join(",")')"
 issues="$(gh issue list --label release-vulnerabilities --json number)"
 
 if [ "$(jq length <<<"${issues}")" == "0" ]; then
-
   if [ "${hasVulnerabilities}" == "true" ]; then
     # create new issue
     echo "[INFO] Creating new issue"
@@ -133,7 +132,9 @@ else
       --add-assignee "${assignees}" \
       --body-file /tmp/report.md
   else
-    gh issue close --reason "No vulnerabilities found in the latest release ${RELEASE_TAG}"
+    gh issue close "${issueNumber}" \
+      --comment  "No vulnerabilities found in the latest release ${RELEASE_TAG}" \
+      --reason completed
   fi
 fi
 
