@@ -29,7 +29,7 @@ jobs:
       - name: Install dyff
         run: curl --silent --location https://raw.githubusercontent.com/homeport/dyff/main/scripts/download-latest.sh | bash
       - name: Install Ko
-        uses: ko-build/setup-ko@v0.7
+        uses: ko-build/setup-ko@v0.8
         with:
           version: v0.17.1
       - name: Install Retry
