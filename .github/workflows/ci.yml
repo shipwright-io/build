@@ -82,7 +82,7 @@ jobs:
           cache: true
           check-latest: true
       - name: Install Ko
-        uses: ko-build/setup-ko@v0.7
+        uses: ko-build/setup-ko@v0.8
         with:
           version: v0.17.1
       - name: Install kubectl
@@ -218,7 +218,7 @@ jobs:
           kubectl apply -f test/data/registry.yaml
           kubectl -n registry rollout status deployment registry --timeout=1m
       - name: Install Ko
-        uses: ko-build/setup-ko@v0.7
+        uses: ko-build/setup-ko@v0.8
         with:
           version: v0.17.1
       - name: Install Shipwright Build
