@@ -151,18 +151,8 @@ jobs:
           # newest LTS that exists at the time of our planned next release
           - v0.65.5 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@fc881a613ad2a34aca9c9624518214ebc21dfc0c
-        with:
-          root-reserve-mb: 30720
-          swap-size-mb: 1024
-          remove-android: "true"
-          remove-codeql: "true"
-          remove-docker-images: "true"
-          remove-dotnet: "true"
-          remove-haskell: "true"
       - name: Check out code
         uses: actions/checkout@v4
       - name: Install Go
