@@ -118,21 +118,20 @@ if [ "$(jq length <<<"${issues}")" == "0" ]; then
       --assignee "${assignees}" \
       --label release-vulnerabilities \
       --title "Vulnerabilities found in latest release ${RELEASE_TAG}" \
-      --body-file /tmp/report.md
+      --body-file /tmp/report.md | tee /tmp/gh_issue
 
-    issues="$(gh issue list --label release-vulnerabilities --json number)"
-    issueNumber="$(jq '.[0].number' <<<"${issues}")"
+    issueIdentifier="$(</tmp/gh_issue)"
   fi
 else
-  issueNumber="$(jq '.[0].number' <<<"${issues}")"
+  issueIdentifier="$(jq '.[0].number' <<<"${issues}")"
   if [ "${hasVulnerabilities}" == "true" ]; then
     # update issue
-    echo "[INFO] Updating existing issue ${issueNumber}"
-    gh issue edit "${issueNumber}" \
+    echo "[INFO] Updating existing issue ${issueIdentifier}"
+    gh issue edit "${issueIdentifier}" \
       --add-assignee "${assignees}" \
       --body-file /tmp/report.md
   else
-    gh issue close "${issueNumber}" \
+    gh issue close "${issueIdentifier}" \
       --comment  "No vulnerabilities found in the latest release ${RELEASE_TAG}" \
       --reason completed
   fi
@@ -145,7 +144,7 @@ if [ "${hasVulnerabilities}" == "true" ] && [ "${allVulnerabilitiesFixedByRebuil
   # check if tag already exists
   if gh release view "${nextTag}" >/dev/null 2>&1; then
     echo "[INFO] There is already a new tag ${nextTag} which seemingly was not yet released by a maintainer"
-    gh issue comment "${issueNumber}" --body "All existing vulnerabilities in ${RELEASE_TAG} can be fixed by a rebuild, but such a rebuild seemingly already exists as ${nextTag}. A maintainer must release this."
+    gh issue comment "${issueIdentifier}" --body "All existing vulnerabilities in ${RELEASE_TAG} can be fixed by a rebuild, but such a rebuild seemingly already exists as ${nextTag}. A maintainer must release this."
   else
     echo "[INFO] Triggering build of release ${nextTag} for branch ${RELEASE_BRANCH}"
     gh workflow run release.yaml \
@@ -154,6 +153,6 @@ if [ "${hasVulnerabilities}" == "true" ] && [ "${allVulnerabilitiesFixedByRebuil
       --raw-field "tags=${RELEASE_TAG}" \
       --raw-field "release=${nextTag}"
 
-    gh issue comment "${issueNumber}" --body "Triggered a release build in branch ${RELEASE_BRANCH} for ${nextTag}. Please check whether this succeeded. A maintainer must release this."
+    gh issue comment "${issueIdentifier}" --body "Triggered a release build in branch ${RELEASE_BRANCH} for ${nextTag}. Please check whether this succeeded. A maintainer must release this."
   fi
 fi
