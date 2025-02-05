@@ -49,7 +49,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
   ```bash
   kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.14.3/release.yaml --server-side
   curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.14.3/hack/setup-webhook-cert.sh | bash
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.14.2/hack/storage-version-migration.sh | bash
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.14.3/hack/storage-version-migration.sh | bash
   ```
 
   To install the latest nightly release, run:
