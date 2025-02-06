@@ -60,21 +60,10 @@ jobs:
 
     - name: Draft release
       id: draft_release
-      # TODO: This action is no longer mainained. We should use a different action
-      # or the gh command line directly.
-      uses: actions/create-release@v1
-      with:
-        release_name: "Shipwright Build release ${{ inputs.release }}"
-        tag_name: ${{ inputs.release }}
-        body_path: Changes.md
-        draft: true
-        prerelease: true
-        # create-release assumes one of two things if commitish is not set
-        # 1. Release is from the "latest commit" on the repo's default branch.
-        # 2. Release is for an existing tag with the same name
-        commitish: ${{ inputs.git-ref }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${TAG} --title "Shipwright Build release ${TAG}" --notes-file Changes.md --draft --prerelease --target ${{ inputs.git-ref }}
 
     - name: Generate and upload release.yaml
       env:
