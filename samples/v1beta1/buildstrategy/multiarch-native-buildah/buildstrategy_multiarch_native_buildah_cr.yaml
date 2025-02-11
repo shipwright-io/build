@@ -157,8 +157,8 @@ spec:
           kube_version=$(curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
             "https:${KUBERNETES_PORT#tcp:}/version" | sed -n 's/^.*gitVersion.*"v\(.*\)\+".*$/\1/p' | cut -f1 -d'+')
           arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-          curl -L -o /usr/local/bin/kubectl \
-            "https://storage.googleapis.com/kubernetes-release/release/v${kube_version}/bin/linux/${arch}/kubectl"
+          curl --fail --location --output /usr/local/bin/kubectl \
+            "https://dl.k8s.io/release/v${kube_version}/bin/linux/${arch}/kubectl"
           chmod +x /usr/local/bin/kubectl
           task_run_pod=${HOSTNAME}
           task_run_name=${task_run_pod%-pod}
