@@ -317,8 +317,8 @@ github.com/inconshreveable/mousetrap
 # github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99
 ## explicit
 github.com/jbenet/go-context/io
-# github.com/jedib0t/go-pretty/v6 v6.6.5
-## explicit; go 1.17
+# github.com/jedib0t/go-pretty/v6 v6.6.6
+## explicit; go 1.18
 github.com/jedib0t/go-pretty/v6/table
 github.com/jedib0t/go-pretty/v6/text
 # github.com/josharian/intern v1.0.0
