@@ -28,17 +28,11 @@ func NewNodeSelector(build *build.Build) *NodeSelectorRef {
 // ValidatePath implements BuildPath interface and validates
 // that NodeSelector keys/values are valid labels
 func (b *NodeSelectorRef) ValidatePath(_ context.Context) error {
-	for key, value := range b.Build.Spec.NodeSelector {
-		if errs := validation.IsQualifiedName(key); len(errs) > 0 {
-			b.Build.Status.Reason = ptr.To(build.NodeSelectorNotValid)
-			b.Build.Status.Message = ptr.To(fmt.Sprintf("Node selector key not valid: %v", strings.Join(errs, ", ")))
-		}
-		if errs := validation.IsValidLabelValue(value); len(errs) > 0 {
-			b.Build.Status.Reason = ptr.To(build.NodeSelectorNotValid)
-			b.Build.Status.Message = ptr.To(fmt.Sprintf("Node selector value not valid: %v", strings.Join(errs, ", ")))
-		}
+	ok, reason, msg := BuildRunNodeSelector(b.Build.Spec.NodeSelector)
+	if !ok {
+		b.Build.Status.Reason = ptr.To(build.BuildReason(reason))
+		b.Build.Status.Message = ptr.To(msg)
 	}
-
 	return nil
 }
 

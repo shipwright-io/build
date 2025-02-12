@@ -240,6 +240,21 @@ spec:
     kubernetes.io/arch: amd64
 `
 
+// MinimalBuildRunWithNodeSelectorOverride defines a minimal BuildRun
+// with a build spec defined and a nodeSelector overriding the build spec
+const MinimalBuildRunWithNodeSelectorOverride = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    spec:
+      strategy:
+        kind: ClusterBuildStrategy
+        name: buildah
+  nodeSelector:
+    kubernetes.io/arch: amd64
+`
+
 // MinimalBuildRunWithToleration defines a minimal BuildRun
 // with a reference to a not existing Build,
 // and a Toleration specified
@@ -253,6 +268,49 @@ spec:
     - key: "buildrun-test-key"
       operator: "Equal"
       value: "buildrun-test-value"
+`
+
+// MinimalBuildRunWithTolerationsOverride defines a minimal BuildRun
+// with a build spec defined and a toleration overriding the build spec
+const MinimalBuildRunWithTolerationsOverride = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    spec:
+      strategy:
+        kind: ClusterBuildStrategy
+        name: buildah
+  tolerations:
+    - key: "buildrun-test-key"
+      operator: "Equal"
+      value: "buildrun-test-value"
+`
+
+// MinimalBuildRunWithSchedulerName defines a minimal BuildRun
+// with a reference to a not existing Build,
+// and a SchedulerName specified
+const MinimalBuildRunWithSchedulerName = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    name: foobar
+  schedulerName: "buildrun-test-schedulername"
+`
+
+// MinimalBuildRunWithSchedulerNameOverride defines a minimal BuildRun
+// with a build spec defined and a nodeSelector overriding the build spec
+const MinimalBuildRunWithSchedulerNameOverride = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    spec:
+      strategy:
+        kind: ClusterBuildStrategy
+        name: buildah
+  schedulerName: "buildrun-test-schedulername"
 `
 
 // MinimalBuildRunWithVulnerabilityScan defines a BuildRun with
