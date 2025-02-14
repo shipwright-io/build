@@ -24,11 +24,12 @@ const (
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// ClusterBuildStrategy is the Schema representing a strategy in the cluster scope to build images from source code.
+// +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:path=clusterbuildstrategies,scope=Cluster,shortName=cbs;cbss
+
+// ClusterBuildStrategy is the Schema representing a strategy in the cluster scope to build images from source code.
 type ClusterBuildStrategy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -38,6 +39,7 @@ type ClusterBuildStrategy struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // ClusterBuildStrategyList contains a list of ClusterBuildStrategy
 type ClusterBuildStrategyList struct {

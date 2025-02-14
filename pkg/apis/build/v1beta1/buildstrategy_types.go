@@ -23,11 +23,12 @@ const (
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// BuildStrategy is the Schema representing a strategy in the namespace scope to build images from source code.
+// +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:path=buildstrategies,scope=Namespaced,shortName=bs;bss
+
+// BuildStrategy is the Schema representing a strategy in the namespace scope to build images from source code.
 type BuildStrategy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -37,6 +38,7 @@ type BuildStrategy struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // BuildStrategyList contains a list of BuildStrategy
 type BuildStrategyList struct {
