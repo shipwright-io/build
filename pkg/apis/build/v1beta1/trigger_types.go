@@ -1,6 +1,7 @@
 // Copyright The Shipwright Contributors
 //
 // SPDX-License-Identifier: Apache-2.0
+
 package v1beta1
 
 // TriggerType set of TriggerWhen valid names.
