@@ -96,6 +96,7 @@ jobs:
         sed -i 's#https://github.com/shipwright-io/build/releases/download/'"$PREVIOUS_TAG"'/release.yaml#https://github.com/shipwright-io/build/releases/download/'"$NEW_TAG"'/release.yaml#g' README.md
         sed -i 's#https://github.com/shipwright-io/build/releases/download/'"$PREVIOUS_TAG"'/sample-strategies.yaml#https://github.com/shipwright-io/build/releases/download/'"$NEW_TAG"'/sample-strategies.yaml#g' README.md
         sed -i 's#https://raw.githubusercontent.com/shipwright-io/build/'"$PREVIOUS_TAG"'/hack/setup-webhook-cert.sh#https://raw.githubusercontent.com/shipwright-io/build/'"$NEW_TAG"'/hack/setup-webhook-cert.sh#g' README.md
+        sed -i 's#https://raw.githubusercontent.com/shipwright-io/build/'"$PREVIOUS_TAG"'/hack/storage-version-migration.sh#https://raw.githubusercontent.com/shipwright-io/build/'"$NEW_TAG"'/hack/storage-version-migration.sh#g' README.md
         sed -i '/Examples @ HEAD/a | ['"$NEW_TAG"'](https://github.com/shipwright-io/build/releases/tag/'"$NEW_TAG"')    | [Docs @ '"$NEW_TAG"'](https://github.com/shipwright-io/build/tree/'"$NEW_TAG"'/docs) | [Examples @ '"$NEW_TAG"'](https://github.com/shipwright-io/build/tree/'"$NEW_TAG"'/samples) |' README.md
 
     - name: Create Readme commits
