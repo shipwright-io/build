@@ -162,6 +162,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						validate.NewEnv(build),
 						validate.NewNodeSelector(build),
 						validate.NewTolerations(build),
+						validate.NewSchedulerName(build),
 					)
 
 					// an internal/technical error during validation happened
@@ -303,6 +304,15 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 			// Validate the tolerations
 			valid, reason, message = validate.BuildRunTolerations(buildRun.Spec.Tolerations)
+			if !valid {
+				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, nil
+			}
+
+			// Validate the schedulerName
+			valid, reason, message = validate.BuildRunSchedulerName(buildRun.Spec.SchedulerName)
 			if !valid {
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err

@@ -39,6 +39,8 @@ const (
 	NodeSelector = "nodeselector"
 	// Tolerations for validating `spec.tolerations` entry
 	Tolerations = "tolerations"
+	// SchedulerName for validating `spec.schedulerName` entry
+	SchedulerName = "schedulername"
 )
 
 const (
@@ -83,6 +85,8 @@ func NewValidation(
 		return &NodeSelectorRef{Build: build}, nil
 	case Tolerations:
 		return &TolerationsRef{Build: build}, nil
+	case SchedulerName:
+		return &SchedulerNameRef{Build: build}, nil
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}
@@ -146,6 +150,11 @@ func BuildRunFields(buildRun *build.BuildRun) (string, string) {
 		if len(buildRun.Spec.Tolerations) > 0 {
 			return resources.BuildRunBuildFieldOverrideForbidden,
 				"cannot use 'tolerations' override and 'buildSpec' simultaneously"
+		}
+
+		if buildRun.Spec.SchedulerName != nil {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'schedulerName' override and 'buildSpec' simultaneously"
 		}
 	}
 
