@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
@@ -289,6 +290,48 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
 				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.TolerationNotValid))
+			})
+		})
+	})
+
+	Context("when a build with SchedulerName is defined", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.MinimalBuildWithSchedulerName)
+			buildRunSample = []byte(test.MinimalBuildRun)
+		})
+
+		Context("when the TaskRun is created", func() {
+			It("should have the SchedulerName specified in the PodTemplate", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(tr.Spec.PodTemplate.SchedulerName).To(Equal(*buildObject.Spec.SchedulerName))
+			})
+		})
+
+		Context("when the SchedulerName is invalid", func() {
+			It("fails the build with a proper error in Reason", func() {
+				// set SchedulerName to be invalid
+				buildObject.Spec.SchedulerName = ptr.To(strings.Repeat("s", 64))
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
+				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SchedulerNameNotValid))
 			})
 		})
 	})

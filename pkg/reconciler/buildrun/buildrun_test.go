@@ -1660,5 +1660,64 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
 			})
 		})
+
+		Context("when SchedulerName is specified", func() {
+			It("should fail to validate when the SchedulerName is invalid", func() {
+				// set SchedulerName to be invalid
+				buildRunSample.Spec.SchedulerName = ptr.To(strings.Repeat("s", 64))
+
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.SchedulerNameNotValid, validation.MaxLenError(64))
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+		})
+
+		Context("when a buildrun has a buildSpec defined and overrides nodeSelector", func() {
+			BeforeEach(func() {
+				buildRunSample = ctl.BuildRunWithNodeSelectorOverride(buildRunName, buildName, map[string]string{"Key": "testkey", "Value": "testvalue"})
+			})
+
+			It("should fail to register", func() {
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildReason(resources.BuildRunBuildFieldOverrideForbidden), "cannot use 'nodeSelector' override and 'buildSpec' simultaneously")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+		})
+
+		Context("when a buildrun has a buildSpec defined and overrides Tolerations", func() {
+			BeforeEach(func() {
+				buildRunSample = ctl.BuildRunWithTolerationsOverride(buildRunName, buildName, []corev1.Toleration{{Key: "testkey", Value: "testvalue", Operator: corev1.TolerationOpEqual, Effect: corev1.TaintEffectNoSchedule}})
+			})
+
+			It("should fail to register", func() {
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildReason(resources.BuildRunBuildFieldOverrideForbidden), "cannot use 'tolerations' override and 'buildSpec' simultaneously")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+		})
+
+		Context("when a buildrun has a buildSpec defined and overrides schedulerName", func() {
+			BeforeEach(func() {
+				buildRunSample = ctl.BuildRunWithSchedulerNameOverride(buildRunName, buildName, "testSchedulerName")
+			})
+
+			It("should fail to register", func() {
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildReason(resources.BuildRunBuildFieldOverrideForbidden), "cannot use 'schedulerName' override and 'buildSpec' simultaneously")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+		})
 	})
 })
