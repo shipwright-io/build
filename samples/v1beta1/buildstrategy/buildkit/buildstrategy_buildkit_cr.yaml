@@ -6,9 +6,6 @@ metadata:
   annotations:
     # See https://github.com/moby/buildkit/blob/master/docs/rootless.md#about---oci-worker-no-process-sandbox for more information
     container.apparmor.security.beta.kubernetes.io/step-build-and-push: unconfined
-    # The usage of seccomp annotation will be deprecate in k8s v1.22.0, see
-    # https://kubernetes.io/docs/tutorials/clusters/seccomp/#create-a-pod-with-a-seccomp-profile-for-syscall-auditing for more information
-    container.seccomp.security.alpha.kubernetes.io/step-build-and-push: unconfined
 spec:
   parameters:
     - name: build-args
@@ -45,6 +42,8 @@ spec:
           add:
             - SETGID
             - SETUID
+        seccompProfile:
+          type: Unconfined
       workingDir: $(params.shp-source-root)
       env:
         - name: DOCKER_CONFIG
