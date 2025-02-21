@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
@@ -630,6 +631,124 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("TolerationNotValid"))
 				Expect(condition.Message).To(ContainSubstring(validation.MaxLenError(63)))
+			})
+		})
+	})
+
+	Context("when a buildrun is created with a SchedulerName defined", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.MinimalBuildWithSchedulerName)
+			buildRunSample = []byte(test.MinimalBuildRunWithSchedulerName)
+		})
+
+		Context("when the taskrun is created", func() {
+			It("should have the SchedulerName specified in the PodTemplate", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillStartTime(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(tr.Spec.PodTemplate.SchedulerName).To(Equal(*br.Spec.SchedulerName))
+			})
+		})
+
+		Context("when the SchedulerName is invalid", func() {
+			It("fails the buildrun with a proper error in Reason", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				// set SchedulerName to be invalid
+				buildRunObject.Spec.SchedulerName = ptr.To(strings.Repeat("s", 64))
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal("SchedulerNameNotValid"))
+				Expect(condition.Message).To(ContainSubstring(validation.MaxLenError(63)))
+			})
+		})
+	})
+
+	Context("when a buildrun has a buildSpec defined and overrides nodeSelector", func() {
+		var standaloneBuildRunObject *v1beta1.BuildRun
+
+		BeforeEach(func() {
+			buildRunSample = []byte(test.MinimalBuildRunWithNodeSelectorOverride)
+			standaloneBuildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithNameAndStrategy(BUILDRUN+tb.Namespace+"-standalone", cbsObject, buildRunSample)
+			Expect(err).To(BeNil())
+		})
+
+		Context("when the buildRun is created", func() {
+			It("should fail to register", func() {
+				Expect(tb.CreateBR(standaloneBuildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+				Expect(condition.Message).To(ContainSubstring("cannot use 'nodeSelector' override and 'buildSpec' simultaneously"))
+			})
+		})
+	})
+
+	Context("when a buildrun has a buildSpec defined and overrides tolerations", func() {
+		var standaloneBuildRunObject *v1beta1.BuildRun
+
+		BeforeEach(func() {
+			buildRunSample = []byte(test.MinimalBuildRunWithTolerationsOverride)
+			standaloneBuildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithNameAndStrategy(BUILDRUN+tb.Namespace+"-standalone", cbsObject, buildRunSample)
+			Expect(err).To(BeNil())
+		})
+
+		Context("when the buildRun is created", func() {
+			It("should fail to register", func() {
+				Expect(tb.CreateBR(standaloneBuildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+				Expect(condition.Message).To(ContainSubstring("cannot use 'tolerations' override and 'buildSpec' simultaneously"))
+			})
+		})
+	})
+
+	Context("when a buildrun has a buildSpec defined and overrides schedulerName", func() {
+		var standaloneBuildRunObject *v1beta1.BuildRun
+
+		BeforeEach(func() {
+			buildRunSample = []byte(test.MinimalBuildRunWithSchedulerNameOverride)
+			standaloneBuildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithNameAndStrategy(BUILDRUN+tb.Namespace+"-standalone", cbsObject, buildRunSample)
+			Expect(err).To(BeNil())
+		})
+
+		Context("when the buildRun is created", func() {
+			It("should fail to register", func() {
+				Expect(tb.CreateBR(standaloneBuildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+				Expect(condition.Message).To(ContainSubstring("cannot use 'schedulerName' override and 'buildSpec' simultaneously"))
 			})
 		})
 	})

@@ -937,6 +937,60 @@ func (c *Catalog) DefaultNamespacedBuildStrategy() *build.BuildStrategy {
 	}
 }
 
+// BuildRunWithNodeSelectorOverride returns a customized BuildRun object
+// that defines a buildspec and overrides the nodeSelector
+func (c *Catalog) BuildRunWithNodeSelectorOverride(buildRunName string, buildName string, nodeSelector map[string]string) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			Build: build.ReferencedBuild{
+				Name: &buildName,
+				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+			},
+			NodeSelector: nodeSelector,
+		},
+		Status: build.BuildRunStatus{},
+	}
+}
+
+// BuildRunWithTolerationsOverride returns a customized BuildRun object
+// that defines a buildspec and overrides the tolerations
+func (c *Catalog) BuildRunWithTolerationsOverride(buildRunName string, buildName string, tolerations []corev1.Toleration) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			Build: build.ReferencedBuild{
+				Name: &buildName,
+				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+			},
+			Tolerations: tolerations,
+		},
+		Status: build.BuildRunStatus{},
+	}
+}
+
+// BuildRunWithSchedulerNameOverride returns a customized BuildRun object
+// that defines a buildspec and overrides the schedulerName
+func (c *Catalog) BuildRunWithSchedulerNameOverride(buildRunName string, buildName string, schedulerName string) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			Build: build.ReferencedBuild{
+				Name: &buildName,
+				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+			},
+			SchedulerName: &schedulerName,
+		},
+		Status: build.BuildRunStatus{},
+	}
+}
+
 // BuildRunWithSucceededCondition returns a BuildRun with a single condition
 // of the type Succeeded
 func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {
