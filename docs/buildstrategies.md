@@ -116,9 +116,8 @@ coordinate with the orchestrator pod.
 
 When all the builds are completed, the orchestrator pod will compose a manifest-list image and push it to the target registry.
 
-The service account that runs the strategy must be bound to a role able to `create`, `list`, `get` and `watch` 
-`batch/v1` `jobs` and `core/v1` `pods` resources. 
-The role also needs to allow the `create` verb for the `pods/exec` resource.
+The service account that runs the strategy must be bound to a ClusterRole able to `create`, `list`, `get` and `watch` `batch/v1` `jobs` and `core/v1` `pods` resources. 
+The ClusteRole also needs to allow the `create` verb for the `pods/exec` resource.
 Finally, when running in OKD or OpenShift clusters, the service account must be able to use the 
 `privileged` SecurityContextConstraint.
 
