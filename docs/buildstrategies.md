@@ -116,9 +116,8 @@ coordinate with the orchestrator pod.
 
 When all the builds are completed, the orchestrator pod will compose a manifest-list image and push it to the target registry.
 
-The service account that runs the strategy must be bound to a role able to `create`, `list`, `get` and `watch` 
-`batch/v1` `jobs` and `core/v1` `pods` resources. 
-The role also needs to allow the `create` verb for the `pods/exec` resource.
+The service account that runs the strategy must be bound to a ClusterRole able to `create`, `list`, `get` and `watch` `batch/v1` `jobs` and `core/v1` `pods` resources. 
+The ClusteRole also needs to allow the `create` verb for the `pods/exec` resource.
 Finally, when running in OKD or OpenShift clusters, the service account must be able to use the 
 `privileged` SecurityContextConstraint.
 
@@ -128,13 +127,26 @@ To install the cluster-scoped strategy, use:
 
 ```sh
 kubectl apply -f samples/v1beta1/buildstrategy/multiarch-native-buildah/buildstrategy_multiarch_native_buildah_cr.yaml
+kubectl apply -f samples/v1beta1/buildstrategy/multiarch-native-buildah/clusterrole_multiarch_native_buildah_cr.yaml
 ```
 
 For each namespace where you want to use the strategy, you also need to apply the RBAC rules that allow the service
 account to run the strategy. If the service account is named `pipeline` (default), you can use:
 
 ```sh
-kubectl apply -n <namespace> -f  samples/v1beta1/buildstrategy/multiarch-native-buildah/
+kubectl apply -n <namespace> -f samples/v1beta1/buildstrategy/multiarch-native-buildah/rolebinding_multiarch_native_buildah_cr.yaml
+```
+
+_note_: If `pipeline` service account isn't available in your environment (most likely when using a kind cluster), replace the subjects[0].name to `default`.
+
+```sh
+sed 's/name: pipeline/name: default/' samples/v1beta1/buildstrategy/multiarch-native-buildah/rolebinding_multiarch_native_buildah_cr.yaml| kubectl apply -f -
+```
+
+If you are on OKD platform, apply the following RBAC to use the 
+`privileged` SecurityContextConstraint:
+```sh
+kubectl apply -f samples/v1beta1/buildstrategy/multiarch-native-buildah/rolebinding_multiarch_native_buildah_scc_okd_cr.yaml
 ```
 
 ### Parameters
