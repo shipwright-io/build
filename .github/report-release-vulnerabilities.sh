@@ -97,7 +97,7 @@ for image in "${images[@]}"; do
     fi
 
     echo "    [INFO] Found ${id} in ${pkg}. Requires upgrade from ${vulnerableVersion} to ${fixedVersion}.${fixedSentence}"
-    echo "| ${id} | ${pkg} | ${vulnerableVersion} -> ${fixedVersion} | ${fixed} |" >>/tmp/report.md
+    echo "| ${id} | [${pkg}](https://pkg.go.dev/${pkg}) | ${vulnerableVersion} -> ${fixedVersion} | ${fixed} |" >>/tmp/report.md
   done <<<"$(jq --raw-output 'select(.finding != null and .finding.fixed_version != null) | [ .finding.osv, .finding.trace[0].module, .finding.trace[0].version, .finding.fixed_version ] | @tsv' <<<"${goVulns}" | sort -u)"
 
   if [ "${goVulnsFound}" == "false" ]; then
