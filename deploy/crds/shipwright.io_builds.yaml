@@ -469,6 +469,13 @@ spec:
                   url:
                     description: URL describes the URL of the Git repository.
                     type: string
+                  shallowCloneDepth:
+                    description: |-
+                      The depth of the shallow clone. If not specified or set to 0, 
+                      a full clone will be performed. Values greater than 0 will 
+                      create a shallow clone with the specified depth.
+                    type: integer
+                    minimum: 0
                 type: object
               sources:
                 description: |-
@@ -2734,6 +2741,13 @@ spec:
                       url:
                         description: URL describes the URL of the Git repository.
                         type: string
+                      shallowCloneDepth:
+                        description: |-
+                          The depth of the shallow clone. If not specified or set to 0, 
+                          a full clone will be performed. Values greater than 0 will 
+                          create a shallow clone with the specified depth.
+                        type: integer
+                        minimum: 0
                     required:
                     - url
                     type: object

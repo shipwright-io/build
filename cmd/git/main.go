@@ -93,7 +93,8 @@ func init() {
 	// Optional flag to be able to override the default shallow clone depth,
 	// which should be fine for almost all use cases we use the Git source step
 	// for (in the context of Shipwright build).
-	pflag.UintVar(&flagValues.depth, "depth", 1, "Create a shallow clone based on the given depth")
+	// Setting depth to 0 means no shallow clone (full clone)
+	pflag.UintVar(&flagValues.depth, "depth", 0, "Create a shallow clone with the given depth. 0 means full clone (no shallow).")
 
 	// Mostly internal flag
 	pflag.BoolVar(&flagValues.skipValidation, "skip-validation", false, "skip pre-requisite validation")
@@ -120,7 +121,7 @@ func main() {
 
 // Execute performs flag parsing, input validation and the Git clone
 func Execute(ctx context.Context) error {
-	flagValues = settings{depth: 1}
+	flagValues = settings{depth: 0}
 	pflag.Parse()
 
 	if flagValues.help {
@@ -266,6 +267,7 @@ func clone(ctx context.Context) error {
 			cloneArgs = append(cloneArgs, "--branch", flagValues.revision)
 		}
 
+		// Only add depth if it's greater than 0 (meaning shallow clone is requested)
 		if flagValues.depth > 0 {
 			cloneArgs = append(cloneArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
 		}
