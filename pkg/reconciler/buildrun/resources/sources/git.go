@@ -79,6 +79,15 @@ func AppendGitStep(
 		)
 	}
 
+	// Check if shallow clone is requested
+	if source.ShallowCloneDepth != nil && *source.ShallowCloneDepth > 0 {
+		gitStep.Args = append(
+			gitStep.Args,
+			"--depth",
+			fmt.Sprintf("%d", *source.ShallowCloneDepth),
+		)
+	}
+
 	// If configure, use Git URL rewrite flag
 	if cfg.GitRewriteRule {
 		gitStep.Args = append(gitStep.Args, "--git-url-rewrite")
