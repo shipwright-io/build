@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_model v0.6.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
-	github.com/tektoncd/pipeline v0.68.0
+	github.com/tektoncd/pipeline v0.68.1
 	go.uber.org/zap v1.27.0
 	k8s.io/api v0.30.9
 	k8s.io/apiextensions-apiserver v0.30.9
