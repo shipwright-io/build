@@ -390,8 +390,8 @@ github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o
 github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/stvp/go-udp-testing v0.0.0-20201019212854-469649b16807/go.mod h1:7jxmlfBCDBXRzr0eAQJ48XC1hBu1np4CS5+cHEYfwpc=
-github.com/tektoncd/pipeline v0.68.0 h1:bVzj+HbS/NQAPV2CfEW8HZrREm7uagPCzEggyxVTBdc=
-github.com/tektoncd/pipeline v0.68.0/go.mod h1:MScUtGGW4VeaNcaNrulmNLBSn14EGTXXKy+kh+YZ8Gg=
+github.com/tektoncd/pipeline v0.68.1 h1:/R1qV2ea8BYbhVBNHceDq5SRAGQ8rCc/+0u7SFwG0vk=
+github.com/tektoncd/pipeline v0.68.1/go.mod h1:MScUtGGW4VeaNcaNrulmNLBSn14EGTXXKy+kh+YZ8Gg=
 github.com/vbatts/tar-split v0.12.1 h1:CqKoORW7BUWBe7UL/iqTVvkTBOF8UvOMKOIZykxnnbo=
 github.com/vbatts/tar-split v0.12.1/go.mod h1:eF6B6i6ftWQcDqEn3/iGFRFRo8cBIMSJVOpnNdfTMFA=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
