@@ -35,6 +35,6 @@ KO_DOCKER_REPO="${IMAGE_HOST}/${IMAGE_NAMESPACE}" GOFLAGS="${GO_FLAGS} -tags=ppr
 
 # Bundle the sample cluster build strategies, remove namespace strategies first
 echo "[INFO] Bundling sample build strategies"
-find samples/v1beta1/buildstrategy -type f -print0 | xargs -0 grep -l "kind: BuildStrategy" | xargs rm -f
+find samples/v1beta1/buildstrategy -type f -print0 | xargs -0 grep -l -e "kind: BuildStrategy" -e "kind: RoleBinding" | xargs rm -f
 KO_DOCKER_REPO=dummy ko resolve --recursive --filename samples/v1beta1/buildstrategy/ > sample-strategies.yaml
 git restore samples/v1beta1/buildstrategy
