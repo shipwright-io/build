@@ -59,8 +59,9 @@ type BuildRunSpec struct {
 	//
 	Build ReferencedBuild `json:"build"`
 
-	// Source refers to the location where the source code is,
-	// this could only be a local source
+	// Source overrides where the source code is obtained for the BuildRun. This can only be used
+	// to obtain source code from a remote machine's local directory, instead of the value defined
+	// in the build.
 	//
 	// +optional
 	Source *BuildRunSource `json:"source,omitempty"`

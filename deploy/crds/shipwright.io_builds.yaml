@@ -2829,10 +2829,13 @@ spec:
                   artifact
                 properties:
                   contextDir:
-                    description: ContextDir is a path to subfolder in the repo. Optional.
+                    description: |-
+                      ContextDir is a path to a subdirectory within the source code that should be used as the
+                      build root directory. Optional.
                     type: string
                   git:
-                    description: Git contains the details for the source of type Git
+                    description: Git contains the details for obtaining source code
+                      from a git repository.
                     properties:
                       cloneSecret:
                         description: |-
@@ -2854,28 +2857,33 @@ spec:
                     - url
                     type: object
                   local:
-                    description: Local contains the details for the source of type
-                      Local
+                    description: |-
+                      Local contains the details for obtaining source code that is streamed in from a remote
+                      machine's local directory.
                     properties:
                       name:
                         description: Name of the local step
                         type: string
                       timeout:
-                        description: Timeout how long the BuildSource execution must
-                          take.
+                        description: |-
+                          Timeout is the maximum duration the build should wait for source code to be streamed in from
+                          a remote machine's local directory.
                         type: string
                     type: object
                   ociArtifact:
-                    description: OCIArtifact contains the details for the source of
-                      type OCIArtifact
+                    description: |-
+                      OCIArtifact contains the details for obtaining source code from a container image, also
+                      known as an OCI artifact.
                     properties:
                       image:
-                        description: Image reference, i.e. quay.io/org/image:tag
+                        description: |-
+                          Image is a reference to a container image to be pulled from a container registry.
+                          For example, quay.io/org/image:tag
                         type: string
                       prune:
                         description: |-
-                          Prune specifies whether the image is suppose to be deleted. Allowed
-                          values are 'Never' (no deletion) and `AfterPull` (removal after the
+                          Prune specifies whether the image containing the source code should be deleted.
+                          Allowed values are 'Never' (no deletion) and `AfterPull` (removal after the
                           image was successfully pulled from the registry).
 
 
@@ -2884,14 +2892,15 @@ spec:
                       pullSecret:
                         description: |-
                           PullSecret references a Secret that contains credentials to access
-                          the repository.
+                          the container image.
                         type: string
                     required:
                     - image
                     type: object
                   type:
-                    description: Type is the BuildSource qualifier, the type of the
-                      source.
+                    description: |-
+                      Type is the type of source code used as input for the build. Allowed values are
+                      `Git`, `OCI`, and `Local`.
                     type: string
                 required:
                 - type
