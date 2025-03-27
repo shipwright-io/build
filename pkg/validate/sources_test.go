@@ -26,7 +26,7 @@ var _ = Describe("SourcesRef", func() {
 			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
 					Source: &build.Source{
-						Type: "Git",
+						Type: build.GitType,
 						Git:  &build.Git{},
 					},
 				},
@@ -51,7 +51,7 @@ var _ = Describe("SourcesRef", func() {
 			srcRef := validate.NewSourceRef(&build.Build{
 				Spec: build.BuildSpec{
 					Source: &build.Source{
-						Type: "OCI",
+						Type: build.OCIArtifactType,
 						Git:  &build.Git{},
 					},
 				},
