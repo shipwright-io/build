@@ -138,7 +138,7 @@ The `Build` definition supports the following fields:
 
 A `Build` resource can specify a source type, such as a Git repository or an OCI artifact, together with other parameters like:
 
-- `source.type` - Specify the type of the data-source. Currently, the supported types are "Git", "OCIArtifact", and "Local".
+- `source.type` - Specify the type of the data-source. Currently, the supported types are "Git", "OCI", and "Local".
 - `source.git.url` - Specify the source location using a Git repository.
 - `source.git.cloneSecret` - For private repositories or registries, the name references a secret in the namespace that contains the SSH private key or Docker access credentials, respectively.
 - `source.git.revision` - A specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fall back to the Git repository default branch.
