@@ -446,7 +446,6 @@ func getAlphaBuildSource(src BuildSpec) v1alpha1.Source {
 			source.URL = &src.Source.Git.URL
 			revision = src.Source.Git.Revision
 		}
-
 	}
 
 	if credentials.Name != "" {
