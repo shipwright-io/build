@@ -42,7 +42,7 @@ jobs:
         check-latest: true
 
     # Install tools
-    - uses: ko-build/setup-ko@v0.8
+    - uses: ko-build/setup-ko@v0.9
       with:
         version: v0.17.1
     - uses: sigstore/cosign-installer@v3
