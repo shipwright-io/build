@@ -35,6 +35,7 @@ import (
 	"github.com/shipwright-io/build/pkg/controller/fakes"
 	buildrunctl "github.com/shipwright-io/build/pkg/reconciler/buildrun"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/runner"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
@@ -457,9 +458,10 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reconcile.Result{}).To(Equal(result))
 
-				// Three client calls because based on the Stub, we should
-				// trigger a call to get the related TaskRun pod.
-				Expect(client.GetCallCount()).To(Equal(3))
+				// 4 client calls because based on the Stub, we should
+				// trigger a call to get the related TaskRun pod. This was increased from 3 to 4
+				// due to the BuildRun refactoring work (an additional `get` call is made).
+				Expect(client.GetCallCount()).To(Equal(4))
 			})
 
 			It("does not break the reconcile when a failed taskrun has a pod with no failed container", func() {
@@ -1483,15 +1485,19 @@ var _ = Describe("Reconcile BuildRun", func() {
 							taskRunCreates++
 							Expect(taskRun.Labels).ToNot(HaveKey(build.LabelBuild), "no build name label is suppose to be set")
 							Expect(taskRun.Labels).ToNot(HaveKey(build.LabelBuildGeneration), "no build generation label is suppose to be set")
+						case *runner.TaskRunBuildRunner:
+							taskRunCreates++
+							Expect(taskRun.GetLabels()).ToNot(HaveKey(build.LabelBuild), "no build name label is suppose to be set")
+							Expect(taskRun.GetLabels()).ToNot(HaveKey(build.LabelBuildGeneration), "no build generation label is suppose to be set")
 						}
 
 						return nil
 					})
 
 					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(statusWriter.UpdateCallCount()).To(Equal(2))
-					Expect(taskRunCreates).To(Equal(1))
+					Expect(err).ToNot(HaveOccurred(), "reconcile error")
+					Expect(statusWriter.UpdateCallCount()).To(Equal(2), "BuildRun status update calls")
+					Expect(taskRunCreates).To(Equal(1), "TaskRun create calls")
 				})
 
 				It("should validate the embedded BuildSpec to identify that the strategy kind is unknown", func() {
