@@ -16,6 +16,37 @@ kubectl -n shipwright-build delete job --selector app=storage-version-migration-
 
 # create new job for storage version migration
 cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: storage-version-migration-role
+rules:
+  - apiGroups: ['apiextensions.k8s.io']
+    resources: ['customresourcedefinitions', 'customresourcedefinitions/status']
+    verbs:     ['get', 'list', 'watch', 'patch']
+  - apiGroups: ['shipwright.io']
+    resources: ['builds','buildruns', 'buildstrategies', 'clusterbuildstrategies']
+    verbs: ['get', 'list', 'watch' ,'patch']
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: storage-version-migration
+  namespace: shipwright-build
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: storage-version-migration-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: storage-version-migration
+    namespace: shipwright-build
+roleRef:
+  kind: ClusterRole
+  name: storage-version-migration-role
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -36,7 +67,7 @@ spec:
         app.kubernetes.io/component: storage-version-migration-job
         app.kubernetes.io/name: shipwright-build
     spec:
-      serviceAccountName: shipwright-build-controller
+      serviceAccountName: storage-version-migration
       containers:
         - args:
             - buildruns.shipwright.io
@@ -73,6 +104,11 @@ while [ "$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '.s
 done
 
 isFailed="$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '.status.conditions[] | select(.type == "Failed") | .status')"
+
+# Delete the ClusterRole, ServiceAccount, and ClusterRoleBinding after the job finishes
+kubectl delete clusterrole storage-version-migration-role || true
+kubectl delete serviceaccount storage-version-migration -n shipwright-build || true
+kubectl delete clusterrolebinding storage-version-migration-rolebinding || true
 
 if [ "${isFailed}" == "True" ]; then
     echo "[ERROR] Storage version migration failed"
