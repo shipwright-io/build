@@ -5,12 +5,6 @@
 package resources
 
 import (
-	"strconv"
-	"strings"
-	"time"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
@@ -71,30 +65,6 @@ func AmendTaskSpecWithSources(
 			if build.Spec.Source.Git != nil {
 				appendSourceTimestampResult(taskSpec)
 				sources.AppendGitStep(cfg, taskSpec, *build.Spec.Source.Git, defaultSourceName)
-			}
-		}
-	}
-}
-
-func updateBuildRunStatusWithSourceResult(buildrun *buildv1beta1.BuildRun, results []pipelineapi.TaskRunResult) {
-	buildSpec := buildrun.Status.BuildSpec
-
-	if buildSpec.Source == nil {
-		return
-	}
-
-	switch {
-	case buildSpec.Source.Type == buildv1beta1.OCIArtifactType && buildSpec.Source.OCIArtifact != nil:
-		sources.AppendBundleResult(buildrun, defaultSourceName, results)
-
-	case buildSpec.Source.Type == buildv1beta1.GitType && buildSpec.Source.Git != nil:
-		sources.AppendGitResult(buildrun, defaultSourceName, results)
-	}
-
-	if sourceTimestamp := sources.FindResultValue(results, defaultSourceName, sourceTimestampName); strings.TrimSpace(sourceTimestamp) != "" {
-		if sec, err := strconv.ParseInt(sourceTimestamp, 10, 64); err == nil {
-			if buildrun.Status.Source != nil {
-				buildrun.Status.Source.Timestamp = &metav1.Time{Time: time.Unix(sec, 0)}
 			}
 		}
 	}
