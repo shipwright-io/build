@@ -32,7 +32,7 @@ jobs:
         check-latest: true
         cache-dependency-path: go/src/github.com/shipwright-io/build
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v8
       with:
         working-directory: go/src/github.com/shipwright-io/build
         args: --timeout=10m
