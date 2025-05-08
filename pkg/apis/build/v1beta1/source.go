@@ -62,6 +62,13 @@ type Git struct {
 	//
 	// +optional
 	CloneSecret *string `json:"cloneSecret,omitempty"`
+
+	// ShallowCloneDepth specifies the depth of the shallow clone.
+	// If not specified or set to 0, a full clone will be performed.
+	// Values greater than 0 will create a shallow clone with the specified depth.
+	//
+	// +optional
+	ShallowCloneDepth *int `json:"shallowCloneDepth,omitempty"`
 }
 
 // OCIArtifact describes how to obtain source code from a container image, also known as an OCI
