@@ -231,6 +231,15 @@ func (c *Catalog) ClusterBuildStrategy(name string) *build.ClusterBuildStrategy 
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
+		Spec: build.BuildStrategySpec{
+			BuildSteps: []build.BuildStep{{
+				Container: corev1.Container{
+					Name:    "dummy",
+					Image:   "alpine",
+					Command: []string{"true"},
+				},
+			}},
+		},
 	}
 }
 

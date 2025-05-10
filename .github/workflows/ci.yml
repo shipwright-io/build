@@ -63,13 +63,13 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.29.12
-          - v1.32.0
+          - v1.30.10
+          - v1.33.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
-          - v0.59.5
+          - v0.62.9
           # newest LTS that exists at the time of our planned next release
-          - v0.68.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v1.0.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -84,7 +84,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.9
         with:
-          version: v0.17.1
+          version: v0.18.0
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
@@ -92,7 +92,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.26.0
+          version: v0.27.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           wait: 120s
@@ -143,13 +143,13 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes:
-          - v1.29.12
-          - v1.32.0
+          - v1.30.10
+          - v1.33.0
         tekton:
           # oldest LTS that exists at the time of our planned next release
-          - v0.59.5
+          - v0.62.9
           # newest LTS that exists at the time of our planned next release
-          - v0.68.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+          - v1.0.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest-16-cores
     steps:
@@ -168,7 +168,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.26.0
+          version: v0.27.0
           node_image: kindest/node:${{ matrix.kubernetes }}
           cluster_name: kind
           config: test/kind/config_three_node.yaml
@@ -213,7 +213,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.9
         with:
-          version: v0.17.1
+          version: v0.18.0
       - name: Install Shipwright Build
         run: |
           make install-controller-kind

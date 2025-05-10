@@ -43,7 +43,7 @@ OLD_VERSION="$(
 # Assumption: every third Tekton release is LTS
 NEW_VERSION="$(
   curl -s 'https://api.github.com/repos/tektoncd/pipeline/releases?per_page=100' |
-  jq -r '.[] | select(.draft == false and .prerelease == false and (.tag_name | split(".") | .[1] | tonumber) % 3 == 2) | .tag_name' |
+  jq -r '.[] | select(.draft == false and .prerelease == false and (.tag_name | split(".") | .[1] | tonumber) % 3 == 0) | .tag_name' |
   sort  --version-sort |
   tail -n 1
 )"
