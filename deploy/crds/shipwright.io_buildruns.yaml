@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: buildruns.shipwright.io
 spec:
   conversion:
@@ -88,7 +88,6 @@ spec:
                       Builder refers to the image containing the build tools inside which
                       the source code would be built.
 
-
                       NOTICE: Builder is deprecated, and will be removed in a future release.
                       Build strategies which rely on "builder" should provide an equivalent parameter instead.
                     properties:
@@ -110,9 +109,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -146,7 +143,6 @@ spec:
                       Dockerfile is the path to the Dockerfile to be used for
                       build strategies which bank on the Dockerfile for building
                       an image.
-
 
                       NOTICE: Dockerfile is deprecated, and will be removed in a future release.
                       Build strategies which rely on "dockerfile" should provide an equivalent parameter instead.
@@ -191,9 +187,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap or its
@@ -259,9 +253,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -298,9 +290,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -475,7 +465,6 @@ spec:
                               values are 'Never' (no deletion) and `AfterPull` (removal after the
                               image was successfully pulled from the registry).
 
-
                               If not defined, it defaults to 'Never'.
                             type: string
                         required:
@@ -497,9 +486,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -507,7 +494,6 @@ spec:
                         description: |-
                           Revision describes the Git revision (e.g., branch, tag, commit SHA,
                           etc.) to fetch.
-
 
                           If not defined, it will fallback to the repository's default branch.
                         type: string
@@ -519,7 +505,6 @@ spec:
                     description: |-
                       Sources slice of BuildSource, defining external build artifacts complementary to VCS
                       (`.spec.source`) data.
-
 
                       NOTICE: Multiple sources in a build are deprecated. This feature will be removed in a future release.
                     items:
@@ -583,9 +568,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -677,7 +660,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             partition:
                               description: |-
@@ -717,6 +699,7 @@ spec:
                                 blob storage
                               type: string
                             fsType:
+                              default: ext4
                               description: |-
                                 fsType is Filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
@@ -730,6 +713,7 @@ spec:
                                 to shared'
                               type: string
                             readOnly:
+                              default: false
                               description: |-
                                 readOnly Defaults to false (read/write). ReadOnly here will force
                                 the ReadOnly setting in VolumeMounts.
@@ -797,9 +781,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -841,9 +823,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -916,9 +896,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: optional specify whether the ConfigMap
@@ -957,9 +935,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -981,7 +957,6 @@ spec:
                         description:
                           description: |-
                             Description of the Build Volume
-
 
                             NOTICE: Description is deprecated, and will be removed in a future release.
                           type: string
@@ -1104,7 +1079,6 @@ spec:
                             The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                             and deleted when the pod is removed.
 
-
                             Use this if:
                             a) the volume is only needed while the pod runs,
                             b) features of normal volumes like restoring from snapshot or capacity
@@ -1115,16 +1089,13 @@ spec:
                                information on the connection between this volume type
                                and PersistentVolumeClaim).
 
-
                             Use PersistentVolumeClaim or one of the vendor-specific
                             APIs for volumes that persist for longer than the lifecycle
                             of an individual pod.
 
-
                             Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                             be used that way - see the documentation of the driver for
                             more information.
-
 
                             A pod can use both types of ephemeral volumes and
                             persistent volumes at the same time.
@@ -1139,7 +1110,6 @@ spec:
                                 entry. Pod validation will reject the pod if the concatenated name
                                 is not valid for a PVC (for example, too long).
 
-
                                 An existing PVC with that name that is not owned by the pod
                                 will *not* be used for the pod to avoid using an unrelated
                                 volume by mistake. Starting the pod is then blocked until
@@ -1149,10 +1119,8 @@ spec:
                                 this should not be necessary, but it may be useful when
                                 manually reconstructing a broken cluster.
 
-
                                 This field is read-only and no changes will be made by Kubernetes
                                 to the PVC after it has been created.
-
 
                                 Required, must not be nil.
                               properties:
@@ -1356,7 +1324,7 @@ spec:
                                         set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                         exists.
                                         More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                        (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                        (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                       type: string
                                     volumeMode:
                                       description: |-
@@ -1382,7 +1350,6 @@ spec:
                                 fsType is the filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
                                 Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             lun:
                               description: 'lun is Optional: FC target lun number'
@@ -1450,9 +1417,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -1486,7 +1451,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             partition:
                               description: |-
@@ -1567,9 +1531,6 @@ spec:
                             used for system agents or other privileged things that are allowed
                             to see the host machine. Most containers will NOT need this.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                            ---
-                            TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                            mount host directories as read/write.
                           properties:
                             path:
                               description: |-
@@ -1585,6 +1546,41 @@ spec:
                               type: string
                           required:
                           - path
+                          type: object
+                        image:
+                          description: |-
+                            image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+                            The volume is resolved at pod startup depending on which PullPolicy value is provided:
+
+                            - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                            - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                            - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                            The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+                            A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+                            The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+                            The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+                            The volume will be mounted read-only (ro) and non-executable files (noexec).
+                            Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                            The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+                          properties:
+                            pullPolicy:
+                              description: |-
+                                Policy for pulling OCI objects. Possible values are:
+                                Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                                Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                                IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                                Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                              type: string
+                            reference:
+                              description: |-
+                                Required: Image or artifact reference to be used.
+                                Behaves in the same way as pod.spec.containers[*].image.
+                                Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+                                More info: https://kubernetes.io/docs/concepts/containers/images
+                                This field is optional to allow higher level config management to default or override
+                                container images in workload controllers like Deployments and StatefulSets.
+                              type: string
                           type: object
                         iscsi:
                           description: |-
@@ -1606,7 +1602,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             initiatorName:
                               description: |-
@@ -1618,6 +1613,7 @@ spec:
                               description: iqn is the target iSCSI Qualified Name.
                               type: string
                             iscsiInterface:
+                              default: default
                               description: |-
                                 iscsiInterface is the interface Name that uses an iSCSI transport.
                                 Defaults to 'default' (tcp).
@@ -1650,9 +1646,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -1768,23 +1762,23 @@ spec:
                               format: int32
                               type: integer
                             sources:
-                              description: sources is the list of volume projections
+                              description: |-
+                                sources is the list of volume projections. Each entry in this list
+                                handles one source.
                               items:
-                                description: Projection that may be projected along
-                                  with other supported volume types
+                                description: |-
+                                  Projection that may be projected along with other supported volume types.
+                                  Exactly one of these fields must be set.
                                 properties:
                                   clusterTrustBundle:
                                     description: |-
                                       ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
                                       of ClusterTrustBundle objects in an auto-updating file.
 
-
                                       Alpha, gated by the ClusterTrustBundleProjection feature gate.
-
 
                                       ClusterTrustBundle objects can either be selected by name, or by the
                                       combination of signer name and a label selector.
-
 
                                       Kubelet performs aggressive normalization of the PEM contents written
                                       into the pod filesystem.  Esoteric PEM features such as inter-block
@@ -1919,9 +1913,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional specify whether the
@@ -2060,9 +2052,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional field specify whether
@@ -2152,7 +2142,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             image:
                               description: |-
@@ -2160,6 +2149,7 @@ spec:
                                 More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                               type: string
                             keyring:
+                              default: /etc/ceph/keyring
                               description: |-
                                 keyring is the path to key ring for RBDUser.
                                 Default is /etc/ceph/keyring.
@@ -2174,6 +2164,7 @@ spec:
                               type: array
                               x-kubernetes-list-type: atomic
                             pool:
+                              default: rbd
                               description: |-
                                 pool is the rados pool name.
                                 Default is rbd.
@@ -2199,13 +2190,12 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
                             user:
+                              default: admin
                               description: |-
                                 user is the rados user name.
                                 Default is admin.
@@ -2220,6 +2210,7 @@ spec:
                             attached and mounted on Kubernetes nodes.
                           properties:
                             fsType:
+                              default: xfs
                               description: |-
                                 fsType is the filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
@@ -2251,9 +2242,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -2262,6 +2251,7 @@ spec:
                                 with Gateway, default false
                               type: boolean
                             storageMode:
+                              default: ThinProvisioned
                               description: |-
                                 storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
                                 Default is ThinProvisioned.
@@ -2376,9 +2366,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -2423,6 +2411,7 @@ spec:
                           - volumePath
                           type: object
                       required:
+                      - ""
                       - name
                       type: object
                     type: array
@@ -2470,9 +2459,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: Specify whether the ConfigMap or its key
@@ -2537,9 +2524,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: Specify whether the Secret or its key must
@@ -2577,9 +2562,7 @@ spec:
                           This field is effectively required, but due to backwards compatibility is
                           allowed to be empty. Instances of this type with an empty value here are
                           almost certainly wrong.
-                          TODO: Add other useful fields. apiVersion, kind, uid?
                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
@@ -2734,7 +2717,6 @@ spec:
                     description: |-
                       If generates a new ServiceAccount for the build
 
-
                       NOTICE: Generated ServiceAccounts are deprecated, and will be removed in a future release.
                     type: boolean
                   name:
@@ -2796,7 +2778,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         partition:
                           description: |-
@@ -2836,6 +2817,7 @@ spec:
                             storage
                           type: string
                         fsType:
+                          default: ext4
                           description: |-
                             fsType is Filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
@@ -2848,6 +2830,7 @@ spec:
                             disk (only in managed availability set). defaults to shared'
                           type: string
                         readOnly:
+                          default: false
                           description: |-
                             readOnly Defaults to false (read/write). ReadOnly here will force
                             the ReadOnly setting in VolumeMounts.
@@ -2915,9 +2898,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -2959,9 +2940,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -3033,9 +3012,7 @@ spec:
                             This field is effectively required, but due to backwards compatibility is
                             allowed to be empty. Instances of this type with an empty value here are
                             almost certainly wrong.
-                            TODO: Add other useful fields. apiVersion, kind, uid?
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                           type: string
                         optional:
                           description: optional specify whether the ConfigMap or its
@@ -3074,9 +3051,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -3098,7 +3073,6 @@ spec:
                     description:
                       description: |-
                         Description of the Build Volume
-
 
                         NOTICE: Description is deprecated, and will be removed in a future release.
                       type: string
@@ -3220,7 +3194,6 @@ spec:
                         The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                         and deleted when the pod is removed.
 
-
                         Use this if:
                         a) the volume is only needed while the pod runs,
                         b) features of normal volumes like restoring from snapshot or capacity
@@ -3231,16 +3204,13 @@ spec:
                            information on the connection between this volume type
                            and PersistentVolumeClaim).
 
-
                         Use PersistentVolumeClaim or one of the vendor-specific
                         APIs for volumes that persist for longer than the lifecycle
                         of an individual pod.
 
-
                         Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                         be used that way - see the documentation of the driver for
                         more information.
-
 
                         A pod can use both types of ephemeral volumes and
                         persistent volumes at the same time.
@@ -3255,7 +3225,6 @@ spec:
                             entry. Pod validation will reject the pod if the concatenated name
                             is not valid for a PVC (for example, too long).
 
-
                             An existing PVC with that name that is not owned by the pod
                             will *not* be used for the pod to avoid using an unrelated
                             volume by mistake. Starting the pod is then blocked until
@@ -3265,10 +3234,8 @@ spec:
                             this should not be necessary, but it may be useful when
                             manually reconstructing a broken cluster.
 
-
                             This field is read-only and no changes will be made by Kubernetes
                             to the PVC after it has been created.
-
 
                             Required, must not be nil.
                           properties:
@@ -3472,7 +3439,7 @@ spec:
                                     set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                     exists.
                                     More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                    (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                    (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                   type: string
                                 volumeMode:
                                   description: |-
@@ -3498,7 +3465,6 @@ spec:
                             fsType is the filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
                             Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         lun:
                           description: 'lun is Optional: FC target lun number'
@@ -3566,9 +3532,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -3602,7 +3566,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         partition:
                           description: |-
@@ -3683,9 +3646,6 @@ spec:
                         used for system agents or other privileged things that are allowed
                         to see the host machine. Most containers will NOT need this.
                         More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                        ---
-                        TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                        mount host directories as read/write.
                       properties:
                         path:
                           description: |-
@@ -3701,6 +3661,41 @@ spec:
                           type: string
                       required:
                       - path
+                      type: object
+                    image:
+                      description: |-
+                        image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+                        The volume is resolved at pod startup depending on which PullPolicy value is provided:
+
+                        - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                        - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                        - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                        The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+                        A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+                        The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+                        The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                        The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+                      properties:
+                        pullPolicy:
+                          description: |-
+                            Policy for pulling OCI objects. Possible values are:
+                            Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                            Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                            IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                            Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                          type: string
+                        reference:
+                          description: |-
+                            Required: Image or artifact reference to be used.
+                            Behaves in the same way as pod.spec.containers[*].image.
+                            Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+                            More info: https://kubernetes.io/docs/concepts/containers/images
+                            This field is optional to allow higher level config management to default or override
+                            container images in workload controllers like Deployments and StatefulSets.
+                          type: string
                       type: object
                     iscsi:
                       description: |-
@@ -3722,7 +3717,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         initiatorName:
                           description: |-
@@ -3734,6 +3728,7 @@ spec:
                           description: iqn is the target iSCSI Qualified Name.
                           type: string
                         iscsiInterface:
+                          default: default
                           description: |-
                             iscsiInterface is the interface Name that uses an iSCSI transport.
                             Defaults to 'default' (tcp).
@@ -3766,9 +3761,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -3882,23 +3875,23 @@ spec:
                           format: int32
                           type: integer
                         sources:
-                          description: sources is the list of volume projections
+                          description: |-
+                            sources is the list of volume projections. Each entry in this list
+                            handles one source.
                           items:
-                            description: Projection that may be projected along with
-                              other supported volume types
+                            description: |-
+                              Projection that may be projected along with other supported volume types.
+                              Exactly one of these fields must be set.
                             properties:
                               clusterTrustBundle:
                                 description: |-
                                   ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
                                   of ClusterTrustBundle objects in an auto-updating file.
 
-
                                   Alpha, gated by the ClusterTrustBundleProjection feature gate.
-
 
                                   ClusterTrustBundle objects can either be selected by name, or by the
                                   combination of signer name and a label selector.
-
 
                                   Kubelet performs aggressive normalization of the PEM contents written
                                   into the pod filesystem.  Esoteric PEM features such as inter-block
@@ -4033,9 +4026,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: optional specify whether the ConfigMap
@@ -4173,9 +4164,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: optional field specify whether the
@@ -4265,7 +4254,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         image:
                           description: |-
@@ -4273,6 +4261,7 @@ spec:
                             More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                           type: string
                         keyring:
+                          default: /etc/ceph/keyring
                           description: |-
                             keyring is the path to key ring for RBDUser.
                             Default is /etc/ceph/keyring.
@@ -4287,6 +4276,7 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         pool:
+                          default: rbd
                           description: |-
                             pool is the rados pool name.
                             Default is rbd.
@@ -4312,13 +4302,12 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
                         user:
+                          default: admin
                           description: |-
                             user is the rados user name.
                             Default is admin.
@@ -4333,6 +4322,7 @@ spec:
                         attached and mounted on Kubernetes nodes.
                       properties:
                         fsType:
+                          default: xfs
                           description: |-
                             fsType is the filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
@@ -4364,9 +4354,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -4375,6 +4363,7 @@ spec:
                             with Gateway, default false
                           type: boolean
                         storageMode:
+                          default: ThinProvisioned
                           description: |-
                             storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
                             Default is ThinProvisioned.
@@ -4488,9 +4477,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -4535,6 +4522,7 @@ spec:
                       - volumePath
                       type: object
                   required:
+                  - ""
                   - name
                   type: object
                 type: array
@@ -4549,7 +4537,6 @@ spec:
                     description: |-
                       Builder refers to the image containing the build tools inside which
                       the source code would be built.
-
 
                       NOTICE: Builder is deprecated, and will be removed in a future release.
                       Build strategies which rely on "builder" should provide an equivalent parameter instead.
@@ -4572,9 +4559,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -4608,7 +4593,6 @@ spec:
                       Dockerfile is the path to the Dockerfile to be used for
                       build strategies which bank on the Dockerfile for building
                       an image.
-
 
                       NOTICE: Dockerfile is deprecated, and will be removed in a future release.
                       Build strategies which rely on "dockerfile" should provide an equivalent parameter instead.
@@ -4653,9 +4637,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap or its
@@ -4721,9 +4703,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -4760,9 +4740,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -4937,7 +4915,6 @@ spec:
                               values are 'Never' (no deletion) and `AfterPull` (removal after the
                               image was successfully pulled from the registry).
 
-
                               If not defined, it defaults to 'Never'.
                             type: string
                         required:
@@ -4959,9 +4936,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -4969,7 +4944,6 @@ spec:
                         description: |-
                           Revision describes the Git revision (e.g., branch, tag, commit SHA,
                           etc.) to fetch.
-
 
                           If not defined, it will fallback to the repository's default branch.
                         type: string
@@ -4981,7 +4955,6 @@ spec:
                     description: |-
                       Sources slice of BuildSource, defining external build artifacts complementary to VCS
                       (`.spec.source`) data.
-
 
                       NOTICE: Multiple sources in a build are deprecated. This feature will be removed in a future release.
                     items:
@@ -5045,9 +5018,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
@@ -5139,7 +5110,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             partition:
                               description: |-
@@ -5179,6 +5149,7 @@ spec:
                                 blob storage
                               type: string
                             fsType:
+                              default: ext4
                               description: |-
                                 fsType is Filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
@@ -5192,6 +5163,7 @@ spec:
                                 to shared'
                               type: string
                             readOnly:
+                              default: false
                               description: |-
                                 readOnly Defaults to false (read/write). ReadOnly here will force
                                 the ReadOnly setting in VolumeMounts.
@@ -5259,9 +5231,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -5303,9 +5273,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -5378,9 +5346,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: optional specify whether the ConfigMap
@@ -5419,9 +5385,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -5443,7 +5407,6 @@ spec:
                         description:
                           description: |-
                             Description of the Build Volume
-
 
                             NOTICE: Description is deprecated, and will be removed in a future release.
                           type: string
@@ -5566,7 +5529,6 @@ spec:
                             The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                             and deleted when the pod is removed.
 
-
                             Use this if:
                             a) the volume is only needed while the pod runs,
                             b) features of normal volumes like restoring from snapshot or capacity
@@ -5577,16 +5539,13 @@ spec:
                                information on the connection between this volume type
                                and PersistentVolumeClaim).
 
-
                             Use PersistentVolumeClaim or one of the vendor-specific
                             APIs for volumes that persist for longer than the lifecycle
                             of an individual pod.
 
-
                             Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                             be used that way - see the documentation of the driver for
                             more information.
-
 
                             A pod can use both types of ephemeral volumes and
                             persistent volumes at the same time.
@@ -5601,7 +5560,6 @@ spec:
                                 entry. Pod validation will reject the pod if the concatenated name
                                 is not valid for a PVC (for example, too long).
 
-
                                 An existing PVC with that name that is not owned by the pod
                                 will *not* be used for the pod to avoid using an unrelated
                                 volume by mistake. Starting the pod is then blocked until
@@ -5611,10 +5569,8 @@ spec:
                                 this should not be necessary, but it may be useful when
                                 manually reconstructing a broken cluster.
 
-
                                 This field is read-only and no changes will be made by Kubernetes
                                 to the PVC after it has been created.
-
 
                                 Required, must not be nil.
                               properties:
@@ -5818,7 +5774,7 @@ spec:
                                         set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                         exists.
                                         More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                        (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                        (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                       type: string
                                     volumeMode:
                                       description: |-
@@ -5844,7 +5800,6 @@ spec:
                                 fsType is the filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
                                 Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             lun:
                               description: 'lun is Optional: FC target lun number'
@@ -5912,9 +5867,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -5948,7 +5901,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             partition:
                               description: |-
@@ -6029,9 +5981,6 @@ spec:
                             used for system agents or other privileged things that are allowed
                             to see the host machine. Most containers will NOT need this.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                            ---
-                            TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                            mount host directories as read/write.
                           properties:
                             path:
                               description: |-
@@ -6047,6 +5996,41 @@ spec:
                               type: string
                           required:
                           - path
+                          type: object
+                        image:
+                          description: |-
+                            image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+                            The volume is resolved at pod startup depending on which PullPolicy value is provided:
+
+                            - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                            - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                            - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                            The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+                            A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+                            The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+                            The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+                            The volume will be mounted read-only (ro) and non-executable files (noexec).
+                            Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                            The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+                          properties:
+                            pullPolicy:
+                              description: |-
+                                Policy for pulling OCI objects. Possible values are:
+                                Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                                Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                                IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                                Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                              type: string
+                            reference:
+                              description: |-
+                                Required: Image or artifact reference to be used.
+                                Behaves in the same way as pod.spec.containers[*].image.
+                                Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+                                More info: https://kubernetes.io/docs/concepts/containers/images
+                                This field is optional to allow higher level config management to default or override
+                                container images in workload controllers like Deployments and StatefulSets.
+                              type: string
                           type: object
                         iscsi:
                           description: |-
@@ -6068,7 +6052,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             initiatorName:
                               description: |-
@@ -6080,6 +6063,7 @@ spec:
                               description: iqn is the target iSCSI Qualified Name.
                               type: string
                             iscsiInterface:
+                              default: default
                               description: |-
                                 iscsiInterface is the interface Name that uses an iSCSI transport.
                                 Defaults to 'default' (tcp).
@@ -6112,9 +6096,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -6230,23 +6212,23 @@ spec:
                               format: int32
                               type: integer
                             sources:
-                              description: sources is the list of volume projections
+                              description: |-
+                                sources is the list of volume projections. Each entry in this list
+                                handles one source.
                               items:
-                                description: Projection that may be projected along
-                                  with other supported volume types
+                                description: |-
+                                  Projection that may be projected along with other supported volume types.
+                                  Exactly one of these fields must be set.
                                 properties:
                                   clusterTrustBundle:
                                     description: |-
                                       ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
                                       of ClusterTrustBundle objects in an auto-updating file.
 
-
                                       Alpha, gated by the ClusterTrustBundleProjection feature gate.
-
 
                                       ClusterTrustBundle objects can either be selected by name, or by the
                                       combination of signer name and a label selector.
-
 
                                       Kubelet performs aggressive normalization of the PEM contents written
                                       into the pod filesystem.  Esoteric PEM features such as inter-block
@@ -6381,9 +6363,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional specify whether the
@@ -6522,9 +6502,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional field specify whether
@@ -6614,7 +6592,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             image:
                               description: |-
@@ -6622,6 +6599,7 @@ spec:
                                 More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                               type: string
                             keyring:
+                              default: /etc/ceph/keyring
                               description: |-
                                 keyring is the path to key ring for RBDUser.
                                 Default is /etc/ceph/keyring.
@@ -6636,6 +6614,7 @@ spec:
                               type: array
                               x-kubernetes-list-type: atomic
                             pool:
+                              default: rbd
                               description: |-
                                 pool is the rados pool name.
                                 Default is rbd.
@@ -6661,13 +6640,12 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
                             user:
+                              default: admin
                               description: |-
                                 user is the rados user name.
                                 Default is admin.
@@ -6682,6 +6660,7 @@ spec:
                             attached and mounted on Kubernetes nodes.
                           properties:
                             fsType:
+                              default: xfs
                               description: |-
                                 fsType is the filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
@@ -6713,9 +6692,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -6724,6 +6701,7 @@ spec:
                                 with Gateway, default false
                               type: boolean
                             storageMode:
+                              default: ThinProvisioned
                               description: |-
                                 storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
                                 Default is ThinProvisioned.
@@ -6838,9 +6816,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -6885,6 +6861,7 @@ spec:
                           - volumePath
                           type: object
                       required:
+                      - ""
                       - name
                       type: object
                     type: array
@@ -6959,11 +6936,8 @@ spec:
                     type: string
                 type: object
               latestTaskRunRef:
-                description: |-
+                description: |
                   LatestTaskRunRef is the name of the TaskRun responsible for executing this BuildRun.
-
-
-                  TODO: This should be called something like "TaskRunName"
                 type: string
               output:
                 description: Output holds the results emitted from step definition
@@ -7132,9 +7106,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -7200,9 +7172,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -7468,7 +7438,6 @@ spec:
                                   Revision describes the Git revision (e.g., branch, tag, commit SHA,
                                   etc.) to fetch.
 
-
                                   If not defined, it will fallback to the repository's default branch.
                                 type: string
                               url:
@@ -7506,7 +7475,6 @@ spec:
                                   Prune specifies whether the image containing the source code should be deleted.
                                   Allowed values are 'Never' (no deletion) and `AfterPull` (removal after the
                                   image was successfully pulled from the registry).
-
 
                                   If not defined, it defaults to 'Never'.
                                 type: string
@@ -7681,7 +7649,6 @@ spec:
                                     Tip: Ensure that the filesystem type is supported by the host operating system.
                                     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                     More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                                    TODO: how do we prevent errors in the filesystem from compromising the machine
                                   type: string
                                 partition:
                                   description: |-
@@ -7721,6 +7688,7 @@ spec:
                                     the blob storage
                                   type: string
                                 fsType:
+                                  default: ext4
                                   description: |-
                                     fsType is Filesystem type to mount.
                                     Must be a filesystem type supported by the host operating system.
@@ -7734,6 +7702,7 @@ spec:
                                     set). defaults to shared'
                                   type: string
                                 readOnly:
+                                  default: false
                                   description: |-
                                     readOnly Defaults to false (read/write). ReadOnly here will force
                                     the ReadOnly setting in VolumeMounts.
@@ -7802,9 +7771,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
@@ -7846,9 +7813,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
@@ -7921,9 +7886,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: optional specify whether the ConfigMap
@@ -7962,9 +7925,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
@@ -8105,7 +8066,6 @@ spec:
                                 The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                                 and deleted when the pod is removed.
 
-
                                 Use this if:
                                 a) the volume is only needed while the pod runs,
                                 b) features of normal volumes like restoring from snapshot or capacity
@@ -8116,16 +8076,13 @@ spec:
                                    information on the connection between this volume type
                                    and PersistentVolumeClaim).
 
-
                                 Use PersistentVolumeClaim or one of the vendor-specific
                                 APIs for volumes that persist for longer than the lifecycle
                                 of an individual pod.
 
-
                                 Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                                 be used that way - see the documentation of the driver for
                                 more information.
-
 
                                 A pod can use both types of ephemeral volumes and
                                 persistent volumes at the same time.
@@ -8140,7 +8097,6 @@ spec:
                                     entry. Pod validation will reject the pod if the concatenated name
                                     is not valid for a PVC (for example, too long).
 
-
                                     An existing PVC with that name that is not owned by the pod
                                     will *not* be used for the pod to avoid using an unrelated
                                     volume by mistake. Starting the pod is then blocked until
@@ -8150,10 +8106,8 @@ spec:
                                     this should not be necessary, but it may be useful when
                                     manually reconstructing a broken cluster.
 
-
                                     This field is read-only and no changes will be made by Kubernetes
                                     to the PVC after it has been created.
-
 
                                     Required, must not be nil.
                                   properties:
@@ -8358,7 +8312,7 @@ spec:
                                             set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                             exists.
                                             More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                            (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                            (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                           type: string
                                         volumeMode:
                                           description: |-
@@ -8384,7 +8338,6 @@ spec:
                                     fsType is the filesystem type to mount.
                                     Must be a filesystem type supported by the host operating system.
                                     Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                                    TODO: how do we prevent errors in the filesystem from compromising the machine
                                   type: string
                                 lun:
                                   description: 'lun is Optional: FC target lun number'
@@ -8452,9 +8405,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
@@ -8488,7 +8439,6 @@ spec:
                                     Tip: Ensure that the filesystem type is supported by the host operating system.
                                     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                     More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                                    TODO: how do we prevent errors in the filesystem from compromising the machine
                                   type: string
                                 partition:
                                   description: |-
@@ -8569,9 +8519,6 @@ spec:
                                 used for system agents or other privileged things that are allowed
                                 to see the host machine. Most containers will NOT need this.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                                ---
-                                TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                                mount host directories as read/write.
                               properties:
                                 path:
                                   description: |-
@@ -8587,6 +8534,41 @@ spec:
                                   type: string
                               required:
                               - path
+                              type: object
+                            image:
+                              description: |-
+                                image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+                                The volume is resolved at pod startup depending on which PullPolicy value is provided:
+
+                                - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                                - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                                - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                                The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+                                A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+                                The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+                                The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+                                The volume will be mounted read-only (ro) and non-executable files (noexec).
+                                Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                                The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+                              properties:
+                                pullPolicy:
+                                  description: |-
+                                    Policy for pulling OCI objects. Possible values are:
+                                    Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                                    Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                                    IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                                    Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                                  type: string
+                                reference:
+                                  description: |-
+                                    Required: Image or artifact reference to be used.
+                                    Behaves in the same way as pod.spec.containers[*].image.
+                                    Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+                                    More info: https://kubernetes.io/docs/concepts/containers/images
+                                    This field is optional to allow higher level config management to default or override
+                                    container images in workload controllers like Deployments and StatefulSets.
+                                  type: string
                               type: object
                             iscsi:
                               description: |-
@@ -8608,7 +8590,6 @@ spec:
                                     Tip: Ensure that the filesystem type is supported by the host operating system.
                                     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                     More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                                    TODO: how do we prevent errors in the filesystem from compromising the machine
                                   type: string
                                 initiatorName:
                                   description: |-
@@ -8620,6 +8601,7 @@ spec:
                                   description: iqn is the target iSCSI Qualified Name.
                                   type: string
                                 iscsiInterface:
+                                  default: default
                                   description: |-
                                     iscsiInterface is the interface Name that uses an iSCSI transport.
                                     Defaults to 'default' (tcp).
@@ -8652,9 +8634,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
@@ -8770,23 +8750,23 @@ spec:
                                   format: int32
                                   type: integer
                                 sources:
-                                  description: sources is the list of volume projections
+                                  description: |-
+                                    sources is the list of volume projections. Each entry in this list
+                                    handles one source.
                                   items:
-                                    description: Projection that may be projected
-                                      along with other supported volume types
+                                    description: |-
+                                      Projection that may be projected along with other supported volume types.
+                                      Exactly one of these fields must be set.
                                     properties:
                                       clusterTrustBundle:
                                         description: |-
                                           ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
                                           of ClusterTrustBundle objects in an auto-updating file.
 
-
                                           Alpha, gated by the ClusterTrustBundleProjection feature gate.
-
 
                                           ClusterTrustBundle objects can either be selected by name, or by the
                                           combination of signer name and a label selector.
-
 
                                           Kubelet performs aggressive normalization of the PEM contents written
                                           into the pod filesystem.  Esoteric PEM features such as inter-block
@@ -8922,9 +8902,7 @@ spec:
                                               This field is effectively required, but due to backwards compatibility is
                                               allowed to be empty. Instances of this type with an empty value here are
                                               almost certainly wrong.
-                                              TODO: Add other useful fields. apiVersion, kind, uid?
                                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                             type: string
                                           optional:
                                             description: optional specify whether
@@ -9066,9 +9044,7 @@ spec:
                                               This field is effectively required, but due to backwards compatibility is
                                               allowed to be empty. Instances of this type with an empty value here are
                                               almost certainly wrong.
-                                              TODO: Add other useful fields. apiVersion, kind, uid?
                                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                             type: string
                                           optional:
                                             description: optional field specify whether
@@ -9158,7 +9134,6 @@ spec:
                                     Tip: Ensure that the filesystem type is supported by the host operating system.
                                     Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                     More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                                    TODO: how do we prevent errors in the filesystem from compromising the machine
                                   type: string
                                 image:
                                   description: |-
@@ -9166,6 +9141,7 @@ spec:
                                     More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                                   type: string
                                 keyring:
+                                  default: /etc/ceph/keyring
                                   description: |-
                                     keyring is the path to key ring for RBDUser.
                                     Default is /etc/ceph/keyring.
@@ -9180,6 +9156,7 @@ spec:
                                   type: array
                                   x-kubernetes-list-type: atomic
                                 pool:
+                                  default: rbd
                                   description: |-
                                     pool is the rados pool name.
                                     Default is rbd.
@@ -9205,13 +9182,12 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 user:
+                                  default: admin
                                   description: |-
                                     user is the rados user name.
                                     Default is admin.
@@ -9226,6 +9202,7 @@ spec:
                                 volume attached and mounted on Kubernetes nodes.
                               properties:
                                 fsType:
+                                  default: xfs
                                   description: |-
                                     fsType is the filesystem type to mount.
                                     Must be a filesystem type supported by the host operating system.
@@ -9257,9 +9234,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
@@ -9268,6 +9243,7 @@ spec:
                                     communication with Gateway, default false
                                   type: boolean
                                 storageMode:
+                                  default: ThinProvisioned
                                   description: |-
                                     storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
                                     Default is ThinProvisioned.
@@ -9382,9 +9358,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                   type: object
                                   x-kubernetes-map-type: atomic
@@ -9430,6 +9404,7 @@ spec:
                               - volumePath
                               type: object
                           required:
+                          - ""
                           - name
                           type: object
                         type: array
@@ -9477,9 +9452,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: Specify whether the ConfigMap or its key
@@ -9544,9 +9517,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: Specify whether the Secret or its key must
@@ -9868,7 +9839,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         partition:
                           description: |-
@@ -9908,6 +9878,7 @@ spec:
                             storage
                           type: string
                         fsType:
+                          default: ext4
                           description: |-
                             fsType is Filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
@@ -9920,6 +9891,7 @@ spec:
                             disk (only in managed availability set). defaults to shared'
                           type: string
                         readOnly:
+                          default: false
                           description: |-
                             readOnly Defaults to false (read/write). ReadOnly here will force
                             the ReadOnly setting in VolumeMounts.
@@ -9987,9 +9959,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -10031,9 +10001,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -10105,9 +10073,7 @@ spec:
                             This field is effectively required, but due to backwards compatibility is
                             allowed to be empty. Instances of this type with an empty value here are
                             almost certainly wrong.
-                            TODO: Add other useful fields. apiVersion, kind, uid?
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                           type: string
                         optional:
                           description: optional specify whether the ConfigMap or its
@@ -10146,9 +10112,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -10285,7 +10249,6 @@ spec:
                         The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                         and deleted when the pod is removed.
 
-
                         Use this if:
                         a) the volume is only needed while the pod runs,
                         b) features of normal volumes like restoring from snapshot or capacity
@@ -10296,16 +10259,13 @@ spec:
                            information on the connection between this volume type
                            and PersistentVolumeClaim).
 
-
                         Use PersistentVolumeClaim or one of the vendor-specific
                         APIs for volumes that persist for longer than the lifecycle
                         of an individual pod.
 
-
                         Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                         be used that way - see the documentation of the driver for
                         more information.
-
 
                         A pod can use both types of ephemeral volumes and
                         persistent volumes at the same time.
@@ -10320,7 +10280,6 @@ spec:
                             entry. Pod validation will reject the pod if the concatenated name
                             is not valid for a PVC (for example, too long).
 
-
                             An existing PVC with that name that is not owned by the pod
                             will *not* be used for the pod to avoid using an unrelated
                             volume by mistake. Starting the pod is then blocked until
@@ -10330,10 +10289,8 @@ spec:
                             this should not be necessary, but it may be useful when
                             manually reconstructing a broken cluster.
 
-
                             This field is read-only and no changes will be made by Kubernetes
                             to the PVC after it has been created.
-
 
                             Required, must not be nil.
                           properties:
@@ -10537,7 +10494,7 @@ spec:
                                     set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                     exists.
                                     More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                    (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                    (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                   type: string
                                 volumeMode:
                                   description: |-
@@ -10563,7 +10520,6 @@ spec:
                             fsType is the filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
                             Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         lun:
                           description: 'lun is Optional: FC target lun number'
@@ -10631,9 +10587,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -10667,7 +10621,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         partition:
                           description: |-
@@ -10748,9 +10701,6 @@ spec:
                         used for system agents or other privileged things that are allowed
                         to see the host machine. Most containers will NOT need this.
                         More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                        ---
-                        TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                        mount host directories as read/write.
                       properties:
                         path:
                           description: |-
@@ -10766,6 +10716,41 @@ spec:
                           type: string
                       required:
                       - path
+                      type: object
+                    image:
+                      description: |-
+                        image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+                        The volume is resolved at pod startup depending on which PullPolicy value is provided:
+
+                        - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                        - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                        - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                        The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+                        A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+                        The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+                        The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                        The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+                      properties:
+                        pullPolicy:
+                          description: |-
+                            Policy for pulling OCI objects. Possible values are:
+                            Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                            Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                            IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                            Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                          type: string
+                        reference:
+                          description: |-
+                            Required: Image or artifact reference to be used.
+                            Behaves in the same way as pod.spec.containers[*].image.
+                            Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+                            More info: https://kubernetes.io/docs/concepts/containers/images
+                            This field is optional to allow higher level config management to default or override
+                            container images in workload controllers like Deployments and StatefulSets.
+                          type: string
                       type: object
                     iscsi:
                       description: |-
@@ -10787,7 +10772,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         initiatorName:
                           description: |-
@@ -10799,6 +10783,7 @@ spec:
                           description: iqn is the target iSCSI Qualified Name.
                           type: string
                         iscsiInterface:
+                          default: default
                           description: |-
                             iscsiInterface is the interface Name that uses an iSCSI transport.
                             Defaults to 'default' (tcp).
@@ -10831,9 +10816,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -10947,23 +10930,23 @@ spec:
                           format: int32
                           type: integer
                         sources:
-                          description: sources is the list of volume projections
+                          description: |-
+                            sources is the list of volume projections. Each entry in this list
+                            handles one source.
                           items:
-                            description: Projection that may be projected along with
-                              other supported volume types
+                            description: |-
+                              Projection that may be projected along with other supported volume types.
+                              Exactly one of these fields must be set.
                             properties:
                               clusterTrustBundle:
                                 description: |-
                                   ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
                                   of ClusterTrustBundle objects in an auto-updating file.
 
-
                                   Alpha, gated by the ClusterTrustBundleProjection feature gate.
-
 
                                   ClusterTrustBundle objects can either be selected by name, or by the
                                   combination of signer name and a label selector.
-
 
                                   Kubelet performs aggressive normalization of the PEM contents written
                                   into the pod filesystem.  Esoteric PEM features such as inter-block
@@ -11098,9 +11081,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: optional specify whether the ConfigMap
@@ -11238,9 +11219,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: optional field specify whether the
@@ -11330,7 +11309,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         image:
                           description: |-
@@ -11338,6 +11316,7 @@ spec:
                             More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                           type: string
                         keyring:
+                          default: /etc/ceph/keyring
                           description: |-
                             keyring is the path to key ring for RBDUser.
                             Default is /etc/ceph/keyring.
@@ -11352,6 +11331,7 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         pool:
+                          default: rbd
                           description: |-
                             pool is the rados pool name.
                             Default is rbd.
@@ -11377,13 +11357,12 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
                         user:
+                          default: admin
                           description: |-
                             user is the rados user name.
                             Default is admin.
@@ -11398,6 +11377,7 @@ spec:
                         attached and mounted on Kubernetes nodes.
                       properties:
                         fsType:
+                          default: xfs
                           description: |-
                             fsType is the filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
@@ -11429,9 +11409,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -11440,6 +11418,7 @@ spec:
                             with Gateway, default false
                           type: boolean
                         storageMode:
+                          default: ThinProvisioned
                           description: |-
                             storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
                             Default is ThinProvisioned.
@@ -11553,9 +11532,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -11600,6 +11577,7 @@ spec:
                       - volumePath
                       type: object
                   required:
+                  - ""
                   - name
                   type: object
                 type: array
@@ -11652,9 +11630,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap or its
@@ -11720,9 +11696,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -11987,7 +11961,6 @@ spec:
                               Revision describes the Git revision (e.g., branch, tag, commit SHA,
                               etc.) to fetch.
 
-
                               If not defined, it will fallback to the repository's default branch.
                             type: string
                           url:
@@ -12025,7 +11998,6 @@ spec:
                               Prune specifies whether the image containing the source code should be deleted.
                               Allowed values are 'Never' (no deletion) and `AfterPull` (removal after the
                               image was successfully pulled from the registry).
-
 
                               If not defined, it defaults to 'Never'.
                             type: string
@@ -12200,7 +12172,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             partition:
                               description: |-
@@ -12240,6 +12211,7 @@ spec:
                                 blob storage
                               type: string
                             fsType:
+                              default: ext4
                               description: |-
                                 fsType is Filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
@@ -12253,6 +12225,7 @@ spec:
                                 to shared'
                               type: string
                             readOnly:
+                              default: false
                               description: |-
                                 readOnly Defaults to false (read/write). ReadOnly here will force
                                 the ReadOnly setting in VolumeMounts.
@@ -12320,9 +12293,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -12364,9 +12335,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -12439,9 +12408,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: optional specify whether the ConfigMap
@@ -12480,9 +12447,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -12620,7 +12585,6 @@ spec:
                             The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                             and deleted when the pod is removed.
 
-
                             Use this if:
                             a) the volume is only needed while the pod runs,
                             b) features of normal volumes like restoring from snapshot or capacity
@@ -12631,16 +12595,13 @@ spec:
                                information on the connection between this volume type
                                and PersistentVolumeClaim).
 
-
                             Use PersistentVolumeClaim or one of the vendor-specific
                             APIs for volumes that persist for longer than the lifecycle
                             of an individual pod.
 
-
                             Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                             be used that way - see the documentation of the driver for
                             more information.
-
 
                             A pod can use both types of ephemeral volumes and
                             persistent volumes at the same time.
@@ -12655,7 +12616,6 @@ spec:
                                 entry. Pod validation will reject the pod if the concatenated name
                                 is not valid for a PVC (for example, too long).
 
-
                                 An existing PVC with that name that is not owned by the pod
                                 will *not* be used for the pod to avoid using an unrelated
                                 volume by mistake. Starting the pod is then blocked until
@@ -12665,10 +12625,8 @@ spec:
                                 this should not be necessary, but it may be useful when
                                 manually reconstructing a broken cluster.
 
-
                                 This field is read-only and no changes will be made by Kubernetes
                                 to the PVC after it has been created.
-
 
                                 Required, must not be nil.
                               properties:
@@ -12872,7 +12830,7 @@ spec:
                                         set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                         exists.
                                         More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                        (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                        (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                       type: string
                                     volumeMode:
                                       description: |-
@@ -12898,7 +12856,6 @@ spec:
                                 fsType is the filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
                                 Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             lun:
                               description: 'lun is Optional: FC target lun number'
@@ -12966,9 +12923,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -13002,7 +12957,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             partition:
                               description: |-
@@ -13083,9 +13037,6 @@ spec:
                             used for system agents or other privileged things that are allowed
                             to see the host machine. Most containers will NOT need this.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                            ---
-                            TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                            mount host directories as read/write.
                           properties:
                             path:
                               description: |-
@@ -13101,6 +13052,41 @@ spec:
                               type: string
                           required:
                           - path
+                          type: object
+                        image:
+                          description: |-
+                            image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+                            The volume is resolved at pod startup depending on which PullPolicy value is provided:
+
+                            - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                            - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                            - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                            The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+                            A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+                            The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+                            The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+                            The volume will be mounted read-only (ro) and non-executable files (noexec).
+                            Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                            The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+                          properties:
+                            pullPolicy:
+                              description: |-
+                                Policy for pulling OCI objects. Possible values are:
+                                Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                                Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                                IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                                Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                              type: string
+                            reference:
+                              description: |-
+                                Required: Image or artifact reference to be used.
+                                Behaves in the same way as pod.spec.containers[*].image.
+                                Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+                                More info: https://kubernetes.io/docs/concepts/containers/images
+                                This field is optional to allow higher level config management to default or override
+                                container images in workload controllers like Deployments and StatefulSets.
+                              type: string
                           type: object
                         iscsi:
                           description: |-
@@ -13122,7 +13108,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             initiatorName:
                               description: |-
@@ -13134,6 +13119,7 @@ spec:
                               description: iqn is the target iSCSI Qualified Name.
                               type: string
                             iscsiInterface:
+                              default: default
                               description: |-
                                 iscsiInterface is the interface Name that uses an iSCSI transport.
                                 Defaults to 'default' (tcp).
@@ -13166,9 +13152,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -13284,23 +13268,23 @@ spec:
                               format: int32
                               type: integer
                             sources:
-                              description: sources is the list of volume projections
+                              description: |-
+                                sources is the list of volume projections. Each entry in this list
+                                handles one source.
                               items:
-                                description: Projection that may be projected along
-                                  with other supported volume types
+                                description: |-
+                                  Projection that may be projected along with other supported volume types.
+                                  Exactly one of these fields must be set.
                                 properties:
                                   clusterTrustBundle:
                                     description: |-
                                       ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
                                       of ClusterTrustBundle objects in an auto-updating file.
 
-
                                       Alpha, gated by the ClusterTrustBundleProjection feature gate.
-
 
                                       ClusterTrustBundle objects can either be selected by name, or by the
                                       combination of signer name and a label selector.
-
 
                                       Kubelet performs aggressive normalization of the PEM contents written
                                       into the pod filesystem.  Esoteric PEM features such as inter-block
@@ -13435,9 +13419,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional specify whether the
@@ -13576,9 +13558,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional field specify whether
@@ -13668,7 +13648,6 @@ spec:
                                 Tip: Ensure that the filesystem type is supported by the host operating system.
                                 Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                                TODO: how do we prevent errors in the filesystem from compromising the machine
                               type: string
                             image:
                               description: |-
@@ -13676,6 +13655,7 @@ spec:
                                 More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                               type: string
                             keyring:
+                              default: /etc/ceph/keyring
                               description: |-
                                 keyring is the path to key ring for RBDUser.
                                 Default is /etc/ceph/keyring.
@@ -13690,6 +13670,7 @@ spec:
                               type: array
                               x-kubernetes-list-type: atomic
                             pool:
+                              default: rbd
                               description: |-
                                 pool is the rados pool name.
                                 Default is rbd.
@@ -13715,13 +13696,12 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
                             user:
+                              default: admin
                               description: |-
                                 user is the rados user name.
                                 Default is admin.
@@ -13736,6 +13716,7 @@ spec:
                             attached and mounted on Kubernetes nodes.
                           properties:
                             fsType:
+                              default: xfs
                               description: |-
                                 fsType is the filesystem type to mount.
                                 Must be a filesystem type supported by the host operating system.
@@ -13767,9 +13748,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -13778,6 +13757,7 @@ spec:
                                 with Gateway, default false
                               type: boolean
                             storageMode:
+                              default: ThinProvisioned
                               description: |-
                                 storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
                                 Default is ThinProvisioned.
@@ -13892,9 +13872,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -13939,6 +13917,7 @@ spec:
                           - volumePath
                           type: object
                       required:
+                      - ""
                       - name
                       type: object
                     type: array

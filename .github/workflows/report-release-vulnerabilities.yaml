@@ -31,7 +31,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.9
         with:
-          version: v0.17.1
+          version: v0.18.0
       - name: Install Retry
         run: curl --location --silent  https://raw.githubusercontent.com/homeport/retry/main/hack/download.sh | bash
       - name: Install semver
