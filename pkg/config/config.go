@@ -187,8 +187,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -215,8 +216,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -249,6 +251,7 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -274,8 +277,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
