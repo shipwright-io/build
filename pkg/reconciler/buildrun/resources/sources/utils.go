@@ -87,3 +87,72 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 
 	return ""
 }
+
+// ensureVolume adds a volume to the TaskSpec if a volume with the same name does not already exist.
+func ensureVolume(taskSpec *pipelineapi.TaskSpec, volume corev1.Volume) {
+	for _, v := range taskSpec.Volumes {
+		if v.Name == volume.Name {
+			return
+		}
+	}
+	taskSpec.Volumes = append(taskSpec.Volumes, volume)
+}
+
+// ensureVolumeMount adds a VolumeMount to a Step if a mount with the same name does not already exist.
+func ensureVolumeMount(step *pipelineapi.Step, mount corev1.VolumeMount) {
+	for _, m := range step.VolumeMounts {
+		if m.Name == mount.Name {
+			return
+		}
+	}
+	step.VolumeMounts = append(step.VolumeMounts, mount)
+}
+
+// AppendWriteableVolumes configures writable volumes for a container step within a Tekton Task.
+func AppendWriteableVolumes(
+	taskSpec *pipelineapi.TaskSpec,
+	targetStep *pipelineapi.Step,
+	writableHomeDir string,
+) {
+	// Volume for /tmp
+	tmpVolumeName := "shp-tmp-data"
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: tmpVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      tmpVolumeName,
+		MountPath: "/tmp",
+	})
+
+	// Volume for writable home directory
+	homeVolumeName := "shp-writable-home"
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: homeVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      homeVolumeName,
+		MountPath: writableHomeDir,
+	})
+
+	// Set HOME env var (override if present)
+	found := false
+	for i, env := range targetStep.Env {
+		if env.Name == "HOME" {
+			targetStep.Env[i].Value = writableHomeDir
+			found = true
+			break
+		}
+	}
+	if !found {
+		targetStep.Env = append(targetStep.Env, corev1.EnvVar{
+			Name:  "HOME",
+			Value: writableHomeDir,
+		})
+	}
+}
