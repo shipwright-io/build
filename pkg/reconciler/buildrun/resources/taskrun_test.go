@@ -122,7 +122,7 @@ var _ = Describe("GenerateTaskrun", func() {
 			})
 
 			It("should ensure top level volumes are populated", func() {
-				Expect(len(got.Volumes)).To(Equal(1))
+				Expect(len(got.Volumes)).To(Equal(3))
 			})
 
 			It("should contain the shipwright system parameters", func() {

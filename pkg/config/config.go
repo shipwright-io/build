@@ -179,6 +179,10 @@ func NewDefaultConfig() *Config {
 					Name:  "GIT_SHOW_LISTING",
 					Value: "false",
 				},
+				{
+					Name:  "TMPDIR",
+					Value: "/tmp-workspace",
+				},
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
@@ -187,8 +191,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -210,6 +215,7 @@ func NewDefaultConfig() *Config {
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
+				ReadOnlyRootFilesystem:   ptr.To(true),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
@@ -231,6 +237,14 @@ func NewDefaultConfig() *Config {
 					Name:  "HOME",
 					Value: "/shared-home",
 				},
+				{
+					Name:  "TRIVY_CACHE_DIR",
+					Value: "/trivy-workspace/trivy-cache",
+				},
+				{
+					Name:  "TMPDIR",
+					Value: "/trivy-workspace/tmp",
+				},
 			},
 			// The image processing step runs after the build strategy steps where an arbitrary
 			// user could have been used to write the result files for the image digest. The
@@ -241,6 +255,7 @@ func NewDefaultConfig() *Config {
 				AllowPrivilegeEscalation: ptr.To(false),
 				RunAsUser:                root,
 				RunAsGroup:               root,
+				ReadOnlyRootFilesystem:   ptr.To(true),
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"DAC_OVERRIDE",
@@ -266,6 +281,10 @@ func NewDefaultConfig() *Config {
 					Name:  "HOME",
 					Value: "/shared-home",
 				},
+				{
+					Name:  "WAITER_LOCK_FILE",
+					Value: "/waiter-workspace/waiter.lock",
+				},
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
@@ -274,8 +293,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
