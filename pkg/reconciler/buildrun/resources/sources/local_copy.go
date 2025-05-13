@@ -32,6 +32,7 @@ func AppendLocalCopyStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, tim
 		WorkingDir:       cfg.WaiterContainerTemplate.WorkingDir,
 	}
 
+	AppendWriteableVolumes(taskSpec, &step, cfg.ContainersWritableDir.WritableHomeDir)
 	if timeout != nil {
 		step.Args = append(step.Args, fmt.Sprintf("--timeout=%s", timeout.Duration.String()))
 	}

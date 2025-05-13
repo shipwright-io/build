@@ -67,6 +67,7 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
 
+	AppendWriteableVolumes(taskSpec, &bundleStep, cfg.ContainersWritableDir.WritableHomeDir)
 	taskSpec.Steps = append(taskSpec.Steps, bundleStep)
 }
 

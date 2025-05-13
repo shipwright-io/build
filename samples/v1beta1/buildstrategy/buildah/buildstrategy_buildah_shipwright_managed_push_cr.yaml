@@ -10,7 +10,27 @@ spec:
       imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
       securityContext:
-        privileged: true
+        runAsUser: 0
+        readOnlyRootFilesystem: true
+        capabilities:
+          add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+            - SETFCAP
+            - KILL
+      volumeMounts:
+        - name: buildah-storage
+          mountPath: /var/lib/containers
+        - name: tmp
+          mountPath: /tmp
+        - name: run
+          mountPath: /run
+      env:
+        - name: TMPDIR
+          value: /tmp
       command:
         - /bin/bash
       args:
@@ -187,6 +207,13 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  volumes:
+    - name: buildah-storage
+      emptyDir: {}
+    - name: tmp
+      emptyDir: {}
+    - name: run
+      emptyDir: {}
   parameters:
     - name: build-args
       description: "The values for the args in the Dockerfile. Values must be in the format KEY=VALUE."
