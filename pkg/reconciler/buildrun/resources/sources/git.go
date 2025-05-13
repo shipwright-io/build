@@ -107,6 +107,19 @@ func AppendGitStep(
 
 	// append the git step
 	taskSpec.Steps = append(taskSpec.Steps, gitStep)
+	// Add tmp volume for git operations
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: "tmp-workspace",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	// Add tmp volume mount to git step
+	gitStep.VolumeMounts = append(gitStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "tmp-workspace",
+		MountPath: "/tmp-workspace",
+	})
 }
 
 // AppendGitResult append git source result to build run

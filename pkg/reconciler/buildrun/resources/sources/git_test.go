@@ -81,7 +81,7 @@ var _ = Describe("Git", func() {
 		})
 
 		It("adds a volume for the secret", func() {
-			Expect(len(taskSpec.Volumes)).To(Equal(1))
+			Expect(len(taskSpec.Volumes)).To(Equal(2))
 			Expect(taskSpec.Volumes[0].Name).To(Equal("shp-a-secret"))
 			Expect(taskSpec.Volumes[0].VolumeSource.Secret).NotTo(BeNil())
 			Expect(taskSpec.Volumes[0].VolumeSource.Secret.SecretName).To(Equal("a.secret"))

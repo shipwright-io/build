@@ -54,7 +54,12 @@ var (
 var defaultTimeout = 60 * time.Second
 
 // defaultLockFile default location of the lock-file.
-var defaultLockFile = "/tmp/waiter.lock"
+var defaultLockFile = func() string {
+	if envLockFile := os.Getenv("WAITER_LOCK_FILE"); envLockFile != "" {
+		return envLockFile
+	}
+	return "/tmp/waiter.lock"
+}()
 
 // flagValues receives the command-line flag values.
 var flagValues = settings{}
