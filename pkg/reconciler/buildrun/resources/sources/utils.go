@@ -6,9 +6,11 @@ package sources
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/shipwright-io/build/pkg/config"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -86,4 +88,69 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 	}
 
 	return ""
+}
+
+// ensureEnvVar adds or updates an environment variable in a step.
+func ensureEnvVar(step *pipelineapi.Step, name, value string) {
+	for i, envVar := range step.Env {
+		if envVar.Name == name {
+			step.Env[i].Value = value
+			return
+		}
+	}
+	step.Env = append(step.Env, corev1.EnvVar{Name: name, Value: value})
+}
+
+// ensureVolume adds a volume to the TaskSpec if a volume with the same name does not already exist.
+func ensureVolume(taskSpec *pipelineapi.TaskSpec, volume corev1.Volume) {
+	for _, v := range taskSpec.Volumes {
+		if v.Name == volume.Name {
+			return
+		}
+	}
+	taskSpec.Volumes = append(taskSpec.Volumes, volume)
+}
+
+// ensureVolumeMount adds a VolumeMount to a Step if a mount with the same name does not already exist.
+func ensureVolumeMount(step *pipelineapi.Step, mount corev1.VolumeMount) {
+	for _, m := range step.VolumeMounts {
+		if m.Name == mount.Name {
+			return
+		}
+	}
+	step.VolumeMounts = append(step.VolumeMounts, mount)
+}
+
+func AppendWriteableVolumes(
+	taskSpec *pipelineapi.TaskSpec,
+	targetStep *pipelineapi.Step,
+	cfg *config.Config,
+) {
+	homeDir := cfg.ContainersWritableDir.WritableHomeDir
+	ensureEnvVar(targetStep, "HOME", homeDir)
+
+	// In some cases, such as when using Kaniko, it is convenient to have a few directories
+	// available for writing. We create them here as emptyDir volumes and mount them.
+	volumes := []struct {
+		name      string
+		mountPath string
+	}{
+		{name: "writable-home", mountPath: homeDir},
+		{name: "ssh-data", mountPath: filepath.Join(homeDir, ".ssh")},
+		{name: "docker-data", mountPath: filepath.Join(homeDir, ".docker")},
+		{name: "tmp-data", mountPath: "/tmp"},
+	}
+
+	for _, v := range volumes {
+		ensureVolume(taskSpec, corev1.Volume{
+			Name: v.name,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+		ensureVolumeMount(targetStep, corev1.VolumeMount{
+			Name:      v.name,
+			MountPath: v.mountPath,
+		})
+	}
 }
