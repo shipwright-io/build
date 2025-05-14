@@ -131,7 +131,7 @@ func main() {
 	}
 
 	// Start the Cmd
-	ctxlog.Info(ctx, "Starting the Cmd.")
+	ctxlog.Info(ctx, "Starting the Cmd")
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		ctxlog.Error(ctx, err, "Manager exited non-zero")
 		os.Exit(1)
