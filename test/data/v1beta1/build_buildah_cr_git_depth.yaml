@@ -1,0 +1,19 @@
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildah-golang-build-depth
+spec:
+  source:
+    type: Git
+    git: 
+      url: https://github.com/ayushsatyam146/buildah-sample-go
+      depth: 3
+    contextDir: docker-build
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  paramValues:
+  - name: dockerfile
+    value: Dockerfile
+  output:
+    image: ttl.sh/buildah-example-sample-go-app:6h

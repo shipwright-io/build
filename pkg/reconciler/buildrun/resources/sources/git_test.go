@@ -108,4 +108,62 @@ var _ = Describe("Git", func() {
 			Expect(taskSpec.Steps[0].VolumeMounts[0].ReadOnly).To(BeTrue())
 		})
 	})
+
+	Context("when adding a Git source with a depth parameter", func() {
+		var taskSpec *pipelineapi.TaskSpec
+
+		BeforeEach(func() {
+			taskSpec = &pipelineapi.TaskSpec{}
+		})
+
+		It("adds --depth argument with default value when depth is set to 1", func() {
+			depth := 1
+			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+				URL:   "https://github.com/shipwright-io/build",
+				Depth: ptr.To(depth),
+			}, "default")
+
+			Expect(len(taskSpec.Steps)).To(Equal(1))
+			Expect(taskSpec.Steps[0].Args).To(ContainElements("--depth", "1"))
+		})
+
+		It("adds --depth argument with specified value when depth is greater than 1", func() {
+			depth := 5
+			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+				URL:   "https://github.com/shipwright-io/build",
+				Depth: ptr.To(depth),
+			}, "default")
+
+			Expect(len(taskSpec.Steps)).To(Equal(1))
+			Expect(taskSpec.Steps[0].Args).To(ContainElements("--depth", "5"))
+		})
+
+		It("does not add --depth argument when depth is not specified", func() {
+			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+				URL: "https://github.com/shipwright-io/build",
+			}, "default")
+
+			Expect(len(taskSpec.Steps)).To(Equal(1))
+			Expect(taskSpec.Steps[0].Args).NotTo(ContainElement("--depth"))
+		})
+
+		It("combines depth with other Git parameters", func() {
+			depth := 3
+			revision := "main"
+			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+				URL:         "https://github.com/shipwright-io/build",
+				Depth:       ptr.To(depth),
+				Revision:    ptr.To(revision),
+				CloneSecret: ptr.To("a.secret"),
+			}, "default")
+
+			Expect(len(taskSpec.Steps)).To(Equal(1))
+			Expect(taskSpec.Steps[0].Args).To(ContainElements(
+				"--url", "https://github.com/shipwright-io/build",
+				"--revision", "main",
+				"--depth", "3",
+				"--secret-path", "/workspace/shp-source-secret",
+			))
+		})
+	})
 })
