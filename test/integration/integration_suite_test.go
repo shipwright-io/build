@@ -5,6 +5,7 @@
 package integration_test
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"testing"
@@ -32,10 +33,16 @@ var (
 	tb            *utils.TestBuild
 	err           error
 	webhookServer *http.Server
+
+	controllerLogs *bytes.Buffer
 )
 
 var _ = BeforeSuite(func() {
 	webhookServer = utils.StartBuildWebhook()
+
+	var err error
+	controllerLogs, err = utils.StartBuildControllers()
+	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
@@ -55,10 +62,7 @@ var _ = BeforeEach(func() {
 		fmt.Printf("fail to create namespace: %v, with error: %v", tb.Namespace, err)
 	}
 
-	err = tb.StartBuildControllers()
-	if err != nil {
-		fmt.Println("fail to start the powerful Build controllers", err)
-	}
+	controllerLogs.Reset()
 })
 
 var _ = AfterEach(func() {
@@ -67,12 +71,9 @@ var _ = AfterEach(func() {
 		fmt.Printf("failed to delete namespace: %v, with error: %v", tb.Namespace, err)
 	}
 
-	if CurrentSpecReport().Failed() && tb.BuildControllerLogBuffer != nil {
+	if CurrentSpecReport().Failed() {
 		// print operator logs
 		fmt.Println("\nLogs of the operator:")
-		fmt.Printf("%v\n", tb.BuildControllerLogBuffer)
+		fmt.Printf("%v\n", controllerLogs)
 	}
-
-	// Cancel the context, this will stop the controllers
-	tb.StopBuildControllers()
 })

@@ -18,10 +18,21 @@ const (
 
 // BuildStrategySpec defines the desired state of BuildStrategy
 type BuildStrategySpec struct {
-	BuildSteps      []BuildStep                   `json:"buildSteps,omitempty"`
-	Parameters      []Parameter                   `json:"parameters,omitempty"`
+	// BuildSteps defines the steps of the strategy
+	// +required
+	BuildSteps []BuildStep `json:"buildSteps,omitempty"`
+
+	// Parameters defines the parameters of the strategy
+	// +optional
+	Parameters []Parameter `json:"parameters,omitempty"`
+
+	// SecurityContext defines the default security context of all strategy steps
+	// +optional
 	SecurityContext *BuildStrategySecurityContext `json:"securityContext,omitempty"`
-	Volumes         []BuildStrategyVolume         `json:"volumes,omitempty"`
+
+	// Volumes defines the volumes of the strategy
+	// +optional
+	Volumes []BuildStrategyVolume `json:"volumes,omitempty"`
 }
 
 // ParameterType indicates the type of a parameter
@@ -78,7 +89,7 @@ type BuildStrategyVolume struct {
 	Description *string `json:"description,omitempty"`
 
 	// Represents the source of a volume to mount
-	// +required
+	// +optional
 	corev1.VolumeSource `json:",inline"`
 }
 

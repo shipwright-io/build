@@ -19,15 +19,14 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
-	"time"
+	context "context"
 
-	v1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	pipelinev1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	scheme "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // RunsGetter has a method to return a RunInterface.
@@ -38,158 +37,34 @@ type RunsGetter interface {
 
 // RunInterface has methods to work with Run resources.
 type RunInterface interface {
-	Create(ctx context.Context, run *v1alpha1.Run, opts v1.CreateOptions) (*v1alpha1.Run, error)
-	Update(ctx context.Context, run *v1alpha1.Run, opts v1.UpdateOptions) (*v1alpha1.Run, error)
-	UpdateStatus(ctx context.Context, run *v1alpha1.Run, opts v1.UpdateOptions) (*v1alpha1.Run, error)
+	Create(ctx context.Context, run *pipelinev1alpha1.Run, opts v1.CreateOptions) (*pipelinev1alpha1.Run, error)
+	Update(ctx context.Context, run *pipelinev1alpha1.Run, opts v1.UpdateOptions) (*pipelinev1alpha1.Run, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, run *pipelinev1alpha1.Run, opts v1.UpdateOptions) (*pipelinev1alpha1.Run, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Run, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RunList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*pipelinev1alpha1.Run, error)
+	List(ctx context.Context, opts v1.ListOptions) (*pipelinev1alpha1.RunList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Run, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *pipelinev1alpha1.Run, err error)
 	RunExpansion
 }
 
 // runs implements RunInterface
 type runs struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*pipelinev1alpha1.Run, *pipelinev1alpha1.RunList]
 }
 
 // newRuns returns a Runs
 func newRuns(c *TektonV1alpha1Client, namespace string) *runs {
 	return &runs{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*pipelinev1alpha1.Run, *pipelinev1alpha1.RunList](
+			"runs",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *pipelinev1alpha1.Run { return &pipelinev1alpha1.Run{} },
+			func() *pipelinev1alpha1.RunList { return &pipelinev1alpha1.RunList{} },
+		),
 	}
-}
-
-// Get takes name of the run, and returns the corresponding run object, and an error if there is any.
-func (c *runs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Run, err error) {
-	result = &v1alpha1.Run{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("runs").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of Runs that match those selectors.
-func (c *runs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RunList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.RunList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("runs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested runs.
-func (c *runs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("runs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a run and creates it.  Returns the server's representation of the run, and an error, if there is any.
-func (c *runs) Create(ctx context.Context, run *v1alpha1.Run, opts v1.CreateOptions) (result *v1alpha1.Run, err error) {
-	result = &v1alpha1.Run{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("runs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(run).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a run and updates it. Returns the server's representation of the run, and an error, if there is any.
-func (c *runs) Update(ctx context.Context, run *v1alpha1.Run, opts v1.UpdateOptions) (result *v1alpha1.Run, err error) {
-	result = &v1alpha1.Run{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("runs").
-		Name(run.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(run).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *runs) UpdateStatus(ctx context.Context, run *v1alpha1.Run, opts v1.UpdateOptions) (result *v1alpha1.Run, err error) {
-	result = &v1alpha1.Run{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("runs").
-		Name(run.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(run).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the run and deletes it. Returns an error if one occurs.
-func (c *runs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("runs").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *runs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("runs").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched run.
-func (c *runs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Run, err error) {
-	result = &v1alpha1.Run{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("runs").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

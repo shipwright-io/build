@@ -6,12 +6,12 @@ package utils
 
 import (
 	"context"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/ptr"
 )
 
 // This class is intended to host all CRUD calls for Namespace primitive resources
@@ -52,22 +52,14 @@ func (t *TestBuild) CreateNamespace() error {
 func (t *TestBuild) DeleteNamespace() error {
 	client := t.Clientset.CoreV1().Namespaces()
 
-	if err := client.Delete(t.Context, t.Namespace, metav1.DeleteOptions{}); err != nil {
+	if err := client.Delete(context.Background(), t.Namespace, metav1.DeleteOptions{
+		GracePeriodSeconds: ptr.To[int64](0),
+	}); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
 
-	// wait for the namespace to be deleted
-	pollNamespace := func(ctx context.Context) (bool, error) {
-
-		if _, err := client.Get(ctx, t.Namespace, metav1.GetOptions{}); err != nil && apierrors.IsNotFound(err) {
-			return true, nil
-		}
-
-		return false, nil
-	}
-
-	return wait.PollUntilContextTimeout(t.Context, t.Interval, 5*time.Second, true, pollNamespace)
+	return nil
 }
