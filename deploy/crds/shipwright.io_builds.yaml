@@ -494,6 +494,13 @@ spec:
                   url:
                     description: URL describes the URL of the Git repository.
                     type: string
+                  depth:
+                    description: |-
+                      The depth of the git clone. If not specified the default value is 1, 
+                      a shallow git clone will be performed. Values greater than 1 will 
+                      create a clone with the specified depth.
+                    type: integer
+                    minimum: 1
                 type: object
               sources:
                 description: |-
@@ -2837,6 +2844,13 @@ spec:
                     description: Git contains the details for obtaining source code
                       from a git repository.
                     properties:
+                      depth:
+                        description: |-
+                          The depth of the git clone. If not specified the default value is 1, 
+                          a shallow git clone will be performed. Values greater than 1 will 
+                          create a clone with the specified depth.
+                        type: integer
+                        minimum: 1
                       cloneSecret:
                         description: |-
                           CloneSecret references a Secret that contains credentials to access
