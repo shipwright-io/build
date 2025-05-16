@@ -142,8 +142,9 @@ var _ = Describe("Config", func() {
 								"ALL",
 							},
 						},
-						RunAsUser:  nonRoot,
-						RunAsGroup: nonRoot,
+						RunAsUser:              nonRoot,
+						RunAsGroup:             nonRoot,
+						ReadOnlyRootFilesystem: ptr.To(true),
 					},
 				}))
 			})
@@ -243,8 +244,9 @@ var _ = Describe("Config", func() {
 								"ALL",
 							},
 						},
-						RunAsUser:  nonRoot,
-						RunAsGroup: nonRoot,
+						RunAsUser:              nonRoot,
+						RunAsGroup:             nonRoot,
+						ReadOnlyRootFilesystem: ptr.To(true),
 					},
 				}))
 			})

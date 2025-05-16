@@ -134,6 +134,7 @@ spec:
     securityContext:
       runAsUser: 1000
       runAsGroup: 1000
+      readOnlyRootFilesystem: true
     env:
     - name: DOCKER_CONFIG
       value: /tekton/home/.docker
