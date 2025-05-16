@@ -29,10 +29,13 @@ const (
 	typeUsernamePassword
 )
 
-var useNoTagsFlag = false
-var useDepthForSubmodule = false
+var (
+	useNoTagsFlag        = false
+	useRevisionFlag      = false
+	useDepthForSubmodule = false
 
-var displayURL string
+	displayURL string
+)
 
 // ExitError is an error which has an exit code to be used in os.Exit() to
 // return both an exit code and an error message
@@ -69,8 +72,9 @@ type settings struct {
 var flagValues settings
 
 var (
-	sshGitURLRegEx = regexp.MustCompile(`^(git@|ssh:\/\/).+$`)
-	commitShaRegEx = regexp.MustCompile(`^[0-9a-f]{7,40}$`)
+	sshGitURLRegEx     = regexp.MustCompile(`^(git@|ssh:\/\/).+$`)
+	fullCommitShaRegex = regexp.MustCompile(`^[0-9a-f]{40}$`)
+	commitShaRegEx     = regexp.MustCompile(`^[0-9a-f]{7,40}$`)
 )
 
 func init() {
@@ -141,9 +145,10 @@ func Execute(ctx context.Context) error {
 		return err
 	}
 
-	// Check if Git CLI supports --no-tags for clone
+	// Check if Git CLI supports --no-tags and --revision for clone
 	out, _ := git(ctx, "clone", "-h")
 	useNoTagsFlag = strings.Contains(out, "--no-tags")
+	useRevisionFlag = strings.Contains(out, "--revision")
 
 	// Check if Git CLI support --single-branch and therefore shallow clones using --depth
 	out, _ = git(ctx, "submodule", "-h")
@@ -275,7 +280,16 @@ func clone(ctx context.Context) error {
 
 	var commitSha string
 	switch {
+	case useRevisionFlag && fullCommitShaRegex.MatchString(flagValues.revision):
+		// we can pass the commit SHA directly to `git clone --revision` and can honor the depth.
+		cloneArgs = append(cloneArgs, "--revision", flagValues.revision)
+
+		if flagValues.depth > 0 {
+			cloneArgs = append(cloneArgs, "--depth", fmt.Sprintf("%d", flagValues.depth))
+		}
+
 	case commitShaRegEx.MatchString(flagValues.revision):
+		// for a short commit SHA or when --revision is not supported, we must do a full `git clone --no-checkout` and later a checkout. For this, we cannot honor depth.
 		commitSha = flagValues.revision
 		cloneArgs = append(cloneArgs, "--no-checkout")
 
