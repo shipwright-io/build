@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("User RBAC for Shipwright", func() {
+var _ = Describe("User RBAC for Shipwright", Label("FEATURE:RBAC", "CORE"), func() {
 
 	var ctx context.Context
 

@@ -48,7 +48,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 	})
 
-	Context("when a Buildah build is defined that is using shipwright-managed push", func() {
+	Context("when a Buildah build is defined that is using shipwright-managed push", Label("FEATURE:Buildah", "CORE", "SAMPLE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildah")
@@ -72,7 +72,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildah build is defined that is using strategy-managed push", func() {
+	Context("when a Buildah build is defined that is using strategy-managed push", Label("FEATURE:Buildah", "CORE", "SAMPLE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildah")
@@ -96,7 +96,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildah build with a contextDir and a custom Dockerfile name is defined", func() {
+	Context("when a Buildah build with a contextDir and a custom Dockerfile name is defined", Label("FEATURE:Buildah", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildah-custom-context-dockerfile")
@@ -119,7 +119,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a BuildAh build runs with a custom target stage", func() {
+	Context("when a BuildAh build runs with a custom target stage", Label("FEATURE:Buildah", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildah-custom-target-stage")
@@ -141,7 +141,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a heroku Buildpacks build is defined using a cluster strategy", func() {
+	Context("when a heroku Buildpacks build is defined using a cluster strategy", Label("FEATURE:Buildpacks", "CORE", "SAMPLE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-heroku")
@@ -163,7 +163,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a heroku Buildpacks build is defined using a namespaced strategy", func() {
+	Context("when a heroku Buildpacks build is defined using a namespaced strategy", Label("FEATURE:Buildpacks", "CORE", "SAMPLE"), func() {
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-heroku-namespaced")
 
@@ -189,7 +189,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks v3 build is defined using a cluster strategy", func() {
+	Context("when a Buildpacks v3 build is defined using a cluster strategy", Label("FEATURE:Buildpacks", "CORE", "SAMPLE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3")
@@ -212,7 +212,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks v3 build is defined using a namespaced strategy", func() {
+	Context("when a Buildpacks v3 build is defined using a namespaced strategy", Label("FEATURE:Buildpacks", "CORE", "SAMPLE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-namespaced")
@@ -238,7 +238,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks v3 build is defined for a php runtime", func() {
+	Context("when a Buildpacks v3 build is defined for a php runtime", Label("FEATURE:Buildpacks", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-php")
@@ -260,7 +260,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks v3 build is defined for a ruby runtime", func() {
+	Context("when a Buildpacks v3 build is defined for a ruby runtime", Label("FEATURE:Buildpacks", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-ruby")
@@ -282,7 +282,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks v3 build is defined for a golang runtime", func() {
+	Context("when a Buildpacks v3 build is defined for a golang runtime", Label("FEATURE:Buildpacks", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-golang")
@@ -304,7 +304,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildpacks v3 build is defined for a golang runtime with `BP_GO_TARGETS` env", func() {
+	Context("when a Buildpacks v3 build is defined for a golang runtime with `BP_GO_TARGETS` env", Label("FEATURE:Buildpacks", "CORE"), func() {
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-golang")
 
@@ -325,7 +325,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a build uses the build-run-deletion annotation", func() {
+	Context("when a build uses the build-run-deletion annotation", Label("FEATURE:BuildRunDeletion", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildpacks-v3-golang")
@@ -384,7 +384,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Kaniko build is defined to use public GitHub", func() {
+	Context("when a Kaniko build is defined to use public GitHub", Label("FEATURE:Kaniko", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("kaniko")
@@ -407,7 +407,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Kaniko build with a Dockerfile that requires advanced permissions is defined", func() {
+	Context("when a Kaniko build with a Dockerfile that requires advanced permissions is defined", Label("FEATURE:Kaniko", "CORE") , func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("kaniko-advanced-dockerfile")
@@ -429,7 +429,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Kaniko build with a contextDir and a custom Dockerfile name is defined", func() {
+	Context("when a Kaniko build with a contextDir and a custom Dockerfile name is defined", Label("FEATURE:Kaniko", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("kaniko-custom-context-dockerfile")
@@ -451,7 +451,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Kaniko build runs with a custom target stage", func() {
+	Context("when a Kaniko build runs with a custom target stage", Label("FEATURE:Kaniko", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("kaniko-custom-target-stage")
@@ -473,7 +473,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Buildkit build with a contextDir and a path to a Dockerfile is defined", func() {
+	Context("when a Buildkit build with a contextDir and a path to a Dockerfile is defined", Label("FEATURE:BuildKit", "CORE", "SAMPLE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildkit-custom-context")
@@ -505,7 +505,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a BuildKit build runs with a custom target stage", func() {
+	Context("when a BuildKit build runs with a custom target stage", Label("FEATURE:BuildKit", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildkit-custom-target-stage")
@@ -527,7 +527,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a Multiarch Native Buildah build is defined", func() {
+	Context("when a Multiarch Native Buildah build is defined", Label("FEATURE:Buildah", "FEATURE:MultiArch", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("buildah-multi-arch-native")
@@ -546,7 +546,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
-	Context("when a s2i build is defined", func() {
+	Context("when a s2i build is defined", Label("FEATURE:SourceToImage", "CORE", "SAMPLE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("s2i")
@@ -569,7 +569,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a private source repository is used", func() {
+	Context("when a private source repository is used", Label("FEATURE:PrivateRepo"), func() {
 
 		BeforeEach(func() {
 			if os.Getenv(EnvVarEnablePrivateRepos) != "true" {
@@ -577,7 +577,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			}
 		})
 
-		Context("when a Buildah build is defined to use a private GitHub repository", func() {
+		Context("when a Buildah build is defined to use a private GitHub repository", Label("FEATURE:Buildah"), func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-github-buildah")
@@ -599,7 +599,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("when a Buildah build is defined to use a private GitLab repository", func() {
+		Context("when a Buildah build is defined to use a private GitLab repository", Label("FEATURE:Buildah"), func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-gitlab-buildah")
@@ -621,7 +621,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("when a Kaniko build is defined to use a private GitHub repository", func() {
+		Context("when a Kaniko build is defined to use a private GitHub repository", Label("FEATURE:Kaniko"), func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-github-kaniko")
@@ -643,7 +643,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("when a Kaniko build is defined to use a private GitLab repository", func() {
+		Context("when a Kaniko build is defined to use a private GitLab repository", Label("FEATURE:Kaniko"), func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-gitlab-kaniko")
@@ -665,7 +665,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("when a s2i build is defined to use a private GitHub repository", func() {
+		Context("when a s2i build is defined to use a private GitHub repository", Label("FEATURE:SourceToImage"), func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-github-s2i")
@@ -688,7 +688,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when a s2i build uses a non-existent git repository as source", func() {
+	Context("when a s2i build uses a non-existent git repository as source", Label("FEATURE:SourceToImage", "FAILING"), func() {
 		It("fails because of prompted authentication which surfaces the to the BuildRun", func() {
 			testID = generateTestID("s2i-failing")
 
@@ -709,7 +709,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("when tolerations are specified", Serial, func() {
+	Context("when tolerations are specified", Serial, Label("FEATURE:Tolerations", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("tolerations")
