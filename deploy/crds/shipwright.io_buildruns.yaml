@@ -7499,6 +7499,13 @@ spec:
                                   CloneSecret references a Secret that contains credentials to access
                                   the repository.
                                 type: string
+                              depth:
+                                description: |-
+                                  Depth specifies the depth of the shallow clone.
+                                  If not specified the default is set to 1.
+                                  Values greater than 1 will create a clone with the specified depth.
+                                  If value is 0, it will create a full git history clone.
+                                type: integer
                               revision:
                                 description: |-
                                   Revision describes the Git revision (e.g., branch, tag, commit SHA,
@@ -12066,6 +12073,13 @@ spec:
                               CloneSecret references a Secret that contains credentials to access
                               the repository.
                             type: string
+                          depth:
+                            description: |-
+                              Depth specifies the depth of the shallow clone.
+                              If not specified the default is set to 1.
+                              Values greater than 1 will create a clone with the specified depth.
+                              If value is 0, it will create a full git history clone.
+                            type: integer
                           revision:
                             description: |-
                               Revision describes the Git revision (e.g., branch, tag, commit SHA,

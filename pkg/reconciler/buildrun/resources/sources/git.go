@@ -6,6 +6,7 @@ package sources
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -76,6 +77,15 @@ func AppendGitStep(
 			gitStep.Args,
 			"--revision",
 			*source.Revision,
+		)
+	}
+
+	// Check if shallow clone is requested
+	if source.Depth != nil && *source.Depth >= 0 {
+		gitStep.Args = append(
+			gitStep.Args,
+			"--depth",
+			strconv.Itoa(*source.Depth),
 		)
 	}
 

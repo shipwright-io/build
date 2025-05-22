@@ -142,6 +142,7 @@ A `Build` resource can specify a source type, such as a Git repository or an OCI
 - `source.git.url` - Specify the source location using a Git repository.
 - `source.git.cloneSecret` - For private repositories or registries, the name references a secret in the namespace that contains the SSH private key or Docker access credentials, respectively.
 - `source.git.revision` - A specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fall back to the Git repository default branch.
+- `source.git.depth` - The depth of the git clone. If not specified the default value is 1 which means that no history is cloned at all. This is the fastest way to clone a Git repository and in most cases enough as long as you don't have anything in your build logic relying on it. Any value greater than 1 will create a clone with the specified depth. For a full git history clone, depth must be set to 0. **Note**: If you specify a commit sha as revision, then the full history is always cloned before this commit is checked out.
 - `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here.
 
 By default, the Build controller does not validate that the Git repository exists. If the validation is desired, users can explicitly define the `build.shipwright.io/verify.repository` annotation with `true`. For example:
