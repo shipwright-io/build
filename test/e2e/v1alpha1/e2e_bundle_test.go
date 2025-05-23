@@ -23,7 +23,7 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
-var _ = Describe("Test local source code (bundle) functionality", func() {
+var _ = Describe("Test local source code (bundle) functionality", Label("FEATURE:BundleSource"), func() {
 
 	insecure := false
 	value, found := os.LookupEnv(EnvVarImageRepoInsecure)
@@ -59,7 +59,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 		}
 	})
 
-	Context("when using local source code bundle images as input", func() {
+	Context("when using local source code bundle images as input", Label("CORE"), func() {
 		var inputImage, outputImage string
 
 		BeforeEach(func() {
@@ -73,7 +73,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 			)
 		})
 
-		It("should work with Kaniko build strategy", func() {
+		It("should work with Kaniko build strategy", Label("FEATURE:Kaniko"), func() {
 			build, err = NewBuildPrototype().
 				ClusterBuildStrategy("kaniko").
 				Name(testID).
@@ -99,7 +99,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 			testBuild.ValidateImageDigest(buildRun)
 		})
 
-		It("should work with Buildpacks build strategy", func() {
+		It("should work with Buildpacks build strategy", Label("FEATURE:Buildpacks"), func() {
 			build, err = NewBuildPrototype().
 				ClusterBuildStrategy("buildpacks-v3").
 				Name(testID).
@@ -124,7 +124,7 @@ var _ = Describe("Test local source code (bundle) functionality", func() {
 			testBuild.ValidateImageDigest(buildRun)
 		})
 
-		It("should work with Buildah build strategy", func() {
+		It("should work with Buildah build strategy", Label("FEATURE:Buildah"), func() {
 			buildPrototype := NewBuildPrototype().
 				ClusterBuildStrategy("buildah-shipwright-managed-push").
 				Name(testID).
