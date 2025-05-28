@@ -100,7 +100,7 @@ var _ = Describe("Git", func() {
 				"--result-file-source-timestamp", "$(results.shp-source-default-source-timestamp.path)",
 				"--secret-path", "/workspace/shp-source-secret",
 			}))
-			Expect(len(taskSpec.Steps[0].VolumeMounts)).To(Equal(1))
+			Expect(len(taskSpec.Steps[0].VolumeMounts)).To(Equal(2))
 			Expect(taskSpec.Steps[0].VolumeMounts[0].Name).To(Equal("shp-a-secret"))
 			Expect(taskSpec.Steps[0].VolumeMounts[0].MountPath).To(Equal("/workspace/shp-source-secret"))
 			Expect(taskSpec.Steps[0].VolumeMounts[0].ReadOnly).To(BeTrue())
@@ -188,7 +188,7 @@ var _ = Describe("Git", func() {
 				Revision:    ptr.To(revision),
 				CloneSecret: ptr.To("another.secret"),
 			}, "default")
-		
+
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Args).To(ContainElements(
 				"--url", "https://github.com/shipwright-io/another-repo",

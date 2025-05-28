@@ -87,3 +87,30 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 
 	return ""
 }
+
+func AppendSharedHomeVolume(
+	taskSpec *pipelineapi.TaskSpec,
+	targetStep *pipelineapi.Step,
+) {
+	volumeName := "shared-home"
+
+	// ensure we do not add the volume twice
+	for _, volume := range taskSpec.Volumes {
+		if volume.Name == volumeName {
+			return
+		}
+	}
+
+	// append volume for secret
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "shared-home",
+		MountPath: "/shared-home",
+	})
+}

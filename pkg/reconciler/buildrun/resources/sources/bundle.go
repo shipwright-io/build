@@ -24,7 +24,6 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 			Description: "The digest of the bundle image.",
 		},
 	)
-
 	// initialize the step from the template and the build-specific arguments
 	bundleStep := pipelineapi.Step{
 		Name:            fmt.Sprintf("source-%s", name),

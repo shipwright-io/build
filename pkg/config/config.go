@@ -88,12 +88,12 @@ const (
 	defaultTrivyTmpDir   = "/trivy-workspace/tmp"
 
 	// Waiter related environment variables
-	waiterLockFileEnvVar  = "WAITER_LOCK_FILE"
-	waiterLockFileDefault = "/waiter-workspace/waiter.lock"
+	waiterLockFileEnvVar   = "WAITER_WORKSPACE"
+	waiterWorkspaceDefault = "/waiter-workspace"
 
 	// Bundle related environment variables
-	bundleWorkdirMountPathEnvVar  = "BUNDLE_WORKDIR_PATH"
-	bundleWorkdirMountPathDefault = "/bundle-workspace"
+	bundleWorkdirMountPathEnvVar = "BUNDLE_WORKDIR_PATH"
+	bundleWorkdirDefault         = "/bundle-workspace"
 
 	// Git related environment variables
 	gitTmpDirEnvVar  = "GIT_TMP_DIR"
@@ -130,11 +130,11 @@ type Config struct {
 }
 
 type WritableDirsConfig struct {
-	TrivyCacheDir  string
-	TrivyTmpDir    string
-	WaiterLockFile string
-	BundleWorkdir  string
-	GitTmpDir      string
+	TrivyCacheDir      string
+	TrivyTmpDir        string
+	WaiterWorkspaceDir string
+	BundleWorkdir      string
+	GitTmpDir          string
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -192,11 +192,11 @@ func NewDefaultConfig() *Config {
 		GitRewriteRule:                false,
 		VulnerabilityCountLimit:       50,
 		ContainersWritableDir: WritableDirsConfig{
-			TrivyCacheDir:  defaultTrivyCacheDir,
-			TrivyTmpDir:    defaultTrivyTmpDir,
-			WaiterLockFile: waiterLockFileDefault,
-			BundleWorkdir:  bundleWorkdirMountPathDefault,
-			GitTmpDir:      gitTmpDirDefault,
+			TrivyCacheDir:      defaultTrivyCacheDir,
+			TrivyTmpDir:        defaultTrivyTmpDir,
+			WaiterWorkspaceDir: waiterWorkspaceDefault,
+			BundleWorkdir:      bundleWorkdirDefault,
+			GitTmpDir:          gitTmpDirDefault,
 		},
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
@@ -225,9 +225,8 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:              nonRoot,
-				RunAsGroup:             nonRoot,
-				ReadOnlyRootFilesystem: ptr.To(true),
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
 			},
 		},
 
@@ -316,8 +315,8 @@ func NewDefaultConfig() *Config {
 					Value: "/shared-home",
 				},
 				{
-					Name:  "WAITER_LOCK_FILE",
-					Value: waiterLockFileDefault,
+					Name:  "WAITER_WORKSPACE",
+					Value: "/waiter-workspace",
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
@@ -327,9 +326,8 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:              nonRoot,
-				RunAsGroup:             nonRoot,
-				ReadOnlyRootFilesystem: ptr.To(true),
+				RunAsUser:  nonRoot,
+				RunAsGroup: nonRoot,
 			},
 		},
 
@@ -516,7 +514,7 @@ func (c *Config) SetConfigFromEnv() error {
 	if err := updateWritableDirOption(&c.ContainersWritableDir.TrivyTmpDir, trivyTmpDirEnvVar); err != nil {
 		return err
 	}
-	if err := updateWritableDirOption(&c.ContainersWritableDir.WaiterLockFile, waiterLockFileEnvVar); err != nil {
+	if err := updateWritableDirOption(&c.ContainersWritableDir.WaiterWorkspaceDir, waiterLockFileEnvVar); err != nil {
 		return err
 	}
 	if err := updateWritableDirOption(&c.ContainersWritableDir.BundleWorkdir, bundleWorkdirMountPathEnvVar); err != nil {
@@ -581,7 +579,7 @@ func updateIntOption(i *int, envVarName string) error {
 	return nil
 }
 
-// updateWritableDirPaths updates the writable directory paths if the environment variable is set
+// updateWritableDirOption updates the writable directory paths if the environment variable is set
 func updateWritableDirOption(path *string, envVarName string) error {
 	if value := os.Getenv(envVarName); value != "" {
 		*path = value
