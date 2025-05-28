@@ -79,6 +79,25 @@ const (
 
 	// environment variable to hold vulnerability count limit
 	VulnerabilityCountLimitEnvVar = "VULNERABILITY_COUNT_LIMIT"
+
+	// Trivy related environment variables
+	trivyCacheDirEnvVar = "TRIVY_CACHE_DIR"
+	trivyTmpDirEnvVar   = "TRIVY_TMP_DIR"
+	// Default paths for Trivy
+	defaultTrivyCacheDir = "/trivy-workspace/trivy-cache"
+	defaultTrivyTmpDir   = "/trivy-workspace/tmp"
+
+	// Waiter related environment variables
+	waiterLockFileEnvVar  = "WAITER_LOCK_FILE"
+	waiterLockFileDefault = "/waiter-workspace/waiter.lock"
+
+	// Bundle related environment variables
+	bundleWorkdirMountPathEnvVar  = "BUNDLE_WORKDIR_PATH"
+	bundleWorkdirMountPathDefault = "/bundle-workspace"
+
+	// Git related environment variables
+	gitTmpDirEnvVar  = "GIT_TMP_DIR"
+	gitTmpDirDefault = "/tmp-workspace"
 )
 
 var (
@@ -107,6 +126,15 @@ type Config struct {
 	KubeAPIOptions                   KubeAPIOptions
 	GitRewriteRule                   bool
 	VulnerabilityCountLimit          int
+	ContainersWritableDir            WritableDirsConfig
+}
+
+type WritableDirsConfig struct {
+	TrivyCacheDir  string
+	TrivyTmpDir    string
+	WaiterLockFile string
+	BundleWorkdir  string
+	GitTmpDir      string
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -163,7 +191,13 @@ func NewDefaultConfig() *Config {
 		TerminationLogPath:            terminationLogPathDefault,
 		GitRewriteRule:                false,
 		VulnerabilityCountLimit:       50,
-
+		ContainersWritableDir: WritableDirsConfig{
+			TrivyCacheDir:  defaultTrivyCacheDir,
+			TrivyTmpDir:    defaultTrivyTmpDir,
+			WaiterLockFile: waiterLockFileDefault,
+			BundleWorkdir:  bundleWorkdirMountPathDefault,
+			GitTmpDir:      gitTmpDirDefault,
+		},
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
 			Command: []string{
@@ -181,7 +215,7 @@ func NewDefaultConfig() *Config {
 				},
 				{
 					Name:  "TMPDIR",
-					Value: "/tmp-workspace",
+					Value: gitTmpDirDefault,
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
@@ -239,11 +273,11 @@ func NewDefaultConfig() *Config {
 				},
 				{
 					Name:  "TRIVY_CACHE_DIR",
-					Value: "/trivy-workspace/trivy-cache",
+					Value: defaultTrivyCacheDir,
 				},
 				{
 					Name:  "TMPDIR",
-					Value: "/trivy-workspace/tmp",
+					Value: defaultTrivyTmpDir,
 				},
 			},
 			// The image processing step runs after the build strategy steps where an arbitrary
@@ -283,7 +317,7 @@ func NewDefaultConfig() *Config {
 				},
 				{
 					Name:  "WAITER_LOCK_FILE",
-					Value: "/waiter-workspace/waiter.lock",
+					Value: waiterLockFileDefault,
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
@@ -475,6 +509,23 @@ func (c *Config) SetConfigFromEnv() error {
 		c.TerminationLogPath = terminationLogPath
 	}
 
+	// Update writable directory paths if environment variables are set
+	if err := updateWritableDirOption(&c.ContainersWritableDir.TrivyCacheDir, trivyCacheDirEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.TrivyTmpDir, trivyTmpDirEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.WaiterLockFile, waiterLockFileEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.BundleWorkdir, bundleWorkdirMountPathEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.GitTmpDir, gitTmpDirEnvVar); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -527,5 +578,13 @@ func updateIntOption(i *int, envVarName string) error {
 		*i = int(intValue)
 	}
 
+	return nil
+}
+
+// updateWritableDirPaths updates the writable directory paths if the environment variable is set
+func updateWritableDirOption(path *string, envVarName string) error {
+	if value := os.Getenv(envVarName); value != "" {
+		*path = value
+	}
 	return nil
 }

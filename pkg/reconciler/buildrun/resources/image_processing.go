@@ -183,13 +183,11 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			VolumeMounts: []core.VolumeMount{
 				{
 					Name:      trivyVolumeName,
-					MountPath: "/trivy-workspace/tmp",
-					SubPath:   "tmp",
+					MountPath: cfg.ContainersWritableDir.TrivyTmpDir,
 				},
 				{
 					Name:      trivyVolumeName,
-					MountPath: "/trivy-workspace/trivy-cache",
-					SubPath:   "trivy-cache",
+					MountPath: cfg.ContainersWritableDir.TrivyCacheDir,
 				},
 			},
 		}
