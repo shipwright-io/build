@@ -184,10 +184,12 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 				{
 					Name:      trivyVolumeName,
 					MountPath: cfg.ContainersWritableDir.TrivyTmpDir,
+					SubPath:   "tmp",
 				},
 				{
 					Name:      trivyVolumeName,
 					MountPath: cfg.ContainersWritableDir.TrivyCacheDir,
+					SubPath:   "trivy-cache",
 				},
 			},
 		}
@@ -217,6 +219,7 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			)
 		}
 
+		sources.AppendSharedHomeVolume(taskRun.Spec.TaskSpec, &imageProcessingStep)
 		// append the mutate step
 		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}

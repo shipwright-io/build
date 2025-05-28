@@ -241,8 +241,8 @@ var _ = Describe("Config", func() {
 					Command: []string{"/ko-app/waiter"},
 					Args:    []string{"start"},
 					Env: []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}, {
-						Name:  "WAITER_LOCK_FILE",
-						Value: "/waiter-workspace/waiter.lock",
+						Name:  "WAITER_WORKSPACE",
+						Value: "/waiter-workspace",
 					}},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: ptr.To(false),

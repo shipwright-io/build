@@ -131,6 +131,7 @@ func AppendGitStep(
 		Name:      tmpVolumeName,
 		MountPath: cfg.ContainersWritableDir.GitTmpDir,
 	})
+	AppendSharedHomeVolume(taskSpec, &gitStep)
 }
 
 // AppendGitResult append git source result to build run

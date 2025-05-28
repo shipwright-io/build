@@ -40,7 +40,7 @@ func AppendLocalCopyStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, tim
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      "waiter-workspace",
-				MountPath: cfg.ContainersWritableDir.WaiterLockFile,
+				MountPath: cfg.ContainersWritableDir.WaiterWorkspaceDir,
 			},
 		},
 	}
@@ -49,4 +49,5 @@ func AppendLocalCopyStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, tim
 		step.Args = append(step.Args, fmt.Sprintf("--timeout=%s", timeout.Duration.String()))
 	}
 	taskSpec.Steps = append(taskSpec.Steps, step)
+	AppendSharedHomeVolume(taskSpec, &step)
 }
