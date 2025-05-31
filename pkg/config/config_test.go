@@ -134,6 +134,10 @@ var _ = Describe("Config", func() {
 					Env: []corev1.EnvVar{
 						{Name: "HOME", Value: "/shared-home"},
 						{Name: "GIT_SHOW_LISTING", Value: "false"},
+						{
+							Name:  "TMPDIR",
+							Value: "/tmp-workspace",
+						},
 					},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: ptr.To(false),
@@ -142,8 +146,9 @@ var _ = Describe("Config", func() {
 								"ALL",
 							},
 						},
-						RunAsUser:  nonRoot,
-						RunAsGroup: nonRoot,
+						RunAsUser:              nonRoot,
+						RunAsGroup:             nonRoot,
+						ReadOnlyRootFilesystem: ptr.To(true),
 					},
 				}))
 			})
@@ -235,7 +240,10 @@ var _ = Describe("Config", func() {
 					Image:   "myregistry/custom/image",
 					Command: []string{"/ko-app/waiter"},
 					Args:    []string{"start"},
-					Env:     []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}},
+					Env: []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}, {
+						Name:  "WAITER_WORKSPACE",
+						Value: "/waiter-workspace",
+					}},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: ptr.To(false),
 						Capabilities: &corev1.Capabilities{
@@ -243,8 +251,9 @@ var _ = Describe("Config", func() {
 								"ALL",
 							},
 						},
-						RunAsUser:  nonRoot,
-						RunAsGroup: nonRoot,
+						RunAsUser:              nonRoot,
+						RunAsGroup:             nonRoot,
+						ReadOnlyRootFilesystem: ptr.To(true),
 					},
 				}))
 			})

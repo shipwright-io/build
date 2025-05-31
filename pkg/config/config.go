@@ -79,6 +79,25 @@ const (
 
 	// environment variable to hold vulnerability count limit
 	VulnerabilityCountLimitEnvVar = "VULNERABILITY_COUNT_LIMIT"
+
+	// Trivy related environment variables
+	trivyCacheDirEnvVar = "TRIVY_CACHE_DIR"
+	trivyTmpDirEnvVar   = "TRIVY_TMP_DIR"
+	// Default paths for Trivy
+	defaultTrivyCacheDir = "/trivy-workspace/trivy-cache"
+	defaultTrivyTmpDir   = "/trivy-workspace/tmp"
+
+	// Waiter related environment variables
+	waiterLockFileEnvVar   = "WAITER_WORKSPACE"
+	waiterWorkspaceDefault = "/waiter-workspace"
+
+	// Bundle related environment variables
+	bundleWorkdirMountPathEnvVar = "BUNDLE_WORKDIR_PATH"
+	bundleWorkdirDefault         = "/bundle-workspace"
+
+	// Git related environment variables
+	gitTmpDirEnvVar  = "GIT_TMP_DIR"
+	gitTmpDirDefault = "/tmp-workspace"
 )
 
 var (
@@ -107,6 +126,15 @@ type Config struct {
 	KubeAPIOptions                   KubeAPIOptions
 	GitRewriteRule                   bool
 	VulnerabilityCountLimit          int
+	ContainersWritableDir            WritableDirsConfig
+}
+
+type WritableDirsConfig struct {
+	TrivyCacheDir      string
+	TrivyTmpDir        string
+	WaiterWorkspaceDir string
+	BundleWorkdir      string
+	GitTmpDir          string
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -163,7 +191,13 @@ func NewDefaultConfig() *Config {
 		TerminationLogPath:            terminationLogPathDefault,
 		GitRewriteRule:                false,
 		VulnerabilityCountLimit:       50,
-
+		ContainersWritableDir: WritableDirsConfig{
+			TrivyCacheDir:      defaultTrivyCacheDir,
+			TrivyTmpDir:        defaultTrivyTmpDir,
+			WaiterWorkspaceDir: waiterWorkspaceDefault,
+			BundleWorkdir:      bundleWorkdirDefault,
+			GitTmpDir:          gitTmpDirDefault,
+		},
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
 			Command: []string{
@@ -179,6 +213,10 @@ func NewDefaultConfig() *Config {
 					Name:  "GIT_SHOW_LISTING",
 					Value: "false",
 				},
+				{
+					Name:  "TMPDIR",
+					Value: gitTmpDirDefault,
+				},
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
@@ -187,8 +225,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -210,6 +249,7 @@ func NewDefaultConfig() *Config {
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
+				ReadOnlyRootFilesystem:   ptr.To(true),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
@@ -231,6 +271,14 @@ func NewDefaultConfig() *Config {
 					Name:  "HOME",
 					Value: "/shared-home",
 				},
+				{
+					Name:  "TRIVY_CACHE_DIR",
+					Value: defaultTrivyCacheDir,
+				},
+				{
+					Name:  "TMPDIR",
+					Value: defaultTrivyTmpDir,
+				},
 			},
 			// The image processing step runs after the build strategy steps where an arbitrary
 			// user could have been used to write the result files for the image digest. The
@@ -241,6 +289,7 @@ func NewDefaultConfig() *Config {
 				AllowPrivilegeEscalation: ptr.To(false),
 				RunAsUser:                root,
 				RunAsGroup:               root,
+				ReadOnlyRootFilesystem:   ptr.To(true),
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"DAC_OVERRIDE",
@@ -266,6 +315,10 @@ func NewDefaultConfig() *Config {
 					Name:  "HOME",
 					Value: "/shared-home",
 				},
+				{
+					Name:  "WAITER_WORKSPACE",
+					Value: "/waiter-workspace",
+				},
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
@@ -274,8 +327,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -455,6 +509,23 @@ func (c *Config) SetConfigFromEnv() error {
 		c.TerminationLogPath = terminationLogPath
 	}
 
+	// Update writable directory paths if environment variables are set
+	if err := updateWritableDirOption(&c.ContainersWritableDir.TrivyCacheDir, trivyCacheDirEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.TrivyTmpDir, trivyTmpDirEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.WaiterWorkspaceDir, waiterLockFileEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.BundleWorkdir, bundleWorkdirMountPathEnvVar); err != nil {
+		return err
+	}
+	if err := updateWritableDirOption(&c.ContainersWritableDir.GitTmpDir, gitTmpDirEnvVar); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -507,5 +578,13 @@ func updateIntOption(i *int, envVarName string) error {
 		*i = int(intValue)
 	}
 
+	return nil
+}
+
+// updateWritableDirOption updates the writable directory paths if the environment variable is set
+func updateWritableDirOption(path *string, envVarName string) error {
+	if value := os.Getenv(envVarName); value != "" {
+		*path = value
+	}
 	return nil
 }

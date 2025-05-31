@@ -24,7 +24,6 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 			Description: "The digest of the bundle image.",
 		},
 	)
-
 	// initialize the step from the template and the build-specific arguments
 	bundleStep := pipelineapi.Step{
 		Name:            fmt.Sprintf("source-%s", name),
@@ -40,8 +39,21 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 		Env:              cfg.BundleContainerTemplate.Env,
 		ComputeResources: cfg.BundleContainerTemplate.Resources,
 		SecurityContext:  cfg.BundleContainerTemplate.SecurityContext,
-		WorkingDir:       cfg.BundleContainerTemplate.WorkingDir,
+		WorkingDir:       cfg.ContainersWritableDir.BundleWorkdir,
 	}
+	AppendSharedHomeVolume(taskSpec, &bundleStep)
+	// Add a volume for all bundle-related data (target, result files)
+	bundleVolumeName := fmt.Sprintf("%s-bundle-workspace", name)
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: bundleVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	bundleStep.VolumeMounts = append(bundleStep.VolumeMounts, corev1.VolumeMount{
+		Name:      bundleVolumeName,
+		MountPath: cfg.ContainersWritableDir.BundleWorkdir,
+	})
 
 	// add credentials mount, if provided
 	if oci.PullSecret != nil {

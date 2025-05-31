@@ -79,7 +79,7 @@ var _ = Describe("Git", func() {
 		})
 
 		It("adds a volume for the secret", func() {
-			Expect(len(taskSpec.Volumes)).To(Equal(1))
+			Expect(len(taskSpec.Volumes)).To(Equal(3))
 			Expect(taskSpec.Volumes[0].Name).To(Equal("shp-a-secret"))
 			Expect(taskSpec.Volumes[0].VolumeSource.Secret).NotTo(BeNil())
 			Expect(taskSpec.Volumes[0].VolumeSource.Secret.SecretName).To(Equal("a.secret"))
@@ -188,7 +188,7 @@ var _ = Describe("Git", func() {
 				Revision:    ptr.To(revision),
 				CloneSecret: ptr.To("another.secret"),
 			}, "default")
-		
+
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Args).To(ContainElements(
 				"--url", "https://github.com/shipwright-io/another-repo",
