@@ -7,6 +7,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/apis"
@@ -69,9 +70,16 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 
 	case pipelineapi.TaskRunReasonTimedOut:
 		reason = "BuildRunTimeout"
+		var timeout time.Duration
+		if taskRun.Spec.Timeout == nil {
+			// if the TaskRun does not have a timeout set, we cannot use it to determine the BuildRun timeout
+			timeout = time.Since(taskRun.CreationTimestamp.Time)
+		} else {
+			timeout = taskRun.Spec.Timeout.Duration
+		}
 		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
 			buildRun.Name,
-			taskRun.Spec.Timeout.Duration,
+			timeout,
 		)
 
 	case pipelineapi.TaskRunReasonSuccessful:
