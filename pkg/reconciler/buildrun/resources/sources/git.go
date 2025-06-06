@@ -117,7 +117,7 @@ func AppendGitStep(
 		)
 	}
 	// Add tmp volume for git operations
-	tmpVolumeName := fmt.Sprintf("%s-tmp-workspace", name)
+	/*tmpVolumeName := fmt.Sprintf("%s-tmp-workspace", name)
 	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
 		Name: tmpVolumeName,
 		VolumeSource: corev1.VolumeSource{
@@ -129,7 +129,7 @@ func AppendGitStep(
 	gitStep.VolumeMounts = append(gitStep.VolumeMounts, corev1.VolumeMount{
 		Name:      tmpVolumeName,
 		MountPath: cfg.ContainersWritableDir.GitTmpDir,
-	})
+	})*/
 
 	// append the git step
 	taskSpec.Steps = append(taskSpec.Steps, gitStep)

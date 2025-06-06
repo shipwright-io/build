@@ -101,9 +101,23 @@ func AppendSharedHomeVolume(
 		}
 	}
 
-	// append volume for secret
+	// append volume for shared-home
 	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
 		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	// append volume for ssh
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: "ssh-data",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	// append volume for docker
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: "docker-data",
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
@@ -112,5 +126,13 @@ func AppendSharedHomeVolume(
 	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
 		Name:      "shared-home",
 		MountPath: "/shared-home",
+	})
+	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "ssh-data",
+		MountPath: "/shared-home/.ssh",
+	})
+	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "docker-data",
+		MountPath: "/shared-home/.docker",
 	})
 }

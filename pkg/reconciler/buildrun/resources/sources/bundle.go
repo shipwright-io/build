@@ -39,10 +39,10 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 		Env:              cfg.BundleContainerTemplate.Env,
 		ComputeResources: cfg.BundleContainerTemplate.Resources,
 		SecurityContext:  cfg.BundleContainerTemplate.SecurityContext,
-		WorkingDir:       cfg.ContainersWritableDir.BundleWorkdir,
+		WorkingDir:       cfg.BundleContainerTemplate.WorkingDir,
 	}
 	// Add a volume for all bundle-related data (target, result files)
-	bundleVolumeName := fmt.Sprintf("%s-bundle-workspace", name)
+	/*bundleVolumeName := fmt.Sprintf("%s-bundle-workspace", name)
 	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
 		Name: bundleVolumeName,
 		VolumeSource: corev1.VolumeSource{
@@ -52,7 +52,7 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 	bundleStep.VolumeMounts = append(bundleStep.VolumeMounts, corev1.VolumeMount{
 		Name:      bundleVolumeName,
 		MountPath: cfg.ContainersWritableDir.BundleWorkdir,
-	})
+	})*/
 
 	// add credentials mount, if provided
 	if oci.PullSecret != nil {

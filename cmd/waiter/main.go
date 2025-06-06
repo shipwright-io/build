@@ -6,7 +6,6 @@ package main
 import (
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -55,12 +54,14 @@ var (
 var defaultTimeout = 60 * time.Second
 
 // defaultLockFile default location of the lock-file.
+/*
 var defaultLockFile = func() string {
 	if envWaiterWorkspace := os.Getenv("WAITER_WORKSPACE"); envWaiterWorkspace != "" {
 		return filepath.Join(envWaiterWorkspace, "waiter.lock")
 	}
 	return "/tmp/waiter.lock"
-}()
+}()*/
+var defaultLockFile = "/tmp/waiter.lock"
 
 // flagValues receives the command-line flag values.
 var flagValues = settings{}

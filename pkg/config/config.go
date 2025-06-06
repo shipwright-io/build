@@ -213,10 +213,10 @@ func NewDefaultConfig() *Config {
 					Name:  "GIT_SHOW_LISTING",
 					Value: "false",
 				},
-				{
+				/*{
 					Name:  "TMPDIR",
 					Value: gitTmpDirDefault,
-				},
+				},*/
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
@@ -313,10 +313,10 @@ func NewDefaultConfig() *Config {
 					Name:  "HOME",
 					Value: "/shared-home",
 				},
-				{
+				/*{
 					Name:  "WAITER_WORKSPACE",
 					Value: "/waiter-workspace",
-				},
+				},*/
 			},
 			SecurityContext: &corev1.SecurityContext{
 				AllowPrivilegeEscalation: ptr.To(false),
