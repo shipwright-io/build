@@ -23,6 +23,8 @@ const (
 	commitSHAResult    = "commit-sha"
 	commitAuthorResult = "commit-author"
 	branchName         = "branch-name"
+	sshVolumeName      = "ssh-home-volume"
+	sshMountPath       = "/shared-home"
 )
 
 // AppendGitStep appends the Git step and results and volume if needed to the TaskSpec
@@ -114,6 +116,20 @@ func AppendGitStep(
 			secretMountPath,
 		)
 	}
+	// Add tmp volume for git operations
+	/*tmpVolumeName := fmt.Sprintf("%s-tmp-workspace", name)
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: tmpVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	// Add tmp volume mount to git step
+	gitStep.VolumeMounts = append(gitStep.VolumeMounts, corev1.VolumeMount{
+		Name:      tmpVolumeName,
+		MountPath: cfg.ContainersWritableDir.GitTmpDir,
+	})*/
 
 	// append the git step
 	taskSpec.Steps = append(taskSpec.Steps, gitStep)

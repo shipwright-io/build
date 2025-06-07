@@ -188,7 +188,7 @@ var _ = Describe("Git", func() {
 				Revision:    ptr.To(revision),
 				CloneSecret: ptr.To("another.secret"),
 			}, "default")
-		
+
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Args).To(ContainElements(
 				"--url", "https://github.com/shipwright-io/another-repo",

@@ -18,6 +18,12 @@ const WaiterContainerName = "source-local"
 // AppendLocalCopyStep defines and append a new task based on the waiter container template, passed
 // by the configuration instance.
 func AppendLocalCopyStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, timeout *metav1.Duration) {
+	/*taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: "waiter-workspace",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})*/
 	step := pipelineapi.Step{
 		// the data upload mechanism targets a specific POD, and in this POD it aims for a specific
 		// container name, and having a static name, makes this process straight forward.
@@ -30,6 +36,12 @@ func AppendLocalCopyStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, tim
 		ComputeResources: cfg.WaiterContainerTemplate.Resources,
 		SecurityContext:  cfg.WaiterContainerTemplate.SecurityContext,
 		WorkingDir:       cfg.WaiterContainerTemplate.WorkingDir,
+		/*VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "waiter-workspace",
+				MountPath: cfg.ContainersWritableDir.WaiterWorkspaceDir,
+			},
+		},*/
 	}
 
 	if timeout != nil {

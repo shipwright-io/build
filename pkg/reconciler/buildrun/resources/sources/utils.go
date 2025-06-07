@@ -87,3 +87,64 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 
 	return ""
 }
+
+func AppendSharedHomeVolume(
+	taskSpec *pipelineapi.TaskSpec,
+	targetStep *pipelineapi.Step,
+) {
+	volumeName := "shared-home"
+
+	// ensure we do not add the volume twice
+	for _, volume := range taskSpec.Volumes {
+		if volume.Name == volumeName {
+			return
+		}
+	}
+
+	// append volume for shared-home
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	// append volume for ssh
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: "ssh-data",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	// append volume for docker
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: "docker-data",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	// append volume for shared-home
+	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
+		Name: "tmp-data",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "tmp-data",
+		MountPath: "/tmp",
+	})
+	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "shared-home",
+		MountPath: "/shared-home",
+	})
+	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "ssh-data",
+		MountPath: "/shared-home/.ssh",
+	})
+	targetStep.VolumeMounts = append(targetStep.VolumeMounts, corev1.VolumeMount{
+		Name:      "docker-data",
+		MountPath: "/shared-home/.docker",
+	})
+}

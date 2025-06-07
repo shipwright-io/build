@@ -23,6 +23,7 @@ const (
 	containerNameImageProcessing = "image-processing"
 	outputDirectoryMountPath     = "/workspace/output-image"
 	paramOutputDirectory         = "output-directory"
+	trivyVolumeName              = "trivy-work-dir"
 )
 
 type VulnerablilityScanParams struct {
@@ -160,6 +161,24 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 		stepArgs = append(stepArgs, "--result-file-image-size", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageSizeResult))
 		stepArgs = append(stepArgs, "--result-file-image-vulnerabilities", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageVulnerabilities))
 
+		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
+			Name: trivyVolumeName,
+			VolumeSource: core.VolumeSource{
+				EmptyDir: &core.EmptyDirVolumeSource{},
+			},
+		})
+		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
+			Name: "trivy-cache-data",
+			VolumeSource: core.VolumeSource{
+				EmptyDir: &core.EmptyDirVolumeSource{},
+			},
+		})
+		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
+			Name: "trivy-tmp-data",
+			VolumeSource: core.VolumeSource{
+				EmptyDir: &core.EmptyDirVolumeSource{},
+			},
+		})
 		// add the push step
 
 		// initialize the step from the template and the build-specific arguments
@@ -174,7 +193,6 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			SecurityContext:  cfg.ImageProcessingContainerTemplate.SecurityContext,
 			WorkingDir:       cfg.ImageProcessingContainerTemplate.WorkingDir,
 		}
-
 		if volumeAdded {
 			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
 				Name:      prefixedOutputDirectory,
@@ -201,6 +219,19 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			)
 		}
 
+		//sources.AppendSharedHomeVolume(taskRun.Spec.TaskSpec, &imageProcessingStep)
+		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+			Name:      trivyVolumeName,
+			MountPath: "/trivy-workspace",
+		})
+		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+			Name:      "trivy-cache-data",
+			MountPath: "/trivy-workspace/trivy-cache",
+		})
+		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+			Name:      "trivy-tmp-data",
+			MountPath: "/trivy-workspace/tmp",
+		})
 		// append the mutate step
 		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}

@@ -134,6 +134,10 @@ var _ = Describe("Config", func() {
 					Env: []corev1.EnvVar{
 						{Name: "HOME", Value: "/shared-home"},
 						{Name: "GIT_SHOW_LISTING", Value: "false"},
+						/*{
+							Name:  "TMPDIR",
+							Value: "/tmp-workspace",
+						},*/
 					},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: ptr.To(false),
