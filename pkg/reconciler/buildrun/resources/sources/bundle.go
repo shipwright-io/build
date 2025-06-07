@@ -41,8 +41,8 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 		SecurityContext:  cfg.BundleContainerTemplate.SecurityContext,
 		WorkingDir:       cfg.BundleContainerTemplate.WorkingDir,
 	}
-	// Add a volume for all bundle-related data (target, result files)
-	/*bundleVolumeName := fmt.Sprintf("%s-bundle-workspace", name)
+	/*// Add a volume for all bundle-related data (target, result files)
+	bundleVolumeName := fmt.Sprintf("%s-bundle-workspace", name)
 	taskSpec.Volumes = append(taskSpec.Volumes, corev1.Volume{
 		Name: bundleVolumeName,
 		VolumeSource: corev1.VolumeSource{
@@ -77,7 +77,7 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 	if oci.Prune != nil && *oci.Prune == build.PruneAfterPull {
 		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
-
+	//AppendSharedHomeVolume(taskSpec, &bundleStep)
 	taskSpec.Steps = append(taskSpec.Steps, bundleStep)
 }
 

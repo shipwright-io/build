@@ -160,13 +160,13 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 		stepArgs = append(stepArgs, "--result-file-image-digest", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageDigestResult))
 		stepArgs = append(stepArgs, "--result-file-image-size", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageSizeResult))
 		stepArgs = append(stepArgs, "--result-file-image-vulnerabilities", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageVulnerabilities))
-
-		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
-			Name: trivyVolumeName,
-			VolumeSource: core.VolumeSource{
-				EmptyDir: &core.EmptyDirVolumeSource{},
-			},
-		})
+		/*
+			taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
+				Name: trivyVolumeName,
+				VolumeSource: core.VolumeSource{
+					EmptyDir: &core.EmptyDirVolumeSource{},
+				},
+			})*/
 		// add the push step
 
 		// initialize the step from the template and the build-specific arguments
@@ -180,7 +180,7 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			ComputeResources: cfg.ImageProcessingContainerTemplate.Resources,
 			SecurityContext:  cfg.ImageProcessingContainerTemplate.SecurityContext,
 			WorkingDir:       cfg.ImageProcessingContainerTemplate.WorkingDir,
-			VolumeMounts: []core.VolumeMount{
+			/*VolumeMounts:     []core.VolumeMount{
 				{
 					Name:      trivyVolumeName,
 					MountPath: cfg.ContainersWritableDir.TrivyTmpDir,
@@ -191,7 +191,7 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 					MountPath: cfg.ContainersWritableDir.TrivyCacheDir,
 					SubPath:   "trivy-cache",
 				},
-			},
+			},*/
 		}
 		if volumeAdded {
 			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
@@ -219,7 +219,7 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			)
 		}
 
-		sources.AppendSharedHomeVolume(taskRun.Spec.TaskSpec, &imageProcessingStep)
+		//sources.AppendSharedHomeVolume(taskRun.Spec.TaskSpec, &imageProcessingStep)
 		// append the mutate step
 		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}
