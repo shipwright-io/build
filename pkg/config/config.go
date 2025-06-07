@@ -269,14 +269,14 @@ func NewDefaultConfig() *Config {
 					Name:  "HOME",
 					Value: "/shared-home",
 				},
-				/*		{
-							Name:  "TRIVY_CACHE_DIR",
-							Value: defaultTrivyCacheDir,
-						},
-						{
-							Name:  "TMPDIR",
-							Value: defaultTrivyTmpDir,
-						},*/
+				{
+					Name:  "TRIVY_CACHE_DIR",
+					Value: defaultTrivyCacheDir,
+				},
+				{
+					Name:  "TMPDIR",
+					Value: defaultTrivyTmpDir,
+				},
 			},
 			// The image processing step runs after the build strategy steps where an arbitrary
 			// user could have been used to write the result files for the image digest. The
@@ -287,7 +287,7 @@ func NewDefaultConfig() *Config {
 				AllowPrivilegeEscalation: ptr.To(false),
 				RunAsUser:                root,
 				RunAsGroup:               root,
-				//ReadOnlyRootFilesystem:   ptr.To(true),
+				ReadOnlyRootFilesystem:   ptr.To(true),
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"DAC_OVERRIDE",
