@@ -17,6 +17,34 @@ jobs:
           - git
           - image-processing
           - waiter
+        ubi:
+          - ubi9
+          - ubi10
+        include:
+          - image: base
+            ubi: ubi10
+            dockerfile: Dockerfile.ubi10
+          - image: image-processing
+            ubi: ubi10
+            dockerfile: Dockerfile.ubi10
+          - image: base
+            ubi: ubi9
+            dockerfile: Dockerfile.ubi9
+          - image: image-processing
+            ubi: ubi9
+            dockerfile: Dockerfile.ubi9
+          - image: git
+            ubi: ubi9
+            dockerfile: Dockerfile.ubi9
+          - image: git
+            ubi: ubi10
+            dockerfile: Dockerfile.ubi10
+          - image: waiter
+            ubi: ubi9
+            dockerfile: Dockerfile.ubi9
+          - image: waiter
+            ubi: ubi10
+            dockerfile: Dockerfile.ubi10
       # We cannot run in parallel because the base image must be built first
       max-parallel: 1
 
@@ -38,4 +66,4 @@ jobs:
         working-directory: images/${{ matrix.image }}
         run: |
           NAMESPACE=$(tr '[:upper:]' '[:lower:]' <<<${{ github.repository_owner }})
-          IMAGE=ghcr.io/${NAMESPACE}/base-${{ matrix.image }} NAMESPACE="${NAMESPACE}" docker buildx bake --push -f ../docker-bake.hcl
+          IMAGE=ghcr.io/${NAMESPACE}/base-${{ matrix.image }} NAMESPACE="${NAMESPACE}" UBI="${{ matrix.ubi }}" DOCKERFILE="${{matrix.dockerfile}}" docker buildx bake --push -f ../docker-bake.hcl

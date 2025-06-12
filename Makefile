@@ -76,6 +76,10 @@ IMAGE_HOST ?= ghcr.io
 IMAGE_NAMESPACE ?= shipwright-io/build
 TAG ?= latest
 
+# UBI version argument for ko builds
+UBI_VERSION ?= 10
+KO_CONFIG ?= .ko.ubi$(UBI_VERSION).yaml
+
 # options for generating crds with controller-gen
 CONTROLLER_GEN="${GOBIN}/controller-gen"
 
@@ -96,11 +100,11 @@ build-plain:
 
 .PHONY: build-image
 build-image:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" ko publish --base-import-paths ./cmd/shipwright-build-controller
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS)" KO_CONFIG_PATH="$(KO_CONFIG)" ko publish --base-import-paths ./cmd/shipwright-build-controller
 
 .PHONY: build-image-with-pprof
 build-image-with-pprof:
-	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS) -tags=pprof_enabled" ko publish --base-import-paths --tags=pprof ./cmd/shipwright-build-controller
+	KO_DOCKER_REPO="$(IMAGE_HOST)/$(IMAGE_NAMESPACE)" GOFLAGS="$(GO_FLAGS) KO_CONFIG_PATH="$(KO_CONFIG)" -tags=pprof_enabled" ko publish --base-import-paths --tags=pprof ./cmd/shipwright-build-controller
 
 .PHONY: release
 release:

@@ -1,0 +1,32 @@
+# Copyright The Shipwright Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+ARG BASE
+
+FROM ${BASE}
+
+RUN \
+    dnf install -y --nodocs git curl && \
+    # Map uname -m to Git LFS archive naming as its not available in dnf and microdnf
+    LFS_ARCH=$(uname -m | sed \
+      -e 's/^x86_64$/linux-amd64/' \
+      -e 's/^aarch64$/linux-arm64/' \
+      -e 's/^ppc64le$/linux-ppc64le/' \
+      -e 's/^s390x$/linux-s390x/' || \
+      (echo "Unsupported arch $(uname -m)" >&2; exit 1)) && \
+    GIT_LFS_VER="3.6.0" && \
+    # Download the tarball to /tmp, extract into /tmp, keeping the directory structure
+    curl -L -o /tmp/git-lfs.tar.gz \
+      "https://github.com/git-lfs/git-lfs/releases/download/v${GIT_LFS_VER}/git-lfs-${LFS_ARCH}-v${GIT_LFS_VER}.tar.gz" && \
+    tar -xzf /tmp/git-lfs.tar.gz -C /tmp && \
+    # Run the installer from the extracted folder
+    cd /tmp/git-lfs-${GIT_LFS_VER} && \
+    ./install.sh && \
+    # Perform global Git LFS setup
+    git lfs install && \
+    # Cleanup temporary files
+    rm -rf /tmp/git-lfs.tar.gz /tmp/git-lfs-${GIT_LFS_VER} && \
+    dnf clean all && rm -rf /var/cache/dnf /var/cache/yum /var/tmp/*
+
+USER 1000:1000
