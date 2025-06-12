@@ -44,6 +44,9 @@ jobs:
           - git
           - image-processing
           - waiter
+        include:
+          - image: git
+            dockerfile: Dockerfile.ubi9
     steps:
       - uses: actions/checkout@v4
       - name: Set up QEMU
@@ -55,8 +58,14 @@ jobs:
       - name: Build Image
         working-directory: images/${{ matrix.image }}
         run: |
+          BUILD_IMAGE="registry.access.redhat.com/ubi9-minimal:latest"
+          TAG=latest
           NAMESPACE=$(tr '[:upper:]' '[:lower:]' <<<${{ github.repository_owner }})
-          IMAGE=test-build/base-${{ matrix.image }} NAMESPACE="${NAMESPACE}" docker buildx bake --file ../docker-bake.hcl
+          IMAGE=test-build/base-${{ matrix.image }} \
+          NAMESPACE="${NAMESPACE}" \
+          TAG=${TAG} BUILD_IMAGE=$BUILD_IMAGE \
+          DOCKERFILE=${{ matrix.dockerfile || 'Dockerfile' }} \
+          docker buildx bake --file ../docker-bake.hcl
 
   integration:
     strategy:
