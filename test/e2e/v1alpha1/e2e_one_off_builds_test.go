@@ -16,7 +16,7 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
-var _ = Describe("Using One-Off Builds", func() {
+var _ = Describe("Using One-Off Builds", Label("OneOffBuild"),  func() {
 
 	insecure := false
 	value, found := os.LookupEnv(EnvVarImageRepoInsecure)
@@ -61,7 +61,7 @@ var _ = Describe("Using One-Off Builds", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should build an image using Buildpacks and a Git source", func() {
+		It("should build an image using Buildpacks and a Git source", Label("Buildpacks", "GitSource"), func() {
 			buildRun, err = NewBuildRunPrototype().
 				Namespace(testBuild.Namespace).
 				Name(testID).
@@ -80,7 +80,7 @@ var _ = Describe("Using One-Off Builds", func() {
 			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 
-		It("should build an image using Buildah and a Git source", func() {
+		It("should build an image using Buildah and a Git source", Label("Buildah", "GitSource"), func() {
 			buildRun, err = NewBuildRunPrototype().
 				Namespace(testBuild.Namespace).
 				Name(testID).
@@ -101,7 +101,7 @@ var _ = Describe("Using One-Off Builds", func() {
 			validateBuildRunToSucceed(testBuild, buildRun)
 		})
 
-		It("should build an image using Buildpacks and a bundle source", func() {
+		It("should build an image using Buildpacks and a bundle source", Label("Buildpacks", "LocalSource"), func() {
 			buildRun, err = NewBuildRunPrototype().
 				Namespace(testBuild.Namespace).
 				Name(testID).
