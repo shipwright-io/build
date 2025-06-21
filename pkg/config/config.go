@@ -79,6 +79,15 @@ const (
 
 	// environment variable to hold vulnerability count limit
 	VulnerabilityCountLimitEnvVar = "VULNERABILITY_COUNT_LIMIT"
+
+	// Trivy related environment variables
+	trivyCacheDirEnvVar = "TRIVY_CACHE_DIR"
+	// Default paths for Trivy
+	defaultTrivyCacheDir = "/trivy-cache-data/trivy-cache"
+
+	// Writeable home directory
+	writableHomeDirEnvVar  = "WRITABLE_HOME_DIR"
+	defaultWritableHomeDir = "/shared-home"
 )
 
 var (
@@ -107,6 +116,12 @@ type Config struct {
 	KubeAPIOptions                   KubeAPIOptions
 	GitRewriteRule                   bool
 	VulnerabilityCountLimit          int
+	ContainersWritableDir            WritableDirsConfig
+}
+
+type WritableDirsConfig struct {
+	TrivyCacheDir   string
+	WritableHomeDir string
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -163,7 +178,10 @@ func NewDefaultConfig() *Config {
 		TerminationLogPath:            terminationLogPathDefault,
 		GitRewriteRule:                false,
 		VulnerabilityCountLimit:       50,
-
+		ContainersWritableDir: WritableDirsConfig{
+			TrivyCacheDir:   defaultTrivyCacheDir,
+			WritableHomeDir: defaultWritableHomeDir,
+		},
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
 			Command: []string{
@@ -173,11 +191,15 @@ func NewDefaultConfig() *Config {
 				// This directory is created in the base image as writable for everybody
 				{
 					Name:  "HOME",
-					Value: "/shared-home",
+					Value: defaultWritableHomeDir,
 				},
 				{
 					Name:  "GIT_SHOW_LISTING",
 					Value: "false",
+				},
+				{
+					Name:  "TMPDIR",
+					Value: "/tmp",
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
@@ -187,8 +209,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -201,7 +224,7 @@ func NewDefaultConfig() *Config {
 			Env: []corev1.EnvVar{
 				{
 					Name:  "HOME",
-					Value: "/shared-home",
+					Value: defaultWritableHomeDir,
 				},
 				{
 					Name:  "BUNDLE_SHOW_LISTING",
@@ -215,8 +238,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -229,7 +253,7 @@ func NewDefaultConfig() *Config {
 			Env: []corev1.EnvVar{
 				{
 					Name:  "HOME",
-					Value: "/shared-home",
+					Value: defaultWritableHomeDir,
 				},
 			},
 			// The image processing step runs after the build strategy steps where an arbitrary
@@ -241,6 +265,7 @@ func NewDefaultConfig() *Config {
 				AllowPrivilegeEscalation: ptr.To(false),
 				RunAsUser:                root,
 				RunAsGroup:               root,
+				ReadOnlyRootFilesystem:   ptr.To(true),
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"DAC_OVERRIDE",
@@ -264,7 +289,7 @@ func NewDefaultConfig() *Config {
 			Env: []corev1.EnvVar{
 				{
 					Name:  "HOME",
-					Value: "/shared-home",
+					Value: defaultWritableHomeDir,
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
@@ -274,8 +299,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -455,6 +481,15 @@ func (c *Config) SetConfigFromEnv() error {
 		c.TerminationLogPath = terminationLogPath
 	}
 
+	// Update writable directory paths if environment variables are set
+	if err := updateWritableDirOption(&c.ContainersWritableDir.TrivyCacheDir, trivyCacheDirEnvVar); err != nil {
+		return err
+	}
+
+	if err := updateWritableDirOption(&c.ContainersWritableDir.WritableHomeDir, writableHomeDirEnvVar); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -507,5 +542,13 @@ func updateIntOption(i *int, envVarName string) error {
 		*i = int(intValue)
 	}
 
+	return nil
+}
+
+// updateWritableDirOption updates the writable directory paths if the environment variable is set
+func updateWritableDirOption(path *string, envVarName string) error {
+	if value := os.Getenv(envVarName); value != "" {
+		*path = value
+	}
 	return nil
 }
