@@ -17,6 +17,14 @@ jobs:
           - git
           - image-processing
           - waiter
+        tags: [latest, ubi10] 
+        include:
+          - image: git
+            tags: latest
+            dockerfile: Dockerfile.ubi9
+          - image: git
+            tags: ubi10
+            dockerfile: Dockerfile
       # We cannot run in parallel because the base image must be built first
       max-parallel: 1
 
@@ -37,5 +45,13 @@ jobs:
       - name: Build Image
         working-directory: images/${{ matrix.image }}
         run: |
+          if [[ "${{ matrix.tags }}" == "ubi10" ]]; then
+          BUILD_IMAGE="registry.access.redhat.com/ubi10-minimal:latest"
+          else
+          BUILD_IMAGE="registry.access.redhat.com/ubi9-minimal:latest"
+          fi
           NAMESPACE=$(tr '[:upper:]' '[:lower:]' <<<${{ github.repository_owner }})
-          IMAGE=ghcr.io/${NAMESPACE}/base-${{ matrix.image }} NAMESPACE="${NAMESPACE}" docker buildx bake --push -f ../docker-bake.hcl
+          IMAGE=ghcr.io/${NAMESPACE}/base-${{ matrix.image }} \
+          NAMESPACE="${NAMESPACE}" \
+          TAG=${{matrix.tags}} BUILD_IMAGE=$BUILD_IMAGE \
+          DOCKERFILE=${{matrix.dockerfile || 'Dockerfile' }} docker buildx bake --push -f ../docker-bake.hcl
