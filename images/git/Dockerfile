@@ -4,11 +4,10 @@
 
 ARG BASE
 
-FROM ${BASE}
+FROM ${BASE} as builder
 
 RUN \
-    microdnf install -y --nodocs git curl && \
-    # Map uname -m to Git LFS archive naming as its not available in microdnf
+   microdnf install -y --nodocs git curl tar gzip && \
     LFS_ARCH=$(uname -m | sed \
       -e 's/^x86_64$/linux-amd64/' \
       -e 's/^aarch64$/linux-arm64/' \
@@ -16,17 +15,21 @@ RUN \
       -e 's/^s390x$/linux-s390x/' || \
       (echo "Unsupported arch $(uname -m)" >&2; exit 1)) && \
     GIT_LFS_VER="3.6.1" && \
-    # Download the tarball to /tmp, extract into /tmp, keeping the directory structure
     curl -L -o /tmp/git-lfs.tar.gz \
       "https://github.com/git-lfs/git-lfs/releases/download/v${GIT_LFS_VER}/git-lfs-${LFS_ARCH}-v${GIT_LFS_VER}.tar.gz" && \
     tar -xzf /tmp/git-lfs.tar.gz -C /tmp && \
     # Run the installer from the extracted folder
     cd /tmp/git-lfs-${GIT_LFS_VER} && \
     ./install.sh && \
-    # Perform global Git LFS setup
-    git lfs install && \
-    # Cleanup temporary files
-    rm -rf /tmp/git-lfs.tar.gz /tmp/git-lfs-${GIT_LFS_VER} && \
-    microdnf clean all && rm -rf /var/cache/microdnf /var/cache/yum /var/tmp/*
+    rm -rf /tmp/git-lfs.tar.gz /tmp/git-lfs-${GIT_LFS_VER}
+
+FROM ${BASE}
+
+RUN microdnf install -y --nodocs git && microdnf clean all && rm -rf /var/cache/microdnf /var/cache/yum /var/tmp/*
+
+COPY --from=builder /usr/local/bin/git-lfs /usr/local/bin/git-lfs
+COPY --from=builder /usr/local/bin/git-lfs /usr/bin/git-lfs
+
+RUN git lfs install
 
 USER 1000:1000
