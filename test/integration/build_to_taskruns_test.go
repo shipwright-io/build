@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 
 	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -145,6 +146,19 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
 				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
 				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+			})
+
+			It("should set the buildrun controller as a field manager", func() {
+				Expect(tb.CreateBuild(buildObject)).To(Succeed())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				fieldManagers := sets.NewString()
+				for _, field := range buildObject.GetObjectMeta().GetManagedFields() {
+					fieldManagers.Insert(field.Manager)
+				}
+				Expect(fieldManagers).To(HaveKey("shipwright-build-controller"), "build controller should be registered as a field manager")
 			})
 		})
 

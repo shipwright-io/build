@@ -6,6 +6,7 @@ package integration_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -21,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
@@ -212,10 +214,32 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	})
 
 	Context("when a buildrun is created", func() {
+
+		var (
+			buildRunObject *v1beta1.BuildRun
+			taskRunObject  *pipelineapi.TaskRun
+		)
+
+		AfterEach(func() {
+			if !CurrentSpecReport().Failed() {
+				return
+			}
+			if buildRunObject != nil {
+				jsonData, err := json.MarshalIndent(buildRunObject, "", "  ")
+				Expect(err).NotTo(HaveOccurred(), "failed to marshal buildRunObject to JSON")
+				GinkgoWriter.Printf("buildRunObject JSON:\n%s\n", string(jsonData))
+			}
+			if taskRunObject != nil {
+				jsonData, err := json.MarshalIndent(taskRunObject, "", "  ")
+				Expect(err).NotTo(HaveOccurred(), "failed to marshal taskRunObject to JSON")
+				GinkgoWriter.Printf("taskRunObject JSON:\n%s\n", string(jsonData))
+			}
+		})
+
 		It("should reflect a Pending and Running reason", func() {
 			// use a custom strategy here that just sleeps 30 seconds to prevent it from completing too fast so that we do not get the Running state
 			WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategySleep30s), func() {
-				_, _, buildRunObject := setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+				_, _, buildRunObject = setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
 
 				_, err = tb.GetBRTillStartTime(buildRunObject.Name)
 				Expect(err).To(BeNil())
@@ -240,6 +264,33 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				expectedReason = "Running"
 				actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
 				Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
+			})
+		})
+
+		It("should create a taskrun that is owned by the buildrun", func() {
+			WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategyNoOp), func() {
+				_, _, buildRunObject = setupBuildAndBuildRun([]byte(test.BuildCBSMinimal), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
+
+				_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				taskRunObject, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				// Check that the taskrun is owned by the buildrun
+				Expect(taskRunObject.OwnerReferences).To(HaveLen(1), "taskrun should have exactly one owner reference")
+				ownerRef := taskRunObject.OwnerReferences[0]
+				Expect(ownerRef.Kind).To(Equal("BuildRun"), "taskrun should have a buildrun owner reference")
+				Expect(ownerRef.Name).To(Equal(buildRunObject.Name), "taskrun should have a buildrun owner reference")
+
+				// Check that the buildrun controller is registered as a field manager
+				fieldManagers := sets.NewString()
+				for _, field := range taskRunObject.GetObjectMeta().GetManagedFields() {
+					fieldManagers.Insert(field.Manager)
+				}
+				// Sets uses a map[string]struct{} internally, so we need to check for the key.
+				// We can't use ContainElement because it would check for the value, not the key.
+				Expect(fieldManagers).To(HaveKey("shipwright-buildrun-controller"), "buildrun controller should be registered as a field manager")
 			})
 		})
 	})

@@ -52,7 +52,7 @@ type ReconcileBuild struct {
 func NewReconciler(c *config.Config, mgr manager.Manager, ownerRef setOwnerReferenceFunc) reconcile.Reconciler {
 	return &ReconcileBuild{
 		config:                c,
-		client:                mgr.GetClient(),
+		client:                client.WithFieldOwner(mgr.GetClient(), "shipwright-build-controller"),
 		scheme:                mgr.GetScheme(),
 		setOwnerReferenceFunc: ownerRef,
 	}
