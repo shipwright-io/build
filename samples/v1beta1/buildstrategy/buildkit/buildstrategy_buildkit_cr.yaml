@@ -34,7 +34,7 @@ spec:
       default: ""
   steps:
     - name: build-and-push
-      image: moby/buildkit:v0.23.1-rootless
+      image: moby/buildkit:v0.23.2-rootless
       imagePullPolicy: Always
       securityContext:
         allowPrivilegeEscalation: true
