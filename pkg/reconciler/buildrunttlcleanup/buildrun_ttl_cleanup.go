@@ -31,7 +31,7 @@ type ReconcileBuildRun struct {
 func NewReconciler(c *config.Config, mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileBuildRun{
 		config: c,
-		client: mgr.GetClient(),
+		client: client.WithFieldOwner(mgr.GetClient(), "shipwright-buildrun-ttl-cleanup-controller"),
 	}
 }
 
