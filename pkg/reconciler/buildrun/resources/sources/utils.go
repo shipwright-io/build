@@ -6,9 +6,11 @@ package sources
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/shipwright-io/build/pkg/config"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -86,4 +88,101 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 	}
 
 	return ""
+}
+
+// ensureEnvVar adds or updates an environment variable in a step.
+func ensureEnvVar(step *pipelineapi.Step, name, value string) {
+	for i, envVar := range step.Env {
+		if envVar.Name == name {
+			step.Env[i].Value = value
+			return
+		}
+	}
+	step.Env = append(step.Env, corev1.EnvVar{Name: name, Value: value})
+}
+
+// ensureVolume adds a volume to the TaskSpec if a volume with the same name does not already exist.
+func ensureVolume(taskSpec *pipelineapi.TaskSpec, volume corev1.Volume) {
+	for _, v := range taskSpec.Volumes {
+		if v.Name == volume.Name {
+			return
+		}
+	}
+	taskSpec.Volumes = append(taskSpec.Volumes, volume)
+}
+
+// ensureVolumeMount adds a VolumeMount to a Step if a mount with the same name does not already exist.
+func ensureVolumeMount(step *pipelineapi.Step, mount corev1.VolumeMount) {
+	for _, m := range step.VolumeMounts {
+		if m.Name == mount.Name {
+			return
+		}
+	}
+	step.VolumeMounts = append(step.VolumeMounts, mount)
+}
+
+// AppendWriteableVolumes configures writable volumes for a container step within a Tekton Task.
+// It uses a single shared volume for the home directory and its subdirectories (.docker, .ssh)
+// A separate volume is used for /tmp.
+func AppendWriteableVolumes(
+	taskSpec *pipelineapi.TaskSpec,
+	targetStep *pipelineapi.Step,
+	cfg *config.Config,
+) {
+	// Determine the base writable home directory path from the configuration.
+	homeDir := cfg.ContainersWritableDir.WritableHomeDir
+	// Ensure the HOME environment variable is set correctly
+	ensureEnvVar(targetStep, "HOME", homeDir)
+
+	// Volume for the base /shared-home directory
+	baseHomeVolumeName := "base-home-volume"
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: baseHomeVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      baseHomeVolumeName,
+		MountPath: homeDir,
+	})
+
+	// Volume for /shared-home/.docker
+	dockerVolumeName := "docker-config-volume"
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: dockerVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      dockerVolumeName,
+		MountPath: filepath.Join(homeDir, ".docker"),
+	})
+
+	// Volume for /shared-home/.ssh
+	sshVolumeName := "ssh-keys-volume"
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: sshVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      sshVolumeName,
+		MountPath: filepath.Join(homeDir, ".ssh"),
+	})
+
+	// Volume for /tmp
+	tmpVolumeName := "tmp-data"
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: tmpVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      tmpVolumeName,
+		MountPath: "/tmp",
+	})
 }
