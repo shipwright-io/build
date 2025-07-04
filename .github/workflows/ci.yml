@@ -1,3 +1,8 @@
+# Primary CI workflow for unit, integration, and e2e tests.
+#
+# Note: The `bump-tekton-lts.sh` script relies on the RETAIN-COMMENT comment being present. Take
+# care to ensure this comment is not removed.
+
 name: Unit, Integration, and E2E Tests
 on:
   pull_request:
@@ -71,14 +76,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kubernetes:
-          - v1.30.10
-          - v1.33.0
-        tekton:
-          # oldest LTS that exists at the time of our planned next release
-          - v0.62.9
-          # newest LTS that exists at the time of our planned next release
-          - v1.0.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+        compat:
+          # oldest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
+          - kubernetes: v1.30.10
+            tekton: v0.62.9
+          # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
+          - kubernetes: v1.33.0
+            tekton: v1.0.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -97,12 +101,12 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: ${{ matrix.kubernetes }}
+          version: ${{ matrix.compat.kubernetes }}
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
           version: v0.27.0
-          node_image: kindest/node:${{ matrix.kubernetes }}
+          node_image: kindest/node:${{ matrix.compat.kubernetes }}
           cluster_name: kind
           wait: 120s
       - name: Verify kind cluster
@@ -126,7 +130,7 @@ jobs:
           fi
       - name: Install Tekton
         env:
-          TEKTON_VERSION: ${{ matrix.tekton }}
+          TEKTON_VERSION: ${{ matrix.compat.tekton }}
         run: |
           make kind-tekton
           if ! kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=3m; then
@@ -151,14 +155,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kubernetes:
-          - v1.30.10
-          - v1.33.0
-        tekton:
-          # oldest LTS that exists at the time of our planned next release
-          - v0.62.9
-          # newest LTS that exists at the time of our planned next release
-          - v1.0.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+        compat:
+          # oldest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
+          - kubernetes: v1.30.10
+            tekton: v0.62.9
+          # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
+          - kubernetes: v1.33.0
+            tekton: v1.0.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest-16-cores
     steps:
@@ -173,12 +176,12 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: ${{ matrix.kubernetes }}
+          version: ${{ matrix.compat.kubernetes }}
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
           version: v0.27.0
-          node_image: kindest/node:${{ matrix.kubernetes }}
+          node_image: kindest/node:${{ matrix.compat.kubernetes }}
           cluster_name: kind
           config: test/kind/config_three_node.yaml
           wait: 120s
@@ -206,7 +209,7 @@ jobs:
           done
       - name: Install Tekton
         env:
-          TEKTON_VERSION: ${{ matrix.tekton }}
+          TEKTON_VERSION: ${{ matrix.compat.tekton }}
         run: |
           make kind-tekton
           if ! kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-controller --timeout=3m; then
