@@ -6,7 +6,6 @@ package buildrun
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -17,7 +16,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -51,6 +49,7 @@ type ReconcileBuildRun struct {
 	client                client.Client
 	scheme                *runtime.Scheme
 	setOwnerReferenceFunc setOwnerReferenceFunc
+	taskRunnerFactory     ImageBuildRunnerFactory
 }
 
 // NewReconciler returns a new reconcile.Reconciler
@@ -60,6 +59,7 @@ func NewReconciler(c *config.Config, mgr manager.Manager, ownerRef setOwnerRefer
 		client:                client.WithFieldOwner(mgr.GetClient(), "shipwright-buildrun-controller"),
 		scheme:                mgr.GetScheme(),
 		setOwnerReferenceFunc: ownerRef,
+		taskRunnerFactory:     &TektonTaskRunImageBuildRunnerFactory{},
 	}
 }
 
@@ -81,8 +81,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 	// so we can no longer assume that a build run event will not come in after the build run has a task run ref in its status
 	buildRun = &buildv1beta1.BuildRun{}
 	getBuildRunErr := r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
-	lastTaskRun := &pipelineapi.TaskRun{}
-	getTaskRunErr := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, lastTaskRun)
+	lastTaskRun, getTaskRunErr := r.taskRunnerFactory.GetImageBuildRunner(ctx, r.client, types.NamespacedName{Name: request.Name, Namespace: request.Namespace})
 
 	if getBuildRunErr != nil && getTaskRunErr != nil {
 		if !apierrors.IsNotFound(getBuildRunErr) {
@@ -125,7 +124,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 	// if this is a build run event after we've set the task run ref, get the task run using the task run name stored in the build run
 	if getBuildRunErr == nil && apierrors.IsNotFound(getTaskRunErr) && buildRun.Status.TaskRunName != nil {
-		getTaskRunErr = r.client.Get(ctx, types.NamespacedName{Name: *buildRun.Status.TaskRunName, Namespace: request.Namespace}, lastTaskRun)
+		lastTaskRun, getTaskRunErr = r.taskRunnerFactory.GetImageBuildRunner(ctx, r.client, types.NamespacedName{Name: *buildRun.Status.TaskRunName, Namespace: request.Namespace})
 	}
 
 	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
@@ -389,21 +388,22 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			return reconcile.Result{}, getBuildRunErr
 		} else if apierrors.IsNotFound(getBuildRunErr) {
 			// this is a TR event, try getting the br from the label on the tr
-			err := r.GetBuildRunObject(ctx, lastTaskRun.Labels[buildv1beta1.LabelBuildRun], request.Namespace, buildRun)
-			if err != nil && !apierrors.IsNotFound(err) {
-				return reconcile.Result{}, err
-			}
-			if err != nil && apierrors.IsNotFound(err) {
-				return reconcile.Result{}, nil
+			labels := lastTaskRun.GetLabels()
+			if labels != nil {
+				err := r.GetBuildRunObject(ctx, labels[buildv1beta1.LabelBuildRun], request.Namespace, buildRun)
+				if err != nil && !apierrors.IsNotFound(err) {
+					return reconcile.Result{}, err
+				}
+				if err != nil && apierrors.IsNotFound(err) {
+					return reconcile.Result{}, nil
+				}
 			}
 		}
 
 		if buildRun.IsCanceled() && !lastTaskRun.IsCancelled() {
 			ctxlog.Info(ctx, "buildRun marked for cancellation, patching task run", namespace, request.Namespace, name, request.Name)
-			// patch tekton taskrun a la tkn to start tekton's cancelling logic
-			trueParam := true
-			if err := r.patchTaskRun(ctx, lastTaskRun, "replace", "/spec/status", pipelineapi.TaskRunSpecStatusCancelled, metav1.PatchOptions{Force: &trueParam}); err != nil {
-				return reconcile.Result{}, err
+			if err := lastTaskRun.Cancel(ctx, r.client); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to cancel TaskRun: %v", err)
 			}
 		}
 
@@ -416,18 +416,22 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			return reconcile.Result{}, nil
 		}
 
-		if len(lastTaskRun.Status.Results) > 0 {
+		taskRunResults := lastTaskRun.GetResults()
+		if len(taskRunResults) > 0 {
 			ctxlog.Info(ctx, "surfacing taskRun results to BuildRun status", namespace, request.Namespace, name, request.Name)
-			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, lastTaskRun.Status.Results, request)
+			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, taskRunResults, request)
 		}
 
-		trCondition := lastTaskRun.Status.GetCondition(apis.ConditionSucceeded)
+		trCondition := lastTaskRun.GetCondition(apis.ConditionSucceeded)
 		if trCondition != nil {
-			if err := resources.UpdateBuildRunUsingTaskRunCondition(ctx, r.client, buildRun, lastTaskRun, trCondition); err != nil {
+			// For now, pass the underlying TaskRun object to maintain compatibility
+			// TODO: Update resources functions to work with interface
+			taskRunObj := lastTaskRun.GetObject().(*pipelineapi.TaskRun)
+			if err := resources.UpdateBuildRunUsingTaskRunCondition(ctx, r.client, buildRun, taskRunObj, trCondition); err != nil {
 				return reconcile.Result{}, err
 			}
 
-			resources.UpdateBuildRunUsingTaskFailures(ctx, r.client, buildRun, lastTaskRun)
+			resources.UpdateBuildRunUsingTaskFailures(ctx, r.client, buildRun, taskRunObj)
 			taskRunStatus := trCondition.Status
 
 			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
@@ -438,10 +442,12 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				}
 			}
 
-			buildRun.Status.TaskRunName = &lastTaskRun.Name
+			taskRunName := lastTaskRun.GetName()
+			buildRun.Status.TaskRunName = &taskRunName
 
-			if buildRun.Status.StartTime == nil && lastTaskRun.Status.StartTime != nil {
-				buildRun.Status.StartTime = lastTaskRun.Status.StartTime
+			taskRunStartTime := lastTaskRun.GetStartTime()
+			if buildRun.Status.StartTime == nil && taskRunStartTime != nil {
+				buildRun.Status.StartTime = taskRunStartTime
 
 				// Report the buildrun established duration (time between the creation of the buildrun and the start of the buildrun)
 				buildmetrics.BuildRunEstablishObserve(
@@ -453,8 +459,8 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				)
 			}
 
-			if lastTaskRun.Status.CompletionTime != nil && buildRun.Status.CompletionTime == nil {
-				buildRun.Status.CompletionTime = lastTaskRun.Status.CompletionTime
+			if lastTaskRun.GetCompletionTime() != nil && buildRun.Status.CompletionTime == nil {
+				buildRun.Status.CompletionTime = lastTaskRun.GetCompletionTime()
 
 				// buildrun completion duration (total time between the creation of the buildrun and the buildrun completion)
 				buildmetrics.BuildRunCompletionObserve(
@@ -467,7 +473,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 				// Look for the pod created by the taskrun
 				var pod = &corev1.Pod{}
-				if err := r.client.Get(ctx, types.NamespacedName{Namespace: request.Namespace, Name: lastTaskRun.Status.PodName}, pod); err == nil {
+				if err := r.client.Get(ctx, types.NamespacedName{Namespace: request.Namespace, Name: lastTaskRun.GetPodName()}, pod); err == nil {
 					if len(pod.Status.InitContainerStatuses) > 0 {
 
 						lastInitPodIdx := len(pod.Status.InitContainerStatuses) - 1
@@ -491,7 +497,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						buildRun.Namespace,
 						buildRun.Spec.BuildName(),
 						buildRun.Name,
-						pod.CreationTimestamp.Time.Sub(lastTaskRun.CreationTimestamp.Time),
+						pod.CreationTimestamp.Time.Sub(lastTaskRun.GetCreationTimestamp().Time),
 					)
 				}
 			}
@@ -604,25 +610,4 @@ func (r *ReconcileBuildRun) createTaskRun(ctx context.Context, serviceAccount *c
 	}
 
 	return generatedTaskRun, nil
-}
-
-type patchStringValue struct {
-	Op    string `json:"op"`
-	Path  string `json:"path"`
-	Value string `json:"value"`
-}
-
-func (r *ReconcileBuildRun) patchTaskRun(ctx context.Context, tr *pipelineapi.TaskRun, op, path, value string, opts metav1.PatchOptions) error {
-	payload := []patchStringValue{{
-		Op:    op,
-		Path:  path,
-		Value: value,
-	}}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	patch := client.RawPatch(types.JSONPatchType, data)
-	patchOpt := client.PatchOptions{Raw: &opts}
-	return r.client.Patch(ctx, tr, patch, &patchOpt)
 }
