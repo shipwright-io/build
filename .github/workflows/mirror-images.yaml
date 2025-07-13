@@ -18,20 +18,17 @@ jobs:
           REPO: ghcr.io/${{ github.repository_owner }}/shipwright-samples
         run: |
           for IMAGE in \
-            library/golang:1.16 \
-            library/golang:1.17 \
-            library/golang:1.18 \
-            library/golang:1.19 \
-            library/golang:1.20 \
-            library/golang:1.21 \
-            library/golang:1.22 \
             library/golang:1.23 \
+            library/golang:1.24 \
             library/maven:3-jdk-8-openj9 \
-            library/node:12 \
-            library/node:14 \
-            library/node:16 \
-            library/python:3.8 \
+            library/node:20 \
+            library/node:22 \
+            library/node:24 \
             library/python:3.9 \
+            library/python:3.10 \
+            library/python:3.11 \
+            library/python:3.12 \
+            library/python:3.13 \
             openliberty/open-liberty:kernel-java8-openj9-ubi \
             ; do
             crane cp "${IMAGE}" "${REPO}/$(cut -d/ -f2 <<<"${IMAGE}")"
