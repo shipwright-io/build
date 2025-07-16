@@ -29,8 +29,12 @@ spec:
     - name: build
       image: golang:$(params.go-version)
       imagePullPolicy: Always
+      securityContext:
+        readOnlyRootFilesystem: true
       workingDir: $(params.shp-source-root)
       volumeMounts:
+        - mountPath: /tmp
+          name: tmp-volume
         - mountPath: /gocache
           name: gocache
           readOnly: false
@@ -111,6 +115,9 @@ spec:
         requests:
           cpu: 250m
           memory: 65Mi
+  volumes:
+    - name: tmp-volume
+      emptyDir: {}
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
