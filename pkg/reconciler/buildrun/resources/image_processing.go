@@ -174,7 +174,6 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			SecurityContext:  cfg.ImageProcessingContainerTemplate.SecurityContext,
 			WorkingDir:       cfg.ImageProcessingContainerTemplate.WorkingDir,
 		}
-
 		if volumeAdded {
 			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
 				Name:      prefixedOutputDirectory,
@@ -201,6 +200,23 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			)
 		}
 
+		sources.AppendWriteableVolumes(taskRun.Spec.TaskSpec, &imageProcessingStep, cfg.ContainersWritableDir.WritableHomeDir)
+
+		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
+			Name: "trivy-cache-data",
+			VolumeSource: core.VolumeSource{
+				EmptyDir: &core.EmptyDirVolumeSource{},
+			},
+		})
+		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+			Name:      "trivy-cache-data",
+			MountPath: cfg.ContainersWritableDir.TrivyCacheDir,
+		})
+
+		imageProcessingStep.Env = append(imageProcessingStep.Env, core.EnvVar{
+			Name:  "TRIVY_CACHE_DIR",
+			Value: cfg.ContainersWritableDir.TrivyCacheDir,
+		})
 		// append the mutate step
 		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}
