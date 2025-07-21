@@ -23,7 +23,7 @@ Options:
 Example:
     ${0} quay.io/containers/buildah https://quay.io/api/v1/repository/containers/buildah/tag/ ./samples
 USAGE
-exit 1
+        exit 1
 }
 
 function validate() {
@@ -46,9 +46,26 @@ function update() {
         # Determine the latest tag
         QUERY=".tag_name"
         if [[ ${IMAGE} == *buildah* ]]; then
-                QUERY="[.tags[] | select(.name | endswith(\"immutable\") | not) ] | sort_by(.name) | reverse | .[0].name"
+                QUERY='[.tags[] | select(.name | endswith("immutable") | not) ] | sort_by(.name) | reverse | .[0].name'
         fi
-        LATEST_TAG="$(curl --silent --retry 3 "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")"
+
+        CURL_FLAGS=(
+                "--silent"
+                "--fail"
+                "--retry" "3"
+        )
+
+        if [[ $LATEST_RELEASE_URL == *api.github.com* ]] && [[ -n ${GITHUB_TOKEN:-} ]]; then
+                CURL_FLAGS+=(
+                        "--header" "Authorization: Bearer $GITHUB_TOKEN"
+                )
+        fi
+
+        LATEST_TAG="$(curl "${CURL_FLAGS[@]}" "${LATEST_RELEASE_URL}" | jq --raw-output "${QUERY}")"
+        if [[ $LATEST_TAG == "null" ]]; then
+                echo "[ERROR] Failed to obtain latest release"
+                return 1
+        fi
 
         if [[ ${IMAGE} == *buildkit* ]]; then
                 LATEST_TAG="${LATEST_TAG}-rootless"
@@ -60,7 +77,7 @@ function update() {
         find "${DIRECTORY}" -type f -exec sed --in-place "s%${IMAGE}\:${CURRENT_TAG}%${IMAGE}\:${LATEST_TAG}%g" {} \;
 }
 
-validate "${@}"
+validate "${@:-}"
 
 IMAGE="${1}"
 LATEST_RELEASE_URL="${2}"
