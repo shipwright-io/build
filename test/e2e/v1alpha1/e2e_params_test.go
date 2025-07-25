@@ -60,7 +60,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 	})
 
-	Context("when using a cluster build strategy is used that uses a lot parameters", func() {
+	Context("when using a cluster build strategy is used that uses a lot parameters", Label("Params"), func() {
 		BeforeEach(func() {
 			buildStrategy, err = testBuild.Catalog.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithParameterVerification))
 			Expect(err).ToNot(HaveOccurred())
