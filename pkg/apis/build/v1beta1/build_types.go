@@ -205,7 +205,7 @@ type BuildVolume struct {
 	Name string `json:"name"`
 
 	// Represents the source of a volume to mount
-	// +required
+	// +optional
 	corev1.VolumeSource `json:",inline"`
 }
 
