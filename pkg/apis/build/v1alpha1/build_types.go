@@ -205,7 +205,7 @@ type BuildVolume struct {
 	Description *string `json:"description,omitempty"`
 
 	// Represents the source of a volume to mount
-	// +required
+	// +optional
 	corev1.VolumeSource `json:",inline"`
 }
 
