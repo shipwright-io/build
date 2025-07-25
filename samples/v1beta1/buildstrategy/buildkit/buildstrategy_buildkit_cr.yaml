@@ -37,15 +37,21 @@ spec:
       image: moby/buildkit:v0.23.2-rootless
       imagePullPolicy: Always
       securityContext:
-        allowPrivilegeEscalation: true
         capabilities:
           add:
             - SETGID
             - SETUID
         seccompProfile:
           type: Unconfined
+        readOnlyRootFilesystem: true
+        runAsUser: 1000
+        runAsGroup: 1000
       workingDir: $(params.shp-source-root)
       env:
+        # This is required to align the temporary directory created by buildkit
+        # with the volume mount for that directory.
+        - name: XDG_RUNTIME_DIR
+          value: /home/user/.local/tmp
         - name: DOCKER_CONFIG
           value: /tekton/home/.docker
         - name: HOME
@@ -67,6 +73,13 @@ spec:
           value: $(params.cache)
         - name: PARAM_TARGET
           value: $(params.target)
+      volumeMounts:
+        - name: buildkitd-1
+          mountPath: /home/user/.local/share/buildkit
+        - name: buildkitd-2
+          mountPath: /home/user/.local/tmp
+        - name: tmp-volume
+          mountPath: /tmp
       command:
         - /bin/ash
       args:
@@ -180,3 +193,11 @@ spec:
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
+  volumes:
+    - name: tmp-volume
+      emptyDir: {}
+    - name: buildkitd-1
+      emptyDir: {}
+    - name: buildkitd-2
+      emptyDir: {}
+
