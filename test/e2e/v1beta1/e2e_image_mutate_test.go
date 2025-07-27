@@ -66,7 +66,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 	})
 
-	Context("when a Buildah build with label and annotation is defined", func() {
+	Context("when a Buildah build with label and annotation is defined", Label("ImageMutation", "Buildah", "CORE"), func() {
 		BeforeEach(func() {
 			testID = generateTestID("buildah-mutate")
 
@@ -95,7 +95,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 	})
 
-	Context("mutate image timestamp", func() {
+	Context("mutate image timestamp", Label("ImageMutation", "CORE"), func() {
 		var outputImage name.Reference
 
 		var insecure = func() bool {
@@ -119,7 +119,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		Context("when using BuildKit based Dockerfile build", func() {
+		Context("when using BuildKit based Dockerfile build", Label("BuildKit"), func() {
 			var sampleBuildRun = func(outputTimestamp string) *buildv1beta1.BuildRun {
 				return NewBuildRunPrototype().
 					Namespace(testBuild.Namespace).
@@ -165,7 +165,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("when using Buildpacks build", func() {
+		Context("when using Buildpacks build", Label("Buildpacks"), func() {
 			var sampleBuildRun = func(outputTimestamp string) *buildv1beta1.BuildRun {
 				return NewBuildRunPrototype().
 					Namespace(testBuild.Namespace).
@@ -211,7 +211,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("edge cases", func() {
+		Context("edge cases", Label("FailureCase"), func() {
 			It("should fail run a build run when source timestamp is used with an empty source", func() {
 				buildRun = NewBuildRunPrototype().
 					Namespace(testBuild.Namespace).

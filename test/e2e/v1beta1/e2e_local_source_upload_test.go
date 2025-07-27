@@ -35,7 +35,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 	})
 
-	Context("when LocalCopy BuildSource is defined", func() {
+	Context("when LocalCopy BuildSource is defined", Label("LocalSource", "FailureCase"), func() {
 		BeforeEach(func() {
 			testID = generateTestID("local-copy")
 			build = createBuild(
