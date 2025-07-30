@@ -238,8 +238,14 @@ type BuildRunStatus struct {
 
 	// TaskRunName is the name of the TaskRun responsible for executing this BuildRun.
 	//
+	// Deprecated: Use ImageBuildrun instead to describe the taskrun.
 	// +optional
 	TaskRunName *string `json:"taskRunName,omitempty"`
+
+	// ImageBuildrun is the name and kind of the resource responsible for executing this BuildRun.
+	//
+	// +optional
+	ImageBuildrun *ImageBuildrun `json:"imageBuildrun,omitempty"`
 
 	// StartTime is the time the build is actually started.
 	// +optional
@@ -448,4 +454,13 @@ func (buildrunSpec *BuildRunSpec) BuildName() string {
 
 	// Only BuildRuns with a ReferencedBuild can actually return a proper Build name
 	return ""
+}
+
+// ImageBuildrun defines the name and kind of the build runner.
+type ImageBuildrun struct {
+	// Name is the name of the TaskRun or PipelineRun that was created to execute this BuildRun
+	Name string `json:"name"`
+	// Kind is the kind of the object that was created to execute the BuildRun (e.g., "TaskRun", "PipelineRun")
+	// +optional
+	Kind string `json:"kind,omitempty"`
 }
