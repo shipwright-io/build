@@ -353,8 +353,12 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				return reconcile.Result{}, err
 			}
 
-			// Set the LastTaskRunRef in the BuildRun status
+			// Set the TaskRunName and ImageBuildRun in the BuildRun status
 			buildRun.Status.TaskRunName = &generatedTaskRun.Name
+			buildRun.Status.ImageBuildrun = &buildv1beta1.ImageBuildrun{
+				Name: generatedTaskRun.Name,
+				Kind: "TaskRun",
+			}
 			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name)
 			if err = r.client.Status().Update(ctx, buildRun); err != nil {
 				// we ignore the error here to prevent another reconciliation that would create another TaskRun,
@@ -439,6 +443,12 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			}
 
 			buildRun.Status.TaskRunName = &lastTaskRun.Name
+			if buildRun.Status.ImageBuildrun == nil {
+				buildRun.Status.ImageBuildrun = &buildv1beta1.ImageBuildrun{
+					Name: lastTaskRun.Name,
+					Kind: "TaskRun",
+				}
+			}
 
 			if buildRun.Status.StartTime == nil && lastTaskRun.Status.StartTime != nil {
 				buildRun.Status.StartTime = lastTaskRun.Status.StartTime
