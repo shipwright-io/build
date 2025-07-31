@@ -114,7 +114,7 @@ func AppendGitStep(
 			secretMountPath,
 		)
 	}
-
+	AppendWriteableVolumes(taskSpec, &gitStep, cfg.ContainersWritableDir.WritableHomeDir)
 	// append the git step
 	taskSpec.Steps = append(taskSpec.Steps, gitStep)
 }
