@@ -87,3 +87,97 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 
 	return ""
 }
+
+// ensureVolume adds a volume to the TaskSpec if a volume with the same name does not already exist.
+func ensureVolume(taskSpec *pipelineapi.TaskSpec, volume corev1.Volume) {
+	for _, v := range taskSpec.Volumes {
+		if v.Name == volume.Name {
+			return
+		}
+	}
+	taskSpec.Volumes = append(taskSpec.Volumes, volume)
+}
+
+// ensureVolumeMount adds a VolumeMount to a Step if a mount with the same name does not already exist.
+func ensureVolumeMount(step *pipelineapi.Step, mount corev1.VolumeMount) {
+	for _, m := range step.VolumeMounts {
+		if m.Name == mount.Name {
+			return
+		}
+	}
+	step.VolumeMounts = append(step.VolumeMounts, mount)
+}
+
+// AppendWriteableVolumes configures distinct, writable volumes for tmp directory
+// for a specific step in a Tekton Task. It ensures that these volumes are not shared with
+// other steps in the same pod.
+func AppendWriteableVolumes(
+	taskSpec *pipelineapi.TaskSpec,
+	targetStep *pipelineapi.Step,
+) {
+	// Define a custom, isolated path for temporary files and mount a volume there.
+	// This avoids overwriting the base image's /tmp and is a container best practice.
+	tmpDir := "/shp-tmp"
+	addStepEmptyDirVolume(
+		taskSpec,
+		targetStep,
+		generateVolumeName("shp-tmp-", targetStep.Name),
+		tmpDir,
+	)
+	// Point the TMPDIR environment variable to the custom path.
+	setEnvVar(targetStep, "TMPDIR", tmpDir)
+}
+
+// generateVolumeName creates a sanitized, unique volume name for a step.
+// It combines a prefix with a sanitized version of the step name, ensuring
+// the result is a valid DNS-1123 label.
+func generateVolumeName(prefix, stepName string) string {
+	// Sanitize the step name by replacing forbidden characters.
+	sanitizedStepName := dnsLabel1123Forbidden.ReplaceAllString(stepName, "-")
+
+	// Calculate the maximum length for the step name portion.
+	maxStepNameLength := 63 - len(prefix)
+	if len(sanitizedStepName) > maxStepNameLength {
+		sanitizedStepName = sanitizedStepName[:maxStepNameLength]
+	}
+
+	// Combine the prefix and the sanitized step name.
+	name := prefix + sanitizedStepName
+
+	// Trim any trailing dashes, as they are not allowed at the end of a label.
+	name = strings.TrimSuffix(name, "-")
+
+	return name
+}
+
+// addStepEmptyDirVolume creates a unique EmptyDir volume for a specific step and mounts it at the given path.
+func addStepEmptyDirVolume(taskSpec *pipelineapi.TaskSpec, step *pipelineapi.Step, volumeName, mountPath string) {
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	ensureVolumeMount(step, corev1.VolumeMount{
+		Name:      volumeName,
+		MountPath: mountPath,
+	})
+}
+
+// setEnvVar sets or overrides an environment variable in a Step.
+func setEnvVar(step *pipelineapi.Step, name, value string) {
+	for i, env := range step.Env {
+		if env.Name == name {
+			// Override existing variable
+			step.Env[i].Value = value
+			return
+		}
+	}
+
+	// Append new variable if it does not exist
+	step.Env = append(step.Env, corev1.EnvVar{
+		Name:  name,
+		Value: value,
+	})
+}
