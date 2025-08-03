@@ -66,6 +66,7 @@ const (
 	controllerBuildRunMaxConcurrentReconciles             = "BUILDRUN_MAX_CONCURRENT_RECONCILES"
 	controllerBuildStrategyMaxConcurrentReconciles        = "BUILDSTRATEGY_MAX_CONCURRENT_RECONCILES"
 	controllerClusterBuildStrategyMaxConcurrentReconciles = "CLUSTERBUILDSTRATEGY_MAX_CONCURRENT_RECONCILES"
+	controllerBuildrunPipelinerunExecutorEnvVar           = "BUILDRUN_PIPELINERUN_EXECUTOR" // not used yet. Relevant to pr #1924
 
 	// environment variables for the kube API
 	kubeAPIBurst = "KUBE_API_BURST"
@@ -107,6 +108,7 @@ type Config struct {
 	KubeAPIOptions                   KubeAPIOptions
 	GitRewriteRule                   bool
 	VulnerabilityCountLimit          int
+	BuildrunPipelinerunExecutor      bool
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -163,7 +165,7 @@ func NewDefaultConfig() *Config {
 		TerminationLogPath:            terminationLogPathDefault,
 		GitRewriteRule:                false,
 		VulnerabilityCountLimit:       50,
-
+		BuildrunPipelinerunExecutor:   false,
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
 			Command: []string{
@@ -453,6 +455,9 @@ func (c *Config) SetConfigFromEnv() error {
 
 	if terminationLogPath := os.Getenv(terminationLogPathEnvVar); terminationLogPath != "" {
 		c.TerminationLogPath = terminationLogPath
+	}
+	if usePipelinerun := os.Getenv(controllerBuildrunPipelinerunExecutorEnvVar); usePipelinerun != "" {
+		c.BuildrunPipelinerunExecutor = strings.ToLower(usePipelinerun) == "true"
 	}
 
 	return nil
