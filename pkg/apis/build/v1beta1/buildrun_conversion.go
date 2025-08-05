@@ -150,11 +150,21 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		}
 	}
 
+	// Handle conversion of BuildExecutor to TaskRunName for backward compatibility
+	var taskRunName *string
+	if src.Status.Executor != nil {
+		// If Executor is set, use its Name field
+		taskRunName = &src.Status.Executor.Name
+	} else {
+		// Fall back to the deprecated TaskRunName field
+		taskRunName = src.Status.TaskRunName // nolint:staticcheck
+	}
+
 	alphaBuildRun.Status = v1alpha1.BuildRunStatus{
 		Sources:          sourceStatus,
 		Output:           output,
 		Conditions:       conditions,
-		LatestTaskRunRef: src.Status.TaskRunName,
+		LatestTaskRunRef: taskRunName,
 		StartTime:        src.Status.StartTime,
 		CompletionTime:   src.Status.CompletionTime,
 	}
@@ -248,11 +258,23 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 		}
 	}
 
+	// Handle conversion from v1alpha1 LatestTaskRunRef to v1beta1 BuildExecutor
+	var executor *BuildExecutor
+	if alphaBuildRun.Status.LatestTaskRunRef != nil {
+		// Convert the old TaskRunName to new BuildExecutor structure
+		// Since v1alpha1 only had TaskRun support, we default to "TaskRun" kind
+		executor = &BuildExecutor{
+			Name: *alphaBuildRun.Status.LatestTaskRunRef,
+			Kind: "TaskRun", // Default to TaskRun for backward compatibility
+		}
+	}
+
 	src.Status = BuildRunStatus{
 		Source:         sourceStatus,
 		Output:         output,
 		Conditions:     conditions,
-		TaskRunName:    alphaBuildRun.Status.LatestTaskRunRef,
+		TaskRunName:    alphaBuildRun.Status.LatestTaskRunRef, // nolint:staticcheck // Keep for backward compatibility
+		Executor:       executor,                              // New field with enhanced information
 		StartTime:      alphaBuildRun.Status.StartTime,
 		CompletionTime: alphaBuildRun.Status.CompletionTime,
 		FailureDetails: src.Status.FailureDetails,

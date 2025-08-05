@@ -364,7 +364,7 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 			if !tolerateEmptyStatus {
 				Expect(object.Status.GetCondition(build.Succeeded).Status).To(Equal(condition.Status))
 				Expect(object.Status.GetCondition(build.Succeeded).Reason).To(Equal(condition.Reason))
-				Expect(object.Status.TaskRunName).To(Equal(name))
+				Expect(object.Status.TaskRunName).To(Equal(name)) // nolint:staticcheck
 			}
 			if object.Status.BuildSpec != nil {
 				Expect(*object.Status.BuildSpec).To(Equal(buildSpec))

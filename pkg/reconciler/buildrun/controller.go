@@ -54,7 +54,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		CreateFunc: func(e event.TypedCreateEvent[*buildv1beta1.BuildRun]) bool {
 			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have a TaskRun referenced already,
 			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun.
-			return e.Object.Status.TaskRunName == nil && e.Object.Status.CompletionTime == nil
+			return e.Object.Status.TaskRunName == nil && e.Object.Status.CompletionTime == nil // nolint:staticcheck
 		},
 		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.BuildRun]) bool {
 			// Only reconcile a BuildRun update when
