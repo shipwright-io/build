@@ -69,6 +69,30 @@ func SanitizeVolumeNameForSecretName(secretName string) string {
 	return sanitizedName
 }
 
+// SanitizeVolumeNameForStepName creates a sanitized volume name for a step
+// Example: "build-and-push" -> "build-and-push", "source-git" -> "source-git"
+// This ensures each step gets its own isolated writable home directory volume
+func SanitizeVolumeNameForStepName(stepName string) string {
+	// remove forbidden characters
+	sanitizedName := dnsLabel1123Forbidden.ReplaceAllString(stepName, "-")
+
+	// ensure maximum length (leave room for prefix "shp-writable-home-")
+	maxStepNameLength := 63 - len("shp-writable-home-")
+	if len(sanitizedName) > maxStepNameLength {
+		sanitizedName = sanitizedName[:maxStepNameLength]
+	}
+
+	// trim trailing dashes because the last character must be alphanumeric
+	sanitizedName = strings.TrimSuffix(sanitizedName, "-")
+
+	// ensure we have at least some content
+	if sanitizedName == "" {
+		sanitizedName = "default"
+	}
+
+	return sanitizedName
+}
+
 func TaskResultName(sourceName, resultName string) string {
 	return fmt.Sprintf("%s-source-%s-%s",
 		PrefixParamsResultsVolumes,
@@ -86,4 +110,74 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 	}
 
 	return ""
+}
+
+// ensureVolume adds a volume to the TaskSpec if a volume with the same name does not already exist.
+func ensureVolume(taskSpec *pipelineapi.TaskSpec, volume corev1.Volume) {
+	for _, v := range taskSpec.Volumes {
+		if v.Name == volume.Name {
+			return
+		}
+	}
+	taskSpec.Volumes = append(taskSpec.Volumes, volume)
+}
+
+// ensureVolumeMount adds a VolumeMount to a Step if a mount with the same name does not already exist.
+func ensureVolumeMount(step *pipelineapi.Step, mount corev1.VolumeMount) {
+	for _, m := range step.VolumeMounts {
+		if m.Name == mount.Name {
+			return
+		}
+	}
+	step.VolumeMounts = append(step.VolumeMounts, mount)
+}
+
+// AppendWriteableVolumes configures writable volumes for a container step within a Tekton Task.
+func AppendWriteableVolumes(
+	taskSpec *pipelineapi.TaskSpec,
+	targetStep *pipelineapi.Step,
+	writableHomeDir string,
+) {
+	// Volume for /tmp (shared across containers as it's for temporary files)
+	tmpVolumeName := "shp-tmp-data"
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: tmpVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      tmpVolumeName,
+		MountPath: "/tmp",
+	})
+
+	// Volume for writable home directory (unique per container)
+	// Generate a unique volume name based on the step name to ensure isolation
+	homeVolumeName := fmt.Sprintf("shp-writable-home-%s", SanitizeVolumeNameForStepName(targetStep.Name))
+	ensureVolume(taskSpec, corev1.Volume{
+		Name: homeVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+	ensureVolumeMount(targetStep, corev1.VolumeMount{
+		Name:      homeVolumeName,
+		MountPath: writableHomeDir,
+	})
+
+	// Set HOME env var (override if present)
+	found := false
+	for i, env := range targetStep.Env {
+		if env.Name == "HOME" {
+			targetStep.Env[i].Value = writableHomeDir
+			found = true
+			break
+		}
+	}
+	if !found {
+		targetStep.Env = append(targetStep.Env, corev1.EnvVar{
+			Name:  "HOME",
+			Value: writableHomeDir,
+		})
+	}
 }

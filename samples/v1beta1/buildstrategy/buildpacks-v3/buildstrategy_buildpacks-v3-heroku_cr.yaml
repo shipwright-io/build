@@ -7,6 +7,12 @@ spec:
   volumes:
     - name: platform-env
       emptyDir: {}
+    - name: tmp
+      emptyDir: {}
+    - name: run
+      emptyDir: {}
+    - name: home-dir
+      emptyDir: {}
   parameters:
     - name: operating-system
       description: The target operating system for the buildpacks build.
@@ -20,7 +26,20 @@ spec:
   steps:
     - name: build-and-push
       image: heroku/builder:22
+      securityContext:
+        readOnlyRootFilesystem: true
+      volumeMounts:
+        - mountPath: /platform/env
+          name: platform-env
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /run
+          name: run
+        - mountPath: /home
+          name: home-dir
       env:
+        - name: HOME
+          value: /home/cnb
         - name: CNB_TARGET_OS
           value: $(params.operating-system)
         - name: CNB_TARGET_ARCH
@@ -95,9 +114,6 @@ spec:
 
           # Store the image digest
           grep digest /tmp/report.toml | tail -n 1 | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
-      volumeMounts:
-        - mountPath: /platform/env
-          name: platform-env
       resources:
         limits:
           cpu: 500m
