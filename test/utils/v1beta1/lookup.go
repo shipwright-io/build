@@ -78,6 +78,7 @@ func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1beta1.BuildRun) 
 		return nil, fmt.Errorf("no BuildRun specified to lookup TaskRun")
 	}
 
+	// nolint:staticcheck
 	if buildRun.Status.TaskRunName != nil {
 		return t.LookupTaskRun(types.NamespacedName{Namespace: buildRun.Namespace, Name: *buildRun.Status.TaskRunName})
 	}

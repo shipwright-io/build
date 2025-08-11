@@ -320,6 +320,7 @@ func (in *BuildRunStatus) DeepCopyInto(out *BuildRunStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	// nolint:staticcheck
 	if in.TaskRunName != nil {
 		in, out := &in.TaskRunName, &out.TaskRunName
 		*out = new(string)

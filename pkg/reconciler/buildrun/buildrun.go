@@ -123,6 +123,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	// if this is a build run event after we've set the task run ref, get the task run using the task run name stored in the build run
+	// nolint:staticcheck
 	if getBuildRunErr == nil && apierrors.IsNotFound(getTaskRunErr) && buildRun.Status.TaskRunName != nil {
 		lastTaskRun, getTaskRunErr = r.taskRunnerFactory.GetImageBuildRunner(ctx, r.client, types.NamespacedName{Name: *buildRun.Status.TaskRunName, Namespace: request.Namespace})
 	}
@@ -352,8 +353,12 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				return reconcile.Result{}, err
 			}
 
-			// Set the LastTaskRunRef in the BuildRun status
-			buildRun.Status.TaskRunName = &generatedTaskRun.Name
+			// Set the TaskRunName and BuildExecutor in the BuildRun status
+			buildRun.Status.TaskRunName = &generatedTaskRun.Name // nolint:staticcheck
+			buildRun.Status.Executor = &buildv1beta1.BuildExecutor{
+				Name: generatedTaskRun.Name,
+				Kind: "TaskRun",
+			}
 			ctxlog.Info(ctx, "updating BuildRun status with TaskRun name", namespace, request.Namespace, name, request.Name, "TaskRun", generatedTaskRun.Name)
 			if err = r.client.Status().Update(ctx, buildRun); err != nil {
 				// we ignore the error here to prevent another reconciliation that would create another TaskRun,
@@ -443,7 +448,13 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			}
 
 			taskRunName := lastTaskRun.GetName()
-			buildRun.Status.TaskRunName = &taskRunName
+			buildRun.Status.TaskRunName = &taskRunName // nolint:staticcheck
+			if buildRun.Status.Executor == nil {
+				buildRun.Status.Executor = &buildv1beta1.BuildExecutor{
+					Name: lastTaskRun.GetName(),
+					Kind: "TaskRun",
+				}
+			}
 
 			taskRunStartTime := lastTaskRun.GetStartTime()
 			if buildRun.Status.StartTime == nil && taskRunStartTime != nil {
