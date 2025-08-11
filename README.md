@@ -47,9 +47,9 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.15.9/release.yaml --server-side
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.15.9/hack/setup-webhook-cert.sh | bash
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.15.9/hack/storage-version-migration.sh | bash
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.16.12/release.yaml --server-side
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.16.12/hack/setup-webhook-cert.sh | bash
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.16.12/hack/storage-version-migration.sh | bash
   ```
 
   To install the latest nightly release, run:
@@ -63,7 +63,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.15.9/sample-strategies.yaml --server-side
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.16.12/sample-strategies.yaml --server-side
   ```
 
   To install the latest nightly release, run:
@@ -171,6 +171,19 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version                                                                | Docs                                                                       | Examples                                                                          |
 |------------------------------------------------------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | HEAD                                                                   | [Docs @ HEAD](docs/README.md)                                              | [Examples @ HEAD](samples)                                                        |
+| [v0.16.12](https://github.com/shipwright-io/build/releases/tag/v0.16.12)    | [Docs @ v0.16.12](https://github.com/shipwright-io/build/tree/v0.16.12/docs) | [Examples @ v0.16.12](https://github.com/shipwright-io/build/tree/v0.16.12/samples) |
+| [v0.16.11](https://github.com/shipwright-io/build/releases/tag/v0.16.11)    | [Docs @ v0.16.11](https://github.com/shipwright-io/build/tree/v0.16.11/docs) | [Examples @ v0.16.11](https://github.com/shipwright-io/build/tree/v0.16.11/samples) |
+| [v0.16.10](https://github.com/shipwright-io/build/releases/tag/v0.16.10)    | [Docs @ v0.16.10](https://github.com/shipwright-io/build/tree/v0.16.10/docs) | [Examples @ v0.16.10](https://github.com/shipwright-io/build/tree/v0.16.10/samples) |
+| [v0.16.9](https://github.com/shipwright-io/build/releases/tag/v0.16.9)    | [Docs @ v0.16.9](https://github.com/shipwright-io/build/tree/v0.16.9/docs) | [Examples @ v0.16.9](https://github.com/shipwright-io/build/tree/v0.16.9/samples) |
+| [v0.16.8](https://github.com/shipwright-io/build/releases/tag/v0.16.8)    | [Docs @ v0.16.8](https://github.com/shipwright-io/build/tree/v0.16.8/docs) | [Examples @ v0.16.8](https://github.com/shipwright-io/build/tree/v0.16.8/samples) |
+| [v0.16.7](https://github.com/shipwright-io/build/releases/tag/v0.16.7)    | [Docs @ v0.16.7](https://github.com/shipwright-io/build/tree/v0.16.7/docs) | [Examples @ v0.16.7](https://github.com/shipwright-io/build/tree/v0.16.7/samples) |
+| [v0.16.6](https://github.com/shipwright-io/build/releases/tag/v0.16.6)    | [Docs @ v0.16.6](https://github.com/shipwright-io/build/tree/v0.16.6/docs) | [Examples @ v0.16.6](https://github.com/shipwright-io/build/tree/v0.16.6/samples) |
+| [v0.16.5](https://github.com/shipwright-io/build/releases/tag/v0.16.5)    | [Docs @ v0.16.5](https://github.com/shipwright-io/build/tree/v0.16.5/docs) | [Examples @ v0.16.5](https://github.com/shipwright-io/build/tree/v0.16.5/samples) |
+| [v0.16.4](https://github.com/shipwright-io/build/releases/tag/v0.16.4)    | [Docs @ v0.16.4](https://github.com/shipwright-io/build/tree/v0.16.4/docs) | [Examples @ v0.16.4](https://github.com/shipwright-io/build/tree/v0.16.4/samples) |
+| [v0.16.3](https://github.com/shipwright-io/build/releases/tag/v0.16.3)    | [Docs @ v0.16.3](https://github.com/shipwright-io/build/tree/v0.16.3/docs) | [Examples @ v0.16.3](https://github.com/shipwright-io/build/tree/v0.16.3/samples) |
+| [v0.16.2](https://github.com/shipwright-io/build/releases/tag/v0.16.2)    | [Docs @ v0.16.2](https://github.com/shipwright-io/build/tree/v0.16.2/docs) | [Examples @ v0.16.2](https://github.com/shipwright-io/build/tree/v0.16.2/samples) |
+| [v0.16.1](https://github.com/shipwright-io/build/releases/tag/v0.16.1)    | [Docs @ v0.16.1](https://github.com/shipwright-io/build/tree/v0.16.1/docs) | [Examples @ v0.16.1](https://github.com/shipwright-io/build/tree/v0.16.1/samples) |
+| [v0.16.0](https://github.com/shipwright-io/build/releases/tag/v0.16.0)    | [Docs @ v0.16.0](https://github.com/shipwright-io/build/tree/v0.16.0/docs) | [Examples @ v0.16.0](https://github.com/shipwright-io/build/tree/v0.16.0/samples) |
 | [v0.15.9](https://github.com/shipwright-io/build/releases/tag/v0.15.9)    | [Docs @ v0.15.9](https://github.com/shipwright-io/build/tree/v0.15.9/docs) | [Examples @ v0.15.9](https://github.com/shipwright-io/build/tree/v0.15.9/samples) |
 | [v0.15.8](https://github.com/shipwright-io/build/releases/tag/v0.15.8)    | [Docs @ v0.15.8](https://github.com/shipwright-io/build/tree/v0.15.8/docs) | [Examples @ v0.15.8](https://github.com/shipwright-io/build/tree/v0.15.8/samples) |
 | [v0.15.7](https://github.com/shipwright-io/build/releases/tag/v0.15.7)    | [Docs @ v0.15.7](https://github.com/shipwright-io/build/tree/v0.15.7/docs) | [Examples @ v0.15.7](https://github.com/shipwright-io/build/tree/v0.15.7/samples) |
