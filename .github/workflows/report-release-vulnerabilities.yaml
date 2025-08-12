@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: main
       - name: Install Go
@@ -53,7 +53,7 @@ jobs:
         run: ./.github/download-latest-release.sh
         working-directory: ${{ github.workspace }}/main
       - name: Checkout release branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: release-branch
           ref: ${{ steps.download-latest-release.outputs.release-branch }}

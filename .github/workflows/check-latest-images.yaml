@@ -19,7 +19,7 @@ jobs:
             latest-release-url: https://quay.io/api/v1/repository/containers/buildah/tag/
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Check and modify ${{ matrix.image }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
