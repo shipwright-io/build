@@ -34,54 +34,250 @@ const (
 	workspaceSource = "source"
 )
 
-// GenerateTaskSpec creates Tekton TaskRun spec to be used for a build run
-func GenerateTaskSpec(
+// GenerateTaskRun creates a Tekton TaskRun to be used for a build run
+func GenerateTaskRun(
 	cfg *config.Config,
 	build *buildv1beta1.Build,
 	buildRun *buildv1beta1.BuildRun,
-	buildSteps []buildv1beta1.Step,
-	parameterDefinitions []buildv1beta1.Parameter,
-	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
-) (*pipelineapi.TaskSpec, error) {
-	generatedTaskSpec := pipelineapi.TaskSpec{
-		Params: []pipelineapi.ParamSpec{
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
-				Description: "The URL of the image that the build produces",
-				Type:        pipelineapi.ParamTypeString,
-			},
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
-				Description: "A flag indicating that the output image is on an insecure container registry",
-				Type:        pipelineapi.ParamTypeString,
-			},
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
-				Description: "The context directory inside the source directory",
-				Type:        pipelineapi.ParamTypeString,
-			},
-			{
-				Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
-				Description: "The source directory",
-				Type:        pipelineapi.ParamTypeString,
-			},
-		},
-		Workspaces: []pipelineapi.WorkspaceDeclaration{
-			// workspace for the source files
-			{
-				Name: workspaceSource,
-			},
+	serviceAccountName string,
+	strategy buildv1beta1.BuilderStrategy,
+) (*pipelineapi.TaskRun, error) {
+	// Generate base TaskRun with TaskSpec
+	taskRun, err := initializeTaskRun(cfg, build, buildRun, serviceAccountName, strategy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize TaskRun for BuildRun %q using strategy %q: %w",
+			buildRun.Name, strategy.GetName(), err)
+	}
+
+	if err := applyNodeSelectors(taskRun, build, buildRun); err != nil {
+		return nil, fmt.Errorf("failed to apply node selectors to TaskRun for BuildRun %q: %w", buildRun.Name, err)
+	}
+
+	if err := applyTolerations(taskRun, build, buildRun); err != nil {
+		return nil, fmt.Errorf("failed to apply tolerations to TaskRun for BuildRun %q: %w", buildRun.Name, err)
+	}
+
+	if err := applyScheduler(taskRun, build, buildRun); err != nil {
+		return nil, fmt.Errorf("failed to apply scheduler configuration to TaskRun for BuildRun %q: %w", buildRun.Name, err)
+	}
+
+	if err := applyAnnotationsAndLabels(taskRun, strategy); err != nil {
+		return nil, fmt.Errorf("failed to apply annotations and labels to TaskRun for BuildRun %q using strategy %q: %w", buildRun.Name, strategy.GetName(), err)
+	}
+
+	if err := applyTimeout(taskRun, build, buildRun); err != nil {
+		return nil, fmt.Errorf("failed to apply timeout configuration to TaskRun for BuildRun %q: %w", buildRun.Name, err)
+	}
+
+	if err := applyParameters(taskRun, build, buildRun, strategy); err != nil {
+		return nil, fmt.Errorf("failed to apply parameters to TaskRun for BuildRun %q using strategy %q: %w", buildRun.Name, strategy.GetName(), err)
+	}
+
+	if err := applyOutputImageSteps(cfg, taskRun, build, buildRun); err != nil {
+		return nil, fmt.Errorf("failed to apply output image processing steps to TaskRun for BuildRun %q: %w", buildRun.Name, err)
+	}
+
+	return taskRun, nil
+}
+
+// initializeTaskRun creates the base TaskRun with TaskSpec and basic metadata
+func initializeTaskRun(cfg *config.Config, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, serviceAccountName string, strategy buildv1beta1.BuilderStrategy) (*pipelineapi.TaskRun, error) {
+	taskSpec, err := buildTaskSpec(cfg, build, buildRun, strategy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build TaskSpec for BuildRun %q using strategy %q: %w",
+			buildRun.Name, strategy.GetName(), err)
+	}
+
+	taskRun := &pipelineapi.TaskRun{
+		ObjectMeta: generateTaskRunMetadata(build, buildRun),
+		Spec: pipelineapi.TaskRunSpec{
+			ServiceAccountName: serviceAccountName,
+			TaskSpec:           taskSpec,
+			Workspaces:         generateWorkspaceBindings(),
 		},
 	}
 
-	generatedTaskSpec.Results = append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
+	return taskRun, nil
+}
 
-	// define the results, steps and volumes for sources, or alternatively, wait for user upload
-	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build, buildRun)
+// buildTaskSpec creates a complete TaskSpec by orchestrating all TaskSpec building functions
+func buildTaskSpec(cfg *config.Config, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, strategy buildv1beta1.BuilderStrategy) (*pipelineapi.TaskSpec, error) {
+	taskSpec := createBaseTaskSpec()
 
-	// Add the strategy defined parameters into the Task spec
+	applySourcesToTaskSpec(cfg, taskSpec, build, buildRun)
+	addStrategyParametersToTaskSpec(taskSpec, strategy.GetParameters())
+
+	combinedEnvs, err := mergeEnvironmentVariables(build, buildRun)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge environment variables for BuildRun %q: %w",
+			buildRun.Name, err)
+	}
+
+	volumeMounts, err := applyBuildStrategySteps(taskSpec, build, strategy.GetBuildSteps(), strategy.GetVolumes(), combinedEnvs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply build strategy steps for strategy %q: %w", strategy.GetName(), err)
+	}
+
+	if err := generateTaskSpecVolumes(taskSpec, volumeMounts, strategy.GetVolumes(), build.Spec.Volumes, buildRun.Spec.Volumes); err != nil {
+		return nil, fmt.Errorf("failed to generate TaskSpec volumes for strategy %q: %w", strategy.GetName(), err)
+	}
+
+	return taskSpec, nil
+}
+
+// createBaseTaskSpec creates the initial TaskSpec with base components
+func createBaseTaskSpec() *pipelineapi.TaskSpec {
+	return &pipelineapi.TaskSpec{
+		Params:     generateBaseTaskSpecParams(),
+		Workspaces: generateBaseTaskSpecWorkspaces(),
+		Results:    generateBaseTaskSpecResults(),
+	}
+}
+
+// generateTaskRunMetadata creates the ObjectMeta for the TaskRun
+func generateTaskRunMetadata(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		GenerateName: buildRun.Name + "-",
+		Namespace:    buildRun.Namespace,
+		Labels:       generateTaskRunLabels(build, buildRun),
+	}
+}
+
+// generateWorkspaceBindings creates the workspace bindings for the TaskRun
+func generateWorkspaceBindings() []pipelineapi.WorkspaceBinding {
+	return []pipelineapi.WorkspaceBinding{
+		{
+			Name:     workspaceSource,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
+// applyBuildStrategySteps processes build strategy steps and adds them to TaskSpec with environment variable handling
+func applyBuildStrategySteps(
+	taskSpec *pipelineapi.TaskSpec,
+	build *buildv1beta1.Build,
+	buildSteps []buildv1beta1.Step,
+	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
+	combinedEnvs []corev1.EnvVar,
+) (map[string]bool, error) {
+	volumeMounts := make(map[string]bool)
+	buildStrategyVolumesMap := toVolumeMap(buildStrategyVolumes)
+
+	for _, containerValue := range buildSteps {
+		// Merge environment variables for this step
+		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
+		if err != nil {
+			return nil, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
+		}
+
+		step := pipelineapi.Step{
+			Image:            containerValue.Image,
+			ImagePullPolicy:  containerValue.ImagePullPolicy,
+			Name:             containerValue.Name,
+			VolumeMounts:     containerValue.VolumeMounts,
+			Command:          containerValue.Command,
+			Args:             containerValue.Args,
+			SecurityContext:  containerValue.SecurityContext,
+			WorkingDir:       containerValue.WorkingDir,
+			ComputeResources: containerValue.Resources,
+			Env:              stepEnv,
+		}
+
+		taskSpec.Steps = append(taskSpec.Steps, step)
+
+		// Validate and collect volume mounts
+		for _, vm := range containerValue.VolumeMounts {
+			if _, ok := buildStrategyVolumesMap[vm.Name]; !ok {
+				return nil, fmt.Errorf("volume for the Volume Mount %q is not found", vm.Name)
+			}
+			volumeMounts[vm.Name] = vm.ReadOnly
+		}
+	}
+
+	return volumeMounts, nil
+}
+
+// generateBaseTaskSpecParams creates the base parameters for TaskSpec
+func generateBaseTaskSpecParams() []pipelineapi.ParamSpec {
+	return []pipelineapi.ParamSpec{
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
+			Description: "The URL of the image that the build produces",
+			Type:        pipelineapi.ParamTypeString,
+		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
+			Description: "A flag indicating that the output image is on an insecure container registry",
+			Type:        pipelineapi.ParamTypeString,
+		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
+			Description: "The context directory inside the source directory",
+			Type:        pipelineapi.ParamTypeString,
+		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
+			Description: "The source directory",
+			Type:        pipelineapi.ParamTypeString,
+		},
+	}
+}
+
+// generateBaseTaskSpecWorkspaces creates the base workspaces for TaskSpec
+func generateBaseTaskSpecWorkspaces() []pipelineapi.WorkspaceDeclaration {
+	return []pipelineapi.WorkspaceDeclaration{
+		{
+			Name: workspaceSource,
+		},
+	}
+}
+
+// generateBaseTaskSpecResults creates the base results for TaskSpec
+func generateBaseTaskSpecResults() []pipelineapi.TaskResult {
+	return append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
+}
+
+// generateTaskSpecVolumes creates and appends volumes to TaskSpec
+func generateTaskSpecVolumes(
+	taskSpec *pipelineapi.TaskSpec,
+	volumeMounts map[string]bool,
+	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
+	buildVolumes []buildv1beta1.BuildVolume,
+	buildRunVolumes []buildv1beta1.BuildVolume,
+) error {
+	volumes, err := volumes.TaskSpecVolumes(volumeMounts, buildStrategyVolumes, buildVolumes, buildRunVolumes)
+	if err != nil {
+		return fmt.Errorf("failed to create TaskSpec volumes from volume configurations: %w", err)
+	}
+	taskSpec.Volumes = append(taskSpec.Volumes, volumes...)
+	return nil
+}
+
+// generateTaskRunLabels creates labels for the TaskRun
+func generateTaskRunLabels(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) map[string]string {
+	taskRunLabels := map[string]string{
+		buildv1beta1.LabelBuildRun:           buildRun.Name,
+		buildv1beta1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+	}
+
+	// Add Build name reference unless it is an embedded Build (empty build name)
+	if build.Name != "" {
+		taskRunLabels[buildv1beta1.LabelBuild] = build.Name
+		taskRunLabels[buildv1beta1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+	}
+
+	return taskRunLabels
+}
+
+// applySourcesToTaskSpec amends TaskSpec with source-related configuration
+func applySourcesToTaskSpec(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) {
+	AmendTaskSpecWithSources(cfg, taskSpec, build, buildRun)
+}
+
+// addStrategyParametersToTaskSpec adds strategy-defined parameters to TaskSpec
+func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDefinitions []buildv1beta1.Parameter) {
 	for _, parameterDefinition := range parameterDefinitions {
-
 		param := pipelineapi.ParamSpec{
 			Name:        parameterDefinition.Name,
 			Description: parameterDefinition.Description,
@@ -109,76 +305,122 @@ func GenerateTaskSpec(
 			}
 		}
 
-		generatedTaskSpec.Params = append(generatedTaskSpec.Params, param)
+		taskSpec.Params = append(taskSpec.Params, param)
 	}
-
-	// Combine the environment variables specified in the Build object and the BuildRun object
-	// env vars in the BuildRun supercede those in the Build, overwriting them
-	combinedEnvs, err := env.MergeEnvVars(buildRun.Spec.Env, build.Spec.Env, true)
-	if err != nil {
-		return nil, err
-	}
-
-	// This map will contain mapping from all volume mount names that build steps contain
-	// to their readonly status in order to later quickly check whether mount is correct
-	volumeMounts := make(map[string]bool)
-	buildStrategyVolumesMap := toVolumeMap(buildStrategyVolumes)
-
-	// define the steps coming from the build strategy
-	for _, containerValue := range buildSteps {
-
-		// Any collision between the env vars in the Container step and those in the Build/BuildRun
-		// will result in an error and cause a failed TaskRun
-		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
-		if err != nil {
-			return &generatedTaskSpec, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
-		}
-
-		step := pipelineapi.Step{
-			Image:            containerValue.Image,
-			ImagePullPolicy:  containerValue.ImagePullPolicy,
-			Name:             containerValue.Name,
-			VolumeMounts:     containerValue.VolumeMounts,
-			Command:          containerValue.Command,
-			Args:             containerValue.Args,
-			SecurityContext:  containerValue.SecurityContext,
-			WorkingDir:       containerValue.WorkingDir,
-			ComputeResources: containerValue.Resources,
-			Env:              stepEnv,
-		}
-
-		generatedTaskSpec.Steps = append(generatedTaskSpec.Steps, step)
-
-		for _, vm := range containerValue.VolumeMounts {
-			// here we should check that volume actually exists for this mount
-			// and in case it does not, exit early with an error
-			if _, ok := buildStrategyVolumesMap[vm.Name]; !ok {
-				return nil, fmt.Errorf("volume for the Volume Mount %q is not found", vm.Name)
-			}
-			volumeMounts[vm.Name] = vm.ReadOnly
-		}
-	}
-
-	// Add volumes from the strategy to generated task spec
-	volumes, err := volumes.TaskSpecVolumes(volumeMounts, buildStrategyVolumes, build.Spec.Volumes, buildRun.Spec.Volumes)
-	if err != nil {
-		return nil, err
-	}
-	generatedTaskSpec.Volumes = append(generatedTaskSpec.Volumes, volumes...)
-
-	return &generatedTaskSpec, nil
 }
 
-// GenerateTaskRun creates a Tekton TaskRun to be used for a build run
-func GenerateTaskRun(
-	cfg *config.Config,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
-	serviceAccountName string,
-	strategy buildv1beta1.BuilderStrategy,
-) (*pipelineapi.TaskRun, error) {
+// applyOutputImageSteps configures image processing steps
+func applyOutputImageSteps(cfg *config.Config, taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	buildRunOutput := buildRun.Spec.Output
+	if buildRunOutput == nil {
+		buildRunOutput = &buildv1beta1.Image{}
+	}
 
-	// retrieve expected imageURL form build or buildRun
+	// Setup image processing, this can be a no-op if no annotations or labels need to be mutated,
+	// and if the strategy is pushing the image by not using $(params.shp-output-directory)
+	if err := SetupImageProcessing(taskRun, cfg, buildRun.CreationTimestamp.Time, build.Spec.Output, *buildRunOutput); err != nil {
+		return fmt.Errorf("failed to setup image processing for BuildRun %q: %w",
+			buildRun.Name, err)
+	}
+
+	return nil
+}
+
+// applyNodeSelectors configures node selectors for the TaskRun
+func applyNodeSelectors(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRunPodTemplate := &pod.PodTemplate{}
+	if taskRun.Spec.PodTemplate != nil {
+		taskRunPodTemplate = taskRun.Spec.PodTemplate
+	}
+
+	// Merge Build and BuildRun NodeSelectors, giving preference to BuildRun NodeSelector
+	taskRunNodeSelector := mergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
+	if len(taskRunNodeSelector) > 0 {
+		taskRunPodTemplate.NodeSelector = taskRunNodeSelector
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	}
+
+	return nil
+}
+
+// applyTolerations configures tolerations for the TaskRun
+func applyTolerations(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRunPodTemplate := &pod.PodTemplate{}
+	if taskRun.Spec.PodTemplate != nil {
+		taskRunPodTemplate = taskRun.Spec.PodTemplate
+	}
+
+	// Merge Build and BuildRun Tolerations, giving preference to BuildRun Tolerations values
+	taskRunTolerations := mergeTolerations(build.Spec.Tolerations, buildRun.Spec.Tolerations)
+	if len(taskRunTolerations) > 0 {
+		for i, toleration := range taskRunTolerations {
+			if toleration.Effect == "" {
+				// set unspecified effects to TaintEffectNoSchedule, as that is the only supported effect
+				taskRunTolerations[i].Effect = corev1.TaintEffectNoSchedule
+			}
+		}
+		taskRunPodTemplate.Tolerations = taskRunTolerations
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	}
+
+	return nil
+}
+
+// applyScheduler configures scheduler for the TaskRun
+func applyScheduler(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRunPodTemplate := &pod.PodTemplate{}
+	if taskRun.Spec.PodTemplate != nil {
+		taskRunPodTemplate = taskRun.Spec.PodTemplate
+	}
+
+	// Set custom scheduler name if specified, giving preference to BuildRun values
+	if buildRun.Spec.SchedulerName != nil {
+		taskRunPodTemplate.SchedulerName = *buildRun.Spec.SchedulerName
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	} else if build.Spec.SchedulerName != nil {
+		taskRunPodTemplate.SchedulerName = *build.Spec.SchedulerName
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	}
+
+	return nil
+}
+
+// applyAnnotationsAndLabels configures annotations and labels for the TaskRun
+func applyAnnotationsAndLabels(taskRun *pipelineapi.TaskRun, strategy buildv1beta1.BuilderStrategy) error {
+	// assign the annotations from the build strategy, filter out those that should not be propagated
+	taskRunAnnotations := make(map[string]string)
+	for key, value := range strategy.GetAnnotations() {
+		if isPropagatableAnnotation(key) {
+			taskRunAnnotations[key] = value
+		}
+	}
+
+	// Update the security context of the Shipwright-injected steps with the runAs user of the build strategy
+	steps.UpdateSecurityContext(taskRun.Spec.TaskSpec, taskRunAnnotations, strategy.GetBuildSteps(), strategy.GetSecurityContext())
+
+	if len(taskRunAnnotations) > 0 {
+		if taskRun.Annotations == nil {
+			taskRun.Annotations = make(map[string]string)
+		}
+		for k, v := range taskRunAnnotations {
+			taskRun.Annotations[k] = v
+		}
+	}
+
+	// Apply resource labels from strategy
+	if taskRun.Labels == nil {
+		taskRun.Labels = make(map[string]string)
+	}
+	for label, value := range strategy.GetResourceLabels() {
+		taskRun.Labels[label] = value
+	}
+
+	return nil
+}
+
+// applyParameters configures parameters for the TaskRun
+func applyParameters(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, strategy buildv1beta1.BuilderStrategy) error {
+	// retrieve expected imageURL from build or buildRun
 	var image string
 	if buildRun.Spec.Output != nil {
 		image = buildRun.Spec.Output.Image
@@ -192,100 +434,6 @@ func GenerateTaskRun(
 	} else if build.Spec.Output.Insecure != nil {
 		insecure = *build.Spec.Output.Insecure
 	}
-
-	taskSpec, err := GenerateTaskSpec(
-		cfg,
-		build,
-		buildRun,
-		strategy.GetBuildSteps(),
-		strategy.GetParameters(),
-		strategy.GetVolumes(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Add BuildRun name reference to the TaskRun labels
-	taskRunLabels := map[string]string{
-		buildv1beta1.LabelBuildRun:           buildRun.Name,
-		buildv1beta1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
-	}
-
-	// Add Build name reference unless it is an embedded Build (empty build name)
-	if build.Name != "" {
-		taskRunLabels[buildv1beta1.LabelBuild] = build.Name
-		taskRunLabels[buildv1beta1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
-	}
-
-	expectedTaskRun := &pipelineapi.TaskRun{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: buildRun.Name + "-",
-			Namespace:    buildRun.Namespace,
-			Labels:       taskRunLabels,
-		},
-		Spec: pipelineapi.TaskRunSpec{
-			ServiceAccountName: serviceAccountName,
-			TaskSpec:           taskSpec,
-			Workspaces: []pipelineapi.WorkspaceBinding{
-				// workspace for the source files
-				{
-					Name:     workspaceSource,
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		},
-	}
-
-	taskRunPodTemplate := &pod.PodTemplate{}
-	// Merge Build and BuildRun NodeSelectors, giving preference to BuildRun NodeSelector
-	taskRunNodeSelector := mergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
-	if len(taskRunNodeSelector) > 0 {
-		taskRunPodTemplate.NodeSelector = taskRunNodeSelector
-	}
-
-	// Merge Build and BuildRun Tolerations, giving preference to BuildRun Tolerations values
-	taskRunTolerations := mergeTolerations(build.Spec.Tolerations, buildRun.Spec.Tolerations)
-	if len(taskRunTolerations) > 0 {
-		for i, toleration := range taskRunTolerations {
-			if toleration.Effect == "" {
-				// set unspecified effects to TainEffectNoSchedule, as that is the only supported effect
-				taskRunTolerations[i].Effect = corev1.TaintEffectNoSchedule
-			}
-		}
-		taskRunPodTemplate.Tolerations = taskRunTolerations
-	}
-
-	// Set custom scheduler name if specified, giving preference to BuildRun values
-	if buildRun.Spec.SchedulerName != nil {
-		taskRunPodTemplate.SchedulerName = *buildRun.Spec.SchedulerName
-	} else if build.Spec.SchedulerName != nil {
-		taskRunPodTemplate.SchedulerName = *build.Spec.SchedulerName
-	}
-
-	if !(taskRunPodTemplate.Equals(&pod.PodTemplate{})) {
-		expectedTaskRun.Spec.PodTemplate = taskRunPodTemplate
-	}
-
-	// assign the annotations from the build strategy, filter out those that should not be propagated
-	taskRunAnnotations := make(map[string]string)
-	for key, value := range strategy.GetAnnotations() {
-		if isPropagatableAnnotation(key) {
-			taskRunAnnotations[key] = value
-		}
-	}
-
-	// Update the security context of the Shipwright-injected steps with the runAs user of the build strategy
-	steps.UpdateSecurityContext(taskSpec, taskRunAnnotations, strategy.GetBuildSteps(), strategy.GetSecurityContext())
-
-	if len(taskRunAnnotations) > 0 {
-		expectedTaskRun.Annotations = taskRunAnnotations
-	}
-
-	for label, value := range strategy.GetResourceLabels() {
-		expectedTaskRun.Labels[label] = value
-	}
-
-	expectedTaskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
 
 	params := []pipelineapi.Param{
 		{
@@ -331,7 +479,7 @@ func GenerateTaskRun(
 		})
 	}
 
-	expectedTaskRun.Spec.Params = params
+	taskRun.Spec.Params = params
 
 	// Ensure a proper override of params between Build and BuildRun
 	// A BuildRun can override a param as long as it was defined in the Build
@@ -342,28 +490,21 @@ func GenerateTaskRun(
 		parameterDefinition := FindParameterByName(strategy.GetParameters(), paramValue.Name)
 		if parameterDefinition == nil {
 			// this error should never happen because we validate this upfront in ValidateBuildRunParameters
-			return nil, fmt.Errorf("the parameter %q is not defined in the build strategy %q", paramValue.Name, strategy.GetName())
+			return fmt.Errorf("the parameter %q is not defined in the build strategy %q", paramValue.Name, strategy.GetName())
 		}
 
-		if err := HandleTaskRunParam(expectedTaskRun, parameterDefinition, paramValue); err != nil {
-			return nil, err
+		if err := HandleTaskRunParam(taskRun, parameterDefinition, paramValue); err != nil {
+			return err
 		}
 	}
 
-	// Setup image processing, this can be a no-op if no annotations or labels need to be mutated,
-	// and if the strategy is pushing the image by not using $(params.shp-output-directory)
-	buildRunOutput := buildRun.Spec.Output
-	if buildRunOutput == nil {
-		buildRunOutput = &buildv1beta1.Image{}
-	}
+	return nil
+}
 
-	// Make sure that image-processing is setup in case it is needed, which can fail with an error
-	// in case some assumptions cannot be met, i.e. illegal combination of fields
-	if err := SetupImageProcessing(expectedTaskRun, cfg, buildRun.CreationTimestamp.Time, build.Spec.Output, *buildRunOutput); err != nil {
-		return nil, err
-	}
-
-	return expectedTaskRun, nil
+// applyTimeout configures timeout for the TaskRun
+func applyTimeout(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
+	return nil
 }
 
 func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) *metav1.Duration {
@@ -375,6 +516,11 @@ func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun
 	}
 
 	return nil
+}
+
+// mergeEnvironmentVariables combines Build and BuildRun environment variables
+func mergeEnvironmentVariables(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) ([]corev1.EnvVar, error) {
+	return env.MergeEnvVars(buildRun.Spec.Env, build.Spec.Env, true)
 }
 
 // mergeTolerations merges the values for Spec.Tolerations in the given Build and BuildRun objects, with values in the BuildRun object overriding values
