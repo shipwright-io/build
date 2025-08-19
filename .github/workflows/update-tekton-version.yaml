@@ -53,7 +53,7 @@ jobs:
             # Release Notes
 
             ```release-note
-            Update the the new latest Tekton LTS release ${{ steps.update-tekton.outputs.NEW_VERSION }}
+            Update to the new latest Tekton LTS release ${{ steps.update-tekton.outputs.NEW_VERSION }}
             ```
           labels: kind/dependency-change
           branch: bump-tekton-pipeline

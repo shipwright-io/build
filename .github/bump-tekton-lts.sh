@@ -59,6 +59,7 @@ pushd "${BASEDIR}" >/dev/null
 go get "github.com/tektoncd/pipeline@${NEW_VERSION}"
 go mod tidy
 go mod vendor
+go get toolchain@none
 popd >/dev/null
 
 # Update ci.yml
