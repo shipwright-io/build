@@ -362,8 +362,11 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 		switch object := object.(type) {
 		case *build.BuildRun:
 			if !tolerateEmptyStatus {
-				Expect(object.Status.GetCondition(build.Succeeded).Status).To(Equal(condition.Status))
-				Expect(object.Status.GetCondition(build.Succeeded).Reason).To(Equal(condition.Reason))
+				succeededCondition := object.Status.GetCondition(build.Succeeded)
+				if succeededCondition != nil {
+					Expect(succeededCondition.Status).To(Equal(condition.Status))
+					Expect(succeededCondition.Reason).To(Equal(condition.Reason))
+				}
 				Expect(object.Status.TaskRunName).To(Equal(name)) // nolint:staticcheck
 			}
 			if object.Status.BuildSpec != nil {
@@ -1156,4 +1159,76 @@ func (c *Catalog) LoadCBSWithName(name string, d []byte) (*build.ClusterBuildStr
 	}
 	b.Name = name
 	return b, nil
+}
+
+// DefaultPipelineRunWithStatus returns a minimal tekton PipelineRun with a Status
+func (c *Catalog) DefaultPipelineRunWithStatus(prName string, buildRunName string, ns string, status corev1.ConditionStatus, reason string) *pipelineapi.PipelineRun {
+	return &pipelineapi.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      prName,
+			Namespace: ns,
+			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
+		},
+		Spec: pipelineapi.PipelineRunSpec{},
+		Status: pipelineapi.PipelineRunStatus{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
+					{
+						Type:   apis.ConditionSucceeded,
+						Reason: reason,
+						Status: status,
+					},
+				},
+			},
+			PipelineRunStatusFields: pipelineapi.PipelineRunStatusFields{
+				StartTime: &metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		},
+	}
+}
+
+// DefaultPipelineRunWithFalseStatus returns a minimal tekton PipelineRun with a FALSE status
+func (c *Catalog) DefaultPipelineRunWithFalseStatus(prName string, buildRunName string, ns string) *pipelineapi.PipelineRun {
+	return &pipelineapi.PipelineRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      prName,
+			Namespace: ns,
+			Labels:    map[string]string{"buildrun.shipwright.io/name": buildRunName},
+		},
+		Spec: pipelineapi.PipelineRunSpec{},
+		Status: pipelineapi.PipelineRunStatus{
+			Status: knativev1.Status{
+				Conditions: knativev1.Conditions{
+					{
+						Type:    apis.ConditionSucceeded,
+						Reason:  "something bad happened",
+						Status:  corev1.ConditionFalse,
+						Message: "some message",
+					},
+				},
+			},
+			PipelineRunStatusFields: pipelineapi.PipelineRunStatusFields{
+				StartTime: &metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		},
+	}
+}
+
+// StubBuildAndPipelineRun returns a stub function that handles GET calls for Build and PipelineRun
+func (c *Catalog) StubBuildAndPipelineRun(b *build.Build, pr *pipelineapi.PipelineRun) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+		switch object := object.(type) {
+		case *build.Build:
+			b.DeepCopyInto(object)
+			return nil
+		case *pipelineapi.PipelineRun:
+			pr.DeepCopyInto(object)
+			return nil
+		}
+		return errors.NewNotFound(schema.GroupResource{}, nn.Name)
+	}
 }

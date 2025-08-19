@@ -150,6 +150,9 @@ jobs:
           export IMAGE_PROCESSING_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/image-processing)"
 
           make test-integration
+      - name: Test-PipelineRun
+        run: |
+          BUILDRUN_EXECUTOR=PipelineRun ginkgo --focus-file="buildruns_to_pipelineruns_test.go" -v test/integration/...
 
   e2e:
     strategy:
@@ -240,6 +243,33 @@ jobs:
           export TEST_E2E_FLAGS="-r --procs 8 --randomize-all --timeout=1h --trace --vv"
           export TEST_E2E_TIMEOUT_MULTIPLIER=2
           make test-e2e
+      - name: Test-PipelineRun
+        run: |
+          export TEST_NAMESPACE=shp-e2e
+          export TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
+          export TEST_IMAGE_REPO_INSECURE=true
+          export TEST_E2E_TIMEOUT_MULTIPLIER=1
+          kubectl patch deployment shipwright-build-controller -n shipwright-build --type='json' -p='[
+            {
+              "op": "add",
+              "path": "/spec/template/spec/containers/0/env/-",
+              "value": {
+                "name": "BUILDRUN_EXECUTOR",
+                "value": "PipelineRun"
+              }
+            }
+          ]'
+          # Wait for the rollout to complete
+          kubectl rollout restart deployment shipwright-build-controller -n shipwright-build
+          kubectl rollout status deployment shipwright-build-controller -n shipwright-build
+          
+          # Run PipelineRun tests
+          TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
+          TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
+          TEST_E2E_SERVICEACCOUNT_NAME=pipeline \
+          TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
+          TEST_E2E_VERIFY_TEKTONOBJECTS=true \
+          ginkgo --focus="PipelineRun E2E Tests" --procs 8 --timeout=1h --vv test/e2e/v1beta1/
       - name: Build controller logs
         if: ${{ failure() }}
         run: |
