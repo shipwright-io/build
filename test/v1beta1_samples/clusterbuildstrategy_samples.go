@@ -19,7 +19,7 @@ spec:
         emptyDir: {}
   steps:
     - name: buildah-bud
-      image: quay.io/containers/buildah:v1.40.1
+      image: quay.io/containers/buildah:v1.41.4
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -41,7 +41,7 @@ spec:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/containers/buildah:v1.40.1
+      image: quay.io/containers/buildah:v1.41.4
       securityContext:
         privileged: true
       command:
@@ -77,7 +77,7 @@ spec:
         emptyDir: {}
   steps:
     - name: buildah-bud
-      image: quay.io/containers/buildah:v1.40.1
+      image: quay.io/containers/buildah:v1.41.4
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -99,7 +99,7 @@ spec:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/containers/buildah:v1.40.1
+      image: quay.io/containers/buildah:v1.41.4
       securityContext:
         privileged: true
       command:

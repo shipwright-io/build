@@ -26,7 +26,7 @@ jobs:
       - name: Login to container registry
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.repository_owner }} --password-stdin ghcr.io
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.24.x'
           cache: true
@@ -82,14 +82,14 @@ jobs:
             tekton: v0.65.7
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.33.1
-            tekton: v1.3.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+            tekton: v1.3.2 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v5
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.24.x'
           cache: true
@@ -150,6 +150,9 @@ jobs:
           export IMAGE_PROCESSING_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/image-processing)"
 
           make test-integration
+      - name: Test-PipelineRun
+        run: |
+          BUILDRUN_EXECUTOR=PipelineRun ginkgo --focus-file="buildruns_to_pipelineruns_test.go" -v test/integration/...
 
   e2e:
     strategy:
@@ -161,14 +164,14 @@ jobs:
             tekton: v0.65.7
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.33.1
-            tekton: v1.3.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+            tekton: v1.3.2 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: oracle-vm-16cpu-64gb-x86-64
     steps:
       - name: Check out code
         uses: actions/checkout@v5
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.24.x'
           cache: true
@@ -240,6 +243,33 @@ jobs:
           export TEST_E2E_FLAGS="-r --procs 8 --randomize-all --timeout=1h --trace --vv"
           export TEST_E2E_TIMEOUT_MULTIPLIER=2
           make test-e2e
+      - name: Test-PipelineRun
+        run: |
+          export TEST_NAMESPACE=shp-e2e
+          export TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
+          export TEST_IMAGE_REPO_INSECURE=true
+          export TEST_E2E_TIMEOUT_MULTIPLIER=1
+          kubectl patch deployment shipwright-build-controller -n shipwright-build --type='json' -p='[
+            {
+              "op": "add",
+              "path": "/spec/template/spec/containers/0/env/-",
+              "value": {
+                "name": "BUILDRUN_EXECUTOR",
+                "value": "PipelineRun"
+              }
+            }
+          ]'
+          # Wait for the rollout to complete
+          kubectl rollout restart deployment shipwright-build-controller -n shipwright-build
+          kubectl rollout status deployment shipwright-build-controller -n shipwright-build
+          
+          # Run PipelineRun tests
+          TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
+          TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
+          TEST_E2E_SERVICEACCOUNT_NAME=pipeline \
+          TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
+          TEST_E2E_VERIFY_TEKTONOBJECTS=true \
+          ginkgo --focus="PipelineRun E2E Tests" --procs 8 --timeout=1h --vv test/e2e/v1beta1/
       - name: Build controller logs
         if: ${{ failure() }}
         run: |

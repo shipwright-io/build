@@ -440,7 +440,7 @@ spec:
   steps:
     ...
     - name: build-and-push
-      image: moby/buildkit:v0.23.2-rootless
+      image: moby/buildkit:v0.24.0-rootless
       imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
       ...
@@ -939,7 +939,7 @@ If we apply the following resources:
 
   ```yaml
     - name: buildah-bud
-      image: quay.io/containers/buildah:v1.40.1
+      image: quay.io/containers/buildah:v1.41.4
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
@@ -961,7 +961,7 @@ If we apply the following resources:
         - name: buildah-images
           mountPath: /var/lib/containers/storage
     - name: buildah-push
-      image: quay.io/containers/buildah:v1.40.1
+      image: quay.io/containers/buildah:v1.41.4
       securityContext:
         privileged: true
       command:
