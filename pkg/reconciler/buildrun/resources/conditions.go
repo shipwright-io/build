@@ -164,6 +164,57 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 	return nil
 }
 
+// UpdateBuildRunUsingPipelineRunCondition updates the BuildRun Succeeded Condition for PipelineRun conditions
+func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, pipelineRun *pipelineapi.PipelineRun, prCondition *apis.Condition) error {
+	var reason, message string = prCondition.Reason, prCondition.Message
+	status := prCondition.Status
+
+	switch reason {
+	case "PipelineRunTimeout":
+		reason = "BuildRunTimeout"
+		var timeout time.Duration
+		if pipelineRun.Spec.Timeouts != nil && pipelineRun.Spec.Timeouts.Pipeline != nil {
+			timeout = pipelineRun.Spec.Timeouts.Pipeline.Duration
+		} else {
+			// if the PipelineRun does not have a timeout set, we cannot use it to determine the BuildRun timeout
+			timeout = time.Since(pipelineRun.CreationTimestamp.Time)
+		}
+		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
+			buildRun.Name,
+			timeout,
+		)
+
+	case "PipelineRunCancelled":
+		if buildRun.IsCanceled() {
+			status = corev1.ConditionFalse
+			reason = buildv1beta1.BuildRunStateCancel
+			message = "The BuildRun and underlying PipelineRun were canceled successfully."
+		}
+
+	case "Succeeded":
+		if buildRun.IsCanceled() {
+			message = "The PipelineRun completed before the request to cancel the PipelineRun could be processed."
+		}
+
+	case "Failed":
+		// For PipelineRun failures, we need to get the underlying TaskRun to extract failure details
+		// This is a simplified approach - in a full implementation, we would extract failure details from the TaskRun
+		if pipelineRun.Status.CompletionTime != nil {
+			message = fmt.Sprintf("PipelineRun %s failed", pipelineRun.Name)
+		}
+	}
+
+	buildRun.Status.SetCondition(&buildv1beta1.Condition{
+		LastTransitionTime: metav1.Now(),
+		Type:               buildv1beta1.Succeeded,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+	})
+
+	return nil
+}
+
 // UpdateConditionWithFalseStatus sets the Succeeded condition fields and mark
 // the condition as Status False. It also updates the object in the cluster by
 // calling client Status Update

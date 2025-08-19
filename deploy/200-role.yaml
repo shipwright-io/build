@@ -67,6 +67,10 @@ rules:
   # With the OwnerReferencesPermissionEnforcement admission controller enabled, controllers need the "delete" permission on objects that they set owner references on.
   verbs:     ['get', 'list', 'watch', 'create', 'delete', 'patch']
 
+- apiGroups: ['tekton.dev']
+  resources: ['pipelineruns']
+  verbs:     ['get', 'list', 'watch', 'create', 'delete', 'patch']
+
 - apiGroups: ['']
   resources: ['pods']
   verbs:     ['get', 'list', 'watch']

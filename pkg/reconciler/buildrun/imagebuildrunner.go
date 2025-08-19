@@ -47,6 +47,23 @@ type ImageBuildRunner interface {
 	Cancel(ctx context.Context, client client.Client) error
 	// GetObject returns the underlying client.Object for owner reference operations.
 	GetObject() client.Object
+
+	// New methods to avoid type assertions:
+
+	// CheckVolumesExist checks if the volumes referenced by the build runner exist.
+	// This replaces the need to cast to TaskRun for volume checking.
+	CheckVolumesExist(ctx context.Context, client client.Client) error
+
+	// GetExecutorKind returns the kind of executor (e.g., "TaskRun", "PipelineRun").
+	GetExecutorKind() string
+
+	// GetUnderlyingTaskRun returns the underlying TaskRun if this is a TaskRun-based runner.
+	// Returns nil if this is not a TaskRun-based runner.
+	GetUnderlyingTaskRun() *pipelineapi.TaskRun
+
+	// GetUnderlyingPipelineRun returns the underlying PipelineRun if this is a PipelineRun-based runner.
+	// Returns nil if this is not a PipelineRun-based runner.
+	GetUnderlyingPipelineRun() *pipelineapi.PipelineRun
 }
 
 // ImageBuildRunnerFactory defines methods for creating and manipulating ImageBuildRunners.
@@ -182,6 +199,29 @@ type patchStringValue struct {
 // GetObject returns the underlying client.Object for owner reference operations
 func (t *TektonTaskRunWrapper) GetObject() client.Object {
 	return t.TaskRun
+}
+
+// CheckVolumesExist checks if the volumes referenced by the TaskRun exist.
+func (t *TektonTaskRunWrapper) CheckVolumesExist(ctx context.Context, client client.Client) error {
+	if t.TaskRun == nil {
+		return fmt.Errorf("underlying TaskRun does not exist")
+	}
+	return resources.CheckTaskRunVolumesExist(ctx, client, t.TaskRun)
+}
+
+// GetExecutorKind returns the kind of executor.
+func (t *TektonTaskRunWrapper) GetExecutorKind() string {
+	return "TaskRun"
+}
+
+// GetUnderlyingTaskRun returns the underlying TaskRun.
+func (t *TektonTaskRunWrapper) GetUnderlyingTaskRun() *pipelineapi.TaskRun {
+	return t.TaskRun
+}
+
+// GetUnderlyingPipelineRun returns nil since this is not a PipelineRun-based runner.
+func (t *TektonTaskRunWrapper) GetUnderlyingPipelineRun() *pipelineapi.PipelineRun {
+	return nil
 }
 
 // TektonTaskRunImageBuildRunnerFactory implements ImageBuildRunnerFactory for Tekton TaskRuns
