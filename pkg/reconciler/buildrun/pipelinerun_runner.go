@@ -141,38 +141,32 @@ func (t *TektonPipelineRunWrapper) GetObject() client.Object {
 	return t.PipelineRun
 }
 
-// CheckVolumesExist checks if the volumes referenced by the PipelineRun exist.
-// For PipelineRuns, we need to check volumes in the underlying TaskRun.
-func (t *TektonPipelineRunWrapper) CheckVolumesExist(ctx context.Context, client client.Client) error {
-	if t.PipelineRun == nil {
-		return fmt.Errorf("underlying PipelineRun does not exist")
-	}
-
-	// For PipelineRuns, we need to get the underlying TaskRun to check volumes
-	// This is a limitation of the current design - PipelineRuns don't have direct volume access
-	// We could either:
-	// 1. Skip volume checking for PipelineRuns (current approach)
-	// 2. Get the TaskRun from ChildReferences and check its volumes
-	// 3. Extract volume information from the PipelineRun spec
-
-	// For now, we'll skip volume checking for PipelineRuns since the volumes
-	// are defined in the embedded TaskSpec and should be valid
-	return nil
-}
-
 // GetExecutorKind returns the kind of executor.
 func (t *TektonPipelineRunWrapper) GetExecutorKind() string {
 	return "PipelineRun"
 }
 
-// GetUnderlyingTaskRun returns nil since this is not a TaskRun-based runner.
+// GetUnderlyingTaskRun returns the generated TaskRun from the PipelineRun for volume checking.
 func (t *TektonPipelineRunWrapper) GetUnderlyingTaskRun() *pipelineapi.TaskRun {
-	return nil
-}
+	if t.PipelineRun == nil {
+		return nil
+	}
 
-// GetUnderlyingPipelineRun returns the underlying PipelineRun.
-func (t *TektonPipelineRunWrapper) GetUnderlyingPipelineRun() *pipelineapi.PipelineRun {
-	return t.PipelineRun
+	// For PipelineRuns, we need to create a TaskRun from the embedded TaskSpec
+	// This is a simplified approach - in a full implementation, we would extract the TaskRun properly
+	if t.PipelineRun.Spec.PipelineSpec != nil && len(t.PipelineRun.Spec.PipelineSpec.Tasks) > 0 {
+		task := t.PipelineRun.Spec.PipelineSpec.Tasks[0]
+		if task.TaskSpec != nil {
+			return &pipelineapi.TaskRun{
+				Spec: pipelineapi.TaskRunSpec{
+					TaskSpec: &task.TaskSpec.TaskSpec,
+					Params:   task.Params,
+				},
+			}
+		}
+	}
+
+	return nil
 }
 
 // TektonPipelineRunImageBuildRunnerFactory implements ImageBuildRunnerFactory for Tekton PipelineRuns.
@@ -186,13 +180,21 @@ func (f *TektonPipelineRunImageBuildRunnerFactory) NewImageBuildRunner() ImageBu
 }
 
 // CreateImageBuildRunner creates an ImageBuildRunner instance from build configuration.
-func (f *TektonPipelineRunImageBuildRunnerFactory) CreateImageBuildRunner(cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
+func (f *TektonPipelineRunImageBuildRunnerFactory) CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
 	generatedPipelineRun, err := resources.GeneratePipelineRun(cfg, build, buildRun, serviceAccount.Name, strategy)
 	if err != nil {
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, client, buildRun, err.Error(), resources.ConditionTaskRunGenerationFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create pipelinerun runtime object", err, updateErr)
+		}
+
 		return nil, err
 	}
 
 	if err := setOwnerRef(buildRun, generatedPipelineRun, scheme); err != nil {
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, client, buildRun, err.Error(), resources.ConditionSetOwnerReferenceFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create pipelinerun runtime object", err, updateErr)
+		}
+
 		return nil, err
 	}
 

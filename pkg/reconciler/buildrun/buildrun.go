@@ -58,7 +58,7 @@ func NewReconciler(c *config.Config, mgr manager.Manager, ownerRef setOwnerRefer
 		client:                client.WithFieldOwner(mgr.GetClient(), "shipwright-buildrun-controller"),
 		scheme:                mgr.GetScheme(),
 		setOwnerReferenceFunc: ownerRef,
-		taskRunnerFactory:     &TektonTaskRunImageBuildRunnerFactory{},
+		taskRunnerFactory:     RunnerFactories[c.BuildrunExecutor],
 	}
 }
 
@@ -81,26 +81,26 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 	buildRun = &buildv1beta1.BuildRun{}
 	getBuildRunErr := r.GetBuildRunObject(ctx, request.Name, request.Namespace, buildRun)
 
-	// Try to get the ImageBuildRunner (TaskRun or PipelineRun) by name first
-	var lastTaskRun ImageBuildRunner
-	var getTaskRunErr error
+	// Try to get the BuildRunner (TaskRun or PipelineRun) by name first
+	var buildRunner ImageBuildRunner
+	var buildRunnerErr error
 
 	// If we have a BuildRun with an executor reference, try to get the executor by its name
 	if getBuildRunErr == nil && buildRun.Status.Executor != nil {
-		lastTaskRun, getTaskRunErr = r.taskRunnerFactory.GetImageBuildRunner(ctx, r.client, types.NamespacedName{Name: buildRun.Status.Executor.Name, Namespace: request.Namespace})
+		buildRunner, buildRunnerErr = r.taskRunnerFactory.GetImageBuildRunner(ctx, r.client, types.NamespacedName{Name: buildRun.Status.Executor.Name, Namespace: request.Namespace})
 	} else {
 		// Otherwise, try to get by the request name (this handles the case where the request comes from a TaskRun/PipelineRun event)
-		lastTaskRun, getTaskRunErr = r.taskRunnerFactory.GetImageBuildRunner(ctx, r.client, types.NamespacedName{Name: request.Name, Namespace: request.Namespace})
+		buildRunner, buildRunnerErr = r.taskRunnerFactory.GetImageBuildRunner(ctx, r.client, types.NamespacedName{Name: request.Name, Namespace: request.Namespace})
 	}
 
-	if getBuildRunErr != nil && getTaskRunErr != nil {
+	if getBuildRunErr != nil && buildRunnerErr != nil {
 		if !apierrors.IsNotFound(getBuildRunErr) {
 			return reconcile.Result{}, getBuildRunErr
 		}
-		if !apierrors.IsNotFound(getTaskRunErr) {
-			return reconcile.Result{}, getTaskRunErr
+		if !apierrors.IsNotFound(buildRunnerErr) {
+			return reconcile.Result{}, buildRunnerErr
 		}
-		// If the BuildRun and TaskRun are not found, it might mean that we are running a Reconcile after a TaskRun was deleted. If this is the case, we need
+		// If the BuildRun and BuildRunner are not found, it might mean that we are running a Reconcile after a TaskRun/PipelineRun was deleted. If this is the case, we need
 		// to identify from the request the BuildRun name associate to it and update the BuildRun Status.
 		r.VerifyRequestName(ctx, request, buildRun)
 		return reconcile.Result{}, nil
@@ -132,9 +132,9 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 		}
 	}
 
-	// for existing TaskRuns update the BuildRun Status, if there is no TaskRun, then create one
-	if getTaskRunErr != nil {
-		if apierrors.IsNotFound(getTaskRunErr) {
+	// for existing BuildRunners update the BuildRun Status, if there is no BuildRunner, then create one
+	if buildRunnerErr != nil {
+		if apierrors.IsNotFound(buildRunnerErr) {
 			build = &buildv1beta1.Build{}
 			if err := resources.GetBuildObject(ctx, r.client, buildRun, build); err != nil {
 				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1beta1.Succeeded) {
@@ -325,29 +325,34 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			}
 
 			// Create the ImageBuildRunner (TaskRun or PipelineRun)
-			imageBuildRunner, err := r.taskRunnerFactory.CreateImageBuildRunner(r.config, svcAccount, strategy, build, buildRun, r.scheme, r.setOwnerReferenceFunc)
+			imageBuildRunner, err := r.taskRunnerFactory.CreateImageBuildRunner(ctx, r.client, r.config, svcAccount, strategy, build, buildRun, r.scheme, r.setOwnerReferenceFunc)
 			if err != nil {
-				// Handle owner reference errors gracefully by marking the BuildRun as failed
-				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), resources.ConditionSetOwnerReferenceFailed); err != nil {
-					return reconcile.Result{}, err
-				}
-				return reconcile.Result{}, nil
-			}
-
-			// Check volumes exist using the interface method
-			if err := imageBuildRunner.CheckVolumesExist(ctx, r.client); err != nil {
-				// if resource is not found, fail the build run
-				if apierrors.IsNotFound(err) {
-					if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), string(buildv1beta1.VolumeDoesNotExist)); err != nil {
-						return reconcile.Result{}, err
-					}
-
-					// end of reconciliation
+				if !resources.IsClientStatusUpdateError(err) && buildRun.Status.IsFailed(buildv1beta1.Succeeded) {
+					ctxlog.Info(ctx, "buildRunner generation failed", namespace, request.Namespace, name, request.Name)
 					return reconcile.Result{}, nil
 				}
-
-				// some other error might have happened, return it and reconcile again
+				// system call failure, reconcile again
 				return reconcile.Result{}, err
+			}
+
+			// Check volumes exist using the TaskRun from the interface
+			generatedTaskRun := imageBuildRunner.GetUnderlyingTaskRun()
+			if generatedTaskRun != nil {
+				err = resources.CheckTaskRunVolumesExist(ctx, r.client, generatedTaskRun)
+				// if resource is not found, fail the build run
+				if err != nil {
+					if apierrors.IsNotFound(err) {
+						if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), string(buildv1beta1.VolumeDoesNotExist)); err != nil {
+							return reconcile.Result{}, err
+						}
+
+						// end of reconciliation
+						return reconcile.Result{}, nil
+					}
+
+					// some other error might have happened, return it and reconcile again
+					return reconcile.Result{}, err
+				}
 			}
 
 			ctxlog.Info(ctx, "creating ImageBuildRunner from BuildRun", namespace, request.Namespace, name, imageBuildRunner.GetName(), "BuildRun", buildRun.Name)
@@ -389,16 +394,16 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				imageBuildRunner.GetCreationTimestamp().Time.Sub(buildRun.CreationTimestamp.Time),
 			)
 		} else {
-			return reconcile.Result{}, getTaskRunErr
+			return reconcile.Result{}, buildRunnerErr
 		}
 	} else {
-		ctxlog.Info(ctx, "taskRun already exists", namespace, request.Namespace, name, request.Name)
+		ctxlog.Info(ctx, "buildRunner already exists", namespace, request.Namespace, name, request.Name)
 
 		if getBuildRunErr != nil && !apierrors.IsNotFound(getBuildRunErr) {
 			return reconcile.Result{}, getBuildRunErr
 		} else if apierrors.IsNotFound(getBuildRunErr) {
-			// this is a TR event, try getting the br from the label on the tr
-			labels := lastTaskRun.GetLabels()
+			// this is a TaskRun/PipelineRun event, try getting the br from the label on the executor
+			labels := buildRunner.GetLabels()
 			if labels != nil {
 				err := r.GetBuildRunObject(ctx, labels[buildv1beta1.LabelBuildRun], request.Namespace, buildRun)
 				if err != nil && !apierrors.IsNotFound(err) {
@@ -410,47 +415,38 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			}
 		}
 
-		if buildRun.IsCanceled() && !lastTaskRun.IsCancelled() {
-			ctxlog.Info(ctx, "buildRun marked for cancellation, patching task run", namespace, request.Namespace, name, request.Name)
-			if err := lastTaskRun.Cancel(ctx, r.client); err != nil {
-				return reconcile.Result{}, fmt.Errorf("failed to cancel TaskRun: %v", err)
+		if buildRun.IsCanceled() && !buildRunner.IsCancelled() {
+			ctxlog.Info(ctx, "buildRun marked for cancellation, patching executor", namespace, request.Namespace, name, request.Name)
+			if err := buildRunner.Cancel(ctx, r.client); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to cancel executor: %v", err)
 			}
 		}
 
 		// Check if the BuildRun is already finished, this happens if the build controller is restarted.
-		// It then reconciles all TaskRuns. This is valuable if the build controller was down while the TaskRun
-		// finishes which would be missed otherwise. But, if the TaskRun was already completed and the status
+		// It then reconciles all executors. This is valuable if the build controller was down while the executor
+		// finishes which would be missed otherwise. But, if the executor was already completed and the status
 		// synchronized into the BuildRun, then yet another reconciliation is not necessary.
 		if buildRun.Status.CompletionTime != nil {
 			ctxlog.Info(ctx, "buildRun already marked completed", namespace, request.Namespace, name, request.Name)
 			return reconcile.Result{}, nil
 		}
 
-		taskRunResults := lastTaskRun.GetResults()
-		if len(taskRunResults) > 0 {
-			ctxlog.Info(ctx, "surfacing taskRun results to BuildRun status", namespace, request.Namespace, name, request.Name)
-			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, taskRunResults, request)
+		executorResults := buildRunner.GetResults()
+		if len(executorResults) > 0 {
+			ctxlog.Info(ctx, "surfacing executor results to BuildRun status", namespace, request.Namespace, name, request.Name)
+			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, executorResults, request)
 		}
 
-		trCondition := lastTaskRun.GetCondition(apis.ConditionSucceeded)
-		if trCondition != nil {
-			// Update BuildRun status based on the condition
-			// Use the new interface methods to get the underlying objects
-			if taskRunObj := lastTaskRun.GetUnderlyingTaskRun(); taskRunObj != nil {
-				if err := resources.UpdateBuildRunUsingTaskRunCondition(ctx, r.client, buildRun, taskRunObj, trCondition); err != nil {
-					return reconcile.Result{}, err
-				}
-				resources.UpdateBuildRunUsingTaskFailures(ctx, r.client, buildRun, taskRunObj)
-			} else if pipelineRunObj := lastTaskRun.GetUnderlyingPipelineRun(); pipelineRunObj != nil {
-				// For PipelineRuns, we need to handle the status update differently
-				if err := resources.UpdateBuildRunUsingPipelineRunCondition(ctx, r.client, buildRun, pipelineRunObj, trCondition); err != nil {
-					return reconcile.Result{}, err
-				}
+		executorCondition := buildRunner.GetCondition(apis.ConditionSucceeded)
+		if executorCondition != nil {
+			// Update BuildRun status based on the condition using the unified function
+			if err := resources.UpdateImageBuildRunFromExecutor(ctx, r.client, buildRun, buildRunner.GetObject(), executorCondition); err != nil {
+				return reconcile.Result{}, err
 			}
-			taskRunStatus := trCondition.Status
+			executorStatus := executorCondition.Status
 
-			// check if we should delete the generated service account by checking the build run spec and that the task run is complete
-			if taskRunStatus == corev1.ConditionTrue || taskRunStatus == corev1.ConditionFalse {
+			// check if we should delete the generated service account by checking the build run spec and that the executor is complete
+			if executorStatus == corev1.ConditionTrue || executorStatus == corev1.ConditionFalse {
 				if err := resources.DeleteServiceAccount(ctx, r.client, buildRun); err != nil {
 					ctxlog.Error(ctx, err, "Error during deletion of generated service account.")
 					return reconcile.Result{}, err
@@ -459,18 +455,18 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 			// Update the BuildExecutor if not already set
 			if buildRun.Status.Executor == nil {
-				executorName := lastTaskRun.GetName()
+				executorName := buildRunner.GetName()
 				buildRun.Status.Executor = &buildv1beta1.BuildExecutor{
 					Name: executorName,
-					Kind: lastTaskRun.GetExecutorKind(),
+					Kind: buildRunner.GetExecutorKind(),
 				}
 				// Set the deprecated TaskRunName field for backward compatibility
 				buildRun.Status.TaskRunName = &executorName
 			}
 
-			taskRunStartTime := lastTaskRun.GetStartTime()
-			if buildRun.Status.StartTime == nil && taskRunStartTime != nil {
-				buildRun.Status.StartTime = taskRunStartTime
+			executorStartTime := buildRunner.GetStartTime()
+			if buildRun.Status.StartTime == nil && executorStartTime != nil {
+				buildRun.Status.StartTime = executorStartTime
 
 				// Report the buildrun established duration (time between the creation of the buildrun and the start of the buildrun)
 				buildmetrics.BuildRunEstablishObserve(
@@ -482,8 +478,8 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				)
 			}
 
-			if lastTaskRun.GetCompletionTime() != nil && buildRun.Status.CompletionTime == nil {
-				buildRun.Status.CompletionTime = lastTaskRun.GetCompletionTime()
+			if buildRunner.GetCompletionTime() != nil && buildRun.Status.CompletionTime == nil {
+				buildRun.Status.CompletionTime = buildRunner.GetCompletionTime()
 
 				// buildrun completion duration (total time between the creation of the buildrun and the buildrun completion)
 				buildmetrics.BuildRunCompletionObserve(
@@ -494,16 +490,16 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time),
 				)
 
-				// Look for the pod created by the taskrun
+				// Look for the pod created by the executor
 				var pod = &corev1.Pod{}
-				if err := r.client.Get(ctx, types.NamespacedName{Namespace: request.Namespace, Name: lastTaskRun.GetPodName()}, pod); err == nil {
+				if err := r.client.Get(ctx, types.NamespacedName{Namespace: request.Namespace, Name: buildRunner.GetPodName()}, pod); err == nil {
 					if len(pod.Status.InitContainerStatuses) > 0 {
 
 						lastInitPodIdx := len(pod.Status.InitContainerStatuses) - 1
 						lastInitPod := pod.Status.InitContainerStatuses[lastInitPodIdx]
 
 						if lastInitPod.State.Terminated != nil {
-							// taskrun pod ramp-up (time between pod creation and last init container completion)
+							// executor pod ramp-up (time between pod creation and last init container completion)
 							buildmetrics.TaskRunPodRampUpDurationObserve(
 								buildRun.Status.BuildSpec.StrategyName(),
 								buildRun.Namespace,
@@ -514,13 +510,13 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						}
 					}
 
-					// taskrun ramp-up duration (time between taskrun creation and taskrun pod creation)
+					// executor ramp-up duration (time between executor creation and executor pod creation)
 					buildmetrics.TaskRunRampUpDurationObserve(
 						buildRun.Status.BuildSpec.StrategyName(),
 						buildRun.Namespace,
 						buildRun.Spec.BuildName(),
 						buildRun.Name,
-						pod.CreationTimestamp.Time.Sub(lastTaskRun.GetCreationTimestamp().Time),
+						pod.CreationTimestamp.Time.Sub(buildRunner.GetCreationTimestamp().Time),
 					)
 				}
 			}

@@ -235,3 +235,26 @@ func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, b
 
 	return nil
 }
+
+// UpdateImageBuildRunFromExecutor updates the BuildRun status based on the executor object type
+func UpdateImageBuildRunFromExecutor(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, executorObj client.Object, conditions *apis.Condition) error {
+	if taskRunObj, ok := executorObj.(*pipelineapi.TaskRun); ok {
+		if err := UpdateBuildRunUsingTaskRunCondition(ctx, client, buildRun, taskRunObj, conditions); err != nil {
+			ctxlog.Error(ctx, err, "failed to update BuildRun status using TaskRun condition", "buildRun", buildRun.Name, "namespace", buildRun.Namespace, "taskRun", taskRunObj.Name)
+			return err
+		}
+		UpdateBuildRunUsingTaskFailures(ctx, client, buildRun, taskRunObj)
+		return nil
+	} else if pipelineRunObj, ok := executorObj.(*pipelineapi.PipelineRun); ok {
+		// For PipelineRuns, we need to handle the status update differently
+		if err := UpdateBuildRunUsingPipelineRunCondition(ctx, client, buildRun, pipelineRunObj, conditions); err != nil {
+			ctxlog.Error(ctx, err, "failed to update BuildRun status using PipelineRun condition", "buildRun", buildRun.Name, "namespace", buildRun.Namespace, "pipelineRun", pipelineRunObj.Name)
+			return err
+		}
+		return nil
+	}
+
+	// If we get here, the object type is not supported
+	ctxlog.Error(ctx, fmt.Errorf("unsupported executor object type: %T", executorObj), "failed to update BuildRun status", "buildRun", buildRun.Name, "namespace", buildRun.Namespace)
+	return fmt.Errorf("unsupported executor object type: %T", executorObj)
+}
