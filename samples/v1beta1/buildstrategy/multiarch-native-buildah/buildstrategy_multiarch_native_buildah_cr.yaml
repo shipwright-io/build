@@ -10,13 +10,25 @@ spec:
       overridable: true
     - name: additional-bins
       emptyDir: {}
+    - name: tmp
+      emptyDir: {}
+    - name: run
+      emptyDir: {}
+    - name: buildah-storage
+      emptyDir: {}
   steps:
     - name: prepare-build
       image: quay.io/centos/centos:stream9
       workingDir: $(params.shp-source-root)
+      securityContext:
+        readOnlyRootFilesystem: true
       volumeMounts:
         - mountPath: /usr/local/bin
           name: additional-bins
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /run
+          name: run
       resources:
         requests:
           cpu: 100m
@@ -198,8 +210,22 @@ spec:
                     volumeMounts:
                       - mountPath: /var/workdir
                         name: workdir
+                      # Temporary directories - all use buildah-temp volume
+                      - mountPath: /tmp
+                        name: buildah-temp
+                      - mountPath: /var/tmp
+                        name: buildah-temp
+                      - mountPath: /var/cache
+                        name: buildah-temp
+                      # Runtime directory
+                      - mountPath: /run
+                        name: buildah-run
+                      # Buildah storage
+                      - mountPath: /var/lib/containers
+                        name: buildah-storage
                     securityContext:
                       privileged: true
+                      readOnlyRootFilesystem: true
                     command:
                       - bash
                     resources:
@@ -242,6 +268,12 @@ spec:
                         echo "[INFO] Build completed on \$(date)"
                 volumes:
                 - name: workdir
+                  emptyDir: {}
+                - name: buildah-temp
+                  emptyDir: {}
+                - name: buildah-run
+                  emptyDir: {}
+                - name: buildah-storage
                   emptyDir: {}
           EOF
           done
@@ -331,11 +363,17 @@ spec:
     - name: wait-manifests-complete
       image: quay.io/centos/centos:stream9
       workingDir: /tmp
+      securityContext:
+        readOnlyRootFilesystem: true
       volumeMounts:
         - mountPath: /var/oci-archive-storage
           name: oci-archive-storage
         - mountPath: /usr/local/bin
           name: additional-bins
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /run
+          name: run
       resources:
         requests:
           cpu: 50m
@@ -415,6 +453,7 @@ spec:
       image: quay.io/containers/buildah:v1.40.1
       securityContext:
         privileged: true
+        readOnlyRootFilesystem: true
       workingDir: /var/oci-archive-storage
       resources:
         requests:
@@ -423,8 +462,22 @@ spec:
         limits:
           memory: 256Mi
       volumeMounts:
+        # Image archive storage
         - mountPath: /var/oci-archive-storage
           name: oci-archive-storage
+        # Temporary directories - all use tmp volume  
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /var/tmp
+          name: tmp
+        - mountPath: /var/cache
+          name: tmp
+        # Runtime directory
+        - mountPath: /run
+          name: run
+        # Buildah storage
+        - mountPath: /var/lib/containers
+          name: buildah-storage
       command:
         - bash
       args:
