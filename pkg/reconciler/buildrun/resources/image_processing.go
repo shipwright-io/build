@@ -200,7 +200,24 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 				"--secret-path", secretMountPath,
 			)
 		}
+		// add volume for trivy writes.
+		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
+			Name: "shp-trivy-cache-data",
+			VolumeSource: core.VolumeSource{
+				EmptyDir: &core.EmptyDirVolumeSource{},
+			},
+		})
+		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+			Name:      "shp-trivy-cache-data",
+			MountPath: "/trivy-cache-data",
+		})
 
+		imageProcessingStep.Env = append(imageProcessingStep.Env, core.EnvVar{
+			Name:  "TRIVY_CACHE_DIR",
+			Value: "/trivy-cache-data",
+		})
+		// add the writeable volumes
+		sources.AppendWriteableVolumes(taskRun.Spec.TaskSpec, &imageProcessingStep)
 		// append the mutate step
 		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}
