@@ -41,7 +41,7 @@ In the near future, the above would be setup by the controller.
 make clean && make build
 ```
 
-* This project uses Golang 1.24 and controller-gen v0.17.3.
+* This project uses Golang 1.24 and controller-gen v0.18.0.
 * The controllers create/watch Tekton objects.
 
 # Testing

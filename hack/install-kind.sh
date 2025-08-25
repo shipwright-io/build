@@ -13,7 +13,7 @@ set -eu
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # kind version
-KIND_VERSION="${KIND_VERSION:-v0.27.0}"
+KIND_VERSION="${KIND_VERSION:-v0.29.0}"
 
 if ! hash kind > /dev/null 2>&1 ; then
     echo "# Installing KinD..."
@@ -27,7 +27,7 @@ kind --version
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
 
 # kind cluster version
-KIND_CLUSTER_VERSION="${KIND_CLUSTER_VERSION:-v1.30.10}"
+KIND_CLUSTER_VERSION="${KIND_CLUSTER_VERSION:-v1.31.9}"
 
 echo "# Creating a new Kubernetes cluster..."
 kind delete cluster --name="${KIND_CLUSTER_NAME}"
