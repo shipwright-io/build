@@ -163,7 +163,7 @@ jobs:
           - kubernetes: v1.33.0
             tekton: v1.3.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
-    runs-on: ubuntu-latest-16-cores
+    runs-on: oracle-vm-16cpu-64gb-x86-64
     steps:
       - name: Check out code
         uses: actions/checkout@v5
@@ -237,6 +237,7 @@ jobs:
           export TEST_NAMESPACE=shp-e2e
           export TEST_IMAGE_REPO=registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
           export TEST_IMAGE_REPO_INSECURE=true
+          export TEST_E2E_FLAGS="-r --procs 8 --randomize-all --timeout=1h --trace --vv"
           export TEST_E2E_TIMEOUT_MULTIPLIER=2
           make test-e2e
       - name: Build controller logs
