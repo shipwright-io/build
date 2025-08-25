@@ -47,6 +47,12 @@ type ImageBuildRunner interface {
 	Cancel(ctx context.Context, client client.Client) error
 	// GetObject returns the underlying client.Object for owner reference operations.
 	GetObject() client.Object
+
+	// GetExecutorKind returns the kind of executor (e.g., "TaskRun", "PipelineRun").
+	GetExecutorKind() string
+
+	// GetUnderlyingTaskRun returns the generated TaskRun from using either TaskRun or PipelineRun.
+	GetUnderlyingTaskRun() *pipelineapi.TaskRun
 }
 
 // ImageBuildRunnerFactory defines methods for creating and manipulating ImageBuildRunners.
@@ -55,13 +61,18 @@ type ImageBuildRunnerFactory interface {
 	NewImageBuildRunner() ImageBuildRunner
 
 	// CreateImageBuildRunner creates an ImageBuildRunner instance from build configuration. It does not create the ImageBuildRunner in the API server.
-	CreateImageBuildRunner(cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error)
+	CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error)
 
 	// GetImageBuildRunner retrieves an ImageBuildRunner from the API server.
 	GetImageBuildRunner(ctx context.Context, client client.Client, namespacedName types.NamespacedName) (ImageBuildRunner, error)
 
 	// CreateImageBuildRunnerInCluster creates the ImageBuildRunner in the API server.
 	CreateImageBuildRunnerInCluster(ctx context.Context, client client.Client, taskRunner ImageBuildRunner) error
+}
+
+var RunnerFactories = map[string]ImageBuildRunnerFactory{
+	"TektonPipelineRun": &TektonPipelineRunImageBuildRunnerFactory{},
+	"TektonTaskRun":     &TektonTaskRunImageBuildRunnerFactory{},
 }
 
 // TektonTaskRunWrapper wraps pipelineapi.TaskRun to implement the ImageBuildRunner interface.
@@ -184,6 +195,16 @@ func (t *TektonTaskRunWrapper) GetObject() client.Object {
 	return t.TaskRun
 }
 
+// GetExecutorKind returns the kind of executor.
+func (t *TektonTaskRunWrapper) GetExecutorKind() string {
+	return "TaskRun"
+}
+
+// GetUnderlyingTaskRun returns the underlying TaskRun.
+func (t *TektonTaskRunWrapper) GetUnderlyingTaskRun() *pipelineapi.TaskRun {
+	return t.TaskRun
+}
+
 // TektonTaskRunImageBuildRunnerFactory implements ImageBuildRunnerFactory for Tekton TaskRuns
 type TektonTaskRunImageBuildRunnerFactory struct{}
 
@@ -195,14 +216,22 @@ func (f *TektonTaskRunImageBuildRunnerFactory) NewImageBuildRunner() ImageBuildR
 }
 
 // CreateImageBuildRunner creates an ImageBuildRunner instance from build configuration. It does not create the ImageBuildRunner in the API server.
-func (f *TektonTaskRunImageBuildRunnerFactory) CreateImageBuildRunner(cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
+func (f *TektonTaskRunImageBuildRunnerFactory) CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
 	generatedTaskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccount.Name, strategy)
 	if err != nil {
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, client, buildRun, err.Error(), resources.ConditionTaskRunGenerationFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create taskrun runtime object", err, updateErr)
+		}
+
 		return nil, err
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun
 	if err := setOwnerRef(buildRun, generatedTaskRun, scheme); err != nil {
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, client, buildRun, err.Error(), resources.ConditionSetOwnerReferenceFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create taskrun runtime object", err, updateErr)
+		}
+
 		return nil, err
 	}
 

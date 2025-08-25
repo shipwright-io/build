@@ -164,6 +164,57 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 	return nil
 }
 
+// UpdateBuildRunUsingPipelineRunCondition updates the BuildRun Succeeded Condition for PipelineRun conditions
+func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, pipelineRun *pipelineapi.PipelineRun, prCondition *apis.Condition) error {
+	var reason, message string = prCondition.Reason, prCondition.Message
+	status := prCondition.Status
+
+	switch reason {
+	case "PipelineRunTimeout":
+		reason = "BuildRunTimeout"
+		var timeout time.Duration
+		if pipelineRun.Spec.Timeouts != nil && pipelineRun.Spec.Timeouts.Pipeline != nil {
+			timeout = pipelineRun.Spec.Timeouts.Pipeline.Duration
+		} else {
+			// if the PipelineRun does not have a timeout set, we cannot use it to determine the BuildRun timeout
+			timeout = time.Since(pipelineRun.CreationTimestamp.Time)
+		}
+		message = fmt.Sprintf("BuildRun %s failed to finish within %s",
+			buildRun.Name,
+			timeout,
+		)
+
+	case "PipelineRunCancelled":
+		if buildRun.IsCanceled() {
+			status = corev1.ConditionFalse
+			reason = buildv1beta1.BuildRunStateCancel
+			message = "The BuildRun and underlying PipelineRun were canceled successfully."
+		}
+
+	case "Succeeded":
+		if buildRun.IsCanceled() {
+			message = "The PipelineRun completed before the request to cancel the PipelineRun could be processed."
+		}
+
+	case "Failed":
+		// For PipelineRun failures, we need to get the underlying TaskRun to extract failure details
+		// This is a simplified approach - in a full implementation, we would extract failure details from the TaskRun
+		if pipelineRun.Status.CompletionTime != nil {
+			message = fmt.Sprintf("PipelineRun %s failed", pipelineRun.Name)
+		}
+	}
+
+	buildRun.Status.SetCondition(&buildv1beta1.Condition{
+		LastTransitionTime: metav1.Now(),
+		Type:               buildv1beta1.Succeeded,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+	})
+
+	return nil
+}
+
 // UpdateConditionWithFalseStatus sets the Succeeded condition fields and mark
 // the condition as Status False. It also updates the object in the cluster by
 // calling client Status Update
@@ -183,4 +234,27 @@ func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, b
 	}
 
 	return nil
+}
+
+// UpdateImageBuildRunFromExecutor updates the BuildRun status based on the executor object type
+func UpdateImageBuildRunFromExecutor(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, executorObj client.Object, conditions *apis.Condition) error {
+	if taskRunObj, ok := executorObj.(*pipelineapi.TaskRun); ok {
+		if err := UpdateBuildRunUsingTaskRunCondition(ctx, client, buildRun, taskRunObj, conditions); err != nil {
+			ctxlog.Error(ctx, err, "failed to update BuildRun status using TaskRun condition", "buildRun", buildRun.Name, "namespace", buildRun.Namespace, "taskRun", taskRunObj.Name)
+			return err
+		}
+		UpdateBuildRunUsingTaskFailures(ctx, client, buildRun, taskRunObj)
+		return nil
+	} else if pipelineRunObj, ok := executorObj.(*pipelineapi.PipelineRun); ok {
+		// For PipelineRuns, we need to handle the status update differently
+		if err := UpdateBuildRunUsingPipelineRunCondition(ctx, client, buildRun, pipelineRunObj, conditions); err != nil {
+			ctxlog.Error(ctx, err, "failed to update BuildRun status using PipelineRun condition", "buildRun", buildRun.Name, "namespace", buildRun.Namespace, "pipelineRun", pipelineRunObj.Name)
+			return err
+		}
+		return nil
+	}
+
+	// If we get here, the object type is not supported
+	ctxlog.Error(ctx, fmt.Errorf("unsupported executor object type: %T", executorObj), "failed to update BuildRun status", "buildRun", buildRun.Name, "namespace", buildRun.Namespace)
+	return fmt.Errorf("unsupported executor object type: %T", executorObj)
 }
