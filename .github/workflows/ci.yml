@@ -163,7 +163,7 @@ jobs:
           - kubernetes: v1.33.0
             tekton: v1.3.1 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
-    runs-on: ubuntu-latest-16-cores
+    runs-on: oracle-vm-16cpu-64gb-x86-64
     steps:
       - name: Check out code
         uses: actions/checkout@v5
