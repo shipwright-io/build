@@ -219,12 +219,12 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 
 | Dependency                           | Supported versions           |
 |--------------------------------------|------------------------------|
-| [Kubernetes](https://kubernetes.io/) | v1.30.\*, v1.31.\*, v1.32.\*, v1.33.\* |
-| [Tekton](https://tekton.dev)         | v0.62.\*, v0.65.\*, v0.68.\*, v1.0.\* |
+| [Kubernetes](https://kubernetes.io/) | v1.31.\*, v1.32.\*, v1.33.\* |
+| [Tekton](https://tekton.dev)         | v0.65.\*, v0.68.\*, v1.0.\*, v1.3.\* |
 
 ### Platform support
 
-We are building container images of the Shipwright Build controller for all platforms supported by the base image that we are using which is [registry.access.redhat.com/ubi9/ubi-minimal](https://catalog.redhat.com/software/containers/ubi9/ubi-minimal/615bd9b4075b022acc111bf5). Those are:
+We are building container images of the Shipwright Build controller for all platforms supported by the base image that we are using which is [registry.access.redhat.com/ubi10/ubi-minimal](https://catalog.redhat.com/software/containers/ubi10/ubi-minimal/66f1504a379b9c2cf23e145c). Those are:
 
 - linux/amd64
 - linux/arm64
