@@ -20,7 +20,7 @@ jobs:
         with:
           token: ${{ secrets.SHIPWRIGHT_BUILD_WRITE_WORKFLOWS }}
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.24.x'
           cache: true

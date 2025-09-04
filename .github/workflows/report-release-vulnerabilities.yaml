@@ -19,7 +19,7 @@ jobs:
         with:
           path: main
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.24.x'
           cache: true
@@ -58,7 +58,7 @@ jobs:
           path: release-branch
           ref: ${{ steps.download-latest-release.outputs.release-branch }}
       - name: Install Go version of latest release
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "${{ steps.download-latest-release.outputs.go-version }}.x"
           cache: true
