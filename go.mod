@@ -10,7 +10,7 @@ require (
 	github.com/google/go-containerregistry v0.20.6
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
