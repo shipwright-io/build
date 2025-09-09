@@ -396,8 +396,8 @@ github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/stvp/go-udp-testing v0.0.0-20201019212854-469649b16807/go.mod h1:7jxmlfBCDBXRzr0eAQJ48XC1hBu1np4CS5+cHEYfwpc=
-github.com/tektoncd/pipeline v1.3.1 h1:GOp49pAMPCXYX1E/cSc2JAm7j4vEB68DOOhGkSoaAmI=
-github.com/tektoncd/pipeline v1.3.1/go.mod h1:924mFZJC0FXYruna4kDisnfFnRowJQgRgLpJuGbjNPQ=
+github.com/tektoncd/pipeline v1.3.2 h1:aOOMa4/u1b+nExxIPVMW7++hJMJQhtSpLisoKdUFQ+c=
+github.com/tektoncd/pipeline v1.3.2/go.mod h1:924mFZJC0FXYruna4kDisnfFnRowJQgRgLpJuGbjNPQ=
 github.com/vbatts/tar-split v0.12.1 h1:CqKoORW7BUWBe7UL/iqTVvkTBOF8UvOMKOIZykxnnbo=
 github.com/vbatts/tar-split v0.12.1/go.mod h1:eF6B6i6ftWQcDqEn3/iGFRFRo8cBIMSJVOpnNdfTMFA=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
