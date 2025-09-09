@@ -32,7 +32,7 @@ type ImageBuildRunner interface {
 	// GetCreationTimestamp returns the creation timestamp of the build runner.
 	GetCreationTimestamp() metav1.Time
 	// GetResults returns the results of the build runner.
-	GetResults() []pipelineapi.TaskRunResult
+	GetResults(ctx context.Context, client client.Client) []pipelineapi.TaskRunResult
 	// GetCondition returns the condition of the build runner.
 	GetCondition(conditionType apis.ConditionType) *apis.Condition
 	// GetStartTime returns the start time of the build runner.
@@ -47,6 +47,12 @@ type ImageBuildRunner interface {
 	Cancel(ctx context.Context, client client.Client) error
 	// GetObject returns the underlying client.Object for owner reference operations.
 	GetObject() client.Object
+
+	// GetExecutorKind returns the kind of executor (e.g., "TaskRun", "PipelineRun").
+	GetExecutorKind() string
+
+	// GetUnderlyingTaskRun returns the generated TaskRun from using either TaskRun or PipelineRun.
+	GetUnderlyingTaskRuns(client client.Client) ([]*pipelineapi.TaskRun, error)
 }
 
 // ImageBuildRunnerFactory defines methods for creating and manipulating ImageBuildRunners.
@@ -55,13 +61,19 @@ type ImageBuildRunnerFactory interface {
 	NewImageBuildRunner() ImageBuildRunner
 
 	// CreateImageBuildRunner creates an ImageBuildRunner instance from build configuration. It does not create the ImageBuildRunner in the API server.
-	CreateImageBuildRunner(cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error)
+	CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error)
 
 	// GetImageBuildRunner retrieves an ImageBuildRunner from the API server.
 	GetImageBuildRunner(ctx context.Context, client client.Client, namespacedName types.NamespacedName) (ImageBuildRunner, error)
 
 	// CreateImageBuildRunnerInCluster creates the ImageBuildRunner in the API server.
 	CreateImageBuildRunnerInCluster(ctx context.Context, client client.Client, taskRunner ImageBuildRunner) error
+}
+
+// Available image build runners for a buildrun.
+var RunnerFactories = map[string]ImageBuildRunnerFactory{
+	"PipelineRun": &TektonPipelineRunImageBuildRunnerFactory{},
+	"TaskRun":     &TektonTaskRunImageBuildRunnerFactory{},
 }
 
 // TektonTaskRunWrapper wraps pipelineapi.TaskRun to implement the ImageBuildRunner interface.
@@ -94,7 +106,7 @@ func (t *TektonTaskRunWrapper) GetCreationTimestamp() metav1.Time {
 }
 
 // GetResults returns the TaskRun results
-func (t *TektonTaskRunWrapper) GetResults() []pipelineapi.TaskRunResult {
+func (t *TektonTaskRunWrapper) GetResults(_ context.Context, _ client.Client) []pipelineapi.TaskRunResult {
 	if t.TaskRun == nil {
 		return nil
 	}
@@ -184,6 +196,20 @@ func (t *TektonTaskRunWrapper) GetObject() client.Object {
 	return t.TaskRun
 }
 
+// GetExecutorKind returns the kind of executor.
+// to set the kind of executor field for the build run
+func (t *TektonTaskRunWrapper) GetExecutorKind() string {
+	return "TaskRun"
+}
+
+// GetUnderlyingTaskRun returns the underlying TaskRun.
+func (t *TektonTaskRunWrapper) GetUnderlyingTaskRuns(_ client.Client) ([]*pipelineapi.TaskRun, error) {
+	if t.TaskRun == nil {
+		return nil, fmt.Errorf("underlying TaskRun does not exist")
+	}
+	return []*pipelineapi.TaskRun{t.TaskRun}, nil
+}
+
 // TektonTaskRunImageBuildRunnerFactory implements ImageBuildRunnerFactory for Tekton TaskRuns
 type TektonTaskRunImageBuildRunnerFactory struct{}
 
@@ -195,14 +221,22 @@ func (f *TektonTaskRunImageBuildRunnerFactory) NewImageBuildRunner() ImageBuildR
 }
 
 // CreateImageBuildRunner creates an ImageBuildRunner instance from build configuration. It does not create the ImageBuildRunner in the API server.
-func (f *TektonTaskRunImageBuildRunnerFactory) CreateImageBuildRunner(cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
+func (f *TektonTaskRunImageBuildRunnerFactory) CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
 	generatedTaskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccount.Name, strategy)
 	if err != nil {
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, client, buildRun, err.Error(), resources.ConditionTaskRunGenerationFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create taskrun runtime object", err, updateErr)
+		}
+
 		return nil, err
 	}
 
 	// Set OwnerReference for BuildRun and TaskRun
 	if err := setOwnerRef(buildRun, generatedTaskRun, scheme); err != nil {
+		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, client, buildRun, err.Error(), resources.ConditionSetOwnerReferenceFailed); updateErr != nil {
+			return nil, resources.HandleError("failed to create taskrun runtime object", err, updateErr)
+		}
+
 		return nil, err
 	}
 
