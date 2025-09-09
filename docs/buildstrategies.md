@@ -440,7 +440,7 @@ spec:
   steps:
     ...
     - name: build-and-push
-      image: moby/buildkit:v0.23.2-rootless
+      image: moby/buildkit:v0.24.0-rootless
       imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
       ...
