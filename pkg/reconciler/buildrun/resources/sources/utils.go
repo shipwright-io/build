@@ -89,9 +89,9 @@ func FindResultValue(results []pipelineapi.TaskRunResult, sourceName, resultName
 	return ""
 }
 
-// AppendWriteableVolumes configures writable volumes for a specific step in a Tekton Task.
-// It ensures that these volumes are not shared with other steps in the same pod.
-func AppendWriteableVolumes(
+// SetupHomeAndTmpVolumes creates writeable `emptyDir` volumes for the task step's `HOME` and `TMPDIR`
+// locations, mounts them to well-known locations, and sets the appropriate environment variable values.
+func SetupHomeAndTmpVolumes(
 	taskSpec *pipelineapi.TaskSpec,
 	targetStep *pipelineapi.Step,
 ) {
@@ -105,6 +105,16 @@ func AppendWriteableVolumes(
 	)
 	// Point the TMPDIR environment variable to the custom path.
 	setEnvVar(targetStep, "TMPDIR", tmpDir)
+
+	// Define a custom, isolated path for the home directory and mount it.
+	writeableHomeMountPath := "/shp-writable-home"
+	addStepEmptyDirVolume(
+		taskSpec,
+		targetStep,
+		generateVolumeName("shp-home-", targetStep.Name),
+		writeableHomeMountPath,
+	)
+	setEnvVar(targetStep, "HOME", writeableHomeMountPath)
 }
 
 // generateVolumeName creates a unique, DNS-1123 compliant volume name for a step.
