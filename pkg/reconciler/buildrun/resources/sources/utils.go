@@ -105,6 +105,16 @@ func AppendWriteableVolumes(
 	)
 	// Point the TMPDIR environment variable to the custom path.
 	setEnvVar(targetStep, "TMPDIR", tmpDir)
+
+	// Define a custom, isolated path for the home directory and mount it.
+	writeableHomeMountPath := "/shp-writable-home"
+	addStepEmptyDirVolume(
+		taskSpec,
+		targetStep,
+		generateVolumeName("shp-home-", targetStep.Name),
+		writeableHomeMountPath,
+	)
+	setEnvVar(targetStep, "HOME", writeableHomeMountPath)
 }
 
 // generateVolumeName creates a unique, DNS-1123 compliant volume name for a step.
