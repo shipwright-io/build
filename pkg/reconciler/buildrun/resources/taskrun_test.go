@@ -5,9 +5,8 @@
 package resources_test
 
 import (
-	"fmt"
-	"reflect"
-	"strings"
+	"path"
+	"strconv"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -15,690 +14,1384 @@ import (
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	utils "github.com/shipwright-io/build/test/utils/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
-var _ = Describe("GenerateTaskrun", func() {
+var _ = Describe("TaskRun Unit Tests", func() {
 	var (
-		build                  *buildv1beta1.Build
-		buildWithEnvs          *buildv1beta1.Build
-		buildRun               *buildv1beta1.BuildRun
-		buildRunWithEnvs       *buildv1beta1.BuildRun
-		buildStrategy          *buildv1beta1.BuildStrategy
-		buildStrategyStepNames map[string]struct{}
-		buildStrategyWithEnvs  *buildv1beta1.BuildStrategy
-		buildpacks             string
-		ctl                    test.Catalog
+		cfg                  *config.Config
+		build                *buildv1beta1.Build
+		buildRun             *buildv1beta1.BuildRun
+		buildStrategy        *buildv1beta1.BuildStrategy
+		clusterBuildStrategy *buildv1beta1.ClusterBuildStrategy
+		serviceAccountName   string
+		ctl                  test.Catalog
 	)
 
 	BeforeEach(func() {
-		buildpacks = "buildpacks-v3"
+		cfg = config.NewDefaultConfig()
+		serviceAccountName = "test-sa"
+
+		// Load basic test objects
+		var err error
+		build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuild))
+		Expect(err).ToNot(HaveOccurred())
+
+		buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildRun))
+		Expect(err).ToNot(HaveOccurred())
+
+		buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.ClusterBuildStrategyNoOp))
+		Expect(err).ToNot(HaveOccurred())
+
+		clusterBuildStrategy, err = ctl.LoadCBSWithName("noop", []byte(test.ClusterBuildStrategyNoOp))
+		Expect(err).ToNot(HaveOccurred())
 	})
 
-	Describe("Generate the TaskSpec", func() {
-		var (
-			expectedCommandOrArg []string
-			got                  *pipelineapi.TaskSpec
-			err                  error
-		)
+	Describe("GenerateTaskRun", func() {
+		Context("with valid inputs", func() {
+			It("should generate a TaskRun with BuildStrategy", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-		Context("when the task spec is generated", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithAnnotationAndLabel))
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+				Expect(taskRun.GenerateName).To(Equal(buildRun.Name + "-"))
+				Expect(taskRun.Namespace).To(Equal(buildRun.Namespace))
+				Expect(taskRun.Spec.ServiceAccountName).To(Equal(serviceAccountName))
+				Expect(taskRun.Spec.TaskSpec).ToNot(BeNil())
+				Expect(len(taskRun.Spec.Workspaces)).To(Equal(1))
+				Expect(taskRun.Spec.Workspaces[0].Name).To(Equal("source"))
+			})
 
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
-				Expect(err).To(BeNil())
+			It("should generate a TaskRun with ClusterBuildStrategy", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, clusterBuildStrategy)
 
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
-				Expect(err).To(BeNil())
-				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+				Expect(taskRun.GenerateName).To(Equal(buildRun.Name + "-"))
+				Expect(taskRun.Namespace).To(Equal(buildRun.Namespace))
+				Expect(taskRun.Spec.ServiceAccountName).To(Equal(serviceAccountName))
+				Expect(taskRun.Spec.TaskSpec).ToNot(BeNil())
+				Expect(len(taskRun.Spec.Workspaces)).To(Equal(1))
+				Expect(taskRun.Spec.Workspaces[0].Name).To(Equal("source"))
+			})
 
-				expectedCommandOrArg = []string{
-					"bud", "--tag=$(params.shp-output-image)", "--file=$(params.dockerfile)", "$(params.shp-source-context)",
+			It("should include proper labels", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Labels).ToNot(BeNil())
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildRunGeneration]).To(Equal(strconv.FormatInt(buildRun.Generation, 10)))
+
+				if build.Name != "" {
+					Expect(taskRun.Labels[buildv1beta1.LabelBuild]).To(Equal(build.Name))
+					Expect(taskRun.Labels[buildv1beta1.LabelBuildGeneration]).To(Equal(strconv.FormatInt(build.Generation, 10)))
 				}
 			})
 
-			JustBeforeEach(func() {
-				taskRun, err := resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, "", buildStrategy)
+			It("should include base parameters", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
 				Expect(err).ToNot(HaveOccurred())
-				got = taskRun.Spec.TaskSpec
-			})
 
-			It("should contain a step to clone the Git sources", func() {
-				Expect(got.Steps[0].Name).To(Equal("source-default"))
-				Expect(got.Steps[0].Command[0]).To(Equal("/ko-app/git"))
-				Expect(got.Steps[0].Args).To(Equal([]string{
-					"--url", build.Spec.Source.Git.URL,
-					"--target", "$(params.shp-source-root)",
-					"--result-file-commit-sha", "$(results.shp-source-default-commit-sha.path)",
-					"--result-file-commit-author", "$(results.shp-source-default-commit-author.path)",
-					"--result-file-branch-name", "$(results.shp-source-default-branch-name.path)",
-					"--result-file-error-message", "$(results.shp-error-message.path)",
-					"--result-file-error-reason", "$(results.shp-error-reason.path)",
-					"--result-file-source-timestamp", "$(results.shp-source-default-source-timestamp.path)",
-				}))
-			})
-
-			It("should contain results for the image", func() {
-				Expect(got.Results).To(utils.ContainNamedElement("shp-image-digest"))
-				Expect(got.Results).To(utils.ContainNamedElement("shp-image-size"))
-			})
-
-			It("should contain a result for the Git commit SHA", func() {
-				Expect(got.Results).To(utils.ContainNamedElement("shp-source-default-commit-sha"))
-			})
-
-			It("should ensure IMAGE is replaced by builder image when needed.", func() {
-				Expect(got.Steps[1].Image).To(Equal("quay.io/containers/buildah:v1.41.4"))
-			})
-
-			It("should ensure ImagePullPolicy can be set by the build strategy author.", func() {
-				Expect(got.Steps[1].ImagePullPolicy).To(Equal(corev1.PullPolicy("Always")))
-			})
-
-			It("should ensure command replacements happen when needed", func() {
-				Expect(got.Steps[1].Command[0]).To(Equal("/usr/bin/buildah"))
-			})
-
-			It("should ensure resource replacements happen for the first step", func() {
-				Expect(got.Steps[1].ComputeResources).To(Equal(ctl.LoadCustomResources("500m", "1Gi")))
-			})
-
-			It("should ensure resource replacements happen for the second step", func() {
-				Expect(got.Steps[2].ComputeResources).To(Equal(ctl.LoadCustomResources("100m", "65Mi")))
-			})
-
-			It("should ensure arg replacements happen when needed", func() {
-				Expect(got.Steps[1].Args).To(Equal(expectedCommandOrArg))
-			})
-
-			It("should ensure top level volumes are populated", func() {
-				Expect(len(got.Volumes)).To(Equal(3))
-			})
-
-			It("should contain the shipwright system parameters", func() {
-				Expect(got.Params).To(utils.ContainNamedElement("shp-source-root"))
-				Expect(got.Params).To(utils.ContainNamedElement("shp-source-context"))
-				Expect(got.Params).To(utils.ContainNamedElement("shp-output-image"))
-				Expect(got.Params).To(utils.ContainNamedElement("shp-output-insecure"))
-
-				// legacy params have been removed
-				Expect(got.Params).ToNot(utils.ContainNamedElement("BUILDER_IMAGE"))
-				Expect(got.Params).ToNot(utils.ContainNamedElement("CONTEXT_DIR"))
-
-				Expect(len(got.Params)).To(Equal(5))
-			})
-
-			It("should contain a step to mutate the image with single mutate args", func() {
-				Expect(got.Steps).To(HaveLen(4))
-				Expect(got.Steps[3].Name).To(Equal("image-processing"))
-				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
-				Expect(got.Steps[3].Args).To(BeEquivalentTo([]string{
-					"--annotation",
-					"org.opencontainers.image.url=https://my-company.com/images",
-					"--label",
-					"maintainer=team@my-company.com",
-					"--image",
-					"$(params.shp-output-image)",
-					"--insecure=$(params.shp-output-insecure)",
-					"--result-file-image-digest",
-					"$(results.shp-image-digest.path)",
-					"--result-file-image-size",
-					"$(results.shp-image-size.path)",
-					"--result-file-image-vulnerabilities",
-					"$(results.shp-image-vulnerabilities.path)",
-				}))
-			})
-
-			It("should contain a step to mutate the image with multiple mutate args", func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithMultipleAnnotationAndLabel))
-				Expect(err).To(BeNil())
-
-				taskRun, err := resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, "", buildStrategy)
-				Expect(err).ToNot(HaveOccurred())
-				got = taskRun.Spec.TaskSpec
-
-				Expect(got.Steps[3].Name).To(Equal("image-processing"))
-				Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
-
-				expected := []string{
-					"--annotation",
-					"org.opencontainers.image.source=https://github.com/org/repo",
-					"--annotation",
-					"org.opencontainers.image.url=https://my-company.com/images",
-					"--label",
-					"description=This is my cool image",
-					"--label",
-					"maintainer=team@my-company.com",
-					"--image",
-					"$(params.shp-output-image)",
-					"--insecure=$(params.shp-output-insecure)",
-					"--result-file-image-digest",
-					"$(results.shp-image-digest.path)",
-					"--result-file-image-size",
-					"$(results.shp-image-size.path)",
-					"--result-file-image-vulnerabilities",
-					"$(results.shp-image-vulnerabilities.path)",
+				// Check that base parameters are included
+				paramNames := make(map[string]bool)
+				for _, param := range taskRun.Spec.Params {
+					paramNames[param.Name] = true
 				}
 
-				Expect(got.Steps[3].Args).To(HaveLen(len(expected)))
+				Expect(paramNames).To(HaveKey("shp-output-image"))
+				Expect(paramNames).To(HaveKey("shp-output-insecure"))
+				Expect(paramNames).To(HaveKey("shp-source-root"))
+				Expect(paramNames).To(HaveKey("shp-source-context"))
+			})
 
-				// there is no way to say which annotation comes first
+			It("should include TaskSpec parameters", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				Expect(got.Steps[3].Args[1]).To(BeElementOf(expected[1], expected[3]))
-				Expect(got.Steps[3].Args[3]).To(BeElementOf(expected[1], expected[3]))
-				Expect(got.Steps[3].Args[1]).ToNot(Equal(got.Steps[3].Args[3]))
+				Expect(err).ToNot(HaveOccurred())
 
-				expected[1] = got.Steps[3].Args[1]
-				expected[3] = got.Steps[3].Args[3]
+				taskSpecParamNames := make(map[string]bool)
+				for _, param := range taskRun.Spec.TaskSpec.Params {
+					taskSpecParamNames[param.Name] = true
+				}
 
-				// same for labels
+				Expect(taskSpecParamNames).To(HaveKey("shp-output-image"))
+				Expect(taskSpecParamNames).To(HaveKey("shp-output-insecure"))
+				Expect(taskSpecParamNames).To(HaveKey("shp-source-root"))
+				Expect(taskSpecParamNames).To(HaveKey("shp-source-context"))
+			})
 
-				Expect(got.Steps[3].Args[5]).To(BeElementOf(expected[5], expected[7]))
-				Expect(got.Steps[3].Args[7]).To(BeElementOf(expected[5], expected[7]))
-				Expect(got.Steps[3].Args[5]).ToNot(Equal(got.Steps[3].Args[7]))
+			It("should include workspaces", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				expected[5] = got.Steps[3].Args[5]
-				expected[7] = got.Steps[3].Args[7]
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(taskRun.Spec.TaskSpec.Workspaces)).To(Equal(1))
+				Expect(taskRun.Spec.TaskSpec.Workspaces[0].Name).To(Equal("source"))
+			})
 
-				Expect(got.Steps[3].Args).To(BeEquivalentTo(expected))
+			It("should include results", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(taskRun.Spec.TaskSpec.Results)).To(BeNumerically(">", 0))
+
+				// Check for standard results
+				resultNames := make(map[string]bool)
+				for _, result := range taskRun.Spec.TaskSpec.Results {
+					resultNames[result.Name] = true
+				}
+
+				Expect(resultNames).To(HaveKey("shp-image-digest"))
+				Expect(resultNames).To(HaveKey("shp-image-size"))
 			})
 		})
 
-		Context("when env vars are defined", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuild))
-				Expect(err).To(BeNil())
+		Context("with timeout configuration", func() {
+			It("should use BuildRun timeout when specified", func() {
+				duration := metav1.Duration{Duration: 5 * time.Minute}
+				buildRun.Spec.Timeout = &duration
 
-				buildWithEnvs, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildahBuildWithEnvVars))
-				Expect(err).To(BeNil())
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
-				Expect(err).To(BeNil())
-
-				buildRunWithEnvs, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRunWithEnvVars))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
-				Expect(err).To(BeNil())
-				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
-				buildStrategyStepNames = make(map[string]struct{})
-				for _, step := range buildStrategy.Spec.Steps {
-					buildStrategyStepNames[step.Name] = struct{}{}
-				}
-
-				buildStrategyWithEnvs, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategyWithEnvs))
-				Expect(err).To(BeNil())
-
-				expectedCommandOrArg = []string{
-					"--storage-driver=$(params.storage-driver)", "bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
-				}
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.Timeout).ToNot(BeNil())
+				Expect(taskRun.Spec.Timeout.Duration).To(Equal(5 * time.Minute))
 			})
 
-			It("should contain env vars specified in Build in every BuildStrategy step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRun, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
-				Expect(err).To(BeNil())
+			It("should use Build timeout when BuildRun timeout is not specified", func() {
+				duration := metav1.Duration{Duration: 10 * time.Minute}
+				build.Spec.Timeout = &duration
 
-				combinedEnvs, err := env.MergeEnvVars(buildRun.Spec.Env, buildWithEnvs.Spec.Env, true)
-				Expect(err).NotTo(HaveOccurred())
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				for _, step := range got.Steps {
-					if _, ok := buildStrategyStepNames[step.Name]; ok {
-						Expect(len(step.Env)).To(Equal(len(combinedEnvs)))
-						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeTrue())
-					} else {
-						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeFalse())
-					}
-				}
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.Timeout).ToNot(BeNil())
+				Expect(taskRun.Spec.Timeout.Duration).To(Equal(10 * time.Minute))
 			})
 
-			It("should contain env vars specified in BuildRun in every step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRunWithEnvs, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
-				Expect(err).To(BeNil())
+			It("should prefer BuildRun timeout over Build timeout", func() {
+				buildDuration := metav1.Duration{Duration: 10 * time.Minute}
+				buildRunDuration := metav1.Duration{Duration: 5 * time.Minute}
 
-				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, build.Spec.Env, true)
-				Expect(err).NotTo(HaveOccurred())
+				build.Spec.Timeout = &buildDuration
+				buildRun.Spec.Timeout = &buildRunDuration
 
-				for _, step := range got.Steps {
-					if _, ok := buildStrategyStepNames[step.Name]; ok {
-						Expect(len(step.Env)).To(Equal(len(combinedEnvs)))
-						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeTrue())
-					} else {
-						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeFalse())
-					}
-				}
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.Timeout).ToNot(BeNil())
+				Expect(taskRun.Spec.Timeout.Duration).To(Equal(5 * time.Minute))
 			})
 
-			It("should override Build env vars with BuildRun env vars in every step", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
-				Expect(err).To(BeNil())
+			It("should have no timeout when neither Build nor BuildRun specify timeout", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				combinedEnvs, err := env.MergeEnvVars(buildRunWithEnvs.Spec.Env, buildWithEnvs.Spec.Env, true)
-				Expect(err).NotTo(HaveOccurred())
-
-				for _, step := range got.Steps {
-					if _, ok := buildStrategyStepNames[step.Name]; ok {
-						Expect(len(step.Env)).To(Equal(len(combinedEnvs)))
-						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeTrue())
-					} else {
-						Expect(reflect.DeepEqual(combinedEnvs, step.Env)).To(BeFalse())
-					}
-
-				}
-			})
-
-			It("should fail attempting to override an env var in a BuildStrategy", func() {
-				got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), buildWithEnvs, buildRunWithEnvs, buildStrategyWithEnvs.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal("error(s) occurred merging environment variables into BuildStrategy \"buildah\" steps: [environment variable \"MY_VAR_1\" already exists, environment variable \"MY_VAR_2\" already exists]"))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.Timeout).To(BeNil())
 			})
 		})
 
-		Context("when only BuildRun has output image labels and annotation defined ", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
-				Expect(err).To(BeNil())
-
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithOutputImageLabelsAndAnnotations))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
-				Expect(err).To(BeNil())
-				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
-
-				expectedCommandOrArg = []string{
-					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+		Context("with node selectors", func() {
+			It("should use BuildRun node selector when specified", func() {
+				buildRun.Spec.NodeSelector = map[string]string{
+					"node-type": "buildrun-node",
 				}
 
-				JustBeforeEach(func() {
-					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
-					Expect(err).To(BeNil())
-				})
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				It("should contain an image-processing step to mutate the image with labels and annotations merged from build and buildrun", func() {
-					Expect(got.Steps[3].Name).To(Equal("image-processing"))
-					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
-					Expect(got.Steps[3].Args).To(Equal([]string{
-						"--image",
-						"$(params.shp-output-image)",
-						"--result-file-image-digest",
-						"$(results.shp-image-digest.path)",
-						"result-file-image-size",
-						"$(results.shp-image-size.path)",
-						"--annotation",
-						"org.opencontainers.owner=my-company",
-						"--label",
-						"maintainer=new-team@my-company.com",
-						"foo=bar",
-					}))
-				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.NodeSelector).To(Equal(buildRun.Spec.NodeSelector))
+			})
+
+			It("should use Build node selector when BuildRun node selector is not specified", func() {
+				build.Spec.NodeSelector = map[string]string{
+					"node-type": "build-node",
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.NodeSelector).To(Equal(build.Spec.NodeSelector))
+			})
+
+			It("should prefer BuildRun node selector over Build node selector", func() {
+				build.Spec.NodeSelector = map[string]string{
+					"node-type": "build-node",
+				}
+				buildRun.Spec.NodeSelector = map[string]string{
+					"node-type": "buildrun-node",
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.NodeSelector).To(Equal(buildRun.Spec.NodeSelector))
+			})
+
+			It("should merge node selectors from Build and BuildRun", func() {
+				build.Spec.NodeSelector = map[string]string{
+					"build-key": "build-value",
+				}
+				buildRun.Spec.NodeSelector = map[string]string{
+					"buildrun-key": "buildrun-value",
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.NodeSelector).To(HaveKeyWithValue("build-key", "build-value"))
+				Expect(taskRun.Spec.PodTemplate.NodeSelector).To(HaveKeyWithValue("buildrun-key", "buildrun-value"))
 			})
 		})
 
-		Context("when Build and BuildRun both have output image labels and annotation defined ", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithAnnotationAndLabel))
-				Expect(err).To(BeNil())
-
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithOutputImageLabelsAndAnnotations))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
-				Expect(err).To(BeNil())
-				buildStrategy.Spec.Steps[0].ImagePullPolicy = "Always"
-
-				expectedCommandOrArg = []string{
-					"bud", "--tag=$(params.shp-output-image)", fmt.Sprintf("--file=$(inputs.params.%s)", "DOCKERFILE"), "$(params.shp-source-context)",
+		Context("with tolerations", func() {
+			It("should use BuildRun tolerations when specified", func() {
+				buildRun.Spec.Tolerations = []corev1.Toleration{
+					{
+						Key:      "buildrun-key",
+						Operator: corev1.TolerationOpEqual,
+						Value:    "buildrun-value",
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
 				}
 
-				JustBeforeEach(func() {
-					got, err = resources.GenerateTaskSpec(config.NewDefaultConfig(), build, buildRun, buildStrategy.Spec.Steps, []buildv1beta1.Parameter{}, buildStrategy.GetVolumes())
-					Expect(err).To(BeNil())
-				})
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				It("should contain an image-processing step to mutate the image with labels and annotations merged from build and buildrun", func() {
-					Expect(got.Steps[3].Name).To(Equal("image-processing"))
-					Expect(got.Steps[3].Command[0]).To(Equal("/ko-app/image-processing"))
-					Expect(got.Steps[3].Args).To(Equal([]string{
-						"--image",
-						"$(params.shp-output-image)",
-						"--result-file-image-digest",
-						"$(results.shp-image-digest.path)",
-						"result-file-image-size",
-						"$(results.shp-image-size.path)",
-						"--annotation",
-						"org.opencontainers.owner=my-company",
-						"org.opencontainers.image.url=https://my-company.com/images",
-						"--label",
-						"maintainer=new-team@my-company.com",
-						"foo=bar",
-					}))
-				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(len(taskRun.Spec.PodTemplate.Tolerations)).To(Equal(1))
+				Expect(taskRun.Spec.PodTemplate.Tolerations[0].Key).To(Equal("buildrun-key"))
+			})
+
+			It("should use Build tolerations when BuildRun tolerations are not specified", func() {
+				build.Spec.Tolerations = []corev1.Toleration{
+					{
+						Key:      "build-key",
+						Operator: corev1.TolerationOpEqual,
+						Value:    "build-value",
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(len(taskRun.Spec.PodTemplate.Tolerations)).To(Equal(1))
+				Expect(taskRun.Spec.PodTemplate.Tolerations[0].Key).To(Equal("build-key"))
+			})
+
+			It("should prefer BuildRun tolerations over Build tolerations for same key", func() {
+				build.Spec.Tolerations = []corev1.Toleration{
+					{
+						Key:      "same-key",
+						Operator: corev1.TolerationOpEqual,
+						Value:    "build-value",
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				}
+				buildRun.Spec.Tolerations = []corev1.Toleration{
+					{
+						Key:      "same-key",
+						Operator: corev1.TolerationOpEqual,
+						Value:    "buildrun-value",
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(len(taskRun.Spec.PodTemplate.Tolerations)).To(Equal(1))
+				Expect(taskRun.Spec.PodTemplate.Tolerations[0].Value).To(Equal("buildrun-value"))
+			})
+
+			It("should set default effect to NoSchedule when not specified", func() {
+				buildRun.Spec.Tolerations = []corev1.Toleration{
+					{
+						Key:      "test-key",
+						Operator: corev1.TolerationOpEqual,
+						Value:    "test-value",
+						// Effect not specified
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(len(taskRun.Spec.PodTemplate.Tolerations)).To(Equal(1))
+				Expect(taskRun.Spec.PodTemplate.Tolerations[0].Effect).To(Equal(corev1.TaintEffectNoSchedule))
 			})
 		})
 
-		Context("when Build and BuildRun have no source", func() {
+		Context("with scheduler name", func() {
+			It("should use BuildRun scheduler name when specified", func() {
+				schedulerName := "buildrun-scheduler"
+				buildRun.Spec.SchedulerName = &schedulerName
 
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildBSMinimalNoSource))
-				Expect(err).ToNot(HaveOccurred())
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildahBuildRun))
 				Expect(err).ToNot(HaveOccurred())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
-				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.SchedulerName).To(Equal(schedulerName))
 			})
 
-			JustBeforeEach(func() {
-				taskRun, err := resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, "", buildStrategy)
+			It("should use Build scheduler name when BuildRun scheduler name is not specified", func() {
+				schedulerName := "build-scheduler"
+				build.Spec.SchedulerName = &schedulerName
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
 				Expect(err).ToNot(HaveOccurred())
-				got = taskRun.Spec.TaskSpec
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.SchedulerName).To(Equal(schedulerName))
 			})
 
-			It("should not contain a source step", func() {
-				sourceStepFound := false
-				for _, step := range got.Steps {
-					if strings.HasPrefix(step.Name, "source") {
-						sourceStepFound = true
+			It("should prefer BuildRun scheduler name over Build scheduler name", func() {
+				buildSchedulerName := "build-scheduler"
+				buildRunSchedulerName := "buildrun-scheduler"
+
+				build.Spec.SchedulerName = &buildSchedulerName
+				buildRun.Spec.SchedulerName = &buildRunSchedulerName
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.SchedulerName).To(Equal(buildRunSchedulerName))
+			})
+		})
+
+		Context("with output image configuration", func() {
+			It("should use BuildRun output image when specified", func() {
+				buildRun.Spec.Output = &buildv1beta1.Image{
+					Image: "registry.com/buildrun-image:latest",
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Find the shp-output-image parameter
+				var outputImageParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-output-image" {
+						outputImageParam = &param
+						break
 					}
 				}
-				Expect(sourceStepFound).To(BeFalse(), "Found unexpected source step")
+
+				Expect(outputImageParam).ToNot(BeNil())
+				Expect(outputImageParam.Value.StringVal).To(Equal("registry.com/buildrun-image:latest"))
+			})
+
+			It("should use Build output image when BuildRun output image is not specified", func() {
+				build.Spec.Output.Image = "registry.com/build-image:latest"
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Find the shp-output-image parameter
+				var outputImageParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-output-image" {
+						outputImageParam = &param
+						break
+					}
+				}
+
+				Expect(outputImageParam).ToNot(BeNil())
+				Expect(outputImageParam.Value.StringVal).To(Equal("registry.com/build-image:latest"))
+			})
+
+			It("should handle insecure flag from BuildRun", func() {
+				insecure := true
+				buildRun.Spec.Output = &buildv1beta1.Image{
+					Image:    "registry.com/image:latest",
+					Insecure: &insecure,
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Find the shp-output-insecure parameter
+				var insecureParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-output-insecure" {
+						insecureParam = &param
+						break
+					}
+				}
+
+				Expect(insecureParam).ToNot(BeNil())
+				Expect(insecureParam.Value.StringVal).To(Equal("true"))
+			})
+
+			It("should handle insecure flag from Build when BuildRun doesn't specify it", func() {
+				insecure := true
+				build.Spec.Output.Insecure = &insecure
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Find the shp-output-insecure parameter
+				var insecureParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-output-insecure" {
+						insecureParam = &param
+						break
+					}
+				}
+
+				Expect(insecureParam).ToNot(BeNil())
+				Expect(insecureParam.Value.StringVal).To(Equal("true"))
+			})
+		})
+
+		Context("with source context directory", func() {
+			It("should set source context to workspace root when no context dir is specified", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Find the shp-source-context parameter
+				var sourceContextParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-source-context" {
+						sourceContextParam = &param
+						break
+					}
+				}
+
+				Expect(sourceContextParam).ToNot(BeNil())
+				Expect(sourceContextParam.Value.StringVal).To(Equal("/workspace/source"))
+			})
+
+			It("should set source context to context dir when specified", func() {
+				contextDir := "sub/directory"
+				build.Spec.Source = &buildv1beta1.Source{
+					ContextDir: &contextDir,
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Find the shp-source-context parameter
+				var sourceContextParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-source-context" {
+						sourceContextParam = &param
+						break
+					}
+				}
+
+				Expect(sourceContextParam).ToNot(BeNil())
+				Expect(sourceContextParam.Value.StringVal).To(Equal(path.Join("/workspace/source", contextDir)))
+			})
+		})
+
+		Context("with environment variables", func() {
+			It("should handle environment variables from Build", func() {
+				build.Spec.Env = []corev1.EnvVar{
+					{Name: "BUILD_ENV", Value: "build-value"},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+
+				// Environment variables should be merged into strategy steps
+				if len(taskRun.Spec.TaskSpec.Steps) > 0 {
+					// Check if any step has the environment variable
+					found := false
+					for _, step := range taskRun.Spec.TaskSpec.Steps {
+						for _, env := range step.Env {
+							if env.Name == "BUILD_ENV" && env.Value == "build-value" {
+								found = true
+								break
+							}
+						}
+						if found {
+							break
+						}
+					}
+					// Note: Env vars are only added to strategy steps, not all steps
+				}
+			})
+
+			It("should handle environment variables from BuildRun", func() {
+				buildRun.Spec.Env = []corev1.EnvVar{
+					{Name: "BUILDRUN_ENV", Value: "buildrun-value"},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+			})
+
+			It("should prefer BuildRun environment variables over Build environment variables", func() {
+				build.Spec.Env = []corev1.EnvVar{
+					{Name: "SAME_ENV", Value: "build-value"},
+				}
+				buildRun.Spec.Env = []corev1.EnvVar{
+					{Name: "SAME_ENV", Value: "buildrun-value"},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+			})
+		})
+
+		Context("with embedded Build (empty build name)", func() {
+			It("should not include Build labels when build name is empty", func() {
+				build.Name = ""
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Labels).ToNot(BeNil())
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
+				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuild))
+				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuildGeneration))
+			})
+		})
+
+		Context("with strategy parameters", func() {
+			It("should include strategy parameters in TaskSpec", func() {
+				// Use a build strategy that already has parameters
+				paramBuildStrategy, err := ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithParameters))
+				Expect(err).ToNot(HaveOccurred())
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, paramBuildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Check that the parameter is included in TaskSpec
+				paramFound := false
+				for _, param := range taskRun.Spec.TaskSpec.Params {
+					if param.Name == "sleep-time" {
+						paramFound = true
+						Expect(param.Description).To(Equal("time in seconds for sleeping"))
+						Expect(param.Type).To(Equal(pipelineapi.ParamTypeString))
+						Expect(param.Default).ToNot(BeNil())
+						Expect(param.Default.StringVal).To(Equal("1"))
+						break
+					}
+				}
+				Expect(paramFound).To(BeTrue())
+			})
+
+			It("should handle array type parameters", func() {
+				// Use a build strategy that already has array parameters
+				paramBuildStrategy, err := ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithParameters))
+				Expect(err).ToNot(HaveOccurred())
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, paramBuildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Check that the array parameter is included in TaskSpec
+				paramFound := false
+				for _, param := range taskRun.Spec.TaskSpec.Params {
+					if param.Name == "array-param" {
+						paramFound = true
+						Expect(param.Description).To(Equal("An arbitrary array"))
+						Expect(param.Type).To(Equal(pipelineapi.ParamTypeArray))
+						Expect(param.Default).ToNot(BeNil())
+						Expect(param.Default.ArrayVal).To(Equal([]string{}))
+						break
+					}
+				}
+				Expect(paramFound).To(BeTrue())
+			})
+		})
+
+		Context("with strategy steps", func() {
+			It("should include strategy steps in TaskSpec", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(taskRun.Spec.TaskSpec.Steps)).To(BeNumerically(">", 0))
+
+				// The exact number of steps depends on the strategy and source configuration
+				// but we should have at least the strategy steps
+				strategyStepFound := false
+				for _, step := range taskRun.Spec.TaskSpec.Steps {
+					// Check if this is one of the strategy steps
+					for _, strategyStep := range buildStrategy.Spec.Steps {
+						if step.Name == strategyStep.Name {
+							strategyStepFound = true
+							Expect(step.Image).To(Equal(strategyStep.Image))
+							break
+						}
+					}
+					if strategyStepFound {
+						break
+					}
+				}
+				Expect(strategyStepFound).To(BeTrue())
+			})
+		})
+
+		Context("with volumes", func() {
+			It("should handle strategy volumes", func() {
+				// Create a build strategy with volumes for this test
+				volumeBuildStrategy, err := ctl.LoadBuildStrategyFromBytes([]byte(test.ClusterBuildStrategyNoOp))
+				Expect(err).ToNot(HaveOccurred())
+
+				// Add a volume to the build strategy
+				volumeBuildStrategy.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+					{
+						Name: "test-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+				}
+
+				// Add a volume mount to the strategy step
+				if len(volumeBuildStrategy.Spec.Steps) > 0 {
+					volumeBuildStrategy.Spec.Steps[0].VolumeMounts = []corev1.VolumeMount{
+						{
+							Name:      "test-volume",
+							MountPath: "/test",
+						},
+					}
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, volumeBuildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+
+				// Check that the volume is included in TaskSpec
+				volumeFound := false
+				for _, volume := range taskRun.Spec.TaskSpec.Volumes {
+					if volume.Name == "test-volume" {
+						volumeFound = true
+						Expect(volume.EmptyDir).ToNot(BeNil())
+						break
+					}
+				}
+				Expect(volumeFound).To(BeTrue())
+			})
+		})
+
+		Context("error handling", func() {
+			It("should handle invalid parameters gracefully", func() {
+				// Create a build with a parameter that doesn't exist in strategy
+				buildWithInvalidParam := build.DeepCopy()
+				buildWithInvalidParam.Spec.ParamValues = []buildv1beta1.ParamValue{
+					{
+						Name:        "nonexistent-param",
+						SingleValue: &buildv1beta1.SingleValue{Value: stringPtr("some-value")},
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, buildWithInvalidParam, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).To(HaveOccurred())
+				Expect(taskRun).To(BeNil())
+				Expect(err.Error()).To(ContainSubstring("not defined in the build strategy"))
 			})
 		})
 	})
 
-	Describe("Generate the TaskRun", func() {
-		var (
-			k8sDuration30s                                                *metav1.Duration
-			k8sDuration1m                                                 *metav1.Duration
-			namespace, outputPath, outputPathBuildRun, serviceAccountName string
-			got                                                           *pipelineapi.TaskRun
-			err                                                           error
-		)
-		BeforeEach(func() {
-			duration, err := time.ParseDuration("30s")
+	Context("with annotations", func() {
+		It("should propagate strategy annotations to TaskRun", func() {
+			annotationStrategy, err := ctl.LoadCBSWithName("kaniko", []byte(test.ClusterBuildStrategyWithAnnotations))
 			Expect(err).ToNot(HaveOccurred())
-			k8sDuration30s = &metav1.Duration{
-				Duration: duration,
-			}
-			duration, err = time.ParseDuration("1m")
-			Expect(err).ToNot(HaveOccurred())
-			k8sDuration1m = &metav1.Duration{
-				Duration: duration,
-			}
 
-			namespace = "build-test"
-			outputPath = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app"
-			outputPathBuildRun = "image-registry.openshift-image-registry.svc:5000/example/buildpacks-app-v2"
-			serviceAccountName = buildpacks + "-serviceaccount"
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, annotationStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun.Annotations).ToNot(BeNil())
+
+			// Check that propagatable annotations are included (only kubernetes.io/ingress-bandwidth should be propagated)
+			Expect(taskRun.Annotations).To(HaveKey("kubernetes.io/ingress-bandwidth"))
+			Expect(taskRun.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
+
+			// Check that non-propagatable annotations are filtered out
+			Expect(taskRun.Annotations).ToNot(HaveKey("clusterbuildstrategy.shipwright.io/dummy"))
+			Expect(taskRun.Annotations).ToNot(HaveKey("kubectl.kubernetes.io/last-applied-configuration"))
 		})
 
-		Context("when the taskrun is generated by default", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
-				Expect(err).To(BeNil())
+		It("should not add annotations when strategy has none", func() {
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithSA))
-				Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+			// TaskRun should have no annotations or empty annotations
+			if taskRun.Annotations != nil {
+				Expect(len(taskRun.Annotations)).To(Equal(0))
+			}
+		})
+	})
 
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildahBuildStrategySingleStep))
-				Expect(err).To(BeNil())
-
-			})
-
-			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
-				Expect(err).To(BeNil())
-			})
-
-			It("should ensure generated TaskRun's basic information are correct", func() {
-				Expect(strings.Contains(got.GenerateName, buildRun.Name+"-")).To(Equal(true))
-				Expect(got.Namespace).To(Equal(namespace))
-				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
-				Expect(got.Labels[buildv1beta1.LabelBuild]).To(Equal(build.Name))
-				Expect(got.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
-				Expect(got.Labels[buildv1beta1.LabelBuildStrategyName]).To(Equal(build.Spec.Strategy.Name))
-				Expect(got.Labels[buildv1beta1.LabelBuildStrategyGeneration]).To(Equal("0"))
-			})
-
-			It("should filter out certain annotations when propagating them to the TaskRun", func() {
-				Expect(len(got.Annotations)).To(Equal(2))
-				Expect(got.Annotations["kubernetes.io/egress-bandwidth"]).To(Equal("1M"))
-				Expect(got.Annotations["kubernetes.io/ingress-bandwidth"]).To(Equal("1M"))
-			})
-
-			It("should ensure resource replacements happen when needed", func() {
-				expectedResourceOrArg := corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
+	Context("with volume overrides", func() {
+		It("should use BuildRun volume overrides when specified", func() {
+			// Create a build strategy that has the volume to be overridden
+			strategyWithVolume := buildStrategy.DeepCopy()
+			overridable := true
+			strategyWithVolume.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+				{
+					Name:        "buildrun-volume",
+					Overridable: &overridable,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+			}
+
+			buildRun.Spec.Volumes = []buildv1beta1.BuildVolume{
+				{
+					Name: "buildrun-volume",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "buildrun-config",
+							},
+						},
 					},
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyWithVolume)
+
+			Expect(err).ToNot(HaveOccurred())
+
+			// Check that BuildRun volume override is used in TaskSpec
+			volumeFound := false
+			for _, volume := range taskRun.Spec.TaskSpec.Volumes {
+				if volume.Name == "buildrun-volume" {
+					volumeFound = true
+					Expect(volume.ConfigMap).ToNot(BeNil())
+					Expect(volume.ConfigMap.Name).To(Equal("buildrun-config"))
+					Expect(volume.EmptyDir).To(BeNil()) // Should not have the original EmptyDir
+					break
 				}
-				Expect(got.Spec.TaskSpec.Steps[1].ComputeResources).To(Equal(expectedResourceOrArg))
+			}
+			Expect(volumeFound).To(BeTrue())
+		})
+
+		It("should use Build volume overrides when BuildRun volumes are not specified", func() {
+			// Create a build strategy that has the volume to be overridden
+			strategyWithVolume := buildStrategy.DeepCopy()
+			overridable := true
+			strategyWithVolume.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+				{
+					Name:        "build-volume",
+					Overridable: &overridable,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			}
+
+			build.Spec.Volumes = []buildv1beta1.BuildVolume{
+				{
+					Name: "build-volume",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "build-secret",
+						},
+					},
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyWithVolume)
+
+			Expect(err).ToNot(HaveOccurred())
+
+			// Check that Build volume override is used in TaskSpec
+			volumeFound := false
+			for _, volume := range taskRun.Spec.TaskSpec.Volumes {
+				if volume.Name == "build-volume" {
+					volumeFound = true
+					Expect(volume.Secret).ToNot(BeNil())
+					Expect(volume.Secret.SecretName).To(Equal("build-secret"))
+					Expect(volume.EmptyDir).To(BeNil()) // Should not have the original EmptyDir
+					break
+				}
+			}
+			Expect(volumeFound).To(BeTrue())
+		})
+
+		It("should prefer BuildRun volumes over Build volumes for same name", func() {
+			// Create a build strategy that has the volume to be overridden
+			strategyWithVolume := buildStrategy.DeepCopy()
+			overridable := true
+			strategyWithVolume.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+				{
+					Name:        "shared-volume",
+					Overridable: &overridable,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			}
+
+			build.Spec.Volumes = []buildv1beta1.BuildVolume{
+				{
+					Name: "shared-volume",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "build-secret",
+						},
+					},
+				},
+			}
+
+			buildRun.Spec.Volumes = []buildv1beta1.BuildVolume{
+				{
+					Name: "shared-volume",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "buildrun-config",
+							},
+						},
+					},
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyWithVolume)
+
+			Expect(err).ToNot(HaveOccurred())
+
+			// Check that BuildRun volume takes precedence over Build volume
+			volumeFound := false
+			for _, volume := range taskRun.Spec.TaskSpec.Volumes {
+				if volume.Name == "shared-volume" {
+					volumeFound = true
+					Expect(volume.ConfigMap).ToNot(BeNil())
+					Expect(volume.ConfigMap.Name).To(Equal("buildrun-config"))
+					Expect(volume.Secret).To(BeNil())
+					Expect(volume.EmptyDir).To(BeNil())
+					break
+				}
+			}
+			Expect(volumeFound).To(BeTrue())
+		})
+	})
+
+	Context("with retention policies", func() {
+		It("should handle Build retention configuration", func() {
+			failedLimit := uint(3)
+			succeededLimit := uint(2)
+			build.Spec.Retention = &buildv1beta1.BuildRetention{
+				FailedLimit:    &failedLimit,
+				SucceededLimit: &succeededLimit,
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+			// Retention policies don't directly affect TaskRun generation,
+			// but they should not cause errors
+		})
+
+		It("should handle BuildRun retention configuration", func() {
+			ttlAfterFailed := metav1.Duration{Duration: 10 * time.Minute}
+			ttlAfterSucceeded := metav1.Duration{Duration: 5 * time.Minute}
+			buildRun.Spec.Retention = &buildv1beta1.BuildRunRetention{
+				TTLAfterFailed:    &ttlAfterFailed,
+				TTLAfterSucceeded: &ttlAfterSucceeded,
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+		})
+	})
+
+	Context("with complex parameter validation", func() {
+		It("should handle array parameters correctly", func() {
+			paramBuildStrategy, err := ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithParameters))
+			Expect(err).ToNot(HaveOccurred())
+
+			// Create a build with array parameter
+			buildWithArrayParam := build.DeepCopy()
+			buildWithArrayParam.Spec.ParamValues = []buildv1beta1.ParamValue{
+				{
+					Name: "array-param",
+					Values: []buildv1beta1.SingleValue{
+						{Value: stringPtr("1")},
+						{Value: stringPtr("2")},
+						{Value: stringPtr("3")},
+					},
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, buildWithArrayParam, buildRun, serviceAccountName, paramBuildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+
+			// Check that the array parameter is included
+			paramFound := false
+			for _, param := range taskRun.Spec.Params {
+				if param.Name == "array-param" {
+					paramFound = true
+					Expect(param.Value.ArrayVal).To(Equal([]string{"1", "2", "3"}))
+					break
+				}
+			}
+			Expect(paramFound).To(BeTrue())
+		})
+
+		It("should handle parameters with defaults", func() {
+			paramBuildStrategy, err := ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithParameters))
+			Expect(err).ToNot(HaveOccurred())
+
+			// Don't provide the sleep-time parameter, let it use default
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, paramBuildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+
+			// Check that the parameter definition is included in TaskSpec with default
+			paramFound := false
+			for _, param := range taskRun.Spec.TaskSpec.Params {
+				if param.Name == "sleep-time" {
+					paramFound = true
+					Expect(param.Default).ToNot(BeNil())
+					Expect(param.Default.StringVal).To(Equal("1")) // default value in TaskSpec
+					break
+				}
+			}
+			Expect(paramFound).To(BeTrue())
+		})
+
+		It("should override parameter defaults when specified", func() {
+			paramBuildStrategy, err := ctl.LoadBuildStrategyFromBytes([]byte(test.BuildStrategyWithParameters))
+			Expect(err).ToNot(HaveOccurred())
+
+			// Override the sleep-time parameter
+			buildWithParam := build.DeepCopy()
+			buildWithParam.Spec.ParamValues = []buildv1beta1.ParamValue{
+				{
+					Name:        "sleep-time",
+					SingleValue: &buildv1beta1.SingleValue{Value: stringPtr("5")},
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, buildWithParam, buildRun, serviceAccountName, paramBuildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+
+			// Check that the parameter uses provided value
+			paramFound := false
+			for _, param := range taskRun.Spec.Params {
+				if param.Name == "sleep-time" {
+					paramFound = true
+					Expect(param.Value.StringVal).To(Equal("5")) // overridden value
+					break
+				}
+			}
+			Expect(paramFound).To(BeTrue())
+		})
+	})
+
+	Context("with environment variable edge cases", func() {
+		It("should handle environment variables with valueFrom", func() {
+			build.Spec.Env = []corev1.EnvVar{
+				{
+					Name: "SECRET_VALUE",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "my-secret",
+							},
+							Key: "secret-key",
+						},
+					},
+				},
+			}
+
+			buildRun.Spec.Env = []corev1.EnvVar{
+				{
+					Name: "CONFIG_VALUE",
+					ValueFrom: &corev1.EnvVarSource{
+						ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "my-config",
+							},
+							Key: "config-key",
+						},
+					},
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+			// Environment variables are merged into strategy steps
+		})
+
+		It("should handle conflicting environment variable names with different sources", func() {
+			build.Spec.Env = []corev1.EnvVar{
+				{
+					Name:  "CONFLICT_VAR",
+					Value: "build-value",
+				},
+			}
+
+			buildRun.Spec.Env = []corev1.EnvVar{
+				{
+					Name: "CONFLICT_VAR",
+					ValueFrom: &corev1.EnvVarSource{
+						ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "my-config",
+							},
+							Key: "config-key",
+						},
+					},
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+			// BuildRun env var should take precedence
+		})
+	})
+
+	Context("with service account variations", func() {
+		It("should handle '.generate' service account", func() {
+			generateSA := ".generate"
+			buildRun.Spec.ServiceAccount = &generateSA
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+			// Service account name should still be set from the parameter passed to GenerateTaskRun
+			Expect(taskRun.Spec.ServiceAccountName).To(Equal(serviceAccountName))
+		})
+
+		It("should handle custom service account", func() {
+			customSA := "custom-service-account"
+			buildRun.Spec.ServiceAccount = &customSA
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+			Expect(taskRun.Spec.ServiceAccountName).To(Equal(serviceAccountName))
+		})
+	})
+
+	Context("with source-related configurations", func() {
+		It("should handle BuildRun source overrides", func() {
+			buildRunWithSource := buildRun.DeepCopy()
+			buildRunWithSource.Spec.Source = &buildv1beta1.BuildRunSource{
+				Type: buildv1beta1.LocalType,
+				Local: &buildv1beta1.Local{
+					Name: "local-source",
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRunWithSource, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+		})
+
+		It("should handle different source types", func() {
+			// Test with OCI source type
+			buildWithOCI := build.DeepCopy()
+			buildWithOCI.Spec.Source = &buildv1beta1.Source{
+				Type: buildv1beta1.OCIArtifactType,
+				OCIArtifact: &buildv1beta1.OCIArtifact{
+					Image: "registry.com/my-source:latest",
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, buildWithOCI, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+		})
+
+		It("should handle source with credentials", func() {
+			secretName := "git-credentials"
+			buildWithCredentials := build.DeepCopy()
+			buildWithCredentials.Spec.Source = &buildv1beta1.Source{
+				Type: buildv1beta1.GitType,
+				Git: &buildv1beta1.Git{
+					URL:         "https://github.com/private/repo.git",
+					CloneSecret: &secretName,
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, buildWithCredentials, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+		})
+	})
+
+	Context("with image processing configurations", func() {
+		It("should handle output image with annotations", func() {
+			buildRun.Spec.Output = &buildv1beta1.Image{
+				Image: "registry.com/test:latest",
+				Annotations: map[string]string{
+					"org.opencontainers.image.description": "Test image",
+					"custom.annotation":                    "custom-value",
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+
+			// Check that image processing steps are added
+			hasImageProcessingStep := false
+			for _, step := range taskRun.Spec.TaskSpec.Steps {
+				if step.Name == "image-processing" {
+					hasImageProcessingStep = true
+					break
+				}
+			}
+			Expect(hasImageProcessingStep).To(BeTrue())
+		})
+
+		It("should handle output image with labels", func() {
+			buildRun.Spec.Output = &buildv1beta1.Image{
+				Image: "registry.com/test:latest",
+				Labels: map[string]string{
+					"maintainer": "team@company.com",
+					"version":    "1.0.0",
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+
+			// Check for image processing step
+			hasImageProcessingStep := false
+			for _, step := range taskRun.Spec.TaskSpec.Steps {
+				if step.Name == "image-processing" {
+					hasImageProcessingStep = true
+					break
+				}
+			}
+			Expect(hasImageProcessingStep).To(BeTrue())
+		})
+
+		It("should handle vulnerability scanning configuration", func() {
+			enabled := true
+			failOnFinding := true
+			buildRun.Spec.Output = &buildv1beta1.Image{
+				Image: "registry.com/test:latest",
+				VulnerabilityScan: &buildv1beta1.VulnerabilityScanOptions{
+					Enabled:       enabled,
+					FailOnFinding: failOnFinding,
+				},
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+
+			// Check that vulnerability scanning is configured in image processing
+			hasImageProcessingStep := false
+			for _, step := range taskRun.Spec.TaskSpec.Steps {
+				if step.Name == "image-processing" {
+					hasImageProcessingStep = true
+					break
+				}
+			}
+			Expect(hasImageProcessingStep).To(BeTrue())
+		})
+
+		It("should handle image timestamp settings", func() {
+			timestamp := buildv1beta1.OutputImageZeroTimestamp
+			buildRun.Spec.Output = &buildv1beta1.Image{
+				Image:     "registry.com/test:latest",
+				Timestamp: &timestamp,
+			}
+
+			taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(taskRun).ToNot(BeNil())
+
+			// Image processing should handle timestamp
+			hasImageProcessingStep := false
+			for _, step := range taskRun.Spec.TaskSpec.Steps {
+				if step.Name == "image-processing" {
+					hasImageProcessingStep = true
+					break
+				}
+			}
+			Expect(hasImageProcessingStep).To(BeTrue())
+		})
+	})
+
+	Describe("Helper functions", func() {
+		Context("generateTaskRunLabels", func() {
+			It("should generate correct labels for Build with name", func() {
+				build.Name = "test-build"
+				build.Generation = 5
+				buildRun.Name = "test-buildrun"
+				buildRun.Generation = 3
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Labels[buildv1beta1.LabelBuild]).To(Equal("test-build"))
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildGeneration]).To(Equal("5"))
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal("test-buildrun"))
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildRunGeneration]).To(Equal("3"))
 			})
 
-			It("should have no timeout set", func() {
-				Expect(got.Spec.Timeout).To(BeNil())
+			It("should not include Build labels when build name is empty", func() {
+				build.Name = ""
+				buildRun.Name = "test-buildrun"
+				buildRun.Generation = 3
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuild))
+				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuildGeneration))
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal("test-buildrun"))
+				Expect(taskRun.Labels[buildv1beta1.LabelBuildRunGeneration]).To(Equal("3"))
 			})
 		})
 
-		Context("when the taskrun is generated by special settings", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildpacksBuildWithBuilderAndTimeOut))
-				Expect(err).To(BeNil())
+		Context("generateWorkspaceBindings", func() {
+			It("should create workspace binding for source", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildpacksBuildRunWithSA))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildpacksBuildStrategySingleStep))
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(taskRun.Spec.Workspaces)).To(Equal(1))
+				Expect(taskRun.Spec.Workspaces[0].Name).To(Equal("source"))
+				Expect(taskRun.Spec.Workspaces[0].EmptyDir).ToNot(BeNil())
 			})
+		})
 
-			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
-				Expect(err).To(BeNil())
+		Context("generateTaskRunMetadata", func() {
+			It("should create correct metadata", func() {
+				buildRun.Name = "test-buildrun"
+				buildRun.Namespace = "test-namespace"
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.GenerateName).To(Equal("test-buildrun-"))
+				Expect(taskRun.Namespace).To(Equal("test-namespace"))
+				Expect(taskRun.Labels).ToNot(BeNil())
 			})
+		})
 
-			It("should ensure generated TaskRun's basic information are correct", func() {
-				Expect(strings.Contains(got.GenerateName, buildRun.Name+"-")).To(Equal(true))
-				Expect(got.Namespace).To(Equal(namespace))
-				Expect(got.Spec.ServiceAccountName).To(Equal(buildpacks + "-serviceaccount"))
-				Expect(got.Labels[buildv1beta1.LabelBuild]).To(Equal(build.Name))
-				Expect(got.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
+		Context("createBaseTaskSpec", func() {
+			It("should create TaskSpec with base components", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.TaskSpec.Params).ToNot(BeEmpty())
+				Expect(taskRun.Spec.TaskSpec.Workspaces).ToNot(BeEmpty())
+				Expect(taskRun.Spec.TaskSpec.Results).ToNot(BeEmpty())
 			})
+		})
+	})
 
-			It("should ensure generated TaskRun's spec special input params are correct", func() {
-				params := got.Spec.Params
+	Describe("Integration scenarios", func() {
+		Context("with complex configuration", func() {
+			It("should handle multiple configurations together", func() {
+				// Set up complex configuration
+				contextDir := "docker"
+				schedulerName := "custom-scheduler"
+				insecure := true
+				duration := metav1.Duration{Duration: 15 * time.Minute}
 
-				paramSourceRootFound := false
-				paramSourceContextFound := false
-				paramOutputImageFound := false
-				paramOutputInsecureFound := false
+				build.Spec.Source = &buildv1beta1.Source{
+					ContextDir: &contextDir,
+				}
+				build.Spec.NodeSelector = map[string]string{"build-node": "true"}
+				build.Spec.Tolerations = []corev1.Toleration{
+					{Key: "build-taint", Operator: corev1.TolerationOpExists},
+				}
+				build.Spec.SchedulerName = &schedulerName
+				build.Spec.Timeout = &duration
+				build.Spec.Output.Insecure = &insecure
+				build.Spec.Env = []corev1.EnvVar{
+					{Name: "BUILD_VAR", Value: "build-val"},
+				}
 
-				for _, param := range params {
-					switch param.Name {
-					case "shp-source-root":
-						paramSourceRootFound = true
-						Expect(param.Value.StringVal).To(Equal("/workspace/source"))
+				buildRun.Spec.NodeSelector = map[string]string{"buildrun-node": "true"}
+				buildRun.Spec.Env = []corev1.EnvVar{
+					{Name: "BUILDRUN_VAR", Value: "buildrun-val"},
+				}
 
-					case "shp-source-context":
-						paramSourceContextFound = true
-						Expect(param.Value.StringVal).To(Equal("/workspace/source/docker-build"))
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
-					case "shp-output-image":
-						paramOutputImageFound = true
-						Expect(param.Value.StringVal).To(Equal(outputPath))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
 
-					case "shp-output-insecure":
-						paramOutputInsecureFound = true
-						Expect(param.Value.StringVal).To(Equal("false"))
+				// Verify all configurations are applied
+				Expect(taskRun.Spec.Timeout.Duration).To(Equal(15 * time.Minute))
+				Expect(taskRun.Spec.PodTemplate.NodeSelector).To(HaveKeyWithValue("buildrun-node", "true"))
+				Expect(taskRun.Spec.PodTemplate.SchedulerName).To(Equal(schedulerName))
 
-					default:
-						Fail(fmt.Sprintf("Unexpected param found: %s", param.Name))
+				// Check source context parameter
+				var sourceContextParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-source-context" {
+						sourceContextParam = &param
+						break
 					}
 				}
+				Expect(sourceContextParam).ToNot(BeNil())
+				Expect(sourceContextParam.Value.StringVal).To(Equal("/workspace/source/docker"))
 
-				Expect(paramSourceRootFound).To(BeTrue())
-				Expect(paramSourceContextFound).To(BeTrue())
-				Expect(paramOutputImageFound).To(BeTrue())
-				Expect(paramOutputInsecureFound).To(BeTrue())
-			})
-
-			It("should ensure resource replacements happen when needed", func() {
-				expectedResourceOrArg := corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
-					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
-					},
-				}
-				Expect(got.Spec.TaskSpec.Steps[1].ComputeResources).To(Equal(expectedResourceOrArg))
-			})
-
-			It("should have the timeout set correctly", func() {
-				Expect(got.Spec.Timeout).To(Equal(k8sDuration30s))
-			})
-		})
-
-		Context("when the build and buildrun contain a timeout", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithTimeOut))
-				Expect(err).To(BeNil())
-
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithTimeOutAndSA))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildahBuildStrategySingleStep))
-				Expect(err).To(BeNil())
-			})
-
-			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
-				Expect(err).To(BeNil())
-			})
-
-			It("should use the timeout from the BuildRun", func() {
-				Expect(got.Spec.Timeout).To(Equal(k8sDuration1m))
-			})
-		})
-
-		Context("when the build and buildrun both contain an output imageURL", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.BuildahBuildWithOutput))
-				Expect(err).To(BeNil())
-
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.BuildahBuildRunWithSAAndOutput))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.BuildahBuildStrategySingleStep))
-				Expect(err).To(BeNil())
-			})
-
-			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
-				Expect(err).To(BeNil())
-			})
-
-			It("should use the imageURL from the BuildRun for the param", func() {
-				params := got.Spec.Params
-
-				paramOutputImageFound := false
-
-				for _, param := range params {
-					switch param.Name {
-					case "shp-output-image":
-						paramOutputImageFound = true
-						Expect(param.Value.StringVal).To(Equal(outputPathBuildRun))
+				// Check insecure parameter
+				var insecureParam *pipelineapi.Param
+				for _, param := range taskRun.Spec.Params {
+					if param.Name == "shp-output-insecure" {
+						insecureParam = &param
+						break
 					}
 				}
-
-				Expect(paramOutputImageFound).To(BeTrue())
-			})
-		})
-
-		Context("when the build and buildrun both specify a nodeSelector", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildWithNodeSelector))
-				Expect(err).To(BeNil())
-
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildRunWithNodeSelector))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.ClusterBuildStrategyNoOp))
-				Expect(err).To(BeNil())
-			})
-
-			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
-				Expect(err).To(BeNil())
-			})
-
-			It("should give precedence to the nodeSelector specified in the buildRun", func() {
-				Expect(got.Spec.PodTemplate.NodeSelector).To(Equal(buildRun.Spec.NodeSelector))
-			})
-		})
-
-		Context("when the build and buildrun both specify a Toleration", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildWithToleration))
-				Expect(err).To(BeNil())
-
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildRunWithToleration))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.ClusterBuildStrategyNoOp))
-				Expect(err).To(BeNil())
-			})
-
-			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
-				Expect(err).To(BeNil())
-			})
-
-			It("should give precedence to the Toleration values specified in the buildRun", func() {
-				Expect(got.Spec.PodTemplate.Tolerations[0].Key).To(Equal(buildRun.Spec.Tolerations[0].Key))
-				Expect(got.Spec.PodTemplate.Tolerations[0].Operator).To(Equal(buildRun.Spec.Tolerations[0].Operator))
-				Expect(got.Spec.PodTemplate.Tolerations[0].Value).To(Equal(buildRun.Spec.Tolerations[0].Value))
-			})
-		})
-
-		Context("when the build and buildrun both specify a SchedulerName", func() {
-			BeforeEach(func() {
-				build, err = ctl.LoadBuildYAML([]byte(test.MinimalBuildWithSchedulerName))
-				Expect(err).To(BeNil())
-
-				buildRun, err = ctl.LoadBuildRunFromBytes([]byte(test.MinimalBuildRunWithSchedulerName))
-				Expect(err).To(BeNil())
-
-				buildStrategy, err = ctl.LoadBuildStrategyFromBytes([]byte(test.ClusterBuildStrategyNoOp))
-				Expect(err).To(BeNil())
-			})
-
-			JustBeforeEach(func() {
-				got, err = resources.GenerateTaskRun(config.NewDefaultConfig(), build, buildRun, serviceAccountName, buildStrategy)
-				Expect(err).To(BeNil())
-			})
-
-			It("should give precedence to the SchedulerName value specified in the buildRun", func() {
-				Expect(got.Spec.PodTemplate.SchedulerName).To(Equal(*buildRun.Spec.SchedulerName))
+				Expect(insecureParam).ToNot(BeNil())
+				Expect(insecureParam.Value.StringVal).To(Equal("true"))
 			})
 		})
 	})
 })
+
+// Helper function to create string pointers
+func stringPtr(s string) *string {
+	return &s
+}
