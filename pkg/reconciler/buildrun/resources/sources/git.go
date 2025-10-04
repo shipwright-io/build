@@ -115,6 +115,7 @@ func AppendGitStep(
 		)
 	}
 
+	AppendWriteableVolumes(taskSpec, &gitStep)
 	// append the git step
 	taskSpec.Steps = append(taskSpec.Steps, gitStep)
 }
