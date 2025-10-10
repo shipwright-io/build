@@ -66,7 +66,7 @@ func AppendBundleStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, oci *b
 	if oci.Prune != nil && *oci.Prune == build.PruneAfterPull {
 		bundleStep.Args = append(bundleStep.Args, "--prune")
 	}
-
+	SetupHomeAndTmpVolumes(taskSpec, &bundleStep)
 	taskSpec.Steps = append(taskSpec.Steps, bundleStep)
 }
 

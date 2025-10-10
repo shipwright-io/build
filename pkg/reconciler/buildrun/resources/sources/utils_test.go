@@ -83,4 +83,127 @@ var _ = Describe("Utils", func() {
 			Expect(len(taskSpec.Volumes)).To(Equal(1))
 		})
 	})
+
+	Context("SetupHomeAndTmpVolumes", func() {
+		var taskSpec *pipelineapi.TaskSpec
+		var targetStep *pipelineapi.Step
+
+		BeforeEach(func() {
+			taskSpec = &pipelineapi.TaskSpec{}
+			targetStep = &pipelineapi.Step{
+				Name: "test-step",
+				Env:  []corev1.EnvVar{},
+			}
+		})
+
+		It("creates volumes and mounts for HOME and TMPDIR", func() {
+			sources.SetupHomeAndTmpVolumes(taskSpec, targetStep)
+
+			// Verify that two volumes were created
+			Expect(len(taskSpec.Volumes)).To(Equal(2))
+
+			// Verify volume types are EmptyDir
+			Expect(taskSpec.Volumes[0].VolumeSource.EmptyDir).NotTo(BeNil())
+			Expect(taskSpec.Volumes[1].VolumeSource.EmptyDir).NotTo(BeNil())
+
+			// Verify volume names start with expected prefixes
+			Expect(taskSpec.Volumes[0].Name).To(ContainSubstring("shp-tmp-"))
+			Expect(taskSpec.Volumes[1].Name).To(ContainSubstring("shp-home-"))
+
+			// Verify volume mounts were added to the step
+			Expect(len(targetStep.VolumeMounts)).To(Equal(2))
+
+			// Verify mount paths
+			Expect(targetStep.VolumeMounts[0].MountPath).To(Equal("/shp-tmp"))
+			Expect(targetStep.VolumeMounts[1].MountPath).To(Equal("/shp-writable-home"))
+
+			// Verify environment variables were set
+			Expect(len(targetStep.Env)).To(Equal(2))
+			Expect(targetStep.Env[0].Name).To(Equal("TMPDIR"))
+			Expect(targetStep.Env[0].Value).To(Equal("/shp-tmp"))
+			Expect(targetStep.Env[1].Name).To(Equal("HOME"))
+			Expect(targetStep.Env[1].Value).To(Equal("/shp-writable-home"))
+		})
+
+		It("overrides existing environment variables", func() {
+			// Set up existing environment variables
+			targetStep.Env = []corev1.EnvVar{
+				{Name: "HOME", Value: "/original/home"},
+				{Name: "TMPDIR", Value: "/original/tmp"},
+				{Name: "OTHER_VAR", Value: "other-value"},
+			}
+
+			sources.SetupHomeAndTmpVolumes(taskSpec, targetStep)
+
+			// Verify that existing env vars were overridden
+			Expect(len(targetStep.Env)).To(Equal(3))
+			// The original order is preserved, but values are overridden
+			Expect(targetStep.Env[0].Name).To(Equal("HOME"))
+			Expect(targetStep.Env[0].Value).To(Equal("/shp-writable-home"))
+			Expect(targetStep.Env[1].Name).To(Equal("TMPDIR"))
+			Expect(targetStep.Env[1].Value).To(Equal("/shp-tmp"))
+			Expect(targetStep.Env[2].Name).To(Equal("OTHER_VAR"))
+			Expect(targetStep.Env[2].Value).To(Equal("other-value"))
+		})
+
+		It("does not duplicate volumes when called multiple times", func() {
+			// Call the function twice
+			sources.SetupHomeAndTmpVolumes(taskSpec, targetStep)
+			sources.SetupHomeAndTmpVolumes(taskSpec, targetStep)
+
+			// Should still only have 2 volumes
+			Expect(len(taskSpec.Volumes)).To(Equal(2))
+			Expect(len(targetStep.VolumeMounts)).To(Equal(2))
+		})
+
+		It("handles step names with special characters", func() {
+			targetStep.Name = "step-with.special@chars!"
+
+			sources.SetupHomeAndTmpVolumes(taskSpec, targetStep)
+
+			// Verify volumes were created despite special characters
+			Expect(len(taskSpec.Volumes)).To(Equal(2))
+			Expect(len(targetStep.VolumeMounts)).To(Equal(2))
+
+			// Verify environment variables are still set correctly
+			Expect(targetStep.Env[0].Name).To(Equal("TMPDIR"))
+			Expect(targetStep.Env[0].Value).To(Equal("/shp-tmp"))
+			Expect(targetStep.Env[1].Name).To(Equal("HOME"))
+			Expect(targetStep.Env[1].Value).To(Equal("/shp-writable-home"))
+		})
+
+		It("works with existing volumes in TaskSpec", func() {
+			// Add an existing volume
+			taskSpec.Volumes = []corev1.Volume{
+				{
+					Name: "existing-volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			}
+
+			sources.SetupHomeAndTmpVolumes(taskSpec, targetStep)
+
+			// Should have 3 volumes total (1 existing + 2 new)
+			Expect(len(taskSpec.Volumes)).To(Equal(3))
+			Expect(len(targetStep.VolumeMounts)).To(Equal(2))
+		})
+
+		It("works with existing volume mounts in step", func() {
+			// Add an existing volume mount
+			targetStep.VolumeMounts = []corev1.VolumeMount{
+				{
+					Name:      "existing-mount",
+					MountPath: "/existing/path",
+				},
+			}
+
+			sources.SetupHomeAndTmpVolumes(taskSpec, targetStep)
+
+			// Should have 3 volume mounts total (1 existing + 2 new)
+			Expect(len(targetStep.VolumeMounts)).To(Equal(3))
+			Expect(len(taskSpec.Volumes)).To(Equal(2))
+		})
+	})
 })

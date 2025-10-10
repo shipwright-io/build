@@ -35,5 +35,6 @@ func AppendLocalCopyStep(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, tim
 	if timeout != nil {
 		step.Args = append(step.Args, fmt.Sprintf("--timeout=%s", timeout.Duration.String()))
 	}
+	SetupHomeAndTmpVolumes(taskSpec, &step)
 	taskSpec.Steps = append(taskSpec.Steps, step)
 }
