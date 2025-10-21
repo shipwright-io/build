@@ -142,8 +142,9 @@ var _ = Describe("Config", func() {
 								"ALL",
 							},
 						},
-						RunAsUser:  nonRoot,
-						RunAsGroup: nonRoot,
+						RunAsUser:              nonRoot,
+						RunAsGroup:             nonRoot,
+						ReadOnlyRootFilesystem: ptr.To(true),
 					},
 				}))
 			})
@@ -234,7 +235,7 @@ var _ = Describe("Config", func() {
 				Expect(config.WaiterContainerTemplate).To(Equal(Step{
 					Image:   "myregistry/custom/image",
 					Command: []string{"/ko-app/waiter"},
-					Args:    []string{"start"},
+					Args:    []string{"start", "--lock-file=/shp-tmp/waiter.lock"},
 					Env:     []corev1.EnvVar{{Name: "HOME", Value: "/shared-home"}},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: ptr.To(false),
@@ -243,8 +244,9 @@ var _ = Describe("Config", func() {
 								"ALL",
 							},
 						},
-						RunAsUser:  nonRoot,
-						RunAsGroup: nonRoot,
+						RunAsUser:              nonRoot,
+						RunAsGroup:             nonRoot,
+						ReadOnlyRootFilesystem: ptr.To(true),
 					},
 				}))
 			})
