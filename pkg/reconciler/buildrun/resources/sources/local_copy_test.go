@@ -32,7 +32,7 @@ var _ = Describe("LocalCopy", func() {
 			Expect(len(taskSpec.Steps)).To(Equal(1))
 			Expect(taskSpec.Steps[0].Name).To(Equal(sources.WaiterContainerName))
 			Expect(taskSpec.Steps[0].Image).To(Equal(cfg.WaiterContainerTemplate.Image))
-			Expect(taskSpec.Steps[0].Args).To(Equal([]string{"start", "--timeout=1m0s"}))
+			Expect(taskSpec.Steps[0].Args).To(Equal([]string{"start", "--lock-file=/shp-tmp/waiter.lock", "--timeout=1m0s"}))
 		})
 	})
 })
