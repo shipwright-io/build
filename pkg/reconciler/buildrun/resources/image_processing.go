@@ -217,7 +217,7 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 			Value: "/trivy-cache-data",
 		})
 		// add the writeable volumes
-		sources.AppendWriteableVolumes(taskRun.Spec.TaskSpec, &imageProcessingStep)
+		sources.SetupHomeAndTmpVolumes(taskRun.Spec.TaskSpec, &imageProcessingStep)
 		// append the mutate step
 		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}
