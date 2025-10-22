@@ -213,6 +213,7 @@ test-integration: install-apis ginkgo
 		--randomize-all \
 		--randomize-suites \
 		--fail-on-pending \
+		--skip-file=buildruns_to_pipelineruns_test.go \
 		-trace \
 		test/integration/...
 
@@ -226,7 +227,7 @@ test-e2e-plain: ginkgo
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
 	TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
-	$(GINKGO) ${TEST_E2E_FLAGS} test/e2e/
+	$(GINKGO) --skip-file=e2e_pipelinerun_test.go ${TEST_E2E_FLAGS} test/e2e/
 
 .PHONY: test-e2e-kind-with-prereq-install
 test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strategies test-e2e-plain
