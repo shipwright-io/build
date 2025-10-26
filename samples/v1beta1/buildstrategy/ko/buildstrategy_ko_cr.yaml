@@ -25,14 +25,23 @@ spec:
       description: "Volume to contain the GOCACHE. Can be set to a persistent volume to optimize compilation performance for rebuilds."
       overridable: true
       emptyDir: {}
+    - name: ko-tmp
+      description: "Volume to contain temporary files for ko binary and other build artifacts."
+      overridable: true
+      emptyDir: {}
   steps:
     - name: build
       image: golang:$(params.go-version)
       imagePullPolicy: Always
       workingDir: $(params.shp-source-root)
+      securityContext:
+        readOnlyRootFilesystem: true
       volumeMounts:
         - mountPath: /gocache
           name: gocache
+          readOnly: false
+        - mountPath: /ko-tmp
+          name: ko-tmp
           readOnly: false
       env:
         - name: DOCKER_CONFIG
@@ -43,6 +52,10 @@ spec:
           value: $(params.go-flags)
         - name: GOCACHE
           value: /gocache
+        - name: GOTMPDIR
+          value: /ko-tmp
+        - name: TMPDIR
+          value: /ko-tmp
         - name: PARAM_OUTPUT_IMAGE
           value: $(params.shp-output-image)
         - name: PARAM_OUTPUT_DIRECTORY
@@ -80,7 +93,7 @@ spec:
           fi
 
           # Download ko to the temp directory
-          curl -f -s -L "https://github.com/ko-build/ko/releases/download/${KO_VERSION_WITH_V}/ko_${KO_VERSION_WITHOUT_V}_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz" | tar xzf - -C /tmp ko
+          curl -f -s -L "https://github.com/ko-build/ko/releases/download/${KO_VERSION_WITH_V}/ko_${KO_VERSION_WITHOUT_V}_$(uname)_$(uname -m | sed 's/aarch64/arm64/').tar.gz" | tar xzf - -C /ko-tmp ko
 
           # Determine the platform
           PLATFORM="${PARAM_TARGET_PLATFORM}"
@@ -90,7 +103,7 @@ spec:
 
           # Print version information
           go version
-          echo "ko version $(/tmp/ko version)"
+          echo "ko version $(/ko-tmp/ko version)"
 
           # Allow directory to be owned by other user which is normal for a volume-mounted directory.
           # This allows Go to run git commands to access repository metadata.
@@ -102,7 +115,7 @@ spec:
           export GOROOT="$(go env GOROOT)"
 
           pushd "${PARAM_SOURCE_CONTEXT}" > /dev/null
-            /tmp/ko build "${PARAM_PACKAGE_DIRECTORY}" --oci-layout-path="${PARAM_OUTPUT_DIRECTORY}" --platform="${PLATFORM}" --push=false
+            /ko-tmp/ko build "${PARAM_PACKAGE_DIRECTORY}" --oci-layout-path="${PARAM_OUTPUT_DIRECTORY}" --platform="${PLATFORM}" --push=false
           popd > /dev/null
       resources:
         limits:
