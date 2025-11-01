@@ -11,6 +11,17 @@ spec:
       workingDir: $(params.shp-source-root)
       securityContext:
         privileged: true
+        readOnlyRootFilesystem: true
+      volumeMounts:
+        - name: shp-buildah-container-storage
+          mountPath: /var/lib/containers # Read/Write location of container storage
+        - name: shp-tmp
+          mountPath: /shp-tmp
+        - name: shp-run
+          mountPath: /var/run
+      env:
+        - name: TMPDIR
+          value: /shp-tmp
       command:
         - /bin/bash
       args:
@@ -125,21 +136,21 @@ spec:
 
           echo "[INFO] Creating registries config file..."
           if [ "${registriesSearch}" != "" ]; then
-            cat <<EOF >>/tmp/registries.conf
+            cat <<EOF >>/shp-tmp/registries.conf
           [registries.search]
           registries = [${registriesSearch::-2}]
 
           EOF
           fi
           if [ "${registriesInsecure}" != "" ]; then
-            cat <<EOF >>/tmp/registries.conf
+            cat <<EOF >>/shp-tmp/registries.conf
           [registries.insecure]
           registries = [${registriesInsecure::-2}]
 
           EOF
           fi
           if [ "${registriesBlock}" != "" ]; then
-            cat <<EOF >>/tmp/registries.conf
+            cat <<EOF >>/shp-tmp/registries.conf
           [registries.block]
           registries = [${registriesBlock::-2}]
 
@@ -150,7 +161,7 @@ spec:
           echo "[INFO] Building image ${image}"
           buildah --storage-driver=$(params.storage-driver) \
             bud "${budArgs[@]}" \
-            --registries-conf=/tmp/registries.conf \
+            --registries-conf=/shp-tmp/registries.conf \
             --tag="${image}" \
             --file="${dockerfile}" \
             .
@@ -219,6 +230,13 @@ spec:
       description: "Sets the target stage to be built."
       type: string
       default: ""
+  volumes:
+    - name: shp-buildah-container-storage
+      emptyDir: {}
+    - name: shp-tmp
+      emptyDir: {}
+    - name: shp-run
+      emptyDir: {}
   securityContext:
     runAsUser: 0
     runAsGroup: 0
