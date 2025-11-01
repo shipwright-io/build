@@ -190,8 +190,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -218,8 +219,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
@@ -244,6 +246,7 @@ func NewDefaultConfig() *Config {
 				AllowPrivilegeEscalation: ptr.To(false),
 				RunAsUser:                root,
 				RunAsGroup:               root,
+				ReadOnlyRootFilesystem:   ptr.To(true),
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"DAC_OVERRIDE",
@@ -262,6 +265,7 @@ func NewDefaultConfig() *Config {
 			},
 			Args: []string{
 				"start",
+				"--lock-file=/shp-tmp/waiter.lock", // Sets lock file path to the generated tmp volume to prevent it from using its own filesystem.
 			},
 			// This directory is created in the base image as writable for everybody
 			Env: []corev1.EnvVar{
@@ -277,8 +281,9 @@ func NewDefaultConfig() *Config {
 						"ALL",
 					},
 				},
-				RunAsUser:  nonRoot,
-				RunAsGroup: nonRoot,
+				RunAsUser:              nonRoot,
+				RunAsGroup:             nonRoot,
+				ReadOnlyRootFilesystem: ptr.To(true),
 			},
 		},
 
