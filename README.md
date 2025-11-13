@@ -9,7 +9,8 @@ SPDX-License-Identifier: Apache-2.0
     <a alt="GoReport" href="https://goreportcard.com/report/github.com/shipwright-io/build"><img src="https://goreportcard.com/badge/github.com/shipwright-io/build"></a>
     <a href="https://github.com/shipwright-io/build/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/shipwright-io/build"></a>
     <a href="https://pkg.go.dev/mod/github.com/shipwright-io/build"><img src="https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white"></a>
-    <a href="https://bestpractices.coreinfrastructure.org/projects/5315"><img src="https://bestpractices.coreinfrastructure.org/projects/5315/badge"></a>
+    <a href="https://bestpractices.dev/projects/5315"><img src="https://bestpractices.dev/projects/5315/badge" alt="openssf best practices badge"></a>
+    <img src="https://api.scorecard.dev/projects/github.com/shipwright-io/build/badge" alt="openssf scorecard"/>
 </p>
 
 <picture>
