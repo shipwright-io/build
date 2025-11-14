@@ -495,7 +495,7 @@ spec:
               # using head because the data could be multiline
               id="$(echo "${a}" | head -1 | sed 's/=.*//')"
 
-              # This is hacky, we remove the suffix ${id}= from all lines of the data.
+              # This is hacky, we remove the prefix ${id}= from all lines of the data.
               # If the data would be multiple lines and a line would start with ${id}=
               # then we would remove it. We could force users to give us the secret
               # base64 encoded. But ultimately, the best solution might be if the user
