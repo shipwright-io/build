@@ -222,8 +222,8 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 
 | Dependency                           | Supported versions           |
 |--------------------------------------|------------------------------|
-| [Kubernetes](https://kubernetes.io/) | v1.31.\*, v1.32.\*, v1.33.\* |
-| [Tekton](https://tekton.dev)         | v0.65.\*, v0.68.\*, v1.0.\*, v1.3.\* |
+| [Kubernetes](https://kubernetes.io/) | v1.32.\*, v1.33.\*, v1.34.\*|
+| [Tekton](https://tekton.dev)         | v0.68.\*, v1.0.\*, v1.3.\*, v1.6.\*|
 
 ### Platform support
 
