@@ -79,6 +79,7 @@ var _ = Describe("Git Resource", func() {
 	}
 
 	var filecontent = func(path string) string {
+		// #nosec: G304 fine in tests
 		data, err := os.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
@@ -509,6 +510,7 @@ var _ = Describe("Git Resource", func() {
 						lfsFile := filepath.Join(target, "assets", "shipwright-logo-lightbg-512.png")
 						Expect(lfsFile).To(BeAnExistingFile())
 
+						// #nosec: G304 fine in tests
 						data, err := os.ReadFile(lfsFile)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(http.DetectContentType(data)).To(Equal("image/png"))
@@ -524,14 +526,14 @@ var _ = Describe("Git Resource", func() {
 				git_config_nosystem := os.Getenv("GIT_CONFIG_NOSYSTEM")
 
 				// unset all pre-existing git configurations to avoid credential helpers and authentication
-				os.Setenv("GIT_CONFIG_NOSYSTEM", "1")
-				os.Setenv("GIT_CONFIG", "/dev/null")
-				os.Setenv("GIT_CONFIG_GLOBAL", "/dev/null")
+				Expect(os.Setenv("GIT_CONFIG_NOSYSTEM", "1")).To(Succeed())
+				Expect(os.Setenv("GIT_CONFIG", "/dev/null")).To(Succeed())
+				Expect(os.Setenv("GIT_CONFIG_GLOBAL", "/dev/null")).To(Succeed())
 
 				DeferCleanup(func() {
-					os.Setenv("GIT_CONFIG_NOSYSTEM", git_config_nosystem)
-					os.Setenv("GIT_CONFIG", git_config)
-					os.Setenv("GIT_CONFIG_GLOBAL", git_global_config)
+					Expect(os.Setenv("GIT_CONFIG_NOSYSTEM", git_config_nosystem)).To(Succeed())
+					Expect(os.Setenv("GIT_CONFIG", git_config)).To(Succeed())
+					Expect(os.Setenv("GIT_CONFIG_GLOBAL", git_global_config)).To(Succeed())
 				})
 			})
 
