@@ -31,6 +31,7 @@ var _ = BeforeSuite(func() {
 var _ = Describe("Waiter", func() {
 	// run creates a exec.Command instance using the arguments informed.
 	var run = func(args ...string) *gexec.Session {
+		// #nosec G204 necessary for the test
 		cmd := exec.Command(executable)
 		cmd.Args = append(cmd.Args, args...)
 		stdin := &bytes.Buffer{}

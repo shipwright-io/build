@@ -91,7 +91,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 		// ensure resources are added to the Scheme
 		// via the manager and initialize the fake Manager
-		apis.AddToScheme(scheme.Scheme)
+		Expect(apis.AddToScheme(scheme.Scheme)).To(Succeed())
 		manager = &fakes.FakeManager{}
 		manager.GetSchemeReturns(scheme.Scheme)
 
