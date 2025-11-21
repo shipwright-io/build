@@ -42,7 +42,7 @@ var _ = Describe("Using One-Off Builds", Label("OneOffBuild"), func() {
 		}
 
 		if buildRun != nil {
-			testBuild.DeleteBR(buildRun.Name)
+			Expect(testBuild.DeleteBR(buildRun.Name)).To(Succeed())
 			buildRun = nil
 		}
 	})

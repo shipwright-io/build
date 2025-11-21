@@ -1,23 +1,25 @@
+version: "2"
+
 linters:
-  enable:
-    - ineffassign
-    - revive
-    - gosec
-    - govet
-    - misspell
-    - staticcheck
   disable:
     - errcheck
+  enable:
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - unused
 
-linters-settings:
-  gosec:
-    excludes:
-      - G101 # Look for hard coded credentials
-      - G305 # File traversal when extracting zip/tar archive
-      - G306 # Poor file permissions used when writing to a new file
+  exclusions:
+    rules:
+      - path: test
+        linters:
+          - revive
 
-issues:
-  exclude-rules:
-    - path: test
-      linters:
-        - revive
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true

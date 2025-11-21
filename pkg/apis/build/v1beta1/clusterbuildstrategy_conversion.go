@@ -23,7 +23,7 @@ func (src *ClusterBuildStrategy) ConvertTo(ctx context.Context, obj *unstructure
 
 	var bs v1alpha1.ClusterBuildStrategy
 	bs.TypeMeta = src.TypeMeta
-	bs.TypeMeta.APIVersion = alphaGroupVersion
+	bs.APIVersion = alphaGroupVersion
 	bs.ObjectMeta = src.ObjectMeta
 
 	src.Spec.ConvertTo(&bs.Spec)
@@ -51,7 +51,7 @@ func (src *ClusterBuildStrategy) ConvertFrom(ctx context.Context, obj *unstructu
 
 	src.ObjectMeta = cbs.ObjectMeta
 	src.TypeMeta = cbs.TypeMeta
-	src.TypeMeta.APIVersion = betaGroupVersion
+	src.APIVersion = betaGroupVersion
 
 	src.Spec.ConvertFrom(cbs.Spec)
 

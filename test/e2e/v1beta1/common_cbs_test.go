@@ -27,7 +27,7 @@ func NewClusterBuildStrategyPrototype() *clusterBuildStrategyPrototype {
 }
 
 func (c *clusterBuildStrategyPrototype) Name(name string) *clusterBuildStrategyPrototype {
-	c.clusterBuildStrategy.ObjectMeta.Name = name
+	c.clusterBuildStrategy.Name = name
 	return c
 }
 

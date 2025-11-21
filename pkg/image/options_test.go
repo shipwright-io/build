@@ -29,8 +29,8 @@ var _ = Describe("GetOptions", func() {
 
 	withDockerConfigJSON := func(hostname string, username string, password string, f func(dockerConfigJSONPath string)) {
 		withTempFile("docker.config", func(tempFile string) {
-			err := os.WriteFile(tempFile, ([]byte(fmt.Sprintf("{\"auths\":{%q:{\"username\":%q,\"password\":%q}}}", hostname, username, password))), 0644)
-			Expect(err).ToNot(HaveOccurred())
+			// #nosec G306 test file
+			Expect(os.WriteFile(tempFile, ([]byte(fmt.Sprintf("{\"auths\":{%q:{\"username\":%q,\"password\":%q}}}", hostname, username, password))), 0644)).To(Succeed())
 
 			f(tempFile)
 		})

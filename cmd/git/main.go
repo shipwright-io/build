@@ -191,6 +191,7 @@ func runGitClone(ctx context.Context) error {
 			return err
 		}
 
+		// #nosec G306 the file must be readable by build steps that potentially run as a different user
 		if err := os.WriteFile(flagValues.resultFileCommitSha, []byte(output), 0644); err != nil {
 			return err
 		}
@@ -202,6 +203,7 @@ func runGitClone(ctx context.Context) error {
 			return err
 		}
 
+		// #nosec G306 the file must be readable by build steps that potentially run as a different user
 		if err = os.WriteFile(flagValues.resultFileCommitAuthor, []byte(output), 0644); err != nil {
 			return err
 		}
@@ -213,6 +215,7 @@ func runGitClone(ctx context.Context) error {
 			return err
 		}
 
+		// #nosec G306 the file must be readable by build steps that potentially run as a different user
 		if err = os.WriteFile(flagValues.resultFileSourceTimestamp, []byte(output), 0644); err != nil {
 			return err
 		}
@@ -224,6 +227,7 @@ func runGitClone(ctx context.Context) error {
 			return err
 		}
 
+		// #nosec G306 the file must be readable by build steps that potentially run as a different user
 		if err := os.WriteFile(flagValues.resultFileBranchName, []byte(output), 0644); err != nil {
 			return err
 		}
@@ -252,6 +256,7 @@ func checkEnvironment(ctx context.Context) error {
 		if flagValues.verbose {
 			log.Printf("Debug: %s %s\n", path, check.versionArg)
 		}
+		// #nosec G204 in the default container configuration, it is impossible to inject other binaries, as such it is safe that we have no hard-coded path
 		out, err := exec.CommandContext(ctx, path, check.versionArg).CombinedOutput()
 		if err != nil {
 			log.Printf("Error: %s: %s\n", check.toolName, strings.TrimRight(string(out), "\n"))
@@ -330,6 +335,7 @@ func clone(ctx context.Context) error {
 
 			defer os.Remove(sshPrivateKeyFile.Name())
 
+			// #nosec G703 this is a simple file in the temporary directory, unclear why gosec sees a path traversal here
 			if err := os.WriteFile(sshPrivateKeyFile.Name(), data, 0400); err != nil {
 				return err
 			}
@@ -414,6 +420,7 @@ func clone(ctx context.Context) error {
 
 			defer os.Remove(credHelperFile.Name())
 
+			// #nosec G703 this is a simple file in the temporary directory, unclear why gosec sees a path traversal here
 			if err := os.WriteFile(credHelperFile.Name(), []byte(repoURL.String()), 0400); err != nil {
 				return err
 			}
@@ -474,13 +481,18 @@ func git(ctx context.Context, args ...string) (string, error) {
 		fmt.Sprintf("safe.directory=%s", flagValues.target),
 	}
 	fullArgs = append(fullArgs, args...)
+	// #nosec G204 arguments are well-defined by the code
+	// #nosec G702 arguments are well-defined by the code
 	cmd := exec.CommandContext(ctx, "git", fullArgs...)
 
 	// Print the command to be executed, but replace the URL with a safe version
+	// #nosec G706
 	log.Print(strings.ReplaceAll(cmd.String(), flagValues.url, displayURL))
 
 	// Make sure that the spawned process does not try to prompt for infos
-	os.Setenv("GIT_TERMINAL_PROMPT", "0")
+	if err := os.Setenv("GIT_TERMINAL_PROMPT", "0"); err != nil {
+		return "", err
+	}
 	cmd.Stdin = nil
 
 	out, err := cmd.CombinedOutput()
@@ -583,10 +595,12 @@ func writeErrorResults(failure *shpgit.ErrorResult) (err error) {
 		messageToWrite = messageToWrite[:messageLengthThreshold-3] + "..."
 	}
 
+	// #nosec G306 the file must be readable by build steps that potentially run as a different user
 	if err = os.WriteFile(flagValues.resultFileErrorMessage, []byte(strings.TrimSpace(messageToWrite)), 0666); err != nil {
 		return err
 	}
 
+	// #nosec G306 the file must be readable by build steps that potentially run as a different user
 	return os.WriteFile(flagValues.resultFileErrorReason, []byte(failure.Reason.String()), 0666)
 }
 

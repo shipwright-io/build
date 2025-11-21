@@ -32,11 +32,14 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 	var alphaBuild v1alpha1.Build
 
 	alphaBuild.TypeMeta = src.TypeMeta
-	alphaBuild.TypeMeta.APIVersion = alphaGroupVersion
+	alphaBuild.APIVersion = alphaGroupVersion
 
 	alphaBuild.ObjectMeta = src.ObjectMeta
 
-	src.Spec.ConvertTo(&alphaBuild.Spec)
+	if err := src.Spec.ConvertTo(&alphaBuild.Spec); err != nil {
+		ctxlog.Error(ctx, err, "failed to convert object")
+		return err
+	}
 
 	alphaBuild.Status = v1alpha1.BuildStatus{
 		Registered: src.Status.Registered,
@@ -47,16 +50,17 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 	// convert annotation-controlled features
 	if src.Spec.Retention != nil && src.Spec.Retention.AtBuildDeletion != nil {
 		// We must create a new Map as otherwise the addition is not kept
-		alphaBuild.ObjectMeta.Annotations = map[string]string{}
+		alphaBuild.Annotations = map[string]string{}
 		for k, v := range src.Annotations {
-			alphaBuild.ObjectMeta.Annotations[k] = v
+			alphaBuild.Annotations[k] = v
 		}
-		alphaBuild.ObjectMeta.Annotations[v1alpha1.AnnotationBuildRunDeletion] = strconv.FormatBool(*src.Spec.Retention.AtBuildDeletion)
+		alphaBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion] = strconv.FormatBool(*src.Spec.Retention.AtBuildDeletion)
 	}
 
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&alphaBuild)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed structuring the newObject")
+		return err
 	}
 	obj.Object = mapito
 
@@ -73,15 +77,19 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &alphaBuild)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed unstructuring the convertedObject")
+		return err
 	}
 
 	ctxlog.Info(ctx, "converting Build from alpha to beta", "namespace", alphaBuild.Namespace, "name", alphaBuild.Name)
 
 	src.ObjectMeta = alphaBuild.ObjectMeta
 	src.TypeMeta = alphaBuild.TypeMeta
-	src.TypeMeta.APIVersion = betaGroupVersion
+	src.APIVersion = betaGroupVersion
 
-	src.Spec.ConvertFrom(&alphaBuild.Spec)
+	if err := src.Spec.ConvertFrom(&alphaBuild.Spec); err != nil {
+		ctxlog.Error(ctx, err, "failed to convert object")
+		return err
+	}
 
 	// convert annotation-controlled features
 	if value, set := alphaBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]; set {
@@ -89,7 +97,7 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 			src.Spec.Retention = &BuildRetention{}
 		}
 		src.Spec.Retention.AtBuildDeletion = ptr.To(value == "true")
-		delete(src.ObjectMeta.Annotations, v1alpha1.AnnotationBuildRunDeletion)
+		delete(src.Annotations, v1alpha1.AnnotationBuildRunDeletion)
 	}
 
 	src.Status = BuildStatus{
@@ -265,13 +273,13 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 	bs.ParamValues = nil
 	for _, p := range dest.ParamValues {
 		if p.Name == "dockerfile" && p.SingleValue != nil {
-			bs.Dockerfile = p.SingleValue.Value
+			bs.Dockerfile = p.Value
 			continue
 		}
 
 		if p.Name == "builder-image" && p.SingleValue != nil {
 			bs.Builder = &v1alpha1.Image{
-				Image: *p.SingleValue.Value,
+				Image: *p.Value,
 			}
 			continue
 		}
@@ -326,7 +334,7 @@ func (dest *BuildSpec) ConvertTo(bs *v1alpha1.BuildSpec) error {
 
 func (p ParamValue) convertToAlpha(dest *v1alpha1.ParamValue) {
 
-	if p.SingleValue != nil && p.SingleValue.Value != nil {
+	if p.SingleValue != nil && p.Value != nil {
 		dest.SingleValue = &v1alpha1.SingleValue{}
 		dest.Value = p.Value
 	}
@@ -371,7 +379,7 @@ func (p TriggerWhen) convertToAlpha(dest *v1alpha1.TriggerWhen) {
 
 func convertBetaParamValue(orig v1alpha1.ParamValue) ParamValue {
 	p := ParamValue{}
-	if orig.SingleValue != nil && orig.SingleValue.Value != nil {
+	if orig.SingleValue != nil && orig.Value != nil {
 		p.SingleValue = &SingleValue{}
 		p.Value = orig.Value
 	}

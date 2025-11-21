@@ -44,7 +44,7 @@ func TaskSpecVolumes(
 			// to errors
 			if !readOnly && isReadOnlyVolume(&v) {
 				return nil,
-					fmt.Errorf("Volume Mount %q must be read only", v.Name)
+					fmt.Errorf("volume mount %q must be read only", v.Name)
 			}
 		}
 
@@ -60,10 +60,10 @@ func TaskSpecVolumes(
 }
 
 func isReadOnlyVolume(strategyVolume *buildv1beta1.BuildStrategyVolume) bool {
-	return strategyVolume.VolumeSource.ConfigMap != nil ||
-		strategyVolume.VolumeSource.Secret != nil ||
-		strategyVolume.VolumeSource.DownwardAPI != nil ||
-		strategyVolume.VolumeSource.Projected != nil
+	return strategyVolume.ConfigMap != nil ||
+		strategyVolume.Secret != nil ||
+		strategyVolume.DownwardAPI != nil ||
+		strategyVolume.Projected != nil
 }
 
 // MergeBuildVolumes merges Build Volumes from one list into the other. It only allows to merge those that have property
@@ -90,14 +90,14 @@ func MergeBuildVolumes(into []buildv1beta1.BuildStrategyVolume, from []buildv1be
 	for _, merger := range from {
 		original, ok := mergeMap[merger.Name]
 		if !ok {
-			errors = append(errors, fmt.Errorf("Build Volume %q is not found in the BuildStrategy", merger.Name))
+			errors = append(errors, fmt.Errorf("build volume %q is not found in the BuildStrategy", merger.Name))
 			continue
 		}
 
 		// in case overridable is nil OR false (default is considered false)
 		// then return error, otherwise means it is not nil AND true
 		if original.Overridable == nil || !*original.Overridable {
-			errors = append(errors, fmt.Errorf("Cannot override BuildVolume %q", original.Name))
+			errors = append(errors, fmt.Errorf("cannot override build volume %q", original.Name))
 			continue
 		}
 

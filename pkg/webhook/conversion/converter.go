@@ -43,42 +43,60 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 		switch toVersion {
 
 		case alphaGroupVersion:
-			if convertedObject.Object[KIND] == buildKind {
+			switch convertedObject.Object[KIND] {
+			case buildKind:
 				unstructured := convertedObject.UnstructuredContent()
 				var build v1beta1.Build
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &build)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the build convertedObject")
+					return nil, statusErrorFromError(err)
 				}
-				build.ConvertTo(ctx, convertedObject)
+				if err = build.ConvertTo(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
 
-			} else if convertedObject.Object[KIND] == buildRunKind {
+			case buildRunKind:
 				unstructured := convertedObject.UnstructuredContent()
 				var buildRun v1beta1.BuildRun
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &buildRun)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the buildRun convertedObject")
+					return nil, statusErrorFromError(err)
 				}
-				buildRun.ConvertTo(ctx, convertedObject)
+				if err = buildRun.ConvertTo(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
 
-			} else if convertedObject.Object[KIND] == buildStrategyKind {
+			case buildStrategyKind:
 				unstructured := convertedObject.UnstructuredContent()
 				var buildStrategy v1beta1.BuildStrategy
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &buildStrategy)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the buildStrategy convertedObject")
+					return nil, statusErrorFromError(err)
 				}
-				buildStrategy.ConvertTo(ctx, convertedObject)
+				if err = buildStrategy.ConvertTo(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
 
-			} else if convertedObject.Object[KIND] == clusterBuildStrategyKind {
+			case clusterBuildStrategyKind:
 				unstructured := convertedObject.UnstructuredContent()
 				var clusterBuildStrategy v1beta1.ClusterBuildStrategy
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &clusterBuildStrategy)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the clusterBuildStrategy convertedObject")
+					return nil, statusErrorFromError(err)
 				}
-				clusterBuildStrategy.ConvertTo(ctx, convertedObject)
-			} else {
+				if err = clusterBuildStrategy.ConvertTo(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
+
+			default:
 				return nil, statusErrorWithMessage("unsupported Kind")
 			}
 		default:
@@ -87,51 +105,70 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 	case alphaGroupVersion:
 		switch toVersion {
 		case betaGroupVersion:
-			if convertedObject.Object[KIND] == buildKind {
-
+			switch convertedObject.Object[KIND] {
+			case buildKind:
 				var buildBeta v1beta1.Build
 
-				buildBeta.ConvertFrom(ctx, convertedObject)
+				if err := buildBeta.ConvertFrom(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
 
 				mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&buildBeta)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed structuring the newObject")
+					return nil, statusErrorFromError(err)
 				}
 				convertedObject.Object = mapito
 
-			} else if convertedObject.Object[KIND] == buildRunKind {
+			case buildRunKind:
 				var buildRunBeta v1beta1.BuildRun
 
-				buildRunBeta.ConvertFrom(ctx, convertedObject)
+				if err := buildRunBeta.ConvertFrom(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
 
 				mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&buildRunBeta)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed structuring the newObject")
+					return nil, statusErrorFromError(err)
 				}
 				convertedObject.Object = mapito
-			} else if convertedObject.Object[KIND] == buildStrategyKind {
+
+			case buildStrategyKind:
 				var buildStrategyBeta v1beta1.BuildStrategy
 
-				buildStrategyBeta.ConvertFrom(ctx, convertedObject)
+				if err := buildStrategyBeta.ConvertFrom(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
 
 				mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&buildStrategyBeta)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed structuring the newObject")
+					return nil, statusErrorFromError(err)
 				}
 				convertedObject.Object = mapito
 
-			} else if convertedObject.Object[KIND] == clusterBuildStrategyKind {
+			case clusterBuildStrategyKind:
 				var clusterBuildStrategyBeta v1beta1.ClusterBuildStrategy
 
-				clusterBuildStrategyBeta.ConvertFrom(ctx, convertedObject)
+				if err := clusterBuildStrategyBeta.ConvertFrom(ctx, convertedObject); err != nil {
+					ctxlog.Error(ctx, err, "failed to convert object")
+					return nil, statusErrorFromError(err)
+				}
 
 				mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&clusterBuildStrategyBeta)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed structuring the newObject")
+					return nil, statusErrorFromError(err)
 				}
 				convertedObject.Object = mapito
-			} else {
+
+			default:
 				return nil, statusErrorWithMessage("unsupported Kind")
+
 			}
 		default:
 			return nil, statusErrorWithMessage("unexpected conversion version to %q", toVersion)
@@ -146,5 +183,13 @@ func statusErrorWithMessage(msg string, params ...interface{}) metav1.Status {
 	return metav1.Status{
 		Message: fmt.Sprintf(msg, params...),
 		Status:  metav1.StatusFailure,
+	}
+}
+
+func statusErrorFromError(err error) metav1.Status {
+	return metav1.Status{
+		Status:  metav1.StatusFailure,
+		Reason:  metav1.StatusReasonInternalError,
+		Message: fmt.Sprintf("unexpected error: %v", err),
 	}
 }

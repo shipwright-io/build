@@ -390,7 +390,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				buildRun.Namespace,
 				buildRun.Spec.BuildName(),
 				buildRun.Name,
-				imageBuildRunner.GetCreationTimestamp().Time.Sub(buildRun.CreationTimestamp.Time),
+				imageBuildRunner.GetCreationTimestamp().Sub(buildRun.CreationTimestamp.Time),
 			)
 		} else {
 			return reconcile.Result{}, buildRunnerErr
@@ -477,7 +477,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					buildRun.Namespace,
 					buildRun.Spec.BuildName(),
 					buildRun.Name,
-					buildRun.Status.StartTime.Time.Sub(buildRun.CreationTimestamp.Time),
+					buildRun.Status.StartTime.Sub(buildRun.CreationTimestamp.Time),
 				)
 			}
 
@@ -490,7 +490,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					buildRun.Namespace,
 					buildRun.Spec.BuildName(),
 					buildRun.Name,
-					buildRun.Status.CompletionTime.Time.Sub(buildRun.CreationTimestamp.Time),
+					buildRun.Status.CompletionTime.Sub(buildRun.CreationTimestamp.Time),
 				)
 
 				// Look for the pod created by the executor
@@ -530,7 +530,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 							buildRun.Namespace,
 							buildRun.Spec.BuildName(),
 							buildRun.Name,
-							pod.CreationTimestamp.Time.Sub(buildRunner.GetCreationTimestamp().Time),
+							pod.CreationTimestamp.Sub(buildRunner.GetCreationTimestamp().Time),
 						)
 					}
 				}

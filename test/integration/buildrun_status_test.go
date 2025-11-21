@@ -32,8 +32,8 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 		})
 
 		AfterEach(func() {
-			tb.DeleteBR(buildRunName)
-			tb.DeleteClusterBuildStrategy(strategyName)
+			Expect(tb.DeleteBR(buildRunName)).To(Succeed())
+			Expect(tb.DeleteClusterBuildStrategy(strategyName)).To(Succeed())
 		})
 
 		It("should have the correct source timestamp for Git sources", func() {

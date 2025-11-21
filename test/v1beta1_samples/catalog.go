@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"knative.dev/pkg/apis"
 	knativev1 "knative.dev/pkg/apis/duck/v1"
@@ -263,9 +263,9 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReas
 	return func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 		switch object := object.(type) {
 		case *build.Build:
-			Expect(*object.Status.Registered).To(Equal(status))
-			Expect(*object.Status.Reason).To(Equal(reason))
-			Expect(*object.Status.Message).To(Equal(message))
+			gomega.Expect(*object.Status.Registered).To(gomega.Equal(status))
+			gomega.Expect(*object.Status.Reason).To(gomega.Equal(reason))
+			gomega.Expect(*object.Status.Message).To(gomega.Equal(message))
 		}
 		return nil
 	}
@@ -277,11 +277,11 @@ func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName str
 	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
-			Expect(object.OwnerReferences[0].Kind).To(Equal(ownerKind))
-			Expect(object.OwnerReferences[0].Name).To(Equal(ownerName))
-			Expect(object.OwnerReferences[0].Controller).To(Equal(isOwnerController))
-			Expect(object.OwnerReferences[0].BlockOwnerDeletion).To(Equal(blockOwnerDeletion))
-			Expect(len(object.OwnerReferences)).ToNot(Equal(0))
+			gomega.Expect(object.OwnerReferences[0].Kind).To(gomega.Equal(ownerKind))
+			gomega.Expect(object.OwnerReferences[0].Name).To(gomega.Equal(ownerName))
+			gomega.Expect(object.OwnerReferences[0].Controller).To(gomega.Equal(isOwnerController))
+			gomega.Expect(object.OwnerReferences[0].BlockOwnerDeletion).To(gomega.Equal(blockOwnerDeletion))
+			gomega.Expect(len(object.OwnerReferences)).ToNot(gomega.Equal(0))
 		}
 		return nil
 	}
@@ -346,10 +346,10 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 		switch object := object.(type) {
 		case *build.Build:
 			if object.Status.Message != nil && *object.Status.Message != "" {
-				Expect(*object.Status.Message).To(Equal(message))
+				gomega.Expect(*object.Status.Message).To(gomega.Equal(message))
 			}
 			if object.Status.Reason != nil && *object.Status.Reason != "" {
-				Expect(*object.Status.Reason).To(Equal(reason))
+				gomega.Expect(*object.Status.Reason).To(gomega.Equal(reason))
 			}
 		}
 		return nil
@@ -364,13 +364,13 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 			if !tolerateEmptyStatus {
 				succeededCondition := object.Status.GetCondition(build.Succeeded)
 				if succeededCondition != nil {
-					Expect(succeededCondition.Status).To(Equal(condition.Status))
-					Expect(succeededCondition.Reason).To(Equal(condition.Reason))
+					gomega.Expect(succeededCondition.Status).To(gomega.Equal(condition.Status))
+					gomega.Expect(succeededCondition.Reason).To(gomega.Equal(condition.Reason))
 				}
-				Expect(object.Status.TaskRunName).To(Equal(name)) // nolint:staticcheck
+				gomega.Expect(object.Status.TaskRunName).To(gomega.Equal(name)) // nolint:staticcheck
 			}
 			if object.Status.BuildSpec != nil {
-				Expect(*object.Status.BuildSpec).To(Equal(buildSpec))
+				gomega.Expect(*object.Status.BuildSpec).To(gomega.Equal(buildSpec))
 			}
 		}
 		return nil
@@ -382,8 +382,8 @@ func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context conte
 	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
 		case *build.BuildRun:
-			Expect(object.Labels[build.LabelBuild]).To(Equal(buildSample.Name))
-			Expect(object.Labels[build.LabelBuildGeneration]).To(Equal(strconv.FormatInt(buildSample.Generation, 10)))
+			gomega.Expect(object.Labels[build.LabelBuild]).To(gomega.Equal(buildSample.Name))
+			gomega.Expect(object.Labels[build.LabelBuildGeneration]).To(gomega.Equal(strconv.FormatInt(buildSample.Generation, 10)))
 		}
 		return nil
 	}

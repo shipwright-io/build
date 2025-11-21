@@ -92,7 +92,7 @@ func ListFiles(w io.Writer, dir string) error {
 		}
 
 		// if possible, try to obtain nlink count and user/group details
-		var nlink, user, group string = "?", "?", "?"
+		nlink, user, group := "?", "?", "?"
 		if stat, ok := info.Sys().(*syscall.Stat_t); ok {
 			user = strconv.FormatUint(uint64(stat.Uid), 10)
 			group = strconv.FormatUint(uint64(stat.Gid), 10)

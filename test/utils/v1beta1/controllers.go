@@ -25,7 +25,9 @@ func StartBuildControllers() (*bytes.Buffer, error) {
 	c := buildconfig.NewDefaultConfig()
 
 	// read configuration from environment variables, especially the GIT_CONTAINER_IMAGE
-	c.SetConfigFromEnv()
+	if err := c.SetConfigFromEnv(); err != nil {
+		return nil, err
+	}
 
 	_, restConfig, err := KubeConfig()
 	if err != nil {

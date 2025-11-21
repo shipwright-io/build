@@ -26,7 +26,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	var alphaBuildRun v1alpha1.BuildRun
 
 	alphaBuildRun.TypeMeta = src.TypeMeta
-	alphaBuildRun.TypeMeta.APIVersion = alphaGroupVersion
+	alphaBuildRun.APIVersion = alphaGroupVersion
 	alphaBuildRun.ObjectMeta = src.ObjectMeta
 
 	// BuildRunSpec BuildSpec
@@ -55,7 +55,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	// With the deprecation of serviceAccount.Generate, serviceAccount is set to ".generate" to have the SA created on fly.
 	if src.Spec.ServiceAccount != nil && *src.Spec.ServiceAccount == ".generate" {
 		alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{
-			Name:     &src.ObjectMeta.Name,
+			Name:     &src.Name,
 			Generate: ptr.To(true),
 		}
 	} else {
@@ -187,13 +187,17 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 
 	aux := &v1alpha1.BuildSpec{}
 	if src.Status.BuildSpec != nil {
-		src.Status.BuildSpec.ConvertTo(aux)
+		if err := src.Status.BuildSpec.ConvertTo(aux); err != nil {
+			ctxlog.Error(ctx, err, "failed to convert object")
+			return err
+		}
 		alphaBuildRun.Status.BuildSpec = aux
 	}
 
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&alphaBuildRun)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed structuring the newObject")
+		return err
 	}
 	obj.Object = mapito
 
@@ -210,15 +214,19 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &alphaBuildRun)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed unstructuring the buildrun convertedObject")
+		return err
 	}
 
 	ctxlog.Info(ctx, "converting BuildRun from alpha to beta", "namespace", alphaBuildRun.Namespace, "name", alphaBuildRun.Name)
 
 	src.ObjectMeta = alphaBuildRun.ObjectMeta
 	src.TypeMeta = alphaBuildRun.TypeMeta
-	src.TypeMeta.APIVersion = betaGroupVersion
+	src.APIVersion = betaGroupVersion
 
-	src.Spec.ConvertFrom(&alphaBuildRun.Spec)
+	if err = src.Spec.ConvertFrom(ctx, &alphaBuildRun.Spec); err != nil {
+		ctxlog.Error(ctx, err, "failed to convert object")
+		return err
+	}
 
 	var sourceStatus *SourceResult
 	for _, s := range alphaBuildRun.Status.Sources {
@@ -282,19 +290,25 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 
 	buildBeta := Build{}
 	if alphaBuildRun.Status.BuildSpec != nil {
-		buildBeta.Spec.ConvertFrom(alphaBuildRun.Status.BuildSpec)
+		if err = buildBeta.Spec.ConvertFrom(alphaBuildRun.Status.BuildSpec); err != nil {
+			ctxlog.Error(ctx, err, "failed to convert object")
+			return err
+		}
 		src.Status.BuildSpec = &buildBeta.Spec
 	}
 
 	return nil
 }
 
-func (dest *BuildRunSpec) ConvertFrom(orig *v1alpha1.BuildRunSpec) error {
+func (dest *BuildRunSpec) ConvertFrom(ctx context.Context, orig *v1alpha1.BuildRunSpec) error {
 
 	// BuildRunSpec BuildSpec
 	if orig.BuildSpec != nil {
 		dest.Build.Spec = &BuildSpec{}
-		dest.Build.Spec.ConvertFrom(orig.BuildSpec)
+		if err := dest.Build.Spec.ConvertFrom(orig.BuildSpec); err != nil {
+			ctxlog.Error(ctx, err, "failed to convert object")
+			return err
+		}
 	}
 	if orig.BuildRef != nil {
 		dest.Build.Name = &orig.BuildRef.Name

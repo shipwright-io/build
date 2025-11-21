@@ -74,6 +74,7 @@ func GetOptions(ctx context.Context, imageName name.Reference, insecure bool, do
 
 	var dockerconfig *configfile.ConfigFile
 	if dockerConfigJSONPath != "" {
+		// #nosec G304 user provided by design
 		file, err := os.Open(dockerConfigJSONPath)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to open the config json: %w", err)

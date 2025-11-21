@@ -267,12 +267,12 @@ func (g *PipelineRunGenerator) ApplyMetadataConfiguration() error {
 				continue
 			}
 
-			if paramValue.SingleValue.Value != nil {
+			if paramValue.Value != nil {
 				params = append(params, pipelineapi.Param{
 					Name: paramValue.Name,
 					Value: pipelineapi.ParamValue{
 						Type:      pipelineapi.ParamTypeString,
-						StringVal: *paramValue.SingleValue.Value,
+						StringVal: *paramValue.Value,
 					},
 				})
 			}
