@@ -48,9 +48,9 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.17.0/release.yaml --server-side
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.17.0/hack/setup-webhook-cert.sh | bash
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.17.0/hack/storage-version-migration.sh | bash
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.17.3/release.yaml --server-side
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.17.3/hack/setup-webhook-cert.sh | bash
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.17.3/hack/storage-version-migration.sh | bash
   ```
 
   To install the latest nightly release, run:
@@ -64,7 +64,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.17.0/sample-strategies.yaml --server-side
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.17.3/sample-strategies.yaml --server-side
   ```
 
   To install the latest nightly release, run:
@@ -172,6 +172,9 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version                                                                | Docs                                                                       | Examples                                                                          |
 |------------------------------------------------------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | HEAD                                                                   | [Docs @ HEAD](docs/README.md)                                              | [Examples @ HEAD](samples)                                                        |
+| [v0.17.3](https://github.com/shipwright-io/build/releases/tag/v0.17.3)    | [Docs @ v0.17.3](https://github.com/shipwright-io/build/tree/v0.17.3/docs) | [Examples @ v0.17.3](https://github.com/shipwright-io/build/tree/v0.17.3/samples) |
+| [v0.17.2](https://github.com/shipwright-io/build/releases/tag/v0.17.2)    | [Docs @ v0.17.2](https://github.com/shipwright-io/build/tree/v0.17.2/docs) | [Examples @ v0.17.2](https://github.com/shipwright-io/build/tree/v0.17.2/samples) |
+| [v0.17.1](https://github.com/shipwright-io/build/releases/tag/v0.17.1)    | [Docs @ v0.17.1](https://github.com/shipwright-io/build/tree/v0.17.1/docs) | [Examples @ v0.17.1](https://github.com/shipwright-io/build/tree/v0.17.1/samples) |
 | [v0.17.0](https://github.com/shipwright-io/build/releases/tag/v0.17.0)    | [Docs @ v0.17.0](https://github.com/shipwright-io/build/tree/v0.17.0/docs) | [Examples @ v0.17.0](https://github.com/shipwright-io/build/tree/v0.17.0/samples) |
 | [v0.16.13](https://github.com/shipwright-io/build/releases/tag/v0.16.13)    | [Docs @ v0.16.13](https://github.com/shipwright-io/build/tree/v0.16.13/docs) | [Examples @ v0.16.13](https://github.com/shipwright-io/build/tree/v0.16.13/samples) |
 | [v0.16.12](https://github.com/shipwright-io/build/releases/tag/v0.16.12)    | [Docs @ v0.16.12](https://github.com/shipwright-io/build/tree/v0.16.12/docs) | [Examples @ v0.16.12](https://github.com/shipwright-io/build/tree/v0.16.12/samples) |
