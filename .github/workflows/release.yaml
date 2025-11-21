@@ -31,7 +31,7 @@ jobs:
     - name: Setup release ${{ inputs.release }}
       run: |
         echo "Creating release ${{ inputs.release }} from previous tag ${{ inputs.tags }} with ref ${{ inputs.git-ref }}"
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         ref: ${{ inputs.git-ref }}
         fetch-depth: 0  # Fetch all history, needed for release note generation.
