@@ -1,0 +1,452 @@
+// Copyright The Shipwright Contributors
+//
+// SPDX-License-Identifier: Apache-2.0
+
+package resources
+
+import (
+	"fmt"
+	"path"
+	"slices"
+	"strconv"
+	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/env"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
+	"github.com/shipwright-io/build/pkg/volumes"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+)
+
+func initializeTaskRun(cfg *config.Config, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, serviceAccountName string, strategy buildv1beta1.BuilderStrategy) (*pipelineapi.TaskRun, error) {
+	taskSpec, err := buildTaskSpec(cfg, build, buildRun, strategy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build TaskSpec for BuildRun %q using strategy %q: %w",
+			buildRun.Name, strategy.GetName(), err)
+	}
+
+	taskRun := &pipelineapi.TaskRun{
+		ObjectMeta: generateTaskRunMetadata(build, buildRun),
+		Spec: pipelineapi.TaskRunSpec{
+			ServiceAccountName: serviceAccountName,
+			TaskSpec:           taskSpec,
+			Workspaces:         generateWorkspaceBindings(),
+		},
+	}
+
+	return taskRun, nil
+}
+
+func buildTaskSpec(cfg *config.Config, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, strategy buildv1beta1.BuilderStrategy) (*pipelineapi.TaskSpec, error) {
+	taskSpec := createBaseTaskSpec()
+
+	applySourcesToTaskSpec(cfg, taskSpec, build, buildRun)
+	addStrategyParametersToTaskSpec(taskSpec, strategy.GetParameters())
+
+	combinedEnvs, err := mergeEnvironmentVariables(build, buildRun)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge environment variables for BuildRun %q: %w",
+			buildRun.Name, err)
+	}
+
+	volumeMounts, err := applyBuildStrategySteps(taskSpec, build, strategy.GetBuildSteps(), strategy.GetVolumes(), combinedEnvs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply build strategy steps for strategy %q: %w", strategy.GetName(), err)
+	}
+
+	if err := generateTaskSpecVolumes(taskSpec, volumeMounts, strategy.GetVolumes(), build.Spec.Volumes, buildRun.Spec.Volumes); err != nil {
+		return nil, fmt.Errorf("failed to generate TaskSpec volumes for strategy %q: %w", strategy.GetName(), err)
+	}
+
+	return taskSpec, nil
+}
+
+func createBaseTaskSpec() *pipelineapi.TaskSpec {
+	return &pipelineapi.TaskSpec{
+		Params:     generateBaseTaskSpecParams(),
+		Workspaces: generateBaseTaskSpecWorkspaces(),
+		Results:    generateBaseTaskSpecResults(),
+	}
+}
+
+func generateBaseTaskSpecParams() []pipelineapi.ParamSpec {
+	return []pipelineapi.ParamSpec{
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
+			Description: "The URL of the image that the build produces",
+			Type:        pipelineapi.ParamTypeString,
+		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
+			Description: "A flag indicating that the output image is on an insecure container registry",
+			Type:        pipelineapi.ParamTypeString,
+		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
+			Description: "The context directory inside the source directory",
+			Type:        pipelineapi.ParamTypeString,
+		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
+			Description: "The source directory",
+			Type:        pipelineapi.ParamTypeString,
+		},
+	}
+}
+
+func generateBaseTaskSpecWorkspaces() []pipelineapi.WorkspaceDeclaration {
+	return []pipelineapi.WorkspaceDeclaration{
+		{
+			Name: workspaceSource,
+		},
+	}
+}
+
+func generateBaseTaskSpecResults() []pipelineapi.TaskResult {
+	return append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
+}
+
+func applySourcesToTaskSpec(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) {
+	AmendTaskSpecWithSources(cfg, taskSpec, build, buildRun)
+}
+
+func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDefinitions []buildv1beta1.Parameter) {
+	for _, parameterDefinition := range parameterDefinitions {
+		param := pipelineapi.ParamSpec{
+			Name:        parameterDefinition.Name,
+			Description: parameterDefinition.Description,
+		}
+
+		switch parameterDefinition.Type {
+		case "": // string is default
+			fallthrough
+		case buildv1beta1.ParameterTypeString:
+			param.Type = pipelineapi.ParamTypeString
+			if parameterDefinition.Default != nil {
+				param.Default = &pipelineapi.ParamValue{
+					Type:      pipelineapi.ParamTypeString,
+					StringVal: *parameterDefinition.Default,
+				}
+			}
+
+		case buildv1beta1.ParameterTypeArray:
+			param.Type = pipelineapi.ParamTypeArray
+			if parameterDefinition.Defaults != nil {
+				param.Default = &pipelineapi.ParamValue{
+					Type:     pipelineapi.ParamTypeArray,
+					ArrayVal: *parameterDefinition.Defaults,
+				}
+			}
+		}
+
+		taskSpec.Params = append(taskSpec.Params, param)
+	}
+}
+
+func applyBuildStrategySteps(
+	taskSpec *pipelineapi.TaskSpec,
+	build *buildv1beta1.Build,
+	buildSteps []buildv1beta1.Step,
+	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
+	combinedEnvs []corev1.EnvVar,
+) (map[string]bool, error) {
+	volumeMounts := make(map[string]bool)
+	buildStrategyVolumesMap := toVolumeMap(buildStrategyVolumes)
+
+	for _, containerValue := range buildSteps {
+		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
+		if err != nil {
+			return nil, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
+		}
+
+		step := pipelineapi.Step{
+			Image:            containerValue.Image,
+			ImagePullPolicy:  containerValue.ImagePullPolicy,
+			Name:             containerValue.Name,
+			VolumeMounts:     containerValue.VolumeMounts,
+			Command:          containerValue.Command,
+			Args:             containerValue.Args,
+			SecurityContext:  containerValue.SecurityContext,
+			WorkingDir:       containerValue.WorkingDir,
+			ComputeResources: containerValue.Resources,
+			Env:              stepEnv,
+		}
+
+		taskSpec.Steps = append(taskSpec.Steps, step)
+
+		for _, vm := range containerValue.VolumeMounts {
+			if _, ok := buildStrategyVolumesMap[vm.Name]; !ok {
+				return nil, fmt.Errorf("volume for the Volume Mount %q is not found", vm.Name)
+			}
+			volumeMounts[vm.Name] = vm.ReadOnly
+		}
+	}
+
+	return volumeMounts, nil
+}
+
+func generateTaskSpecVolumes(
+	taskSpec *pipelineapi.TaskSpec,
+	volumeMounts map[string]bool,
+	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
+	buildVolumes []buildv1beta1.BuildVolume,
+	buildRunVolumes []buildv1beta1.BuildVolume,
+) error {
+	volumes, err := volumes.TaskSpecVolumes(volumeMounts, buildStrategyVolumes, buildVolumes, buildRunVolumes)
+	if err != nil {
+		return fmt.Errorf("failed to create TaskSpec volumes from volume configurations: %w", err)
+	}
+	taskSpec.Volumes = append(taskSpec.Volumes, volumes...)
+	return nil
+}
+
+func generateTaskRunMetadata(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		GenerateName: buildRun.Name + "-",
+		Namespace:    buildRun.Namespace,
+		Labels:       generateTaskRunLabels(build, buildRun),
+	}
+}
+
+func generateTaskRunLabels(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) map[string]string {
+	taskRunLabels := map[string]string{
+		buildv1beta1.LabelBuildRun:           buildRun.Name,
+		buildv1beta1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+	}
+
+	if build.Name != "" {
+		taskRunLabels[buildv1beta1.LabelBuild] = build.Name
+		taskRunLabels[buildv1beta1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+	}
+
+	return taskRunLabels
+}
+
+func generateWorkspaceBindings() []pipelineapi.WorkspaceBinding {
+	return []pipelineapi.WorkspaceBinding{
+		{
+			Name:     workspaceSource,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
+func applyOutputImageSteps(cfg *config.Config, taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	buildRunOutput := buildRun.Spec.Output
+	if buildRunOutput == nil {
+		buildRunOutput = &buildv1beta1.Image{}
+	}
+
+	if err := SetupImageProcessing(taskRun, cfg, buildRun.CreationTimestamp.Time, build.Spec.Output, *buildRunOutput); err != nil {
+		return fmt.Errorf("failed to setup image processing for BuildRun %q: %w",
+			buildRun.Name, err)
+	}
+
+	return nil
+}
+
+func applyNodeSelectors(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRunPodTemplate := &pod.PodTemplate{}
+	if taskRun.Spec.PodTemplate != nil {
+		taskRunPodTemplate = taskRun.Spec.PodTemplate
+	}
+
+	taskRunNodeSelector := mergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
+	if len(taskRunNodeSelector) > 0 {
+		taskRunPodTemplate.NodeSelector = taskRunNodeSelector
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	}
+
+	return nil
+}
+
+func applyTolerations(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRunPodTemplate := &pod.PodTemplate{}
+	if taskRun.Spec.PodTemplate != nil {
+		taskRunPodTemplate = taskRun.Spec.PodTemplate
+	}
+
+	taskRunTolerations := mergeTolerations(build.Spec.Tolerations, buildRun.Spec.Tolerations)
+	if len(taskRunTolerations) > 0 {
+		for i, toleration := range taskRunTolerations {
+			if toleration.Effect == "" {
+				taskRunTolerations[i].Effect = corev1.TaintEffectNoSchedule
+			}
+		}
+		taskRunPodTemplate.Tolerations = taskRunTolerations
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	}
+
+	return nil
+}
+
+func applyScheduler(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRunPodTemplate := &pod.PodTemplate{}
+	if taskRun.Spec.PodTemplate != nil {
+		taskRunPodTemplate = taskRun.Spec.PodTemplate
+	}
+
+	if buildRun.Spec.SchedulerName != nil {
+		taskRunPodTemplate.SchedulerName = *buildRun.Spec.SchedulerName
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	} else if build.Spec.SchedulerName != nil {
+		taskRunPodTemplate.SchedulerName = *build.Spec.SchedulerName
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	}
+
+	return nil
+}
+
+func mergeTolerations(buildTolerations []corev1.Toleration, buildRunTolerations []corev1.Toleration) []corev1.Toleration {
+	mergedTolerations := []corev1.Toleration{}
+	mergedTolerations = append(mergedTolerations, buildRunTolerations...)
+	for _, toleration := range buildTolerations {
+		if !slices.ContainsFunc(mergedTolerations, func(t corev1.Toleration) bool {
+			return t.Key == toleration.Key
+		}) {
+			mergedTolerations = append(mergedTolerations, toleration)
+		}
+	}
+	return mergedTolerations
+}
+
+func applyAnnotationsAndLabels(taskRun *pipelineapi.TaskRun, strategy buildv1beta1.BuilderStrategy) error {
+	taskRunAnnotations := make(map[string]string)
+	for key, value := range strategy.GetAnnotations() {
+		if isPropagatableAnnotation(key) {
+			taskRunAnnotations[key] = value
+		}
+	}
+
+	steps.UpdateSecurityContext(taskRun.Spec.TaskSpec, taskRunAnnotations, strategy.GetBuildSteps(), strategy.GetSecurityContext())
+
+	if len(taskRunAnnotations) > 0 {
+		if taskRun.Annotations == nil {
+			taskRun.Annotations = make(map[string]string)
+		}
+		for k, v := range taskRunAnnotations {
+			taskRun.Annotations[k] = v
+		}
+	}
+
+	if taskRun.Labels == nil {
+		taskRun.Labels = make(map[string]string)
+	}
+	for label, value := range strategy.GetResourceLabels() {
+		taskRun.Labels[label] = value
+	}
+
+	return nil
+}
+
+func applyParameters(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, strategy buildv1beta1.BuilderStrategy) error {
+	var image string
+	if buildRun.Spec.Output != nil {
+		image = buildRun.Spec.Output.Image
+	} else {
+		image = build.Spec.Output.Image
+	}
+
+	insecure := false
+	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Insecure != nil {
+		insecure = *buildRun.Spec.Output.Insecure
+	} else if build.Spec.Output.Insecure != nil {
+		insecure = *build.Spec.Output.Insecure
+	}
+
+	params := []pipelineapi.Param{
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: image,
+			},
+		},
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: strconv.FormatBool(insecure),
+			},
+		},
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: "/workspace/source",
+			},
+		},
+	}
+
+	if build.Spec.Source != nil && build.Spec.Source.ContextDir != nil {
+		params = append(params, pipelineapi.Param{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: path.Join("/workspace/source", *build.Spec.Source.ContextDir),
+			},
+		})
+	} else {
+		params = append(params, pipelineapi.Param{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: "/workspace/source",
+			},
+		})
+	}
+
+	taskRun.Spec.Params = params
+
+	paramValues := OverrideParams(build.Spec.ParamValues, buildRun.Spec.ParamValues)
+
+	for _, paramValue := range paramValues {
+		parameterDefinition := FindParameterByName(strategy.GetParameters(), paramValue.Name)
+		if parameterDefinition == nil {
+			return fmt.Errorf("the parameter %q is not defined in the build strategy %q", paramValue.Name, strategy.GetName())
+		}
+
+		if err := HandleTaskRunParam(taskRun, parameterDefinition, paramValue); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func applyTimeout(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
+	return nil
+}
+
+func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) *metav1.Duration {
+	if buildRun.Spec.Timeout != nil {
+		return buildRun.Spec.Timeout
+
+	} else if build.Spec.Timeout != nil {
+		return build.Spec.Timeout
+	}
+
+	return nil
+}
+
+func isPropagatableAnnotation(key string) bool {
+	return key != "kubectl.kubernetes.io/last-applied-configuration" &&
+		!strings.HasPrefix(key, buildv1beta1.ClusterBuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildv1beta1.BuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildv1beta1.BuildDomain+"/") &&
+		!strings.HasPrefix(key, buildv1beta1.BuildRunDomain+"/")
+}
+
+func toVolumeMap(strategyVolumes []buildv1beta1.BuildStrategyVolume) map[string]bool {
+	res := make(map[string]bool)
+	for _, v := range strategyVolumes {
+		res[v.Name] = true
+	}
+	return res
+}
