@@ -252,6 +252,7 @@ func checkEnvironment(ctx context.Context) error {
 		if flagValues.verbose {
 			log.Printf("Debug: %s %s\n", path, check.versionArg)
 		}
+		// #nosec G204 in the default container configuration, it is impossible to inject other binaries, as such it is safe that we have no hard-coded path
 		out, err := exec.CommandContext(ctx, path, check.versionArg).CombinedOutput()
 		if err != nil {
 			log.Printf("Error: %s: %s\n", check.toolName, strings.TrimRight(string(out), "\n"))
@@ -474,13 +475,16 @@ func git(ctx context.Context, args ...string) (string, error) {
 		fmt.Sprintf("safe.directory=%s", flagValues.target),
 	}
 	fullArgs = append(fullArgs, args...)
+	// #nosec G204 arguments are well-defined by the code
 	cmd := exec.CommandContext(ctx, "git", fullArgs...)
 
 	// Print the command to be executed, but replace the URL with a safe version
 	log.Print(strings.ReplaceAll(cmd.String(), flagValues.url, displayURL))
 
 	// Make sure that the spawned process does not try to prompt for infos
-	os.Setenv("GIT_TERMINAL_PROMPT", "0")
+	if err := os.Setenv("GIT_TERMINAL_PROMPT", "0"); err != nil {
+		return "", err
+	}
 	cmd.Stdin = nil
 
 	out, err := cmd.CombinedOutput()

@@ -283,6 +283,7 @@ func readAndDecode(filePath string) (runtime.Object, error) {
 		return nil, err
 	}
 
+	// #nosec G304 ok in tests
 	payload, err := os.ReadFile(filepath.Join("..", "..", "..", filePath))
 	if err != nil {
 		return nil, err
