@@ -583,3 +583,26 @@ func generatePipelineWorkspaceBindings() []pipelineapi.WorkspaceBinding {
 		},
 	}
 }
+
+// createSourceAcquisitionPipelineTask creates a PipelineTask for source acquisition phase
+// This wraps the TaskSpec in a PipelineTask with appropriate parameter and workspace bindings
+func createSourceAcquisitionPipelineTask(taskSpec *pipelineapi.TaskSpec) pipelineapi.PipelineTask {
+	return pipelineapi.PipelineTask{
+		Name: "source-acquisition",
+		TaskSpec: &pipelineapi.EmbeddedTask{
+			TaskSpec: *taskSpec,
+		},
+		Params:     generateBaseTaskParamReferences(),
+		Workspaces: generateSourceAcquisitionWorkspaceBindings(),
+	}
+}
+
+// generateSourceAcquisitionWorkspaceBindings creates workspace bindings for source acquisition task
+func generateSourceAcquisitionWorkspaceBindings() []pipelineapi.WorkspacePipelineTaskBinding {
+	return []pipelineapi.WorkspacePipelineTaskBinding{
+		{
+			Name:      workspaceSource,
+			Workspace: workspaceSource,
+		},
+	}
+}

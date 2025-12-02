@@ -80,21 +80,12 @@ func (g *PipelineRunGenerator) InitializeExecutor() error {
 }
 
 func (g *PipelineRunGenerator) GenerateSourceAcquisitionPhase(execCtx *executionContext) error {
-	// taskSpec := createBaseTaskSpec()
-	// applySourcesToTaskSpec(g.cfg, taskSpec, g.build, g.buildRun)
+	taskSpec := createBaseTaskSpec()
+	applySourcesToTaskSpec(g.cfg, taskSpec, g.build, g.buildRun)
 
-	// pipelineTask := pipelineapi.PipelineTask{
-	// 	Name: "source-acquisition",
-	// 	TaskSpec: &pipelineapi.EmbeddedTask{
-	// 		TaskSpec: *taskSpec,
-	// 	},
-	// 	Params: generateBaseTaskParamReferences(), // Reuse helper from resource_builders.go
-	// 	Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
-	// 		{Name: workspaceSource, Workspace: workspaceSource},
-	// 	},
-	// }
+	pipelineTask := createSourceAcquisitionPipelineTask(taskSpec)
+	g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
 
-	// g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
 	return nil
 }
 
