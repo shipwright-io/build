@@ -8,8 +8,6 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
@@ -67,33 +65,14 @@ func NewPipelineRunGenerator(
 }
 
 func (g *PipelineRunGenerator) InitializeExecutor() error {
+	pipelineSpec := createBasePipelineSpec()
+
 	g.pipelineRun = &pipelineapi.PipelineRun{
-		ObjectMeta: generatePipelineRunMetadata(g.build, g.buildRun),
+		ObjectMeta: generateTaskRunMetadata(g.build, g.buildRun),
 		Spec: pipelineapi.PipelineRunSpec{
-			PipelineSpec: &pipelineapi.PipelineSpec{
-				Tasks: []pipelineapi.PipelineTask{},
-				Workspaces: []pipelineapi.PipelineWorkspaceDeclaration{
-					{Name: workspaceSource, Description: "Workspace for source code and build artifacts"},
-				},
-			},
-			TaskRunTemplate: pipelineapi.PipelineTaskRunTemplate{
-				ServiceAccountName: g.serviceAccountName,
-			},
-			Workspaces: []pipelineapi.WorkspaceBinding{
-				{
-					Name: workspaceSource,
-					VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
-						Spec: corev1.PersistentVolumeClaimSpec{
-							AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-							Resources: corev1.VolumeResourceRequirements{
-								Requests: corev1.ResourceList{
-									corev1.ResourceStorage: resource.MustParse("1Gi"),
-								},
-							},
-						},
-					},
-				},
-			},
+			PipelineSpec:    pipelineSpec,
+			TaskRunTemplate: generatePipelineTaskRunTemplate(g.serviceAccountName),
+			Workspaces:      generatePipelineWorkspaceBindings(),
 		},
 	}
 
@@ -101,98 +80,154 @@ func (g *PipelineRunGenerator) InitializeExecutor() error {
 }
 
 func (g *PipelineRunGenerator) GenerateSourceAcquisitionPhase(execCtx *executionContext) error {
-	taskSpec := createBaseTaskSpec()
-	applySourcesToTaskSpec(g.cfg, taskSpec, g.build, g.buildRun)
+	// taskSpec := createBaseTaskSpec()
+	// applySourcesToTaskSpec(g.cfg, taskSpec, g.build, g.buildRun)
 
-	pipelineTask := pipelineapi.PipelineTask{
-		Name: "source-acquisition",
-		TaskSpec: &pipelineapi.EmbeddedTask{
-			TaskSpec: *taskSpec,
-		},
-		Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
-			{Name: workspaceSource, Workspace: workspaceSource},
-		},
-	}
+	// pipelineTask := pipelineapi.PipelineTask{
+	// 	Name: "source-acquisition",
+	// 	TaskSpec: &pipelineapi.EmbeddedTask{
+	// 		TaskSpec: *taskSpec,
+	// 	},
+	// 	Params: generateBaseTaskParamReferences(), // Reuse helper from resource_builders.go
+	// 	Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
+	// 		{Name: workspaceSource, Workspace: workspaceSource},
+	// 	},
+	// }
 
-	g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
+	// g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
 	return nil
 }
 
 func (g *PipelineRunGenerator) GenerateBuildStrategyPhase(execCtx *executionContext) error {
-	taskSpec := createBaseTaskSpec()
+	// taskSpec := createBaseTaskSpec()
 
-	addStrategyParametersToTaskSpec(taskSpec, g.strategy.GetParameters())
+	// addStrategyParametersToTaskSpec(taskSpec, g.strategy.GetParameters())
 
-	volumeMounts, err := applyBuildStrategySteps(
-		taskSpec,
-		g.build,
-		g.strategy.GetBuildSteps(),
-		g.strategy.GetVolumes(),
-		execCtx.combinedEnvs,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to apply build strategy steps: %w", err)
-	}
+	// volumeMounts, err := applyBuildStrategySteps(
+	// 	taskSpec,
+	// 	g.build,
+	// 	g.strategy.GetBuildSteps(),
+	// 	g.strategy.GetVolumes(),
+	// 	execCtx.combinedEnvs,
+	// )
+	// if err != nil {
+	// 	return fmt.Errorf("failed to apply build strategy steps: %w", err)
+	// }
 
-	execCtx.volumeMounts = volumeMounts
+	// execCtx.volumeMounts = volumeMounts
 
-	if err := generateTaskSpecVolumes(
-		taskSpec,
-		execCtx.volumeMounts,
-		execCtx.strategyVolumes,
-		execCtx.buildVolumes,
-		execCtx.buildRunVolumes,
-	); err != nil {
-		return fmt.Errorf("failed to generate TaskSpec volumes: %w", err)
-	}
+	// if err := generateTaskSpecVolumes(
+	// 	taskSpec,
+	// 	execCtx.volumeMounts,
+	// 	execCtx.strategyVolumes,
+	// 	execCtx.buildVolumes,
+	// 	execCtx.buildRunVolumes,
+	// ); err != nil {
+	// 	return fmt.Errorf("failed to generate TaskSpec volumes: %w", err)
+	// }
 
-	pipelineTask := pipelineapi.PipelineTask{
-		Name: "build-strategy",
-		TaskSpec: &pipelineapi.EmbeddedTask{
-			TaskSpec: *taskSpec,
-		},
-		Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
-			{Name: workspaceSource, Workspace: workspaceSource},
-		},
-		RunAfter: []string{"source-acquisition"},
-	}
+	// // Add cache workspace declaration to TaskSpec if strategy references it
+	// taskSpec.Workspaces = append(taskSpec.Workspaces, pipelineapi.WorkspaceDeclaration{
+	// 	Name:     "cache",
+	// 	Optional: true,
+	// })
 
-	g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
+	// // Build params list including base shipwright params and strategy params
+	// pipelineTaskParams := generateBaseTaskParamReferences() // Start with base params from helper
+
+	// // Add strategy parameters to Pipeline-level and task-level
+	// for _, strategyParam := range g.strategy.GetParameters() {
+	// 	// Determine parameter type
+	// 	paramType := pipelineapi.ParamTypeString
+	// 	if strategyParam.Type == buildv1beta1.ParameterTypeArray {
+	// 		paramType = pipelineapi.ParamTypeArray
+	// 	}
+
+	// 	// Create Pipeline-level param spec with defaults
+	// 	pipelineParamSpec := pipelineapi.ParamSpec{
+	// 		Name: strategyParam.Name,
+	// 		Type: paramType,
+	// 	}
+
+	// 	// Add default value if strategy has one
+	// 	if paramType == pipelineapi.ParamTypeString && strategyParam.Default != nil {
+	// 		pipelineParamSpec.Default = &pipelineapi.ParamValue{
+	// 			Type:      pipelineapi.ParamTypeString,
+	// 			StringVal: *strategyParam.Default,
+	// 		}
+	// 	} else if paramType == pipelineapi.ParamTypeArray && strategyParam.Defaults != nil {
+	// 		pipelineParamSpec.Default = &pipelineapi.ParamValue{
+	// 			Type:     pipelineapi.ParamTypeArray,
+	// 			ArrayVal: *strategyParam.Defaults,
+	// 		}
+	// 	}
+
+	// 	g.pipelineRun.Spec.PipelineSpec.Params = append(g.pipelineRun.Spec.PipelineSpec.Params, pipelineParamSpec)
+
+	// 	// Add to PipelineTask params (pass through from pipeline params)
+	// 	paramRef := fmt.Sprintf("$(params.%s)", strategyParam.Name)
+	// 	if paramType == pipelineapi.ParamTypeArray {
+	// 		paramRef = fmt.Sprintf("$(params.%s[*])", strategyParam.Name)
+	// 	}
+
+	// 	pipelineTaskParams = append(pipelineTaskParams, pipelineapi.Param{
+	// 		Name: strategyParam.Name,
+	// 		Value: pipelineapi.ParamValue{
+	// 			Type:      pipelineapi.ParamTypeString,
+	// 			StringVal: paramRef,
+	// 		},
+	// 	})
+	// }
+
+	// pipelineTask := pipelineapi.PipelineTask{
+	// 	Name: "build-strategy",
+	// 	TaskSpec: &pipelineapi.EmbeddedTask{
+	// 		TaskSpec: *taskSpec,
+	// 	},
+	// 	Params: pipelineTaskParams,
+	// 	Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
+	// 		{Name: workspaceSource, Workspace: workspaceSource},
+	// 		{Name: "cache", Workspace: "cache"},
+	// 	},
+	// 	RunAfter: []string{"source-acquisition"},
+	// }
+
+	// g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
 	return nil
 }
 
 func (g *PipelineRunGenerator) GenerateOutputImagePhase(execCtx *executionContext) error {
-	taskSpec := createBaseTaskSpec()
+	// taskSpec := createBaseTaskSpec()
 
-	buildRunOutput := g.buildRun.Spec.Output
-	if buildRunOutput == nil {
-		buildRunOutput = &buildv1beta1.Image{}
-	}
+	// buildRunOutput := g.buildRun.Spec.Output
+	// if buildRunOutput == nil {
+	// 	buildRunOutput = &buildv1beta1.Image{}
+	// }
 
-	tempTaskRun := &pipelineapi.TaskRun{
-		Spec: pipelineapi.TaskRunSpec{
-			TaskSpec: taskSpec,
-		},
-	}
+	// tempTaskRun := &pipelineapi.TaskRun{
+	// 	Spec: pipelineapi.TaskRunSpec{
+	// 		TaskSpec: taskSpec,
+	// 	},
+	// }
 
-	if err := SetupImageProcessing(tempTaskRun, g.cfg, g.buildRun.CreationTimestamp.Time, g.build.Spec.Output, *buildRunOutput); err != nil {
-		return fmt.Errorf("failed to setup image processing: %w", err)
-	}
+	// if err := SetupImageProcessing(tempTaskRun, g.cfg, g.buildRun.CreationTimestamp.Time, g.build.Spec.Output, *buildRunOutput); err != nil {
+	// 	return fmt.Errorf("failed to setup image processing: %w", err)
+	// }
 
-	taskSpec = tempTaskRun.Spec.TaskSpec
+	// taskSpec = tempTaskRun.Spec.TaskSpec
 
-	pipelineTask := pipelineapi.PipelineTask{
-		Name: "output-image",
-		TaskSpec: &pipelineapi.EmbeddedTask{
-			TaskSpec: *taskSpec,
-		},
-		Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
-			{Name: workspaceSource, Workspace: workspaceSource},
-		},
-		RunAfter: []string{"build-strategy"},
-	}
+	// pipelineTask := pipelineapi.PipelineTask{
+	// 	Name: "output-image",
+	// 	TaskSpec: &pipelineapi.EmbeddedTask{
+	// 		TaskSpec: *taskSpec,
+	// 	},
+	// 	Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
+	// 		{Name: workspaceSource, Workspace: workspaceSource},
+	// 	},
+	// 	RunAfter: []string{"build-strategy"},
+	// }
 
-	g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
+	// g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
 	return nil
 }
 
@@ -260,60 +295,63 @@ func (g *PipelineRunGenerator) ApplyMetadataConfiguration() error {
 		Pipeline: effectiveTimeout(g.build, g.buildRun),
 	}
 
-	var image string
-	if g.buildRun.Spec.Output != nil {
-		image = g.buildRun.Spec.Output.Image
-	} else {
-		image = g.build.Spec.Output.Image
-	}
+	// Generate base parameter values using helper from resource_builders.go
+	params := generateBaseParamValues(g.build, g.buildRun)
 
-	insecure := false
-	if g.buildRun.Spec.Output != nil && g.buildRun.Spec.Output.Insecure != nil {
-		insecure = *g.buildRun.Spec.Output.Insecure
-	} else if g.build.Spec.Output.Insecure != nil {
-		insecure = *g.build.Spec.Output.Insecure
-	}
+	// Add strategy parameter values (only for explicitly provided params, like TaskRun does)
+	paramValues := OverrideParams(g.build.Spec.ParamValues, g.buildRun.Spec.ParamValues)
 
-	params := []pipelineapi.Param{
-		{
-			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: image,
-			},
-		},
-		{
-			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: fmt.Sprintf("%t", insecure),
-			},
-		},
-		{
-			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: "/workspace/source",
-			},
-		},
-	}
+	for _, paramValue := range paramValues {
+		parameterDefinition := FindParameterByName(g.strategy.GetParameters(), paramValue.Name)
+		if parameterDefinition == nil {
+			return fmt.Errorf("the parameter %q is not defined in the build strategy %q", paramValue.Name, g.strategy.GetName())
+		}
 
-	if g.build.Spec.Source != nil && g.build.Spec.Source.ContextDir != nil {
-		params = append(params, pipelineapi.Param{
-			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: fmt.Sprintf("/workspace/source/%s", *g.build.Spec.Source.ContextDir),
-			},
-		})
-	} else {
-		params = append(params, pipelineapi.Param{
-			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
-			Value: pipelineapi.ParamValue{
-				Type:      pipelineapi.ParamTypeString,
-				StringVal: "/workspace/source",
-			},
-		})
+		// Handle different parameter types
+		switch parameterDefinition.Type {
+		case "", buildv1beta1.ParameterTypeString:
+			// Handle string parameters
+			if paramValue.SingleValue == nil {
+				// No value provided, will use default from TaskSpec
+				continue
+			}
+
+			if paramValue.SingleValue.Value != nil {
+				params = append(params, pipelineapi.Param{
+					Name: paramValue.Name,
+					Value: pipelineapi.ParamValue{
+						Type:      pipelineapi.ParamTypeString,
+						StringVal: *paramValue.SingleValue.Value,
+					},
+				})
+			}
+			// TODO: Handle ConfigMapValue and SecretValue if needed
+
+		case buildv1beta1.ParameterTypeArray:
+			// Handle array parameters
+			if paramValue.Values == nil {
+				// No values provided, will use defaults from TaskSpec
+				continue
+			}
+
+			var arrayValues []string
+			for _, v := range paramValue.Values {
+				if v.Value != nil {
+					arrayValues = append(arrayValues, *v.Value)
+				}
+				// TODO: Handle ConfigMapValue and SecretValue if needed
+			}
+
+			if len(arrayValues) > 0 {
+				params = append(params, pipelineapi.Param{
+					Name: paramValue.Name,
+					Value: pipelineapi.ParamValue{
+						Type:     pipelineapi.ParamTypeArray,
+						ArrayVal: arrayValues,
+					},
+				})
+			}
+		}
 	}
 
 	g.pipelineRun.Spec.Params = params
@@ -325,12 +363,4 @@ func (g *PipelineRunGenerator) ApplyMetadataConfiguration() error {
 
 func (g *PipelineRunGenerator) GetExecutor() client.Object {
 	return g.pipelineRun
-}
-
-func generatePipelineRunMetadata(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) metav1.ObjectMeta {
-	return metav1.ObjectMeta{
-		GenerateName: buildRun.Name + "-",
-		Namespace:    buildRun.Namespace,
-		Labels:       generateTaskRunLabels(build, buildRun),
-	}
 }

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -97,6 +98,78 @@ func generateBaseTaskSpecParams() []pipelineapi.ParamSpec {
 			Type:        pipelineapi.ParamTypeString,
 		},
 	}
+}
+
+// generateBaseTaskParamReferences creates parameter references for passing base Shipwright params
+// from Pipeline level to PipelineTask level using $(params.xxx) syntax
+func generateBaseTaskParamReferences() []pipelineapi.Param {
+	return []pipelineapi.Param{
+		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage)}},
+		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputInsecure)}},
+		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot)}},
+		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceContext)}},
+	}
+}
+
+// generateBaseParamValues generates the base Shipwright parameter values from Build and BuildRun specs
+func generateBaseParamValues(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) []pipelineapi.Param {
+	var image string
+	if buildRun.Spec.Output != nil {
+		image = buildRun.Spec.Output.Image
+	} else {
+		image = build.Spec.Output.Image
+	}
+
+	insecure := false
+	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Insecure != nil {
+		insecure = *buildRun.Spec.Output.Insecure
+	} else if build.Spec.Output.Insecure != nil {
+		insecure = *build.Spec.Output.Insecure
+	}
+
+	params := []pipelineapi.Param{
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputImage),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: image,
+			},
+		},
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: fmt.Sprintf("%t", insecure),
+			},
+		},
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: "/workspace/source",
+			},
+		},
+	}
+
+	if build.Spec.Source != nil && build.Spec.Source.ContextDir != nil {
+		params = append(params, pipelineapi.Param{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: fmt.Sprintf("/workspace/source/%s", *build.Spec.Source.ContextDir),
+			},
+		})
+	} else {
+		params = append(params, pipelineapi.Param{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: "/workspace/source",
+			},
+		})
+	}
+
+	return params
 }
 
 func generateBaseTaskSpecWorkspaces() []pipelineapi.WorkspaceDeclaration {
@@ -449,4 +522,64 @@ func toVolumeMap(strategyVolumes []buildv1beta1.BuildStrategyVolume) map[string]
 		res[v.Name] = true
 	}
 	return res
+}
+
+// PipelineRun-specific helper functions
+
+// createBasePipelineSpec creates the base pipeline spec with parameters and workspace declarations
+// Mirrors createBaseTaskSpec() for TaskRun but adapted for Pipeline requirements
+func createBasePipelineSpec() *pipelineapi.PipelineSpec {
+	return &pipelineapi.PipelineSpec{
+		Tasks:      []pipelineapi.PipelineTask{},
+		Params:     generateBaseTaskSpecParams(), // Reuse existing helper
+		Workspaces: generateBasePipelineWorkspaceDeclarations(),
+	}
+}
+
+// generateBasePipelineWorkspaceDeclarations creates workspace declarations for the Pipeline
+// PipelineRuns need workspace declarations at the Pipeline level
+func generateBasePipelineWorkspaceDeclarations() []pipelineapi.PipelineWorkspaceDeclaration {
+	return []pipelineapi.PipelineWorkspaceDeclaration{
+		{
+			Name:        workspaceSource,
+			Description: "Workspace for source code and build artifacts",
+		},
+		{
+			Name:        "cache",
+			Description: "Cache workspace for build artifacts",
+			Optional:    true,
+		},
+	}
+}
+
+// generatePipelineTaskRunTemplate creates the TaskRunTemplate for the PipelineRun
+// This is equivalent to setting ServiceAccountName directly in TaskRun
+func generatePipelineTaskRunTemplate(serviceAccountName string) pipelineapi.PipelineTaskRunTemplate {
+	return pipelineapi.PipelineTaskRunTemplate{
+		ServiceAccountName: serviceAccountName,
+	}
+}
+
+// generatePipelineWorkspaceBindings creates workspace bindings for the PipelineRun
+// Unlike TaskRun which uses EmptyDir, PipelineRun uses PVC for inter-task communication
+func generatePipelineWorkspaceBindings() []pipelineapi.WorkspaceBinding {
+	return []pipelineapi.WorkspaceBinding{
+		{
+			Name: workspaceSource,
+			VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+					Resources: corev1.VolumeResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceStorage: resource.MustParse("1Gi"),
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:     "cache",
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
 }
