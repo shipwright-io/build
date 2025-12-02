@@ -17,11 +17,12 @@ import (
 
 // executionContext holds pre-computed, executor-agnostic data needed for build execution.
 type executionContext struct {
-	combinedEnvs    []corev1.EnvVar
-	volumeMounts    map[string]bool
-	strategyVolumes []buildv1beta1.BuildStrategyVolume
-	buildVolumes    []buildv1beta1.BuildVolume
-	buildRunVolumes []buildv1beta1.BuildVolume
+	combinedEnvs       []corev1.EnvVar
+	volumeMounts       map[string]bool
+	strategyVolumes    []buildv1beta1.BuildStrategyVolume
+	buildVolumes       []buildv1beta1.BuildVolume
+	buildRunVolumes    []buildv1beta1.BuildVolume
+	hasOutputDirectory bool // Track if build strategy uses output directory
 }
 
 func prepareExecutionContext(

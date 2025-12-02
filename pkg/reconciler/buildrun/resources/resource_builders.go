@@ -606,3 +606,175 @@ func generateSourceAcquisitionWorkspaceBindings() []pipelineapi.WorkspacePipelin
 		},
 	}
 }
+
+// addStrategyParametersToPipelineSpec adds strategy parameters to the Pipeline-level parameter declarations
+// This allows the strategy parameters to be passed from PipelineRun to individual PipelineTasks
+func addStrategyParametersToPipelineSpec(pipelineSpec *pipelineapi.PipelineSpec, parameterDefinitions []buildv1beta1.Parameter) {
+	for _, parameterDefinition := range parameterDefinitions {
+		param := pipelineapi.ParamSpec{
+			Name:        parameterDefinition.Name,
+			Description: parameterDefinition.Description,
+		}
+
+		switch parameterDefinition.Type {
+		case "", buildv1beta1.ParameterTypeString:
+			param.Type = pipelineapi.ParamTypeString
+			if parameterDefinition.Default != nil {
+				param.Default = &pipelineapi.ParamValue{
+					Type:      pipelineapi.ParamTypeString,
+					StringVal: *parameterDefinition.Default,
+				}
+			}
+
+		case buildv1beta1.ParameterTypeArray:
+			param.Type = pipelineapi.ParamTypeArray
+			if parameterDefinition.Defaults != nil {
+				param.Default = &pipelineapi.ParamValue{
+					Type:     pipelineapi.ParamTypeArray,
+					ArrayVal: *parameterDefinition.Defaults,
+				}
+			}
+		}
+
+		pipelineSpec.Params = append(pipelineSpec.Params, param)
+	}
+}
+
+// createBuildStrategyPipelineTask creates a PipelineTask for the build strategy phase
+// Includes parameter references for both base params and strategy-specific params
+func createBuildStrategyPipelineTask(taskSpec *pipelineapi.TaskSpec, strategy buildv1beta1.BuilderStrategy) pipelineapi.PipelineTask {
+	pipelineTask := pipelineapi.PipelineTask{
+		Name: "build-strategy",
+		TaskSpec: &pipelineapi.EmbeddedTask{
+			TaskSpec: *taskSpec,
+		},
+		Params:     generateBuildStrategyTaskParams(strategy),
+		Workspaces: generateBuildStrategyWorkspaceBindings(),
+		RunAfter:   []string{"source-acquisition"},
+	}
+
+	// Add shp-output-directory parameter if it exists in the TaskSpec
+	if hasTaskSpecParam(taskSpec, "shp-output-directory") {
+		pipelineTask.Params = append(pipelineTask.Params, pipelineapi.Param{
+			Name: "shp-output-directory",
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: "$(params.shp-output-directory)",
+			},
+		})
+	}
+
+	return pipelineTask
+}
+
+// generateBuildStrategyTaskParams creates parameter references for the build strategy task
+// Combines base Shipwright params with strategy-specific params
+func generateBuildStrategyTaskParams(strategy buildv1beta1.BuilderStrategy) []pipelineapi.Param {
+	// Start with base params
+	params := generateBaseTaskParamReferences()
+
+	// Add strategy parameters
+	for _, strategyParam := range strategy.GetParameters() {
+		var paramRef string
+		if strategyParam.Type == buildv1beta1.ParameterTypeArray {
+			paramRef = fmt.Sprintf("$(params.%s[*])", strategyParam.Name)
+		} else {
+			paramRef = fmt.Sprintf("$(params.%s)", strategyParam.Name)
+		}
+
+		params = append(params, pipelineapi.Param{
+			Name: strategyParam.Name,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString, // References are always strings
+				StringVal: paramRef,
+			},
+		})
+	}
+
+	return params
+}
+
+// generateBuildStrategyWorkspaceBindings creates workspace bindings for the build strategy task
+// Includes both the source workspace and optional cache workspace
+func generateBuildStrategyWorkspaceBindings() []pipelineapi.WorkspacePipelineTaskBinding {
+	return []pipelineapi.WorkspacePipelineTaskBinding{
+		{
+			Name:      workspaceSource,
+			Workspace: workspaceSource,
+		},
+		{
+			Name:      "cache",
+			Workspace: "cache",
+		},
+	}
+}
+
+// addOutputDirectoryParamToPipelineSpec adds shp-output-directory parameter to Pipeline-level params
+func addOutputDirectoryParamToPipelineSpec(pipelineSpec *pipelineapi.PipelineSpec) {
+	prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+	pipelineSpec.Params = append(pipelineSpec.Params, pipelineapi.ParamSpec{
+		Name: prefixedOutputDirectory,
+		Type: pipelineapi.ParamTypeString,
+	})
+}
+
+// createOutputImagePipelineTask creates a PipelineTask for the output-image phase
+func createOutputImagePipelineTask(taskSpec *pipelineapi.TaskSpec, hasOutputDirectory bool) pipelineapi.PipelineTask {
+	task := pipelineapi.PipelineTask{
+		Name: "output-image",
+		TaskSpec: &pipelineapi.EmbeddedTask{
+			TaskSpec: *taskSpec,
+		},
+		Params: generateBaseTaskParamReferences(),
+		Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
+			{Name: workspaceSource, Workspace: workspaceSource},
+		},
+		RunAfter: []string{"build-strategy"},
+	}
+
+	// Add output-directory parameter reference if needed
+	if hasOutputDirectory {
+		prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+		task.Params = append(task.Params, pipelineapi.Param{
+			Name: prefixedOutputDirectory,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: fmt.Sprintf("$(params.%s)", prefixedOutputDirectory),
+			},
+		})
+	}
+
+	return task
+}
+
+// hasOutputDirectoryParam checks if the PipelineSpec has shp-output-directory parameter
+func hasOutputDirectoryParam(pipelineSpec *pipelineapi.PipelineSpec) bool {
+	prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+	for _, param := range pipelineSpec.Params {
+		if param.Name == prefixedOutputDirectory {
+			return true
+		}
+	}
+	return false
+}
+
+// hasTaskSpecParam checks if a TaskSpec has a parameter with the given name
+func hasTaskSpecParam(taskSpec *pipelineapi.TaskSpec, paramName string) bool {
+	for _, param := range taskSpec.Params {
+		if param.Name == paramName {
+			return true
+		}
+	}
+	return false
+}
+
+// doesTaskSpecReferenceOutputDirectory checks if any step references the output-directory parameter
+func doesTaskSpecReferenceOutputDirectory(taskSpec *pipelineapi.TaskSpec) bool {
+	prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+	for _, step := range taskSpec.Steps {
+		if isStepReferencingParameter(&step, prefixedOutputDirectory) {
+			return true
+		}
+	}
+	return false
+}

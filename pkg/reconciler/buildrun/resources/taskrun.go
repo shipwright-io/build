@@ -15,10 +15,11 @@ import (
 const (
 	prefixParamsResultsVolumes = "shp"
 
-	paramOutputImage    = "output-image"
-	paramOutputInsecure = "output-insecure"
-	paramSourceRoot     = "source-root"
-	paramSourceContext  = "source-context"
+	paramOutputImage     = "output-image"
+	paramOutputInsecure  = "output-insecure"
+	paramSourceRoot      = "source-root"
+	paramSourceContext   = "source-context"
+	paramOutputDirectory = "output-directory"
 
 	workspaceSource = "source"
 )

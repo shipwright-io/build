@@ -90,135 +90,113 @@ func (g *PipelineRunGenerator) GenerateSourceAcquisitionPhase(execCtx *execution
 }
 
 func (g *PipelineRunGenerator) GenerateBuildStrategyPhase(execCtx *executionContext) error {
-	// taskSpec := createBaseTaskSpec()
+	taskSpec := createBaseTaskSpec()
+	addStrategyParametersToTaskSpec(taskSpec, g.strategy.GetParameters())
 
-	// addStrategyParametersToTaskSpec(taskSpec, g.strategy.GetParameters())
+	volumeMounts, err := applyBuildStrategySteps(
+		taskSpec,
+		g.build,
+		g.strategy.GetBuildSteps(),
+		g.strategy.GetVolumes(),
+		execCtx.combinedEnvs,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to apply build strategy steps: %w", err)
+	}
 
-	// volumeMounts, err := applyBuildStrategySteps(
-	// 	taskSpec,
-	// 	g.build,
-	// 	g.strategy.GetBuildSteps(),
-	// 	g.strategy.GetVolumes(),
-	// 	execCtx.combinedEnvs,
-	// )
-	// if err != nil {
-	// 	return fmt.Errorf("failed to apply build strategy steps: %w", err)
-	// }
+	execCtx.volumeMounts = volumeMounts
 
-	// execCtx.volumeMounts = volumeMounts
+	if err := generateTaskSpecVolumes(
+		taskSpec,
+		execCtx.volumeMounts,
+		execCtx.strategyVolumes,
+		execCtx.buildVolumes,
+		execCtx.buildRunVolumes,
+	); err != nil {
+		return fmt.Errorf("failed to generate TaskSpec volumes: %w", err)
+	}
 
-	// if err := generateTaskSpecVolumes(
-	// 	taskSpec,
-	// 	execCtx.volumeMounts,
-	// 	execCtx.strategyVolumes,
-	// 	execCtx.buildVolumes,
-	// 	execCtx.buildRunVolumes,
-	// ); err != nil {
-	// 	return fmt.Errorf("failed to generate TaskSpec volumes: %w", err)
-	// }
+	// Check if any step references shp-output-directory
+	// For PipelineRun, we'll use the workspace PVC instead of EmptyDir
+	hasOutputDirectory := doesTaskSpecReferenceOutputDirectory(taskSpec)
+	execCtx.hasOutputDirectory = hasOutputDirectory
 
-	// // Add cache workspace declaration to TaskSpec if strategy references it
-	// taskSpec.Workspaces = append(taskSpec.Workspaces, pipelineapi.WorkspaceDeclaration{
-	// 	Name:     "cache",
-	// 	Optional: true,
-	// })
+	if hasOutputDirectory {
+		// Add parameter to TaskSpec
+		prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+		taskSpec.Params = append(taskSpec.Params, pipelineapi.ParamSpec{
+			Name: prefixedOutputDirectory,
+			Type: pipelineapi.ParamTypeString,
+		})
 
-	// // Build params list including base shipwright params and strategy params
-	// pipelineTaskParams := generateBaseTaskParamReferences() // Start with base params from helper
+		// Add parameter to Pipeline-level
+		addOutputDirectoryParamToPipelineSpec(g.pipelineRun.Spec.PipelineSpec)
+	}
 
-	// // Add strategy parameters to Pipeline-level and task-level
-	// for _, strategyParam := range g.strategy.GetParameters() {
-	// 	// Determine parameter type
-	// 	paramType := pipelineapi.ParamTypeString
-	// 	if strategyParam.Type == buildv1beta1.ParameterTypeArray {
-	// 		paramType = pipelineapi.ParamTypeArray
-	// 	}
+	// Add strategy parameters to Pipeline-level params
+	addStrategyParametersToPipelineSpec(g.pipelineRun.Spec.PipelineSpec, g.strategy.GetParameters())
 
-	// 	// Create Pipeline-level param spec with defaults
-	// 	pipelineParamSpec := pipelineapi.ParamSpec{
-	// 		Name: strategyParam.Name,
-	// 		Type: paramType,
-	// 	}
+	pipelineTask := createBuildStrategyPipelineTask(taskSpec, g.strategy)
+	g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
 
-	// 	// Add default value if strategy has one
-	// 	if paramType == pipelineapi.ParamTypeString && strategyParam.Default != nil {
-	// 		pipelineParamSpec.Default = &pipelineapi.ParamValue{
-	// 			Type:      pipelineapi.ParamTypeString,
-	// 			StringVal: *strategyParam.Default,
-	// 		}
-	// 	} else if paramType == pipelineapi.ParamTypeArray && strategyParam.Defaults != nil {
-	// 		pipelineParamSpec.Default = &pipelineapi.ParamValue{
-	// 			Type:     pipelineapi.ParamTypeArray,
-	// 			ArrayVal: *strategyParam.Defaults,
-	// 		}
-	// 	}
-
-	// 	g.pipelineRun.Spec.PipelineSpec.Params = append(g.pipelineRun.Spec.PipelineSpec.Params, pipelineParamSpec)
-
-	// 	// Add to PipelineTask params (pass through from pipeline params)
-	// 	paramRef := fmt.Sprintf("$(params.%s)", strategyParam.Name)
-	// 	if paramType == pipelineapi.ParamTypeArray {
-	// 		paramRef = fmt.Sprintf("$(params.%s[*])", strategyParam.Name)
-	// 	}
-
-	// 	pipelineTaskParams = append(pipelineTaskParams, pipelineapi.Param{
-	// 		Name: strategyParam.Name,
-	// 		Value: pipelineapi.ParamValue{
-	// 			Type:      pipelineapi.ParamTypeString,
-	// 			StringVal: paramRef,
-	// 		},
-	// 	})
-	// }
-
-	// pipelineTask := pipelineapi.PipelineTask{
-	// 	Name: "build-strategy",
-	// 	TaskSpec: &pipelineapi.EmbeddedTask{
-	// 		TaskSpec: *taskSpec,
-	// 	},
-	// 	Params: pipelineTaskParams,
-	// 	Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
-	// 		{Name: workspaceSource, Workspace: workspaceSource},
-	// 		{Name: "cache", Workspace: "cache"},
-	// 	},
-	// 	RunAfter: []string{"source-acquisition"},
-	// }
-
-	// g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
 	return nil
 }
 
 func (g *PipelineRunGenerator) GenerateOutputImagePhase(execCtx *executionContext) error {
-	// taskSpec := createBaseTaskSpec()
+	buildRunOutput := g.buildRun.Spec.Output
+	if buildRunOutput == nil {
+		buildRunOutput = &buildv1beta1.Image{}
+	}
 
-	// buildRunOutput := g.buildRun.Spec.Output
-	// if buildRunOutput == nil {
-	// 	buildRunOutput = &buildv1beta1.Image{}
-	// }
+	// Build the arguments for image processing step
+	// Pass hasOutputDirectory=true since we're using workspace for the OCI directory
+	hasSourceTimestamp := true
+	stepArgs, err := BuildImageProcessingArgs(
+		g.cfg,
+		g.buildRun.CreationTimestamp.Time,
+		g.build.Spec.Output,
+		*buildRunOutput,
+		execCtx.hasOutputDirectory, // Use the value from build strategy phase
+		hasSourceTimestamp,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to build image processing args: %w", err)
+	}
 
-	// tempTaskRun := &pipelineapi.TaskRun{
-	// 	Spec: pipelineapi.TaskRunSpec{
-	// 		TaskSpec: taskSpec,
-	// 	},
-	// }
+	// Only create output-image task if there's actually work to do
+	if len(stepArgs) == 0 {
+		return nil
+	}
 
-	// if err := SetupImageProcessing(tempTaskRun, g.cfg, g.buildRun.CreationTimestamp.Time, g.build.Spec.Output, *buildRunOutput); err != nil {
-	// 	return fmt.Errorf("failed to setup image processing: %w", err)
-	// }
+	// Create a new TaskSpec for the output-image task
+	taskSpec := createBaseTaskSpec()
 
-	// taskSpec = tempTaskRun.Spec.TaskSpec
+	// Add shp-output-directory parameter to TaskSpec if needed
+	if execCtx.hasOutputDirectory {
+		prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+		taskSpec.Params = append(taskSpec.Params, pipelineapi.ParamSpec{
+			Name: prefixedOutputDirectory,
+			Type: pipelineapi.ParamTypeString,
+		})
+	}
 
-	// pipelineTask := pipelineapi.PipelineTask{
-	// 	Name: "output-image",
-	// 	TaskSpec: &pipelineapi.EmbeddedTask{
-	// 		TaskSpec: *taskSpec,
-	// 	},
-	// 	Workspaces: []pipelineapi.WorkspacePipelineTaskBinding{
-	// 		{Name: workspaceSource, Workspace: workspaceSource},
-	// 	},
-	// 	RunAfter: []string{"build-strategy"},
-	// }
+	// Create and add the image processing step
+	// Pass false for hasOutputDirectory to prevent adding the EmptyDir volume
+	// The volume will come from the workspace PVC instead
+	if err := CreateImageProcessingStep(
+		g.cfg,
+		taskSpec,
+		stepArgs,
+		false, // Don't add EmptyDir volume - we'll use workspace
+		g.build.Spec.Output.PushSecret,
+	); err != nil {
+		return fmt.Errorf("failed to create image processing step: %w", err)
+	}
 
-	// g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
+	// Create the output-image PipelineTask
+	pipelineTask := createOutputImagePipelineTask(taskSpec, execCtx.hasOutputDirectory)
+	g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
+
 	return nil
 }
 
@@ -346,6 +324,19 @@ func (g *PipelineRunGenerator) ApplyMetadataConfiguration() error {
 	}
 
 	g.pipelineRun.Spec.Params = params
+
+	// Add shp-output-directory parameter value if it was added to Pipeline params
+	// For PipelineRun, we use the workspace PVC path to share data between tasks
+	if hasOutputDirectoryParam(g.pipelineRun.Spec.PipelineSpec) {
+		prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+		g.pipelineRun.Spec.Params = append(g.pipelineRun.Spec.Params, pipelineapi.Param{
+			Name: prefixedOutputDirectory,
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: "/workspace/source/output-image", // Use workspace subdirectory
+			},
+		})
+	}
 
 	g.pipelineRun.Spec.PipelineSpec.Tasks = g.pipelineTasks
 
