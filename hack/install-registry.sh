@@ -27,7 +27,7 @@ REGISTRY_NAME="${REGISTRY_NAME:-kind-registry}"
 REGISTRY_PORT="${REGISTRY_PORT:-5000}"
 
 function is_registry_running () {
-    REGISTRY_RUNNING="$(docker inspect --format='{{ .State.Running }}' "${REGISTRY_NAME}" 2>/dev/null || true)"
+    REGISTRY_RUNNING="$(podman inspect --format='{{ .State.Running }}' "${REGISTRY_NAME}" 2>/dev/null || true)"
     if [ "${REGISTRY_RUNNING}" != "true" ] ; then
         return 1
     else
@@ -36,7 +36,7 @@ function is_registry_running () {
 }
 
 function start_registry () {
-    docker run \
+    podman run \
         --name="${REGISTRY_NAME}" \
         --publish="${REGISTRY_PORT}:5000" \
         --restart="always" \
@@ -52,7 +52,7 @@ EOS
 }
 
 function show_ipaddr () {
-    docker inspect --format='{{ .NetworkSettings.Networks.kind.IPAddress }}' "${REGISTRY_NAME}"
+    podman inspect --format='{{ .NetworkSettings.Networks.kind.IPAddress }}' "${REGISTRY_NAME}"
 }
 
 if [ "${ACTION}" == "" ] ; then

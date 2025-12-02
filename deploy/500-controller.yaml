@@ -45,6 +45,8 @@ spec:
               value: ko://github.com/shipwright-io/build/cmd/bundle
             - name: WAITER_CONTAINER_IMAGE
               value: ko://github.com/shipwright-io/build/cmd/waiter
+            - name: BUILDRUN_EXECUTOR
+              value: "PipelineRun"
           ports:
             - containerPort: 8383
               name: metrics-port
