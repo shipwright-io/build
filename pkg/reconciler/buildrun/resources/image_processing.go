@@ -22,7 +22,6 @@ import (
 const (
 	containerNameImageProcessing = "image-processing"
 	outputDirectoryMountPath     = "/workspace/output-image"
-	paramOutputDirectory         = "output-directory"
 )
 
 type VulnerablilityScanParams struct {
@@ -47,71 +46,84 @@ func (v *VulnerablilityScanParams) Type() string {
 	return "vulnerability-scan-params"
 }
 
-// SetupImageProcessing appends the image-processing step to a TaskRun if desired
-func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, creationTimestamp time.Time, buildOutput, buildRunOutput build.Image) error {
-	stepArgs := []string{}
-
-	// Check if any build step references the output-directory system parameter. If that is the case,
-	// then we assume that Shipwright performs the image push operation.
+// SetupOutputDirectory scans existing steps for output-directory parameter references
+// and sets up the necessary volume, parameter, and volume mounts.
+// Returns true if output directory was added.
+func SetupOutputDirectory(taskSpec *pipelineapi.TaskSpec, taskRunParams *[]pipelineapi.Param) bool {
 	volumeAdded := false
 	prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
-	for i := range taskRun.Spec.TaskSpec.Steps {
-		step := taskRun.Spec.TaskSpec.Steps[i]
+
+	for i := range taskSpec.Steps {
+		step := taskSpec.Steps[i]
 
 		if isStepReferencingParameter(&step, prefixedOutputDirectory) {
 			if !volumeAdded {
 				volumeAdded = true
 
-				// add an emptyDir volume for the output directory
-				taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
+				// Add emptyDir volume
+				taskSpec.Volumes = append(taskSpec.Volumes, core.Volume{
 					Name: prefixedOutputDirectory,
 					VolumeSource: core.VolumeSource{
 						EmptyDir: &core.EmptyDirVolumeSource{},
 					},
 				})
 
-				// add the parameter definition
-				taskRun.Spec.TaskSpec.Params = append(taskRun.Spec.TaskSpec.Params, pipelineapi.ParamSpec{
+				// Add parameter definition
+				taskSpec.Params = append(taskSpec.Params, pipelineapi.ParamSpec{
 					Name: prefixedOutputDirectory,
 					Type: pipelineapi.ParamTypeString,
 				})
 
-				// add the parameter value
-				taskRun.Spec.Params = append(taskRun.Spec.Params, pipelineapi.Param{
-					Name: prefixedOutputDirectory,
-					Value: pipelineapi.ParamValue{
-						StringVal: outputDirectoryMountPath,
-						Type:      pipelineapi.ParamTypeString,
-					},
-				})
-
-				// add the push argument to the command
-				stepArgs = append(stepArgs, "--push", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputDirectory))
+				// Add parameter value (only for TaskRun)
+				if taskRunParams != nil {
+					*taskRunParams = append(*taskRunParams, pipelineapi.Param{
+						Name: prefixedOutputDirectory,
+						Value: pipelineapi.ParamValue{
+							StringVal: outputDirectoryMountPath,
+							Type:      pipelineapi.ParamTypeString,
+						},
+					})
+				}
 			}
 
-			// add a volumeMount to the step
-			taskRun.Spec.TaskSpec.Steps[i].VolumeMounts = append(taskRun.Spec.TaskSpec.Steps[i].VolumeMounts, core.VolumeMount{
+			// Add volumeMount to the step
+			taskSpec.Steps[i].VolumeMounts = append(taskSpec.Steps[i].VolumeMounts, core.VolumeMount{
 				Name:      prefixedOutputDirectory,
 				MountPath: outputDirectoryMountPath,
 			})
 		}
 	}
 
-	// check if we need to set image labels
+	return volumeAdded
+}
+
+// BuildImageProcessingArgs builds the argument list for the image-processing step
+// based on output configuration (labels, annotations, vulnerability scanning, timestamps).
+func BuildImageProcessingArgs(
+	cfg *config.Config,
+	creationTimestamp time.Time,
+	buildOutput, buildRunOutput build.Image,
+	hasOutputDirectory bool,
+	hasSourceTimestamp bool,
+) ([]string, error) {
+	stepArgs := []string{}
+
+	// Add push arg if output directory is used
+	if hasOutputDirectory {
+		stepArgs = append(stepArgs, "--push", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputDirectory))
+	}
+
 	annotations := mergeMaps(buildOutput.Annotations, buildRunOutput.Annotations)
 	if len(annotations) > 0 {
 		stepArgs = append(stepArgs, convertMutateArgs("--annotation", annotations)...)
 	}
 
-	// check if we need to set image labels
 	labels := mergeMaps(buildOutput.Labels, buildRunOutput.Labels)
 	if len(labels) > 0 {
 		stepArgs = append(stepArgs, convertMutateArgs("--label", labels)...)
 	}
 
 	vulnerabilitySettings := GetVulnerabilityScanOptions(buildOutput, buildRunOutput)
-
-	// check if we need to add vulnerability scan arguments
 	if vulnerabilitySettings != nil && vulnerabilitySettings.Enabled {
 		vulnerablilityScanParams := &VulnerablilityScanParams{*vulnerabilitySettings}
 		stepArgs = append(stepArgs, "--vuln-settings", vulnerablilityScanParams.String())
@@ -121,17 +133,15 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 		}
 	}
 
-	// check if we need to set image timestamp
 	if imageTimestamp := getImageTimestamp(buildOutput, buildRunOutput); imageTimestamp != nil {
 		switch *imageTimestamp {
 		case build.OutputImageZeroTimestamp:
 			stepArgs = append(stepArgs, "--image-timestamp", "0")
 
 		case build.OutputImageSourceTimestamp:
-			if !hasTaskSpecResult(taskRun, "shp-source-default-source-timestamp") {
-				return fmt.Errorf("cannot use SourceTimestamp setting, because there is no source timestamp available for this source")
+			if !hasSourceTimestamp {
+				return nil, fmt.Errorf("cannot use SourceTimestamp setting, because there is no source timestamp available for this source")
 			}
-
 			stepArgs = append(stepArgs, "--image-timestamp-file", "$(results.shp-source-default-source-timestamp.path)")
 
 		case build.OutputImageBuildTimestamp:
@@ -139,7 +149,7 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 
 		default:
 			if _, err := strconv.ParseInt(*imageTimestamp, 10, 64); err != nil {
-				return fmt.Errorf("cannot parse output timestamp %s as a number, must be %s, %s, %s, or a an integer",
+				return nil, fmt.Errorf("cannot parse output timestamp %s as a number, must be %s, %s, %s, or a an integer",
 					*imageTimestamp, build.OutputImageZeroTimestamp, build.OutputImageSourceTimestamp, build.OutputImageBuildTimestamp)
 			}
 
@@ -147,82 +157,113 @@ func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, crea
 		}
 	}
 
-	// check if there is anything to do
 	if len(stepArgs) > 0 {
-		// add the image argument
 		stepArgs = append(stepArgs, "--image", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputImage))
-
-		// add the insecure flag
 		stepArgs = append(stepArgs, fmt.Sprintf("--insecure=$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputInsecure))
-
-		// add the result arguments
 		stepArgs = append(stepArgs, "--result-file-image-digest", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageDigestResult))
 		stepArgs = append(stepArgs, "--result-file-image-size", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageSizeResult))
 		stepArgs = append(stepArgs, "--result-file-image-vulnerabilities", fmt.Sprintf("$(results.%s-%s.path)", prefixParamsResultsVolumes, imageVulnerabilities))
-
-		// add the push step
-
-		// initialize the step from the template and the build-specific arguments
-		imageProcessingStep := pipelineapi.Step{
-			Name:             containerNameImageProcessing,
-			Image:            cfg.ImageProcessingContainerTemplate.Image,
-			ImagePullPolicy:  cfg.ImageProcessingContainerTemplate.ImagePullPolicy,
-			Command:          cfg.ImageProcessingContainerTemplate.Command,
-			Args:             stepArgs,
-			Env:              cfg.ImageProcessingContainerTemplate.Env,
-			ComputeResources: cfg.ImageProcessingContainerTemplate.Resources,
-			SecurityContext:  cfg.ImageProcessingContainerTemplate.SecurityContext,
-			WorkingDir:       cfg.ImageProcessingContainerTemplate.WorkingDir,
-		}
-
-		if volumeAdded {
-			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
-				Name:      prefixedOutputDirectory,
-				MountPath: outputDirectoryMountPath,
-				ReadOnly:  true,
-			})
-		}
-
-		if buildOutput.PushSecret != nil {
-			sources.AppendSecretVolume(taskRun.Spec.TaskSpec, *buildOutput.PushSecret)
-
-			secretMountPath := fmt.Sprintf("/workspace/%s-push-secret", prefixParamsResultsVolumes)
-
-			// define the volume mount on the container
-			imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
-				Name:      sources.SanitizeVolumeNameForSecretName(*buildOutput.PushSecret),
-				MountPath: secretMountPath,
-				ReadOnly:  true,
-			})
-
-			// append the argument
-			imageProcessingStep.Args = append(imageProcessingStep.Args,
-				"--secret-path", secretMountPath,
-			)
-		}
-		// add volume for trivy writes.
-		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, core.Volume{
-			Name: "shp-trivy-cache-data",
-			VolumeSource: core.VolumeSource{
-				EmptyDir: &core.EmptyDirVolumeSource{},
-			},
-		})
-		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
-			Name:      "shp-trivy-cache-data",
-			MountPath: "/trivy-cache-data",
-		})
-
-		imageProcessingStep.Env = append(imageProcessingStep.Env, core.EnvVar{
-			Name:  "TRIVY_CACHE_DIR",
-			Value: "/trivy-cache-data",
-		})
-		// add the writeable volumes
-		sources.SetupHomeAndTmpVolumes(taskRun.Spec.TaskSpec, &imageProcessingStep)
-		// append the mutate step
-		taskRun.Spec.TaskSpec.Steps = append(taskRun.Spec.TaskSpec.Steps, imageProcessingStep)
 	}
 
+	return stepArgs, nil
+}
+
+func CreateImageProcessingStep(
+	cfg *config.Config,
+	taskSpec *pipelineapi.TaskSpec,
+	stepArgs []string,
+	hasOutputDirectory bool,
+	pushSecret *string,
+) error {
+	if len(stepArgs) == 0 {
+		return nil
+	}
+
+	imageProcessingStep := pipelineapi.Step{
+		Name:             containerNameImageProcessing,
+		Image:            cfg.ImageProcessingContainerTemplate.Image,
+		ImagePullPolicy:  cfg.ImageProcessingContainerTemplate.ImagePullPolicy,
+		Command:          cfg.ImageProcessingContainerTemplate.Command,
+		Args:             stepArgs,
+		Env:              cfg.ImageProcessingContainerTemplate.Env,
+		ComputeResources: cfg.ImageProcessingContainerTemplate.Resources,
+		SecurityContext:  cfg.ImageProcessingContainerTemplate.SecurityContext,
+		WorkingDir:       cfg.ImageProcessingContainerTemplate.WorkingDir,
+	}
+
+	if hasOutputDirectory {
+		prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+			Name:      prefixedOutputDirectory,
+			MountPath: outputDirectoryMountPath,
+			ReadOnly:  true,
+		})
+	}
+
+	if pushSecret != nil {
+		sources.AppendSecretVolume(taskSpec, *pushSecret)
+
+		secretMountPath := fmt.Sprintf("/workspace/%s-push-secret", prefixParamsResultsVolumes)
+
+		imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+			Name:      sources.SanitizeVolumeNameForSecretName(*pushSecret),
+			MountPath: secretMountPath,
+			ReadOnly:  true,
+		})
+
+		imageProcessingStep.Args = append(imageProcessingStep.Args,
+			"--secret-path", secretMountPath,
+		)
+	}
+
+	taskSpec.Volumes = append(taskSpec.Volumes, core.Volume{
+		Name: "shp-trivy-cache-data",
+		VolumeSource: core.VolumeSource{
+			EmptyDir: &core.EmptyDirVolumeSource{},
+		},
+	})
+	imageProcessingStep.VolumeMounts = append(imageProcessingStep.VolumeMounts, core.VolumeMount{
+		Name:      "shp-trivy-cache-data",
+		MountPath: "/trivy-cache-data",
+	})
+
+	imageProcessingStep.Env = append(imageProcessingStep.Env, core.EnvVar{
+		Name:  "TRIVY_CACHE_DIR",
+		Value: "/trivy-cache-data",
+	})
+
+	sources.SetupHomeAndTmpVolumes(taskSpec, &imageProcessingStep)
+	taskSpec.Steps = append(taskSpec.Steps, imageProcessingStep)
+
 	return nil
+}
+
+// SetupImageProcessing configures image processing for TaskRun execution.
+func SetupImageProcessing(taskRun *pipelineapi.TaskRun, cfg *config.Config, creationTimestamp time.Time, buildOutput, buildRunOutput build.Image) error {
+	params := []pipelineapi.Param(taskRun.Spec.Params)
+	hasOutputDirectory := SetupOutputDirectory(taskRun.Spec.TaskSpec, &params)
+	taskRun.Spec.Params = pipelineapi.Params(params)
+
+	hasSourceTimestamp := hasTaskSpecResult(taskRun, "shp-source-default-source-timestamp")
+	stepArgs, err := BuildImageProcessingArgs(
+		cfg,
+		creationTimestamp,
+		buildOutput,
+		buildRunOutput,
+		hasOutputDirectory,
+		hasSourceTimestamp,
+	)
+	if err != nil {
+		return err
+	}
+
+	return CreateImageProcessingStep(
+		cfg,
+		taskRun.Spec.TaskSpec,
+		stepArgs,
+		hasOutputDirectory,
+		buildOutput.PushSecret,
+	)
 }
 
 // convertMutateArgs to convert the argument map to comma separated values
