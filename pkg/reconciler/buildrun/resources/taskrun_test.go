@@ -374,6 +374,47 @@ var _ = Describe("TaskRun Unit Tests", func() {
 			})
 		})
 
+		Context("with runtimeClassName", func() {
+			It("should use BuildRun runtimeClassName when specified", func() {
+				runtimeClassName := "kata-containers"
+				buildRun.Spec.RuntimeClassName = &runtimeClassName
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.RuntimeClassName).ToNot(BeNil())
+				Expect(*taskRun.Spec.PodTemplate.RuntimeClassName).To(Equal(runtimeClassName))
+			})
+
+			It("should use Build runtimeClassName when BuildRun runtimeClassName is not specified", func() {
+				runtimeClassName := "gvisor"
+				build.Spec.RuntimeClassName = &runtimeClassName
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.RuntimeClassName).ToNot(BeNil())
+				Expect(*taskRun.Spec.PodTemplate.RuntimeClassName).To(Equal(runtimeClassName))
+			})
+
+			It("should prefer BuildRun runtimeClassName over Build runtimeClassName", func() {
+				buildRuntimeClassName := "gvisor"
+				buildRunRuntimeClassName := "kata-containers"
+
+				build.Spec.RuntimeClassName = &buildRuntimeClassName
+				buildRun.Spec.RuntimeClassName = &buildRunRuntimeClassName
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.RuntimeClassName).ToNot(BeNil())
+				Expect(*taskRun.Spec.PodTemplate.RuntimeClassName).To(Equal(buildRunRuntimeClassName))
+			})
+		})
+
 		Context("with output image configuration", func() {
 			It("should use BuildRun output image when specified", func() {
 				buildRun.Spec.Output = &buildv1beta1.Image{

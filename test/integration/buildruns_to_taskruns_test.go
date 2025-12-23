@@ -803,4 +803,75 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			})
 		})
 	})
+
+	Context("when a buildrun is created with a RuntimeClassName defined", func() {
+		BeforeEach(func() {
+			buildSample = []byte(test.MinimalBuildWithRuntimeClassName)
+			buildRunSample = []byte(test.MinimalBuildRunWithRuntimeClassName)
+		})
+
+		Context("when the taskrun is created", func() {
+			It("should have the RuntimeClassName specified in the PodTemplate", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillStartTime(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(tr.Spec.PodTemplate.RuntimeClassName).ToNot(BeNil())
+				Expect(*tr.Spec.PodTemplate.RuntimeClassName).To(Equal(*br.Spec.RuntimeClassName))
+			})
+		})
+
+		Context("when the RuntimeClassName is invalid", func() {
+			It("fails the buildrun with a proper error in Reason", func() {
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
+
+				// set RuntimeClassName to be invalid (uppercase not allowed in DNS subdomain names)
+				buildRunObject.Spec.RuntimeClassName = ptr.To("InvalidRuntimeClass")
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal("RuntimeClassNameNotValid"))
+				Expect(condition.Message).To(ContainSubstring("RuntimeClassName not valid"))
+			})
+		})
+	})
+
+	Context("when a buildrun has a buildSpec defined and overrides runtimeClassName", func() {
+		var standaloneBuildRunObject *v1beta1.BuildRun
+
+		BeforeEach(func() {
+			buildRunSample = []byte(test.MinimalBuildRunWithRuntimeClassNameOverride)
+			standaloneBuildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithNameAndStrategy(BUILDRUN+tb.Namespace+"-standalone", cbsObject, buildRunSample)
+			Expect(err).To(BeNil())
+		})
+
+		Context("when the buildRun is created", func() {
+			It("should fail to register", func() {
+				Expect(tb.CreateBR(standaloneBuildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+				Expect(condition.Message).To(ContainSubstring("cannot use 'runtimeClassName' override and 'buildSpec' simultaneously"))
+			})
+		})
+	})
 })

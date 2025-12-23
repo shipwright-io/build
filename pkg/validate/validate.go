@@ -41,6 +41,8 @@ const (
 	Tolerations = "tolerations"
 	// SchedulerName for validating `spec.schedulerName` entry
 	SchedulerName = "schedulername"
+	// RuntimeClassName for validating `spec.runtimeClassName` entry
+	RuntimeClassName = "runtimeclassname"
 )
 
 const (
@@ -87,6 +89,8 @@ func NewValidation(
 		return &TolerationsRef{Build: build}, nil
 	case SchedulerName:
 		return &SchedulerNameRef{Build: build}, nil
+	case RuntimeClassName:
+		return &RuntimeClassNameRef{Build: build}, nil
 	default:
 		return nil, fmt.Errorf("unknown validation type")
 	}
@@ -155,6 +159,11 @@ func BuildRunFields(buildRun *build.BuildRun) (string, string) {
 		if buildRun.Spec.SchedulerName != nil {
 			return resources.BuildRunBuildFieldOverrideForbidden,
 				"cannot use 'schedulerName' override and 'buildSpec' simultaneously"
+		}
+
+		if buildRun.Spec.RuntimeClassName != nil {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'runtimeClassName' override and 'buildSpec' simultaneously"
 		}
 	}
 

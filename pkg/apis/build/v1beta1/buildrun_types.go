@@ -126,6 +126,10 @@ type BuildRunSpec struct {
 	// SchedulerName specifies the scheduler to be used to dispatch the Pod
 	// +optional
 	SchedulerName *string `json:"schedulerName,omitempty"`
+
+	// RuntimeClassName specifies the RuntimeClass to be used to run the Pod
+	// +optional
+	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
 }
 
 // BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.
