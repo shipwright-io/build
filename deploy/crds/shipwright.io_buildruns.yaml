@@ -7472,6 +7472,10 @@ spec:
                             format: duration
                             type: string
                         type: object
+                      runtimeClassName:
+                        description: RuntimeClassName specifies the RuntimeClass to
+                          be used to run the Pod
+                        type: string
                       schedulerName:
                         description: SchedulerName specifies the scheduler to be used
                           to dispatch the Pod
@@ -9826,6 +9830,10 @@ spec:
                     format: duration
                     type: string
                 type: object
+              runtimeClassName:
+                description: RuntimeClassName specifies the RuntimeClass to be used
+                  to run the Pod
+                type: string
               schedulerName:
                 description: SchedulerName specifies the scheduler to be used to dispatch
                   the Pod
@@ -12044,6 +12052,10 @@ spec:
                         format: duration
                         type: string
                     type: object
+                  runtimeClassName:
+                    description: RuntimeClassName specifies the RuntimeClass to be
+                      used to run the Pod
+                    type: string
                   schedulerName:
                     description: SchedulerName specifies the scheduler to be used
                       to dispatch the Pod

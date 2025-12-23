@@ -317,6 +317,15 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				return reconcile.Result{}, nil
 			}
 
+			// Validate the runtimeClassName
+			valid, reason, message = validate.BuildRunRuntimeClassName(buildRun.Spec.RuntimeClassName)
+			if !valid {
+				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, nil
+			}
+
 			// Create the ImageBuildRunner (TaskRun or PipelineRun)
 			imageBuildRunner, err := r.taskRunnerFactory.CreateImageBuildRunner(ctx, r.client, r.config, svcAccount, strategy, build, buildRun, r.scheme, r.setOwnerReferenceFunc)
 			if err != nil {

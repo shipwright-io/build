@@ -36,6 +36,7 @@ var validationTypes = [...]string{
 	validate.NodeSelector,
 	validate.Tolerations,
 	validate.SchedulerName,
+	validate.RuntimeClassName,
 }
 
 // ReconcileBuild reconciles a Build object

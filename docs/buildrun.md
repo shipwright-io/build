@@ -78,8 +78,9 @@ The `BuildRun` definition supports the following fields:
   - `spec.nodeSelector` - Specifies a selector which must match a node's labels for the build pod to be scheduled on that node. If nodeSelectors are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.tolerations` - Specifies the tolerations for the build pod. Only `key`, `value`, and `operator` are supported. Only `NoSchedule` taint `effect` is supported. If tolerations are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.schedulerName` - Specifies the scheduler name for the build pod. If schedulerName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
+  - `spec.runtimeClassName` - Specifies the [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) to be used for the build pod. If runtimeClassName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
 
-**Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, and `env` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
+**Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, `env`, `nodeSelector`, `tolerations`, `schedulerName`, and `runtimeClassName` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
 
 ### Defining the Build Reference
 

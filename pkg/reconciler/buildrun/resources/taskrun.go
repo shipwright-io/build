@@ -61,6 +61,10 @@ func GenerateTaskRun(
 		return nil, fmt.Errorf("failed to apply scheduler configuration to TaskRun for BuildRun %q: %w", buildRun.Name, err)
 	}
 
+	if err := applyRuntimeClassName(taskRun, build, buildRun); err != nil {
+		return nil, fmt.Errorf("failed to apply runtimeClassName to TaskRun for BuildRun %q: %w", buildRun.Name, err)
+	}
+
 	if err := applyAnnotationsAndLabels(taskRun, strategy); err != nil {
 		return nil, fmt.Errorf("failed to apply annotations and labels to TaskRun for BuildRun %q using strategy %q: %w", buildRun.Name, strategy.GetName(), err)
 	}
@@ -379,6 +383,25 @@ func applyScheduler(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, bui
 		taskRun.Spec.PodTemplate = taskRunPodTemplate
 	} else if build.Spec.SchedulerName != nil {
 		taskRunPodTemplate.SchedulerName = *build.Spec.SchedulerName
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	}
+
+	return nil
+}
+
+// applyRuntimeClassName configures runtimeClassName for the TaskRun
+func applyRuntimeClassName(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+	taskRunPodTemplate := &pod.PodTemplate{}
+	if taskRun.Spec.PodTemplate != nil {
+		taskRunPodTemplate = taskRun.Spec.PodTemplate
+	}
+
+	// Set runtimeClassName if specified, giving preference to BuildRun values
+	if buildRun.Spec.RuntimeClassName != nil {
+		taskRunPodTemplate.RuntimeClassName = buildRun.Spec.RuntimeClassName
+		taskRun.Spec.PodTemplate = taskRunPodTemplate
+	} else if build.Spec.RuntimeClassName != nil {
+		taskRunPodTemplate.RuntimeClassName = build.Spec.RuntimeClassName
 		taskRun.Spec.PodTemplate = taskRunPodTemplate
 	}
 

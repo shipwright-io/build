@@ -313,6 +313,32 @@ spec:
   schedulerName: "buildrun-test-schedulername"
 `
 
+// MinimalBuildRunWithRuntimeClassName defines a minimal BuildRun
+// with a reference to a not existing Build,
+// and a RuntimeClassName specified
+const MinimalBuildRunWithRuntimeClassName = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    name: foobar
+  runtimeClassName: "kata-containers"
+`
+
+// MinimalBuildRunWithRuntimeClassNameOverride defines a minimal BuildRun
+// with a build spec defined and a runtimeClassName overriding the build spec
+const MinimalBuildRunWithRuntimeClassNameOverride = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    spec:
+      strategy:
+        kind: ClusterBuildStrategy
+        name: buildah
+  runtimeClassName: "kata-containers"
+`
+
 // MinimalBuildRunWithVulnerabilityScan defines a BuildRun with
 // an override for the Build Output
 const MinimalBuildRunWithVulnerabilityScan = `
