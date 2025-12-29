@@ -82,6 +82,8 @@ const (
 	TolerationNotValid BuildReason = "TolerationNotValid"
 	// SchedulerNameNotValid indicates that the Scheduler name is not valid
 	SchedulerNameNotValid BuildReason = "SchedulerNameNotValid"
+	// RuntimeClassNameNotValid indicates that the RuntimeClassName is not valid
+	RuntimeClassNameNotValid BuildReason = "RuntimeClassNameNotValid"
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
 )
@@ -196,6 +198,10 @@ type BuildSpec struct {
 	// SchedulerName specifies the scheduler to be used to dispatch the Pod
 	// +optional
 	SchedulerName *string `json:"schedulerName,omitempty"`
+
+	// RuntimeClassName specifies the RuntimeClass to be used to run the Pod
+	// +optional
+	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
 }
 
 // BuildVolume is a volume that will be mounted in build pod during build step

@@ -594,6 +594,19 @@ spec:
   schedulerName: "build-test-schedulername"
 `
 
+// MinimalBuildWithRuntimeClassName defines a simple
+// Build with a strategy, output, and a RuntimeClassName specified
+const MinimalBuildWithRuntimeClassName = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+spec:
+  strategy:
+    kind: ClusterBuildStrategy
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/example/buildpacks-app
+  runtimeClassName: "kata-containers"
+`
+
 // BuildWithUndefinedParameter defines a param that was not declared under the
 // strategy parameters
 const BuildWithUndefinedParam = `
