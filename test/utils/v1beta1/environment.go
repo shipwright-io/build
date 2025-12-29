@@ -105,6 +105,8 @@ func KubeConfig() (*kubernetes.Clientset, *rest.Config, error) {
 			return nil, nil, err
 		}
 	}
+	config.QPS = 50
+	config.Burst = 100
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
