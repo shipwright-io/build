@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// +build pprof_enabled
+//go:build pprof_enabled
 
 package metrics
 

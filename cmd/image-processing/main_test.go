@@ -153,6 +153,7 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 	}
 
 	filecontent := func(path string) string {
+		// #nosec G304 ok in tests
 		data, err := os.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
