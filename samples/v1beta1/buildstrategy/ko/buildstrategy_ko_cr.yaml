@@ -51,7 +51,9 @@ spec:
         - name: GOFLAGS
           value: $(params.go-flags)
         - name: GOCACHE
-          value: /gocache
+          value: /gocache/go-build
+        - name: GOMODCACHE
+          value: /gocache/go-mod
         - name: GOTMPDIR
           value: /ko-tmp
         - name: TMPDIR
