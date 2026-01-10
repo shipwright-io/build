@@ -49,12 +49,19 @@ func mergeEnvironmentVariables(build *buildv1beta1.Build, buildRun *buildv1beta1
 
 // BuildRunExecutorGenerator generates build execution objects (TaskRun or PipelineRun).
 type BuildRunExecutorGenerator interface {
+	// InitializeExecutor creates the base executor with metadata and default settings.
 	InitializeExecutor() error
+	// GenerateSourceAcquisitionPhase configures steps for fetching source code into the workspace.
 	GenerateSourceAcquisitionPhase(execCtx *executionContext) error
+	// GenerateBuildStrategyPhase configures the main build steps from the BuildStrategy.
 	GenerateBuildStrategyPhase(execCtx *executionContext) error
+	// GenerateOutputImagePhase configures steps for pushing the built image to the registry.
 	GenerateOutputImagePhase(execCtx *executionContext) error
+	// ApplyInfrastructureConfiguration applies service accounts, node selectors, tolerations, and timeouts.
 	ApplyInfrastructureConfiguration() error
+	// ApplyMetadataConfiguration applies labels, annotations, and owner references.
 	ApplyMetadataConfiguration() error
+	// GetExecutor returns the fully configured executor object.
 	GetExecutor() client.Object
 }
 
