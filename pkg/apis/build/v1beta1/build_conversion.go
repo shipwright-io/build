@@ -36,7 +36,10 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 
 	alphaBuild.ObjectMeta = src.ObjectMeta
 
-	src.Spec.ConvertTo(&alphaBuild.Spec)
+	if err := src.Spec.ConvertTo(&alphaBuild.Spec); err != nil {
+		ctxlog.Error(ctx, err, "failed to convert object")
+		return err
+	}
 
 	alphaBuild.Status = v1alpha1.BuildStatus{
 		Registered: src.Status.Registered,
@@ -57,6 +60,7 @@ func (src *Build) ConvertTo(ctx context.Context, obj *unstructured.Unstructured)
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&alphaBuild)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed structuring the newObject")
+		return err
 	}
 	obj.Object = mapito
 
@@ -73,6 +77,7 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &alphaBuild)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed unstructuring the convertedObject")
+		return err
 	}
 
 	ctxlog.Info(ctx, "converting Build from alpha to beta", "namespace", alphaBuild.Namespace, "name", alphaBuild.Name)
@@ -81,7 +86,10 @@ func (src *Build) ConvertFrom(ctx context.Context, obj *unstructured.Unstructure
 	src.TypeMeta = alphaBuild.TypeMeta
 	src.TypeMeta.APIVersion = betaGroupVersion
 
-	src.Spec.ConvertFrom(&alphaBuild.Spec)
+	if err := src.Spec.ConvertFrom(&alphaBuild.Spec); err != nil {
+		ctxlog.Error(ctx, err, "failed to convert object")
+		return err
+	}
 
 	// convert annotation-controlled features
 	if value, set := alphaBuild.Annotations[v1alpha1.AnnotationBuildRunDeletion]; set {

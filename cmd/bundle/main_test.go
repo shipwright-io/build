@@ -79,6 +79,7 @@ var _ = Describe("Bundle Loader", func() {
 	}
 
 	filecontent := func(path string) string {
+		// #nosec G304 ok in tests
 		data, err := os.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
