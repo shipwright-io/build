@@ -198,6 +198,13 @@ func schema_pkg_apis_pipeline_pod_AffinityAssistantTemplate(ref common.Reference
 							Format:      "",
 						},
 					},
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountName is the name of the ServiceAccount to use for the affinity assistant pod. If not specified, the affinity assistant will inherit the serviceAccountName from the PipelineRun's taskRunTemplate. If that is also not specified, the pod will use the namespace's default ServiceAccount. More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -390,6 +397,13 @@ func schema_pkg_apis_pipeline_pod_Template(ref common.ReferenceCallback) common.
 					"hostNetwork": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HostNetwork specifies whether the pod may use the node network namespace",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"hostUsers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HostUsers indicates whether the pod will use the host's user namespace. Optional: Default to true. If set to true or not present, the pod will be run in the host user namespace, useful for when the pod needs a feature only available to the host user namespace, such as loading a kernel module with CAP_SYS_MODULE. When set to false, a new user namespace is created for the pod. Setting false is useful to mitigating container breakout vulnerabilities such as allowing containers to run as root without their user having root privileges on the host. This field depends on the kubernetes feature gate UserNamespacesSupport being enabled.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -1789,6 +1803,7 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineRunList(ref common.ReferenceCallba
 						},
 					},
 				},
+				Required: []string{"items"},
 			},
 		},
 		Dependencies: []string{

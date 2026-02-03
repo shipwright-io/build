@@ -82,7 +82,7 @@ jobs:
             tekton: v0.68.1
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.34.0
-            tekton: v1.6.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+            tekton: v1.9.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
     steps:
@@ -164,7 +164,7 @@ jobs:
             tekton: v0.68.1
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.34.0
-            tekton: v1.6.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
+            tekton: v1.9.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: oracle-vm-16cpu-64gb-x86-64
     steps:
