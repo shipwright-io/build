@@ -72,4 +72,4 @@ sed -i "s/TEKTON_VERSION ?= v.*/TEKTON_VERSION ?= ${NEW_VERSION}/" "${BASEDIR}/M
 sed -i "s/TEKTON_VERSION:-v.*}/TEKTON_VERSION:-${NEW_VERSION}}/" "${BASEDIR}/hack/install-tekton.sh"
 
 # Update README.md
-sed -i "s#https://storage.googleapis.com/tekton-releases/pipeline/previous/v.*/release.yaml#https://storage.googleapis.com/tekton-releases/pipeline/previous/${NEW_VERSION}/release.yaml#" "${BASEDIR}/README.md"
+sed -i "s#https://infra.tekton.dev/tekton-releases/pipeline/previous/v.*/release.yaml#https://infra.tekton.dev/tekton-releases/pipeline/previous/${NEW_VERSION}/release.yaml#" "${BASEDIR}/README.md"
