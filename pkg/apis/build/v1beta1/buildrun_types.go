@@ -130,6 +130,10 @@ type BuildRunSpec struct {
 	// RuntimeClassName specifies the RuntimeClass to be used to run the Pod
 	// +optional
 	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
+
+	// CABundle specifies the list certificates to be loaded in workload containers.
+	// +optional
+	CABundle *CABundle `json:"caBundle,omitempty"`
 }
 
 // BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.

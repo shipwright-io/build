@@ -2486,6 +2486,50 @@ spec:
           spec:
             description: BuildSpec defines the desired state of Build
             properties:
+              caBundle:
+                description: CABundle specifies the list certificates to be loaded
+                  in workload containers.
+                properties:
+                  configMap:
+                    description: |-
+                      configMap is a reference (by name) to a ConfigMap's `data` key(s), or to a
+                      list of ConfigMap's `data` key(s) using label selector, in the namespace.
+                    properties:
+                      key:
+                        description: Key of the entry in the object's `data` field
+                          to be used.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the name of the source object in the
+                          trust namespace.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  secret:
+                    description: |-
+                      secret is a reference (by name) to a Secret's `data` key(s), or to a
+                      list of Secret's `data` key(s) using label selector, in the namespace.
+                    properties:
+                      key:
+                        description: Key of the entry in the object's `data` field
+                          to be used.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the name of the source object in the
+                          trust namespace.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                type: object
+                x-kubernetes-map-type: atomic
               env:
                 description: Env contains additional environment variables that should
                   be passed to the build container

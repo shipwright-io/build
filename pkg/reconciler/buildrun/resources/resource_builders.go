@@ -6,6 +6,7 @@ package resources
 
 import (
 	"fmt"
+	"github.com/shipwright-io/build/pkg/cabundle"
 	"path"
 	"slices"
 	"strconv"
@@ -54,6 +55,11 @@ func generateBaseTaskSpecParams() []pipelineapi.ParamSpec {
 			Description: "The source directory",
 			Type:        pipelineapi.ParamTypeString,
 		},
+		{
+			Name:        fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramCABundle),
+			Description: "File file",
+			Type:        pipelineapi.ParamTypeString,
+		},
 	}
 }
 
@@ -64,6 +70,7 @@ func generateBaseTaskParamReferences() []pipelineapi.Param {
 		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputInsecure), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputInsecure)}},
 		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceRoot), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceRoot)}},
 		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramSourceContext), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramSourceContext)}},
+		{Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramCABundle), Value: pipelineapi.ParamValue{Type: pipelineapi.ParamTypeString, StringVal: fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramCABundle)}},
 	}
 }
 
@@ -102,6 +109,13 @@ func generateBaseParamValues(build *buildv1beta1.Build, buildRun *buildv1beta1.B
 			Value: pipelineapi.ParamValue{
 				Type:      pipelineapi.ParamTypeString,
 				StringVal: "/workspace/source",
+			},
+		},
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramCABundle),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: cabundle.File,
 			},
 		},
 	}
@@ -425,6 +439,13 @@ func applyParameters(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, bu
 			Value: pipelineapi.ParamValue{
 				Type:      pipelineapi.ParamTypeString,
 				StringVal: "/workspace/source",
+			},
+		},
+		{
+			Name: fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramCABundle),
+			Value: pipelineapi.ParamValue{
+				Type:      pipelineapi.ParamTypeString,
+				StringVal: cabundle.File,
 			},
 		},
 	}
