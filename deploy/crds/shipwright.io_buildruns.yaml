@@ -7598,6 +7598,59 @@ spec:
                   spec:
                     description: Spec refers to an embedded build specification
                     properties:
+                      caBundle:
+                        description: CABundle specifies the Secret or ConfigMap containing
+                          CA certificates to be loaded in workload containers.
+                        properties:
+                          configMap:
+                            description: configMap is a reference (by name) to a ConfigMap's
+                              `data` key.
+                            properties:
+                              key:
+                                description: Key of the entry in the object's `data`
+                                  field to be used.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                              name:
+                                description: Name is the name of the source object
+                                  in the trust namespace.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          secret:
+                            description: secret is a reference (by name) to a Secret's
+                              `data` key.
+                            properties:
+                              key:
+                                description: Key of the entry in the object's `data`
+                                  field to be used.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                              name:
+                                description: Name is the name of the source object
+                                  in the trust namespace.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
+                        x-kubernetes-map-type: atomic
+                        x-kubernetes-validations:
+                        - message: exactly one of the fields in [configMap secret]
+                            must be set
+                          rule: '[has(self.configMap),has(self.secret)].filter(x,x==true).size()
+                            == 1'
                       env:
                         description: Env contains additional environment variables
                           that should be passed to the build container
@@ -10244,6 +10297,59 @@ spec:
                     - strategy
                     type: object
                 type: object
+              caBundle:
+                description: CABundle specifies the Secret or ConfigMap containing
+                  CA certificates to be loaded in workload containers.
+                properties:
+                  configMap:
+                    description: configMap is a reference (by name) to a ConfigMap's
+                      `data` key.
+                    properties:
+                      key:
+                        description: Key of the entry in the object's `data` field
+                          to be used.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the name of the source object in the
+                          trust namespace.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  secret:
+                    description: secret is a reference (by name) to a Secret's `data`
+                      key.
+                    properties:
+                      key:
+                        description: Key of the entry in the object's `data` field
+                          to be used.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the name of the source object in the
+                          trust namespace.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                    x-kubernetes-map-type: atomic
+                type: object
+                x-kubernetes-map-type: atomic
+                x-kubernetes-validations:
+                - message: exactly one of the fields in [configMap secret] must be
+                    set
+                  rule: '[has(self.configMap),has(self.secret)].filter(x,x==true).size()
+                    == 1'
               env:
                 description: Env contains additional environment variables that should
                   be passed to the build container
@@ -12713,6 +12819,59 @@ spec:
               buildSpec:
                 description: BuildSpec is the Build Spec of this BuildRun.
                 properties:
+                  caBundle:
+                    description: CABundle specifies the Secret or ConfigMap containing
+                      CA certificates to be loaded in workload containers.
+                    properties:
+                      configMap:
+                        description: configMap is a reference (by name) to a ConfigMap's
+                          `data` key.
+                        properties:
+                          key:
+                            description: Key of the entry in the object's `data` field
+                              to be used.
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                          name:
+                            description: Name is the name of the source object in
+                              the trust namespace.
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      secret:
+                        description: secret is a reference (by name) to a Secret's
+                          `data` key.
+                        properties:
+                          key:
+                            description: Key of the entry in the object's `data` field
+                              to be used.
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                          name:
+                            description: Name is the name of the source object in
+                              the trust namespace.
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                    x-kubernetes-map-type: atomic
+                    x-kubernetes-validations:
+                    - message: exactly one of the fields in [configMap secret] must
+                        be set
+                      rule: '[has(self.configMap),has(self.secret)].filter(x,x==true).size()
+                        == 1'
                   env:
                     description: Env contains additional environment variables that
                       should be passed to the build container

@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
     - [Defining Retention Parameters](#defining-retention-parameters)
     - [Defining Volumes](#defining-volumes)
     - [Defining Step Resources](#defining-step-resources)
+    - [Defining CA Bundle](#defining-ca-bundle)
   - [Canceling a `BuildRun`](#canceling-a-buildrun)
   - [Automatic `BuildRun` deletion](#automatic-buildrun-deletion)
   - [Specifying Environment Variables](#specifying-environment-variables)
@@ -81,6 +82,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.tolerations` - Specifies the tolerations for the build pod. Only `key`, `value`, and `operator` are supported. Only `NoSchedule` taint `effect` is supported. If tolerations are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.schedulerName` - Specifies the scheduler name for the build pod. If schedulerName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.runtimeClassName` - Specifies the [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) to be used for the build pod. If runtimeClassName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
+  - `spec.caBundle` - Specifies a CA Bundle that is mounted in all the workloads. Either `ConfigMap` or `Secret` can be referenced. The `Key` inside the referenced object also needs to be specified.
 
 **Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, `env`, `stepResources`, `nodeSelector`, `tolerations`, `schedulerName`, and `runtimeClassName` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
 
@@ -283,6 +285,38 @@ spec:
 ```
 
 See the related [Build documentation](./build.md#defining-step-resources) for how to define step resources at the Build level.
+
+### Defining CA Bundle
+
+Using the CA Bundle API, you can add your own certificate authority, so that any program running in the build workload can use defined CA to establish mutual trust.
+
+CA Bundle can be referenced from a `ConfigMap` or `Secret` in the build namespace. The `Key` to be used from referenced `ConfigMap` or `Secret` also needs to be defined.
+
+The CA will be mounted in all the containers at the following locations
+- /etc/ssl/certs/ca-certificates.crt
+- /etc/pki/tls/certs/ca-bundle.crt
+
+The following environment variables will be added in all the containers, with value `/etc/ssl/certs/ca-certificates.crt`
+- SSL_CERT_FILE - OS trust store
+- NODE_EXTRA_CA_CERTS - Node.js uses this to append additional certificates
+- REQUESTS_CA_BUNDLE - Python requests library
+- CURL_CA_BUNDLE - curl CA bundle
+
+**Note**: If an environment is already defined, it will not be overwritten.
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  generateName: buildah-buildrun-with-ca-
+spec:
+  caBundle:
+    secret:
+      name: ca-bundle
+      key: ca.crt
+  build:
+    name: buildah-build
+```
 
 ## Canceling a `BuildRun`
 
