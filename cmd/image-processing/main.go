@@ -225,6 +225,7 @@ func runImageProcessing(ctx context.Context) error {
 			}
 		}
 		vulnOuput := serializeVulnerabilities(vulns)
+		// #nosec G306 the file must be readable by build steps that potentially run as a different user
 		if err := os.WriteFile(flagValues.resultFileImageVulnerabilities, vulnOuput, 0640); err != nil {
 			return err
 		}

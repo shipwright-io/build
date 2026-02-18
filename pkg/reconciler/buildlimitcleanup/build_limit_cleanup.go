@@ -89,9 +89,10 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	for _, br := range allBuildRuns.Items {
 		condition := br.Status.GetCondition(build.Succeeded)
 		if condition != nil {
-			if condition.Status == corev1.ConditionFalse {
+			switch condition.Status {
+			case corev1.ConditionFalse:
 				buildRunFailed = append(buildRunFailed, br)
-			} else if condition.Status == corev1.ConditionTrue {
+			case corev1.ConditionTrue:
 				buildRunSucceeded = append(buildRunSucceeded, br)
 			}
 		}
@@ -104,7 +105,7 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 		if len(buildRunSucceeded) > succeededLimit {
 			// Sort buildruns with oldest one at the beginning
 			sort.Slice(buildRunSucceeded, func(i, j int) bool {
-				return buildRunSucceeded[i].ObjectMeta.CreationTimestamp.Before(&buildRunSucceeded[j].ObjectMeta.CreationTimestamp)
+				return buildRunSucceeded[i].CreationTimestamp.Before(&buildRunSucceeded[j].CreationTimestamp)
 			})
 			lenOfList := len(buildRunSucceeded)
 			for i := 0; i < lenOfList-succeededLimit; i++ {
@@ -127,7 +128,7 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 		if len(buildRunFailed) > failedLimit {
 			// Sort buildruns with oldest one at the beginning
 			sort.Slice(buildRunFailed, func(i, j int) bool {
-				return buildRunFailed[i].ObjectMeta.CreationTimestamp.Before(&buildRunFailed[j].ObjectMeta.CreationTimestamp)
+				return buildRunFailed[i].CreationTimestamp.Before(&buildRunFailed[j].CreationTimestamp)
 			})
 			lenOfList := len(buildRunFailed)
 			for i := 0; i < lenOfList-failedLimit; i++ {

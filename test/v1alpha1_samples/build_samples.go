@@ -193,6 +193,7 @@ spec:
 
 // BuildCBSMinimalWithFakeSecret defines a Build with a
 // ClusterBuildStrategy and an not existing secret
+// #nosec G101 no hard-coded credentials
 const BuildCBSMinimalWithFakeSecret = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build
@@ -209,6 +210,7 @@ spec:
 
 // BuildWithOutputRefSecret defines a Build with a
 // referenced secret under spec.output
+// #nosec G101 no hard-coded credentials
 const BuildWithOutputRefSecret = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build
@@ -226,6 +228,7 @@ spec:
 
 // BuildWithSourceRefSecret defines a Build with a
 // referenced secret under spec.source
+// #nosec G101 no hard-coded credentials
 const BuildWithSourceRefSecret = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build
@@ -243,6 +246,7 @@ spec:
 
 // BuildWithBuilderRefSecret defines a Build with a
 // referenced secret under spec.builder
+// #nosec G101 no hard-coded credentials
 const BuildWithBuilderRefSecret = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build
@@ -262,6 +266,7 @@ spec:
 
 // BuildWithMultipleRefSecrets defines a Build with
 // multiple referenced secrets under spec
+// #nosec G101 no hard-coded credentials
 const BuildWithMultipleRefSecrets = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build
@@ -298,6 +303,7 @@ spec:
 
 // BuildCBSWithShortTimeOutAndRefOutputSecret defines a Build with a
 // ClusterBuildStrategy, a short timeout and an output secret
+// #nosec G101 no hard-coded credentials
 const BuildCBSWithShortTimeOutAndRefOutputSecret = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build
@@ -410,6 +416,7 @@ spec:
 `
 
 // BuildWithConfigMapSecretParams defines a Build with parameter values referencing a ConfigMap and Secret
+// #nosec G101 no hard-coded credentials
 const BuildWithConfigMapSecretParams = `
 apiVersion: shipwright.io/v1alpha1
 kind: Build

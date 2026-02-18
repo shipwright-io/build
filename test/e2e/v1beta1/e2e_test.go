@@ -38,12 +38,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		}
 
 		if buildRun != nil {
-			testBuild.DeleteBR(buildRun.Name)
+			Expect(testBuild.DeleteBR(buildRun.Name)).To(Succeed())
 			buildRun = nil
 		}
 
 		if build != nil {
-			testBuild.DeleteBuild(build.Name)
+			Expect(testBuild.DeleteBuild(build.Name)).To(Succeed())
 			build = nil
 		}
 	})
@@ -349,6 +349,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			By("deleting the parent Build object")
 			err = testBuild.DeleteBuild(build.Name)
 			Expect(err).NotTo(HaveOccurred(), "error deleting the parent Build")
+			build = nil
+
 			Eventually(func() bool {
 				_, err = testBuild.GetBR(buildRun.Name)
 				if err == nil {
@@ -359,6 +361,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				}
 				return true
 			}).Should(BeTrue())
+			buildRun = nil
 		})
 	})
 
@@ -621,7 +624,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("when a Kaniko build is defined to use a private GitHub repository", Label("Kaniko", "CORE", "SAMPLE"),func() {
+		Context("when a Kaniko build is defined to use a private GitHub repository", Label("Kaniko", "CORE", "SAMPLE"), func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-github-kaniko")
@@ -665,7 +668,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			})
 		})
 
-		Context("when a s2i build is defined to use a private GitHub repository", Label("s2i", "CORE", "SAMPLE"),func() {
+		Context("when a s2i build is defined to use a private GitHub repository", Label("s2i", "CORE", "SAMPLE"), func() {
 
 			BeforeEach(func() {
 				testID = generateTestID("private-github-s2i")
@@ -755,7 +758,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			// set untolerated value and a low timeout since we do not expect this to be scheduled
 			build.Spec.Tolerations[0].Value = "untolerated"
 			build.Spec.Timeout = &metav1.Duration{Duration: time.Minute}
-			testBuild.UpdateBuild(build)
+			Expect(testBuild.UpdateBuild(build)).To(Succeed())
 
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_buildah_tolerations_cr.yaml")
 			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")

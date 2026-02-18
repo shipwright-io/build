@@ -47,27 +47,27 @@ var _ = Describe("PipelineRun E2E Tests", Label("PipelineRun", "CORE"), func() {
 		}
 
 		if buildRun != nil {
-			testBuild.DeleteBR(buildRun.Name)
+			Expect(testBuild.DeleteBR(buildRun.Name)).To(Succeed())
 			buildRun = nil
 		}
 
 		if build != nil {
-			testBuild.DeleteBuild(build.Name)
+			Expect(testBuild.DeleteBuild(build.Name)).To(Succeed())
 			build = nil
 		}
 
 		if buildStrategy != nil {
-			testBuild.DeleteBuildStrategy(buildStrategy.Name)
+			Expect(testBuild.DeleteBuildStrategy(buildStrategy.Name)).To(Succeed())
 			buildStrategy = nil
 		}
 
 		if configMap != nil {
-			testBuild.DeleteConfigMap(configMap.Name)
+			Expect(testBuild.DeleteConfigMap(configMap.Name)).To(Succeed())
 			configMap = nil
 		}
 
 		if secret != nil {
-			testBuild.DeleteSecret(secret.Name)
+			Expect(testBuild.DeleteSecret(secret.Name)).To(Succeed())
 			secret = nil
 		}
 	})

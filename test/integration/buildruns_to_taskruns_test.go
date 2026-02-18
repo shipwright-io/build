@@ -124,7 +124,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				var seq = []*v1beta1.Condition{}
 				for event := range buildRunWatcher.ResultChan() {
 					if event.Type == watch.Error {
-						GinkgoWriter.Write([]byte(fmt.Sprintf("Unexpected error event in watch: %v", event.Object)))
+						_, _ = fmt.Fprintf(GinkgoWriter, "Unexpected error event in watch: %v", event.Object)
 						continue
 					}
 
@@ -503,7 +503,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			tb.DeleteTR(tr.Name)
+			Expect(tb.DeleteTR(tr.Name)).To(Succeed())
 
 			expectedReason := "TaskRunIsMissing"
 			actualReason, err := tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
@@ -528,7 +528,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				Expect(err).To(BeNil())
 				Expect(tr.Status.CompletionTime).NotTo(BeNil())
 
-				tb.DeleteTR(tr.Name)
+				Expect(tb.DeleteTR(tr.Name)).To(Succeed())
 
 				// in a test case, it is hard to verify that something (marking the BuildRun failed) is not happening, we quickly check the TaskRun is gone and
 				// check one more time that the BuildRun is still Succeeded

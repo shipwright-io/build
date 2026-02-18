@@ -113,35 +113,35 @@ func HandleTaskRunParam(taskRun *pipelineapi.TaskRun, parameterDefinition *build
 			// set a paramValue without a value in the BuildRun to get back to the default value.
 			return nil
 
-		case paramValue.SingleValue.ConfigMapValue != nil:
-			envVarName, err := addConfigMapEnvVar(taskRun, paramValue.Name, paramValue.SingleValue.ConfigMapValue.Name, paramValue.SingleValue.ConfigMapValue.Key)
+		case paramValue.ConfigMapValue != nil:
+			envVarName, err := addConfigMapEnvVar(taskRun, paramValue.Name, paramValue.ConfigMapValue.Name, paramValue.ConfigMapValue.Key)
 
 			if err != nil {
 				return err
 			}
 
 			envVarExpression := fmt.Sprintf("$(%s)", envVarName)
-			if paramValue.SingleValue.ConfigMapValue.Format != nil {
-				taskRunParam.Value.StringVal = strings.ReplaceAll(*paramValue.SingleValue.ConfigMapValue.Format, "${CONFIGMAP_VALUE}", envVarExpression)
+			if paramValue.ConfigMapValue.Format != nil {
+				taskRunParam.Value.StringVal = strings.ReplaceAll(*paramValue.ConfigMapValue.Format, "${CONFIGMAP_VALUE}", envVarExpression)
 			} else {
 				taskRunParam.Value.StringVal = envVarExpression
 			}
 
-		case paramValue.SingleValue.SecretValue != nil:
-			envVarName, err := addSecretEnvVar(taskRun, paramValue.Name, paramValue.SingleValue.SecretValue.Name, paramValue.SingleValue.SecretValue.Key)
+		case paramValue.SecretValue != nil:
+			envVarName, err := addSecretEnvVar(taskRun, paramValue.Name, paramValue.SecretValue.Name, paramValue.SecretValue.Key)
 			if err != nil {
 				return err
 			}
 
 			envVarExpression := fmt.Sprintf("$(%s)", envVarName)
-			if paramValue.SingleValue.SecretValue.Format != nil {
-				taskRunParam.Value.StringVal = strings.ReplaceAll(*paramValue.SingleValue.SecretValue.Format, "${SECRET_VALUE}", envVarExpression)
+			if paramValue.SecretValue.Format != nil {
+				taskRunParam.Value.StringVal = strings.ReplaceAll(*paramValue.SecretValue.Format, "${SECRET_VALUE}", envVarExpression)
 			} else {
 				taskRunParam.Value.StringVal = envVarExpression
 			}
 
-		case paramValue.SingleValue.Value != nil:
-			taskRunParam.Value.StringVal = *paramValue.SingleValue.Value
+		case paramValue.Value != nil:
+			taskRunParam.Value.StringVal = *paramValue.Value
 
 		}
 
@@ -236,7 +236,7 @@ func addConfigMapEnvVar(taskRun *pipelineapi.TaskRun, paramName string, configMa
 stepLookupLoop:
 	for _, step := range taskRun.Spec.TaskSpec.Steps {
 		for _, env := range step.Env {
-			if strings.HasPrefix(env.Name, "SHP_CONFIGMAP_PARAM_") && env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil && env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name == configMapName && env.ValueFrom.ConfigMapKeyRef.Key == configMapKey {
+			if strings.HasPrefix(env.Name, "SHP_CONFIGMAP_PARAM_") && env.ValueFrom != nil && env.ValueFrom.ConfigMapKeyRef != nil && env.ValueFrom.ConfigMapKeyRef.Name == configMapName && env.ValueFrom.ConfigMapKeyRef.Key == configMapKey {
 				envVarName = env.Name
 				break stepLookupLoop
 			}
@@ -298,7 +298,7 @@ func addSecretEnvVar(taskRun *pipelineapi.TaskRun, paramName string, secretName 
 stepLookupLoop:
 	for _, step := range taskRun.Spec.TaskSpec.Steps {
 		for _, env := range step.Env {
-			if strings.HasPrefix(env.Name, "SHP_SECRET_PARAM_") && env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil && env.ValueFrom.SecretKeyRef.LocalObjectReference.Name == secretName && env.ValueFrom.SecretKeyRef.Key == secretKey {
+			if strings.HasPrefix(env.Name, "SHP_SECRET_PARAM_") && env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil && env.ValueFrom.SecretKeyRef.Name == secretName && env.ValueFrom.SecretKeyRef.Key == secretKey {
 				envVarName = env.Name
 				break stepLookupLoop
 			}

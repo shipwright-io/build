@@ -121,6 +121,7 @@ func Do(ctx context.Context) error {
 	}
 
 	if flagValues.resultFileImageDigest != "" {
+		// #nosec G306 the file must be readable by build steps that potentially run as a different user
 		if err = os.WriteFile(flagValues.resultFileImageDigest, []byte(digest.String()), 0644); err != nil {
 			return err
 		}
@@ -128,6 +129,7 @@ func Do(ctx context.Context) error {
 
 	if flagValues.resultFileSourceTimestamp != "" {
 		if unpackDetails.MostRecentFileTimestamp != nil {
+			// #nosec G306 the file must be readable by build steps that potentially run as a different user
 			if err = os.WriteFile(flagValues.resultFileSourceTimestamp, []byte(strconv.FormatInt(unpackDetails.MostRecentFileTimestamp.Unix(), 10)), 0644); err != nil {
 				return err
 			}

@@ -285,7 +285,7 @@ func configWithEnvVariableOverrides(settings map[string]string, f func(config *C
 			backup[k] = nil
 		}
 
-		os.Setenv(k, v)
+		Expect(os.Setenv(k, v)).To(Succeed())
 	}
 
 	config := NewDefaultConfig()
@@ -298,9 +298,9 @@ func configWithEnvVariableOverrides(settings map[string]string, f func(config *C
 
 	for k, v := range backup {
 		if v != nil {
-			os.Setenv(k, *v)
+			Expect(os.Setenv(k, *v)).To(Succeed())
 		} else {
-			os.Unsetenv(k)
+			Expect(os.Unsetenv(k)).To(Succeed())
 		}
 	}
 }

@@ -79,6 +79,7 @@ var _ = Describe("Bundle Loader", func() {
 	}
 
 	filecontent := func(path string) string {
+		// #nosec G304 ok in tests
 		data, err := os.ReadFile(path)
 		Expect(err).ToNot(HaveOccurred())
 		return string(data)
@@ -117,12 +118,14 @@ var _ = Describe("Bundle Loader", func() {
 
 		It("should fail in case the provided credentials do not match the required registry", func() {
 			withTempFile("config.json", func(filename string) {
+				// #nosec G306 test file
 				Expect(os.WriteFile(filename, []byte(`{}`), 0644)).To(BeNil())
 				Expect(run(
 					"--image", "secret.typo.registry.com/foo:bar",
 					"--secret-path", filename,
 				)).To(MatchError("failed to find registry credentials for secret.typo.registry.com, available configurations: none"))
 
+				// #nosec G306 test file
 				Expect(os.WriteFile(filename, []byte(`{"auths":{"secret.private.registry.com":{"auth":"Zm9vQGJhci5jb206RGlkWW91UmVhbGx5RGVjb2RlVGhpcz8K"}}}`), 0644)).To(BeNil())
 				Expect(run(
 					"--image", "secret.typo.registry.com/foo:bar",

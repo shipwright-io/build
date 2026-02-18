@@ -38,12 +38,12 @@ func NewBuildPrototype() *buildPrototype {
 }
 
 func (b *buildPrototype) Name(name string) *buildPrototype {
-	b.build.ObjectMeta.Name = name
+	b.build.Name = name
 	return b
 }
 
 func (b *buildPrototype) Namespace(namespace string) *buildPrototype {
-	b.build.ObjectMeta.Namespace = namespace
+	b.build.Namespace = namespace
 	return b
 }
 
@@ -275,7 +275,7 @@ func NewBuildRunPrototype() *buildRunPrototype {
 }
 
 func (b *buildRunPrototype) Name(name string) *buildRunPrototype {
-	b.buildRun.ObjectMeta.Name = name
+	b.buildRun.Name = name
 	return b
 }
 
@@ -286,7 +286,7 @@ func (b *buildRunPrototype) Namespace(namespace string) *buildRunPrototype {
 
 func (b *buildRunPrototype) ForBuild(build *buildv1alpha1.Build) *buildRunPrototype {
 	b.buildRun.Spec.BuildRef = &buildv1alpha1.BuildRef{Name: build.Name}
-	b.buildRun.ObjectMeta.Namespace = build.Namespace
+	b.buildRun.Namespace = build.Namespace
 	return b
 }
 

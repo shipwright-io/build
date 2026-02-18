@@ -49,12 +49,12 @@ var _ = Describe("Test local source code (bundle) functionality", Label("LocalSo
 		}
 
 		if buildRun != nil {
-			testBuild.DeleteBR(buildRun.Name)
+			Expect(testBuild.DeleteBR(buildRun.Name)).To(Succeed())
 			buildRun = nil
 		}
 
 		if build != nil {
-			testBuild.DeleteBuild(build.Name)
+			Expect(testBuild.DeleteBuild(build.Name)).To(Succeed())
 			build = nil
 		}
 	})
@@ -73,7 +73,7 @@ var _ = Describe("Test local source code (bundle) functionality", Label("LocalSo
 			)
 		})
 
-		It("should work with Kaniko build strategy", Label("Kaniko"),func() {
+		It("should work with Kaniko build strategy", Label("Kaniko"), func() {
 			build, err = NewBuildPrototype().
 				ClusterBuildStrategy("kaniko").
 				Name(testID).
@@ -99,7 +99,7 @@ var _ = Describe("Test local source code (bundle) functionality", Label("LocalSo
 			testBuild.ValidateImageDigest(buildRun)
 		})
 
-		It("should work with Buildpacks build strategy", Label("Buildpacks"),func() {
+		It("should work with Buildpacks build strategy", Label("Buildpacks"), func() {
 			build, err = NewBuildPrototype().
 				ClusterBuildStrategy("buildpacks-v3").
 				Name(testID).
@@ -124,7 +124,7 @@ var _ = Describe("Test local source code (bundle) functionality", Label("LocalSo
 			testBuild.ValidateImageDigest(buildRun)
 		})
 
-		It("should work with Buildah build strategy", Label("Buildah"),func() {
+		It("should work with Buildah build strategy", Label("Buildah"), func() {
 			buildPrototype := NewBuildPrototype().
 				ClusterBuildStrategy("buildah-shipwright-managed-push").
 				Name(testID).

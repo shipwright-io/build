@@ -51,7 +51,7 @@ const (
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition
 func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, taskRun *pipelineapi.TaskRun, trCondition *apis.Condition) error {
-	var reason, message string = trCondition.Reason, trCondition.Message
+	reason, message := trCondition.Reason, trCondition.Message
 	status := trCondition.Status
 
 	switch pipelineapi.TaskRunReason(reason) {
@@ -168,7 +168,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 
 // UpdateBuildRunUsingPipelineRunCondition updates the BuildRun Succeeded Condition for PipelineRun conditions
 func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, pipelineRun *pipelineapi.PipelineRun, prCondition *apis.Condition) error {
-	var reason, message string = prCondition.Reason, prCondition.Message
+	reason, message := prCondition.Reason, prCondition.Message
 	status := prCondition.Status
 
 	switch reason {
@@ -254,7 +254,7 @@ func extractPipelineRunFailureDetails(ctx context.Context, client client.Client,
 
 	// Look for failed TaskRuns in the child references
 	for _, childRef := range pipelineRun.Status.ChildReferences {
-		if childRef.TypeMeta.Kind == "TaskRun" {
+		if childRef.Kind == "TaskRun" {
 			taskRun := &pipelineapi.TaskRun{}
 			err := client.Get(ctx, types.NamespacedName{
 				Name:      childRef.Name,

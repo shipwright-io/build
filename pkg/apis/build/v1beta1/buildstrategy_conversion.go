@@ -26,7 +26,7 @@ func (src *BuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstr
 
 	var bs v1alpha1.BuildStrategy
 	bs.TypeMeta = src.TypeMeta
-	bs.TypeMeta.APIVersion = alphaGroupVersion
+	bs.APIVersion = alphaGroupVersion
 	bs.ObjectMeta = src.ObjectMeta
 
 	src.Spec.ConvertTo(&bs.Spec)
@@ -158,7 +158,7 @@ func (src *BuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Uns
 
 	src.ObjectMeta = bs.ObjectMeta
 	src.TypeMeta = bs.TypeMeta
-	src.TypeMeta.APIVersion = betaGroupVersion
+	src.APIVersion = betaGroupVersion
 
 	src.Spec.ConvertFrom(bs.Spec)
 

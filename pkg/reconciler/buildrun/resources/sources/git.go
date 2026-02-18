@@ -11,9 +11,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -29,7 +27,7 @@ const (
 func AppendGitStep(
 	cfg *config.Config,
 	taskSpec *pipelineapi.TaskSpec,
-	source buildv1beta1.Git,
+	source buildapi.Git,
 	name string,
 ) {
 	// append the result
@@ -121,16 +119,16 @@ func AppendGitStep(
 }
 
 // AppendGitResult append git source result to build run
-func AppendGitResult(buildRun *buildv1beta1.BuildRun, name string, results []pipelineapi.TaskRunResult) {
+func AppendGitResult(buildRun *buildapi.BuildRun, name string, results []pipelineapi.TaskRunResult) {
 	commitAuthor := FindResultValue(results, name, commitAuthorResult)
 	commitSha := FindResultValue(results, name, commitSHAResult)
 	branchName := FindResultValue(results, name, branchName)
 
 	if strings.TrimSpace(commitAuthor) != "" || strings.TrimSpace(commitSha) != "" || strings.TrimSpace(branchName) != "" {
 		if buildRun.Status.Source == nil {
-			buildRun.Status.Source = &build.SourceResult{}
+			buildRun.Status.Source = &buildapi.SourceResult{}
 		}
-		buildRun.Status.Source.Git = &v1beta1.GitSourceResult{
+		buildRun.Status.Source.Git = &buildapi.GitSourceResult{
 			CommitAuthor: commitAuthor,
 			CommitSha:    commitSha,
 			BranchName:   branchName,

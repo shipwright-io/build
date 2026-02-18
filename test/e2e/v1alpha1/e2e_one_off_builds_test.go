@@ -16,7 +16,7 @@ import (
 	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
-var _ = Describe("Using One-Off Builds", Label("OneOffBuild"),  func() {
+var _ = Describe("Using One-Off Builds", Label("OneOffBuild"), func() {
 
 	insecure := false
 	value, found := os.LookupEnv(EnvVarImageRepoInsecure)
@@ -42,7 +42,7 @@ var _ = Describe("Using One-Off Builds", Label("OneOffBuild"),  func() {
 		}
 
 		if buildRun != nil {
-			testBuild.DeleteBR(buildRun.Name)
+			Expect(testBuild.DeleteBR(buildRun.Name)).To(Succeed())
 			buildRun = nil
 		}
 	})

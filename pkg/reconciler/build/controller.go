@@ -88,7 +88,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 				if newDeletion == nil {
 					newDeletion = ptr.To(false)
 				}
-				return (*oldDeletion || *newDeletion) && !(*oldDeletion && *newDeletion)
+				return *oldDeletion != *newDeletion
 			}
 
 			if !reflect.DeepEqual(oldBuildRetention, newBuildRetention) {

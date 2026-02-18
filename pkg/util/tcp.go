@@ -5,14 +5,14 @@
 package util
 
 import (
-	"fmt"
 	"net"
+	"strconv"
 	"time"
 )
 
 // TestConnection tries to establish a connection to a provided host using a 5 seconds timeout.
 func TestConnection(hostname string, port int, retries int) bool {
-	host := fmt.Sprintf("%s:%d", hostname, port)
+	host := net.JoinHostPort(hostname, strconv.Itoa(port))
 
 	dialer := &net.Dialer{
 		Timeout: 5 * time.Second,

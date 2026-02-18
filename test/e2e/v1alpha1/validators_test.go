@@ -28,17 +28,20 @@ import (
 )
 
 const (
-	EnvVarServiceAccountName   = "TEST_E2E_SERVICEACCOUNT_NAME"
-	EnvVarVerifyTektonObjects  = "TEST_E2E_VERIFY_TEKTONOBJECTS"
-	EnvVarTimeoutMultiplier    = "TEST_E2E_TIMEOUT_MULTIPLIER"
-	EnvVarImageRepo            = "TEST_IMAGE_REPO"
-	EnvVarImageRepoInsecure    = "TEST_IMAGE_REPO_INSECURE"
-	EnvVarEnablePrivateRepos   = "TEST_PRIVATE_REPO"
-	EnvVarImageRepoSecret      = "TEST_IMAGE_REPO_SECRET"
+	EnvVarServiceAccountName  = "TEST_E2E_SERVICEACCOUNT_NAME"
+	EnvVarVerifyTektonObjects = "TEST_E2E_VERIFY_TEKTONOBJECTS"
+	EnvVarTimeoutMultiplier   = "TEST_E2E_TIMEOUT_MULTIPLIER"
+	EnvVarImageRepo           = "TEST_IMAGE_REPO"
+	EnvVarImageRepoInsecure   = "TEST_IMAGE_REPO_INSECURE"
+	EnvVarEnablePrivateRepos  = "TEST_PRIVATE_REPO"
+	// #nosec G101 no hard-coded credentials
+	EnvVarImageRepoSecret = "TEST_IMAGE_REPO_SECRET"
+	// #nosec G101 no hard-coded credentials
 	EnvVarSourceRepoSecretJSON = "TEST_IMAGE_REPO_DOCKERCONFIGJSON"
 	EnvVarSourceURLGithub      = "TEST_PRIVATE_GITHUB"
 	EnvVarSourceURLGitlab      = "TEST_PRIVATE_GITLAB"
-	EnvVarSourceURLSecret      = "TEST_SOURCE_SECRET"
+	// #nosec G101 no hard-coded credentials
+	EnvVarSourceURLSecret = "TEST_SOURCE_SECRET"
 )
 
 // createPipelineServiceAccount reads the TEST_E2E_SERVICEACCOUNT_NAME environment variable. If the value is "generated", then nothing is done.
@@ -149,7 +152,7 @@ func validateBuildRunToSucceed(testBuild *utils.TestBuild, testBuildRun *buildv1
 	Expect(err).ToNot(HaveOccurred())
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")
 
-	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
+	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Sub(testBuildRun.Status.StartTime.Time))
 
 	return testBuildRun
 }
@@ -247,7 +250,7 @@ func validateBuildRunToFail(testBuild *utils.TestBuild, testBuildRun *buildv1alp
 	// Verify that the BuildSpec is still available in the status
 	Expect(testBuildRun.Status.BuildSpec).ToNot(BeNil(), "BuildSpec is not available in the status")
 
-	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Time.Sub(testBuildRun.Status.StartTime.Time))
+	Logf("Test build '%s' is completed after %v !", testBuildRun.GetName(), testBuildRun.Status.CompletionTime.Sub(testBuildRun.Status.StartTime.Time))
 }
 
 // validateServiceAccountDeletion validates that a service account is correctly deleted after the end of
@@ -283,6 +286,7 @@ func readAndDecode(filePath string) (runtime.Object, error) {
 		return nil, err
 	}
 
+	// #nosec G304 ok in tests
 	payload, err := os.ReadFile(filepath.Join("..", "..", "..", filePath))
 	if err != nil {
 		return nil, err

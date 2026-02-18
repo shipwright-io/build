@@ -14,10 +14,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/onsi/gomega"
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
-
-	. "github.com/onsi/gomega"
 )
 
 func getImageURL(buildRun *buildv1beta1.BuildRun) string {
@@ -43,10 +42,10 @@ func getImageURL(buildRun *buildv1beta1.BuildRun) string {
 // GetImage loads the image manifest for the image produced by a BuildRun
 func (t *TestBuild) GetImage(buildRun *buildv1beta1.BuildRun) containerreg.Image {
 	ref, err := name.ParseReference(getImageURL(buildRun))
-	Expect(err).ToNot(HaveOccurred())
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	img, err := remote.Image(ref, remote.WithAuth(t.getRegistryAuthentication(buildRun, ref)))
-	Expect(err).ToNot(HaveOccurred())
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	return img
 }
@@ -74,7 +73,7 @@ func (t *TestBuild) getRegistryAuthentication(
 			Name:      secretName,
 		},
 	)
-	Expect(err).ToNot(HaveOccurred(), "Error retrieving registry secret")
+	gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Error retrieving registry secret")
 
 	type auth struct {
 		Auths map[string]authn.AuthConfig `json:"auths,omitempty"`
@@ -82,7 +81,7 @@ func (t *TestBuild) getRegistryAuthentication(
 
 	var authConfig auth
 
-	Expect(json.Unmarshal(secret.Data[".dockerconfigjson"], &authConfig)).ToNot(HaveOccurred(), "Error parsing secrets docker config")
+	gomega.Expect(json.Unmarshal(secret.Data[".dockerconfigjson"], &authConfig)).ToNot(gomega.HaveOccurred(), "Error parsing secrets docker config")
 
 	// Look-up the respective registry server inside the credentials
 	registryName := ref.Context().RegistryStr()
@@ -96,19 +95,19 @@ func (t *TestBuild) getRegistryAuthentication(
 // ValidateImagePlatformsExist that the image produced by a BuildRun exists for a set of platforms
 func (t *TestBuild) ValidateImagePlatformsExist(buildRun *buildv1beta1.BuildRun, expectedPlatforms []containerreg.Platform) {
 	ref, err := name.ParseReference(getImageURL(buildRun))
-	Expect(err).ToNot(HaveOccurred())
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	for _, expectedPlatform := range expectedPlatforms {
 		_, err := remote.Image(ref, remote.WithAuth(t.getRegistryAuthentication(buildRun, ref)), remote.WithPlatform(expectedPlatform))
-		Expect(err).ToNot(HaveOccurred(), fmt.Sprintf("Failed to validate %s/%s", expectedPlatform.OS, expectedPlatform.Architecture))
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), fmt.Sprintf("Failed to validate %s/%s", expectedPlatform.OS, expectedPlatform.Architecture))
 	}
 }
 
 // ValidateImageDigest ensures that an image digest is set in the BuildRun status and that this digest is pointing to an image
 func (t *TestBuild) ValidateImageDigest(buildRun *buildv1beta1.BuildRun) {
 	// Verify that the status contains a digest
-	Expect(buildRun.Status.Output).NotTo(BeNil(), ".status.output is nil")
-	Expect(buildRun.Status.Output.Digest).NotTo(Equal(""), ".status.output.digest is empty")
+	gomega.Expect(buildRun.Status.Output).NotTo(gomega.BeNil(), ".status.output is nil")
+	gomega.Expect(buildRun.Status.Output.Digest).NotTo(gomega.Equal(""), ".status.output.digest is empty")
 
 	// Verify that the digest is valid by retrieving the image manifest
 	t.GetImage(buildRun)

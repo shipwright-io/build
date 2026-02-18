@@ -25,12 +25,12 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 
 	AfterEach(func() {
 		if buildRun != nil {
-			testBuild.DeleteBR(buildRun.Name)
+			Expect(testBuild.DeleteBR(buildRun.Name)).To(Succeed())
 			buildRun = nil
 		}
 
 		if build != nil {
-			testBuild.DeleteBuild(build.Name)
+			Expect(testBuild.DeleteBuild(build.Name)).To(Succeed())
 			build = nil
 		}
 	})

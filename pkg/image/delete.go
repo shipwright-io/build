@@ -132,6 +132,7 @@ func isIcrStageEndpoint(registry string) bool {
 func dockerHubLogin(username string, password string) (string, error) {
 	type LoginData struct {
 		Username string `json:"username"`
+		// #nosec: G117 no hard-coded credentials
 		Password string `json:"password"`
 	}
 
@@ -148,6 +149,7 @@ func dockerHubLogin(username string, password string) (string, error) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
+	// #nosec G704 the URL has no user input
 	resp, err := httpClient().Do(req)
 	if err != nil {
 		return "", err
@@ -186,6 +188,7 @@ func dockerHubRepoDelete(token string, ref name.Reference) error {
 
 	req.Header.Set("Authorization", token)
 
+	// #nosec G704 the URL is well-build, user input is reasonable
 	resp, err := httpClient().Do(req)
 	if err != nil {
 		return err
@@ -235,6 +238,7 @@ func icrLogin(registry, username, apikey string) (string, string, error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
+	// #nosec G704 the URL has no user input
 	resp, err := httpClient().Do(req)
 	if err != nil {
 		return "", "", err
@@ -249,7 +253,9 @@ func icrLogin(registry, username, apikey string) (string, string, error) {
 	switch resp.StatusCode {
 	case http.StatusOK:
 		type ibmCloudIdentityToken struct {
-			AccessToken  string `json:"access_token"`
+			// #nosec: G117 no hard-coded credentials
+			AccessToken string `json:"access_token"`
+			// #nosec: G117 no hard-coded credentials
 			RefreshToken string `json:"refresh_token"`
 			TokenType    string `json:"token_type"`
 			Scope        string `json:"scope"`
@@ -319,6 +325,7 @@ func icrDelete(token string, accountID string, ref name.Reference) error {
 	req.Header.Set("Authorization", token)
 	req.Header.Set("Accept", "application/json")
 
+	// #nosec G704 the URL is well-build, user input is reasonable
 	resp, err := httpClient().Do(req)
 	if err != nil {
 		return err

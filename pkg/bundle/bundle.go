@@ -98,6 +98,7 @@ func Pack(directory string) (io.ReadCloser, error) {
 	var split = func(path string) []string { return strings.Split(path, string(filepath.Separator)) }
 
 	var write = func(w io.Writer, path string) error {
+		// #nosec G304 names are safe, they come from the listing
 		file, err := os.Open(path)
 		if err != nil {
 			return err
@@ -127,6 +128,7 @@ func Pack(directory string) (io.ReadCloser, error) {
 	}
 
 	var patterns []gitignore.Pattern
+	// #nosec G304 names are safe
 	if file, err := os.Open(filepath.Join(directory, shpIgnoreFilename)); err == nil {
 		defer file.Close()
 
@@ -268,6 +270,7 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 			continue
 		}
 
+		// #nosec G305 path traversal is checked by validating that the resulting path does not contain unexpected special elements
 		var target = filepath.Join(targetPath, header.Name)
 		if strings.Contains(target, "/../") {
 			return nil, fmt.Errorf("targetPath validation failed, path contains unexpected special elements")
@@ -293,13 +296,14 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 				return nil, err
 			}
 
+			// #nosec G304 names are safe, they come from the listing
 			file, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, fileMode(header))
 			if err != nil {
 				return nil, err
 			}
 
 			if _, err := io.Copy(file, tr); err != nil {
-				file.Close()
+				_ = file.Close()
 				return nil, err
 			}
 

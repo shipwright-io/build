@@ -37,7 +37,7 @@ func AppendSecretVolume(
 
 	// ensure we do not add the secret twice
 	for _, volume := range taskSpec.Volumes {
-		if volume.VolumeSource.Secret != nil && volume.Name == volumeName {
+		if volume.Secret != nil && volume.Name == volumeName {
 			return
 		}
 	}
