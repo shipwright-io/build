@@ -16,6 +16,7 @@ import (
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -1758,6 +1759,31 @@ var _ = Describe("Reconcile BuildRun", func() {
 
 			It("should fail to register", func() {
 				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildReason(resources.BuildRunBuildFieldOverrideForbidden), "cannot use 'schedulerName' override and 'buildSpec' simultaneously")
+				statusWriter.UpdateCalls(statusCall)
+
+				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+				Expect(err).To(BeNil())
+				Expect(statusWriter.UpdateCallCount()).To(Equal(1))
+			})
+		})
+
+		Context("when a buildrun has a buildSpec defined and overrides stepResources", func() {
+			BeforeEach(func() {
+				buildRunSample = ctl.BuildRunWithStepResourcesOverride(buildRunName, buildName, []build.StepResourceOverride{
+					{
+						Name: "build",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("512Mi"),
+							},
+						},
+					},
+				})
+			})
+
+			It("should fail to register", func() {
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, build.BuildReason(resources.BuildRunBuildFieldOverrideForbidden), "cannot use 'stepResources' override and 'buildSpec' simultaneously")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)

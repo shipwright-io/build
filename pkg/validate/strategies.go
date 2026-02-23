@@ -64,6 +64,7 @@ func (s Strategy) validateBuildStrategy(ctx context.Context, strategyName string
 	if err == nil {
 		s.validateBuildParams(buildStrategy.GetParameters())
 		s.validateBuildVolumes(buildStrategy.GetVolumes())
+		s.validateStepResources(buildStrategy.GetBuildSteps())
 		return nil
 	}
 
@@ -82,6 +83,7 @@ func (s Strategy) validateClusterBuildStrategy(ctx context.Context, strategyName
 	if err == nil {
 		s.validateBuildParams(clusterBuildStrategy.GetParameters())
 		s.validateBuildVolumes(clusterBuildStrategy.GetVolumes())
+		s.validateStepResources(clusterBuildStrategy.GetBuildSteps())
 		return nil
 	}
 
@@ -104,6 +106,16 @@ func (s Strategy) validateBuildParams(parameterDefinitions []build.Parameter) {
 
 func (s Strategy) validateBuildVolumes(strategyVolumes []build.BuildStrategyVolume) {
 	valid, reason, message := BuildVolumes(strategyVolumes, s.Build.Spec.Volumes)
+	if !valid {
+		s.Build.Status.Reason = ptr.To[build.BuildReason](reason)
+		s.Build.Status.Message = ptr.To(message)
+	}
+}
+
+// validateStepResources validates that all step resource overrides reference steps
+// that exist in the build strategy.
+func (s Strategy) validateStepResources(strategySteps []build.Step) {
+	valid, reason, message := BuildStepResources(strategySteps, s.Build.Spec.Strategy.StepResources)
 	if !valid {
 		s.Build.Status.Reason = ptr.To[build.BuildReason](reason)
 		s.Build.Status.Message = ptr.To(message)

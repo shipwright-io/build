@@ -49,6 +49,7 @@ func (t *TestBuild) CreateNamespace() error {
 }
 
 // DeleteNamespace deletes the namespace with the current test name
+// and waits for it to be fully deleted to prevent race conditions
 func (t *TestBuild) DeleteNamespace() error {
 	client := t.Clientset.CoreV1().Namespaces()
 
@@ -61,5 +62,15 @@ func (t *TestBuild) DeleteNamespace() error {
 		return err
 	}
 
-	return nil
+	// Wait for namespace to be fully deleted
+	return wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, func(ctx context.Context) (bool, error) {
+		_, err := client.Get(ctx, t.Namespace, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		return false, nil
+	})
 }

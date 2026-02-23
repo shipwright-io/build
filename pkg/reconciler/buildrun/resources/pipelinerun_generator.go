@@ -86,6 +86,7 @@ func (g *PipelineRunGenerator) GenerateBuildStrategyPhase(execCtx *executionCont
 	volumeMounts, err := applyBuildStrategySteps(
 		taskSpec,
 		g.build,
+		g.buildRun,
 		g.strategy.GetBuildSteps(),
 		g.strategy.GetVolumes(),
 		execCtx.combinedEnvs,

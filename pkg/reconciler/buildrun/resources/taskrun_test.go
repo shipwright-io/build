@@ -14,6 +14,7 @@ import (
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -1427,6 +1428,392 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				}
 				Expect(insecureParam).ToNot(BeNil())
 				Expect(insecureParam.Value.StringVal).To(Equal("true"))
+			})
+		})
+
+		Context("with stepResources overrides", func() {
+			var strategyWithResources *buildv1beta1.BuildStrategy
+
+			BeforeEach(func() {
+				// Create a strategy with a step that has default resources
+				strategyWithResources = &buildv1beta1.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "strategy-with-resources",
+						Namespace: "default",
+					},
+					Spec: buildv1beta1.BuildStrategySpec{
+						Steps: []buildv1beta1.Step{
+							{
+								Name:    "build",
+								Image:   "busybox",
+								Command: []string{"echo"},
+								Args:    []string{"hello"},
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("100m"),
+										corev1.ResourceMemory: resource.MustParse("128Mi"),
+									},
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("200m"),
+										corev1.ResourceMemory: resource.MustParse("256Mi"),
+									},
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("should use strategy default resources when no overrides specified", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyWithResources)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+
+				// Find the build step
+				var buildStep *pipelineapi.Step
+				for i := range taskRun.Spec.TaskSpec.Steps {
+					if taskRun.Spec.TaskSpec.Steps[i].Name == "build" {
+						buildStep = &taskRun.Spec.TaskSpec.Steps[i]
+						break
+					}
+				}
+
+				Expect(buildStep).ToNot(BeNil())
+				Expect(buildStep.ComputeResources.Requests.Cpu().String()).To(Equal("100m"))
+				Expect(buildStep.ComputeResources.Requests.Memory().String()).To(Equal("128Mi"))
+				Expect(buildStep.ComputeResources.Limits.Cpu().String()).To(Equal("200m"))
+				Expect(buildStep.ComputeResources.Limits.Memory().String()).To(Equal("256Mi"))
+			})
+
+			It("should override stepResources from Build", func() {
+				// Add step resource overrides to Build
+				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+					{
+						Name: "build",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("512Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1"),
+								corev1.ResourceMemory: resource.MustParse("1Gi"),
+							},
+						},
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyWithResources)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+
+				// Find the build step
+				var buildStep *pipelineapi.Step
+				for i := range taskRun.Spec.TaskSpec.Steps {
+					if taskRun.Spec.TaskSpec.Steps[i].Name == "build" {
+						buildStep = &taskRun.Spec.TaskSpec.Steps[i]
+						break
+					}
+				}
+
+				Expect(buildStep).ToNot(BeNil())
+				Expect(buildStep.ComputeResources.Requests.Cpu().String()).To(Equal("500m"))
+				Expect(buildStep.ComputeResources.Requests.Memory().String()).To(Equal("512Mi"))
+				Expect(buildStep.ComputeResources.Limits.Cpu().String()).To(Equal("1"))
+				Expect(buildStep.ComputeResources.Limits.Memory().String()).To(Equal("1Gi"))
+			})
+
+			It("should handle partial overrides (only some steps overridden)", func() {
+				// Create strategy with multiple steps
+				strategyMultiStep := &buildv1beta1.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "strategy-multi-step",
+						Namespace: "default",
+					},
+					Spec: buildv1beta1.BuildStrategySpec{
+						Steps: []buildv1beta1.Step{
+							{
+								Name:    "prepare",
+								Image:   "busybox",
+								Command: []string{"echo"},
+								Args:    []string{"prepare"},
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("50m"),
+										corev1.ResourceMemory: resource.MustParse("64Mi"),
+									},
+								},
+							},
+							{
+								Name:    "build",
+								Image:   "busybox",
+								Command: []string{"echo"},
+								Args:    []string{"build"},
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("100m"),
+										corev1.ResourceMemory: resource.MustParse("128Mi"),
+									},
+								},
+							},
+							{
+								Name:    "push",
+								Image:   "busybox",
+								Command: []string{"echo"},
+								Args:    []string{"push"},
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("75m"),
+										corev1.ResourceMemory: resource.MustParse("96Mi"),
+									},
+								},
+							},
+						},
+					},
+				}
+
+				// Only override the "build" step
+				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+					{
+						Name: "build",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("512Mi"),
+							},
+						},
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyMultiStep)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+
+				// Find all steps and verify resources
+				var prepareStep, buildStep, pushStep *pipelineapi.Step
+				for i := range taskRun.Spec.TaskSpec.Steps {
+					switch taskRun.Spec.TaskSpec.Steps[i].Name {
+					case "prepare":
+						prepareStep = &taskRun.Spec.TaskSpec.Steps[i]
+					case "build":
+						buildStep = &taskRun.Spec.TaskSpec.Steps[i]
+					case "push":
+						pushStep = &taskRun.Spec.TaskSpec.Steps[i]
+					}
+				}
+
+				// Prepare step should retain strategy defaults
+				Expect(prepareStep).ToNot(BeNil())
+				Expect(prepareStep.ComputeResources.Requests.Cpu().String()).To(Equal("50m"))
+				Expect(prepareStep.ComputeResources.Requests.Memory().String()).To(Equal("64Mi"))
+
+				// Build step should have overridden values
+				Expect(buildStep).ToNot(BeNil())
+				Expect(buildStep.ComputeResources.Requests.Cpu().String()).To(Equal("500m"))
+				Expect(buildStep.ComputeResources.Requests.Memory().String()).To(Equal("512Mi"))
+
+				// Push step should retain strategy defaults
+				Expect(pushStep).ToNot(BeNil())
+				Expect(pushStep.ComputeResources.Requests.Cpu().String()).To(Equal("75m"))
+				Expect(pushStep.ComputeResources.Requests.Memory().String()).To(Equal("96Mi"))
+			})
+
+			It("should override multiple steps simultaneously", func() {
+				// Create strategy with multiple steps
+				strategyMultiStep := &buildv1beta1.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "strategy-multi-step",
+						Namespace: "default",
+					},
+					Spec: buildv1beta1.BuildStrategySpec{
+						Steps: []buildv1beta1.Step{
+							{
+								Name:    "build",
+								Image:   "busybox",
+								Command: []string{"echo"},
+								Args:    []string{"build"},
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("100m"),
+										corev1.ResourceMemory: resource.MustParse("128Mi"),
+									},
+								},
+							},
+							{
+								Name:    "push",
+								Image:   "busybox",
+								Command: []string{"echo"},
+								Args:    []string{"push"},
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("50m"),
+										corev1.ResourceMemory: resource.MustParse("64Mi"),
+									},
+								},
+							},
+						},
+					},
+				}
+
+				// Override both steps simultaneously
+				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+					{
+						Name: "build",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("512Mi"),
+							},
+						},
+					},
+					{
+						Name: "push",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("250m"),
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
+							},
+						},
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyMultiStep)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+
+				var buildStep, pushStep *pipelineapi.Step
+				for i := range taskRun.Spec.TaskSpec.Steps {
+					switch taskRun.Spec.TaskSpec.Steps[i].Name {
+					case "build":
+						buildStep = &taskRun.Spec.TaskSpec.Steps[i]
+					case "push":
+						pushStep = &taskRun.Spec.TaskSpec.Steps[i]
+					}
+				}
+
+				// Both steps should have overridden values
+				Expect(buildStep).ToNot(BeNil())
+				Expect(buildStep.ComputeResources.Requests.Cpu().String()).To(Equal("500m"))
+				Expect(buildStep.ComputeResources.Requests.Memory().String()).To(Equal("512Mi"))
+
+				Expect(pushStep).ToNot(BeNil())
+				Expect(pushStep.ComputeResources.Requests.Cpu().String()).To(Equal("250m"))
+				Expect(pushStep.ComputeResources.Requests.Memory().String()).To(Equal("256Mi"))
+			})
+
+			It("should apply stepResources to a step with no default resources", func() {
+				// Create strategy with a step that has NO default resources
+				strategyNoDefaults := &buildv1beta1.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "strategy-no-defaults",
+						Namespace: "default",
+					},
+					Spec: buildv1beta1.BuildStrategySpec{
+						Steps: []buildv1beta1.Step{
+							{
+								Name:    "build",
+								Image:   "busybox",
+								Command: []string{"echo"},
+								Args:    []string{"build"},
+							},
+						},
+					},
+				}
+
+				// Override resources for a step that has no defaults
+				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+					{
+						Name: "build",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("512Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1"),
+								corev1.ResourceMemory: resource.MustParse("1Gi"),
+							},
+						},
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyNoDefaults)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+
+				var buildStep *pipelineapi.Step
+				for i := range taskRun.Spec.TaskSpec.Steps {
+					if taskRun.Spec.TaskSpec.Steps[i].Name == "build" {
+						buildStep = &taskRun.Spec.TaskSpec.Steps[i]
+						break
+					}
+				}
+
+				Expect(buildStep).ToNot(BeNil())
+				Expect(buildStep.ComputeResources.Requests.Cpu().String()).To(Equal("500m"))
+				Expect(buildStep.ComputeResources.Requests.Memory().String()).To(Equal("512Mi"))
+				Expect(buildStep.ComputeResources.Limits.Cpu().String()).To(Equal("1"))
+				Expect(buildStep.ComputeResources.Limits.Memory().String()).To(Equal("1Gi"))
+			})
+
+			It("should override BuildRun.Spec.StepResources over Build.Spec.Strategy.StepResources (name reference path)", func() {
+				// Build has stepResources (simulates a shared Build the user doesn't control)
+				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+					{
+						Name: "build",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("512Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1"),
+								corev1.ResourceMemory: resource.MustParse("1Gi"),
+							},
+						},
+					},
+				}
+
+				// BuildRun references Build by name and overrides via top-level field
+				buildRun.Spec.StepResources = []buildv1beta1.StepResourceOverride{
+					{
+						Name: "build",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("2"),
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("4"),
+								corev1.ResourceMemory: resource.MustParse("4Gi"),
+							},
+						},
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategyWithResources)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+
+				var buildStep *pipelineapi.Step
+				for i := range taskRun.Spec.TaskSpec.Steps {
+					if taskRun.Spec.TaskSpec.Steps[i].Name == "build" {
+						buildStep = &taskRun.Spec.TaskSpec.Steps[i]
+						break
+					}
+				}
+
+				Expect(buildStep).ToNot(BeNil())
+				Expect(buildStep.ComputeResources.Requests.Cpu().String()).To(Equal("2"))
+				Expect(buildStep.ComputeResources.Requests.Memory().String()).To(Equal("2Gi"))
+				Expect(buildStep.ComputeResources.Limits.Cpu().String()).To(Equal("4"))
+				Expect(buildStep.ComputeResources.Limits.Memory().String()).To(Equal("4Gi"))
 			})
 		})
 	})

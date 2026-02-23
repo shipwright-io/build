@@ -164,4 +164,153 @@ var _ = Describe("BuildStrategy", func() {
 			Expect(*sample.Status.Reason).To(Equal(build.UnknownBuildStrategyKind))
 		})
 	})
+
+	Context("stepResources validation", func() {
+		It("should pass when stepResources references valid step names", func() {
+			sample := sampleBuild(build.NamespacedBuildStrategyKind, "buildkit")
+			sample.Spec.Strategy.StepResources = []build.StepResourceOverride{
+				{Name: "build"},
+			}
+
+			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
+				switch object := object.(type) {
+				case *build.BuildStrategy:
+					(&build.BuildStrategy{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: nn.Namespace,
+							Name:      nn.Name,
+						},
+						Spec: build.BuildStrategySpec{
+							Steps: []build.Step{
+								{Name: "build", Image: "busybox"},
+							},
+						},
+					}).DeepCopyInto(object)
+					return nil
+				}
+				return errors.NewNotFound(schema.GroupResource{}, "schema not found")
+			})
+
+			Expect(NewStrategies(client, sample).ValidatePath(ctx)).To(Succeed())
+			Expect(sample.Status.Reason).To(BeNil())
+		})
+
+		It("should fail when stepResources references non-existent step name", func() {
+			sample := sampleBuild(build.NamespacedBuildStrategyKind, "buildkit")
+			sample.Spec.Strategy.StepResources = []build.StepResourceOverride{
+				{Name: "non-existent-step"},
+			}
+
+			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
+				switch object := object.(type) {
+				case *build.BuildStrategy:
+					(&build.BuildStrategy{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: nn.Namespace,
+							Name:      nn.Name,
+						},
+						Spec: build.BuildStrategySpec{
+							Steps: []build.Step{
+								{Name: "build", Image: "busybox"},
+							},
+						},
+					}).DeepCopyInto(object)
+					return nil
+				}
+				return errors.NewNotFound(schema.GroupResource{}, "schema not found")
+			})
+
+			Expect(NewStrategies(client, sample).ValidatePath(ctx)).To(Succeed())
+			Expect(*sample.Status.Reason).To(Equal(build.UndefinedStepResource))
+			Expect(*sample.Status.Message).To(ContainSubstring("non-existent-step"))
+		})
+
+		It("should fail when stepResources has one valid and one invalid step", func() {
+			sample := sampleBuild(build.NamespacedBuildStrategyKind, "buildkit")
+			sample.Spec.Strategy.StepResources = []build.StepResourceOverride{
+				{Name: "build"},
+				{Name: "non-existent-step"},
+			}
+
+			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
+				switch object := object.(type) {
+				case *build.BuildStrategy:
+					(&build.BuildStrategy{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: nn.Namespace,
+							Name:      nn.Name,
+						},
+						Spec: build.BuildStrategySpec{
+							Steps: []build.Step{
+								{Name: "build", Image: "busybox"},
+								{Name: "push", Image: "busybox"},
+							},
+						},
+					}).DeepCopyInto(object)
+					return nil
+				}
+				return errors.NewNotFound(schema.GroupResource{}, "schema not found")
+			})
+
+			Expect(NewStrategies(client, sample).ValidatePath(ctx)).To(Succeed())
+			Expect(*sample.Status.Reason).To(Equal(build.UndefinedStepResource))
+			Expect(*sample.Status.Message).To(ContainSubstring("non-existent-step"))
+		})
+
+		It("should pass when no stepResources are specified", func() {
+			sample := sampleBuild(build.NamespacedBuildStrategyKind, "buildkit")
+			// No stepResources specified
+
+			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
+				switch object := object.(type) {
+				case *build.BuildStrategy:
+					(&build.BuildStrategy{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: nn.Namespace,
+							Name:      nn.Name,
+						},
+						Spec: build.BuildStrategySpec{
+							Steps: []build.Step{
+								{Name: "build", Image: "busybox"},
+							},
+						},
+					}).DeepCopyInto(object)
+					return nil
+				}
+				return errors.NewNotFound(schema.GroupResource{}, "schema not found")
+			})
+
+			Expect(NewStrategies(client, sample).ValidatePath(ctx)).To(Succeed())
+			Expect(sample.Status.Reason).To(BeNil())
+		})
+
+		It("should validate stepResources for ClusterBuildStrategy", func() {
+			sample := sampleBuild(build.ClusterBuildStrategyKind, "buildkit")
+			sample.Spec.Strategy.StepResources = []build.StepResourceOverride{
+				{Name: "non-existent-step"},
+			}
+
+			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, getOptions ...crc.GetOption) error {
+				switch object := object.(type) {
+				case *build.ClusterBuildStrategy:
+					(&build.ClusterBuildStrategy{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: nn.Name,
+						},
+						Spec: build.BuildStrategySpec{
+							Steps: []build.Step{
+								{Name: "build", Image: "busybox"},
+								{Name: "push", Image: "busybox"},
+							},
+						},
+					}).DeepCopyInto(object)
+					return nil
+				}
+				return errors.NewNotFound(schema.GroupResource{}, "schema not found")
+			})
+
+			Expect(NewStrategies(client, sample).ValidatePath(ctx)).To(Succeed())
+			Expect(*sample.Status.Reason).To(Equal(build.UndefinedStepResource))
+		})
+	})
 })

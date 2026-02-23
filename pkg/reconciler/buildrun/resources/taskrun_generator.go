@@ -71,6 +71,7 @@ func (g *TaskRunGenerator) GenerateBuildStrategyPhase(execCtx *executionContext)
 	volumeMounts, err := applyBuildStrategySteps(
 		g.taskRun.Spec.TaskSpec,
 		g.build,
+		g.buildRun,
 		g.strategy.GetBuildSteps(),
 		g.strategy.GetVolumes(),
 		execCtx.combinedEnvs,

@@ -39,6 +39,7 @@ SPDX-License-Identifier: Apache-2.0
 - [System results](#system-results)
 - [Security Contexts](#security-contexts)
 - [Steps Resource Definition](#steps-resource-definition)
+  - [Overriding Step Resources via Build and BuildRun](#overriding-step-resources-via-build-and-buildrun)
   - [Strategies with different resources](#strategies-with-different-resources)
   - [How does Tekton Pipelines handle resources](#how-does-tekton-pipelines-handle-resources)
   - [Examples of Tekton resources management](#examples-of-tekton-resources-management)
@@ -716,6 +717,16 @@ In build strategy steps you can define a step-specific `securityContext` that ma
 ## Steps Resource Definition
 
 All strategies steps can include a definition of resources(_limits and requests_) for CPU, memory and disk. For strategies with more than one step, each step(_container_) could require more resources than others. Strategy admins are free to define the values that they consider the best fit for each step. Also, identical strategies with the same steps that are only different in their name and step resources can be installed on the cluster to allow users to create a build with smaller and larger resource requirements.
+
+### Overriding Step Resources via Build and BuildRun
+
+As an alternative to creating multiple strategy flavours, build users can override the resource requirements for individual steps using the `stepResources` field in a [Build](build.md#defining-step-resources) or [BuildRun](buildrun.md#defining-step-resources). Each entry specifies the step name (which must match a step defined in the strategy) and the desired resource requirements. The override precedence is:
+
+1. `BuildRun.spec.stepResources` (highest priority)
+2. `Build.spec.strategy.stepResources`
+3. Strategy step defaults (lowest priority)
+
+This allows build users to adjust resource allocations without requiring strategy admins to create and maintain multiple strategy variants.
 
 ### Strategies with different resources
 
