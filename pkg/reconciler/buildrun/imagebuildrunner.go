@@ -6,7 +6,6 @@ package buildrun
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
@@ -14,6 +13,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -159,36 +159,23 @@ func (t *TektonTaskRunWrapper) Cancel(ctx context.Context, c client.Client) erro
 		return fmt.Errorf("underlying TaskRun does not exist")
 	}
 
-	// Use a raw patch to mark the TaskRun as cancelled.
-
-	// TODO: Investigate how we can use server-side apply with controller-runtime. Potentially
-	// depends on https://github.com/kubernetes-sigs/controller-runtime/issues/3183
-	payload := []patchStringValue{{
-		Op:    "replace",
-		Path:  "/spec/status",
-		Value: pipelineapi.TaskRunSpecStatusCancelled,
-	}}
-	data, err := json.Marshal(payload)
-	if err != nil {
+	// patching using server-side apply
+	u := &unstructured.Unstructured{}
+	u.SetAPIVersion("tekton.dev/v1")
+	u.SetKind("TaskRun")
+	u.SetNamespace(t.TaskRun.Namespace)
+	u.SetName(t.TaskRun.Name)
+	if err := unstructured.SetNestedField(u.Object, pipelineapi.TaskRunSpecStatusCancelled, "spec", "status"); err != nil {
 		return err
 	}
-	patch := client.RawPatch(types.JSONPatchType, data)
 
-	// In theory we should be able to use client.ForceOwnership, but it doesn't seem to work.
-	// Below is the preexisting "raw" patch option.
-	trueParam := true
-	patchOpt := client.PatchOptions{
-		Raw: &metav1.PatchOptions{
-			Force: &trueParam,
-		},
-	}
-	return c.Patch(ctx, t.TaskRun, patch, &patchOpt)
-}
-
-type patchStringValue struct {
-	Op    string `json:"op"`
-	Path  string `json:"path"`
-	Value string `json:"value"`
+	return c.Patch(
+		ctx,
+		u,
+		client.Apply,
+		client.FieldOwner("shipwright-build-controller"),
+		client.ForceOwnership,
+	)
 }
 
 // GetObject returns the underlying client.Object for owner reference operations
