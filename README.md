@@ -35,7 +35,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 ## Try It!
 
-- We assume you already have a Kubernetes cluster (v1.29+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
+- We assume you already have a Kubernetes cluster (v1.33+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
 
 - We also require a Tekton installation (v0.59.+). To install the latest LTS release, run:
 
@@ -48,9 +48,9 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.18.1/release.yaml --server-side
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.18.1/hack/setup-webhook-cert.sh | bash
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.18.1/hack/storage-version-migration.sh | bash
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.18.4/release.yaml --server-side
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.18.4/hack/setup-webhook-cert.sh | bash
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.18.4/hack/storage-version-migration.sh | bash
   ```
 
   To install the latest nightly release, run:
@@ -64,7 +64,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.18.1/sample-strategies.yaml --server-side
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.18.4/sample-strategies.yaml --server-side
   ```
 
   To install the latest nightly release, run:
@@ -172,6 +172,9 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version                                                                | Docs                                                                       | Examples                                                                          |
 |------------------------------------------------------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | HEAD                                                                   | [Docs @ HEAD](docs/README.md)                                              | [Examples @ HEAD](samples)                                                        |
+| [v0.18.4](https://github.com/shipwright-io/build/releases/tag/v0.18.4)    | [Docs @ v0.18.4](https://github.com/shipwright-io/build/tree/v0.18.4/docs) | [Examples @ v0.18.4](https://github.com/shipwright-io/build/tree/v0.18.4/samples) |
+| [v0.18.3](https://github.com/shipwright-io/build/releases/tag/v0.18.3)    | [Docs @ v0.18.3](https://github.com/shipwright-io/build/tree/v0.18.3/docs) | [Examples @ v0.18.3](https://github.com/shipwright-io/build/tree/v0.18.3/samples) |
+| [v0.18.2](https://github.com/shipwright-io/build/releases/tag/v0.18.2)    | [Docs @ v0.18.2](https://github.com/shipwright-io/build/tree/v0.18.2/docs) | [Examples @ v0.18.2](https://github.com/shipwright-io/build/tree/v0.18.2/samples) |
 | [v0.18.1](https://github.com/shipwright-io/build/releases/tag/v0.18.1)    | [Docs @ v0.18.1](https://github.com/shipwright-io/build/tree/v0.18.1/docs) | [Examples @ v0.18.1](https://github.com/shipwright-io/build/tree/v0.18.1/samples) |
 | [v0.18.0](https://github.com/shipwright-io/build/releases/tag/v0.18.0)    | [Docs @ v0.18.0](https://github.com/shipwright-io/build/tree/v0.18.0/docs) | [Examples @ v0.18.0](https://github.com/shipwright-io/build/tree/v0.18.0/samples) |
 | [v0.17.4](https://github.com/shipwright-io/build/releases/tag/v0.17.4)    | [Docs @ v0.17.4](https://github.com/shipwright-io/build/tree/v0.17.4/docs) | [Examples @ v0.17.4](https://github.com/shipwright-io/build/tree/v0.17.4/samples) |
@@ -228,8 +231,8 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 
 | Dependency                           | Supported versions           |
 |--------------------------------------|------------------------------|
-| [Kubernetes](https://kubernetes.io/) | v1.32.\*, v1.33.\*, v1.34.\*|
-| [Tekton](https://tekton.dev)         | v0.68.\*, v1.0.\*, v1.3.\*, v1.6.\*|
+| [Kubernetes](https://kubernetes.io/) | v1.33.\*, v1.33.\*, v1.35.\*|
+| [Tekton](https://tekton.dev)         | v1.0.\*, v1.3.\*, v1.6.\*, v1.9.\* |
 
 ### Platform support
 

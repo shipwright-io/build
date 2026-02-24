@@ -6,7 +6,6 @@ package buildrun
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -17,6 +16,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -145,24 +145,23 @@ func (t *TektonPipelineRunWrapper) Cancel(ctx context.Context, c client.Client) 
 		return fmt.Errorf("underlying PipelineRun does not exist")
 	}
 
-	payload := []patchStringValue{{
-		Op:    "replace",
-		Path:  "/spec/status",
-		Value: pipelineapi.PipelineRunSpecStatusCancelled,
-	}}
-	data, err := json.Marshal(payload)
-	if err != nil {
+	// patching using server-side apply
+	u := &unstructured.Unstructured{}
+	u.SetAPIVersion("tekton.dev/v1")
+	u.SetKind("PipelineRun")
+	u.SetNamespace(t.PipelineRun.Namespace)
+	u.SetName(t.PipelineRun.Name)
+	if err := unstructured.SetNestedField(u.Object, pipelineapi.PipelineRunSpecStatusCancelled, "spec", "status"); err != nil {
 		return err
 	}
-	patch := client.RawPatch(types.JSONPatchType, data)
 
-	trueParam := true
-	patchOpt := client.PatchOptions{
-		Raw: &metav1.PatchOptions{
-			Force: &trueParam,
-		},
-	}
-	return c.Patch(ctx, t.PipelineRun, patch, &patchOpt)
+	return c.Patch(
+		ctx,
+		u,
+		client.Apply,
+		client.FieldOwner("shipwright-build-controller"),
+		client.ForceOwnership,
+	)
 }
 
 // GetObject returns the underlying client.Object for owner reference operations.

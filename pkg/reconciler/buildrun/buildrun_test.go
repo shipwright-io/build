@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -420,6 +421,13 @@ var _ = Describe("Reconcile BuildRun", func() {
 					case *pipelineapi.TaskRun:
 						if v.Name == taskRunSample.Name {
 							cancelPatchCalled = true
+						}
+					case *unstructured.Unstructured:
+						if v.GetName() == taskRunSample.Name && v.GetNamespace() == taskRunSample.Namespace && v.GetKind() == "TaskRun" && v.GetAPIVersion() == "tekton.dev/v1" {
+							value, ok, _ := unstructured.NestedString(v.Object, "spec", "status")
+							if ok && value == pipelineapi.TaskRunSpecStatusCancelled {
+								cancelPatchCalled = true
+							}
 						}
 					}
 					return nil

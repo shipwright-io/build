@@ -18,8 +18,9 @@ jobs:
           REPO: ghcr.io/${{ github.repository_owner }}/shipwright-samples
         run: |
           for IMAGE in \
-            library/golang:1.23 \
             library/golang:1.24 \
+            library/golang:1.25 \
+            library/golang:1.26 \
             library/maven:3-jdk-8-openj9 \
             library/node:20 \
             library/node:22 \
