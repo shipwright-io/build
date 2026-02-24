@@ -36,6 +36,10 @@ jobs:
         run: curl --location --silent  https://raw.githubusercontent.com/homeport/retry/main/hack/download.sh | bash
       - name: Install semver
         run: go install gitlab.com/usvc/utils/semver/cmd/semver@latest
+      - name: Install Grype
+        run: |
+          TAG_NAME="$(curl -s https://api.github.com/repos/anchore/grype/releases/latest | jq -r '.tag_name')"
+          curl -L -s "https://github.com/anchore/grype/releases/download/${TAG_NAME}/grype_${TAG_NAME/v/}_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed -e 's/aarch64/arm64/' -e 's/x86_64/amd64/').tar.gz" | tar -xzf - grype
       - name: Install Trivy
         run: make install-trivy
         working-directory: ${{ github.workspace }}/main
@@ -43,7 +47,7 @@ jobs:
         env:
           TRIVY_USERNAME: ${{ github.repository_owner }}
           TRIVY_PASSWORD: ${{ github.token }}
-        run: retry trivy image --download-db-only
+        run: retry trivy image --download-db-only --disable-telemetry --skip-version-check
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
       - name: Download latest release

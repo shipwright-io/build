@@ -26,19 +26,19 @@ for image in "${images[@]}"; do
     KO_DOCKER_REPO=dummy/image ko build "github.com/shipwright-io/build/cmd/${binaryName}" --bare --platform linux/amd64 --push=false --sbom none --tarball /tmp/image.tar
   popd >/dev/null
 
-  # OS vulnerabilities
-  echo "  [INFO] Checking for OS vulnerabilities"
-  echo "### OS vulnerabilities" >>/tmp/report.md
-  osVulns="$(trivy image --format json --ignore-unfixed --no-progress --pkg-types os --scanners vuln --skip-db-update --timeout 10m "${image}")"
-  osVulnsFound=false
-  osVulnsLatest="$(trivy image --format json --ignore-unfixed --input /tmp/image.tar --no-progress --pkg-types os --scanners vuln --skip-db-update --timeout 10m)"
+  # OS vulnerabilities (Grype)
+  echo "  [INFO] Checking for OS vulnerabilities using Grype"
+  echo "### OS vulnerabilities (Grype)" >>/tmp/report.md
+  osVulnsGrype="$(grype --output json --only-fixed --quiet "${image}")"
+  osVulnsGrypeFound=false
+  osVulnsGrypeLatest="$(grype --output json --only-fixed --quiet /tmp/image.tar)"
   while read -r id pkg severity vulnerableVersion fixedVersion; do
     if [ "${id}" == "" ]; then
       continue
     fi
 
     # Check if it exists in the latest image
-    if [ "$(jq --raw-output "(.Results[0].Vulnerabilities // [])[] | select(.VulnerabilityID == \"${id}\")" <<<"${osVulnsLatest}")" == "" ]; then
+    if [ "$(jq --raw-output ".matches[] | select(.artifact.type == \"rpm\" and .vulnerability.id == \"${id}\")" <<<"${osVulnsGrypeLatest}")" == "" ]; then
       fixed=":white_check_mark:"
       fixedSentence=" This vulnerability is fixed by a rebuild."
     else
@@ -47,10 +47,10 @@ for image in "${images[@]}"; do
       allVulnerabilitiesFixedByRebuild=false
     fi
 
-    if [ "${osVulnsFound}" == "false" ]; then
+    if [ "${osVulnsGrypeFound}" == "false" ]; then
       echo "| Vulnerability | Package | Severity | Version | Fixed by rebuild |" >>/tmp/report.md
       echo "| -- | -- | -- | -- | -- |" >>/tmp/report.md
-      osVulnsFound=true
+      osVulnsGrypeFound=true
       hasVulnerabilities=true
     fi
 
@@ -58,9 +58,48 @@ for image in "${images[@]}"; do
 
     echo "    [INFO] Found ${id} in ${pkg} with severity ${severityLower}. Requires upgrade from ${vulnerableVersion} to ${fixedVersion}.${fixedSentence}"
     echo "| ${id} | ${pkg} | ${severityLower} | ${vulnerableVersion} -> ${fixedVersion} | ${fixed} |" >>/tmp/report.md
-  done <<<"$(jq --raw-output '.Results[0].Vulnerabilities[] | [ .VulnerabilityID, .PkgName, .Severity, .InstalledVersion, .FixedVersion ] | @tsv' <<<"${osVulns}")"
+  done <<<"$(jq --raw-output '.matches[] | select(.artifact.type == "rpm") | [ .vulnerability.id, .artifact.name, .vulnerability.severity, .artifact.version, .vulnerability.fix.versions[0] ] | @tsv' <<<"${osVulnsGrype}")"
 
-  if [ "${osVulnsFound}" == "false" ]; then
+  if [ "${osVulnsGrypeFound}" == "false" ]; then
+    echo "    [INFO] No vulnerabilities found."
+    echo "No vulnerabilities found." >>/tmp/report.md
+  fi
+
+  # OS vulnerabilities (Trivy)
+  echo "  [INFO] Checking for OS vulnerabilities using Trivy"
+  echo "### OS vulnerabilities (Trivy)" >>/tmp/report.md
+  osVulnsTrivy="$(trivy image --disable-telemetry --skip-version-check --format json --ignore-unfixed --no-progress --pkg-types os --scanners vuln --skip-db-update --timeout 10m "${image}")"
+  osVulnsTrivyFound=false
+  osVulnsTrivyLatest="$(trivy image --disable-telemetry --skip-version-check --format json --ignore-unfixed --input /tmp/image.tar --no-progress --pkg-types os --scanners vuln --skip-db-update --timeout 10m)"
+  while read -r id pkg severity vulnerableVersion fixedVersion; do
+    if [ "${id}" == "" ]; then
+      continue
+    fi
+
+    # Check if it exists in the latest image
+    if [ "$(jq --raw-output "(.Results[0].Vulnerabilities // [])[] | select(.VulnerabilityID == \"${id}\")" <<<"${osVulnsTrivyLatest}")" == "" ]; then
+      fixed=":white_check_mark:"
+      fixedSentence=" This vulnerability is fixed by a rebuild."
+    else
+      fixed=":x:"
+      fixedSentence=
+      allVulnerabilitiesFixedByRebuild=false
+    fi
+
+    if [ "${osVulnsTrivyFound}" == "false" ]; then
+      echo "| Vulnerability | Package | Severity | Version | Fixed by rebuild |" >>/tmp/report.md
+      echo "| -- | -- | -- | -- | -- |" >>/tmp/report.md
+      osVulnsTrivyFound=true
+      hasVulnerabilities=true
+    fi
+
+    severityLower="$(tr '[:upper:]' '[:lower:]' <<<"${severity}")"
+
+    echo "    [INFO] Found ${id} in ${pkg} with severity ${severityLower}. Requires upgrade from ${vulnerableVersion} to ${fixedVersion}.${fixedSentence}"
+    echo "| ${id} | ${pkg} | ${severityLower} | ${vulnerableVersion} -> ${fixedVersion} | ${fixed} |" >>/tmp/report.md
+  done <<<"$(jq --raw-output '.Results[0].Vulnerabilities[] | [ .VulnerabilityID, .PkgName, .Severity, .InstalledVersion, .FixedVersion ] | @tsv' <<<"${osVulnsTrivy}")"
+
+  if [ "${osVulnsTrivyFound}" == "false" ]; then
     echo "    [INFO] No vulnerabilities found."
     echo "No vulnerabilities found." >>/tmp/report.md
   fi
