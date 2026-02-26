@@ -87,6 +87,8 @@ const (
 	RuntimeClassNameNotValid BuildReason = "RuntimeClassNameNotValid"
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
+	// CABundleReferenceNotFound indicates the referenced Secret or ConfigMap is missing
+	CABundleReferenceNotFound BuildReason = "CABundleReferenceNotFound"
 )
 
 // IgnoredVulnerabilitySeverity is an enum for the possible values for the ignored severity
@@ -203,6 +205,10 @@ type BuildSpec struct {
 	// RuntimeClassName specifies the RuntimeClass to be used to run the Pod
 	// +optional
 	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
+
+	// CABundle specifies the list certificates to be loaded in workload containers.
+	// +optional
+	CABundle *CABundle `json:"caBundle,omitempty"`
 }
 
 // BuildVolume is a volume that will be mounted in build pod during build step

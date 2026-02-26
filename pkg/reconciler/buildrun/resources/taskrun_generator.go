@@ -81,13 +81,17 @@ func (g *TaskRunGenerator) GenerateBuildStrategyPhase(execCtx *executionContext)
 
 	execCtx.volumeMounts = volumeMounts
 
-	return generateTaskSpecVolumes(
+	if err = generateTaskSpecVolumes(
 		g.taskRun.Spec.TaskSpec,
 		execCtx.volumeMounts,
 		execCtx.strategyVolumes,
 		execCtx.buildVolumes,
 		execCtx.buildRunVolumes,
-	)
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *TaskRunGenerator) GenerateOutputImagePhase(_ *executionContext) error {
@@ -96,7 +100,11 @@ func (g *TaskRunGenerator) GenerateOutputImagePhase(_ *executionContext) error {
 		buildRunOutput = &buildv1beta1.Image{}
 	}
 
-	return SetupImageProcessing(g.taskRun, g.cfg, g.buildRun.CreationTimestamp.Time, g.build.Spec.Output, *buildRunOutput)
+	if err := SetupImageProcessing(g.taskRun, g.cfg, g.buildRun.CreationTimestamp.Time, g.build.Spec.Output, *buildRunOutput); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *TaskRunGenerator) ApplyInfrastructureConfiguration() error {
@@ -112,7 +120,15 @@ func (g *TaskRunGenerator) ApplyInfrastructureConfiguration() error {
 		return err
 	}
 
-	return applyScheduler(g.taskRun, g.build, g.buildRun)
+	if err := applyScheduler(g.taskRun, g.build, g.buildRun); err != nil {
+		return err
+	}
+
+	if err := addCertificates(g.taskRun, g.build, g.buildRun); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *TaskRunGenerator) ApplyMetadataConfiguration() error {
@@ -124,7 +140,11 @@ func (g *TaskRunGenerator) ApplyMetadataConfiguration() error {
 		return err
 	}
 
-	return applyParameters(g.taskRun, g.build, g.buildRun, g.strategy)
+	if err := applyParameters(g.taskRun, g.build, g.buildRun, g.strategy); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *TaskRunGenerator) GetExecutor() client.Object {
