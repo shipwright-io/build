@@ -39,7 +39,7 @@ jobs:
       - name: Install Grype
         run: |
           TAG_NAME="$(curl -s https://api.github.com/repos/anchore/grype/releases/latest | jq -r '.tag_name')"
-          curl -L -s "https://github.com/anchore/grype/releases/download/${TAG_NAME}/grype_${TAG_NAME/v/}_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed -e 's/aarch64/arm64/' -e 's/x86_64/amd64/').tar.gz" | tar -xzf - grype
+          curl -L -s "https://github.com/anchore/grype/releases/download/${TAG_NAME}/grype_${TAG_NAME/v/}_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed -e 's/aarch64/arm64/' -e 's/x86_64/amd64/').tar.gz" | sudo tar -xzf - -C /usr/local/bin grype
       - name: Install Trivy
         run: make install-trivy
         working-directory: ${{ github.workspace }}/main
