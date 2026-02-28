@@ -179,6 +179,7 @@ func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDe
 func applyBuildStrategySteps(
 	taskSpec *pipelineapi.TaskSpec,
 	build *buildv1beta1.Build,
+	buildRun *buildv1beta1.BuildRun,
 	buildSteps []buildv1beta1.Step,
 	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
 	combinedEnvs []corev1.EnvVar,
@@ -186,10 +187,19 @@ func applyBuildStrategySteps(
 	volumeMounts := make(map[string]bool)
 	buildStrategyVolumesMap := toVolumeMap(buildStrategyVolumes)
 
+	// Build step resource overrides map (step name -> resources)
+	stepResourceOverrides := buildStepResourceOverridesMap(build, buildRun)
+
 	for _, containerValue := range buildSteps {
 		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
 		if err != nil {
 			return nil, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
+		}
+
+		// Use overridden resources if specified, otherwise use strategy defaults
+		stepResources := containerValue.Resources
+		if override, exists := stepResourceOverrides[containerValue.Name]; exists {
+			stepResources = override
 		}
 
 		step := pipelineapi.Step{
@@ -201,7 +211,7 @@ func applyBuildStrategySteps(
 			Args:             containerValue.Args,
 			SecurityContext:  containerValue.SecurityContext,
 			WorkingDir:       containerValue.WorkingDir,
-			ComputeResources: containerValue.Resources,
+			ComputeResources: stepResources,
 			Env:              stepEnv,
 		}
 
@@ -216,6 +226,38 @@ func applyBuildStrategySteps(
 	}
 
 	return volumeMounts, nil
+}
+
+// buildStepResourceOverridesMap creates a map of step name to resource requirements
+// by merging Build and BuildRun step resource overrides with the following precedence:
+// 1. BuildRun.Spec.StepResources (highest priority - for name reference builds)
+// 2. BuildRun.Spec.Build.Spec.Strategy.StepResources (for embedded spec builds)
+// 3. Build.Spec.Strategy.StepResources (Build-level overrides)
+func buildStepResourceOverridesMap(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) map[string]corev1.ResourceRequirements {
+	overrides := make(map[string]corev1.ResourceRequirements)
+
+	// First apply Build-level overrides (lowest priority)
+	if build != nil {
+		for _, sr := range build.Spec.Strategy.StepResources {
+			overrides[sr.Name] = sr.Resources
+		}
+	}
+
+	// Then apply BuildRun.Spec.Build.Spec.Strategy.StepResources (for embedded spec path)
+	if buildRun != nil && buildRun.Spec.Build.Spec != nil {
+		for _, sr := range buildRun.Spec.Build.Spec.Strategy.StepResources {
+			overrides[sr.Name] = sr.Resources
+		}
+	}
+
+	// Finally apply BuildRun.Spec.StepResources (highest priority - for name reference path)
+	if buildRun != nil {
+		for _, sr := range buildRun.Spec.StepResources {
+			overrides[sr.Name] = sr.Resources
+		}
+	}
+
+	return overrides
 }
 
 func generateTaskSpecVolumes(

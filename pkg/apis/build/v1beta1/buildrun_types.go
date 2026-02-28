@@ -110,6 +110,14 @@ type BuildRunSpec struct {
 	// +optional
 	Volumes []BuildVolume `json:"volumes,omitempty"`
 
+	// StepResources allows overriding the resource requirements for specific steps
+	// defined in the referenced BuildStrategy or ClusterBuildStrategy. Each entry
+	// specifies the step name and the resources to use instead of those defined in
+	// the referenced strategy.
+	// BuildRun stepResources take precedence over Build stepResources.
+	// +optional
+	StepResources []StepResourceOverride `json:"stepResources,omitempty"`
+
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/

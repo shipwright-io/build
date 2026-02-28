@@ -63,6 +63,8 @@ const (
 	VolumeNotOverridable BuildReason = "VolumeNotOverridable"
 	// UndefinedVolume indicates that volume defined by build is not found in the strategy
 	UndefinedVolume BuildReason = "UndefinedVolume"
+	// UndefinedStepResource indicates that a step resource override references a step not found in the strategy
+	UndefinedStepResource BuildReason = "UndefinedStepResource"
 	// TriggerNameCanNotBeBlank indicates the trigger condition does not have a name
 	TriggerNameCanNotBeBlank BuildReason = "TriggerNameCanNotBeBlank"
 	// TriggerInvalidType indicates the trigger type is invalid

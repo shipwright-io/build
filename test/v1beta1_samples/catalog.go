@@ -1001,6 +1001,24 @@ func (c *Catalog) BuildRunWithSchedulerNameOverride(buildRunName string, buildNa
 	}
 }
 
+// BuildRunWithStepResourcesOverride returns a customized BuildRun object
+// that defines a buildspec and overrides the stepResources
+func (c *Catalog) BuildRunWithStepResourcesOverride(buildRunName string, buildName string, stepResources []build.StepResourceOverride) *build.BuildRun {
+	return &build.BuildRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: buildRunName,
+		},
+		Spec: build.BuildRunSpec{
+			Build: build.ReferencedBuild{
+				Name: &buildName,
+				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+			},
+			StepResources: stepResources,
+		},
+		Status: build.BuildRunStatus{},
+	}
+}
+
 // BuildRunWithSucceededCondition returns a BuildRun with a single condition
 // of the type Succeeded
 func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {

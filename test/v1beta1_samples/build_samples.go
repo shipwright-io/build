@@ -775,3 +775,58 @@ spec:
     ttlAfterFailed: 1m
     ttlAfterSucceeded: 1m
 `
+
+// BuildWithStepResources defines a Build with step resource overrides
+// using a BuildStrategy
+const BuildWithStepResourcesBuildStrategy = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: build-with-step-resources
+spec:
+  source:
+    type: Git
+    git:
+      url: "https://github.com/shipwright-io/sample-go"
+  strategy:
+    name: buildah
+    kind: BuildStrategy
+    stepResources:
+      - name: buildah-bud
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+  paramValues:
+  - name: dockerfile
+    value: Dockerfile
+`
+
+// BuildWithStepResourcesClusterStrategy defines a Build with step resource overrides
+// using a ClusterBuildStrategy
+const BuildWithStepResourcesClusterBuildStrategy = `
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: build-with-step-resources-cbs
+spec:
+  source:
+    type: Git
+    git:
+      url: "https://github.com/shipwright-io/sample-go"
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+    stepResources:
+      - name: build-step
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+`

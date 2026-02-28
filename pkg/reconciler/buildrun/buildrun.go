@@ -290,6 +290,15 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				return reconcile.Result{}, nil
 			}
 
+			// Validate the stepResources
+			valid, reason, message = validate.BuildRunStepResources(strategy.GetBuildSteps(), buildRun.Spec.StepResources)
+			if !valid {
+				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, nil
+			}
+
 			// Validate the nodeSelector
 			valid, reason, message = validate.BuildRunNodeSelector(buildRun.Spec.NodeSelector)
 			if !valid {

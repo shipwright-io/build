@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
     - [Defining the vulnerabilityScan](#defining-the-vulnerabilityscan)
     - [Defining Retention Parameters](#defining-retention-parameters)
     - [Defining Volumes](#defining-volumes)
+    - [Defining Step Resources](#defining-step-resources)
     - [Defining Triggers](#defining-triggers)
       - [GitHub](#github)
       - [Image](#image)
@@ -39,6 +40,7 @@ A `Build` resource allows the user to define:
 - env
 - retention
 - volumes
+- stepResources
 - nodeSelector
 - tolerations
 - schedulerName
@@ -90,6 +92,7 @@ To prevent users from triggering `BuildRun`s (_execution of a Build_) that will 
 | VolumeDoesNotExist                              | Volume referenced by the Build does not exist, therefore Build cannot be run.                                                                                                                                |
 | VolumeNotOverridable                            | Volume defined by build is not set as overridable in the strategy.                                                                                                                                           |
 | UndefinedVolume                                 | Volume defined by build is not found in the strategy.                                                                                                                                                        |
+| UndefinedStepResource                           | A `stepResources` entry references a step name that does not exist in the referenced strategy.                                                                                                               |
 | TriggerNameCanNotBeBlank                        | Trigger condition does not have a name.                                                                                                                                                                      |
 | TriggerInvalidType                              | Trigger type is invalid.                                                                                                                                                                                     |
 | TriggerInvalidGitHubWebHook                     | Trigger type GitHub is invalid.                                                                                                                                                                              |
@@ -135,6 +138,7 @@ The `Build` definition supports the following fields:
   - `spec.nodeSelector` - Specifies a selector which must match a node's labels for the build pod to be scheduled on that node. If nodeSelectors are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.tolerations` - Specifies the tolerations for the build pod. Only `key`, `value`, and `operator` are supported. Only `NoSchedule` taint `effect` is supported. If tolerations are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.schedulerName` - Specifies the scheduler name for the build pod. If schedulerName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
+  - `spec.strategy.stepResources` - Allows overriding resource requirements (CPU, memory) for individual steps defined in the `BuildStrategy` or `ClusterBuildStrategy`. Each entry specifies a step name and the resources to use instead of those defined in the strategy. You can overwrite values in the `BuildRun`. See [Defining Step Resources](#defining-step-resources) for more information.
   - `spec.runtimeClassName` - Specifies the [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) to be used for the build pod. If runtimeClassName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
 
 ### Defining the Source
@@ -737,6 +741,48 @@ spec:
       configMap:
         name: test-config
 ```
+
+### Defining Step Resources
+
+A `Build` can override the compute resource requirements (CPU, memory) for individual steps defined in the referenced `BuildStrategy` or `ClusterBuildStrategy`. This is useful when the strategy's default resource allocations are not suitable for your workload without needing to create a new strategy.
+
+Each entry in `spec.strategy.stepResources` specifies the name of a step and the resource requirements to use. The step name must match a step defined in the strategy; otherwise, the Build will fail validation with the `UndefinedStepResource` reason.
+
+If `stepResources` are specified in both a `Build` and a `BuildRun` (via `spec.stepResources`), the `BuildRun` values take precedence for the same step.
+
+Here is an example of a `Build` that overrides resources for the `build` step:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildah-build-with-resources
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+    stepResources:
+      - name: build
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+  paramValues:
+  - name: dockerfile
+    value: Dockerfile
+  output:
+    image: registry/namespace/image:latest
+```
+
+See the related [BuildRun documentation](buildrun.md#defining-step-resources) for how to override step resources at the BuildRun level.
 
 ### Defining Triggers
 

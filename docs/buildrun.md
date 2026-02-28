@@ -17,6 +17,7 @@ SPDX-License-Identifier: Apache-2.0
     - [Defining the ServiceAccount](#defining-the-serviceaccount)
     - [Defining Retention Parameters](#defining-retention-parameters)
     - [Defining Volumes](#defining-volumes)
+    - [Defining Step Resources](#defining-step-resources)
   - [Canceling a `BuildRun`](#canceling-a-buildrun)
   - [Automatic `BuildRun` deletion](#automatic-buildrun-deletion)
   - [Specifying Environment Variables](#specifying-environment-variables)
@@ -75,12 +76,13 @@ The `BuildRun` definition supports the following fields:
   - `spec.output.timestamp` - Overrides the output timestamp configuration of the referenced build to instruct the build to change the output image creation timestamp to the specified value. When omitted, the respective build strategy tool defines the output image timestamp.
   - `spec.output.vulnerabilityScan` - Overrides the output vulnerabilityScan configuration of the referenced build to run the vulnerability scan for the generated image.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
+  - `spec.stepResources` - Allows overriding resource requirements (CPU, memory) for individual steps defined in the `BuildStrategy` or `ClusterBuildStrategy`. If the referenced `Build` also specifies `spec.strategy.stepResources`, the `BuildRun` values take precedence for the same step. See [Defining Step Resources](#defining-step-resources) for more information.
   - `spec.nodeSelector` - Specifies a selector which must match a node's labels for the build pod to be scheduled on that node. If nodeSelectors are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.tolerations` - Specifies the tolerations for the build pod. Only `key`, `value`, and `operator` are supported. Only `NoSchedule` taint `effect` is supported. If tolerations are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.schedulerName` - Specifies the scheduler name for the build pod. If schedulerName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.runtimeClassName` - Specifies the [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) to be used for the build pod. If runtimeClassName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
 
-**Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, `env`, `nodeSelector`, `tolerations`, `schedulerName`, and `runtimeClassName` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
+**Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, `env`, `stepResources`, `nodeSelector`, `tolerations`, `schedulerName`, and `runtimeClassName` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
 
 ### Defining the Build Reference
 
@@ -249,6 +251,39 @@ spec:
         name: test-config
 ```
 
+### Defining Step Resources
+
+A `BuildRun` can override the compute resource requirements (CPU, memory) for individual steps defined in the referenced `BuildStrategy` or `ClusterBuildStrategy`. This is useful when different build runs need different resource allocations for the same build, for example running a larger build with more memory.
+
+Each entry in `spec.stepResources` specifies the name of a step and the resource requirements to use. The step name must match a step defined in the strategy; otherwise, the BuildRun will fail with the `UndefinedStepResource` reason.
+
+If the referenced `Build` also specifies `spec.strategy.stepResources` for the same step, the `BuildRun` values take precedence. The full precedence order is: `BuildRun.spec.stepResources` > `Build.spec.strategy.stepResources` > strategy step defaults.
+
+**Note**: `spec.stepResources` can only be used with `spec.build.name` (a Build reference). It cannot be combined with `spec.build.spec` (an embedded Build specification). When using an embedded spec, define the step resources directly in `spec.build.spec.strategy.stepResources`.
+
+Here is an example of a `BuildRun` that overrides step resources:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+metadata:
+  name: buildah-buildrun-with-resources
+spec:
+  build:
+    name: buildah-build
+  stepResources:
+    - name: build
+      resources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
+        limits:
+          cpu: "2"
+          memory: 2Gi
+```
+
+See the related [Build documentation](./build.md#defining-step-resources) for how to define step resources at the Build level.
+
 ## Canceling a `BuildRun`
 
 To cancel a `BuildRun` that's currently executing, update its status to mark it as canceled.
@@ -397,7 +432,8 @@ The following table illustrates the different states a BuildRun can have under i
 | False   | BuildRunNameInvalid                     | Yes                   | The defined `BuildRun` name (`metadata.name`) is invalid. The `BuildRun` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set).                                                                                    |
 | False   | BuildRunNoRefOrSpec                     | Yes                   | BuildRun does not have either `spec.build.name` or `spec.build.spec` defined. There is no connection to a Build specification.                                                                                                                                                                        |
 | False   | BuildRunAmbiguousBuild                  | Yes                   | The defined `BuildRun` uses both `spec.build.name` and `spec.build.spec`. Only one of them is allowed at the same time.                                                                                                                                                                               |
-| False   | BuildRunBuildFieldOverrideForbidden     | Yes                   | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, or `env`) in combination with `spec.build.spec`, which is not allowed. Use the `spec.build.spec` to directly specify the respective value.                                                                          |
+| False   | BuildRunBuildFieldOverrideForbidden     | Yes                   | The defined `BuildRun` uses an override (e.g. `timeout`, `paramValues`, `output`, `env`, or `stepResources`) in combination with `spec.build.spec`, which is not allowed. Use the `spec.build.spec` to directly specify the respective value.                                                         |
+| False   | UndefinedStepResource                   | Yes                   | A `stepResources` entry references a step name that does not exist in the build strategy.                                                                                                                                                                                                             |
 | False   | PodEvicted                              | Yes                   | The BuildRun Pod was evicted from the node it was running on. See [API-initiated Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/) and [Node-pressure Eviction](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/) for more information. |
 | False   | StepOutOfMemory                         | Yes                   | The BuildRun Pod failed because a step went out of memory.                                                                                                                                                                                                                                            |
 

@@ -190,6 +190,19 @@ type BuildStrategyStatus struct {
 // BuildStrategyKind defines the type of BuildStrategy used by the build.
 type BuildStrategyKind string
 
+// StepResourceOverride allows overriding resource requirements for a specific
+// step defined in the referenced BuildStrategy or ClusterBuildStrategy.
+type StepResourceOverride struct {
+	// Name of the step to override resources for. Must match a step name
+	// defined in the referenced BuildStrategy or ClusterBuildStrategy.
+	// +required
+	Name string `json:"name"`
+
+	// Resources defines the compute resource requirements for this step.
+	// +required
+	Resources corev1.ResourceRequirements `json:"resources"`
+}
+
 // Strategy can be used to refer to a specific instance of a buildstrategy.
 // Copied from CrossVersionObjectReference: https://github.com/kubernetes/kubernetes/blob/169df7434155cbbc22f1532cba8e0a9588e29ad8/pkg/apis/autoscaling/types.go#L64
 type Strategy struct {
@@ -198,6 +211,14 @@ type Strategy struct {
 
 	// BuildStrategyKind indicates the kind of the buildstrategy, namespaced or cluster scoped.
 	Kind *BuildStrategyKind `json:"kind,omitempty"`
+
+	// StepResources allows overriding the resource requirements for specific steps
+	// defined in the referenced BuildStrategy or ClusterBuildStrategy. Each entry
+	// specifies the step name and the resources to use instead of those defined in
+	// the referenced strategy.
+	//
+	// +optional
+	StepResources []StepResourceOverride `json:"stepResources,omitempty"`
 }
 
 // BuilderStrategy defines the common elements of build strategies

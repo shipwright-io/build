@@ -1,0 +1,28 @@
+---
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: build-with-step-resources
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  strategy:
+    name: buildah-shipwright-managed-push
+    kind: ClusterBuildStrategy
+    stepResources:
+      - name: build
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+  paramValues:
+  - name: dockerfile
+    value: Dockerfile
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/stepresources-test

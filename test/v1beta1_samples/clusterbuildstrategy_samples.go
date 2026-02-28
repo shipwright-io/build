@@ -391,3 +391,40 @@ spec:
     args:
     - $(params.sleep-time)
 `
+
+// ClusterBuildStrategyWithResources is a ClusterBuildStrategy with defined
+// resources for testing stepResources overrides
+const ClusterBuildStrategyWithResources = `
+apiVersion: shipwright.io/v1beta1
+kind: ClusterBuildStrategy
+metadata:
+  name: cbs-with-resources
+spec:
+  steps:
+    - name: build-step
+      image: alpine:latest
+      command:
+        - echo
+      args:
+        - "building"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    - name: push-step
+      image: alpine:latest
+      command:
+        - echo
+      args:
+        - "pushing"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+`

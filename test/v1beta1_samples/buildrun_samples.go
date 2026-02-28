@@ -339,6 +339,25 @@ spec:
   runtimeClassName: "kata-containers"
 `
 
+// MinimalBuildRunWithStepResourcesOverride defines a minimal BuildRun
+// with stepResources override (for name reference path)
+const MinimalBuildRunWithStepResourcesOverride = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    name: foobar
+  stepResources:
+    - name: buildah-bud
+      resources:
+        requests:
+          cpu: 500m
+          memory: 512Mi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+`
+
 // MinimalBuildRunWithVulnerabilityScan defines a BuildRun with
 // an override for the Build Output
 const MinimalBuildRunWithVulnerabilityScan = `

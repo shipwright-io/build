@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -771,5 +772,51 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			Expect(buildRun.Status.GetCondition(buildv1beta1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
 			Expect(buildRun.Status.GetCondition(buildv1beta1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
+	})
+
+	Context("when a build with stepResources is defined", Label("stepResources", "CORE"), func() {
+
+		BeforeEach(func() {
+			testID = generateTestID("stepresources")
+
+			build = createBuild(
+				testBuild,
+				testID,
+				"test/data/v1beta1/build_stepresources_cr.yaml",
+			)
+		})
+
+		It("successfully runs a build with stepResources overrides", func() {
+			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_stepresources_cr.yaml")
+			Expect(err).ToNot(HaveOccurred(), "Error retrieving buildrun test data")
+			appendRegistryInsecureParamValue(build, buildRun)
+
+			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
+			testBuild.ValidateImageDigest(buildRun)
+
+			if os.Getenv(EnvVarVerifyTektonObjects) == "true" {
+				tr, err := testBuild.GetTaskRunFromBuildRun(buildRun.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				podName := tr.Status.PodName
+				Expect(podName).ToNot(BeEmpty(), "TaskRun should have a pod name")
+
+				pod, err := testBuild.LookupPod(types.NamespacedName{Name: podName, Namespace: testBuild.Namespace})
+				Expect(err).ToNot(HaveOccurred())
+
+				var buildContainer *corev1.Container
+				for i, c := range pod.Spec.Containers {
+					if c.Name == "step-build" {
+						buildContainer = &pod.Spec.Containers[i]
+						break
+					}
+				}
+				Expect(buildContainer).ToNot(BeNil(), "Pod should have a step-build container")
+
+				Expect(buildContainer.Resources.Limits[corev1.ResourceCPU]).To(Equal(resource.MustParse("1")))
+				Expect(buildContainer.Resources.Limits[corev1.ResourceMemory]).To(Equal(resource.MustParse("1Gi")))
+			}
+		})
+
 	})
 })

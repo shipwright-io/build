@@ -654,4 +654,174 @@ var _ = Describe("Integration tests BuildStrategies and TaskRuns", func() {
 			})
 		})
 	})
+
+	Context("when a build with stepResources is created", func() {
+
+		BeforeEach(func() {
+			buildSample = []byte(test.BuildWithStepResourcesBuildStrategy)
+			buildRunSample = []byte(test.MinimalBuildRun)
+
+			// Delete the single-step BuildStrategy created in the global BeforeEach
+			// and create a multi-step strategy that has buildah-bud and buildah-push steps
+			Expect(tb.DeleteBuildStrategy(bsObject.Name)).To(BeNil())
+			bsObject, err = tb.Catalog.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+			Expect(err).To(BeNil())
+			err = tb.CreateBuildStrategy(bsObject)
+			Expect(err).To(BeNil())
+		})
+
+		It("should create a taskrun with the correct stepResources", func() {
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			taskRun, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			// Find the buildah-bud step and verify its resources
+			var budStep *pipelineapi.Step
+			for i := range taskRun.Spec.TaskSpec.Steps {
+				if taskRun.Spec.TaskSpec.Steps[i].Name == "buildah-bud" {
+					budStep = &taskRun.Spec.TaskSpec.Steps[i]
+					break
+				}
+			}
+
+			Expect(budStep).ToNot(BeNil())
+			// Verify that the step resources were overridden
+			Expect(budStep.ComputeResources.Requests.Cpu().String()).To(Equal("250m"))
+			Expect(budStep.ComputeResources.Requests.Memory().String()).To(Equal("256Mi"))
+			Expect(budStep.ComputeResources.Limits.Cpu().String()).To(Equal("1"))
+			Expect(budStep.ComputeResources.Limits.Memory().String()).To(Equal("2Gi"))
+
+			// Find the buildah-push step and verify it retains strategy defaults
+			var pushStep *pipelineapi.Step
+			for i := range taskRun.Spec.TaskSpec.Steps {
+				if taskRun.Spec.TaskSpec.Steps[i].Name == "buildah-push" {
+					pushStep = &taskRun.Spec.TaskSpec.Steps[i]
+					break
+				}
+			}
+
+			Expect(pushStep).ToNot(BeNil())
+			// Verify that the push step retains strategy defaults (100m, 65Mi)
+			Expect(pushStep.ComputeResources.Requests.Cpu().String()).To(Equal("100m"))
+			Expect(pushStep.ComputeResources.Requests.Memory().String()).To(Equal("65Mi"))
+		})
+
+		It("should fail validation when a stepResources override references an unknown step", func() {
+			buildSample = []byte(test.BuildWithStepResourcesBuildStrategy)
+			buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(BUILD+tb.Namespace, bsObject.Name, buildSample)
+			Expect(err).To(BeNil())
+
+			// Mutate the valid Build to reference a non-existent step
+			buildObject.Spec.Strategy.StepResources[0].Name = "non-existent-step"
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(buildObject.Status.Reason).ToNot(BeNil())
+			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.UndefinedStepResource))
+			Expect(*buildObject.Status.Message).To(ContainSubstring("non-existent-step"))
+		})
+	})
+
+	Context("when a buildrun with stepResources override is created", func() {
+
+		BeforeEach(func() {
+			// Use a Build with stepResources, then override with BuildRun.Spec.StepResources
+			buildSample = []byte(test.BuildWithStepResourcesBuildStrategy)
+			buildRunSample = []byte(test.MinimalBuildRunWithStepResourcesOverride)
+
+			// Delete the single-step BuildStrategy created in the global BeforeEach
+			// and create a multi-step strategy that has buildah-bud and buildah-push steps
+			Expect(tb.DeleteBuildStrategy(bsObject.Name)).To(BeNil())
+			bsObject, err = tb.Catalog.LoadBuildStrategyFromBytes([]byte(test.MinimalBuildahBuildStrategy))
+			Expect(err).To(BeNil())
+			err = tb.CreateBuildStrategy(bsObject)
+			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			buildRunSample = nil
+		})
+
+		It("should create a taskrun with BuildRun stepResources taking precedence over Build stepResources", func() {
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+
+			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			_, err = tb.GetBRTillStartTime(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			taskRun, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			// Find the buildah-bud step and verify its resources
+			var budStep *pipelineapi.Step
+			for i := range taskRun.Spec.TaskSpec.Steps {
+				if taskRun.Spec.TaskSpec.Steps[i].Name == "buildah-bud" {
+					budStep = &taskRun.Spec.TaskSpec.Steps[i]
+					break
+				}
+			}
+
+			Expect(budStep).ToNot(BeNil())
+			// Verify that BuildRun.Spec.StepResources took precedence over Build.Spec.Strategy.StepResources
+			// Build has: 250m/256Mi requests, 1/2Gi limits
+			// BuildRun has: 500m/512Mi requests, 2/4Gi limits
+			Expect(budStep.ComputeResources.Requests.Cpu().String()).To(Equal("500m"))
+			Expect(budStep.ComputeResources.Requests.Memory().String()).To(Equal("512Mi"))
+			Expect(budStep.ComputeResources.Limits.Cpu().String()).To(Equal("2"))
+			Expect(budStep.ComputeResources.Limits.Memory().String()).To(Equal("4Gi"))
+
+			// Find the buildah-push step and verify it retains strategy defaults (not overridden by either)
+			var pushStep *pipelineapi.Step
+			for i := range taskRun.Spec.TaskSpec.Steps {
+				if taskRun.Spec.TaskSpec.Steps[i].Name == "buildah-push" {
+					pushStep = &taskRun.Spec.TaskSpec.Steps[i]
+					break
+				}
+			}
+
+			Expect(pushStep).ToNot(BeNil())
+			// Verify that the push step retains strategy defaults (100m, 65Mi)
+			Expect(pushStep.ComputeResources.Requests.Cpu().String()).To(Equal("100m"))
+			Expect(pushStep.ComputeResources.Requests.Memory().String()).To(Equal("65Mi"))
+		})
+
+		It("should fail validation when BuildRun stepResources reference an unknown step", func() {
+			buildRunSample = []byte(test.MinimalBuildRunWithStepResourcesOverride)
+			buildRunObject, err = tb.Catalog.LoadBRWithNameAndRef(BUILDRUN+tb.Namespace, buildObject.Name, buildRunSample)
+			Expect(err).To(BeNil())
+
+			// Mutate the valid BuildRun to reference a non-existent step
+			buildRunObject.Spec.StepResources[0].Name = "non-existent-step"
+
+			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+			_, err = tb.GetBuildTillValidation(buildObject.Name)
+			Expect(err).To(BeNil())
+
+			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+
+			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
+			Expect(err).To(BeNil())
+
+			condition := br.Status.GetCondition(v1beta1.Succeeded)
+			Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+			Expect(condition.Reason).To(Equal(string(v1beta1.UndefinedStepResource)))
+			Expect(condition.Message).To(ContainSubstring("does not exist"))
+		})
+	})
 })
