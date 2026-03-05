@@ -2813,6 +2813,38 @@ spec:
                     description: Labels references the additional labels to be applied
                       on the image
                     type: object
+                  multiArch:
+                    description: |-
+                      MultiArch configures building container images for multiple OS and CPU
+                      architecture combinations. When set, the build controller will orchestrate
+                      parallel builds for each specified platform and assemble the results into
+                      an OCI image index.
+                    properties:
+                      platforms:
+                        description: Platforms is the list of os/architecture combinations
+                          to build for.
+                        items:
+                          description: |-
+                            ImagePlatform describes the operating system and CPU architecture
+                            of a container image, following the OCI image index specification.
+                          properties:
+                            arch:
+                              description: Arch is the CPU architecture of the image
+                                platform (e.g. "amd64", "arm64", "s390x", "ppc64le").
+                              type: string
+                            os:
+                              description: OS is the operating system of the image
+                                platform (e.g. "linux").
+                              type: string
+                          required:
+                          - arch
+                          - os
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - platforms
+                    type: object
                   pushSecret:
                     description: Describes the secret name for pushing a container
                       image.
