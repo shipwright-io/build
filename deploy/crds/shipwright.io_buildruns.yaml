@@ -7734,6 +7734,39 @@ spec:
                             description: Labels references the additional labels to
                               be applied on the image
                             type: object
+                          multiArch:
+                            description: |-
+                              MultiArch configures building container images for multiple OS and CPU
+                              architecture combinations. When set, the build controller will orchestrate
+                              parallel builds for each specified platform and assemble the results into
+                              an OCI image index.
+                            properties:
+                              platforms:
+                                description: Platforms is the list of os/architecture
+                                  combinations to build for.
+                                items:
+                                  description: |-
+                                    ImagePlatform describes the operating system and CPU architecture
+                                    of a container image, following the OCI image index specification.
+                                  properties:
+                                    arch:
+                                      description: Arch is the CPU architecture of
+                                        the image platform (e.g. "amd64", "arm64",
+                                        "s390x", "ppc64le").
+                                      type: string
+                                    os:
+                                      description: OS is the operating system of the
+                                        image platform (e.g. "linux").
+                                      type: string
+                                  required:
+                                  - arch
+                                  - os
+                                  type: object
+                                minItems: 1
+                                type: array
+                            required:
+                            - platforms
+                            type: object
                           pushSecret:
                             description: Describes the secret name for pushing a container
                               image.
@@ -10332,6 +10365,38 @@ spec:
                     description: Labels references the additional labels to be applied
                       on the image
                     type: object
+                  multiArch:
+                    description: |-
+                      MultiArch configures building container images for multiple OS and CPU
+                      architecture combinations. When set, the build controller will orchestrate
+                      parallel builds for each specified platform and assemble the results into
+                      an OCI image index.
+                    properties:
+                      platforms:
+                        description: Platforms is the list of os/architecture combinations
+                          to build for.
+                        items:
+                          description: |-
+                            ImagePlatform describes the operating system and CPU architecture
+                            of a container image, following the OCI image index specification.
+                          properties:
+                            arch:
+                              description: Arch is the CPU architecture of the image
+                                platform (e.g. "amd64", "arm64", "s390x", "ppc64le").
+                              type: string
+                            os:
+                              description: OS is the operating system of the image
+                                platform (e.g. "linux").
+                              type: string
+                          required:
+                          - arch
+                          - os
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - platforms
+                    type: object
                   pushSecret:
                     description: Describes the secret name for pushing a container
                       image.
@@ -12755,6 +12820,39 @@ spec:
                           type: string
                         description: Labels references the additional labels to be
                           applied on the image
+                        type: object
+                      multiArch:
+                        description: |-
+                          MultiArch configures building container images for multiple OS and CPU
+                          architecture combinations. When set, the build controller will orchestrate
+                          parallel builds for each specified platform and assemble the results into
+                          an OCI image index.
+                        properties:
+                          platforms:
+                            description: Platforms is the list of os/architecture
+                              combinations to build for.
+                            items:
+                              description: |-
+                                ImagePlatform describes the operating system and CPU architecture
+                                of a container image, following the OCI image index specification.
+                              properties:
+                                arch:
+                                  description: Arch is the CPU architecture of the
+                                    image platform (e.g. "amd64", "arm64", "s390x",
+                                    "ppc64le").
+                                  type: string
+                                os:
+                                  description: OS is the operating system of the image
+                                    platform (e.g. "linux").
+                                  type: string
+                              required:
+                              - arch
+                              - os
+                              type: object
+                            minItems: 1
+                            type: array
+                        required:
+                        - platforms
                         type: object
                       pushSecret:
                         description: Describes the secret name for pushing a container
@@ -15225,6 +15323,12 @@ spec:
                   reason:
                     type: string
                 type: object
+              manifestDigest:
+                description: |-
+                  ManifestDigest holds the digest of the multi-arch manifest list (OCI image index)
+                  when running a multi-arch build. For single-arch builds this field is not set;
+                  use Output.Digest instead.
+                type: string
               output:
                 description: Output holds the results emitted from step definition
                   of an output
@@ -15252,6 +15356,72 @@ spec:
                       type: object
                     type: array
                 type: object
+              platformResults:
+                description: |-
+                  PlatformResults contains per-platform build results when running a multi-arch build.
+                  Each entry corresponds to one platform from the multiArch configuration.
+                items:
+                  description: PlatformBuildResult holds the build result for a specific
+                    platform in a multi-arch build.
+                  properties:
+                    digest:
+                      description: Digest holds the digest of the image built for
+                        this platform.
+                      type: string
+                    failureMessage:
+                      description: FailureMessage contains the error message if the
+                        platform build failed.
+                      type: string
+                    platform:
+                      description: Platform identifies the OS and CPU architecture
+                        this result corresponds to.
+                      properties:
+                        arch:
+                          description: Arch is the CPU architecture of the image platform
+                            (e.g. "amd64", "arm64", "s390x", "ppc64le").
+                          type: string
+                        os:
+                          description: OS is the operating system of the image platform
+                            (e.g. "linux").
+                          type: string
+                      required:
+                      - arch
+                      - os
+                      type: object
+                    size:
+                      description: Size holds the compressed size of the image built
+                        for this platform.
+                      format: int64
+                      type: integer
+                    status:
+                      description: Status indicates the build status for this platform.
+                      enum:
+                      - Pending
+                      - Running
+                      - Succeeded
+                      - Failed
+                      type: string
+                    vulnerabilities:
+                      description: |-
+                        Vulnerabilities holds the list of vulnerabilities detected in the image
+                        built for this platform.
+                      items:
+                        description: Vulnerability defines a vulnerability by its
+                          ID and severity
+                        properties:
+                          id:
+                            type: string
+                          severity:
+                            description: VulnerabilitySeverity is an enum for the
+                              possible values for severity of a vulnerability
+                            type: string
+                        type: object
+                      type: array
+                  required:
+                  - platform
+                  - status
+                  type: object
+                type: array
               source:
                 description: Source holds the results emitted from the source step
                 properties:
