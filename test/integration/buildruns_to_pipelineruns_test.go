@@ -15,7 +15,7 @@ import (
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
-var _ = Describe("Integration tests BuildRuns and PipelineRuns", func() {
+var _ = Describe("Integration tests BuildRuns and PipelineRuns", Label("PipelineRun"), func() {
 	var (
 		cbsObject      *v1beta1.ClusterBuildStrategy
 		buildObject    *v1beta1.Build

@@ -152,7 +152,7 @@ jobs:
           make test-integration
       - name: Test-PipelineRun
         run: |
-          BUILDRUN_EXECUTOR=PipelineRun ginkgo --focus-file="buildruns_to_pipelineruns_test.go" -v test/integration/...
+          BUILDRUN_EXECUTOR=PipelineRun ginkgo --label-filter="PipelineRun" -v test/integration/...
 
   e2e:
     strategy:
@@ -269,7 +269,7 @@ jobs:
           TEST_E2E_SERVICEACCOUNT_NAME=pipeline \
           TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
           TEST_E2E_VERIFY_TEKTONOBJECTS=true \
-          ginkgo --focus="PipelineRun E2E Tests" --procs 8 --timeout=1h --vv test/e2e/v1beta1/
+          ginkgo --label-filter="PipelineRun" --procs 8 --timeout=1h --vv test/e2e/v1beta1/
       - name: Build controller logs
         if: ${{ failure() }}
         run: |
