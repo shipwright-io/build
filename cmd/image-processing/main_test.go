@@ -537,3 +537,180 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 		})
 	})
 })
+
+var _ = Describe("Source Bundle Push", func() {
+	run := func(args ...string) error {
+		log.SetOutput(GinkgoWriter)
+		os.Args = append([]string{"tool"}, args...)
+		tmp := os.Stderr
+		defer func() { os.Stderr = tmp }()
+		os.Stderr = nil
+		return Execute(context.Background())
+	}
+
+	AfterEach(func() {
+		pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
+	})
+
+	It("should bundle a source directory and push it as an OCI artifact", func() {
+		logLogger := log.Logger{}
+		logLogger.SetOutput(GinkgoWriter)
+		s := httptest.NewServer(registry.New(registry.Logger(&logLogger)))
+		defer s.Close()
+		u, err := url.Parse(s.URL)
+		Expect(err).ToNot(HaveOccurred())
+		endpoint := u.Host
+
+		srcDir, err := os.MkdirTemp("", "source-bundle-test")
+		Expect(err).ToNot(HaveOccurred())
+		defer os.RemoveAll(srcDir)
+
+		Expect(os.WriteFile(fmt.Sprintf("%s/main.go", srcDir), []byte("package main"), 0600)).To(Succeed())
+		Expect(os.MkdirAll(fmt.Sprintf("%s/pkg", srcDir), 0750)).To(Succeed())
+		Expect(os.WriteFile(fmt.Sprintf("%s/pkg/lib.go", srcDir), []byte("package pkg"), 0600)).To(Succeed())
+
+		imageRef := fmt.Sprintf("%s/test/source-bundle:latest", endpoint)
+		digestFile, err := os.CreateTemp("", "digest")
+		Expect(err).ToNot(HaveOccurred())
+		defer os.Remove(digestFile.Name())
+
+		Expect(run(
+			"--push-source-bundle", srcDir,
+			"--source-bundle-image", imageRef,
+			"--insecure",
+			"--result-file-image-digest", digestFile.Name(),
+		)).To(Succeed())
+
+		ref, err := name.ParseReference(imageRef)
+		Expect(err).ToNot(HaveOccurred())
+
+		desc, err := remote.Get(ref)
+		Expect(err).ToNot(HaveOccurred())
+
+		img, err := desc.Image()
+		Expect(err).ToNot(HaveOccurred())
+
+		layers, err := img.Layers()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(layers).To(HaveLen(1))
+
+		digestData, err := os.ReadFile(digestFile.Name())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(digestData)).To(HavePrefix("sha256:"))
+	})
+
+	It("should fail when --source-bundle-image is missing", func() {
+		srcDir, err := os.MkdirTemp("", "source-bundle-test")
+		Expect(err).ToNot(HaveOccurred())
+		defer os.RemoveAll(srcDir)
+
+		Expect(run(
+			"--push-source-bundle", srcDir,
+		)).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("Assemble Index", func() {
+	run := func(args ...string) error {
+		log.SetOutput(GinkgoWriter)
+		os.Args = append([]string{"tool"}, args...)
+		tmp := os.Stderr
+		defer func() { os.Stderr = tmp }()
+		os.Stderr = nil
+		return Execute(context.Background())
+	}
+
+	AfterEach(func() {
+		pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
+	})
+
+	It("should assemble an OCI image index from per-platform images", func() {
+		logLogger := log.Logger{}
+		logLogger.SetOutput(GinkgoWriter)
+		s := httptest.NewServer(registry.New(registry.Logger(&logLogger)))
+		defer s.Close()
+		u, err := url.Parse(s.URL)
+		Expect(err).ToNot(HaveOccurred())
+		endpoint := u.Host
+
+		amd64Tag := fmt.Sprintf("%s/test/app-linux-amd64:latest", endpoint)
+		arm64Tag := fmt.Sprintf("%s/test/app-linux-arm64:latest", endpoint)
+
+		amd64Ref, err := name.ParseReference(amd64Tag)
+		Expect(err).ToNot(HaveOccurred())
+		arm64Ref, err := name.ParseReference(arm64Tag)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(remote.Write(amd64Ref, empty.Image)).To(Succeed())
+		Expect(remote.Write(arm64Ref, empty.Image)).To(Succeed())
+
+		amd64Digest, err := empty.Image.Digest()
+		Expect(err).ToNot(HaveOccurred())
+		arm64Digest, err := empty.Image.Digest()
+		Expect(err).ToNot(HaveOccurred())
+
+		outputRef := fmt.Sprintf("%s/test/app:latest", endpoint)
+		digestFile, err := os.CreateTemp("", "index-digest")
+		Expect(err).ToNot(HaveOccurred())
+		defer os.Remove(digestFile.Name())
+
+		Expect(run(
+			"--assemble-index",
+			"--image", outputRef,
+			"--insecure",
+			"--platform-image", fmt.Sprintf("linux/amd64=%s@%s", amd64Tag, amd64Digest),
+			"--platform-image", fmt.Sprintf("linux/arm64=%s@%s", arm64Tag, arm64Digest),
+			"--result-file-image-digest", digestFile.Name(),
+		)).To(Succeed())
+
+		digestData, err := os.ReadFile(digestFile.Name())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(digestData)).To(HavePrefix("sha256:"))
+
+		ref, err := name.ParseReference(outputRef)
+		Expect(err).ToNot(HaveOccurred())
+
+		desc, err := remote.Get(ref)
+		Expect(err).ToNot(HaveOccurred())
+		idx, err := desc.ImageIndex()
+		Expect(err).ToNot(HaveOccurred())
+
+		indexManifest, err := idx.IndexManifest()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(indexManifest.Manifests).To(HaveLen(2))
+	})
+
+	It("should fail when --image is missing", func() {
+		Expect(run(
+			"--assemble-index",
+			"--platform-image", "linux/amd64=localhost:5000/test@sha256:abc",
+		)).To(HaveOccurred())
+	})
+
+	It("should fail when no --platform-image is provided", func() {
+		Expect(run(
+			"--assemble-index",
+			"--image", "localhost:5000/test:latest",
+		)).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("ParsePlatformImages", func() {
+	It("should parse valid platform image entries", func() {
+		entries, err := ParsePlatformImages([]string{
+			"linux/amd64=registry.example.com/app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			"linux/arm64=registry.example.com/app@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(entries).To(HaveLen(2))
+		Expect(entries[0].OS).To(Equal("linux"))
+		Expect(entries[0].Arch).To(Equal("amd64"))
+		Expect(entries[1].OS).To(Equal("linux"))
+		Expect(entries[1].Arch).To(Equal("arm64"))
+	})
+
+	It("should fail when the format is invalid", func() {
+		_, err := ParsePlatformImages([]string{"not-a-valid-entry"})
+		Expect(err).To(HaveOccurred())
+	})
+})

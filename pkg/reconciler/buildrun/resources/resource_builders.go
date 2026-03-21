@@ -326,7 +326,7 @@ func applyNodeSelectors(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build,
 		taskRunPodTemplate = taskRun.Spec.PodTemplate
 	}
 
-	taskRunNodeSelector := mergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
+	taskRunNodeSelector := MergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
 	if len(taskRunNodeSelector) > 0 {
 		taskRunPodTemplate.NodeSelector = taskRunNodeSelector
 		taskRun.Spec.PodTemplate = taskRunPodTemplate
@@ -583,6 +583,22 @@ func generatePipelineWorkspaceBindings() []pipelineapi.WorkspaceBinding {
 					},
 				},
 			},
+		},
+		{
+			Name:     "cache",
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
+// generateMultiArchWorkspaceBindings creates EmptyDir workspace bindings for multi-arch
+// PipelineRuns. Each TaskRun in the PipelineRun gets its own independent EmptyDir volume,
+// which is essential because per-platform tasks run on different nodes.
+func generateMultiArchWorkspaceBindings() []pipelineapi.WorkspaceBinding {
+	return []pipelineapi.WorkspaceBinding{
+		{
+			Name:     workspaceSource,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
 			Name:     "cache",

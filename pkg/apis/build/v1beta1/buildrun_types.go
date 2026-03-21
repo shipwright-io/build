@@ -233,6 +233,55 @@ type Output struct {
 	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
 }
 
+// PlatformBuildStatus represents the status of a build for a single platform
+// in a multi-arch build.
+type PlatformBuildStatus string
+
+const (
+	// PlatformBuildStatusPending indicates the platform build has not started yet.
+	PlatformBuildStatusPending PlatformBuildStatus = "Pending"
+
+	// PlatformBuildStatusRunning indicates the platform build is currently running.
+	PlatformBuildStatusRunning PlatformBuildStatus = "Running"
+
+	// PlatformBuildStatusSucceeded indicates the platform build completed successfully.
+	PlatformBuildStatusSucceeded PlatformBuildStatus = "Succeeded"
+
+	// PlatformBuildStatusFailed indicates the platform build failed.
+	PlatformBuildStatusFailed PlatformBuildStatus = "Failed"
+)
+
+// PlatformBuildResult holds the build result for a specific platform in a multi-arch build.
+type PlatformBuildResult struct {
+	// Platform identifies the OS and CPU architecture this result corresponds to.
+	Platform ImagePlatform `json:"platform"`
+
+	// Digest holds the digest of the image built for this platform.
+	//
+	// +optional
+	Digest string `json:"digest,omitempty"`
+
+	// Size holds the compressed size of the image built for this platform.
+	//
+	// +optional
+	Size int64 `json:"size,omitempty"`
+
+	// Vulnerabilities holds the list of vulnerabilities detected in the image
+	// built for this platform.
+	//
+	// +optional
+	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
+
+	// Status indicates the build status for this platform.
+	// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed
+	Status PlatformBuildStatus `json:"status"`
+
+	// FailureMessage contains the error message if the platform build failed.
+	//
+	// +optional
+	FailureMessage string `json:"failureMessage,omitempty"`
+}
+
 // BuildRunStatus defines the observed state of BuildRun
 type BuildRunStatus struct {
 	// Source holds the results emitted from the source step
@@ -274,6 +323,19 @@ type BuildRunStatus struct {
 	// FailureDetails contains error details that are collected and surfaced from TaskRun
 	// +optional
 	FailureDetails *FailureDetails `json:"failureDetails,omitempty"`
+
+	// PlatformResults contains per-platform build results when running a multi-arch build.
+	// Each entry corresponds to one platform from the multiArch configuration.
+	//
+	// +optional
+	PlatformResults []PlatformBuildResult `json:"platformResults,omitempty"`
+
+	// ManifestDigest holds the digest of the multi-arch manifest list (OCI image index)
+	// when running a multi-arch build. For single-arch builds this field is not set;
+	// use Output.Digest instead.
+	//
+	// +optional
+	ManifestDigest string `json:"manifestDigest,omitempty"`
 }
 
 // Location describes the location where the failure happened

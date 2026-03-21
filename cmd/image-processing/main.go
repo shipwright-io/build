@@ -53,6 +53,12 @@ type settings struct {
 	secretPath string
 	vulnerabilitySettings   resources.VulnerablilityScanParams
 	vulnerabilityCountLimit int
+
+	pushSourceBundle  string
+	sourceBundleImage string
+
+	assembleIndex  bool
+	platformImages []string
 }
 
 var flagValues settings
@@ -80,6 +86,12 @@ func initializeFlag() {
 	pflag.StringVar(&flagValues.resultFileImageVulnerabilities, "result-file-image-vulnerabilities", "", "A file to write the image vulnerabilities to")
 	pflag.Var(&flagValues.vulnerabilitySettings, "vuln-settings", "Vulnerability settings json string. One can enable the scan by setting {\"enabled\":true} to this option")
 	pflag.IntVar(&flagValues.vulnerabilityCountLimit, "vuln-count-limit", 50, "vulnerability count limit for the output of vulnerability scan")
+
+	pflag.StringVar(&flagValues.pushSourceBundle, "push-source-bundle", "", "Package this directory as an OCI artifact and push it")
+	pflag.StringVar(&flagValues.sourceBundleImage, "source-bundle-image", "", "Registry reference for the source bundle OCI artifact")
+
+	pflag.BoolVar(&flagValues.assembleIndex, "assemble-index", false, "Assemble an OCI image index from per-platform images")
+	pflag.StringArrayVar(&flagValues.platformImages, "platform-image", nil, "Per-platform image reference in os/arch=ref@digest format (repeatable)")
 }
 
 func main() {
@@ -125,6 +137,14 @@ func Execute(ctx context.Context) error {
 		}
 
 		flagValues.imageTimestamp = string(data)
+	}
+
+	if flagValues.pushSourceBundle != "" {
+		return runSourceBundlePush(ctx)
+	}
+
+	if flagValues.assembleIndex {
+		return runAssembleIndex(ctx)
 	}
 
 	return runImageProcessing(ctx)
@@ -300,4 +320,123 @@ func serializeVulnerabilities(Vulnerabilities []buildapi.Vulnerability) []byte {
 		output = append(output, fmt.Sprintf("%s:%c", vuln.ID, vuln.Severity[0]))
 	}
 	return []byte(strings.Join(output, ","))
+}
+
+func runSourceBundlePush(ctx context.Context) error {
+	if flagValues.sourceBundleImage == "" {
+		return &ExitError{Code: 100, Message: "the 'source-bundle-image' argument is required when using 'push-source-bundle'"}
+	}
+
+	bundleRef, err := name.ParseReference(flagValues.sourceBundleImage)
+	if err != nil {
+		return fmt.Errorf("failed to parse source bundle image reference: %w", err)
+	}
+
+	log.Printf("Bundling source directory %q as OCI artifact\n", flagValues.pushSourceBundle)
+	img, err := image.BundleSourceDirectory(flagValues.pushSourceBundle)
+	if err != nil {
+		return fmt.Errorf("failed to bundle source directory: %w", err)
+	}
+
+	options, _, err := image.GetOptions(ctx, bundleRef, flagValues.insecure, flagValues.secretPath, "Shipwright Build")
+	if err != nil {
+		return fmt.Errorf("failed to get registry options: %w", err)
+	}
+
+	log.Printf("Pushing source bundle to %q\n", bundleRef.String())
+	digest, _, err := image.PushImageOrImageIndex(bundleRef, img, nil, options)
+	if err != nil {
+		return fmt.Errorf("failed to push source bundle: %w", err)
+	}
+	log.Printf("Source bundle %s@%s pushed\n", bundleRef.String(), digest)
+
+	if flagValues.resultFileImageDigest != "" {
+		if err := os.WriteFile(flagValues.resultFileImageDigest, []byte(digest), 0400); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func runAssembleIndex(ctx context.Context) error {
+	if flagValues.image == "" {
+		return &ExitError{Code: 100, Message: "the 'image' argument is required when using 'assemble-index'"}
+	}
+	if len(flagValues.platformImages) == 0 {
+		return &ExitError{Code: 100, Message: "at least one 'platform-image' argument is required when using 'assemble-index'"}
+	}
+
+	outputRef, err := name.ParseReference(flagValues.image)
+	if err != nil {
+		return fmt.Errorf("failed to parse output image reference: %w", err)
+	}
+
+	options, _, err := image.GetOptions(ctx, outputRef, flagValues.insecure, flagValues.secretPath, "Shipwright Build")
+	if err != nil {
+		return fmt.Errorf("failed to get registry options: %w", err)
+	}
+
+	platformEntries, err := ParsePlatformImages(flagValues.platformImages)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Assembling OCI image index for %d platforms\n", len(platformEntries))
+	imageIndex, err := image.AssembleImageIndex(platformEntries, options)
+	if err != nil {
+		return fmt.Errorf("failed to assemble image index: %w", err)
+	}
+
+	log.Printf("Pushing image index to %q\n", outputRef.String())
+	digest, size, err := image.PushImageOrImageIndex(outputRef, nil, imageIndex, options)
+	if err != nil {
+		return fmt.Errorf("failed to push image index: %w", err)
+	}
+	log.Printf("Image index %s@%s pushed\n", outputRef.String(), digest)
+
+	if digest != "" && flagValues.resultFileImageDigest != "" {
+		if err := os.WriteFile(flagValues.resultFileImageDigest, []byte(digest), 0400); err != nil {
+			return err
+		}
+	}
+
+	if size > 0 && flagValues.resultFileImageSize != "" {
+		if err := os.WriteFile(flagValues.resultFileImageSize, []byte(strconv.FormatInt(size, 10)), 0400); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ParsePlatformImages parses --platform-image flags in the format "os/arch=ref@digest"
+func ParsePlatformImages(entries []string) ([]image.PlatformImageEntry, error) {
+	var result []image.PlatformImageEntry
+	for _, entry := range entries {
+		parts := strings.SplitN(entry, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid platform-image format %q, expected os/arch=ref@digest", entry)
+		}
+
+		platformStr := parts[0]
+		imageRef := parts[1]
+
+		platformParts := strings.SplitN(platformStr, "/", 2)
+		if len(platformParts) != 2 {
+			return nil, fmt.Errorf("invalid platform format %q, expected os/arch", platformStr)
+		}
+
+		ref, err := name.ParseReference(imageRef)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse image reference %q: %w", imageRef, err)
+		}
+
+		result = append(result, image.PlatformImageEntry{
+			OS:       platformParts[0],
+			Arch:     platformParts[1],
+			ImageRef: ref,
+		})
+	}
+	return result, nil
 }

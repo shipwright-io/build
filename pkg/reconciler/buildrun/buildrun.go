@@ -335,6 +335,48 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				return reconcile.Result{}, nil
 			}
 
+			// Validate the multiArch configuration
+			mergedOutput := build.Spec.Output
+			if buildRun.Spec.Output != nil && buildRun.Spec.Output.MultiArch != nil {
+				mergedOutput.MultiArch = buildRun.Spec.Output.MultiArch
+			}
+			if mergedOutput.MultiArch != nil {
+				valid, reason, message = validate.ValidateMultiArchPlatforms(mergedOutput.MultiArch.Platforms)
+				if !valid {
+					if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+						return reconcile.Result{}, err
+					}
+					return reconcile.Result{}, nil
+				}
+
+				mergedNodeSelector := resources.MergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
+				valid, reason, message = validate.ValidateMultiArchNodeSelector(mergedNodeSelector)
+				if !valid {
+					if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+						return reconcile.Result{}, err
+					}
+					return reconcile.Result{}, nil
+				}
+
+				// Enforce PipelineRun executor for multi-arch builds
+				valid, reason, message = validate.ValidateMultiArchExecutor(r.config.BuildrunExecutor)
+				if !valid {
+					if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+						return reconcile.Result{}, err
+					}
+					return reconcile.Result{}, nil
+				}
+
+				// Validate that nodes exist for each platform
+				valid, reason, message = validate.ValidateMultiArchNodes(ctx, r.client, mergedOutput.MultiArch.Platforms)
+				if !valid {
+					if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+						return reconcile.Result{}, err
+					}
+					return reconcile.Result{}, nil
+				}
+			}
+
 			// Create the ImageBuildRunner (TaskRun or PipelineRun)
 			imageBuildRunner, err := r.taskRunnerFactory.CreateImageBuildRunner(ctx, r.client, r.config, svcAccount, strategy, build, buildRun, r.scheme, r.setOwnerReferenceFunc)
 			if err != nil {
@@ -444,6 +486,19 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 		if len(executorResults) > 0 {
 			ctxlog.Info(ctx, "surfacing executor results to BuildRun status", namespace, request.Namespace, name, request.Name)
 			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, executorResults, request)
+		}
+
+		// For multi-arch builds, extract per-platform results from PipelineRun child TaskRuns
+		if pipelineWrapper, ok := buildRunner.(*TektonPipelineRunWrapper); ok && pipelineWrapper.PipelineRun != nil {
+			var platforms []buildv1beta1.ImagePlatform
+			if buildRun.Spec.Output != nil && buildRun.Spec.Output.MultiArch != nil && len(buildRun.Spec.Output.MultiArch.Platforms) > 0 {
+				platforms = buildRun.Spec.Output.MultiArch.Platforms
+			} else if buildRun.Status.BuildSpec != nil && buildRun.Status.BuildSpec.Output.MultiArch != nil {
+				platforms = buildRun.Status.BuildSpec.Output.MultiArch.Platforms
+			}
+			if len(platforms) > 0 {
+				resources.UpdateBuildRunWithMultiArchResults(ctx, buildRun, pipelineWrapper.PipelineRun, platforms, r.client)
+			}
 		}
 
 		executorCondition := buildRunner.GetCondition(apis.ConditionSucceeded)

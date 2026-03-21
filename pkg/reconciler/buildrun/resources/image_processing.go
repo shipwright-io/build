@@ -113,12 +113,12 @@ func BuildImageProcessingArgs(
 		stepArgs = append(stepArgs, "--push", fmt.Sprintf("$(params.%s-%s)", prefixParamsResultsVolumes, paramOutputDirectory))
 	}
 
-	annotations := mergeMaps(buildOutput.Annotations, buildRunOutput.Annotations)
+	annotations := MergeMaps(buildOutput.Annotations, buildRunOutput.Annotations)
 	if len(annotations) > 0 {
 		stepArgs = append(stepArgs, convertMutateArgs("--annotation", annotations)...)
 	}
 
-	labels := mergeMaps(buildOutput.Labels, buildRunOutput.Labels)
+	labels := MergeMaps(buildOutput.Labels, buildRunOutput.Labels)
 	if len(labels) > 0 {
 		stepArgs = append(stepArgs, convertMutateArgs("--label", labels)...)
 	}
@@ -277,9 +277,9 @@ func convertMutateArgs(flag string, args map[string]string) []string {
 	return result
 }
 
-// mergeMaps takes 2 maps as input and merge the second into the first
-// values in second would takes precedence if both maps have same keys
-func mergeMaps(first map[string]string, second map[string]string) map[string]string {
+// MergeMaps merges two string maps. Values in second take precedence
+// over first when keys overlap.
+func MergeMaps(first map[string]string, second map[string]string) map[string]string {
 	if len(first) == 0 {
 		first = map[string]string{}
 	}
