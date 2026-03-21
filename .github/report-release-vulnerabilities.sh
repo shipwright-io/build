@@ -143,6 +143,37 @@ for image in "${images[@]}"; do
     echo "    [INFO] No vulnerabilities found."
     echo "No vulnerabilities found." >>/tmp/report.md
   fi
+
+  # Trivy binary vulnerabilities (only for image-processing, which embeds the Trivy binary)
+  if [[ "${image}" == *"image-processing"* ]]; then
+    echo "  [INFO] Checking for Trivy binary vulnerabilities"
+    echo "### Trivy binary vulnerabilities" >>/tmp/report.md
+    crane export "${image}" - | tar -xf - -C /tmp usr/local/bin/trivy
+    trivyBinaryVulns="$(govulncheck -format json -mode binary /tmp/usr/local/bin/trivy)"
+    rm -f /tmp/usr/local/bin/trivy
+    trivyBinaryVulnsFound=false
+    while read -r id pkg vulnerableVersion fixedVersion; do
+      if [ "${id}" == "" ]; then
+        continue
+      fi
+
+      if [ "${trivyBinaryVulnsFound}" == "false" ]; then
+        echo "| Vulnerability | Package | Version | Fixed by rebuild |" >>/tmp/report.md
+        echo "| -- | -- | -- | -- |" >>/tmp/report.md
+        trivyBinaryVulnsFound=true
+        hasVulnerabilities=true
+        allVulnerabilitiesFixedByRebuild=false
+      fi
+
+      echo "    [INFO] Found ${id} in ${pkg}. Requires upgrade from ${vulnerableVersion} to ${fixedVersion}."
+      echo "| ${id} | [${pkg}](https://pkg.go.dev/${pkg}) | ${vulnerableVersion} -> ${fixedVersion} | :x: |" >>/tmp/report.md
+    done <<<"$(jq --raw-output 'select(.finding != null and .finding.fixed_version != null) | [ .finding.osv, .finding.trace[0].module, .finding.trace[0].version, .finding.fixed_version ] | @tsv' <<<"${trivyBinaryVulns}" | sort -u)"
+
+    if [ "${trivyBinaryVulnsFound}" == "false" ]; then
+      echo "    [INFO] No vulnerabilities found."
+      echo "No vulnerabilities found." >>/tmp/report.md
+    fi
+  fi
 done
 
 # check if issue exists, if yes, update description, otherwise create one, or close it if vulnerabilities are gone
