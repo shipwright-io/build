@@ -107,10 +107,10 @@ for image in "${images[@]}"; do
   # Go vulnerabilities
   echo "  [INFO] Checking for Go vulnerabilities"
   echo "### Go vulnerabilities" >>/tmp/report.md
-  crane export "${image}" - | tar -xf - -C /tmp "${entrypoint}"
+  crane export "${image}" - | tar -xf - -C /tmp "${entrypoint:1}"
   goVulns="$(govulncheck -format json -mode binary "/tmp${entrypoint}")"
   goVulnsFound=false
-  cat /tmp/image.tar | crane export - - | tar -xf - -C /tmp "${entrypoint}"
+  cat /tmp/image.tar | crane export - - | tar -xf - -C /tmp "${entrypoint:1}"
   goVulnsLatest="$(govulncheck -format json -mode binary "/tmp${entrypoint}")"
   rm -f /tmp/image.tar "/tmp${entrypoint}"
   while read -r id pkg vulnerableVersion fixedVersion; do

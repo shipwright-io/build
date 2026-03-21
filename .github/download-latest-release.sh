@@ -22,7 +22,7 @@ echo "release-yaml=/tmp/release.yaml" >>"${GITHUB_OUTPUT}"
 # look at the first image, download the entrypoint to determine the Go version
 image="$(grep ghcr.io /tmp/release.yaml | sed -E 's/(image|value)://' | tr -d ' ' | head -n 1)"
 entrypoint="$(crane config "${image}" | jq -r '.config.Entrypoint[0]')"
-crane export "${image}" - | tar -xf - -C /tmp "${entrypoint}"
+crane export "${image}" - | tar -xf - -C /tmp "${entrypoint:1}"
 goVersion="$(go version "/tmp${entrypoint}" | sed "s#/tmp${entrypoint}: go##")"
 goVersion="${goVersion:0:4}"
 echo "[INFO] Go version is ${goVersion}"
