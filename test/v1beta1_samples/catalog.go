@@ -12,9 +12,6 @@ import (
 
 	"github.com/onsi/gomega"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"knative.dev/pkg/apis"
-	knativev1 "knative.dev/pkg/apis/duck/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -22,10 +19,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	"knative.dev/pkg/apis"
+	knativev1 "knative.dev/pkg/apis/duck/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // Catalog allows you to access helper functions
@@ -37,7 +36,7 @@ func (c *Catalog) SecretWithAnnotation(name string, ns string) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   ns,
-			Annotations: map[string]string{build.AnnotationBuildRefSecret: "true"},
+			Annotations: map[string]string{buildapi.AnnotationBuildRefSecret: "true"},
 		},
 	}
 }
@@ -89,26 +88,26 @@ func (c *Catalog) ConfigMapWithData(name string, ns string, data map[string]stri
 }
 
 // BuildWithClusterBuildStrategyAndFalseSourceAnnotation gives you an specific Build CRD
-func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name string, ns string, strategyName string) *build.Build {
-	buildStrategy := build.ClusterBuildStrategyKind
-	return &build.Build{
+func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name string, ns string, strategyName string) *buildapi.Build {
+	buildStrategy := buildapi.ClusterBuildStrategyKind
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   ns,
-			Annotations: map[string]string{build.AnnotationBuildVerifyRepository: "false"},
+			Annotations: map[string]string{buildapi.AnnotationBuildVerifyRepository: "false"},
 		},
-		Spec: build.BuildSpec{
-			Source: &build.Source{
-				Git: &build.Git{
+		Spec: buildapi.BuildSpec{
+			Source: &buildapi.Source{
+				Git: &buildapi.Git{
 					URL: "foobar",
 				},
-				Type: build.GitType,
+				Type: buildapi.GitType,
 			},
-			Strategy: build.Strategy{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
-			Output: build.Image{
+			Output: buildapi.Image{
 				Image: "foobar",
 			},
 		},
@@ -116,25 +115,25 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndFalseSourceAnnotation(name str
 }
 
 // BuildWithClusterBuildStrategy gives you an specific Build CRD
-func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategyName string, secretName string) *build.Build {
-	buildStrategy := build.ClusterBuildStrategyKind
-	return &build.Build{
+func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategyName string, secretName string) *buildapi.Build {
+	buildStrategy := buildapi.ClusterBuildStrategyKind
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
 		},
-		Spec: build.BuildSpec{
-			Source: &build.Source{
-				Git: &build.Git{
+		Spec: buildapi.BuildSpec{
+			Source: &buildapi.Source{
+				Git: &buildapi.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
-				Type: build.GitType,
+				Type: buildapi.GitType,
 			},
-			Strategy: build.Strategy{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
-			Output: build.Image{
+			Output: buildapi.Image{
 				Image:      "foobar",
 				PushSecret: &secretName,
 			},
@@ -143,27 +142,27 @@ func (c *Catalog) BuildWithClusterBuildStrategy(name string, ns string, strategy
 }
 
 // BuildWithClusterBuildStrategyAndSourceSecret gives you an specific Build CRD
-func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns string, strategyName string) *build.Build {
-	buildStrategy := build.ClusterBuildStrategyKind
+func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns string, strategyName string) *buildapi.Build {
+	buildStrategy := buildapi.ClusterBuildStrategyKind
 	secret := "foobar"
-	return &build.Build{
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
 		},
-		Spec: build.BuildSpec{
-			Source: &build.Source{
-				Git: &build.Git{
+		Spec: buildapi.BuildSpec{
+			Source: &buildapi.Source{
+				Git: &buildapi.Git{
 					URL:         "https://github.com/shipwright-io/sample-go",
 					CloneSecret: &secret,
 				},
-				Type: build.GitType,
+				Type: buildapi.GitType,
 			},
-			Strategy: build.Strategy{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
-			Output: build.Image{
+			Output: buildapi.Image{
 				Image: "foobar",
 			},
 		},
@@ -171,21 +170,21 @@ func (c *Catalog) BuildWithClusterBuildStrategyAndSourceSecret(name string, ns s
 }
 
 // BuildWithBuildStrategy gives you an specific Build CRD
-func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName string) *build.Build {
-	buildStrategy := build.NamespacedBuildStrategyKind
-	return &build.Build{
+func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName string) *buildapi.Build {
+	buildStrategy := buildapi.NamespacedBuildStrategyKind
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
 		},
-		Spec: build.BuildSpec{
-			Source: &build.Source{
-				Git: &build.Git{
+		Spec: buildapi.BuildSpec{
+			Source: &buildapi.Source{
+				Git: &buildapi.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
-				Type: build.GitType,
+				Type: buildapi.GitType,
 			},
-			Strategy: build.Strategy{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &buildStrategy,
 			},
@@ -194,20 +193,20 @@ func (c *Catalog) BuildWithBuildStrategy(name string, ns string, strategyName st
 }
 
 // BuildWithNilBuildStrategyKind gives you an Build CRD with nil build strategy kind
-func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategyName string) *build.Build {
-	return &build.Build{
+func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategyName string) *buildapi.Build {
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
 		},
-		Spec: build.BuildSpec{
-			Source: &build.Source{
-				Git: &build.Git{
+		Spec: buildapi.BuildSpec{
+			Source: &buildapi.Source{
+				Git: &buildapi.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
-				Type: build.GitType,
+				Type: buildapi.GitType,
 			},
-			Strategy: build.Strategy{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 			},
 		},
@@ -215,20 +214,20 @@ func (c *Catalog) BuildWithNilBuildStrategyKind(name string, ns string, strategy
 }
 
 // BuildWithOutputSecret ....
-func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName string) *build.Build {
-	return &build.Build{
+func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName string) *buildapi.Build {
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
 		},
-		Spec: build.BuildSpec{
-			Source: &build.Source{
-				Git: &build.Git{
+		Spec: buildapi.BuildSpec{
+			Source: &buildapi.Source{
+				Git: &buildapi.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
-				Type: build.GitType,
+				Type: buildapi.GitType,
 			},
-			Output: build.Image{
+			Output: buildapi.Image{
 				PushSecret: &secretName,
 			},
 		},
@@ -236,13 +235,13 @@ func (c *Catalog) BuildWithOutputSecret(name string, ns string, secretName strin
 }
 
 // ClusterBuildStrategy to support tests
-func (c *Catalog) ClusterBuildStrategy(name string) *build.ClusterBuildStrategy {
-	return &build.ClusterBuildStrategy{
+func (c *Catalog) ClusterBuildStrategy(name string) *buildapi.ClusterBuildStrategy {
+	return &buildapi.ClusterBuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: build.BuildStrategySpec{
-			Steps: []build.Step{{
+		Spec: buildapi.BuildStrategySpec{
+			Steps: []buildapi.Step{{
 				Name:    "dummy",
 				Image:   "alpine",
 				Command: []string{"true"},
@@ -259,10 +258,10 @@ func (c *Catalog) FakeClusterBuildStrategyNotFound(name string) error {
 // StubFunc is used to simulate the status of the Build
 // after a .Status().Update() call in the controller. This
 // receives a parameter to return an specific status state
-func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
+func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason buildapi.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 	return func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			gomega.Expect(*object.Status.Registered).To(gomega.Equal(status))
 			gomega.Expect(*object.Status.Reason).To(gomega.Equal(reason))
 			gomega.Expect(*object.Status.Message).To(gomega.Equal(message))
@@ -276,7 +275,7 @@ func (c *Catalog) StubFunc(status corev1.ConditionStatus, reason build.BuildReas
 func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName string, isOwnerController *bool, blockOwnerDeletion *bool) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			gomega.Expect(object.OwnerReferences[0].Kind).To(gomega.Equal(ownerKind))
 			gomega.Expect(object.OwnerReferences[0].Name).To(gomega.Equal(ownerName))
 			gomega.Expect(object.OwnerReferences[0].Controller).To(gomega.Equal(isOwnerController))
@@ -290,11 +289,11 @@ func (c *Catalog) StubBuildUpdateOwnerReferences(ownerKind string, ownerName str
 // StubBuildRun is used to simulate the existence of a BuildRun
 // only when there is a client GET on this object type
 func (c *Catalog) StubBuildRun(
-	b *build.BuildRun,
+	b *buildapi.BuildRun,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			b.DeepCopyInto(object)
 			return nil
 		}
@@ -305,12 +304,12 @@ func (c *Catalog) StubBuildRun(
 // StubBuildRunAndTaskRun is used to simulate the existence of a BuildRun
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildRunAndTaskRun(
-	b *build.BuildRun,
+	b *buildapi.BuildRun,
 	tr *pipelineapi.TaskRun,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			b.DeepCopyInto(object)
 			return nil
 		case *pipelineapi.TaskRun:
@@ -324,12 +323,12 @@ func (c *Catalog) StubBuildRunAndTaskRun(
 // StubBuildAndTaskRun is used to simulate the existence of a Build
 // and a TaskRun when there is a client GET on this two objects
 func (c *Catalog) StubBuildAndTaskRun(
-	b *build.Build,
+	b *buildapi.Build,
 	tr *pipelineapi.TaskRun,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			b.DeepCopyInto(object)
 			return nil
 		case *pipelineapi.TaskRun:
@@ -341,10 +340,10 @@ func (c *Catalog) StubBuildAndTaskRun(
 }
 
 // StubBuildStatusReason asserts Status fields on a Build resource
-func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
+func (c *Catalog) StubBuildStatusReason(reason buildapi.BuildReason, message string) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 	return func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			if object.Status.Message != nil && *object.Status.Message != "" {
 				gomega.Expect(*object.Status.Message).To(gomega.Equal(message))
 			}
@@ -357,12 +356,12 @@ func (c *Catalog) StubBuildStatusReason(reason build.BuildReason, message string
 }
 
 // StubBuildRunStatus asserts Status fields on a BuildRun resource
-func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition build.Condition, status corev1.ConditionStatus, buildSpec build.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
+func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buildapi.Condition, status corev1.ConditionStatus, buildSpec buildapi.BuildSpec, tolerateEmptyStatus bool) func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 	return func(context context.Context, object client.Object, _ ...client.SubResourceUpdateOption) error {
 		switch object := object.(type) {
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			if !tolerateEmptyStatus {
-				succeededCondition := object.Status.GetCondition(build.Succeeded)
+				succeededCondition := object.Status.GetCondition(buildapi.Succeeded)
 				if succeededCondition != nil {
 					gomega.Expect(succeededCondition.Status).To(gomega.Equal(condition.Status))
 					gomega.Expect(succeededCondition.Reason).To(gomega.Equal(condition.Reason))
@@ -378,12 +377,12 @@ func (c *Catalog) StubBuildRunStatus(reason string, name *string, condition buil
 }
 
 // StubBuildRunLabel asserts Label fields on a BuildRun resource
-func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
+func (c *Catalog) StubBuildRunLabel(buildSample *buildapi.Build) func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 	return func(context context.Context, object client.Object, _ ...client.UpdateOption) error {
 		switch object := object.(type) {
-		case *build.BuildRun:
-			gomega.Expect(object.Labels[build.LabelBuild]).To(gomega.Equal(buildSample.Name))
-			gomega.Expect(object.Labels[build.LabelBuildGeneration]).To(gomega.Equal(strconv.FormatInt(buildSample.Generation, 10)))
+		case *buildapi.BuildRun:
+			gomega.Expect(object.Labels[buildapi.LabelBuild]).To(gomega.Equal(buildSample.Name))
+			gomega.Expect(object.Labels[buildapi.LabelBuildGeneration]).To(gomega.Equal(strconv.FormatInt(buildSample.Generation, 10)))
 		}
 		return nil
 	}
@@ -392,15 +391,15 @@ func (c *Catalog) StubBuildRunLabel(buildSample *build.Build) func(context conte
 // StubBuildRunGetWithoutSA simulates the output of client GET calls
 // for the BuildRun unit tests
 func (c *Catalog) StubBuildRunGetWithoutSA(
-	b *build.Build,
-	br *build.BuildRun,
+	b *buildapi.Build,
+	br *buildapi.BuildRun,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			b.DeepCopyInto(object)
 			return nil
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			br.DeepCopyInto(object)
 			return nil
 		}
@@ -411,17 +410,17 @@ func (c *Catalog) StubBuildRunGetWithoutSA(
 // StubBuildRunGetWithTaskRunAndSA returns fake object for different
 // client calls
 func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
-	b *build.Build,
-	br *build.BuildRun,
+	b *buildapi.Build,
+	br *buildapi.BuildRun,
 	tr *pipelineapi.TaskRun,
 	sa *corev1.ServiceAccount,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			b.DeepCopyInto(object)
 			return nil
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			br.DeepCopyInto(object)
 			return nil
 		case *pipelineapi.TaskRun:
@@ -438,16 +437,16 @@ func (c *Catalog) StubBuildRunGetWithTaskRunAndSA(
 // StubBuildRunGetWithSA returns fake object for different
 // client calls
 func (c *Catalog) StubBuildRunGetWithSA(
-	b *build.Build,
-	br *build.BuildRun,
+	b *buildapi.Build,
+	br *buildapi.BuildRun,
 	sa *corev1.ServiceAccount,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			b.DeepCopyInto(object)
 			return nil
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			br.DeepCopyInto(object)
 			return nil
 		case *corev1.ServiceAccount:
@@ -461,20 +460,20 @@ func (c *Catalog) StubBuildRunGetWithSA(
 // StubBuildRunGetWithSAandStrategies simulates the output of client GET
 // calls for the BuildRun unit tests
 func (c *Catalog) StubBuildRunGetWithSAandStrategies(
-	b *build.Build,
-	br *build.BuildRun,
+	b *buildapi.Build,
+	br *buildapi.BuildRun,
 	sa *corev1.ServiceAccount,
-	cb *build.ClusterBuildStrategy,
-	bs *build.BuildStrategy,
+	cb *buildapi.ClusterBuildStrategy,
+	bs *buildapi.BuildStrategy,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			if b != nil {
 				b.DeepCopyInto(object)
 				return nil
 			}
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			if br != nil {
 				br.DeepCopyInto(object)
 				return nil
@@ -484,12 +483,12 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 				sa.DeepCopyInto(object)
 				return nil
 			}
-		case *build.ClusterBuildStrategy:
+		case *buildapi.ClusterBuildStrategy:
 			if cb != nil {
 				cb.DeepCopyInto(object)
 				return nil
 			}
-		case *build.BuildStrategy:
+		case *buildapi.BuildStrategy:
 			if bs != nil {
 				bs.DeepCopyInto(object)
 				return nil
@@ -500,27 +499,27 @@ func (c *Catalog) StubBuildRunGetWithSAandStrategies(
 }
 
 func (c *Catalog) StubBuildCRDs(
-	b *build.Build,
-	br *build.BuildRun,
+	b *buildapi.Build,
+	br *buildapi.BuildRun,
 	sa *corev1.ServiceAccount,
-	cb *build.ClusterBuildStrategy,
-	bs *build.BuildStrategy,
+	cb *buildapi.ClusterBuildStrategy,
+	bs *buildapi.BuildStrategy,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			b.DeepCopyInto(object)
 			return nil
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			br.DeepCopyInto(object)
 			return nil
 		case *corev1.ServiceAccount:
 			sa.DeepCopyInto(object)
 			return nil
-		case *build.ClusterBuildStrategy:
+		case *buildapi.ClusterBuildStrategy:
 			cb.DeepCopyInto(object)
 			return nil
-		case *build.BuildStrategy:
+		case *buildapi.BuildStrategy:
 			bs.DeepCopyInto(object)
 			return nil
 		}
@@ -531,29 +530,29 @@ func (c *Catalog) StubBuildCRDs(
 // StubBuildCRDsPodAndTaskRun stubs different objects in case a client
 // GET call is executed against them
 func (c *Catalog) StubBuildCRDsPodAndTaskRun(
-	b *build.Build,
-	br *build.BuildRun,
+	b *buildapi.Build,
+	br *buildapi.BuildRun,
 	sa *corev1.ServiceAccount,
-	cb *build.ClusterBuildStrategy,
-	bs *build.BuildStrategy,
+	cb *buildapi.ClusterBuildStrategy,
+	bs *buildapi.BuildStrategy,
 	tr *pipelineapi.TaskRun,
 	pod *corev1.Pod,
 ) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			b.DeepCopyInto(object)
 			return nil
-		case *build.BuildRun:
+		case *buildapi.BuildRun:
 			br.DeepCopyInto(object)
 			return nil
 		case *corev1.ServiceAccount:
 			sa.DeepCopyInto(object)
 			return nil
-		case *build.ClusterBuildStrategy:
+		case *buildapi.ClusterBuildStrategy:
 			cb.DeepCopyInto(object)
 			return nil
-		case *build.BuildStrategy:
+		case *buildapi.BuildStrategy:
 			bs.DeepCopyInto(object)
 			return nil
 		case *pipelineapi.TaskRun:
@@ -694,117 +693,117 @@ func (c *Catalog) DefaultTaskRunWithFalseStatus(trName string, buildRunName stri
 }
 
 // DefaultBuild returns a minimal Build object
-func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
-	return &build.Build{
+func (c *Catalog) DefaultBuild(buildName string, strategyName string, strategyKind buildapi.BuildStrategyKind) *buildapi.Build {
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildName,
 		},
-		Spec: build.BuildSpec{
-			Strategy: build.Strategy{
+		Spec: buildapi.BuildSpec{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
 		},
-		Status: build.BuildStatus{
+		Status: buildapi.BuildStatus{
 			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
 
 // BuildWithoutStrategyKind returns a minimal Build object without an strategy kind definition
-func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string) *build.Build {
-	return &build.Build{
+func (c *Catalog) BuildWithoutStrategyKind(buildName string, strategyName string) *buildapi.Build {
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildName,
 		},
-		Spec: build.BuildSpec{
-			Strategy: build.Strategy{
+		Spec: buildapi.BuildSpec{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 			},
 		},
-		Status: build.BuildStatus{
+		Status: buildapi.BuildStatus{
 			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
 
 // BuildWithBuildRunDeletions returns a minimal Build object with the
-// build.shipwright.io/build-run-deletion annotation set to true
-func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
-	return &build.Build{
+// buildapi.shipwright.io/build-run-deletion annotation set to true
+func (c *Catalog) BuildWithBuildRunDeletions(buildName string, strategyName string, strategyKind buildapi.BuildStrategyKind) *buildapi.Build {
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildName,
 		},
-		Spec: build.BuildSpec{
-			Strategy: build.Strategy{
+		Spec: buildapi.BuildSpec{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
-			Retention: &build.BuildRetention{
+			Retention: &buildapi.BuildRetention{
 				AtBuildDeletion: ptr.To(true),
 			},
 		},
-		Status: build.BuildStatus{
+		Status: buildapi.BuildStatus{
 			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
 
 // BuildWithBuildRunDeletionsAndFakeNS returns a minimal Build object with the
-// build.shipwright.io/build-run-deletion annotation set to true in a fake namespace
-func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
-	return &build.Build{
+// buildapi.shipwright.io/build-run-deletion annotation set to true in a fake namespace
+func (c *Catalog) BuildWithBuildRunDeletionsAndFakeNS(buildName string, strategyName string, strategyKind buildapi.BuildStrategyKind) *buildapi.Build {
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      buildName,
 			Namespace: "fakens",
 		},
-		Spec: build.BuildSpec{
-			Strategy: build.Strategy{
+		Spec: buildapi.BuildSpec{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
-			Retention: &build.BuildRetention{
+			Retention: &buildapi.BuildRetention{
 				AtBuildDeletion: ptr.To(true),
 			},
 		},
-		Status: build.BuildStatus{
+		Status: buildapi.BuildStatus{
 			Registered: ptr.To(corev1.ConditionTrue),
 		},
 	}
 }
 
 // DefaultBuildWithFalseRegistered returns a minimal Build object with a FALSE Registered
-func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName string, strategyKind build.BuildStrategyKind) *build.Build {
-	return &build.Build{
+func (c *Catalog) DefaultBuildWithFalseRegistered(buildName string, strategyName string, strategyKind buildapi.BuildStrategyKind) *buildapi.Build {
+	return &buildapi.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildName,
 		},
-		Spec: build.BuildSpec{
-			Strategy: build.Strategy{
+		Spec: buildapi.BuildSpec{
+			Strategy: buildapi.Strategy{
 				Name: strategyName,
 				Kind: &strategyKind,
 			},
 		},
-		Status: build.BuildStatus{
+		Status: buildapi.BuildStatus{
 			Registered: ptr.To(corev1.ConditionFalse),
-			Reason:     ptr.To[build.BuildReason]("something bad happened"),
+			Reason:     ptr.To[buildapi.BuildReason]("something bad happened"),
 		},
 	}
 }
 
 // DefaultBuildRun returns a minimal BuildRun object
-func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *build.BuildRun {
-	var defaultBuild = c.DefaultBuild(buildName, "foobar-strategy", build.ClusterBuildStrategyKind)
-	return &build.BuildRun{
+func (c *Catalog) DefaultBuildRun(buildRunName string, buildName string) *buildapi.BuildRun {
+	var defaultBuild = c.DefaultBuild(buildName, "foobar-strategy", buildapi.ClusterBuildStrategyKind)
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
 			},
 		},
-		Status: build.BuildRunStatus{
+		Status: buildapi.BuildRunStatus{
 			BuildSpec: &defaultBuild.Spec,
 		},
 	}
@@ -829,23 +828,23 @@ func (c *Catalog) PodWithInitContainerStatus(podName string, initContainerName s
 
 // BuildRunWithBuildSnapshot returns BuildRun Object with a populated
 // BuildSpec in the Status field
-func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName string) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName string) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
 		},
-		Status: build.BuildRunStatus{
-			BuildSpec: &build.BuildSpec{
-				Strategy: build.Strategy{
+		Status: buildapi.BuildRunStatus{
+			BuildSpec: &buildapi.BuildSpec{
+				Strategy: buildapi.Strategy{
 					Name: "foobar",
 				},
 			},
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
 			},
 		},
@@ -854,7 +853,7 @@ func (c *Catalog) BuildRunWithBuildSnapshot(buildRunName string, buildName strin
 
 // BuildRunWithExistingOwnerReferences returns a BuildRun object that is
 // already owned by some fake object
-func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, buildName string, ownerName string) *build.BuildRun {
+func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, buildName string, ownerName string) *buildapi.BuildRun {
 
 	managingController := true
 
@@ -864,13 +863,13 @@ func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, build
 		Controller: &managingController,
 	}
 
-	return &build.BuildRun{
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            buildRunName,
 			OwnerReferences: []metav1.OwnerReference{fakeOwnerRef},
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
 			},
 		},
@@ -879,14 +878,14 @@ func (c *Catalog) BuildRunWithExistingOwnerReferences(buildRunName string, build
 
 // BuildRunWithFakeNamespace returns a BuildRun object with
 // a namespace that does not exist
-func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName string) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithFakeNamespace(buildRunName string, buildName string) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      buildRunName,
 			Namespace: "foobarns",
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
 			},
 		},
@@ -929,8 +928,8 @@ func (c *Catalog) ServiceAccountWithControllerRef(name string) *corev1.ServiceAc
 
 // DefaultClusterBuildStrategy returns a minimal ClusterBuildStrategy
 // object with a inmutable name
-func (c *Catalog) DefaultClusterBuildStrategy() *build.ClusterBuildStrategy {
-	return &build.ClusterBuildStrategy{
+func (c *Catalog) DefaultClusterBuildStrategy() *buildapi.ClusterBuildStrategy {
+	return &buildapi.ClusterBuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
 		},
@@ -939,8 +938,8 @@ func (c *Catalog) DefaultClusterBuildStrategy() *build.ClusterBuildStrategy {
 
 // DefaultNamespacedBuildStrategy returns a minimal BuildStrategy
 // object with a inmutable name
-func (c *Catalog) DefaultNamespacedBuildStrategy() *build.BuildStrategy {
-	return &build.BuildStrategy{
+func (c *Catalog) DefaultNamespacedBuildStrategy() *buildapi.BuildStrategy {
+	return &buildapi.BuildStrategy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
 		},
@@ -949,87 +948,87 @@ func (c *Catalog) DefaultNamespacedBuildStrategy() *build.BuildStrategy {
 
 // BuildRunWithNodeSelectorOverride returns a customized BuildRun object
 // that defines a buildspec and overrides the nodeSelector
-func (c *Catalog) BuildRunWithNodeSelectorOverride(buildRunName string, buildName string, nodeSelector map[string]string) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithNodeSelectorOverride(buildRunName string, buildName string, nodeSelector map[string]string) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
-				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+				Spec: &buildapi.BuildSpec{Strategy: buildapi.Strategy{Name: "foobar"}},
 			},
 			NodeSelector: nodeSelector,
 		},
-		Status: build.BuildRunStatus{},
+		Status: buildapi.BuildRunStatus{},
 	}
 }
 
 // BuildRunWithTolerationsOverride returns a customized BuildRun object
 // that defines a buildspec and overrides the tolerations
-func (c *Catalog) BuildRunWithTolerationsOverride(buildRunName string, buildName string, tolerations []corev1.Toleration) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithTolerationsOverride(buildRunName string, buildName string, tolerations []corev1.Toleration) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
-				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+				Spec: &buildapi.BuildSpec{Strategy: buildapi.Strategy{Name: "foobar"}},
 			},
 			Tolerations: tolerations,
 		},
-		Status: build.BuildRunStatus{},
+		Status: buildapi.BuildRunStatus{},
 	}
 }
 
 // BuildRunWithSchedulerNameOverride returns a customized BuildRun object
 // that defines a buildspec and overrides the schedulerName
-func (c *Catalog) BuildRunWithSchedulerNameOverride(buildRunName string, buildName string, schedulerName string) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithSchedulerNameOverride(buildRunName string, buildName string, schedulerName string) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
-				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+				Spec: &buildapi.BuildSpec{Strategy: buildapi.Strategy{Name: "foobar"}},
 			},
 			SchedulerName: &schedulerName,
 		},
-		Status: build.BuildRunStatus{},
+		Status: buildapi.BuildRunStatus{},
 	}
 }
 
 // BuildRunWithStepResourcesOverride returns a customized BuildRun object
 // that defines a buildspec and overrides the stepResources
-func (c *Catalog) BuildRunWithStepResourcesOverride(buildRunName string, buildName string, stepResources []build.StepResourceOverride) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithStepResourcesOverride(buildRunName string, buildName string, stepResources []buildapi.StepResourceOverride) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
-				Spec: &build.BuildSpec{Strategy: build.Strategy{Name: "foobar"}},
+				Spec: &buildapi.BuildSpec{Strategy: buildapi.Strategy{Name: "foobar"}},
 			},
 			StepResources: stepResources,
 		},
-		Status: build.BuildRunStatus{},
+		Status: buildapi.BuildRunStatus{},
 	}
 }
 
 // BuildRunWithSucceededCondition returns a BuildRun with a single condition
 // of the type Succeeded
-func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithSucceededCondition() *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar",
 		},
-		Status: build.BuildRunStatus{
-			Conditions: build.Conditions{
-				build.Condition{
-					Type:    build.Succeeded,
+		Status: buildapi.BuildRunStatus{
+			Conditions: buildapi.Conditions{
+				buildapi.Condition{
+					Type:    buildapi.Succeeded,
 					Reason:  "foobar",
 					Message: "foo is not bar",
 					Status:  corev1.ConditionUnknown,
@@ -1041,29 +1040,29 @@ func (c *Catalog) BuildRunWithSucceededCondition() *build.BuildRun {
 
 // BuildRunWithSA returns a customized BuildRun object that defines a
 // service account
-func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName string) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithSA(buildRunName string, buildName string, saName string) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
 			},
 			ServiceAccount: &saName,
 		},
-		Status: build.BuildRunStatus{},
+		Status: buildapi.BuildRunStatus{},
 	}
 }
 
 // BuildRunWithoutSA returns a buildrun without serviceAccountName and generate serviceAccount is false
-func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
 			},
 			ServiceAccount: nil,
@@ -1073,13 +1072,13 @@ func (c *Catalog) BuildRunWithoutSA(buildRunName string, buildName string) *buil
 
 // BuildRunWithSAGenerate returns a customized BuildRun object that defines a
 // service account
-func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *build.BuildRun {
-	return &build.BuildRun{
+func (c *Catalog) BuildRunWithSAGenerate(buildRunName string, buildName string) *buildapi.BuildRun {
+	return &buildapi.BuildRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: buildRunName,
 		},
-		Spec: build.BuildRunSpec{
-			Build: build.ReferencedBuild{
+		Spec: buildapi.BuildRunSpec{
+			Build: buildapi.ReferencedBuild{
 				Name: &buildName,
 			},
 			ServiceAccount: ptr.To(".generate"),
@@ -1103,8 +1102,8 @@ func (c *Catalog) LoadCustomResources(cpu string, mem string) corev1.ResourceReq
 
 // LoadBuildYAML parses YAML bytes into JSON and from JSON
 // into a Build struct
-func (c *Catalog) LoadBuildYAML(d []byte) (*build.Build, error) {
-	b := &build.Build{}
+func (c *Catalog) LoadBuildYAML(d []byte) (*buildapi.Build, error) {
+	b := &buildapi.Build{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -1113,8 +1112,8 @@ func (c *Catalog) LoadBuildYAML(d []byte) (*build.Build, error) {
 }
 
 // LoadBuildWithNameAndStrategy returns a populated Build with name and a referenced strategy
-func (c *Catalog) LoadBuildWithNameAndStrategy(name string, strategy string, d []byte) (*build.Build, error) {
-	b := &build.Build{}
+func (c *Catalog) LoadBuildWithNameAndStrategy(name string, strategy string, d []byte) (*buildapi.Build, error) {
+	b := &buildapi.Build{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -1125,8 +1124,8 @@ func (c *Catalog) LoadBuildWithNameAndStrategy(name string, strategy string, d [
 }
 
 // LoadBuildRunFromBytes returns a populated BuildRun
-func (c *Catalog) LoadBuildRunFromBytes(d []byte) (*build.BuildRun, error) {
-	b := &build.BuildRun{}
+func (c *Catalog) LoadBuildRunFromBytes(d []byte) (*buildapi.BuildRun, error) {
+	b := &buildapi.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -1135,8 +1134,8 @@ func (c *Catalog) LoadBuildRunFromBytes(d []byte) (*build.BuildRun, error) {
 }
 
 // LoadBRWithNameAndRef returns a populated BuildRun with a name and a referenced Build
-func (c *Catalog) LoadBRWithNameAndRef(name string, buildName string, d []byte) (*build.BuildRun, error) {
-	b := &build.BuildRun{}
+func (c *Catalog) LoadBRWithNameAndRef(name string, buildName string, d []byte) (*buildapi.BuildRun, error) {
+	b := &buildapi.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -1146,21 +1145,21 @@ func (c *Catalog) LoadBRWithNameAndRef(name string, buildName string, d []byte) 
 	return b, nil
 }
 
-func (c *Catalog) LoadStandAloneBuildRunWithNameAndStrategy(name string, strategy *build.ClusterBuildStrategy, d []byte) (*build.BuildRun, error) {
-	b := &build.BuildRun{}
+func (c *Catalog) LoadStandAloneBuildRunWithNameAndStrategy(name string, strategy *buildapi.ClusterBuildStrategy, d []byte) (*buildapi.BuildRun, error) {
+	b := &buildapi.BuildRun{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
 	}
 	b.Name = name
-	b.Spec.Build.Spec.Strategy = build.Strategy{Kind: (*build.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name}
+	b.Spec.Build.Spec.Strategy = buildapi.Strategy{Kind: (*buildapi.BuildStrategyKind)(&strategy.Kind), Name: strategy.Name}
 
 	return b, nil
 }
 
 // LoadBuildStrategyFromBytes returns a populated BuildStrategy
-func (c *Catalog) LoadBuildStrategyFromBytes(d []byte) (*build.BuildStrategy, error) {
-	b := &build.BuildStrategy{}
+func (c *Catalog) LoadBuildStrategyFromBytes(d []byte) (*buildapi.BuildStrategy, error) {
+	b := &buildapi.BuildStrategy{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -1169,8 +1168,8 @@ func (c *Catalog) LoadBuildStrategyFromBytes(d []byte) (*build.BuildStrategy, er
 }
 
 // LoadCBSWithName returns a populated ClusterBuildStrategy with a name
-func (c *Catalog) LoadCBSWithName(name string, d []byte) (*build.ClusterBuildStrategy, error) {
-	b := &build.ClusterBuildStrategy{}
+func (c *Catalog) LoadCBSWithName(name string, d []byte) (*buildapi.ClusterBuildStrategy, error) {
+	b := &buildapi.ClusterBuildStrategy{}
 	err := yaml.Unmarshal(d, b)
 	if err != nil {
 		return nil, err
@@ -1237,10 +1236,10 @@ func (c *Catalog) DefaultPipelineRunWithFalseStatus(prName string, buildRunName 
 }
 
 // StubBuildAndPipelineRun returns a stub function that handles GET calls for Build and PipelineRun
-func (c *Catalog) StubBuildAndPipelineRun(b *build.Build, pr *pipelineapi.PipelineRun) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
+func (c *Catalog) StubBuildAndPipelineRun(b *buildapi.Build, pr *pipelineapi.PipelineRun) func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 	return func(context context.Context, nn types.NamespacedName, object client.Object, getOptions ...client.GetOption) error {
 		switch object := object.(type) {
-		case *build.Build:
+		case *buildapi.Build:
 			b.DeepCopyInto(object)
 			return nil
 		case *pipelineapi.PipelineRun:

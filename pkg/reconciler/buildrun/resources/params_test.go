@@ -10,63 +10,62 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 var _ = Describe("Params overrides", func() {
 
 	DescribeTable("original params can be overridden",
-		func(buildParams []buildv1beta1.ParamValue, buildRunParams []buildv1beta1.ParamValue, expected types.GomegaMatcher) {
+		func(buildParams []buildapi.ParamValue, buildRunParams []buildapi.ParamValue, expected types.GomegaMatcher) {
 			Expect(OverrideParams(buildParams, buildRunParams)).To(expected)
 		},
 
 		Entry("override a single parameter",
-			[]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			[]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-			}, []buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, []buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("3"),
 				}},
-			}, ContainElements([]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, ContainElements([]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("3"),
 				}},
 			})),
 
 		Entry("override two parameters",
-			[]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			[]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
-					SecretValue: &buildv1beta1.ObjectKeyRef{
+				{Name: "b", SingleValue: &buildapi.SingleValue{
+					SecretValue: &buildapi.ObjectKeyRef{
 						Name: "a-secret",
 						Key:  "a-key",
 					},
 				}},
-			}, []buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, []buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("3"),
 				}},
-				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
-					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
+				{Name: "b", SingleValue: &buildapi.SingleValue{
+					ConfigMapValue: &buildapi.ObjectKeyRef{
 						Name: "a-config-map",
 						Key:  "a-cm-key",
 					},
 				}},
-			}, ContainElements([]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, ContainElements([]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("3"),
 				}},
-				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
-					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
+				{Name: "b", SingleValue: &buildapi.SingleValue{
+					ConfigMapValue: &buildapi.ObjectKeyRef{
 						Name: "a-config-map",
 						Key:  "a-cm-key",
 					},
@@ -74,116 +73,116 @@ var _ = Describe("Params overrides", func() {
 			})),
 
 		Entry("override multiple parameters",
-			[]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			[]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "b", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "c", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-			}, []buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, []buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
-				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "c", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
-			}, ContainElements([]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, ContainElements([]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
-				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "b", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "c", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
 			})),
 
 		Entry("dont override when second list is empty",
-			[]buildv1beta1.ParamValue{
-				{Name: "t", SingleValue: &buildv1beta1.SingleValue{
+			[]buildapi.ParamValue{
+				{Name: "t", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "z", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "z", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "g", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "g", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
 			},
-			[]buildv1beta1.ParamValue{
+			[]buildapi.ParamValue{
 				// no overrides
 			},
-			ContainElements([]buildv1beta1.ParamValue{
-				{Name: "t", SingleValue: &buildv1beta1.SingleValue{
+			ContainElements([]buildapi.ParamValue{
+				{Name: "t", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "z", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "z", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-				{Name: "g", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "g", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
 			})),
 
 		Entry("override when first list is empty but not the second list",
-			[]buildv1beta1.ParamValue{
+			[]buildapi.ParamValue{
 				// no original values
-			}, []buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, []buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
-				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "c", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
-			}, ContainElements([]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, ContainElements([]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
-				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "c", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("6"),
 				}},
 			})),
 
 		Entry("override multiple parameters if the match and add them if not present in first list",
-			[]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			[]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("2"),
 				}},
-			}, []buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, []buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("22"),
 				}},
-				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "b", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("20"),
 				}},
-				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "c", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("10"),
 				}},
-				{Name: "d", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "d", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("8"),
 				}},
-				{Name: "e", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "e", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("4"),
 				}},
-			}, ContainElements([]buildv1beta1.ParamValue{
-				{Name: "a", SingleValue: &buildv1beta1.SingleValue{
+			}, ContainElements([]buildapi.ParamValue{
+				{Name: "a", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("22"),
 				}},
-				{Name: "b", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "b", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("20"),
 				}},
-				{Name: "c", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "c", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("10"),
 				}},
-				{Name: "d", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "d", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("8"),
 				}},
-				{Name: "e", SingleValue: &buildv1beta1.SingleValue{
+				{Name: "e", SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("4"),
 				}},
 			})),
@@ -211,7 +210,7 @@ var _ = Describe("FindParameterByName", func() {
 
 	Context("For a list of three parameters", func() {
 
-		parameters := []buildv1beta1.Parameter{{
+		parameters := []buildapi.Parameter{{
 			Name: "some-parameter",
 			Type: "string",
 		}, {
@@ -229,7 +228,7 @@ var _ = Describe("FindParameterByName", func() {
 		It("returns the correct parameter with a matching name", func() {
 			parameter := FindParameterByName(parameters, "another-parameter")
 			Expect(parameter).ToNot(BeNil())
-			Expect(parameter).To(BeEquivalentTo(&buildv1beta1.Parameter{
+			Expect(parameter).To(BeEquivalentTo(&buildapi.Parameter{
 				Name: "another-parameter",
 				Type: "array",
 			}))
@@ -241,19 +240,19 @@ var _ = Describe("FindParamValueByName", func() {
 
 	Context("For a list of three parameter values", func() {
 
-		paramValues := []buildv1beta1.ParamValue{{
+		paramValues := []buildapi.ParamValue{{
 			Name: "some-parameter",
-			SingleValue: &buildv1beta1.SingleValue{
+			SingleValue: &buildapi.SingleValue{
 				Value: ptr.To("some-value"),
 			},
 		}, {
 			Name: "another-parameter",
-			Values: []buildv1beta1.SingleValue{
+			Values: []buildapi.SingleValue{
 				{
 					Value: ptr.To("item"),
 				},
 				{
-					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
+					ConfigMapValue: &buildapi.ObjectKeyRef{
 						Name: "a-configmap",
 						Key:  "a-key",
 					},
@@ -261,7 +260,7 @@ var _ = Describe("FindParamValueByName", func() {
 			},
 		}, {
 			Name: "last-parameter",
-			SingleValue: &buildv1beta1.SingleValue{
+			SingleValue: &buildapi.SingleValue{
 				Value: ptr.To("last-value"),
 			},
 		}}
@@ -273,14 +272,14 @@ var _ = Describe("FindParamValueByName", func() {
 		It("returns the correct parameter with a matching name", func() {
 			parameter := FindParamValueByName(paramValues, "another-parameter")
 			Expect(parameter).ToNot(BeNil())
-			Expect(parameter).To(BeEquivalentTo(&buildv1beta1.ParamValue{
+			Expect(parameter).To(BeEquivalentTo(&buildapi.ParamValue{
 				Name: "another-parameter",
-				Values: []buildv1beta1.SingleValue{
+				Values: []buildapi.SingleValue{
 					{
 						Value: ptr.To("item"),
 					},
 					{
-						ConfigMapValue: &buildv1beta1.ObjectKeyRef{
+						ConfigMapValue: &buildapi.ObjectKeyRef{
 							Name: "a-configmap",
 							Key:  "a-key",
 						},
@@ -374,15 +373,15 @@ var _ = Describe("HandleTaskRunParam", func() {
 
 	Context("for a string parameter", func() {
 
-		parameterDefinition := &buildv1beta1.Parameter{
+		parameterDefinition := &buildapi.Parameter{
 			Name: "string-parameter",
-			Type: buildv1beta1.ParameterTypeString,
+			Type: buildapi.ParameterTypeString,
 		}
 
 		It("adds a simple value", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "string-parameter",
-				SingleValue: &buildv1beta1.SingleValue{
+				SingleValue: &buildapi.SingleValue{
 					Value: ptr.To("My value"),
 				},
 			})
@@ -400,10 +399,10 @@ var _ = Describe("HandleTaskRunParam", func() {
 		})
 
 		It("adds a configmap value without a format", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "string-parameter",
-				SingleValue: &buildv1beta1.SingleValue{
-					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
+				SingleValue: &buildapi.SingleValue{
+					ConfigMapValue: &buildapi.ObjectKeyRef{
 						Name: "config-map-name",
 						Key:  "my-key",
 					},
@@ -443,10 +442,10 @@ var _ = Describe("HandleTaskRunParam", func() {
 		})
 
 		It("adds a configmap value with a format", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "string-parameter",
-				SingleValue: &buildv1beta1.SingleValue{
-					ConfigMapValue: &buildv1beta1.ObjectKeyRef{
+				SingleValue: &buildapi.SingleValue{
+					ConfigMapValue: &buildapi.ObjectKeyRef{
 						Name:   "config-map-name",
 						Key:    "my-key",
 						Format: ptr.To("The value from the config map is '${CONFIGMAP_VALUE}'."),
@@ -487,10 +486,10 @@ var _ = Describe("HandleTaskRunParam", func() {
 		})
 
 		It("adds a secret value without a format", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "string-parameter",
-				SingleValue: &buildv1beta1.SingleValue{
-					SecretValue: &buildv1beta1.ObjectKeyRef{
+				SingleValue: &buildapi.SingleValue{
+					SecretValue: &buildapi.ObjectKeyRef{
 						Name: "secret-name",
 						Key:  "secret-key",
 					},
@@ -530,10 +529,10 @@ var _ = Describe("HandleTaskRunParam", func() {
 		})
 
 		It("adds a secret value with a format", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "string-parameter",
-				SingleValue: &buildv1beta1.SingleValue{
-					SecretValue: &buildv1beta1.ObjectKeyRef{
+				SingleValue: &buildapi.SingleValue{
+					SecretValue: &buildapi.ObjectKeyRef{
 						Name:   "secret-name",
 						Key:    "secret-key",
 						Format: ptr.To("secret-value: ${SECRET_VALUE}"),
@@ -576,15 +575,15 @@ var _ = Describe("HandleTaskRunParam", func() {
 
 	Context("for an array parameter", func() {
 
-		parameterDefinition := &buildv1beta1.Parameter{
+		parameterDefinition := &buildapi.Parameter{
 			Name: "array-parameter",
-			Type: buildv1beta1.ParameterTypeArray,
+			Type: buildapi.ParameterTypeArray,
 		}
 
 		It("adds simple values correctly", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "array-parameter",
-				Values: []buildv1beta1.SingleValue{
+				Values: []buildapi.SingleValue{
 					{
 						Value: ptr.To("first entry"),
 					},
@@ -617,20 +616,20 @@ var _ = Describe("HandleTaskRunParam", func() {
 		})
 
 		It("adds values from different sources correctly", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "array-parameter",
-				Values: []buildv1beta1.SingleValue{
+				Values: []buildapi.SingleValue{
 					{
 						Value: ptr.To("first entry"),
 					},
 					{
-						SecretValue: &buildv1beta1.ObjectKeyRef{
+						SecretValue: &buildapi.ObjectKeyRef{
 							Name: "secret-name",
 							Key:  "secret-key",
 						},
 					},
 					{
-						SecretValue: &buildv1beta1.ObjectKeyRef{
+						SecretValue: &buildapi.ObjectKeyRef{
 							Name:   "secret-name",
 							Key:    "secret-key",
 							Format: ptr.To("The secret value is ${SECRET_VALUE}"),
@@ -676,20 +675,20 @@ var _ = Describe("HandleTaskRunParam", func() {
 		})
 
 		It("adds multiple environment variables correctly", func() {
-			err := HandleTaskRunParam(taskRun, parameterDefinition, buildv1beta1.ParamValue{
+			err := HandleTaskRunParam(taskRun, parameterDefinition, buildapi.ParamValue{
 				Name: "array-parameter",
-				Values: []buildv1beta1.SingleValue{
+				Values: []buildapi.SingleValue{
 					{
 						Value: ptr.To("first entry"),
 					},
 					{
-						SecretValue: &buildv1beta1.ObjectKeyRef{
+						SecretValue: &buildapi.ObjectKeyRef{
 							Name: "secret-name",
 							Key:  "secret-key-1",
 						},
 					},
 					{
-						SecretValue: &buildv1beta1.ObjectKeyRef{
+						SecretValue: &buildapi.ObjectKeyRef{
 							Name:   "secret-name",
 							Key:    "secret-key-2",
 							Format: ptr.To("The secret value is ${SECRET_VALUE}"),

@@ -7,13 +7,13 @@ package utils
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // This class is intended to host all CRUD calls for testing ClusterBuildStrategy CRDs resources
 
 // CreateClusterBuildStrategy generates a ClusterBuildStrategy on the current test namespace
-func (t *TestBuild) CreateClusterBuildStrategy(cbs *v1beta1.ClusterBuildStrategy) error {
+func (t *TestBuild) CreateClusterBuildStrategy(cbs *buildapi.ClusterBuildStrategy) error {
 	cbsInterface := t.BuildClientSet.ShipwrightV1beta1().ClusterBuildStrategies()
 
 	_, err := cbsInterface.Create(t.Context, cbs, metav1.CreateOptions{})

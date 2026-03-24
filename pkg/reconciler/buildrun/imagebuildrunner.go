@@ -9,16 +9,15 @@ import (
 	"fmt"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"knative.dev/pkg/apis"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
@@ -61,7 +60,7 @@ type ImageBuildRunnerFactory interface {
 	NewImageBuildRunner() ImageBuildRunner
 
 	// CreateImageBuildRunner creates an ImageBuildRunner instance from build configuration. It does not create the ImageBuildRunner in the API server.
-	CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error)
+	CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildapi.BuilderStrategy, build *buildapi.Build, buildRun *buildapi.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error)
 
 	// GetImageBuildRunner retrieves an ImageBuildRunner from the API server.
 	GetImageBuildRunner(ctx context.Context, client client.Client, namespacedName types.NamespacedName) (ImageBuildRunner, error)
@@ -208,7 +207,7 @@ func (f *TektonTaskRunImageBuildRunnerFactory) NewImageBuildRunner() ImageBuildR
 }
 
 // CreateImageBuildRunner creates an ImageBuildRunner instance from build configuration. It does not create the ImageBuildRunner in the API server.
-func (f *TektonTaskRunImageBuildRunnerFactory) CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildv1beta1.BuilderStrategy, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
+func (f *TektonTaskRunImageBuildRunnerFactory) CreateImageBuildRunner(ctx context.Context, client client.Client, cfg *config.Config, serviceAccount *corev1.ServiceAccount, strategy buildapi.BuilderStrategy, build *buildapi.Build, buildRun *buildapi.BuildRun, scheme *runtime.Scheme, setOwnerRef setOwnerReferenceFunc) (ImageBuildRunner, error) {
 	generatedTaskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccount.Name, strategy)
 	if err != nil {
 		if updateErr := resources.UpdateConditionWithFalseStatus(ctx, client, buildRun, err.Error(), resources.ConditionTaskRunGenerationFailed); updateErr != nil {

@@ -7,17 +7,17 @@ package integration_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests ClusterBuildStrategies and TaskRuns", func() {
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
 	)

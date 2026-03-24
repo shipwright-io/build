@@ -16,9 +16,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spf13/pflag"
+
 	shpgit "github.com/shipwright-io/build/pkg/git"
 	"github.com/shipwright-io/build/pkg/util"
-	"github.com/spf13/pflag"
 )
 
 type credentialType int

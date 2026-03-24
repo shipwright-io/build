@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 func (t *TestBuild) LookupSecret(entity types.NamespacedName) (*corev1.Secret, error) {
@@ -44,22 +44,22 @@ func (t *TestBuild) LookupPod(entity types.NamespacedName) (*corev1.Pod, error) 
 	return result.(*corev1.Pod), err
 }
 
-func (t *TestBuild) LookupBuild(entity types.NamespacedName) (*buildv1beta1.Build, error) {
+func (t *TestBuild) LookupBuild(entity types.NamespacedName) (*buildapi.Build, error) {
 	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.BuildClientSet.ShipwrightV1beta1().
 			Builds(entity.Namespace).Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
-	return result.(*buildv1beta1.Build), err
+	return result.(*buildapi.Build), err
 }
 
-func (t *TestBuild) LookupBuildRun(entity types.NamespacedName) (*buildv1beta1.BuildRun, error) {
+func (t *TestBuild) LookupBuildRun(entity types.NamespacedName) (*buildapi.BuildRun, error) {
 	result, err := t.lookupRuntimeObject(func(ctx context.Context) (runtime.Object, error) {
 		return t.BuildClientSet.ShipwrightV1beta1().
 			BuildRuns(entity.Namespace).Get(ctx, entity.Name, metav1.GetOptions{})
 	})
 
-	return result.(*buildv1beta1.BuildRun), err
+	return result.(*buildapi.BuildRun), err
 }
 
 func (t *TestBuild) LookupTaskRun(entity types.NamespacedName) (*pipelineapi.TaskRun, error) {
@@ -73,7 +73,7 @@ func (t *TestBuild) LookupTaskRun(entity types.NamespacedName) (*pipelineapi.Tas
 	return result.(*pipelineapi.TaskRun), err
 }
 
-func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1beta1.BuildRun) (*pipelineapi.TaskRun, error) {
+func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildapi.BuildRun) (*pipelineapi.TaskRun, error) {
 	if buildRun == nil {
 		return nil, fmt.Errorf("no BuildRun specified to lookup TaskRun")
 	}
@@ -90,7 +90,7 @@ func (t *TestBuild) LookupTaskRunUsingBuildRun(buildRun *buildv1beta1.BuildRun) 
 			List(ctx, metav1.ListOptions{
 				LabelSelector: labels.SelectorFromSet(
 					map[string]string{
-						buildv1beta1.LabelBuildRun: buildRun.Name,
+						buildapi.LabelBuildRun: buildRun.Name,
 					}).String(),
 			})
 	})

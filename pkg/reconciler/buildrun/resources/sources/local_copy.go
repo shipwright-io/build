@@ -6,10 +6,10 @@ package sources
 import (
 	"fmt"
 
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/shipwright-io/build/pkg/config"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 // WaiterContainerName name given to the container watier container.

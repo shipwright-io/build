@@ -12,16 +12,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/ptr"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // NodeSelectorRef contains all required fields
 // to validate a node selector
 type NodeSelectorRef struct {
-	Build *build.Build // build instance for analysis
+	Build *buildapi.Build // build instance for analysis
 }
 
-func NewNodeSelector(build *build.Build) *NodeSelectorRef {
+func NewNodeSelector(build *buildapi.Build) *NodeSelectorRef {
 	return &NodeSelectorRef{build}
 }
 
@@ -30,7 +30,7 @@ func NewNodeSelector(build *build.Build) *NodeSelectorRef {
 func (b *NodeSelectorRef) ValidatePath(_ context.Context) error {
 	ok, reason, msg := BuildRunNodeSelector(b.Build.Spec.NodeSelector)
 	if !ok {
-		b.Build.Status.Reason = ptr.To(build.BuildReason(reason))
+		b.Build.Status.Reason = ptr.To(buildapi.BuildReason(reason))
 		b.Build.Status.Message = ptr.To(msg)
 	}
 	return nil
@@ -40,10 +40,10 @@ func (b *NodeSelectorRef) ValidatePath(_ context.Context) error {
 func BuildRunNodeSelector(nodeSelector map[string]string) (bool, string, string) {
 	for key, value := range nodeSelector {
 		if errs := validation.IsQualifiedName(key); len(errs) > 0 {
-			return false, string(build.NodeSelectorNotValid), fmt.Sprintf("Node selector key not valid: %v", strings.Join(errs, ", "))
+			return false, string(buildapi.NodeSelectorNotValid), fmt.Sprintf("Node selector key not valid: %v", strings.Join(errs, ", "))
 		}
 		if errs := validation.IsValidLabelValue(value); len(errs) > 0 {
-			return false, string(build.NodeSelectorNotValid), fmt.Sprintf("Node selector value not valid: %v", strings.Join(errs, ", "))
+			return false, string(buildapi.NodeSelectorNotValid), fmt.Sprintf("Node selector value not valid: %v", strings.Join(errs, ", "))
 		}
 	}
 	return true, "", ""

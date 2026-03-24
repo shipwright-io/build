@@ -20,10 +20,11 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/spf13/pflag"
+
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/image"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	"github.com/spf13/pflag"
 )
 
 // ExitError is an error which has an exit code to be used in os.Exit() to

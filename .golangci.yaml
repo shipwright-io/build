@@ -1,11 +1,27 @@
 version: "2"
 
+formatters:
+  enable:
+    - gci
+
+  exclusions:
+    paths:
+      - pkg/client
+
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/shipwright-io/build)
+
 linters:
   disable:
     - errcheck
   enable:
     - gosec
     - govet
+    - importas
     - ineffassign
     - misspell
     - revive
@@ -17,8 +33,19 @@ linters:
       - path: test
         linters:
           - revive
+      - path: pkg/client
+        linters:
+          - importas
 
   settings:
+    importas:
+      alias:
+        - pkg: github.com/shipwright-io/build/pkg/apis/build/v1beta1
+          alias: buildapi
+        - pkg: github.com/shipwright-io/build/pkg/apis/build/v1alpha1
+          alias: buildapialpha
+        - pkg: github.com/tektoncd/pipeline/pkg/apis/pipeline/v1
+          alias: pipelineapi
     revive:
       rules:
         - name: package-comments

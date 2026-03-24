@@ -9,13 +9,13 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/go-containerregistry/pkg/name"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/google/go-containerregistry/pkg/name"
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 var _ = Describe("PipelineRun E2E Tests", Label("PipelineRun", "CORE"), func() {
@@ -32,9 +32,9 @@ var _ = Describe("PipelineRun E2E Tests", Label("PipelineRun", "CORE"), func() {
 		testID string
 		err    error
 
-		build         *buildv1beta1.Build
-		buildRun      *buildv1beta1.BuildRun
-		buildStrategy *buildv1beta1.BuildStrategy
+		build         *buildapi.Build
+		buildRun      *buildapi.BuildRun
+		buildStrategy *buildapi.BuildStrategy
 		configMap     *corev1.ConfigMap
 		secret        *corev1.Secret
 	)
@@ -265,9 +265,9 @@ var _ = Describe("PipelineRun E2E Tests", Label("PipelineRun", "CORE"), func() {
 })
 
 // validatePipelineRunExistsAndSucceeded verifies that a PipelineRun was created and succeeded
-func validatePipelineRunExistsAndSucceeded(buildRun *buildv1beta1.BuildRun) {
+func validatePipelineRunExistsAndSucceeded(buildRun *buildapi.BuildRun) {
 	// Verify that the BuildRun has the succeeded condition
-	condition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+	condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 	Expect(condition).NotTo(BeNil())
 	Expect(condition.Status).To(Equal(corev1.ConditionTrue))
 
@@ -283,9 +283,9 @@ func validatePipelineRunExistsAndSucceeded(buildRun *buildv1beta1.BuildRun) {
 }
 
 // validatePipelineRunExistsAndFailed verifies that a PipelineRun was created and failed
-func validatePipelineRunExistsAndFailed(buildRun *buildv1beta1.BuildRun) {
+func validatePipelineRunExistsAndFailed(buildRun *buildapi.BuildRun) {
 	// Verify that the BuildRun has the failed condition
-	condition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+	condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 	Expect(condition).NotTo(BeNil())
 	Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 
@@ -301,21 +301,21 @@ func validatePipelineRunExistsAndFailed(buildRun *buildv1beta1.BuildRun) {
 }
 
 // validateMultipleTaskRunsHandling verifies that the controller can handle multiple TaskRuns
-func validateMultipleTaskRunsHandling(buildRun *buildv1beta1.BuildRun) {
+func validateMultipleTaskRunsHandling(buildRun *buildapi.BuildRun) {
 	// Verify that the BuildRun has the succeeded condition
-	condition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+	condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 	Expect(condition).NotTo(BeNil())
 	Expect(condition.Status).To(Equal(corev1.ConditionTrue))
 }
 
 // validatePipelineRunResultsFromGitSource validates PipelineRun results for Git source
 // This function is similar to validateBuildRunResultsFromGitSource but adapted for PipelineRun executor
-func validatePipelineRunResultsFromGitSource(buildRun *buildv1beta1.BuildRun) {
+func validatePipelineRunResultsFromGitSource(buildRun *buildapi.BuildRun) {
 	// For PipelineRun executor, we validate what we can expect to be populated
 	// The Source field might not be populated by the controller when using PipelineRun executor
 
 	// Verify that the BuildRun has the succeeded condition
-	condition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+	condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 	Expect(condition).NotTo(BeNil())
 	Expect(condition.Status).To(Equal(corev1.ConditionTrue))
 
@@ -329,11 +329,11 @@ func validatePipelineRunResultsFromGitSource(buildRun *buildv1beta1.BuildRun) {
 }
 
 // validatePipelineRunResultsFromBundleSource validates PipelineRun results for Bundle source
-func validatePipelineRunResultsFromBundleSource(buildRun *buildv1beta1.BuildRun) {
+func validatePipelineRunResultsFromBundleSource(buildRun *buildapi.BuildRun) {
 	// For PipelineRun executor, we validate what we can expect to be populated
 
 	// Verify that the BuildRun has the succeeded condition
-	condition := buildRun.Status.GetCondition(buildv1beta1.Succeeded)
+	condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 	Expect(condition).NotTo(BeNil())
 	Expect(condition.Status).To(Equal(corev1.ConditionTrue))
 

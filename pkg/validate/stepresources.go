@@ -7,12 +7,12 @@ package validate
 import (
 	"fmt"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // validateStepResources is the shared validation logic for step resource overrides.
 // It validates that all step resource overrides reference steps that exist in the build strategy.
-func validateStepResources(strategySteps []buildv1beta1.Step, stepResources []buildv1beta1.StepResourceOverride) (bool, buildv1beta1.BuildReason, string) {
+func validateStepResources(strategySteps []buildapi.Step, stepResources []buildapi.StepResourceOverride) (bool, buildapi.BuildReason, string) {
 	if len(stepResources) == 0 {
 		return true, "", ""
 	}
@@ -26,7 +26,7 @@ func validateStepResources(strategySteps []buildv1beta1.Step, stepResources []bu
 	// Validate each step resource override
 	for _, stepResource := range stepResources {
 		if !validStepNames[stepResource.Name] {
-			return false, buildv1beta1.UndefinedStepResource,
+			return false, buildapi.UndefinedStepResource,
 				fmt.Sprintf("stepResources references step %q which does not exist in the build strategy", stepResource.Name)
 		}
 	}
@@ -36,13 +36,13 @@ func validateStepResources(strategySteps []buildv1beta1.Step, stepResources []bu
 
 // BuildStepResources validates that all step resource overrides in the Build
 // reference steps that exist in the build strategy.
-func BuildStepResources(strategySteps []buildv1beta1.Step, buildStepResources []buildv1beta1.StepResourceOverride) (bool, buildv1beta1.BuildReason, string) {
+func BuildStepResources(strategySteps []buildapi.Step, buildStepResources []buildapi.StepResourceOverride) (bool, buildapi.BuildReason, string) {
 	return validateStepResources(strategySteps, buildStepResources)
 }
 
 // BuildRunStepResources validates that all step resource overrides in the BuildRun
 // reference steps that exist in the build strategy.
-func BuildRunStepResources(strategySteps []buildv1beta1.Step, buildRunStepResources []buildv1beta1.StepResourceOverride) (bool, string, string) {
+func BuildRunStepResources(strategySteps []buildapi.Step, buildRunStepResources []buildapi.StepResourceOverride) (bool, string, string) {
 	valid, reason, msg := validateStepResources(strategySteps, buildRunStepResources)
 	return valid, string(reason), msg
 }

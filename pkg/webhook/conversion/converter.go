@@ -7,12 +7,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 const (
@@ -46,7 +46,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 			switch convertedObject.Object[KIND] {
 			case buildKind:
 				unstructured := convertedObject.UnstructuredContent()
-				var build v1beta1.Build
+				var build buildapi.Build
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &build)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the build convertedObject")
@@ -59,7 +59,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 
 			case buildRunKind:
 				unstructured := convertedObject.UnstructuredContent()
-				var buildRun v1beta1.BuildRun
+				var buildRun buildapi.BuildRun
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &buildRun)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the buildRun convertedObject")
@@ -72,7 +72,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 
 			case buildStrategyKind:
 				unstructured := convertedObject.UnstructuredContent()
-				var buildStrategy v1beta1.BuildStrategy
+				var buildStrategy buildapi.BuildStrategy
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &buildStrategy)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the buildStrategy convertedObject")
@@ -85,7 +85,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 
 			case clusterBuildStrategyKind:
 				unstructured := convertedObject.UnstructuredContent()
-				var clusterBuildStrategy v1beta1.ClusterBuildStrategy
+				var clusterBuildStrategy buildapi.ClusterBuildStrategy
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &clusterBuildStrategy)
 				if err != nil {
 					ctxlog.Error(ctx, err, "failed unstructuring the clusterBuildStrategy convertedObject")
@@ -107,7 +107,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 		case betaGroupVersion:
 			switch convertedObject.Object[KIND] {
 			case buildKind:
-				var buildBeta v1beta1.Build
+				var buildBeta buildapi.Build
 
 				if err := buildBeta.ConvertFrom(ctx, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
@@ -122,7 +122,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 				convertedObject.Object = mapito
 
 			case buildRunKind:
-				var buildRunBeta v1beta1.BuildRun
+				var buildRunBeta buildapi.BuildRun
 
 				if err := buildRunBeta.ConvertFrom(ctx, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
@@ -137,7 +137,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 				convertedObject.Object = mapito
 
 			case buildStrategyKind:
-				var buildStrategyBeta v1beta1.BuildStrategy
+				var buildStrategyBeta buildapi.BuildStrategy
 
 				if err := buildStrategyBeta.ConvertFrom(ctx, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
@@ -152,7 +152,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 				convertedObject.Object = mapito
 
 			case clusterBuildStrategyKind:
-				var clusterBuildStrategyBeta v1beta1.ClusterBuildStrategy
+				var clusterBuildStrategyBeta buildapi.ClusterBuildStrategy
 
 				if err := clusterBuildStrategyBeta.ConvertFrom(ctx, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")

@@ -9,18 +9,17 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	"k8s.io/apimachinery/pkg/types"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
 	var (
 		testID   string
-		build    *buildv1alpha1.Build
-		buildRun *buildv1alpha1.BuildRun
+		build    *buildapialpha.Build
+		buildRun *buildapialpha.BuildRun
 	)
 
 	AfterEach(func() {
@@ -59,19 +58,19 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 	})
 })
 
-func getBuildRunStatusCondition(name types.NamespacedName) *buildv1alpha1.Condition {
+func getBuildRunStatusCondition(name types.NamespacedName) *buildapialpha.Condition {
 	testBuildRun, err := testBuild.LookupBuildRun(name)
 	Expect(err).ToNot(HaveOccurred(), "Error retrieving the BuildRun")
 
 	if len(testBuildRun.Status.Conditions) == 0 {
 		return nil
 	}
-	return testBuildRun.Status.GetCondition(buildv1alpha1.Succeeded)
+	return testBuildRun.Status.GetCondition(buildapialpha.Succeeded)
 }
 
 // validateWaiterBuildRun assert the BuildRun informed will fail, since Waiter's timeout is reached
 // and it causes the actual build process to fail as well.
-func validateWaiterBuildRun(testBuild *utils.TestBuild, testBuildRun *buildv1alpha1.BuildRun) {
+func validateWaiterBuildRun(testBuild *utils.TestBuild, testBuildRun *buildapialpha.BuildRun) {
 	err := testBuild.CreateBR(testBuildRun)
 	Expect(err).ToNot(HaveOccurred(), "Failed to create BuildRun")
 

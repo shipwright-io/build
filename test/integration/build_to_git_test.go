@@ -7,17 +7,18 @@ package integration_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests Build and referenced Source url", func() {
 
 	var (
-		cbsObject   *v1beta1.ClusterBuildStrategy
-		buildObject *v1beta1.Build
+		cbsObject   *buildapi.ClusterBuildStrategy
+		buildObject *buildapi.Build
 	)
 	// Load the ClusterBuildStrategies before each test case
 	BeforeEach(func() {
@@ -47,9 +48,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "http://github.com/shipwright-io/sample-go",
 				},
 			}
@@ -60,8 +61,8 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			buildObject, err := tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 		})
 	})
 
@@ -77,9 +78,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "http://github.com/shipwright-io/sample-go-fake",
 				},
 			}
@@ -90,8 +91,8 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 			// skip validation due to empty annotation
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 		})
 	})
 
@@ -108,9 +109,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "https://github.com/shipwright-io/sample-go",
 				},
 			}
@@ -121,8 +122,8 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			buildObject, err := tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 		})
 	})
 
@@ -138,9 +139,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			)
 			Expect(err).To(BeNil())
 
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "https://github.com/shipwright-io/sample-go-fake",
 				},
 			}
@@ -151,8 +152,8 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 			// skip validation due to empty annotation
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 		})
 	})
 
@@ -169,9 +170,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "foobar",
 				},
 			}
@@ -183,7 +184,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 			// this one is validating file protocol
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.RemoteRepositoryUnreachable))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.RemoteRepositoryUnreachable))
 			Expect(*buildObject.Status.Message).To(Equal("invalid source url"))
 		})
 	})
@@ -201,9 +202,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "false"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "foobar",
 				},
 			}
@@ -214,8 +215,8 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 			// skip validation due to false annotation
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 		})
 	})
 
@@ -232,9 +233,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "https://github.yourco.com/org/build-fake",
 				},
 			}
@@ -247,7 +248,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
 			// Because github enterprise always require authentication, this validation will fail while
 			// the repository could not be found.
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.RemoteRepositoryUnreachable))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.RemoteRepositoryUnreachable))
 			Expect(*buildObject.Status.Message).To(ContainSubstring("no such host"))
 		})
 
@@ -263,9 +264,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL:         "https://github.yourco.com/org/build-fake",
 					CloneSecret: ptr.To("foobar"),
 				},
@@ -282,8 +283,8 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 
 			// Because this build references a source secret, Build controller will skip this validation.
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+			Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 		})
 	})
 
@@ -300,9 +301,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "git@github.com:shipwright-io/build-fake.git",
 				},
 			}
@@ -315,7 +316,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			// Because sourceURL with git@ format implies that authentication is required,
 			// this validation will be skipped and build will be successful.
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.RemoteRepositoryUnreachable))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.RemoteRepositoryUnreachable))
 			Expect(*buildObject.Status.Message).To(Equal("the source url requires authentication"))
 		})
 	})
@@ -333,9 +334,9 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			Expect(err).To(BeNil())
 
 			buildObject.Annotations["build.shipwright.io/verify.repository"] = "true"
-			buildObject.Spec.Source = &v1beta1.Source{
-				Type: v1beta1.GitType,
-				Git: &v1beta1.Git{
+			buildObject.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL: "ssh://github.com/shipwright-io/build-fake.git",
 				},
 			}
@@ -348,7 +349,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 			// Because sourceURL with ssh format implies that authentication is required,
 			// this validation will be skipped and build will be successful.
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(v1beta1.RemoteRepositoryUnreachable))
+			Expect(*buildObject.Status.Reason).To(Equal(buildapi.RemoteRepositoryUnreachable))
 			Expect(*buildObject.Status.Message).To(Equal("the source url requires authentication"))
 		})
 	})

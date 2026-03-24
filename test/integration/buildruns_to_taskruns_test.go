@@ -14,11 +14,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	test "github.com/shipwright-io/build/test/v1beta1_samples"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,18 +22,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/ptr"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
 	)
 
-	var setupBuildAndBuildRun = func(buildDef []byte, buildRunDef []byte, strategy ...string) (watch.Interface, *v1beta1.Build, *v1beta1.BuildRun) {
+	var setupBuildAndBuildRun = func(buildDef []byte, buildRunDef []byte, strategy ...string) (watch.Interface, *buildapi.Build, *buildapi.BuildRun) {
 
 		var strategyName = STRATEGY + tb.Namespace
 		if len(strategy) > 0 {
@@ -121,14 +120,14 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				// use a fakeTime to simplify tests
 				fakeTime := time.Date(1989, 05, 15, 00, 01, 01, 651387237, time.UTC)
 
-				var seq = []*v1beta1.Condition{}
+				var seq = []*buildapi.Condition{}
 				for event := range buildRunWatcher.ResultChan() {
 					if event.Type == watch.Error {
 						_, _ = fmt.Fprintf(GinkgoWriter, "Unexpected error event in watch: %v", event.Object)
 						continue
 					}
 
-					condition := event.Object.(*v1beta1.BuildRun).Status.GetCondition(v1beta1.Succeeded)
+					condition := event.Object.(*buildapi.BuildRun).Status.GetCondition(buildapi.Succeeded)
 					if condition != nil {
 						condition.LastTransitionTime = metav1.Time{Time: fakeTime}
 						seq = append(seq, condition)
@@ -144,15 +143,15 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				Expect(len(seq) >= 2).To(Equal(true))
 
 				// ensure the conditions move eventually from unknown into running
-				Expect(seq).Should(ContainElement(&v1beta1.Condition{
-					Type:               v1beta1.Succeeded,
+				Expect(seq).Should(ContainElement(&buildapi.Condition{
+					Type:               buildapi.Succeeded,
 					Status:             corev1.ConditionUnknown,
 					LastTransitionTime: metav1.Time{Time: fakeTime},
 					Reason:             "Pending",
 					Message:            "Pending",
 				}))
-				Expect(seq).Should(ContainElement(&v1beta1.Condition{
-					Type:               v1beta1.Succeeded,
+				Expect(seq).Should(ContainElement(&buildapi.Condition{
+					Type:               buildapi.Succeeded,
 					Status:             corev1.ConditionUnknown,
 					LastTransitionTime: metav1.Time{Time: fakeTime},
 					Reason:             "Running",
@@ -168,7 +167,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				buildRun, err := tb.GetBRTillCompletion(buildRun.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				condition := buildRun.Status.GetCondition(v1beta1.Succeeded)
+				condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("BuildRunTimeout"))
 				Expect(condition.Message).To(Equal(fmt.Sprintf("BuildRun %s failed to finish within %v", buildRun.Name, build.Spec.Timeout.Duration)))
@@ -188,7 +187,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					Expect(buildRun.Status.FailureDetails.Location.Pod).To(Equal(taskRun.Status.PodName))
 					Expect(buildRun.Status.FailureDetails.Location.Container).To(Equal("step-step-build-and-push"))
 
-					condition := buildRun.Status.GetCondition(v1beta1.Succeeded)
+					condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 					Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 					Expect(condition.Reason).To(Equal("Failed"))
 					Expect(condition.Message).To(ContainSubstring("buildrun step %s failed", "step-step-build-and-push"))
@@ -204,7 +203,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					buildRun, err := tb.GetBRTillCompletion(buildRun.Name)
 					Expect(err).ToNot(HaveOccurred())
 
-					condition := buildRun.Status.GetCondition(v1beta1.Succeeded)
+					condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 					Expect(condition.Status).To(Equal(corev1.ConditionTrue))
 					Expect(condition.Reason).To(Equal("Succeeded"))
 					Expect(condition.Message).To(ContainSubstring("All Steps have completed executing"))
@@ -216,7 +215,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	Context("when a buildrun is created", func() {
 
 		var (
-			buildRunObject *v1beta1.BuildRun
+			buildRunObject *buildapi.BuildRun
 			taskRunObject  *pipelineapi.TaskRun
 		)
 
@@ -350,7 +349,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			b, err := tb.GetBuildTillRegistration(buildObject.Name, corev1.ConditionFalse)
 			Expect(err).To(BeNil())
 			Expect(*b.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*b.Status.Reason).To(Equal(v1beta1.RemoteRepositoryUnreachable))
+			Expect(*b.Status.Reason).To(Equal(buildapi.RemoteRepositoryUnreachable))
 			Expect(*b.Status.Message).To(ContainSubstring("no such host"))
 
 			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
@@ -404,7 +403,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	Context("when a standalone buildrun is created and the buildrun is cancelled", func() {
 
 		var standAloneBuildRunSample []byte
-		var standaloneBuildRunObject *v1beta1.BuildRun
+		var standaloneBuildRunObject *buildapi.BuildRun
 
 		BeforeEach(func() {
 			standAloneBuildRunSample = []byte(test.MinimalOneOffBuildRun)
@@ -422,8 +421,8 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			_, err = tb.GetTaskRunFromBuildRun(br.Name)
 			Expect(err).ToNot(HaveOccurred())
 
-			br.Spec.State = v1beta1.BuildRunRequestedStatePtr(v1beta1.BuildRunStateCancel)
-			data := []byte(fmt.Sprintf(`{"spec":{"state": "%s"}}`, v1beta1.BuildRunStateCancel))
+			br.Spec.State = buildapi.BuildRunRequestedStatePtr(buildapi.BuildRunStateCancel)
+			data := []byte(fmt.Sprintf(`{"spec":{"state": "%s"}}`, buildapi.BuildRunStateCancel))
 			br, err = tb.BuildClientSet.ShipwrightV1beta1().
 				BuildRuns(tb.Namespace).
 				Patch(tb.Context, br.Name, types.MergePatchType, data, metav1.PatchOptions{})
@@ -432,9 +431,9 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			actualReason, err := tb.GetTRTillDesiredReason(br.Name, "TaskRunCancelled")
 			Expect(err).ToNot(HaveOccurred(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", "TaskRunCancelled", actualReason))
 
-			actualReason, err = tb.GetBRTillDesiredReason(br.Name, v1beta1.BuildRunStateCancel)
-			Expect(err).ToNot(HaveOccurred(), fmt.Sprintf("failed to get desired BuildRun reason; expected %s, got %s", v1beta1.BuildRunStateCancel, actualReason))
-			Expect(actualReason).To(Equal(v1beta1.BuildRunStateCancel))
+			actualReason, err = tb.GetBRTillDesiredReason(br.Name, buildapi.BuildRunStateCancel)
+			Expect(err).ToNot(HaveOccurred(), fmt.Sprintf("failed to get desired BuildRun reason; expected %s, got %s", buildapi.BuildRunStateCancel, actualReason))
+			Expect(actualReason).To(Equal(buildapi.BuildRunStateCancel))
 		})
 	})
 
@@ -461,7 +460,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 					return false, nil
 				}
 
-				bro.Spec.State = v1beta1.BuildRunRequestedStatePtr(v1beta1.BuildRunStateCancel)
+				bro.Spec.State = buildapi.BuildRunRequestedStatePtr(buildapi.BuildRunStateCancel)
 				err = tb.UpdateBR(bro)
 				if err != nil {
 					GinkgoT().Logf("error on br update: %s\n", err.Error())
@@ -475,7 +474,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired TaskRun reason; expected %s, got %s", expectedReason, actualReason))
 
-			expectedReason = v1beta1.BuildRunStateCancel
+			expectedReason = buildapi.BuildRunStateCancel
 			actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired BuildRun reason; expected %s, got %s", expectedReason, actualReason))
 		})
@@ -562,7 +561,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
 
-			condition := br.Status.GetCondition(v1beta1.Succeeded)
+			condition := br.Status.GetCondition(buildapi.Succeeded)
 			Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 			Expect(condition.Reason).To(Equal(resources.BuildRunNameInvalid))
 			Expect(condition.Message).To(Equal("must be no more than 63 characters"))
@@ -628,7 +627,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("NodeSelectorNotValid"))
 				Expect(condition.Message).To(ContainSubstring("must be no more than 63 characters"))
@@ -678,7 +677,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("TolerationNotValid"))
 				Expect(condition.Message).To(ContainSubstring(validation.MaxLenError(63)))
@@ -724,7 +723,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("SchedulerNameNotValid"))
 				Expect(condition.Message).To(ContainSubstring(validation.MaxLenError(63)))
@@ -733,7 +732,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	})
 
 	Context("when a buildrun has a buildSpec defined and overrides nodeSelector", func() {
-		var standaloneBuildRunObject *v1beta1.BuildRun
+		var standaloneBuildRunObject *buildapi.BuildRun
 
 		BeforeEach(func() {
 			buildRunSample = []byte(test.MinimalBuildRunWithNodeSelectorOverride)
@@ -748,7 +747,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
 				Expect(condition.Message).To(ContainSubstring("cannot use 'nodeSelector' override and 'buildSpec' simultaneously"))
@@ -757,7 +756,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	})
 
 	Context("when a buildrun has a buildSpec defined and overrides tolerations", func() {
-		var standaloneBuildRunObject *v1beta1.BuildRun
+		var standaloneBuildRunObject *buildapi.BuildRun
 
 		BeforeEach(func() {
 			buildRunSample = []byte(test.MinimalBuildRunWithTolerationsOverride)
@@ -772,7 +771,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
 				Expect(condition.Message).To(ContainSubstring("cannot use 'tolerations' override and 'buildSpec' simultaneously"))
@@ -781,7 +780,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	})
 
 	Context("when a buildrun has a buildSpec defined and overrides schedulerName", func() {
-		var standaloneBuildRunObject *v1beta1.BuildRun
+		var standaloneBuildRunObject *buildapi.BuildRun
 
 		BeforeEach(func() {
 			buildRunSample = []byte(test.MinimalBuildRunWithSchedulerNameOverride)
@@ -796,7 +795,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
 				Expect(condition.Message).To(ContainSubstring("cannot use 'schedulerName' override and 'buildSpec' simultaneously"))
@@ -843,7 +842,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("RuntimeClassNameNotValid"))
 				Expect(condition.Message).To(ContainSubstring("RuntimeClassName not valid"))
@@ -852,7 +851,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 	})
 
 	Context("when a buildrun has a buildSpec defined and overrides runtimeClassName", func() {
-		var standaloneBuildRunObject *v1beta1.BuildRun
+		var standaloneBuildRunObject *buildapi.BuildRun
 
 		BeforeEach(func() {
 			buildRunSample = []byte(test.MinimalBuildRunWithRuntimeClassNameOverride)
@@ -867,7 +866,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
 				Expect(err).To(BeNil())
 
-				condition := br.Status.GetCondition(v1beta1.Succeeded)
+				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
 				Expect(condition.Message).To(ContainSubstring("cannot use 'runtimeClassName' override and 'buildSpec' simultaneously"))

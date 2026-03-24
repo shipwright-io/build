@@ -7,77 +7,78 @@ import (
 	"context"
 	"fmt"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/utils/ptr"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // Trigger implements the interface BuildPath with the objective of applying validations against the
 // `.spec.trigger` related attributes.
 type Trigger struct {
-	build *build.Build // build instance
+	build *buildapi.Build // build instance
 }
 
 // validate goes through the trigger "when" conditions to validate each entry.
-func (t *Trigger) validate(triggerWhen []build.TriggerWhen) []error {
+func (t *Trigger) validate(triggerWhen []buildapi.TriggerWhen) []error {
 	var allErrs []error
 	for _, when := range triggerWhen {
 		if when.Name == "" {
-			t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerNameCanNotBeBlank)
+			t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerNameCanNotBeBlank)
 			t.build.Status.Message = ptr.To("name is not set on when trigger condition")
 			allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 		}
 
 		switch when.Type {
-		case build.GitHubWebHookTrigger:
+		case buildapi.GitHubWebHookTrigger:
 			if when.GitHub == nil {
-				t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidGitHubWebHook)
+				t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidGitHubWebHook)
 				t.build.Status.Message = ptr.To(fmt.Sprintf(
 					"%q is missing required attribute `.github`", when.Name,
 				))
 				allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 			} else {
 				if len(when.GitHub.Events) == 0 {
-					t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidGitHubWebHook)
+					t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidGitHubWebHook)
 					t.build.Status.Message = ptr.To(fmt.Sprintf(
 						"%q is missing required attribute `.github.events`", when.Name,
 					))
 					allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 				}
 			}
-		case build.ImageTrigger:
+		case buildapi.ImageTrigger:
 			if when.Image == nil {
-				t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidImage)
+				t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidImage)
 				t.build.Status.Message = ptr.To(fmt.Sprintf(
 					"%q is missing required attribute `.image`", when.Name,
 				))
 				allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 			} else {
 				if len(when.Image.Names) == 0 {
-					t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidImage)
+					t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidImage)
 					t.build.Status.Message = ptr.To(fmt.Sprintf(
 						"%q is missing required attribute `.image.names`", when.Name,
 					))
 					allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 				}
 			}
-		case build.PipelineTrigger:
+		case buildapi.PipelineTrigger:
 			if when.ObjectRef == nil {
-				t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidPipeline)
+				t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidPipeline)
 				t.build.Status.Message = ptr.To(fmt.Sprintf(
 					"%q is missing required attribute `.objectRef`", when.Name,
 				))
 				allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 			} else {
 				if len(when.ObjectRef.Status) == 0 {
-					t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidPipeline)
+					t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidPipeline)
 					t.build.Status.Message = ptr.To(fmt.Sprintf(
 						"%q is missing required attribute `.objectRef.status`", when.Name,
 					))
 					allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 				}
 				if when.ObjectRef.Name == "" && len(when.ObjectRef.Selector) == 0 {
-					t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidPipeline)
+					t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidPipeline)
 					t.build.Status.Message = ptr.To(fmt.Sprintf(
 						"%q is missing required attributes `.objectRef.name` or `.objectRef.selector`",
 						when.Name,
@@ -85,7 +86,7 @@ func (t *Trigger) validate(triggerWhen []build.TriggerWhen) []error {
 					allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
 				}
 				if when.ObjectRef.Name != "" && len(when.ObjectRef.Selector) > 0 {
-					t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidPipeline)
+					t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidPipeline)
 					t.build.Status.Message = ptr.To(fmt.Sprintf(
 						"%q contains `.objectRef.name` and `.objectRef.selector`, must be only one",
 						when.Name,
@@ -94,7 +95,7 @@ func (t *Trigger) validate(triggerWhen []build.TriggerWhen) []error {
 				}
 			}
 		default:
-			t.build.Status.Reason = ptr.To[build.BuildReason](build.TriggerInvalidType)
+			t.build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.TriggerInvalidType)
 			t.build.Status.Message = ptr.To(
 				fmt.Sprintf("%q contains an invalid type %q", when.Name, when.Type))
 			allErrs = append(allErrs, fmt.Errorf("%s", *t.build.Status.Message))
@@ -116,6 +117,6 @@ func (t *Trigger) ValidatePath(_ context.Context) error {
 }
 
 // NewTrigger instantiate Trigger validation helper.
-func NewTrigger(b *build.Build) *Trigger {
+func NewTrigger(b *buildapi.Build) *Trigger {
 	return &Trigger{build: b}
 }

@@ -8,13 +8,14 @@ import (
 	"context"
 	"strings"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/shipwright-io/build/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	"github.com/shipwright-io/build/pkg/webhook"
 )
 
 // ensure v1beta1 implements the Conversion interface
@@ -24,7 +25,7 @@ var _ webhook.Conversion = (*BuildStrategy)(nil)
 func (src *BuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
 	ctxlog.Info(ctx, "converting BuildStrategy from beta to alpha", "namespace", src.Namespace, "name", src.Name)
 
-	var bs v1alpha1.BuildStrategy
+	var bs buildapialpha.BuildStrategy
 	bs.TypeMeta = src.TypeMeta
 	bs.APIVersion = alphaGroupVersion
 	bs.ObjectMeta = src.ObjectMeta
@@ -40,10 +41,10 @@ func (src *BuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstr
 	return nil
 }
 
-func (src *BuildStrategySpec) ConvertTo(bs *v1alpha1.BuildStrategySpec) {
+func (src *BuildStrategySpec) ConvertTo(bs *buildapialpha.BuildStrategySpec) {
 	usesMigratedDockerfileArg, usesMigratedBuilderArg := false, false
 
-	bs.Parameters = []v1alpha1.Parameter{}
+	bs.Parameters = []buildapialpha.Parameter{}
 	for _, param := range src.Parameters {
 		if param.Name == "dockerfile" && param.Type == ParameterTypeString && param.Default != nil && *param.Default == "Dockerfile" {
 			usesMigratedDockerfileArg = true
@@ -55,19 +56,19 @@ func (src *BuildStrategySpec) ConvertTo(bs *v1alpha1.BuildStrategySpec) {
 			continue
 		}
 
-		bs.Parameters = append(bs.Parameters, v1alpha1.Parameter{
+		bs.Parameters = append(bs.Parameters, buildapialpha.Parameter{
 			Name:        param.Name,
 			Description: param.Description,
-			Type:        v1alpha1.ParameterType(param.Type),
+			Type:        buildapialpha.ParameterType(param.Type),
 			Default:     param.Default,
 			Defaults:    param.Defaults,
 		})
 	}
 
-	bs.BuildSteps = []v1alpha1.BuildStep{}
+	bs.BuildSteps = []buildapialpha.BuildStep{}
 	for _, step := range src.Steps {
 
-		buildStep := v1alpha1.BuildStep{
+		buildStep := buildapialpha.BuildStep{
 			Container: corev1.Container{
 				Name:            step.Name,
 				Image:           step.Image,
@@ -130,12 +131,12 @@ func (src *BuildStrategySpec) ConvertTo(bs *v1alpha1.BuildStrategySpec) {
 	}
 
 	if src.SecurityContext != nil {
-		bs.SecurityContext = (*v1alpha1.BuildStrategySecurityContext)(src.SecurityContext)
+		bs.SecurityContext = (*buildapialpha.BuildStrategySecurityContext)(src.SecurityContext)
 	}
 
-	bs.Volumes = []v1alpha1.BuildStrategyVolume{}
+	bs.Volumes = []buildapialpha.BuildStrategyVolume{}
 	for _, vol := range src.Volumes {
-		bs.Volumes = append(bs.Volumes, v1alpha1.BuildStrategyVolume{
+		bs.Volumes = append(bs.Volumes, buildapialpha.BuildStrategyVolume{
 			Overridable:  vol.Overridable,
 			Name:         vol.Name,
 			Description:  vol.Description,
@@ -144,9 +145,9 @@ func (src *BuildStrategySpec) ConvertTo(bs *v1alpha1.BuildStrategySpec) {
 	}
 }
 
-// ConvertFrom converts from v1alpha1.BuildStrategy into this object.
+// ConvertFrom converts from buildapialpha.BuildStrategy into this object.
 func (src *BuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Unstructured) error {
-	var bs v1alpha1.BuildStrategy
+	var bs buildapialpha.BuildStrategy
 
 	unstructured := obj.UnstructuredContent()
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &bs)
@@ -165,7 +166,7 @@ func (src *BuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Uns
 	return nil
 }
 
-func (src *BuildStrategySpec) ConvertFrom(bs v1alpha1.BuildStrategySpec) {
+func (src *BuildStrategySpec) ConvertFrom(bs buildapialpha.BuildStrategySpec) {
 	src.Steps = []Step{}
 
 	usesDockerfile, usesBuilderImage := false, false

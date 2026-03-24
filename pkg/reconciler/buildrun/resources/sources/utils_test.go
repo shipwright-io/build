@@ -7,10 +7,10 @@ package sources_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
-
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 )
 
 var _ = Describe("Utils", func() {

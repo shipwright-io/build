@@ -8,18 +8,19 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests for retention limits and ttls for succeeded buildruns.", func() {
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
 	)
@@ -73,7 +74,7 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 			_, err = tb.GetBRTillNotFound(buildRunObject.Name, time.Second*1, time.Second*15)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		})
@@ -96,7 +97,7 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 			_, err = tb.GetBRTillNotFound(buildRunObject.Name, time.Second*1, time.Second*15)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		})
@@ -115,7 +116,7 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			_, err = tb.GetBRTillNotFound(buildRunObject.Name, time.Second*1, time.Second*15)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		})
@@ -140,7 +141,7 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 
 			// Make the TTL 5 seconds
 			br.Spec.Retention.TTLAfterSucceeded.Duration = time.Second * 5
@@ -169,13 +170,13 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br1, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br1.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br1.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 			// Create second buildrun
 			buildRunObject.Name = BUILDRUN + tb.Namespace + "-2"
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br2, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br2.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br2.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 
 			_, err = tb.GetBRTillNotFound(BUILDRUN+tb.Namespace+"-1", time.Second*1, time.Second*5)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
@@ -201,7 +202,7 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 			_, err = tb.GetBRTillNotFound(buildRunObject.Name, time.Second*1, time.Second*15)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
@@ -234,31 +235,31 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 			// Create 1 failed buildrun
 			buildRunObject.Name = BUILDRUN + tb.Namespace + "-fail-1"
 			str := "false"
-			falseParam := v1beta1.ParamValue{Name: "exit-command", SingleValue: &v1beta1.SingleValue{Value: &str}}
-			buildRunObject.Spec.ParamValues = []v1beta1.ParamValue{falseParam}
+			falseParam := buildapi.ParamValue{Name: "exit-command", SingleValue: &buildapi.SingleValue{Value: &str}}
+			buildRunObject.Spec.ParamValues = []buildapi.ParamValue{falseParam}
 			err = tb.CreateBR(buildRunObject)
 
 			// Wait for buildrun completion
 			br1, err := tb.GetBRTillCompletion(BUILDRUN + tb.Namespace + "-success-1")
 			Expect(err).To(BeNil())
-			Expect(br1.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br1.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 
 			br2, err := tb.GetBRTillCompletion(BUILDRUN + tb.Namespace + "-success-2")
 			Expect(err).To(BeNil())
-			Expect(br2.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionTrue))
+			Expect(br2.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionTrue))
 
 			br3, err := tb.GetBRTillCompletion(BUILDRUN + tb.Namespace + "-fail-1")
 			Expect(err).To(BeNil())
-			Expect(br3.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br3.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 
 			// Create 1 failed buildrun.
 			buildRunObject.Name = BUILDRUN + tb.Namespace + "-fail-2"
-			buildRunObject.Spec.ParamValues = []v1beta1.ParamValue{falseParam}
+			buildRunObject.Spec.ParamValues = []buildapi.ParamValue{falseParam}
 			err = tb.CreateBR(buildRunObject)
 			Expect(err).To(BeNil())
 			br4, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br4.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br4.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 
 			// Check that the older failed buildrun has been deleted while the successful buildruns exist
 			_, err = tb.GetBRTillNotFound(BUILDRUN+tb.Namespace+"-fail-1", time.Second*1, time.Second*5)
@@ -274,9 +275,9 @@ var _ = Describe("Integration tests for retention limits and ttls for succeeded 
 
 var _ = Describe("Integration tests for retention limits and ttls of buildRuns that fail", func() {
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
 	)
@@ -309,8 +310,8 @@ var _ = Describe("Integration tests for retention limits and ttls of buildRuns t
 			buildRunObject, err = tb.Catalog.LoadBRWithNameAndRef(BUILDRUN+tb.Namespace, BUILD+tb.Namespace, buildRunSample)
 			Expect(err).To(BeNil())
 			str := "false"
-			falseParam := v1beta1.ParamValue{Name: "exit-command", SingleValue: &v1beta1.SingleValue{Value: &str}}
-			buildRunObject.Spec.ParamValues = []v1beta1.ParamValue{falseParam}
+			falseParam := buildapi.ParamValue{Name: "exit-command", SingleValue: &buildapi.SingleValue{Value: &str}}
+			buildRunObject.Spec.ParamValues = []buildapi.ParamValue{falseParam}
 		}
 	})
 
@@ -332,7 +333,7 @@ var _ = Describe("Integration tests for retention limits and ttls of buildRuns t
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			_, err = tb.GetBRTillNotFound(buildRunObject.Name, time.Second*1, time.Second*15)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		})
@@ -357,7 +358,7 @@ var _ = Describe("Integration tests for retention limits and ttls of buildRuns t
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 
 			// Make the TTL 5 seconds
 			br.Spec.Retention.TTLAfterFailed.Duration = time.Second * 5
@@ -384,7 +385,7 @@ var _ = Describe("Integration tests for retention limits and ttls of buildRuns t
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			_, err = tb.GetBRTillNotFound(buildRunObject.Name, time.Second*1, time.Second*15)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 		})
@@ -406,7 +407,7 @@ var _ = Describe("Integration tests for retention limits and ttls of buildRuns t
 
 			br, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			_, err = tb.GetBRTillNotFound(buildRunObject.Name, time.Second*1, time.Second*15)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
@@ -431,13 +432,13 @@ var _ = Describe("Integration tests for retention limits and ttls of buildRuns t
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br1, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br1.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br1.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 			// Create second buildrun
 			buildRunObject.Name = BUILDRUN + tb.Namespace + "-2"
 			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 			br2, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			Expect(br2.Status.GetCondition(v1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(br2.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
 
 			_, err = tb.GetBRTillNotFound(BUILDRUN+tb.Namespace+"-1", time.Second*1, time.Second*5)
 			Expect(apierrors.IsNotFound(err)).To(BeTrue())

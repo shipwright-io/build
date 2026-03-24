@@ -7,9 +7,10 @@ package resources
 import (
 	"fmt"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
 )
 
 const (
@@ -27,10 +28,10 @@ const (
 // GenerateTaskRun creates a TaskRun with all build phases as sequential steps.
 func GenerateTaskRun(
 	cfg *config.Config,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
 	serviceAccountName string,
-	strategy buildv1beta1.BuilderStrategy,
+	strategy buildapi.BuilderStrategy,
 ) (*pipelineapi.TaskRun, error) {
 	generator := NewTaskRunGenerator(cfg, build, buildRun, serviceAccountName, strategy)
 

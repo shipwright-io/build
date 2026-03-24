@@ -7,8 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/shipwright-io/build/pkg/env"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/shipwright-io/build/pkg/env"
 )
 
 func TestMergeEnvVars(t *testing.T) {

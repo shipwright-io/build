@@ -16,20 +16,20 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	. "github.com/shipwright-io/build/cmd/image-processing"
-
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/rand"
+
+	. "github.com/shipwright-io/build/cmd/image-processing"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
 var _ = Describe("Image Processing Resource", Ordered, func() {

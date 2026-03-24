@@ -14,7 +14,6 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	tektonClient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-
 	"k8s.io/client-go/kubernetes"
 	// from https://github.com/kubernetes/client-go/issues/345
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"

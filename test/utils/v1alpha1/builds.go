@@ -14,13 +14,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // This class is intended to host all CRUD calls for testing Build CRDs resources
 
 // CreateBuild generates a Build on the current test namespace
-func (t *TestBuild) CreateBuild(build *v1alpha1.Build) error {
+func (t *TestBuild) CreateBuild(build *buildapialpha.Build) error {
 	bInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 
 	_, err := bInterface.Create(t.Context, build, metav1.CreateOptions{})
@@ -38,23 +38,23 @@ func (t *TestBuild) DeleteBuild(name string) error {
 
 // GetBuild returns a Build based on name
 // Deprecated: Use LookupBuild instead
-func (t *TestBuild) GetBuild(name string) (*v1alpha1.Build, error) {
+func (t *TestBuild) GetBuild(name string) (*buildapialpha.Build, error) {
 	return t.BuildClientSet.ShipwrightV1alpha1().
 		Builds(t.Namespace).Get(t.Context, name, metav1.GetOptions{})
 }
 
 // ListBuilds returns existing Builds from the desired namespace
-func (t *TestBuild) ListBuilds(namespace string) (*v1alpha1.BuildList, error) {
+func (t *TestBuild) ListBuilds(namespace string) (*buildapialpha.BuildList, error) {
 	return t.BuildClientSet.ShipwrightV1alpha1().Builds(namespace).List(t.Context, metav1.ListOptions{})
 }
 
 // PatchBuild patches an existing Build using the merge patch type
-func (t *TestBuild) PatchBuild(buildName string, data []byte) (*v1alpha1.Build, error) {
+func (t *TestBuild) PatchBuild(buildName string, data []byte) (*buildapialpha.Build, error) {
 	return t.PatchBuildWithPatchType(buildName, data, types.MergePatchType)
 }
 
 // PatchBuildWithPatchType patches an existing Build and allows specifying the patch type
-func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt types.PatchType) (*v1alpha1.Build, error) {
+func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt types.PatchType) (*buildapialpha.Build, error) {
 	bInterface := t.BuildClientSet.ShipwrightV1alpha1().Builds(t.Namespace)
 	b, err := bInterface.Patch(t.Context, buildName, pt, data, metav1.PatchOptions{})
 	if err != nil {
@@ -66,7 +66,7 @@ func (t *TestBuild) PatchBuildWithPatchType(buildName string, data []byte, pt ty
 // GetBuildTillValidation polls until a Build gets a validation and updates
 // it´s registered field. If timeout is reached or an error is found, it will
 // return with an error
-func (t *TestBuild) GetBuildTillValidation(name string) (build *v1alpha1.Build, err error) {
+func (t *TestBuild) GetBuildTillValidation(name string) (build *buildapialpha.Build, err error) {
 	err = wait.PollUntilContextTimeout(t.Context, t.Interval, t.TimeOut, true, func(_ context.Context) (bool, error) {
 		build, err = t.LookupBuild(types.NamespacedName{Namespace: t.Namespace, Name: name})
 		if err != nil && !apierrors.IsNotFound(err) {
@@ -87,7 +87,7 @@ func (t *TestBuild) GetBuildTillValidation(name string) (build *v1alpha1.Build, 
 // GetBuildTillRegistration polls until a Build gets a desired validation and updates
 // it´s registered field. If timeout is reached or an error is found, it will
 // return with an error
-func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.ConditionStatus) (*v1alpha1.Build, error) {
+func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.ConditionStatus) (*buildapialpha.Build, error) {
 
 	var (
 		pollBuildTillRegistration = func(ctx context.Context) (bool, error) {
@@ -119,7 +119,7 @@ func (t *TestBuild) GetBuildTillRegistration(name string, condition corev1.Condi
 // GetBuildTillMessageContainsSubstring polls until a Build message contains the desired
 // substring value and updates it´s registered field. If timeout is reached or an error is found,
 // it will return with an error
-func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMessage string) (*v1alpha1.Build, error) {
+func (t *TestBuild) GetBuildTillMessageContainsSubstring(name string, partOfMessage string) (*buildapialpha.Build, error) {
 
 	var (
 		pollBuildTillMessageContainsSubString = func(ctx context.Context) (bool, error) {

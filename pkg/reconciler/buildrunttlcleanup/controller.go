@@ -7,8 +7,6 @@ package buildrunttlcleanup
 import (
 	"context"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -17,6 +15,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
 )
 
 const (
@@ -31,7 +32,7 @@ func Add(_ context.Context, c *config.Config, mgr manager.Manager) error {
 }
 
 // reconcileCompletedBuildRun returns true if the object has the required TTL parameters
-func reconcileCompletedBuildRun(condition *buildv1beta1.Condition, o *buildv1beta1.BuildRun) bool {
+func reconcileCompletedBuildRun(condition *buildapi.Condition, o *buildapi.BuildRun) bool {
 	if condition.Status == corev1.ConditionTrue {
 		// check if a successful BuildRun has a TTL after succeeded value set
 		if o.Spec.Retention != nil && o.Spec.Retention.TTLAfterSucceeded != nil {
@@ -56,7 +57,7 @@ func reconcileCompletedBuildRun(condition *buildv1beta1.Condition, o *buildv1bet
 
 // reconcileAlreadyCompletedBuildRun returns true only if the TTL limit was introduced
 // or if it was lowered as the object was completed before the update
-func reconcileAlreadyCompletedBuildRun(newCondition *buildv1beta1.Condition, n *buildv1beta1.BuildRun, o *buildv1beta1.BuildRun) bool {
+func reconcileAlreadyCompletedBuildRun(newCondition *buildapi.Condition, n *buildapi.BuildRun, o *buildapi.BuildRun) bool {
 	if newCondition.Status == corev1.ConditionTrue {
 		// check if a successful BuildRun has a TTL that was lowered or introduced
 		if (o.Spec.Retention == nil || o.Spec.Retention.TTLAfterSucceeded == nil) && n.Spec.Retention != nil && n.Spec.Retention.TTLAfterSucceeded != nil {
@@ -95,24 +96,24 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		return err
 	}
 
-	predBuildRun := predicate.TypedFuncs[*buildv1beta1.BuildRun]{
-		CreateFunc: func(e event.TypedCreateEvent[*buildv1beta1.BuildRun]) bool {
+	predBuildRun := predicate.TypedFuncs[*buildapi.BuildRun]{
+		CreateFunc: func(e event.TypedCreateEvent[*buildapi.BuildRun]) bool {
 			// ignore a running BuildRun
-			condition := e.Object.Status.GetCondition(buildv1beta1.Succeeded)
+			condition := e.Object.Status.GetCondition(buildapi.Succeeded)
 			if condition == nil || condition.Status == corev1.ConditionUnknown {
 				return false
 			}
 
 			return reconcileCompletedBuildRun(condition, e.Object)
 		},
-		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.BuildRun]) bool {
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildapi.BuildRun]) bool {
 			// check if the updated object is completed
-			newCondition := e.ObjectNew.Status.GetCondition(buildv1beta1.Succeeded)
+			newCondition := e.ObjectNew.Status.GetCondition(buildapi.Succeeded)
 			if newCondition == nil || newCondition.Status == corev1.ConditionUnknown {
 				return false
 			}
 
-			oldCondition := e.ObjectOld.Status.GetCondition(buildv1beta1.Succeeded)
+			oldCondition := e.ObjectOld.Status.GetCondition(buildapi.Succeeded)
 
 			// for objects that failed or just completed, check if a matching TTL is set
 			if oldCondition == nil || oldCondition.Status == corev1.ConditionUnknown {
@@ -126,11 +127,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 
 			return false
 		},
-		DeleteFunc: func(_ event.TypedDeleteEvent[*buildv1beta1.BuildRun]) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildapi.BuildRun]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 	// Watch for changes to primary resource BuildRun
-	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}, &handler.TypedEnqueueRequestForObject[*buildv1beta1.BuildRun]{}, predBuildRun))
+	return c.Watch(source.Kind(mgr.GetCache(), &buildapi.BuildRun{}, &handler.TypedEnqueueRequestForObject[*buildapi.BuildRun]{}, predBuildRun))
 }

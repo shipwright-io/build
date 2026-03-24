@@ -14,17 +14,15 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	. "github.com/shipwright-io/build/cmd/bundle"
-
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/rand"
 
+	. "github.com/shipwright-io/build/cmd/bundle"
 	"github.com/shipwright-io/build/pkg/bundle"
 	"github.com/shipwright-io/build/pkg/image"
 )

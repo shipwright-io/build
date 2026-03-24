@@ -10,10 +10,10 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/shipwright-io/build/pkg/image"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/shipwright-io/build/pkg/image"
 )
 
 var _ = Describe("For a remote repository", func() {

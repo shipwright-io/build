@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	shpgit "github.com/shipwright-io/build/pkg/git"
 )
 
@@ -26,8 +26,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		testID string
 		err    error
 
-		build    *buildv1beta1.Build
-		buildRun *buildv1beta1.BuildRun
+		build    *buildapi.Build
+		buildRun *buildapi.BuildRun
 	)
 
 	AfterEach(func() {
@@ -768,9 +768,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			buildRun, err = testBuild.LookupBuildRun(types.NamespacedName{Name: buildRun.Name, Namespace: testBuild.Namespace})
 
 			// Pod should fail to schedule and the BuildRun should timeout.
-			Expect(buildRun.Status.GetCondition(buildv1beta1.Succeeded).Status).To(Equal(corev1.ConditionFalse))
-			Expect(buildRun.Status.GetCondition(buildv1beta1.Succeeded).Reason).To(Equal("BuildRunTimeout"))
-			Expect(buildRun.Status.GetCondition(buildv1beta1.Succeeded).Message).To(ContainSubstring("failed to finish within"))
+			Expect(buildRun.Status.GetCondition(buildapi.Succeeded).Status).To(Equal(corev1.ConditionFalse))
+			Expect(buildRun.Status.GetCondition(buildapi.Succeeded).Reason).To(Equal("BuildRunTimeout"))
+			Expect(buildRun.Status.GetCondition(buildapi.Succeeded).Message).To(ContainSubstring("failed to finish within"))
 		})
 	})
 

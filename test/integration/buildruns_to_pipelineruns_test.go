@@ -11,15 +11,15 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests BuildRuns and PipelineRuns", Label("PipelineRun"), func() {
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 	)
 	// Delete the ClusterBuildStrategies after each test case
 	AfterEach(func() {
@@ -129,7 +129,7 @@ var _ = Describe("Integration tests BuildRuns and PipelineRuns", Label("Pipeline
 			buildRun, err := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).ToNot(HaveOccurred())
 
-			condition := buildRun.Status.GetCondition(v1beta1.Succeeded)
+			condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 			Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 			Expect(condition.Reason).To(Equal("BuildRunTimeout"))
 			Expect(condition.Message).To(Equal(fmt.Sprintf("BuildRun %s failed to finish within %v", buildRun.Name, buildObject.Spec.Timeout.Duration)))
@@ -160,7 +160,7 @@ var _ = Describe("Integration tests BuildRuns and PipelineRuns", Label("Pipeline
 			Expect(buildRun.Status.StartTime).ToNot(BeNil(), "BuildRun should have start time when PipelineRun starts")
 
 			// Verify BuildRun condition reflects running state
-			condition := buildRun.Status.GetCondition(v1beta1.Succeeded)
+			condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 			Expect(condition).ToNot(BeNil(), "BuildRun should have Succeeded condition")
 			Expect(condition.Status).To(Equal(corev1.ConditionUnknown), "BuildRun should be in Unknown state while running")
 

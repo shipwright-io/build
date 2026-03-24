@@ -9,20 +9,19 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 type clusterBuildStrategyPrototype struct {
-	clusterBuildStrategy buildv1beta1.ClusterBuildStrategy
+	clusterBuildStrategy buildapi.ClusterBuildStrategy
 }
 
 func NewClusterBuildStrategyPrototype() *clusterBuildStrategyPrototype {
 	return &clusterBuildStrategyPrototype{
-		clusterBuildStrategy: buildv1beta1.ClusterBuildStrategy{},
+		clusterBuildStrategy: buildapi.ClusterBuildStrategy{},
 	}
 }
 
@@ -31,22 +30,22 @@ func (c *clusterBuildStrategyPrototype) Name(name string) *clusterBuildStrategyP
 	return c
 }
 
-func (c *clusterBuildStrategyPrototype) BuildStep(buildStep buildv1beta1.Step) *clusterBuildStrategyPrototype {
+func (c *clusterBuildStrategyPrototype) BuildStep(buildStep buildapi.Step) *clusterBuildStrategyPrototype {
 	c.clusterBuildStrategy.Spec.Steps = append(c.clusterBuildStrategy.Spec.Steps, buildStep)
 	return c
 }
 
-func (c *clusterBuildStrategyPrototype) Parameter(parameter buildv1beta1.Parameter) *clusterBuildStrategyPrototype {
+func (c *clusterBuildStrategyPrototype) Parameter(parameter buildapi.Parameter) *clusterBuildStrategyPrototype {
 	c.clusterBuildStrategy.Spec.Parameters = append(c.clusterBuildStrategy.Spec.Parameters, parameter)
 	return c
 }
 
-func (c *clusterBuildStrategyPrototype) Volume(volume buildv1beta1.BuildStrategyVolume) *clusterBuildStrategyPrototype {
+func (c *clusterBuildStrategyPrototype) Volume(volume buildapi.BuildStrategyVolume) *clusterBuildStrategyPrototype {
 	c.clusterBuildStrategy.Spec.Volumes = append(c.clusterBuildStrategy.Spec.Volumes, volume)
 	return c
 }
 
-func (c *clusterBuildStrategyPrototype) Create() (cbs *buildv1beta1.ClusterBuildStrategy, err error) {
+func (c *clusterBuildStrategyPrototype) Create() (cbs *buildapi.ClusterBuildStrategy, err error) {
 	ctx := context.Background()
 
 	_, err = testBuild.
@@ -71,7 +70,7 @@ func (c *clusterBuildStrategyPrototype) Create() (cbs *buildv1beta1.ClusterBuild
 	return
 }
 
-func (c *clusterBuildStrategyPrototype) TestMe(f func(clusterBuildStrategy *buildv1beta1.ClusterBuildStrategy)) {
+func (c *clusterBuildStrategyPrototype) TestMe(f func(clusterBuildStrategy *buildapi.ClusterBuildStrategy)) {
 	GinkgoHelper()
 	cbs, err := c.Create()
 	Expect(err).ToNot(HaveOccurred())

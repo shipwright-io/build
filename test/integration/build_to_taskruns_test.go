@@ -13,16 +13,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests Build and TaskRun", func() {
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		buildSample,
 		buildRunSample []byte
 	)
@@ -79,8 +79,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label value as empty string", func() {
@@ -94,8 +94,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with annotation", func() {
@@ -109,8 +109,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with label", func() {
@@ -124,8 +124,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should be successful with both label and annotation", func() {
@@ -144,8 +144,8 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 			})
 
 			It("should set the buildrun controller as a field manager", func() {
@@ -232,9 +232,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
@@ -257,7 +257,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.NodeSelectorNotValid))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.NodeSelectorNotValid))
 			})
 		})
 	})
@@ -274,9 +274,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
@@ -303,7 +303,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.TolerationNotValid))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.TolerationNotValid))
 			})
 		})
 	})
@@ -320,9 +320,9 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 
 				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
 				Expect(err).To(BeNil())
-				Expect(*buildObject.Status.Message).To(Equal(v1beta1.AllValidationsSucceeded))
+				Expect(*buildObject.Status.Message).To(Equal(buildapi.AllValidationsSucceeded))
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SucceedStatus))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
 
 				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
@@ -345,7 +345,7 @@ var _ = Describe("Integration tests Build and TaskRun", func() {
 				Expect(err).To(BeNil())
 
 				Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-				Expect(*buildObject.Status.Reason).To(Equal(v1beta1.SchedulerNameNotValid))
+				Expect(*buildObject.Status.Reason).To(Equal(buildapi.SchedulerNameNotValid))
 			})
 		})
 	})

@@ -10,21 +10,20 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/go-containerregistry/pkg/name"
+	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/google/go-containerregistry/pkg/name"
-	containerreg "github.com/google/go-containerregistry/pkg/v1"
-
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
 	var (
 		err      error
 		testID   string
-		build    *buildv1alpha1.Build
-		buildRun *buildv1alpha1.BuildRun
+		build    *buildapialpha.Build
+		buildRun *buildapialpha.BuildRun
 	)
 
 	annotationsOf := func(img containerreg.Image) map[string]string {
@@ -120,7 +119,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		Context("when using BuildKit based Dockerfile build", Label("BuildKit"), func() {
-			var sampleBuildRun = func(outputTimestamp string) *buildv1alpha1.BuildRun {
+			var sampleBuildRun = func(outputTimestamp string) *buildapialpha.BuildRun {
 				return NewBuildRunPrototype().
 					Namespace(testBuild.Namespace).
 					Name(testID).
@@ -141,19 +140,19 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			}
 
 			It("should create an image with creation timestamp set to unix epoch timestamp zero", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1alpha1.OutputImageZeroTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapialpha.OutputImageZeroTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(0, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the source timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1alpha1.OutputImageSourceTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapialpha.OutputImageSourceTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(1699261787, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the build timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1alpha1.OutputImageBuildTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapialpha.OutputImageBuildTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", buildRun.CreationTimestamp.Time))
 			})
@@ -166,7 +165,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		})
 
 		Context("when using Buildpacks build", Label("Buildpacks"), func() {
-			var sampleBuildRun = func(outputTimestamp string) *buildv1alpha1.BuildRun {
+			var sampleBuildRun = func(outputTimestamp string) *buildapialpha.BuildRun {
 				return NewBuildRunPrototype().
 					Namespace(testBuild.Namespace).
 					Name(testID).
@@ -187,19 +186,19 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 			}
 
 			It("should create an image with creation timestamp set to unix epoch timestamp zero", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1alpha1.OutputImageZeroTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapialpha.OutputImageZeroTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(0, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the source timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1alpha1.OutputImageSourceTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapialpha.OutputImageSourceTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", time.Unix(1699261787, 0)))
 			})
 
 			It("should create an image with creation timestamp set to the build timestamp", func() {
-				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildv1alpha1.OutputImageBuildTimestamp))
+				buildRun := validateBuildRunToSucceed(testBuild, sampleBuildRun(buildapialpha.OutputImageBuildTimestamp))
 				image := testBuild.GetImage(buildRun)
 				Expect(creationTimeOf(image)).To(BeTemporally("==", buildRun.CreationTimestamp.Time))
 			})
@@ -223,7 +222,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 						OutputImage(outputImage.String()).
 						OutputImageCredentials(os.Getenv(EnvVarImageRepoSecret)).
 						OutputImageInsecure(insecure).
-						OutputTimestamp(buildv1alpha1.OutputImageSourceTimestamp).
+						OutputTimestamp(buildapialpha.OutputImageSourceTimestamp).
 						BuildSpec()).
 					MustCreate()
 
@@ -232,7 +231,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = testBuild.GetBRTillCompletion(buildRun.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				condition := buildRun.Status.GetCondition(buildv1alpha1.Succeeded)
+				condition := buildRun.Status.GetCondition(buildapialpha.Succeeded)
 				Expect(condition).ToNot(BeNil())
 				Expect(condition.Reason).To(ContainSubstring("TaskRunGenerationFailed"))
 				Expect(condition.Message).To(ContainSubstring("cannot use SourceTimestamp setting"))
@@ -262,7 +261,7 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 				buildRun, err = testBuild.GetBRTillCompletion(buildRun.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				condition := buildRun.Status.GetCondition(buildv1alpha1.Succeeded)
+				condition := buildRun.Status.GetCondition(buildapialpha.Succeeded)
 				Expect(condition).ToNot(BeNil())
 				Expect(condition.Reason).To(ContainSubstring("Failed"))
 				Expect(condition.Message).To(ContainSubstring("cannot parse output timestamp"))

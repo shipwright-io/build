@@ -9,10 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/controller/fakes"
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
-	test "github.com/shipwright-io/build/test/v1beta1_samples"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +17,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/apis"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/controller/fakes"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
+	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Conditions", func() {
@@ -37,7 +38,7 @@ var _ = Describe("Conditions", func() {
 
 			// BuildRun implements StatusConditions, therefore it can operate on
 			// an existing Condition
-			msg := br.Status.GetCondition(build.Succeeded).GetMessage()
+			msg := br.Status.GetCondition(buildapi.Succeeded).GetMessage()
 			Expect(msg).To(Equal("foo is not bar"))
 		})
 
@@ -45,7 +46,7 @@ var _ = Describe("Conditions", func() {
 			// BuildRun sample with an embedded condition of the type Succeeded
 			br := ctl.BuildRunWithSucceededCondition()
 
-			reason := br.Status.GetCondition(build.Succeeded).GetReason()
+			reason := br.Status.GetCondition(buildapi.Succeeded).GetReason()
 			Expect(reason).To(Equal("foobar"))
 		})
 
@@ -53,7 +54,7 @@ var _ = Describe("Conditions", func() {
 			// BuildRun sample with an embedded condition of the type Succeeded
 			br := ctl.BuildRunWithSucceededCondition()
 
-			status := br.Status.GetCondition(build.Succeeded).GetStatus()
+			status := br.Status.GetCondition(buildapi.Succeeded).GetStatus()
 			Expect(status).To(Equal(corev1.ConditionUnknown))
 		})
 
@@ -62,15 +63,15 @@ var _ = Describe("Conditions", func() {
 
 			// when getting a condition that does not exists on the BuildRun, do not
 			// panic but rather return a nil
-			cond := br.Status.GetCondition(build.Succeeded)
+			cond := br.Status.GetCondition(buildapi.Succeeded)
 			Expect(cond).To(BeNil())
 		})
 
 		It("should be able to set a condition based on a type", func() {
 			br := ctl.DefaultBuildRun("foo", "bar")
 			// generate a condition of the type Succeeded
-			tmpCond := &build.Condition{
-				Type:               build.Succeeded,
+			tmpCond := &buildapi.Condition{
+				Type:               buildapi.Succeeded,
 				Status:             corev1.ConditionUnknown,
 				Message:            "foobar",
 				Reason:             "foo is bar",
@@ -80,11 +81,11 @@ var _ = Describe("Conditions", func() {
 			// set the condition on the BuildRun resource
 			br.Status.SetCondition(tmpCond)
 
-			condition := br.Status.GetCondition(build.Succeeded)
+			condition := br.Status.GetCondition(buildapi.Succeeded)
 			Expect(condition).ToNot(BeNil())
-			Expect(condition.Type).To(Equal(build.Succeeded))
+			Expect(condition.Type).To(Equal(buildapi.Succeeded))
 
-			condMsg := br.Status.GetCondition(build.Succeeded).GetMessage()
+			condMsg := br.Status.GetCondition(buildapi.Succeeded).GetMessage()
 			Expect(condMsg).To(Equal("foobar"))
 		})
 
@@ -92,12 +93,12 @@ var _ = Describe("Conditions", func() {
 			// BuildRun sample with an embedded condition of the type Succeeded
 			br := ctl.BuildRunWithSucceededCondition()
 
-			reason := br.Status.GetCondition(build.Succeeded).GetReason()
+			reason := br.Status.GetCondition(buildapi.Succeeded).GetReason()
 			Expect(reason).To(Equal("foobar"))
 
 			// generate a condition in order to update the existing one
-			tmpCond := &build.Condition{
-				Type:               build.Succeeded,
+			tmpCond := &buildapi.Condition{
+				Type:               buildapi.Succeeded,
 				Status:             corev1.ConditionUnknown,
 				Message:            "foobar was updated",
 				Reason:             "foo is bar",
@@ -107,7 +108,7 @@ var _ = Describe("Conditions", func() {
 			// update the condition on the BuildRun resource
 			br.Status.SetCondition(tmpCond)
 
-			condMsg := br.Status.GetCondition(build.Succeeded).GetMessage()
+			condMsg := br.Status.GetCondition(buildapi.Succeeded).GetMessage()
 			Expect(condMsg).To(Equal("foobar was updated"))
 		})
 
@@ -116,7 +117,7 @@ var _ = Describe("Conditions", func() {
 		var (
 			client *fakes.FakeClient
 			ctl    test.Catalog
-			br     *build.BuildRun
+			br     *buildapi.BuildRun
 			tr     *pipelineapi.TaskRun
 		)
 
@@ -287,8 +288,8 @@ var _ = Describe("Conditions", func() {
 
 			// Finally, check the output of the buildRun
 			Expect(br.Status.GetCondition(
-				build.Succeeded).Reason,
-			).To(Equal(build.BuildRunStateVulnerabilitiesFound))
+				buildapi.Succeeded).Reason,
+			).To(Equal(buildapi.BuildRunStateVulnerabilitiesFound))
 		})
 
 		It("updates BuildRun condition when TaskRun fails and pod is evicted", func() {
@@ -341,8 +342,8 @@ var _ = Describe("Conditions", func() {
 
 			// Finally, check the output of the buildRun
 			Expect(br.Status.GetCondition(
-				build.Succeeded).Reason,
-			).To(Equal(build.BuildRunStatePodEvicted))
+				buildapi.Succeeded).Reason,
+			).To(Equal(buildapi.BuildRunStatePodEvicted))
 		})
 
 		It("updates BuildRun condition when TaskRun fails and container is out of memory", func() {
@@ -403,8 +404,8 @@ var _ = Describe("Conditions", func() {
 
 			// Finally, check the output of the buildRun
 			Expect(br.Status.GetCondition(
-				build.Succeeded).Reason,
-			).To(Equal(build.BuildRunStateStepOutOfMemory))
+				buildapi.Succeeded).Reason,
+			).To(Equal(buildapi.BuildRunStateStepOutOfMemory))
 		})
 
 		It("updates a BuildRun condition when the related TaskRun fails and pod containers are not available", func() {

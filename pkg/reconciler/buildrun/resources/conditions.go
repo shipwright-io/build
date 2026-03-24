@@ -10,15 +10,14 @@ import (
 	"time"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"knative.dev/pkg/apis"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"knative.dev/pkg/apis"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
@@ -50,7 +49,7 @@ const (
 )
 
 // UpdateBuildRunUsingTaskRunCondition updates the BuildRun Succeeded Condition
-func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, taskRun *pipelineapi.TaskRun, trCondition *apis.Condition) error {
+func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Client, buildRun *buildapi.BuildRun, taskRun *pipelineapi.TaskRun, trCondition *apis.Condition) error {
 	reason, message := trCondition.Reason, trCondition.Message
 	status := trCondition.Status
 
@@ -60,13 +59,13 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 	case pipelineapi.TaskRunReasonRunning:
 		if buildRun.IsCanceled() {
 			status = corev1.ConditionUnknown // in practice the taskrun status is already unknown in this case, but we are making sure here
-			reason = buildv1beta1.BuildRunStateCancel
+			reason = buildapi.BuildRunStateCancel
 			message = "The user requested the BuildRun to be canceled.  This BuildRun controller has requested the TaskRun be canceled.  That request has not been process by Tekton's TaskRun controller yet."
 		}
 	case pipelineapi.TaskRunReasonCancelled:
 		if buildRun.IsCanceled() {
 			status = corev1.ConditionFalse // in practice the taskrun status is already false in this case, bue we are making sure here
-			reason = buildv1beta1.BuildRunStateCancel
+			reason = buildapi.BuildRunStateCancel
 			message = "The BuildRun and underlying TaskRun were canceled successfully."
 		}
 
@@ -105,15 +104,15 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 			}
 
 			//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
-			buildRun.Status.FailureDetails = &buildv1beta1.FailureDetails{
-				Location: &buildv1beta1.Location{
+			buildRun.Status.FailureDetails = &buildapi.FailureDetails{
+				Location: &buildapi.Location{
 					Pod: pod.Name,
 				},
 			}
 
 			if pod.Status.Reason == "Evicted" {
 				message = pod.Status.Message
-				reason = buildv1beta1.BuildRunStatePodEvicted
+				reason = buildapi.BuildRunStatePodEvicted
 				if failedContainer != nil {
 					buildRun.Status.FailureDetails.Location.Container = failedContainer.Name
 				}
@@ -129,7 +128,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 
 				if failedContainerStatus != nil && failedContainerStatus.State.Terminated != nil {
 					if failedContainerStatus.State.Terminated.Reason == "OOMKilled" {
-						reason = buildv1beta1.BuildRunStateStepOutOfMemory
+						reason = buildapi.BuildRunStateStepOutOfMemory
 						message = fmt.Sprintf("buildrun step %s failed due to out-of-memory, for detailed information: kubectl --namespace %s logs %s --container=%s",
 							failedContainer.Name,
 							pod.Namespace,
@@ -137,7 +136,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 							failedContainer.Name,
 						)
 					} else if failedContainer.Name == "step-image-processing" && failedContainerStatus.State.Terminated.ExitCode == 22 {
-						reason = buildv1beta1.BuildRunStateVulnerabilitiesFound
+						reason = buildapi.BuildRunStateVulnerabilitiesFound
 						message = fmt.Sprintf("Vulnerabilities have been found in the image which can be seen in the buildrun status. For detailed information,see kubectl --namespace %s logs %s --container=%s",
 							pod.Namespace,
 							pod.Name,
@@ -155,9 +154,9 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 		}
 	}
 
-	buildRun.Status.SetCondition(&buildv1beta1.Condition{
+	buildRun.Status.SetCondition(&buildapi.Condition{
 		LastTransitionTime: metav1.Now(),
-		Type:               buildv1beta1.Succeeded,
+		Type:               buildapi.Succeeded,
 		Status:             status,
 		Reason:             reason,
 		Message:            message,
@@ -167,7 +166,7 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 }
 
 // UpdateBuildRunUsingPipelineRunCondition updates the BuildRun Succeeded Condition for PipelineRun conditions
-func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, pipelineRun *pipelineapi.PipelineRun, prCondition *apis.Condition) error {
+func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.Client, buildRun *buildapi.BuildRun, pipelineRun *pipelineapi.PipelineRun, prCondition *apis.Condition) error {
 	reason, message := prCondition.Reason, prCondition.Message
 	status := prCondition.Status
 
@@ -189,7 +188,7 @@ func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.
 	case "PipelineRunCancelled":
 		if buildRun.IsCanceled() {
 			status = corev1.ConditionFalse
-			reason = buildv1beta1.BuildRunStateCancel
+			reason = buildapi.BuildRunStateCancel
 			message = "The BuildRun and underlying PipelineRun were canceled successfully."
 		}
 
@@ -225,9 +224,9 @@ func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.
 		}
 	}
 
-	buildRun.Status.SetCondition(&buildv1beta1.Condition{
+	buildRun.Status.SetCondition(&buildapi.Condition{
 		LastTransitionTime: metav1.Now(),
-		Type:               buildv1beta1.Succeeded,
+		Type:               buildapi.Succeeded,
 		Status:             status,
 		Reason:             reason,
 		Message:            message,
@@ -240,7 +239,7 @@ func UpdateBuildRunUsingPipelineRunCondition(ctx context.Context, client client.
 type PipelineRunFailureDetails struct {
 	Reason         string
 	Message        string
-	FailureDetails *buildv1beta1.FailureDetails
+	FailureDetails *buildapi.FailureDetails
 }
 
 // extractPipelineRunFailureDetails extracts detailed failure information from a failed PipelineRun
@@ -285,8 +284,8 @@ func extractPipelineRunFailureDetails(ctx context.Context, client client.Client,
 				}
 
 				// Build failure details similar to TaskRun handling
-				failureDetails := &buildv1beta1.FailureDetails{
-					Location: &buildv1beta1.Location{
+				failureDetails := &buildapi.FailureDetails{
+					Location: &buildapi.Location{
 						Pod: pod.Name,
 					},
 				}
@@ -295,7 +294,7 @@ func extractPipelineRunFailureDetails(ctx context.Context, client client.Client,
 
 				if pod.Status.Reason == "Evicted" {
 					message = pod.Status.Message
-					reason = buildv1beta1.BuildRunStatePodEvicted
+					reason = buildapi.BuildRunStatePodEvicted
 					if failedContainer != nil {
 						failureDetails.Location.Container = failedContainer.Name
 					}
@@ -312,7 +311,7 @@ func extractPipelineRunFailureDetails(ctx context.Context, client client.Client,
 
 					if failedContainerStatus != nil && failedContainerStatus.State.Terminated != nil {
 						if failedContainerStatus.State.Terminated.Reason == "OOMKilled" {
-							reason = buildv1beta1.BuildRunStateStepOutOfMemory
+							reason = buildapi.BuildRunStateStepOutOfMemory
 							message = fmt.Sprintf("PipelineRun %s failed due to out-of-memory in step %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
 								pipelineRun.Name,
 								failedContainer.Name,
@@ -321,7 +320,7 @@ func extractPipelineRunFailureDetails(ctx context.Context, client client.Client,
 								failedContainer.Name,
 							)
 						} else if failedContainer.Name == "step-image-processing" && failedContainerStatus.State.Terminated.ExitCode == 22 {
-							reason = buildv1beta1.BuildRunStateVulnerabilitiesFound
+							reason = buildapi.BuildRunStateVulnerabilitiesFound
 							message = fmt.Sprintf("Vulnerabilities have been found in the image from PipelineRun %s, for detailed information: kubectl --namespace %s logs %s --container=%s",
 								pipelineRun.Name,
 								pod.Namespace,
@@ -363,12 +362,12 @@ func extractPipelineRunFailureDetails(ctx context.Context, client client.Client,
 // UpdateConditionWithFalseStatus sets the Succeeded condition fields and mark
 // the condition as Status False. It also updates the object in the cluster by
 // calling client Status Update
-func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, errorMessage string, reason string) error {
+func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildapi.BuildRun, errorMessage string, reason string) error {
 	now := metav1.Now()
 	buildRun.Status.CompletionTime = &now
-	buildRun.Status.SetCondition(&buildv1beta1.Condition{
+	buildRun.Status.SetCondition(&buildapi.Condition{
 		LastTransitionTime: now,
-		Type:               buildv1beta1.Succeeded,
+		Type:               buildapi.Succeeded,
 		Status:             corev1.ConditionFalse,
 		Reason:             reason,
 		Message:            errorMessage,
@@ -382,7 +381,7 @@ func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, b
 }
 
 // UpdateImageBuildRunFromExecutor updates the BuildRun status based on the executor object type
-func UpdateImageBuildRunFromExecutor(ctx context.Context, client client.Client, buildRun *buildv1beta1.BuildRun, executorObj client.Object, conditions *apis.Condition) error {
+func UpdateImageBuildRunFromExecutor(ctx context.Context, client client.Client, buildRun *buildapi.BuildRun, executorObj client.Object, conditions *apis.Condition) error {
 	if taskRunObj, ok := executorObj.(*pipelineapi.TaskRun); ok {
 		if err := UpdateBuildRunUsingTaskRunCondition(ctx, client, buildRun, taskRunObj, conditions); err != nil {
 			ctxlog.Error(ctx, err, "failed to update BuildRun status using TaskRun condition", "buildRun", buildRun.Name, "namespace", buildRun.Namespace, "taskRun", taskRunObj.Name)

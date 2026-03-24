@@ -11,10 +11,10 @@ import (
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
-	"github.com/shipwright-io/build/pkg/image"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/shipwright-io/build/pkg/image"
 )
 
 var _ = Describe("MutateImageOrImageIndex", func() {

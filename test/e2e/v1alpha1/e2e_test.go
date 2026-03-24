@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	shpgit "github.com/shipwright-io/build/pkg/git"
 )
 
@@ -23,8 +23,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		testID string
 		err    error
 
-		build    *buildv1alpha1.Build
-		buildRun *buildv1alpha1.BuildRun
+		build    *buildapialpha.Build
+		buildRun *buildapialpha.BuildRun
 	)
 
 	AfterEach(func() {

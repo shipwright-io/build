@@ -7,13 +7,12 @@ package sources_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
-
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"k8s.io/utils/ptr"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
 )
 
 var _ = Describe("Git", func() {
@@ -28,7 +27,7 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL: "https://github.com/shipwright-io/build",
 			}, "default")
 		})
@@ -65,7 +64,7 @@ var _ = Describe("Git", func() {
 		})
 
 		JustBeforeEach(func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL:         "git@github.com:shipwright-io/build.git",
 				CloneSecret: ptr.To("a.secret"),
 			}, "default")
@@ -116,7 +115,7 @@ var _ = Describe("Git", func() {
 
 		It("adds --depth argument with value 0 when depth is set to 0", func() {
 			depth := 0
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL:   "https://github.com/shipwright-io/build",
 				Depth: ptr.To(depth),
 			}, "default")
@@ -131,7 +130,7 @@ var _ = Describe("Git", func() {
 
 		It("adds --depth argument with value 1 when depth is set to 1", func() {
 			depth := 1
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL:   "https://github.com/shipwright-io/build",
 				Depth: ptr.To(depth),
 			}, "default")
@@ -142,7 +141,7 @@ var _ = Describe("Git", func() {
 
 		It("adds --depth argument with specified value when depth is greater than 1", func() {
 			depth := 5
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL:   "https://github.com/shipwright-io/build",
 				Depth: ptr.To(depth),
 			}, "default")
@@ -152,7 +151,7 @@ var _ = Describe("Git", func() {
 		})
 
 		It("does not add --depth argument when source.Depth is nil (not specified)", func() {
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL: "https://github.com/shipwright-io/build",
 			}, "default")
 
@@ -163,7 +162,7 @@ var _ = Describe("Git", func() {
 		It("combines depth with other Git parameters", func() {
 			depth := 3
 			revision := "main"
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL:         "https://github.com/shipwright-io/build",
 				Depth:       ptr.To(depth),
 				Revision:    ptr.To(revision),
@@ -182,7 +181,7 @@ var _ = Describe("Git", func() {
 		It("correctly passes --depth 0 when combined with other Git parameters", func() {
 			depth := 0
 			revision := "develop"
-			sources.AppendGitStep(cfg, taskSpec, buildv1beta1.Git{
+			sources.AppendGitStep(cfg, taskSpec, buildapi.Git{
 				URL:         "https://github.com/shipwright-io/another-repo",
 				Depth:       ptr.To(depth),
 				Revision:    ptr.To(revision),

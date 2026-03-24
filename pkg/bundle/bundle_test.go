@@ -12,13 +12,13 @@ import (
 	"os"
 	"path/filepath"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	. "github.com/shipwright-io/build/pkg/bundle"
-
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/rand"
+
+	. "github.com/shipwright-io/build/pkg/bundle"
 )
 
 var _ = Describe("Bundle", func() {

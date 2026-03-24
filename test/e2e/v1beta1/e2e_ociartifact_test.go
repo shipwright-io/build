@@ -11,16 +11,15 @@ import (
 	"strconv"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
 	"github.com/docker/cli/cli/config"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 var _ = Describe("Test local source code (bundle) functionality", Label("OCIArtifactSource"), func() {
@@ -37,8 +36,8 @@ var _ = Describe("Test local source code (bundle) functionality", Label("OCIArti
 		testID string
 		err    error
 
-		build    *buildv1beta1.Build
-		buildRun *buildv1beta1.BuildRun
+		build    *buildapi.Build
+		buildRun *buildapi.BuildRun
 	)
 
 	AfterEach(func() {
@@ -245,7 +244,7 @@ var _ = Describe("Test local source code (bundle) functionality", Label("OCIArti
 					Name(testID).
 					Namespace(testBuild.Namespace).
 					SourceBundle(tmpImage).
-					SourceBundlePrune(buildv1beta1.PruneAfterPull).
+					SourceBundlePrune(buildapi.PruneAfterPull).
 					SourceCredentials(secretName).
 					SourceContextDir("docker-build").
 					Dockerfile("Dockerfile").

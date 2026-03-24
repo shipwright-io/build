@@ -7,11 +7,12 @@ package v1beta1
 import (
 	"context"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/shipwright-io/build/pkg/webhook"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	"github.com/shipwright-io/build/pkg/webhook"
 )
 
 // ensure v1beta1 implements the Conversion interface
@@ -21,7 +22,7 @@ var _ webhook.Conversion = (*ClusterBuildStrategy)(nil)
 func (src *ClusterBuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
 	ctxlog.Info(ctx, "converting ClusterBuildStrategy from beta to alpha", "namespace", src.Namespace, "name", src.Name)
 
-	var bs v1alpha1.ClusterBuildStrategy
+	var bs buildapialpha.ClusterBuildStrategy
 	bs.TypeMeta = src.TypeMeta
 	bs.APIVersion = alphaGroupVersion
 	bs.ObjectMeta = src.ObjectMeta
@@ -37,9 +38,9 @@ func (src *ClusterBuildStrategy) ConvertTo(ctx context.Context, obj *unstructure
 	return nil
 }
 
-// ConvertFrom converts v1alpha1.ClusterBuildStrategy into this object
+// ConvertFrom converts buildapialpha.ClusterBuildStrategy into this object
 func (src *ClusterBuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Unstructured) error {
-	var cbs v1alpha1.ClusterBuildStrategy
+	var cbs buildapialpha.ClusterBuildStrategy
 
 	unstructured := obj.UnstructuredContent()
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &cbs)
