@@ -87,6 +87,14 @@ const (
 	SchedulerNameNotValid BuildReason = "SchedulerNameNotValid"
 	// RuntimeClassNameNotValid indicates that the RuntimeClassName is not valid
 	RuntimeClassNameNotValid BuildReason = "RuntimeClassNameNotValid"
+	// MultiArchNodeSelectorConflict indicates that nodeSelector contains kubernetes.io/os or kubernetes.io/arch which conflicts with multi-arch platform scheduling
+	MultiArchNodeSelectorConflict BuildReason = "MultiArchNodeSelectorConflict"
+	// MultiArchInvalidPlatform indicates that a multi-arch platform entry has invalid or empty fields
+	MultiArchInvalidPlatform BuildReason = "MultiArchInvalidPlatform"
+	// MultiArchExecutorNotPipelineRun indicates multi-arch builds require PipelineRun executor mode
+	MultiArchExecutorNotPipelineRun BuildReason = "MultiArchExecutorNotPipelineRun"
+	// MultiArchNodeNotFound indicates no schedulable node was found for a requested platform
+	MultiArchNodeNotFound BuildReason = "MultiArchNodeNotFound"
 	// AllValidationsSucceeded indicates a Build was successfully validated
 	AllValidationsSucceeded = "all validations succeeded"
 )
@@ -271,6 +279,28 @@ type VulnerabilityScanOptions struct {
 	Ignore *VulnerabilityIgnoreOptions `json:"ignore,omitempty"`
 }
 
+// ImagePlatform describes the operating system and CPU architecture
+// of a container image, following the OCI image index specification.
+type ImagePlatform struct {
+	// OS is the operating system of the image platform (e.g. "linux").
+	// +required
+	OS string `json:"os"`
+
+	// Arch is the CPU architecture of the image platform (e.g. "amd64", "arm64", "s390x", "ppc64le").
+	// +required
+	Arch string `json:"arch"`
+}
+
+// MultiArch configures multi-architecture image builds. When specified,
+// the build controller will orchestrate parallel builds for each platform
+// and assemble the results into an OCI image index (manifest list).
+type MultiArch struct {
+	// Platforms is the list of os/architecture combinations to build for.
+	// +required
+	// +kubebuilder:validation:MinItems=1
+	Platforms []ImagePlatform `json:"platforms"`
+}
+
 // Image refers to an container image with credentials
 type Image struct {
 	// Image is the reference of the image.
@@ -310,6 +340,14 @@ type Image struct {
 	//
 	// +optional
 	Timestamp *string `json:"timestamp,omitempty"`
+
+	// MultiArch configures building container images for multiple OS and CPU
+	// architecture combinations. When set, the build controller will orchestrate
+	// parallel builds for each specified platform and assemble the results into
+	// an OCI image index.
+	//
+	// +optional
+	MultiArch *MultiArch `json:"multiArch,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build
