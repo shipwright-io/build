@@ -1577,6 +1577,9 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               parameters:
                 description: Parameters defines the parameters of the strategy
                 items:
@@ -4165,6 +4168,9 @@ spec:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               volumes:
                 description: Volumes defines the volumes of the strategy
                 items:
