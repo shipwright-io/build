@@ -326,7 +326,7 @@ func applyNodeSelectors(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build,
 		taskRunPodTemplate = taskRun.Spec.PodTemplate
 	}
 
-	taskRunNodeSelector := mergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
+	taskRunNodeSelector := MergeMaps(build.Spec.NodeSelector, buildRun.Spec.NodeSelector)
 	if len(taskRunNodeSelector) > 0 {
 		taskRunPodTemplate.NodeSelector = taskRunNodeSelector
 		taskRun.Spec.PodTemplate = taskRunPodTemplate
