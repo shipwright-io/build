@@ -121,11 +121,11 @@ spec:
           popd > /dev/null
       resources:
         limits:
-          cpu: 500m
-          memory: 1Gi
+          cpu: "1"
+          memory: 2Gi
         requests:
           cpu: 250m
-          memory: 65Mi
+          memory: 256Mi
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
