@@ -20,7 +20,11 @@ const (
 type BuildStrategySpec struct {
 	// Steps defines the steps of the strategy
 	// +required
-	Steps []Step `json:"steps,omitempty"`
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	Steps []Step `json:"steps,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 
 	// Parameters defines the parameters of the strategy
 	// +optional
