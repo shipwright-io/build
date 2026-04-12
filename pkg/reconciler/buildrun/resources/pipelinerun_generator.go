@@ -7,13 +7,13 @@ package resources
 import (
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
-
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
 )
 
 // PipelineRunGenerator implements BuildRunExecutorGenerator for PipelineRun execution.
@@ -27,10 +27,10 @@ import (
 // parallel multi-arch builds.
 type PipelineRunGenerator struct {
 	cfg                *config.Config
-	build              *buildv1beta1.Build
-	buildRun           *buildv1beta1.BuildRun
+	build              *buildapi.Build
+	buildRun           *buildapi.BuildRun
 	serviceAccountName string
-	strategy           buildv1beta1.BuilderStrategy
+	strategy           buildapi.BuilderStrategy
 
 	pipelineRun   *pipelineapi.PipelineRun
 	pipelineTasks []pipelineapi.PipelineTask
@@ -38,10 +38,10 @@ type PipelineRunGenerator struct {
 
 func NewPipelineRunGenerator(
 	cfg *config.Config,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
 	serviceAccountName string,
-	strategy buildv1beta1.BuilderStrategy,
+	strategy buildapi.BuilderStrategy,
 ) *PipelineRunGenerator {
 	return &PipelineRunGenerator{
 		cfg:                cfg,
@@ -130,7 +130,7 @@ func (g *PipelineRunGenerator) GenerateBuildStrategyPhase(execCtx *executionCont
 func (g *PipelineRunGenerator) GenerateOutputImagePhase(execCtx *executionContext) error {
 	buildRunOutput := g.buildRun.Spec.Output
 	if buildRunOutput == nil {
-		buildRunOutput = &buildv1beta1.Image{}
+		buildRunOutput = &buildapi.Image{}
 	}
 
 	hasSourceTimestamp := true
@@ -263,7 +263,7 @@ func (g *PipelineRunGenerator) ApplyMetadataConfiguration() error {
 		}
 
 		switch parameterDefinition.Type {
-		case "", buildv1beta1.ParameterTypeString:
+		case "", buildapi.ParameterTypeString:
 			if paramValue.SingleValue == nil {
 				continue
 			}
@@ -278,7 +278,7 @@ func (g *PipelineRunGenerator) ApplyMetadataConfiguration() error {
 				})
 			}
 
-		case buildv1beta1.ParameterTypeArray:
+		case buildapi.ParameterTypeArray:
 			if paramValue.Values == nil {
 				continue
 			}

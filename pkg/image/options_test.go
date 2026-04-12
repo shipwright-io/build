@@ -11,10 +11,10 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/shipwright-io/build/pkg/image"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/shipwright-io/build/pkg/image"
 )
 
 var _ = Describe("GetOptions", func() {

@@ -7,18 +7,19 @@ package volumes
 import (
 	"fmt"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // TaskSpecVolumes creates a list of Volumes for the generated TaskSpec object and
 // checks for some erroneous situations around volumes and volume mounts
 func TaskSpecVolumes(
 	existingVolumeMounts map[string]bool,
-	strategyVolumes []buildv1beta1.BuildStrategyVolume,
-	buildVolumes []buildv1beta1.BuildVolume,
-	buildrunVolumes []buildv1beta1.BuildVolume,
+	strategyVolumes []buildapi.BuildStrategyVolume,
+	buildVolumes []buildapi.BuildVolume,
+	buildrunVolumes []buildapi.BuildVolume,
 ) ([]corev1.Volume, error) {
 	res := []corev1.Volume{}
 
@@ -59,7 +60,7 @@ func TaskSpecVolumes(
 	return res, nil
 }
 
-func isReadOnlyVolume(strategyVolume *buildv1beta1.BuildStrategyVolume) bool {
+func isReadOnlyVolume(strategyVolume *buildapi.BuildStrategyVolume) bool {
 	return strategyVolume.ConfigMap != nil ||
 		strategyVolume.Secret != nil ||
 		strategyVolume.DownwardAPI != nil ||
@@ -69,15 +70,15 @@ func isReadOnlyVolume(strategyVolume *buildv1beta1.BuildStrategyVolume) bool {
 // MergeBuildVolumes merges Build Volumes from one list into the other. It only allows to merge those that have property
 // Overridable set to true. In case it is empty or false, it is not allowed to be overridden, so Volume cannot be merged
 // Merging in this context means copying the VolumeSource from one object to the other.
-func MergeBuildVolumes(into []buildv1beta1.BuildStrategyVolume, from []buildv1beta1.BuildVolume) ([]buildv1beta1.BuildStrategyVolume, error) {
+func MergeBuildVolumes(into []buildapi.BuildStrategyVolume, from []buildapi.BuildVolume) ([]buildapi.BuildStrategyVolume, error) {
 	if len(from) == 0 && len(into) == 0 {
-		return []buildv1beta1.BuildStrategyVolume{}, nil
+		return []buildapi.BuildStrategyVolume{}, nil
 	}
 	if len(from) == 0 {
 		return into, nil
 	}
 
-	mergeMap := make(map[string]buildv1beta1.BuildStrategyVolume)
+	mergeMap := make(map[string]buildapi.BuildStrategyVolume)
 	var errors []error
 
 	for _, vol := range into {
@@ -105,7 +106,7 @@ func MergeBuildVolumes(into []buildv1beta1.BuildStrategyVolume, from []buildv1be
 		mergeMap[merger.Name] = original
 	}
 
-	result := make([]buildv1beta1.BuildStrategyVolume, 0, len(mergeMap))
+	result := make([]buildapi.BuildStrategyVolume, 0, len(mergeMap))
 	for _, v := range mergeMap {
 		result = append(result, v)
 	}

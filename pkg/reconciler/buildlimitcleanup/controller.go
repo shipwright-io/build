@@ -7,8 +7,6 @@ package buildlimitcleanup
 import (
 	"context"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -18,6 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
 )
 
 const (
@@ -46,12 +47,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		return err
 	}
 
-	pred := predicate.TypedFuncs[*buildv1beta1.Build]{
-		CreateFunc: func(e event.TypedCreateEvent[*buildv1beta1.Build]) bool {
+	pred := predicate.TypedFuncs[*buildapi.Build]{
+		CreateFunc: func(e event.TypedCreateEvent[*buildapi.Build]) bool {
 			o := e.Object
 			return o.Spec.Retention != nil && (o.Spec.Retention.FailedLimit != nil || o.Spec.Retention.SucceededLimit != nil)
 		},
-		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.Build]) bool {
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildapi.Build]) bool {
 			n := e.ObjectNew
 			o := e.ObjectOld
 
@@ -76,19 +77,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			}
 			return false
 		},
-		DeleteFunc: func(_ event.TypedDeleteEvent[*buildv1beta1.Build]) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildapi.Build]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 
-	predBuildRun := predicate.TypedFuncs[*buildv1beta1.BuildRun]{
-		CreateFunc: func(_ event.TypedCreateEvent[*buildv1beta1.BuildRun]) bool {
+	predBuildRun := predicate.TypedFuncs[*buildapi.BuildRun]{
+		CreateFunc: func(_ event.TypedCreateEvent[*buildapi.BuildRun]) bool {
 			// Never reconcile in case of create buildrun event
 			return false
 		},
 		// Reconcile the build the related buildrun has just completed
-		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.BuildRun]) bool {
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildapi.BuildRun]) bool {
 			n := e.ObjectNew
 
 			// check if Buildrun is related to a build
@@ -97,8 +98,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			}
 
 			o := e.ObjectOld
-			oldCondition := o.Status.GetCondition(buildv1beta1.Succeeded)
-			newCondition := n.Status.GetCondition(buildv1beta1.Succeeded)
+			oldCondition := o.Status.GetCondition(buildapi.Succeeded)
+			newCondition := n.Status.GetCondition(buildapi.Succeeded)
 			if newCondition != nil {
 				if (oldCondition == nil || oldCondition.Status == corev1.ConditionUnknown) &&
 					(newCondition.Status == corev1.ConditionFalse || newCondition.Status == corev1.ConditionTrue) {
@@ -107,19 +108,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 			}
 			return false
 		},
-		DeleteFunc: func(_ event.TypedDeleteEvent[*buildv1beta1.BuildRun]) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildapi.BuildRun]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.Build{}, &handler.TypedEnqueueRequestForObject[*buildv1beta1.Build]{}, pred)); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &buildapi.Build{}, &handler.TypedEnqueueRequestForObject[*buildapi.Build]{}, pred)); err != nil {
 		return err
 	}
 
 	// Watch for changes to resource BuildRun
-	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.BuildRun{}, handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, buildRun *buildv1beta1.BuildRun) []reconcile.Request {
+	return c.Watch(source.Kind(mgr.GetCache(), &buildapi.BuildRun{}, handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, buildRun *buildapi.BuildRun) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{

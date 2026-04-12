@@ -11,17 +11,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 	"github.com/shipwright-io/build/pkg/volumes"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 func createBaseTaskSpec() *pipelineapi.TaskSpec {
@@ -67,7 +67,7 @@ func generateBaseTaskParamReferences() []pipelineapi.Param {
 	}
 }
 
-func generateBaseParamValues(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) []pipelineapi.Param {
+func generateBaseParamValues(build *buildapi.Build, buildRun *buildapi.BuildRun) []pipelineapi.Param {
 	var image string
 	if buildRun.Spec.Output != nil {
 		image = buildRun.Spec.Output.Image
@@ -139,11 +139,11 @@ func generateBaseTaskSpecResults() []pipelineapi.TaskResult {
 	return append(getTaskSpecResults(), getFailureDetailsTaskSpecResults()...)
 }
 
-func applySourcesToTaskSpec(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) {
+func applySourcesToTaskSpec(cfg *config.Config, taskSpec *pipelineapi.TaskSpec, build *buildapi.Build, buildRun *buildapi.BuildRun) {
 	AmendTaskSpecWithSources(cfg, taskSpec, build, buildRun)
 }
 
-func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDefinitions []buildv1beta1.Parameter) {
+func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDefinitions []buildapi.Parameter) {
 	for _, parameterDefinition := range parameterDefinitions {
 		param := pipelineapi.ParamSpec{
 			Name:        parameterDefinition.Name,
@@ -153,7 +153,7 @@ func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDe
 		switch parameterDefinition.Type {
 		case "": // string is default
 			fallthrough
-		case buildv1beta1.ParameterTypeString:
+		case buildapi.ParameterTypeString:
 			param.Type = pipelineapi.ParamTypeString
 			if parameterDefinition.Default != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -162,7 +162,7 @@ func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDe
 				}
 			}
 
-		case buildv1beta1.ParameterTypeArray:
+		case buildapi.ParameterTypeArray:
 			param.Type = pipelineapi.ParamTypeArray
 			if parameterDefinition.Defaults != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -178,10 +178,10 @@ func addStrategyParametersToTaskSpec(taskSpec *pipelineapi.TaskSpec, parameterDe
 
 func applyBuildStrategySteps(
 	taskSpec *pipelineapi.TaskSpec,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
-	buildSteps []buildv1beta1.Step,
-	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
+	buildSteps []buildapi.Step,
+	buildStrategyVolumes []buildapi.BuildStrategyVolume,
 	combinedEnvs []corev1.EnvVar,
 ) (map[string]bool, error) {
 	volumeMounts := make(map[string]bool)
@@ -233,7 +233,7 @@ func applyBuildStrategySteps(
 // 1. BuildRun.Spec.StepResources (highest priority - for name reference builds)
 // 2. BuildRun.Spec.Build.Spec.Strategy.StepResources (for embedded spec builds)
 // 3. Build.Spec.Strategy.StepResources (Build-level overrides)
-func buildStepResourceOverridesMap(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) map[string]corev1.ResourceRequirements {
+func buildStepResourceOverridesMap(build *buildapi.Build, buildRun *buildapi.BuildRun) map[string]corev1.ResourceRequirements {
 	overrides := make(map[string]corev1.ResourceRequirements)
 
 	// First apply Build-level overrides (lowest priority)
@@ -263,9 +263,9 @@ func buildStepResourceOverridesMap(build *buildv1beta1.Build, buildRun *buildv1b
 func generateTaskSpecVolumes(
 	taskSpec *pipelineapi.TaskSpec,
 	volumeMounts map[string]bool,
-	buildStrategyVolumes []buildv1beta1.BuildStrategyVolume,
-	buildVolumes []buildv1beta1.BuildVolume,
-	buildRunVolumes []buildv1beta1.BuildVolume,
+	buildStrategyVolumes []buildapi.BuildStrategyVolume,
+	buildVolumes []buildapi.BuildVolume,
+	buildRunVolumes []buildapi.BuildVolume,
 ) error {
 	volumes, err := volumes.TaskSpecVolumes(volumeMounts, buildStrategyVolumes, buildVolumes, buildRunVolumes)
 	if err != nil {
@@ -275,7 +275,7 @@ func generateTaskSpecVolumes(
 	return nil
 }
 
-func generateTaskRunMetadata(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) metav1.ObjectMeta {
+func generateTaskRunMetadata(build *buildapi.Build, buildRun *buildapi.BuildRun) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		GenerateName: buildRun.Name + "-",
 		Namespace:    buildRun.Namespace,
@@ -283,15 +283,15 @@ func generateTaskRunMetadata(build *buildv1beta1.Build, buildRun *buildv1beta1.B
 	}
 }
 
-func generateTaskRunLabels(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) map[string]string {
+func generateTaskRunLabels(build *buildapi.Build, buildRun *buildapi.BuildRun) map[string]string {
 	taskRunLabels := map[string]string{
-		buildv1beta1.LabelBuildRun:           buildRun.Name,
-		buildv1beta1.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
+		buildapi.LabelBuildRun:           buildRun.Name,
+		buildapi.LabelBuildRunGeneration: strconv.FormatInt(buildRun.Generation, 10),
 	}
 
 	if build.Name != "" {
-		taskRunLabels[buildv1beta1.LabelBuild] = build.Name
-		taskRunLabels[buildv1beta1.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
+		taskRunLabels[buildapi.LabelBuild] = build.Name
+		taskRunLabels[buildapi.LabelBuildGeneration] = strconv.FormatInt(build.Generation, 10)
 	}
 
 	return taskRunLabels
@@ -320,7 +320,7 @@ func (g *PipelineRunGenerator) applySecurityContextToTaskSpec(taskSpec *pipeline
 	}
 }
 
-func applyNodeSelectors(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+func applyNodeSelectors(taskRun *pipelineapi.TaskRun, build *buildapi.Build, buildRun *buildapi.BuildRun) error {
 	taskRunPodTemplate := &pod.PodTemplate{}
 	if taskRun.Spec.PodTemplate != nil {
 		taskRunPodTemplate = taskRun.Spec.PodTemplate
@@ -335,7 +335,7 @@ func applyNodeSelectors(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build,
 	return nil
 }
 
-func applyTolerations(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+func applyTolerations(taskRun *pipelineapi.TaskRun, build *buildapi.Build, buildRun *buildapi.BuildRun) error {
 	taskRunPodTemplate := &pod.PodTemplate{}
 	if taskRun.Spec.PodTemplate != nil {
 		taskRunPodTemplate = taskRun.Spec.PodTemplate
@@ -355,7 +355,7 @@ func applyTolerations(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, b
 	return nil
 }
 
-func applyScheduler(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+func applyScheduler(taskRun *pipelineapi.TaskRun, build *buildapi.Build, buildRun *buildapi.BuildRun) error {
 	taskRunPodTemplate := &pod.PodTemplate{}
 	if taskRun.Spec.PodTemplate != nil {
 		taskRunPodTemplate = taskRun.Spec.PodTemplate
@@ -372,7 +372,7 @@ func applyScheduler(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, bui
 	return nil
 }
 
-func applyRuntimeClassName(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+func applyRuntimeClassName(taskRun *pipelineapi.TaskRun, build *buildapi.Build, buildRun *buildapi.BuildRun) error {
 	taskRunPodTemplate := &pod.PodTemplate{}
 	if taskRun.Spec.PodTemplate != nil {
 		taskRunPodTemplate = taskRun.Spec.PodTemplate
@@ -403,7 +403,7 @@ func mergeTolerations(buildTolerations []corev1.Toleration, buildRunTolerations 
 	return mergedTolerations
 }
 
-func applyAnnotationsAndLabels(taskRun *pipelineapi.TaskRun, strategy buildv1beta1.BuilderStrategy) error {
+func applyAnnotationsAndLabels(taskRun *pipelineapi.TaskRun, strategy buildapi.BuilderStrategy) error {
 	taskRunAnnotations := make(map[string]string)
 	for key, value := range strategy.GetAnnotations() {
 		if isPropagatableAnnotation(key) {
@@ -432,7 +432,7 @@ func applyAnnotationsAndLabels(taskRun *pipelineapi.TaskRun, strategy buildv1bet
 	return nil
 }
 
-func applyParameters(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, strategy buildv1beta1.BuilderStrategy) error {
+func applyParameters(taskRun *pipelineapi.TaskRun, build *buildapi.Build, buildRun *buildapi.BuildRun, strategy buildapi.BuilderStrategy) error {
 	var image string
 	if buildRun.Spec.Output != nil {
 		image = buildRun.Spec.Output.Image
@@ -507,12 +507,12 @@ func applyParameters(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, bu
 	return nil
 }
 
-func applyTimeout(taskRun *pipelineapi.TaskRun, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) error {
+func applyTimeout(taskRun *pipelineapi.TaskRun, build *buildapi.Build, buildRun *buildapi.BuildRun) error {
 	taskRun.Spec.Timeout = effectiveTimeout(build, buildRun)
 	return nil
 }
 
-func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) *metav1.Duration {
+func effectiveTimeout(build *buildapi.Build, buildRun *buildapi.BuildRun) *metav1.Duration {
 	if buildRun.Spec.Timeout != nil {
 		return buildRun.Spec.Timeout
 
@@ -525,13 +525,13 @@ func effectiveTimeout(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun
 
 func isPropagatableAnnotation(key string) bool {
 	return key != "kubectl.kubernetes.io/last-applied-configuration" &&
-		!strings.HasPrefix(key, buildv1beta1.ClusterBuildStrategyDomain+"/") &&
-		!strings.HasPrefix(key, buildv1beta1.BuildStrategyDomain+"/") &&
-		!strings.HasPrefix(key, buildv1beta1.BuildDomain+"/") &&
-		!strings.HasPrefix(key, buildv1beta1.BuildRunDomain+"/")
+		!strings.HasPrefix(key, buildapi.ClusterBuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildapi.BuildStrategyDomain+"/") &&
+		!strings.HasPrefix(key, buildapi.BuildDomain+"/") &&
+		!strings.HasPrefix(key, buildapi.BuildRunDomain+"/")
 }
 
-func toVolumeMap(strategyVolumes []buildv1beta1.BuildStrategyVolume) map[string]bool {
+func toVolumeMap(strategyVolumes []buildapi.BuildStrategyVolume) map[string]bool {
 	res := make(map[string]bool)
 	for _, v := range strategyVolumes {
 		res[v.Name] = true
@@ -611,7 +611,7 @@ func generateSourceAcquisitionWorkspaceBindings() []pipelineapi.WorkspacePipelin
 	}
 }
 
-func addStrategyParametersToPipelineSpec(pipelineSpec *pipelineapi.PipelineSpec, parameterDefinitions []buildv1beta1.Parameter) {
+func addStrategyParametersToPipelineSpec(pipelineSpec *pipelineapi.PipelineSpec, parameterDefinitions []buildapi.Parameter) {
 	for _, parameterDefinition := range parameterDefinitions {
 		param := pipelineapi.ParamSpec{
 			Name:        parameterDefinition.Name,
@@ -619,7 +619,7 @@ func addStrategyParametersToPipelineSpec(pipelineSpec *pipelineapi.PipelineSpec,
 		}
 
 		switch parameterDefinition.Type {
-		case "", buildv1beta1.ParameterTypeString:
+		case "", buildapi.ParameterTypeString:
 			param.Type = pipelineapi.ParamTypeString
 			if parameterDefinition.Default != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -628,7 +628,7 @@ func addStrategyParametersToPipelineSpec(pipelineSpec *pipelineapi.PipelineSpec,
 				}
 			}
 
-		case buildv1beta1.ParameterTypeArray:
+		case buildapi.ParameterTypeArray:
 			param.Type = pipelineapi.ParamTypeArray
 			if parameterDefinition.Defaults != nil {
 				param.Default = &pipelineapi.ParamValue{
@@ -642,7 +642,7 @@ func addStrategyParametersToPipelineSpec(pipelineSpec *pipelineapi.PipelineSpec,
 	}
 }
 
-func createBuildStrategyPipelineTask(taskSpec *pipelineapi.TaskSpec, strategy buildv1beta1.BuilderStrategy) pipelineapi.PipelineTask {
+func createBuildStrategyPipelineTask(taskSpec *pipelineapi.TaskSpec, strategy buildapi.BuilderStrategy) pipelineapi.PipelineTask {
 	pipelineTask := pipelineapi.PipelineTask{
 		Name: "build-strategy",
 		TaskSpec: &pipelineapi.EmbeddedTask{
@@ -667,12 +667,12 @@ func createBuildStrategyPipelineTask(taskSpec *pipelineapi.TaskSpec, strategy bu
 	return pipelineTask
 }
 
-func generateBuildStrategyTaskParams(strategy buildv1beta1.BuilderStrategy) []pipelineapi.Param {
+func generateBuildStrategyTaskParams(strategy buildapi.BuilderStrategy) []pipelineapi.Param {
 	params := generateBaseTaskParamReferences()
 
 	for _, strategyParam := range strategy.GetParameters() {
 		var paramRef string
-		if strategyParam.Type == buildv1beta1.ParameterTypeArray {
+		if strategyParam.Type == buildapi.ParameterTypeArray {
 			paramRef = fmt.Sprintf("$(params.%s[*])", strategyParam.Name)
 		} else {
 			paramRef = fmt.Sprintf("$(params.%s)", strategyParam.Name)

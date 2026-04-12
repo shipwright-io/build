@@ -15,13 +15,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 // This class is intended to host all CRUD calls for testing BuildRun CRDs resources
 
 // CreateBR generates a BuildRun on the current test namespace
-func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
+func (t *TestBuild) CreateBR(buildRun *buildapialpha.BuildRun) error {
 	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	_, err := brInterface.Create(t.Context, buildRun, metav1.CreateOptions{})
@@ -32,7 +32,7 @@ func (t *TestBuild) CreateBR(buildRun *v1alpha1.BuildRun) error {
 }
 
 // UpdateBR updates a BuildRun on the current test namespace
-func (t *TestBuild) UpdateBR(buildRun *v1alpha1.BuildRun) error {
+func (t *TestBuild) UpdateBR(buildRun *buildapialpha.BuildRun) error {
 	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 	_, err := brInterface.Update(t.Context, buildRun, metav1.UpdateOptions{})
 	if err != nil {
@@ -43,7 +43,7 @@ func (t *TestBuild) UpdateBR(buildRun *v1alpha1.BuildRun) error {
 
 // GetBR retrieves a BuildRun from a desired namespace
 // Deprecated: Use LookupBuildRun instead.
-func (t *TestBuild) GetBR(name string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBR(name string) (*buildapialpha.BuildRun, error) {
 	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
 	br, err := brInterface.Get(t.Context, name, metav1.GetOptions{})
@@ -70,7 +70,7 @@ func (t *TestBuild) GetBRReason(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cond := br.Status.GetCondition(v1alpha1.Succeeded)
+	cond := br.Status.GetCondition(buildapialpha.Succeeded)
 	if cond == nil {
 		return "", errors.New("BuildRun had no Succeeded condition")
 	}
@@ -80,7 +80,7 @@ func (t *TestBuild) GetBRReason(name string) (string, error) {
 // GetBRTillCompletion returns a BuildRun that have a CompletionTime set.
 // If the timeout is reached or it fails when retrieving the BuildRun it will
 // stop polling and return
-func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBRTillCompletion(name string) (*buildapialpha.BuildRun, error) {
 
 	var (
 		pollBRTillCompletion = func(ctx context.Context) (bool, error) {
@@ -110,7 +110,7 @@ func (t *TestBuild) GetBRTillCompletion(name string) (*v1alpha1.BuildRun, error)
 }
 
 // GetBRTillNotFound waits for the buildrun to get deleted. It returns an error if BuildRun is not found
-func (t *TestBuild) GetBRTillNotFound(name string, interval time.Duration, timeout time.Duration) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBRTillNotFound(name string, interval time.Duration, timeout time.Duration) (*buildapialpha.BuildRun, error) {
 
 	var (
 		GetBRTillNotFound = func(ctx context.Context) (bool, error) {
@@ -137,7 +137,7 @@ func (t *TestBuild) GetBRTillNotFound(name string, interval time.Duration, timeo
 // GetBRTillNotOwner returns a BuildRun that has not an owner.
 // If the timeout is reached or it fails when retrieving the BuildRun it will
 // stop polling and return
-func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*buildapialpha.BuildRun, error) {
 
 	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
@@ -169,7 +169,7 @@ func (t *TestBuild) GetBRTillNotOwner(name string, owner string) (*v1alpha1.Buil
 // GetBRTillOwner returns a BuildRun that has an owner.
 // If the timeout is reached or it fails when retrieving the BuildRun it will
 // stop polling and return
-func (t *TestBuild) GetBRTillOwner(name string, owner string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBRTillOwner(name string, owner string) (*buildapialpha.BuildRun, error) {
 
 	brInterface := t.BuildClientSet.ShipwrightV1alpha1().BuildRuns(t.Namespace)
 
@@ -201,7 +201,7 @@ func (t *TestBuild) GetBRTillOwner(name string, owner string) (*v1alpha1.BuildRu
 // GetBRTillStartTime returns a BuildRun that have a StartTime set.
 // If the timeout is reached or it fails when retrieving the BuildRun it will
 // stop polling and return
-func (t *TestBuild) GetBRTillStartTime(name string) (*v1alpha1.BuildRun, error) {
+func (t *TestBuild) GetBRTillStartTime(name string) (*buildapialpha.BuildRun, error) {
 
 	var (
 		pollBRTillCompletion = func(ctx context.Context) (bool, error) {

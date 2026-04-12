@@ -7,13 +7,14 @@ package v1beta1
 import (
 	"context"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/shipwright-io/build/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
+	"github.com/shipwright-io/build/pkg/webhook"
 )
 
 // ensure v1beta1 implements the Conversion interface
@@ -23,7 +24,7 @@ var _ webhook.Conversion = (*BuildRun)(nil)
 func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
 	ctxlog.Info(ctx, "converting BuildRun from beta to alpha", "namespace", src.Namespace, "name", src.Name)
 
-	var alphaBuildRun v1alpha1.BuildRun
+	var alphaBuildRun buildapialpha.BuildRun
 
 	alphaBuildRun.TypeMeta = src.TypeMeta
 	alphaBuildRun.APIVersion = alphaGroupVersion
@@ -31,22 +32,22 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 
 	// BuildRunSpec BuildSpec
 	if src.Spec.Build.Spec != nil {
-		newBuildSpec := v1alpha1.BuildSpec{}
+		newBuildSpec := buildapialpha.BuildSpec{}
 		if err := src.Spec.Build.Spec.ConvertTo(&newBuildSpec); err != nil {
 			return err
 		}
 		alphaBuildRun.Spec.BuildSpec = &newBuildSpec
 	} else if src.Spec.Build.Name != nil {
-		alphaBuildRun.Spec.BuildRef = &v1alpha1.BuildRef{
+		alphaBuildRun.Spec.BuildRef = &buildapialpha.BuildRef{
 			Name: *src.Spec.Build.Name,
 		}
 	}
 
 	// BuildRunSpec Sources
 	if src.Spec.Source != nil && src.Spec.Source.Type == LocalType && src.Spec.Source.Local != nil {
-		alphaBuildRun.Spec.Sources = append(alphaBuildRun.Spec.Sources, v1alpha1.BuildSource{
+		alphaBuildRun.Spec.Sources = append(alphaBuildRun.Spec.Sources, buildapialpha.BuildSource{
 			Name:    src.Spec.Source.Local.Name,
-			Type:    v1alpha1.LocalCopy,
+			Type:    buildapialpha.LocalCopy,
 			Timeout: src.Spec.Source.Local.Timeout,
 		})
 	}
@@ -54,12 +55,12 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	// BuildRunSpec ServiceAccount
 	// With the deprecation of serviceAccount.Generate, serviceAccount is set to ".generate" to have the SA created on fly.
 	if src.Spec.ServiceAccount != nil && *src.Spec.ServiceAccount == ".generate" {
-		alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{
+		alphaBuildRun.Spec.ServiceAccount = &buildapialpha.ServiceAccount{
 			Name:     &src.Name,
 			Generate: ptr.To(true),
 		}
 	} else {
-		alphaBuildRun.Spec.ServiceAccount = &v1alpha1.ServiceAccount{
+		alphaBuildRun.Spec.ServiceAccount = &buildapialpha.ServiceAccount{
 			Name: src.Spec.ServiceAccount,
 		}
 	}
@@ -70,7 +71,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	// BuildRunSpec ParamValues
 	alphaBuildRun.Spec.ParamValues = nil
 	for _, p := range src.Spec.ParamValues {
-		param := v1alpha1.ParamValue{}
+		param := buildapialpha.ParamValue{}
 		p.convertToAlpha(&param)
 		alphaBuildRun.Spec.ParamValues = append(alphaBuildRun.Spec.ParamValues, param)
 	}
@@ -78,7 +79,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	// BuildRunSpec Image
 
 	if src.Spec.Output != nil {
-		alphaBuildRun.Spec.Output = &v1alpha1.Image{
+		alphaBuildRun.Spec.Output = &buildapialpha.Image{
 			Image:       src.Spec.Output.Image,
 			Annotations: src.Spec.Output.Annotations,
 			Labels:      src.Spec.Output.Labels,
@@ -91,31 +92,31 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	}
 
 	// BuildRunSpec State
-	alphaBuildRun.Spec.State = (*v1alpha1.BuildRunRequestedState)(src.Spec.State)
+	alphaBuildRun.Spec.State = (*buildapialpha.BuildRunRequestedState)(src.Spec.State)
 
 	// BuildRunSpec Env
 	alphaBuildRun.Spec.Env = src.Spec.Env
 
 	// BuildRunSpec Retention
-	alphaBuildRun.Spec.Retention = (*v1alpha1.BuildRunRetention)(src.Spec.Retention)
+	alphaBuildRun.Spec.Retention = (*buildapialpha.BuildRunRetention)(src.Spec.Retention)
 
 	// BuildRunSpec Volumes
-	alphaBuildRun.Spec.Volumes = []v1alpha1.BuildVolume{}
+	alphaBuildRun.Spec.Volumes = []buildapialpha.BuildVolume{}
 	for _, vol := range src.Spec.Volumes {
-		alphaBuildRun.Spec.Volumes = append(alphaBuildRun.Spec.Volumes, v1alpha1.BuildVolume{
+		alphaBuildRun.Spec.Volumes = append(alphaBuildRun.Spec.Volumes, buildapialpha.BuildVolume{
 			Name:         vol.Name,
 			VolumeSource: vol.VolumeSource,
 		})
 	}
 
 	// BuildRun Status
-	var sourceStatus []v1alpha1.SourceResult
+	var sourceStatus []buildapialpha.SourceResult
 	if src.Status.Source != nil && src.Status.Source.Git != nil {
 		// Note: v1alpha contains a Name field under the SourceResult
 		// object, which we dont set here.
-		sourceStatus = append(sourceStatus, v1alpha1.SourceResult{
+		sourceStatus = append(sourceStatus, buildapialpha.SourceResult{
 			Name:      "default",
-			Git:       (*v1alpha1.GitSourceResult)(src.Status.Source.Git),
+			Git:       (*buildapialpha.GitSourceResult)(src.Status.Source.Git),
 			Timestamp: src.Status.Source.Timestamp,
 		})
 	}
@@ -123,17 +124,17 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	if src.Status.Source != nil && src.Status.Source.OciArtifact != nil {
 		// Note: v1alpha contains a Name field under the SourceResult
 		// object, which we dont set here.
-		sourceStatus = append(sourceStatus, v1alpha1.SourceResult{
+		sourceStatus = append(sourceStatus, buildapialpha.SourceResult{
 			Name:      "default",
-			Bundle:    (*v1alpha1.BundleSourceResult)(src.Status.Source.OciArtifact),
+			Bundle:    (*buildapialpha.BundleSourceResult)(src.Status.Source.OciArtifact),
 			Timestamp: src.Status.Source.Timestamp,
 		})
 	}
 
-	var conditions []v1alpha1.Condition
+	var conditions []buildapialpha.Condition
 	for _, c := range src.Status.Conditions {
-		ct := v1alpha1.Condition{
-			Type:               v1alpha1.Type(c.Type),
+		ct := buildapialpha.Condition{
+			Type:               buildapialpha.Type(c.Type),
 			Status:             c.Status,
 			LastTransitionTime: c.LastTransitionTime,
 			Reason:             c.Reason,
@@ -142,9 +143,9 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		conditions = append(conditions, ct)
 	}
 
-	var output *v1alpha1.Output
+	var output *buildapialpha.Output
 	if src.Status.Output != nil {
-		output = &v1alpha1.Output{
+		output = &buildapialpha.Output{
 			Digest: src.Status.Output.Digest,
 			Size:   src.Status.Output.Size,
 		}
@@ -160,7 +161,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		taskRunName = src.Status.TaskRunName // nolint:staticcheck
 	}
 
-	alphaBuildRun.Status = v1alpha1.BuildRunStatus{
+	alphaBuildRun.Status = buildapialpha.BuildRunStatus{
 		Sources:          sourceStatus,
 		Output:           output,
 		Conditions:       conditions,
@@ -170,14 +171,14 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	}
 
 	if src.Status.FailureDetails != nil {
-		alphaBuildRun.Status.FailureDetails = &v1alpha1.FailureDetails{
+		alphaBuildRun.Status.FailureDetails = &buildapialpha.FailureDetails{
 			Reason:  src.Status.FailureDetails.Reason,
 			Message: src.Status.FailureDetails.Message,
 		}
 	}
 
 	if src.Status.FailureDetails != nil && src.Status.FailureDetails.Location != nil {
-		alphaBuildRun.Status.FailureDetails.Location = &v1alpha1.FailedAt{
+		alphaBuildRun.Status.FailureDetails.Location = &buildapialpha.FailedAt{
 			Pod:       src.Status.FailureDetails.Location.Pod,
 			Container: src.Status.FailureDetails.Location.Container,
 		}
@@ -185,7 +186,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 		alphaBuildRun.Status.FailedAt = alphaBuildRun.Status.FailureDetails.Location
 	}
 
-	aux := &v1alpha1.BuildSpec{}
+	aux := &buildapialpha.BuildSpec{}
 	if src.Status.BuildSpec != nil {
 		if err := src.Status.BuildSpec.ConvertTo(aux); err != nil {
 			ctxlog.Error(ctx, err, "failed to convert object")
@@ -208,7 +209,7 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 // From Alpha
 func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstructured) error {
 
-	var alphaBuildRun v1alpha1.BuildRun
+	var alphaBuildRun buildapialpha.BuildRun
 
 	unstructured := obj.UnstructuredContent()
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &alphaBuildRun)
@@ -300,7 +301,7 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 	return nil
 }
 
-func (dest *BuildRunSpec) ConvertFrom(ctx context.Context, orig *v1alpha1.BuildRunSpec) error {
+func (dest *BuildRunSpec) ConvertFrom(ctx context.Context, orig *buildapialpha.BuildRunSpec) error {
 
 	// BuildRunSpec BuildSpec
 	if orig.BuildSpec != nil {
@@ -316,7 +317,7 @@ func (dest *BuildRunSpec) ConvertFrom(ctx context.Context, orig *v1alpha1.BuildR
 
 	// only interested on spec.sources as long as an item of the list
 	// is of the type LocalCopy. Otherwise, we move into bundle or git types.
-	index, isLocal := v1alpha1.IsLocalCopyType(orig.Sources)
+	index, isLocal := buildapialpha.IsLocalCopyType(orig.Sources)
 	if isLocal {
 		dest.Source = &BuildRunSource{
 			Type: LocalType,

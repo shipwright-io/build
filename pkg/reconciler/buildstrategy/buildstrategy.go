@@ -7,12 +7,13 @@ package buildstrategy
 import (
 	"context"
 
-	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // blank assignment to verify that ReconcileBuildStrategy implements reconcile.Reconciler

@@ -7,6 +7,7 @@ package controller
 import (
 	"context"
 
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -15,10 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-
 	"github.com/shipwright-io/build/pkg/apis"
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/reconciler/build"
@@ -44,7 +43,7 @@ func NewManager(ctx context.Context, config *config.Config, cfg *rest.Config, op
 	}
 
 	// Configure the cache
-	buildRunLabelExistsSelector, err := labels.Parse(buildv1beta1.LabelBuildRun)
+	buildRunLabelExistsSelector, err := labels.Parse(buildapi.LabelBuildRun)
 	if err != nil {
 		return nil, err
 	}

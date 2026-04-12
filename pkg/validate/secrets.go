@@ -16,17 +16,17 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 // Credentials contains all required fields
 // to validate a Build spec secrets definitions
 type Credentials struct {
-	Build  *build.Build
+	Build  *buildapi.Build
 	Client client.Client
 }
 
-func NewCredentials(client client.Client, build *build.Build) *Credentials {
+func NewCredentials(client client.Client, build *buildapi.Build) *Credentials {
 	return &Credentials{build, client}
 }
 
@@ -42,7 +42,7 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 		if err := s.Client.Get(ctx, types.NamespacedName{Name: refSecret, Namespace: s.Build.Namespace}, secret); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		} else if apierrors.IsNotFound(err) {
-			s.Build.Status.Reason = ptr.To[build.BuildReason](secretType)
+			s.Build.Status.Reason = ptr.To[buildapi.BuildReason](secretType)
 			s.Build.Status.Message = ptr.To(fmt.Sprintf("referenced secret %s not found", refSecret))
 			missingSecrets = append(missingSecrets, refSecret)
 		}
@@ -52,21 +52,21 @@ func (s Credentials) ValidatePath(ctx context.Context) error {
 	sort.Strings(missingSecrets)
 
 	if len(missingSecrets) > 1 {
-		s.Build.Status.Reason = ptr.To[build.BuildReason](build.MultipleSecretRefNotFound)
+		s.Build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.MultipleSecretRefNotFound)
 		s.Build.Status.Message = ptr.To(fmt.Sprintf("missing secrets are %s", strings.Join(missingSecrets, ",")))
 	}
 	return nil
 }
 
-func (s Credentials) buildCredentialReferences() map[string]build.BuildReason {
+func (s Credentials) buildCredentialReferences() map[string]buildapi.BuildReason {
 	// Validate if the referenced secrets exist in the namespace
-	secretRefMap := map[string]build.BuildReason{}
+	secretRefMap := map[string]buildapi.BuildReason{}
 	if s.Build.Spec.Output.PushSecret != nil {
-		secretRefMap[*s.Build.Spec.Output.PushSecret] = build.SpecOutputSecretRefNotFound
+		secretRefMap[*s.Build.Spec.Output.PushSecret] = buildapi.SpecOutputSecretRefNotFound
 	}
 
 	if s.Build.GetSourceCredentials() != nil {
-		secretRefMap[*s.Build.GetSourceCredentials()] = build.SpecSourceSecretRefNotFound
+		secretRefMap[*s.Build.GetSourceCredentials()] = buildapi.SpecSourceSecretRefNotFound
 	}
 	return secretRefMap
 }

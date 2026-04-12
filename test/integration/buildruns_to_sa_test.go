@@ -11,20 +11,19 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
 )
 
 var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 	var (
-		cbsObject      *v1beta1.ClusterBuildStrategy
-		buildObject    *v1beta1.Build
-		buildRunObject *v1beta1.BuildRun
+		cbsObject      *buildapi.ClusterBuildStrategy
+		buildObject    *buildapi.Build
+		buildRunObject *buildapi.BuildRun
 		buildSample    []byte
 		buildRunSample []byte
 	)
@@ -159,7 +158,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 					return false, nil
 				}
 
-				bro.Spec.State = v1beta1.BuildRunRequestedStatePtr(v1beta1.BuildRunStateCancel)
+				bro.Spec.State = buildapi.BuildRunRequestedStatePtr(buildapi.BuildRunStateCancel)
 				err = tb.UpdateBR(bro)
 				if err != nil {
 					GinkgoT().Logf("error on br update: %s\n", err.Error())
@@ -169,7 +168,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 			})
 			Expect(err).To(BeNil())
 
-			expectedReason := v1beta1.BuildRunStateCancel
+			expectedReason := buildapi.BuildRunStateCancel
 			actualReason, err := tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
 			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired BuildRun reason; expected %s, got %s", expectedReason, actualReason))
 
@@ -247,7 +246,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 
 			br, _ := tb.GetBRTillCompletion(buildRunObject.Name)
 			Expect(err).To(BeNil())
-			buildRunCondition := br.Status.GetCondition(v1beta1.Succeeded)
+			buildRunCondition := br.Status.GetCondition(buildapi.Succeeded)
 
 			Expect(buildRunCondition).ToNot(BeNil())
 			Expect(buildRunCondition.Status).To(Equal(corev1.ConditionFalse))

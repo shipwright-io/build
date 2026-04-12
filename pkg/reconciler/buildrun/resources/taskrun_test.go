@@ -12,12 +12,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	test "github.com/shipwright-io/build/test/v1beta1_samples"
@@ -26,10 +25,10 @@ import (
 var _ = Describe("TaskRun Unit Tests", func() {
 	var (
 		cfg                  *config.Config
-		build                *buildv1beta1.Build
-		buildRun             *buildv1beta1.BuildRun
-		buildStrategy        *buildv1beta1.BuildStrategy
-		clusterBuildStrategy *buildv1beta1.ClusterBuildStrategy
+		build                *buildapi.Build
+		buildRun             *buildapi.BuildRun
+		buildStrategy        *buildapi.BuildStrategy
+		clusterBuildStrategy *buildapi.ClusterBuildStrategy
 		serviceAccountName   string
 		ctl                  test.Catalog
 	)
@@ -86,12 +85,12 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(taskRun.Labels).ToNot(BeNil())
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildRunGeneration]).To(Equal(strconv.FormatInt(buildRun.Generation, 10)))
+				Expect(taskRun.Labels[buildapi.LabelBuildRun]).To(Equal(buildRun.Name))
+				Expect(taskRun.Labels[buildapi.LabelBuildRunGeneration]).To(Equal(strconv.FormatInt(buildRun.Generation, 10)))
 
 				if build.Name != "" {
-					Expect(taskRun.Labels[buildv1beta1.LabelBuild]).To(Equal(build.Name))
-					Expect(taskRun.Labels[buildv1beta1.LabelBuildGeneration]).To(Equal(strconv.FormatInt(build.Generation, 10)))
+					Expect(taskRun.Labels[buildapi.LabelBuild]).To(Equal(build.Name))
+					Expect(taskRun.Labels[buildapi.LabelBuildGeneration]).To(Equal(strconv.FormatInt(build.Generation, 10)))
 				}
 			})
 
@@ -418,7 +417,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 		Context("with output image configuration", func() {
 			It("should use BuildRun output image when specified", func() {
-				buildRun.Spec.Output = &buildv1beta1.Image{
+				buildRun.Spec.Output = &buildapi.Image{
 					Image: "registry.com/buildrun-image:latest",
 				}
 
@@ -461,7 +460,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			It("should handle insecure flag from BuildRun", func() {
 				insecure := true
-				buildRun.Spec.Output = &buildv1beta1.Image{
+				buildRun.Spec.Output = &buildapi.Image{
 					Image:    "registry.com/image:latest",
 					Insecure: &insecure,
 				}
@@ -526,7 +525,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			It("should set source context to context dir when specified", func() {
 				contextDir := "sub/directory"
-				build.Spec.Source = &buildv1beta1.Source{
+				build.Spec.Source = &buildapi.Source{
 					ContextDir: &contextDir,
 				}
 
@@ -612,9 +611,9 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(taskRun.Labels).ToNot(BeNil())
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal(buildRun.Name))
-				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuild))
-				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuildGeneration))
+				Expect(taskRun.Labels[buildapi.LabelBuildRun]).To(Equal(buildRun.Name))
+				Expect(taskRun.Labels).ToNot(HaveKey(buildapi.LabelBuild))
+				Expect(taskRun.Labels).ToNot(HaveKey(buildapi.LabelBuildGeneration))
 			})
 		})
 
@@ -702,7 +701,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// Add a volume to the build strategy
-				volumeBuildStrategy.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+				volumeBuildStrategy.Spec.Volumes = []buildapi.BuildStrategyVolume{
 					{
 						Name: "test-volume",
 						VolumeSource: corev1.VolumeSource{
@@ -742,10 +741,10 @@ var _ = Describe("TaskRun Unit Tests", func() {
 			It("should handle invalid parameters gracefully", func() {
 				// Create a build with a parameter that doesn't exist in strategy
 				buildWithInvalidParam := build.DeepCopy()
-				buildWithInvalidParam.Spec.ParamValues = []buildv1beta1.ParamValue{
+				buildWithInvalidParam.Spec.ParamValues = []buildapi.ParamValue{
 					{
 						Name:        "nonexistent-param",
-						SingleValue: &buildv1beta1.SingleValue{Value: stringPtr("some-value")},
+						SingleValue: &buildapi.SingleValue{Value: stringPtr("some-value")},
 					},
 				}
 
@@ -793,7 +792,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 			// Create a build strategy that has the volume to be overridden
 			strategyWithVolume := buildStrategy.DeepCopy()
 			overridable := true
-			strategyWithVolume.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+			strategyWithVolume.Spec.Volumes = []buildapi.BuildStrategyVolume{
 				{
 					Name:        "buildrun-volume",
 					Overridable: &overridable,
@@ -803,7 +802,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				},
 			}
 
-			buildRun.Spec.Volumes = []buildv1beta1.BuildVolume{
+			buildRun.Spec.Volumes = []buildapi.BuildVolume{
 				{
 					Name: "buildrun-volume",
 					VolumeSource: corev1.VolumeSource{
@@ -838,7 +837,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 			// Create a build strategy that has the volume to be overridden
 			strategyWithVolume := buildStrategy.DeepCopy()
 			overridable := true
-			strategyWithVolume.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+			strategyWithVolume.Spec.Volumes = []buildapi.BuildStrategyVolume{
 				{
 					Name:        "build-volume",
 					Overridable: &overridable,
@@ -848,7 +847,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				},
 			}
 
-			build.Spec.Volumes = []buildv1beta1.BuildVolume{
+			build.Spec.Volumes = []buildapi.BuildVolume{
 				{
 					Name: "build-volume",
 					VolumeSource: corev1.VolumeSource{
@@ -881,7 +880,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 			// Create a build strategy that has the volume to be overridden
 			strategyWithVolume := buildStrategy.DeepCopy()
 			overridable := true
-			strategyWithVolume.Spec.Volumes = []buildv1beta1.BuildStrategyVolume{
+			strategyWithVolume.Spec.Volumes = []buildapi.BuildStrategyVolume{
 				{
 					Name:        "shared-volume",
 					Overridable: &overridable,
@@ -891,7 +890,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				},
 			}
 
-			build.Spec.Volumes = []buildv1beta1.BuildVolume{
+			build.Spec.Volumes = []buildapi.BuildVolume{
 				{
 					Name: "shared-volume",
 					VolumeSource: corev1.VolumeSource{
@@ -902,7 +901,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				},
 			}
 
-			buildRun.Spec.Volumes = []buildv1beta1.BuildVolume{
+			buildRun.Spec.Volumes = []buildapi.BuildVolume{
 				{
 					Name: "shared-volume",
 					VolumeSource: corev1.VolumeSource{
@@ -939,7 +938,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		It("should handle Build retention configuration", func() {
 			failedLimit := uint(3)
 			succeededLimit := uint(2)
-			build.Spec.Retention = &buildv1beta1.BuildRetention{
+			build.Spec.Retention = &buildapi.BuildRetention{
 				FailedLimit:    &failedLimit,
 				SucceededLimit: &succeededLimit,
 			}
@@ -955,7 +954,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		It("should handle BuildRun retention configuration", func() {
 			ttlAfterFailed := metav1.Duration{Duration: 10 * time.Minute}
 			ttlAfterSucceeded := metav1.Duration{Duration: 5 * time.Minute}
-			buildRun.Spec.Retention = &buildv1beta1.BuildRunRetention{
+			buildRun.Spec.Retention = &buildapi.BuildRunRetention{
 				TTLAfterFailed:    &ttlAfterFailed,
 				TTLAfterSucceeded: &ttlAfterSucceeded,
 			}
@@ -974,10 +973,10 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			// Create a build with array parameter
 			buildWithArrayParam := build.DeepCopy()
-			buildWithArrayParam.Spec.ParamValues = []buildv1beta1.ParamValue{
+			buildWithArrayParam.Spec.ParamValues = []buildapi.ParamValue{
 				{
 					Name: "array-param",
-					Values: []buildv1beta1.SingleValue{
+					Values: []buildapi.SingleValue{
 						{Value: stringPtr("1")},
 						{Value: stringPtr("2")},
 						{Value: stringPtr("3")},
@@ -1031,10 +1030,10 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			// Override the sleep-time parameter
 			buildWithParam := build.DeepCopy()
-			buildWithParam.Spec.ParamValues = []buildv1beta1.ParamValue{
+			buildWithParam.Spec.ParamValues = []buildapi.ParamValue{
 				{
 					Name:        "sleep-time",
-					SingleValue: &buildv1beta1.SingleValue{Value: stringPtr("5")},
+					SingleValue: &buildapi.SingleValue{Value: stringPtr("5")},
 				},
 			}
 
@@ -1151,9 +1150,9 @@ var _ = Describe("TaskRun Unit Tests", func() {
 	Context("with source-related configurations", func() {
 		It("should handle BuildRun source overrides", func() {
 			buildRunWithSource := buildRun.DeepCopy()
-			buildRunWithSource.Spec.Source = &buildv1beta1.BuildRunSource{
-				Type: buildv1beta1.LocalType,
-				Local: &buildv1beta1.Local{
+			buildRunWithSource.Spec.Source = &buildapi.BuildRunSource{
+				Type: buildapi.LocalType,
+				Local: &buildapi.Local{
 					Name: "local-source",
 				},
 			}
@@ -1167,9 +1166,9 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		It("should handle different source types", func() {
 			// Test with OCI source type
 			buildWithOCI := build.DeepCopy()
-			buildWithOCI.Spec.Source = &buildv1beta1.Source{
-				Type: buildv1beta1.OCIArtifactType,
-				OCIArtifact: &buildv1beta1.OCIArtifact{
+			buildWithOCI.Spec.Source = &buildapi.Source{
+				Type: buildapi.OCIArtifactType,
+				OCIArtifact: &buildapi.OCIArtifact{
 					Image: "registry.com/my-source:latest",
 				},
 			}
@@ -1183,9 +1182,9 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		It("should handle source with credentials", func() {
 			secretName := "git-credentials"
 			buildWithCredentials := build.DeepCopy()
-			buildWithCredentials.Spec.Source = &buildv1beta1.Source{
-				Type: buildv1beta1.GitType,
-				Git: &buildv1beta1.Git{
+			buildWithCredentials.Spec.Source = &buildapi.Source{
+				Type: buildapi.GitType,
+				Git: &buildapi.Git{
 					URL:         "https://github.com/private/repo.git",
 					CloneSecret: &secretName,
 				},
@@ -1200,7 +1199,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 	Context("with image processing configurations", func() {
 		It("should handle output image with annotations", func() {
-			buildRun.Spec.Output = &buildv1beta1.Image{
+			buildRun.Spec.Output = &buildapi.Image{
 				Image: "registry.com/test:latest",
 				Annotations: map[string]string{
 					"org.opencontainers.image.description": "Test image",
@@ -1225,7 +1224,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		})
 
 		It("should handle output image with labels", func() {
-			buildRun.Spec.Output = &buildv1beta1.Image{
+			buildRun.Spec.Output = &buildapi.Image{
 				Image: "registry.com/test:latest",
 				Labels: map[string]string{
 					"maintainer": "team@company.com",
@@ -1252,9 +1251,9 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		It("should handle vulnerability scanning configuration", func() {
 			enabled := true
 			failOnFinding := true
-			buildRun.Spec.Output = &buildv1beta1.Image{
+			buildRun.Spec.Output = &buildapi.Image{
 				Image: "registry.com/test:latest",
-				VulnerabilityScan: &buildv1beta1.VulnerabilityScanOptions{
+				VulnerabilityScan: &buildapi.VulnerabilityScanOptions{
 					Enabled:       enabled,
 					FailOnFinding: failOnFinding,
 				},
@@ -1277,8 +1276,8 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		})
 
 		It("should handle image timestamp settings", func() {
-			timestamp := buildv1beta1.OutputImageZeroTimestamp
-			buildRun.Spec.Output = &buildv1beta1.Image{
+			timestamp := buildapi.OutputImageZeroTimestamp
+			buildRun.Spec.Output = &buildapi.Image{
 				Image:     "registry.com/test:latest",
 				Timestamp: &timestamp,
 			}
@@ -1311,10 +1310,10 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(taskRun.Labels[buildv1beta1.LabelBuild]).To(Equal("test-build"))
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildGeneration]).To(Equal("5"))
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal("test-buildrun"))
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildRunGeneration]).To(Equal("3"))
+				Expect(taskRun.Labels[buildapi.LabelBuild]).To(Equal("test-build"))
+				Expect(taskRun.Labels[buildapi.LabelBuildGeneration]).To(Equal("5"))
+				Expect(taskRun.Labels[buildapi.LabelBuildRun]).To(Equal("test-buildrun"))
+				Expect(taskRun.Labels[buildapi.LabelBuildRunGeneration]).To(Equal("3"))
 			})
 
 			It("should not include Build labels when build name is empty", func() {
@@ -1325,10 +1324,10 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuild))
-				Expect(taskRun.Labels).ToNot(HaveKey(buildv1beta1.LabelBuildGeneration))
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildRun]).To(Equal("test-buildrun"))
-				Expect(taskRun.Labels[buildv1beta1.LabelBuildRunGeneration]).To(Equal("3"))
+				Expect(taskRun.Labels).ToNot(HaveKey(buildapi.LabelBuild))
+				Expect(taskRun.Labels).ToNot(HaveKey(buildapi.LabelBuildGeneration))
+				Expect(taskRun.Labels[buildapi.LabelBuildRun]).To(Equal("test-buildrun"))
+				Expect(taskRun.Labels[buildapi.LabelBuildRunGeneration]).To(Equal("3"))
 			})
 		})
 
@@ -1378,7 +1377,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				insecure := true
 				duration := metav1.Duration{Duration: 15 * time.Minute}
 
-				build.Spec.Source = &buildv1beta1.Source{
+				build.Spec.Source = &buildapi.Source{
 					ContextDir: &contextDir,
 				}
 				build.Spec.NodeSelector = map[string]string{"build-node": "true"}
@@ -1432,17 +1431,17 @@ var _ = Describe("TaskRun Unit Tests", func() {
 		})
 
 		Context("with stepResources overrides", func() {
-			var strategyWithResources *buildv1beta1.BuildStrategy
+			var strategyWithResources *buildapi.BuildStrategy
 
 			BeforeEach(func() {
 				// Create a strategy with a step that has default resources
-				strategyWithResources = &buildv1beta1.BuildStrategy{
+				strategyWithResources = &buildapi.BuildStrategy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "strategy-with-resources",
 						Namespace: "default",
 					},
-					Spec: buildv1beta1.BuildStrategySpec{
-						Steps: []buildv1beta1.Step{
+					Spec: buildapi.BuildStrategySpec{
+						Steps: []buildapi.Step{
 							{
 								Name:    "build",
 								Image:   "busybox",
@@ -1488,7 +1487,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			It("should override stepResources from Build", func() {
 				// Add step resource overrides to Build
-				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+				build.Spec.Strategy.StepResources = []buildapi.StepResourceOverride{
 					{
 						Name: "build",
 						Resources: corev1.ResourceRequirements{
@@ -1527,13 +1526,13 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			It("should handle partial overrides (only some steps overridden)", func() {
 				// Create strategy with multiple steps
-				strategyMultiStep := &buildv1beta1.BuildStrategy{
+				strategyMultiStep := &buildapi.BuildStrategy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "strategy-multi-step",
 						Namespace: "default",
 					},
-					Spec: buildv1beta1.BuildStrategySpec{
-						Steps: []buildv1beta1.Step{
+					Spec: buildapi.BuildStrategySpec{
+						Steps: []buildapi.Step{
 							{
 								Name:    "prepare",
 								Image:   "busybox",
@@ -1575,7 +1574,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				}
 
 				// Only override the "build" step
-				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+				build.Spec.Strategy.StepResources = []buildapi.StepResourceOverride{
 					{
 						Name: "build",
 						Resources: corev1.ResourceRequirements{
@@ -1623,13 +1622,13 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			It("should override multiple steps simultaneously", func() {
 				// Create strategy with multiple steps
-				strategyMultiStep := &buildv1beta1.BuildStrategy{
+				strategyMultiStep := &buildapi.BuildStrategy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "strategy-multi-step",
 						Namespace: "default",
 					},
-					Spec: buildv1beta1.BuildStrategySpec{
-						Steps: []buildv1beta1.Step{
+					Spec: buildapi.BuildStrategySpec{
+						Steps: []buildapi.Step{
 							{
 								Name:    "build",
 								Image:   "busybox",
@@ -1659,7 +1658,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				}
 
 				// Override both steps simultaneously
-				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+				build.Spec.Strategy.StepResources = []buildapi.StepResourceOverride{
 					{
 						Name: "build",
 						Resources: corev1.ResourceRequirements{
@@ -1707,13 +1706,13 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			It("should apply stepResources to a step with no default resources", func() {
 				// Create strategy with a step that has NO default resources
-				strategyNoDefaults := &buildv1beta1.BuildStrategy{
+				strategyNoDefaults := &buildapi.BuildStrategy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "strategy-no-defaults",
 						Namespace: "default",
 					},
-					Spec: buildv1beta1.BuildStrategySpec{
-						Steps: []buildv1beta1.Step{
+					Spec: buildapi.BuildStrategySpec{
+						Steps: []buildapi.Step{
 							{
 								Name:    "build",
 								Image:   "busybox",
@@ -1725,7 +1724,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				}
 
 				// Override resources for a step that has no defaults
-				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+				build.Spec.Strategy.StepResources = []buildapi.StepResourceOverride{
 					{
 						Name: "build",
 						Resources: corev1.ResourceRequirements{
@@ -1763,7 +1762,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 
 			It("should override BuildRun.Spec.StepResources over Build.Spec.Strategy.StepResources (name reference path)", func() {
 				// Build has stepResources (simulates a shared Build the user doesn't control)
-				build.Spec.Strategy.StepResources = []buildv1beta1.StepResourceOverride{
+				build.Spec.Strategy.StepResources = []buildapi.StepResourceOverride{
 					{
 						Name: "build",
 						Resources: corev1.ResourceRequirements{
@@ -1780,7 +1779,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				}
 
 				// BuildRun references Build by name and overrides via top-level field
-				buildRun.Spec.StepResources = []buildv1beta1.StepResourceOverride{
+				buildRun.Spec.StepResources = []buildapi.StepResourceOverride{
 					{
 						Name: "build",
 						Resources: corev1.ResourceRequirements{

@@ -10,10 +10,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shipwright-io/build/pkg/webhook/conversion"
-
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+
+	"github.com/shipwright-io/build/pkg/webhook/conversion"
 )
 
 func TestClient() *http.Client {

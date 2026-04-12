@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 )
 
@@ -40,5 +40,5 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource ClusterBuildStrategy
-	return c.Watch(source.Kind(mgr.GetCache(), &buildv1beta1.ClusterBuildStrategy{}, &handler.TypedEnqueueRequestForObject[*buildv1beta1.ClusterBuildStrategy]{}))
+	return c.Watch(source.Kind(mgr.GetCache(), &buildapi.ClusterBuildStrategy{}, &handler.TypedEnqueueRequestForObject[*buildapi.ClusterBuildStrategy]{}))
 }

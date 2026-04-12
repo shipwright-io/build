@@ -8,15 +8,16 @@ import (
 	"context"
 	"sort"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // ReconcileBuild reconciles a Build object
@@ -43,7 +44,7 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 
 	ctxlog.Debug(ctx, "Start reconciling build-limit-cleanup", namespace, request.Namespace, name, request.Name)
 
-	b := &build.Build{}
+	b := &buildapi.Build{}
 	err := r.client.Get(ctx, request.NamespacedName, b)
 
 	if err != nil {
@@ -65,13 +66,13 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	lbls := map[string]string{
-		build.LabelBuild: b.Name,
+		buildapi.LabelBuild: b.Name,
 	}
 	opts := client.ListOptions{
 		Namespace:     b.Namespace,
 		LabelSelector: labels.SelectorFromSet(lbls),
 	}
-	allBuildRuns := &build.BuildRunList{}
+	allBuildRuns := &buildapi.BuildRunList{}
 
 	err = r.client.List(ctx, allBuildRuns, &opts)
 	if err != nil {
@@ -82,12 +83,12 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, nil
 	}
 
-	var buildRunFailed []build.BuildRun
-	var buildRunSucceeded []build.BuildRun
+	var buildRunFailed []buildapi.BuildRun
+	var buildRunSucceeded []buildapi.BuildRun
 
 	// Sort buildruns into successful ones and failed ones
 	for _, br := range allBuildRuns.Items {
-		condition := br.Status.GetCondition(build.Succeeded)
+		condition := br.Status.GetCondition(buildapi.Succeeded)
 		if condition != nil {
 			switch condition.Status {
 			case corev1.ConditionFalse:

@@ -15,14 +15,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // OwnerRef contains all required fields
 // to validate a Build OwnerReference definition
 type OwnerRef struct {
-	Build  *build.Build
+	Build  *buildapi.Build
 	Client client.Client
 	Scheme *runtime.Scheme
 }
@@ -42,7 +42,7 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 
 			if index := o.validateBuildOwnerReference(buildRun.OwnerReferences); index == -1 {
 				if err := controllerutil.SetControllerReference(o.Build, &buildRun, o.Scheme); err != nil {
-					o.Build.Status.Reason = ptr.To[build.BuildReason](build.SetOwnerReferenceFailed)
+					o.Build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.SetOwnerReferenceFailed)
 					o.Build.Status.Message = ptr.To(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
 				}
 				if err = o.Client.Update(ctx, &buildRun); err != nil {
@@ -69,11 +69,11 @@ func (o OwnerRef) ValidatePath(ctx context.Context) error {
 }
 
 // retrieveBuildRunsfromBuild returns a list of BuildRuns that are owned by a Build in the same namespace
-func (o OwnerRef) retrieveBuildRunsfromBuild(ctx context.Context) (*build.BuildRunList, error) {
-	buildRunList := &build.BuildRunList{}
+func (o OwnerRef) retrieveBuildRunsfromBuild(ctx context.Context) (*buildapi.BuildRunList, error) {
+	buildRunList := &buildapi.BuildRunList{}
 
 	lbls := map[string]string{
-		build.LabelBuild: o.Build.Name,
+		buildapi.LabelBuild: o.Build.Name,
 	}
 	opts := client.ListOptions{
 		Namespace:     o.Build.Namespace,

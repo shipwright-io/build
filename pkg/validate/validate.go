@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
@@ -60,7 +60,7 @@ type BuildPath interface {
 // BuildPath interface
 func NewValidation(
 	validationType string,
-	build *build.Build,
+	build *buildapi.Build,
 	client client.Client,
 	scheme *runtime.Scheme,
 ) (BuildPath, error) {
@@ -109,7 +109,7 @@ func All(ctx context.Context, validations ...BuildPath) error {
 
 // BuildRunFields runs field validations against a BuildRun to detect
 // disallowed field combinations and issues
-func BuildRunFields(buildRun *build.BuildRun) (string, string) {
+func BuildRunFields(buildRun *buildapi.BuildRun) (string, string) {
 	if buildRun.Spec.Build.Spec == nil && buildRun.Spec.Build.Name == nil {
 		return resources.BuildRunNoRefOrSpec,
 			"no build referenced or specified, either 'buildRef' or 'buildSpec' has to be set"

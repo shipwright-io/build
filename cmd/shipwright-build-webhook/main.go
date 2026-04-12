@@ -15,11 +15,12 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/spf13/pflag"
+	"knative.dev/pkg/signals"
+
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/webhook/conversion"
 	"github.com/shipwright-io/build/version"
-	"github.com/spf13/pflag"
-	"knative.dev/pkg/signals"
 )
 
 var (

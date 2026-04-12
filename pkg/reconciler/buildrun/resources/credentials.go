@@ -9,13 +9,13 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // ApplyCredentials adds all credentials that are referenced by the build and adds them to the service account.
 // The function returns true if the service account was modified.
-func ApplyCredentials(ctx context.Context, build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun, serviceAccount *corev1.ServiceAccount) bool {
+func ApplyCredentials(ctx context.Context, build *buildapi.Build, buildRun *buildapi.BuildRun, serviceAccount *corev1.ServiceAccount) bool {
 
 	modified := false
 

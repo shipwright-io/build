@@ -5,10 +5,10 @@
 package image_test
 
 import (
-	"github.com/shipwright-io/build/pkg/image"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/shipwright-io/build/pkg/image"
 )
 
 var _ = Describe("Endpoints", func() {

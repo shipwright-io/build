@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/ctxlog"
-
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 // to the buildrun
 func UpdateBuildRunUsingTaskResults(
 	ctx context.Context,
-	buildRun *build.BuildRun,
+	buildRun *buildapi.BuildRun,
 	taskRunResult []pipelineapi.TaskRunResult,
 	request reconcile.Request,
 ) {
@@ -38,9 +38,9 @@ func UpdateBuildRunUsingTaskResults(
 	updateBuildRunStatusWithOutputResult(ctx, buildRun, taskRunResult, request)
 }
 
-func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *build.BuildRun, taskRunResult []pipelineapi.TaskRunResult, request reconcile.Request) {
+func updateBuildRunStatusWithOutputResult(ctx context.Context, buildRun *buildapi.BuildRun, taskRunResult []pipelineapi.TaskRunResult, request reconcile.Request) {
 	if buildRun.Status.Output == nil {
-		buildRun.Status.Output = &build.Output{}
+		buildRun.Status.Output = &buildapi.Output{}
 	}
 
 	for _, result := range taskRunResult {
@@ -81,8 +81,8 @@ func getTaskSpecResults() []pipelineapi.TaskResult {
 	}
 }
 
-func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []build.Vulnerability {
-	var vulns []build.Vulnerability
+func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []buildapi.Vulnerability {
+	var vulns []buildapi.Vulnerability
 	if len(result.Value.StringVal) == 0 {
 		return vulns
 	}
@@ -91,7 +91,7 @@ func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []build.Vul
 	for _, vulnerability := range vulnerabilities {
 		vuln := strings.Split(vulnerability, ":")
 		severity := getSeverity(vuln[1])
-		vulns = append(vulns, build.Vulnerability{
+		vulns = append(vulns, buildapi.Vulnerability{
 			ID:       vuln[0],
 			Severity: severity,
 		})
@@ -99,17 +99,17 @@ func getImageVulnerabilitiesResult(result pipelineapi.TaskRunResult) []build.Vul
 	return vulns
 }
 
-func getSeverity(sev string) build.VulnerabilitySeverity {
+func getSeverity(sev string) buildapi.VulnerabilitySeverity {
 	switch strings.ToUpper(sev) {
 	case "L":
-		return build.Low
+		return buildapi.Low
 	case "M":
-		return build.Medium
+		return buildapi.Medium
 	case "H":
-		return build.High
+		return buildapi.High
 	case "C":
-		return build.Critical
+		return buildapi.Critical
 	default:
-		return build.Unknown
+		return buildapi.Unknown
 	}
 }

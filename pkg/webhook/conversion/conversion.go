@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"github.com/munnerz/goautoneg"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 var scheme = runtime.NewScheme()

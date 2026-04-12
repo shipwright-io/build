@@ -16,17 +16,16 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
-	knativeapis "knative.dev/pkg/apis"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	knativeapis "knative.dev/pkg/apis"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	resources "github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	utils "github.com/shipwright-io/build/test/utils/v1alpha1"
@@ -40,7 +39,7 @@ func removeTestIDSuffix(id string) string {
 	return id[:len(id)-6]
 }
 
-func createBuild(testBuild *utils.TestBuild, identifier string, filePath string) *buildv1alpha1.Build {
+func createBuild(testBuild *utils.TestBuild, identifier string, filePath string) *buildapialpha.Build {
 	build, err := buildTestData(testBuild.Namespace, identifier, filePath)
 	Expect(err).ToNot(HaveOccurred(), "Error retrieving build test data")
 
@@ -49,7 +48,7 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 	// For Builds that use a namespaces build strategy, there is a race condition: we just created the
 	// build strategy and it might be that the build controller does not yet have this in his cache
 	// and therefore marks the build as not registered with reason BuildStrategyNotFound
-	Eventually(func() buildv1alpha1.BuildReason {
+	Eventually(func() buildapialpha.BuildReason {
 		// cleanup the build of the previous try
 		if build.Status.Registered != nil && *build.Status.Registered != "" {
 			err = testBuild.DeleteBuild(build.Name)
@@ -70,13 +69,13 @@ func createBuild(testBuild *utils.TestBuild, identifier string, filePath string)
 		Expect(err).ToNot(HaveOccurred())
 
 		return *build.Status.Reason
-	}, time.Duration(10*time.Second), time.Second).Should(Equal(buildv1alpha1.SucceedStatus))
+	}, time.Duration(10*time.Second), time.Second).Should(Equal(buildapialpha.SucceedStatus))
 
 	return build
 }
 
 // amendOutputImage amend container image URL based on informed image repository.
-func amendOutputImage(b *buildv1alpha1.Build, imageRepo string, insecure bool) {
+func amendOutputImage(b *buildapialpha.Build, imageRepo string, insecure bool) {
 	if imageRepo == "" {
 		return
 	}
@@ -92,7 +91,7 @@ func amendOutputImage(b *buildv1alpha1.Build, imageRepo string, insecure bool) {
 }
 
 // amendOutputCredentials amend secret-ref for output image.
-func amendOutputCredentials(b *buildv1alpha1.Build, secretName string) {
+func amendOutputCredentials(b *buildapialpha.Build, secretName string) {
 	if secretName == "" {
 		return
 	}
@@ -101,7 +100,7 @@ func amendOutputCredentials(b *buildv1alpha1.Build, secretName string) {
 }
 
 // amendSourceSecretName patch Build source.Credentials with secret name.
-func amendSourceSecretName(b *buildv1alpha1.Build, secretName string) {
+func amendSourceSecretName(b *buildapialpha.Build, secretName string) {
 	if secretName == "" {
 		return
 	}
@@ -109,7 +108,7 @@ func amendSourceSecretName(b *buildv1alpha1.Build, secretName string) {
 }
 
 // amendSourceURL patch Build source.URL with informed string.
-func amendSourceURL(b *buildv1alpha1.Build, sourceURL string) {
+func amendSourceURL(b *buildapialpha.Build, sourceURL string) {
 	if sourceURL == "" {
 		return
 	}
@@ -117,7 +116,7 @@ func amendSourceURL(b *buildv1alpha1.Build, sourceURL string) {
 }
 
 // amendBuild make changes on build object.
-func amendBuild(identifier string, b *buildv1alpha1.Build) {
+func amendBuild(identifier string, b *buildapialpha.Build) {
 	if strings.Contains(identifier, "github") {
 		amendSourceSecretName(b, os.Getenv(EnvVarSourceURLSecret))
 		amendSourceURL(b, os.Getenv(EnvVarSourceURLGithub))
@@ -139,14 +138,14 @@ func amendBuild(identifier string, b *buildv1alpha1.Build) {
 }
 
 // retrieveBuildAndBuildRun will retrieve the build and buildRun
-func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildv1alpha1.Build, *buildv1alpha1.BuildRun, error) {
+func retrieveBuildAndBuildRun(testBuild *utils.TestBuild, namespace string, buildRunName string) (*buildapialpha.Build, *buildapialpha.BuildRun, error) {
 	buildRun, err := testBuild.LookupBuildRun(types.NamespacedName{Name: buildRunName, Namespace: namespace})
 	if err != nil {
 		Logf("Failed to get BuildRun %q: %s", buildRunName, err)
 		return nil, nil, err
 	}
 
-	var build buildv1alpha1.Build
+	var build buildapialpha.Build
 	if err := GetBuildObject(testBuild.Context, testBuild.ControllerRuntimeClient, buildRun, &build); err != nil {
 		Logf("Failed to get Build from BuildRun %s: %s", buildRunName, err)
 		return nil, buildRun, err
@@ -180,7 +179,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 	}
 
 	if buildRun != nil {
-		brCondition := buildRun.Status.GetCondition(buildv1alpha1.Succeeded)
+		brCondition := buildRun.Status.GetCondition(buildapialpha.Succeeded)
 		if brCondition != nil {
 			Logf("The status of BuildRun %s: status=%s, reason=%s", buildRun.Name, brCondition.Status, brCondition.Reason)
 		}
@@ -217,7 +216,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 		} else {
 			podList, err := testBuild.Clientset.CoreV1().Pods(namespace).List(testBuild.Context, metav1.ListOptions{
 				LabelSelector: labels.FormatLabels(map[string]string{
-					buildv1alpha1.LabelBuildRun: buildRunName,
+					buildapialpha.LabelBuildRun: buildRunName,
 				}),
 			})
 
@@ -260,7 +259,7 @@ func printTestFailureDebugInfo(testBuild *utils.TestBuild, namespace string, bui
 }
 
 // GetBuildObject retrieves an existing Build based on a name and namespace
-func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, build *buildv1alpha1.Build) error {
+func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildapialpha.BuildRun, build *buildapialpha.Build) error {
 	// Option #1: BuildRef is specified
 	// An actual Build resource is specified by name and needs to be looked up in the cluster.
 	if buildRun.Spec.BuildRef != nil && buildRun.Spec.BuildRef.Name != "" {
@@ -281,7 +280,7 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 	if buildRun.Spec.BuildSpec != nil {
 		build.Name = ""
 		build.Namespace = buildRun.Namespace
-		build.Status = buildv1alpha1.BuildStatus{}
+		build.Status = buildapialpha.BuildStatus{}
 		buildRun.Spec.BuildSpec.DeepCopyInto(&build.Spec)
 		return nil
 	}
@@ -290,12 +289,12 @@ func GetBuildObject(ctx context.Context, client client.Client, buildRun *buildv1
 	return fmt.Errorf("invalid BuildRun resource that neither has a BuildRef nor an embedded BuildSpec")
 }
 
-func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildv1alpha1.BuildRun, errorMessage string, reason string) error {
+func UpdateConditionWithFalseStatus(ctx context.Context, client client.Client, buildRun *buildapialpha.BuildRun, errorMessage string, reason string) error {
 	now := metav1.Now()
 	buildRun.Status.CompletionTime = &now
-	buildRun.Status.SetCondition(&buildv1alpha1.Condition{
+	buildRun.Status.SetCondition(&buildapialpha.Condition{
 		LastTransitionTime: now,
-		Type:               buildv1alpha1.Succeeded,
+		Type:               buildapialpha.Succeeded,
 		Status:             corev1.ConditionFalse,
 		Reason:             reason,
 		Message:            errorMessage,

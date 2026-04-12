@@ -9,19 +9,18 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
 var _ = Describe("Env", func() {
 	Context("ValidatePath", func() {
 		It("should fail in case of empty env var name", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
 					Env: []corev1.EnvVar{
 						{
 							Name:  "",
@@ -33,13 +32,13 @@ var _ = Describe("Env", func() {
 
 			err := validate.NewEnv(b).ValidatePath(context.TODO())
 			Expect(err).To(HaveOccurred())
-			Expect(b.Status.Reason).To(Equal(ptr.To[build.BuildReason](build.SpecEnvNameCanNotBeBlank)))
+			Expect(b.Status.Reason).To(Equal(ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameCanNotBeBlank)))
 			Expect(b.Status.Message).To(Equal(ptr.To("name for environment variable must not be blank")))
 		})
 
 		It("should fail in case of specifying both value and valueFrom", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
 					Env: []corev1.EnvVar{
 						{
 							Name:  "some-name",
@@ -56,13 +55,13 @@ var _ = Describe("Env", func() {
 
 			err := validate.NewEnv(b).ValidatePath(context.TODO())
 			Expect(err).To(HaveOccurred())
-			Expect(b.Status.Reason).To(Equal(ptr.To[build.BuildReason](build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)))
+			Expect(b.Status.Reason).To(Equal(ptr.To[buildapi.BuildReason](buildapi.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)))
 			Expect(b.Status.Message).To(Equal(ptr.To("only one of value or valueFrom must be specified")))
 		})
 
 		It("should pass in case no env var are set", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{},
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{},
 			}
 
 			err := validate.NewEnv(b).ValidatePath(context.TODO())
@@ -70,8 +69,8 @@ var _ = Describe("Env", func() {
 		})
 
 		It("should pass in case of compliant env var", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
 					Env: []corev1.EnvVar{
 						{
 							Name:  "some-name",
@@ -86,8 +85,8 @@ var _ = Describe("Env", func() {
 		})
 
 		It("should pass in case of compliant env var using valueFrom", func() {
-			b := &build.Build{
-				Spec: build.BuildSpec{
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
 					Env: []corev1.EnvVar{
 						{
 							Name: "some-name",

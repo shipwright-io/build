@@ -13,9 +13,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/webhook/conversion"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +20,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/utils/ptr"
+
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/webhook/conversion"
 )
 
 func getConversionReview(o string) (apiextensionsv1.ConversionReview, error) {
@@ -102,7 +103,7 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1alpha1 Build
-			desiredBuild := v1alpha1.Build{
+			desiredBuild := buildapialpha.Build{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "Build",
@@ -110,26 +111,26 @@ request:
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
 				},
-				Spec: v1alpha1.BuildSpec{
-					Source: v1alpha1.Source{},
-					Sources: []v1alpha1.BuildSource{
+				Spec: buildapialpha.BuildSpec{
+					Source: buildapialpha.Source{},
+					Sources: []buildapialpha.BuildSource{
 						{
 							Name: "foobar_local",
-							Type: v1alpha1.LocalCopy,
+							Type: buildapialpha.LocalCopy,
 							Timeout: &v1.Duration{
 								Duration: 1 * time.Minute,
 							},
 						},
 					},
-					Strategy: v1alpha1.Strategy{
+					Strategy: buildapialpha.Strategy{
 						Name: strategyName,
-						Kind: (*v1alpha1.BuildStrategyKind)(&strategyKind),
+						Kind: (*buildapialpha.BuildStrategyKind)(&strategyKind),
 					},
 				},
-				Status: v1alpha1.BuildStatus{
+				Status: buildapialpha.BuildStatus{
 					Message:    ptr.To("all validations succeeded"),
-					Reason:     v1alpha1.BuildReasonPtr(v1alpha1.SucceedStatus),
-					Registered: v1alpha1.ConditionStatusPtr(corev1.ConditionTrue),
+					Reason:     buildapialpha.BuildReasonPtr(buildapialpha.SucceedStatus),
+					Registered: buildapialpha.ConditionStatusPtr(corev1.ConditionTrue),
 				},
 			}
 
@@ -192,8 +193,8 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1alpha1 Build
-			s := v1alpha1.PruneAfterPull
-			desiredBuild := v1alpha1.Build{
+			s := buildapialpha.PruneAfterPull
+			desiredBuild := buildapialpha.Build{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "Build",
@@ -201,9 +202,9 @@ request:
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
 				},
-				Spec: v1alpha1.BuildSpec{
-					Source: v1alpha1.Source{
-						BundleContainer: &v1alpha1.BundleContainer{
+				Spec: buildapialpha.BuildSpec{
+					Source: buildapialpha.Source{
+						BundleContainer: &buildapialpha.BundleContainer{
 							Image: image,
 							Prune: &s,
 						},
@@ -212,18 +213,18 @@ request:
 						},
 						ContextDir: &ctxDir,
 					},
-					Strategy: v1alpha1.Strategy{
+					Strategy: buildapialpha.Strategy{
 						Name: strategyName,
-						Kind: (*v1alpha1.BuildStrategyKind)(&strategyKind),
+						Kind: (*buildapialpha.BuildStrategyKind)(&strategyKind),
 					},
-					Trigger: &v1alpha1.Trigger{
-						When: []v1alpha1.TriggerWhen{
+					Trigger: &buildapialpha.Trigger{
+						When: []buildapialpha.TriggerWhen{
 							{
 								Name: "",
-								Type: v1alpha1.GitHubWebHookTrigger,
-								GitHub: &v1alpha1.WhenGitHub{
-									Events: []v1alpha1.GitHubEventName{
-										v1alpha1.GitHubPushEvent,
+								Type: buildapialpha.GitHubWebHookTrigger,
+								GitHub: &buildapialpha.WhenGitHub{
+									Events: []buildapialpha.GitHubEventName{
+										buildapialpha.GitHubPushEvent,
 									},
 									Branches: []string{
 										branchMain,
@@ -305,7 +306,7 @@ request:
 			valDisable := "disabled"
 			dockerfileVal := "Dockerfilefoobar"
 			b := "NPM_AUTH_TOKEN=${SECRET_VALUE}"
-			desiredBuild := v1alpha1.Build{
+			desiredBuild := buildapialpha.Build{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "Build",
@@ -313,11 +314,11 @@ request:
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
 					Annotations: map[string]string{
-						v1alpha1.AnnotationBuildRunDeletion: "true",
+						buildapialpha.AnnotationBuildRunDeletion: "true",
 					},
 				},
-				Spec: v1alpha1.BuildSpec{
-					Source: v1alpha1.Source{
+				Spec: buildapialpha.BuildSpec{
+					Source: buildapialpha.Source{
 						URL: &url,
 						Credentials: &corev1.LocalObjectReference{
 							Name: secretName,
@@ -326,27 +327,27 @@ request:
 						ContextDir: &ctxDir,
 					},
 					Dockerfile: &dockerfileVal,
-					Strategy: v1alpha1.Strategy{
+					Strategy: buildapialpha.Strategy{
 						Name: strategyName,
-						Kind: (*v1alpha1.BuildStrategyKind)(&strategyKind),
+						Kind: (*buildapialpha.BuildStrategyKind)(&strategyKind),
 					},
 					Timeout: &v1.Duration{
 						Duration: 10 * time.Minute,
 					},
-					ParamValues: []v1alpha1.ParamValue{
+					ParamValues: []buildapialpha.ParamValue{
 						{
 							Name: "foo1",
-							SingleValue: &v1alpha1.SingleValue{
+							SingleValue: &buildapialpha.SingleValue{
 								Value: &valDisable,
 							},
 						},
 						{
 							Name: "foo2",
 							// todo: figure out why we need to set this one
-							SingleValue: &v1alpha1.SingleValue{},
-							Values: []v1alpha1.SingleValue{
+							SingleValue: &buildapialpha.SingleValue{},
+							Values: []buildapialpha.SingleValue{
 								{
-									SecretValue: &v1alpha1.ObjectKeyRef{
+									SecretValue: &buildapialpha.ObjectKeyRef{
 										Name:   "npm-registry-access",
 										Key:    "npm-auth-token",
 										Format: &b,
@@ -355,7 +356,7 @@ request:
 							},
 						},
 					},
-					Output: v1alpha1.Image{
+					Output: buildapialpha.Image{
 						Image: image,
 						Credentials: &corev1.LocalObjectReference{
 							Name: secretName,
@@ -420,7 +421,7 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1alpha1 Build
-			desiredBuild := v1alpha1.Build{
+			desiredBuild := buildapialpha.Build{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "Build",
@@ -428,8 +429,8 @@ request:
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
 				},
-				Spec: v1alpha1.BuildSpec{
-					Source: v1alpha1.Source{
+				Spec: buildapialpha.BuildSpec{
+					Source: buildapialpha.Source{
 						URL: &url,
 						Credentials: &corev1.LocalObjectReference{
 							Name: secretName,
@@ -437,11 +438,11 @@ request:
 						Revision:   &revision,
 						ContextDir: &ctxDir,
 					},
-					Strategy: v1alpha1.Strategy{
+					Strategy: buildapialpha.Strategy{
 						Name: strategyName,
-						Kind: (*v1alpha1.BuildStrategyKind)(&strategyKind),
+						Kind: (*buildapialpha.BuildStrategyKind)(&strategyKind),
 					},
-					Retention: &v1alpha1.BuildRetention{
+					Retention: &buildapialpha.BuildRetention{
 						FailedLimit:    &limit,
 						SucceededLimit: &limit,
 						TTLAfterFailed: &v1.Duration{
@@ -451,7 +452,7 @@ request:
 							Duration: time.Minute * 30,
 						},
 					},
-					Volumes: []v1alpha1.BuildVolume{
+					Volumes: []buildapialpha.BuildVolume{
 						{
 							Name: "gocache",
 							VolumeSource: corev1.VolumeSource{
@@ -516,7 +517,7 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1beta1 Build
-			desiredBuild := v1beta1.Build{
+			desiredBuild := buildapi.Build{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: "shipwright.io/v1beta1",
 					Kind:       "Build",
@@ -524,10 +525,10 @@ request:
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
 				},
-				Spec: v1beta1.BuildSpec{
-					Source: &v1beta1.Source{
-						Type: v1beta1.LocalType,
-						Local: &v1beta1.Local{
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type: buildapi.LocalType,
+						Local: &buildapi.Local{
 							Name: "foobar_local",
 							Timeout: &v1.Duration{
 								Duration: 1 * time.Minute,
@@ -609,9 +610,9 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1beta1 Build
-			pruneNever := v1beta1.PruneNever
+			pruneNever := buildapi.PruneNever
 			dockerfileVal := "Dockerfile"
-			desiredBuild := v1beta1.Build{
+			desiredBuild := buildapi.Build{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: "shipwright.io/v1beta1",
 					Kind:       "Build",
@@ -619,35 +620,35 @@ request:
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
 				},
-				Spec: v1beta1.BuildSpec{
-					Source: &v1beta1.Source{
-						Type:       v1beta1.OCIArtifactType,
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type:       buildapi.OCIArtifactType,
 						ContextDir: &ctxDir,
-						OCIArtifact: &v1beta1.OCIArtifact{
+						OCIArtifact: &buildapi.OCIArtifact{
 							Image:      image,
 							Prune:      &pruneNever,
 							PullSecret: &secretName,
 						},
 					},
-					ParamValues: []v1beta1.ParamValue{
+					ParamValues: []buildapi.ParamValue{
 						{
 							Name: "dockerfile",
-							SingleValue: &v1beta1.SingleValue{
+							SingleValue: &buildapi.SingleValue{
 								Value: &dockerfileVal,
 							},
 						},
 					},
-					Retention: &v1beta1.BuildRetention{
+					Retention: &buildapi.BuildRetention{
 						AtBuildDeletion: ptr.To(true),
 					},
-					Trigger: &v1beta1.Trigger{
-						When: []v1beta1.TriggerWhen{
+					Trigger: &buildapi.Trigger{
+						When: []buildapi.TriggerWhen{
 							{
 								Name: "",
-								Type: v1beta1.GitHubWebHookTrigger,
-								GitHub: &v1beta1.WhenGitHub{
-									Events: []v1beta1.GitHubEventName{
-										v1beta1.GitHubPushEvent,
+								Type: buildapi.GitHubWebHookTrigger,
+								GitHub: &buildapi.WhenGitHub{
+									Events: []buildapi.GitHubEventName{
+										buildapi.GitHubPushEvent,
 									},
 									Branches: []string{
 										branchMain,
@@ -661,7 +662,7 @@ request:
 					Timeout: &v1.Duration{
 						Duration: time.Minute * 10,
 					},
-					Output: v1beta1.Image{
+					Output: buildapi.Image{
 						Image:      image,
 						PushSecret: &secretName,
 						Labels: map[string]string{
@@ -728,7 +729,7 @@ request:
 			// Prepare our desired v1beta1 Build
 			valDisable := "disabled"
 			b := "NPM_AUTH_TOKEN=${SECRET_VALUE}"
-			desiredBuild := v1beta1.Build{
+			desiredBuild := buildapi.Build{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: "shipwright.io/v1beta1",
 					Kind:       "Build",
@@ -736,30 +737,30 @@ request:
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-build",
 				},
-				Spec: v1beta1.BuildSpec{
-					Source: &v1beta1.Source{
-						Type:       v1beta1.GitType,
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type:       buildapi.GitType,
 						ContextDir: &ctxDir,
-						Git: &v1beta1.Git{
+						Git: &buildapi.Git{
 							URL:         url,
 							Revision:    &revision,
 							CloneSecret: &secretName,
 						},
 					},
-					ParamValues: []v1beta1.ParamValue{
+					ParamValues: []buildapi.ParamValue{
 						{
 							Name: "foo1",
-							SingleValue: &v1beta1.SingleValue{
+							SingleValue: &buildapi.SingleValue{
 								Value: &valDisable,
 							},
 						},
 						{
 							Name: "foo2",
 							// todo: figure out why we need to set this one
-							SingleValue: &v1beta1.SingleValue{},
-							Values: []v1beta1.SingleValue{
+							SingleValue: &buildapi.SingleValue{},
+							Values: []buildapi.SingleValue{
 								{
-									SecretValue: &v1beta1.ObjectKeyRef{
+									SecretValue: &buildapi.ObjectKeyRef{
 										Name:   "npm-registry-access",
 										Key:    "npm-auth-token",
 										Format: &b,
@@ -815,7 +816,7 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1alpha1 BuildRun
-			desiredBuildRun := v1alpha1.BuildRun{
+			desiredBuildRun := buildapialpha.BuildRun{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-run",
 				},
@@ -823,20 +824,20 @@ request:
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "BuildRun",
 				},
-				Spec: v1alpha1.BuildRunSpec{
-					BuildRef: &v1alpha1.BuildRef{
+				Spec: buildapialpha.BuildRunSpec{
+					BuildRef: &buildapialpha.BuildRef{
 						Name: "a_build",
 					},
-					Sources: []v1alpha1.BuildSource{
+					Sources: []buildapialpha.BuildSource{
 						{
 							Name: "foobar_local",
-							Type: v1alpha1.LocalCopy,
+							Type: buildapialpha.LocalCopy,
 							Timeout: &v1.Duration{
 								Duration: 1 * time.Minute,
 							},
 						},
 					},
-					ServiceAccount: &v1alpha1.ServiceAccount{},
+					ServiceAccount: &buildapialpha.ServiceAccount{},
 				},
 			}
 
@@ -908,9 +909,9 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1alpha1 BuildRun
-			s := v1alpha1.PruneAfterPull
+			s := buildapialpha.PruneAfterPull
 			paramVal := "bar"
-			desiredBuildRun := v1alpha1.BuildRun{
+			desiredBuildRun := buildapialpha.BuildRun{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-run",
 				},
@@ -918,10 +919,10 @@ request:
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "BuildRun",
 				},
-				Spec: v1alpha1.BuildRunSpec{
-					BuildSpec: &v1alpha1.BuildSpec{
-						Source: v1alpha1.Source{
-							BundleContainer: &v1alpha1.BundleContainer{
+				Spec: buildapialpha.BuildRunSpec{
+					BuildSpec: &buildapialpha.BuildSpec{
+						Source: buildapialpha.Source{
+							BundleContainer: &buildapialpha.BundleContainer{
 								Image: image,
 								Prune: &s,
 							},
@@ -931,21 +932,21 @@ request:
 							},
 						},
 					},
-					ServiceAccount: &v1alpha1.ServiceAccount{
+					ServiceAccount: &buildapialpha.ServiceAccount{
 						Name: &sa,
 					},
 					Timeout: &v1.Duration{
 						Duration: time.Minute * 10,
 					},
-					ParamValues: []v1alpha1.ParamValue{
+					ParamValues: []buildapialpha.ParamValue{
 						{
 							Name: "foobar",
-							SingleValue: &v1alpha1.SingleValue{
+							SingleValue: &buildapialpha.SingleValue{
 								Value: &paramVal,
 							},
 						},
 					},
-					Output: &v1alpha1.Image{
+					Output: &buildapialpha.Image{
 						Image: image,
 						Credentials: &corev1.LocalObjectReference{
 							Name: secretName,
@@ -963,12 +964,12 @@ request:
 							Value: "two",
 						},
 					},
-					Retention: &v1alpha1.BuildRunRetention{
+					Retention: &buildapialpha.BuildRunRetention{
 						TTLAfterFailed: &v1.Duration{
 							Duration: time.Minute * 10,
 						},
 					},
-					Volumes: []v1alpha1.BuildVolume{
+					Volumes: []buildapialpha.BuildVolume{
 						{
 							Name: "volume1",
 							VolumeSource: corev1.VolumeSource{
@@ -1017,7 +1018,7 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1alpha1 BuildRun
-			desiredBuildRun := v1alpha1.BuildRun{
+			desiredBuildRun := buildapialpha.BuildRun{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-run",
 				},
@@ -1025,11 +1026,11 @@ request:
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "BuildRun",
 				},
-				Spec: v1alpha1.BuildRunSpec{
-					BuildRef: &v1alpha1.BuildRef{
+				Spec: buildapialpha.BuildRunSpec{
+					BuildRef: &buildapialpha.BuildRef{
 						Name: refBuild,
 					},
-					ServiceAccount: &v1alpha1.ServiceAccount{
+					ServiceAccount: &buildapialpha.ServiceAccount{
 						Name: &sa,
 					},
 				},
@@ -1110,8 +1111,8 @@ request:
 			Expect(err).To(BeNil())
 			startTime, err := time.Parse(time.RFC3339, "2023-10-17T07:31:55Z")
 			Expect(err).To(BeNil())
-			buildStrategyKind := v1alpha1.BuildStrategyKind(v1alpha1.ClusterBuildStrategyKind)
-			desiredBuildRun := v1alpha1.BuildRun{
+			buildStrategyKind := buildapialpha.BuildStrategyKind(buildapialpha.ClusterBuildStrategyKind)
+			desiredBuildRun := buildapialpha.BuildRun{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-run",
 				},
@@ -1119,34 +1120,34 @@ request:
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "BuildRun",
 				},
-				Spec: v1alpha1.BuildRunSpec{
-					BuildRef: &v1alpha1.BuildRef{
+				Spec: buildapialpha.BuildRunSpec{
+					BuildRef: &buildapialpha.BuildRef{
 						Name: "a_build",
 					},
-					Sources: []v1alpha1.BuildSource{
+					Sources: []buildapialpha.BuildSource{
 						{
 							Name: "foobar_local",
-							Type: v1alpha1.LocalCopy,
+							Type: buildapialpha.LocalCopy,
 							Timeout: &v1.Duration{
 								Duration: 1 * time.Minute,
 							},
 						},
 					},
-					ServiceAccount: &v1alpha1.ServiceAccount{},
+					ServiceAccount: &buildapialpha.ServiceAccount{},
 				},
-				Status: v1alpha1.BuildRunStatus{
-					BuildSpec: &v1alpha1.BuildSpec{
-						Source: v1alpha1.Source{
+				Status: buildapialpha.BuildRunStatus{
+					BuildSpec: &buildapialpha.BuildSpec{
+						Source: buildapialpha.Source{
 							URL: ptr.To("https://github.com/shipwright-io/sample-go"),
 						},
 						Dockerfile: ptr.To("Dockerfile"),
-						Output: v1alpha1.Image{
+						Output: buildapialpha.Image{
 							Image: "somewhere",
 							Credentials: &corev1.LocalObjectReference{
 								Name: "some-secret",
 							},
 						},
-						Strategy: v1alpha1.Strategy{
+						Strategy: buildapialpha.Strategy{
 							Kind: &buildStrategyKind,
 							Name: "buildkit",
 						},
@@ -1157,22 +1158,22 @@ request:
 					CompletionTime: &v1.Time{
 						Time: completionTime,
 					},
-					Conditions: v1alpha1.Conditions{{
+					Conditions: buildapialpha.Conditions{{
 						LastTransitionTime: v1.Time{
 							Time: completionTime,
 						},
 						Message: "All Steps have completed executing",
 						Reason:  "Succeeded",
 						Status:  corev1.ConditionTrue,
-						Type:    v1alpha1.Succeeded,
+						Type:    buildapialpha.Succeeded,
 					}},
 					LatestTaskRunRef: ptr.To("buildkit-run-n5sxr"),
-					Output: &v1alpha1.Output{
+					Output: &buildapialpha.Output{
 						Digest: "sha256:9befa6f5f7142a5bf92174b54bb6e0a1dd04e5252aa9dc8f6962f6da966f68a8",
 					},
-					Sources: []v1alpha1.SourceResult{{
+					Sources: []buildapialpha.SourceResult{{
 						Name: "default",
-						Git: &v1alpha1.GitSourceResult{
+						Git: &buildapialpha.GitSourceResult{
 							CommitAuthor: "somebody",
 							CommitSha:    "6a45e68454ca0f319b1a82c65bea09a10fa9eec6",
 						},
@@ -1225,7 +1226,7 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1alpha1 BuildRun
-			desiredBuildRun := v1beta1.BuildRun{
+			desiredBuildRun := buildapi.BuildRun{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-run",
 				},
@@ -1233,13 +1234,13 @@ request:
 					APIVersion: "shipwright.io/v1beta1",
 					Kind:       "BuildRun",
 				},
-				Spec: v1beta1.BuildRunSpec{
-					Build: v1beta1.ReferencedBuild{
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
 						Name: ptr.To("a_build"),
 					},
-					Source: &v1beta1.BuildRunSource{
-						Type: v1beta1.LocalType,
-						Local: &v1beta1.Local{
+					Source: &buildapi.BuildRunSource{
+						Type: buildapi.LocalType,
+						Local: &buildapi.Local{
 							Name: "foobar_local",
 							Timeout: &v1.Duration{
 								Duration: 1 * time.Minute,
@@ -1287,7 +1288,7 @@ request:
 			Expect(err).To(BeNil())
 
 			// Prepare our desired v1beta1 BuildRun
-			desiredBuildRun := v1beta1.BuildRun{
+			desiredBuildRun := buildapi.BuildRun{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-run",
 				},
@@ -1295,12 +1296,12 @@ request:
 					APIVersion: "shipwright.io/v1beta1",
 					Kind:       "BuildRun",
 				},
-				Spec: v1beta1.BuildRunSpec{
-					Build: v1beta1.ReferencedBuild{
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
 						Name: ptr.To("a_build"),
 					},
 					ServiceAccount: ptr.To(".generate"),
-					Output: &v1beta1.Image{
+					Output: &buildapi.Image{
 						Image: "foobar",
 					},
 				},
@@ -1365,7 +1366,7 @@ request:
 			// Prepare our desired v1alpha1 BuildRun
 			sa := "foobar"
 			paramVal := "registry"
-			desiredBuildRun := v1beta1.BuildRun{
+			desiredBuildRun := buildapi.BuildRun{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit-run",
 				},
@@ -1373,23 +1374,23 @@ request:
 					APIVersion: "shipwright.io/v1beta1",
 					Kind:       "BuildRun",
 				},
-				Spec: v1beta1.BuildRunSpec{
-					Build: v1beta1.ReferencedBuild{
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
 						Name: ptr.To("a_build"),
 					},
 					ServiceAccount: &sa,
 					Timeout: &v1.Duration{
 						Duration: 10 * time.Minute,
 					},
-					ParamValues: []v1beta1.ParamValue{
+					ParamValues: []buildapi.ParamValue{
 						{
 							Name: "cache",
-							SingleValue: &v1beta1.SingleValue{
+							SingleValue: &buildapi.SingleValue{
 								Value: &paramVal,
 							},
 						},
 					},
-					Output: &v1beta1.Image{
+					Output: &buildapi.Image{
 						Image: "foobar",
 						Labels: map[string]string{
 							"foo": "bar",
@@ -1402,7 +1403,7 @@ request:
 							Value: "bar",
 						},
 					},
-					Retention: &v1beta1.BuildRunRetention{
+					Retention: &buildapi.BuildRunRetention{
 						TTLAfterFailed: &v1.Duration{
 							Duration: time.Minute * 10,
 						},
@@ -1410,7 +1411,7 @@ request:
 							Duration: time.Minute * 10,
 						},
 					},
-					Volumes: []v1beta1.BuildVolume{
+					Volumes: []buildapi.BuildVolume{
 						{
 							Name: "volume-name",
 							VolumeSource: corev1.VolumeSource{
@@ -1490,7 +1491,7 @@ request:
 			// Prepare our desired v1alpha1 BuildStrategy
 			privileged := false
 			volDescription := "nonedescription"
-			desiredBuildStrategy := v1alpha1.BuildStrategy{
+			desiredBuildStrategy := buildapialpha.BuildStrategy{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit",
 				},
@@ -1498,8 +1499,8 @@ request:
 					APIVersion: "shipwright.io/v1alpha1",
 					Kind:       "BuildStrategy",
 				},
-				Spec: v1alpha1.BuildStrategySpec{
-					BuildSteps: []v1alpha1.BuildStep{
+				Spec: buildapialpha.BuildStrategySpec{
+					BuildSteps: []buildapialpha.BuildStep{
 						{
 							Container: corev1.Container{
 								Name:    "step-foobar",
@@ -1512,23 +1513,23 @@ request:
 							},
 						},
 					},
-					Parameters: []v1alpha1.Parameter{
+					Parameters: []buildapialpha.Parameter{
 						{
 							Name:        "param_one",
 							Description: "foobar",
-							Type:        v1alpha1.ParameterTypeString,
+							Type:        buildapialpha.ParameterTypeString,
 						},
 						{
 							Name:        "param_two",
 							Description: "foobar",
-							Type:        v1alpha1.ParameterTypeArray,
+							Type:        buildapialpha.ParameterTypeArray,
 						},
 					},
-					SecurityContext: &v1alpha1.BuildStrategySecurityContext{
+					SecurityContext: &buildapialpha.BuildStrategySecurityContext{
 						RunAsUser:  1000,
 						RunAsGroup: 1000,
 					},
-					Volumes: []v1alpha1.BuildStrategyVolume{
+					Volumes: []buildapialpha.BuildStrategyVolume{
 						{
 							Name:        "foobar",
 							Overridable: &privileged,
@@ -1598,7 +1599,7 @@ request:
 			// Prepare our desired v1alpha1 BuildStrategy
 			privileged := false
 			volDescription := "nonedescription"
-			desiredBuildStrategy := v1beta1.BuildStrategy{
+			desiredBuildStrategy := buildapi.BuildStrategy{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "buildkit",
 				},
@@ -1606,8 +1607,8 @@ request:
 					APIVersion: "shipwright.io/v1beta1",
 					Kind:       "BuildStrategy",
 				},
-				Spec: v1beta1.BuildStrategySpec{
-					Steps: []v1beta1.Step{
+				Spec: buildapi.BuildStrategySpec{
+					Steps: []buildapi.Step{
 						{
 							Name:    "step-foobar",
 							Command: []string{"some-command"},
@@ -1618,29 +1619,29 @@ request:
 							},
 						},
 					},
-					Parameters: []v1beta1.Parameter{
+					Parameters: []buildapi.Parameter{
 						{
 							Name:        "param_one",
 							Description: "foobar",
-							Type:        v1beta1.ParameterTypeString,
+							Type:        buildapi.ParameterTypeString,
 						},
 						{
 							Name:        "param_two",
 							Description: "foobar",
-							Type:        v1beta1.ParameterTypeArray,
+							Type:        buildapi.ParameterTypeArray,
 						},
 						{
 							Name:        "dockerfile",
 							Description: "The Dockerfile to be built.",
-							Type:        v1beta1.ParameterTypeString,
+							Type:        buildapi.ParameterTypeString,
 							Default:     ptr.To("Dockerfile"),
 						},
 					},
-					SecurityContext: &v1beta1.BuildStrategySecurityContext{
+					SecurityContext: &buildapi.BuildStrategySecurityContext{
 						RunAsUser:  1000,
 						RunAsGroup: 1000,
 					},
-					Volumes: []v1beta1.BuildStrategyVolume{
+					Volumes: []buildapi.BuildStrategyVolume{
 						{
 							Name:        "foobar",
 							Overridable: &privileged,
@@ -1667,8 +1668,8 @@ func ToUnstructured(conversionReview apiextensionsv1.ConversionReview) (unstruct
 	return convertedObj, nil
 }
 
-func toV1Alpha1BuildObject(convertedObject unstructured.Unstructured) (v1alpha1.Build, error) {
-	var build v1alpha1.Build
+func toV1Alpha1BuildObject(convertedObject unstructured.Unstructured) (buildapialpha.Build, error) {
+	var build buildapialpha.Build
 	u := convertedObject.UnstructuredContent()
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, &build); err != nil {
 		return build, err
@@ -1676,8 +1677,8 @@ func toV1Alpha1BuildObject(convertedObject unstructured.Unstructured) (v1alpha1.
 	return build, nil
 }
 
-func toV1Alpha1BuildRunObject(convertedObject unstructured.Unstructured) (v1alpha1.BuildRun, error) {
-	var build v1alpha1.BuildRun
+func toV1Alpha1BuildRunObject(convertedObject unstructured.Unstructured) (buildapialpha.BuildRun, error) {
+	var build buildapialpha.BuildRun
 	u := convertedObject.UnstructuredContent()
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, &build); err != nil {
 		return build, err
@@ -1685,8 +1686,8 @@ func toV1Alpha1BuildRunObject(convertedObject unstructured.Unstructured) (v1alph
 	return build, nil
 }
 
-func toV1Beta1BuildRunObject(convertedObject unstructured.Unstructured) (v1beta1.BuildRun, error) {
-	var build v1beta1.BuildRun
+func toV1Beta1BuildRunObject(convertedObject unstructured.Unstructured) (buildapi.BuildRun, error) {
+	var build buildapi.BuildRun
 	u := convertedObject.UnstructuredContent()
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, &build); err != nil {
 		return build, err
@@ -1694,8 +1695,8 @@ func toV1Beta1BuildRunObject(convertedObject unstructured.Unstructured) (v1beta1
 	return build, nil
 }
 
-func toV1Beta1BuildStrategyObject(convertedObject unstructured.Unstructured) (v1beta1.BuildStrategy, error) {
-	var buildStrategy v1beta1.BuildStrategy
+func toV1Beta1BuildStrategyObject(convertedObject unstructured.Unstructured) (buildapi.BuildStrategy, error) {
+	var buildStrategy buildapi.BuildStrategy
 	u := convertedObject.UnstructuredContent()
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, &buildStrategy); err != nil {
 		return buildStrategy, err
@@ -1703,8 +1704,8 @@ func toV1Beta1BuildStrategyObject(convertedObject unstructured.Unstructured) (v1
 	return buildStrategy, nil
 }
 
-func toV1Alpha1BuildStrategyObject(convertedObject unstructured.Unstructured) (v1alpha1.BuildStrategy, error) {
-	var buildStrategy v1alpha1.BuildStrategy
+func toV1Alpha1BuildStrategyObject(convertedObject unstructured.Unstructured) (buildapialpha.BuildStrategy, error) {
+	var buildStrategy buildapialpha.BuildStrategy
 	u := convertedObject.UnstructuredContent()
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, &buildStrategy); err != nil {
 		return buildStrategy, err
@@ -1712,8 +1713,8 @@ func toV1Alpha1BuildStrategyObject(convertedObject unstructured.Unstructured) (v
 	return buildStrategy, nil
 }
 
-func toV1Beta1BuildObject(convertedObject unstructured.Unstructured) (v1beta1.Build, error) {
-	var build v1beta1.Build
+func toV1Beta1BuildObject(convertedObject unstructured.Unstructured) (buildapi.Build, error) {
+	var build buildapi.Build
 	u := convertedObject.UnstructuredContent()
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, &build); err != nil {
 		return build, err

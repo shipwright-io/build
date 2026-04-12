@@ -7,15 +7,14 @@ package steps_test
 import (
 	"fmt"
 
-	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
-
-	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/steps"
 )
 
 var _ = Describe("UpdateSecurityContext", func() {

@@ -15,11 +15,12 @@ import (
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/onsi/gomega"
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
+
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
-func getImageURL(buildRun *buildv1alpha1.BuildRun) string {
+func getImageURL(buildRun *buildapialpha.BuildRun) string {
 	image := ""
 	if buildRun.Spec.Output != nil {
 		image = buildRun.Spec.Output.Image
@@ -40,7 +41,7 @@ func getImageURL(buildRun *buildv1alpha1.BuildRun) string {
 }
 
 // GetImage loads the image manifest for the image produced by a BuildRun
-func (t *TestBuild) GetImage(buildRun *buildv1alpha1.BuildRun) containerreg.Image {
+func (t *TestBuild) GetImage(buildRun *buildapialpha.BuildRun) containerreg.Image {
 	ref, err := name.ParseReference(getImageURL(buildRun))
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
@@ -51,7 +52,7 @@ func (t *TestBuild) GetImage(buildRun *buildv1alpha1.BuildRun) containerreg.Imag
 }
 
 func (t *TestBuild) getRegistryAuthentication(
-	buildRun *buildv1alpha1.BuildRun,
+	buildRun *buildapialpha.BuildRun,
 	ref name.Reference,
 ) authn.Authenticator {
 	secretName := ""
@@ -93,7 +94,7 @@ func (t *TestBuild) getRegistryAuthentication(
 }
 
 // ValidateImagePlatformsExist that the image produced by a BuildRun exists for a set of platforms
-func (t *TestBuild) ValidateImagePlatformsExist(buildRun *buildv1alpha1.BuildRun, expectedPlatforms []containerreg.Platform) {
+func (t *TestBuild) ValidateImagePlatformsExist(buildRun *buildapialpha.BuildRun, expectedPlatforms []containerreg.Platform) {
 	ref, err := name.ParseReference(getImageURL(buildRun))
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
@@ -104,7 +105,7 @@ func (t *TestBuild) ValidateImagePlatformsExist(buildRun *buildv1alpha1.BuildRun
 }
 
 // ValidateImageDigest ensures that an image digest is set in the BuildRun status and that this digest is pointing to an image
-func (t *TestBuild) ValidateImageDigest(buildRun *buildv1alpha1.BuildRun) {
+func (t *TestBuild) ValidateImageDigest(buildRun *buildapialpha.BuildRun) {
 	// Verify that the status contains a digest
 	gomega.Expect(buildRun.Status.Output).NotTo(gomega.BeNil(), ".status.output is nil")
 	gomega.Expect(buildRun.Status.Output.Digest).NotTo(gomega.Equal(""), ".status.output.digest is empty")

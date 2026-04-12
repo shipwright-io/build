@@ -12,15 +12,15 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/utils/ptr"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
-// Env implements the Env interface to add validations for the `build.spec.env` slice.
+// Env implements the Env interface to add validations for the `buildapi.spec.env` slice.
 type Env struct {
-	Build *build.Build
+	Build *buildapi.Build
 }
 
-// ValidatePath executes the validation routine, inspecting the `build.spec.env` path, which
+// ValidatePath executes the validation routine, inspecting the `buildapi.spec.env` path, which
 // contains a slice of corev1.EnvVar.
 func (e *Env) ValidatePath(_ context.Context) error {
 	if e.Build.Spec.Env == nil {
@@ -46,13 +46,13 @@ func (e *Env) validate(envVar corev1.EnvVar) []error {
 	var allErrs []error
 
 	if envVar.Name == "" {
-		e.Build.Status.Reason = ptr.To[build.BuildReason](build.SpecEnvNameCanNotBeBlank)
+		e.Build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameCanNotBeBlank)
 		e.Build.Status.Message = ptr.To("name for environment variable must not be blank")
 		allErrs = append(allErrs, fmt.Errorf("%s", *e.Build.Status.Message))
 	}
 
 	if envVar.Value != "" && envVar.ValueFrom != nil {
-		e.Build.Status.Reason = ptr.To[build.BuildReason](build.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)
+		e.Build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified)
 		e.Build.Status.Message = ptr.To("only one of value or valueFrom must be specified")
 		allErrs = append(allErrs, fmt.Errorf("%s", *e.Build.Status.Message))
 	}
@@ -61,6 +61,6 @@ func (e *Env) validate(envVar corev1.EnvVar) []error {
 }
 
 // NewEnv instantiates a new Env passing the build object pointer along.
-func NewEnv(b *build.Build) *Env {
+func NewEnv(b *buildapi.Build) *Env {
 	return &Env{Build: b}
 }

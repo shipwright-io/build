@@ -10,12 +10,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/ptr"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
 var _ = Describe("Checking BuildRun Status fields", func() {
@@ -40,21 +39,21 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 			// Use an empty strategy to only have the source step
 			strategy := tb.Catalog.ClusterBuildStrategy(strategyName)
 			Expect(tb.CreateClusterBuildStrategy(strategy)).To(Succeed())
-			cbs := v1beta1.ClusterBuildStrategyKind
+			cbs := buildapi.ClusterBuildStrategyKind
 			// Setup BuildRun with fixed revision where we know the commit details
-			Expect(tb.CreateBR(&v1beta1.BuildRun{
+			Expect(tb.CreateBR(&buildapi.BuildRun{
 				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
-				Spec: v1beta1.BuildRunSpec{
-					Build: v1beta1.ReferencedBuild{
-						Spec: &v1beta1.BuildSpec{
-							Source: &v1beta1.Source{
-								Type: v1beta1.GitType,
-								Git: &v1beta1.Git{
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
+						Spec: &buildapi.BuildSpec{
+							Source: &buildapi.Source{
+								Type: buildapi.GitType,
+								Git: &buildapi.Git{
 									URL:      "https://github.com/shipwright-io/sample-go",
 									Revision: ptr.To("v0.1.0"),
 								},
 							},
-							Strategy: v1beta1.Strategy{
+							Strategy: buildapi.Strategy{
 								Kind: &cbs,
 								Name: strategy.Name,
 							},
@@ -76,21 +75,21 @@ var _ = Describe("Checking BuildRun Status fields", func() {
 			// Use an empty strategy to only have the source step
 			strategy := tb.Catalog.ClusterBuildStrategy(strategyName)
 			Expect(tb.CreateClusterBuildStrategy(strategy)).To(Succeed())
-			cbs := v1beta1.ClusterBuildStrategyKind
+			cbs := buildapi.ClusterBuildStrategyKind
 			// Setup BuildRun with fixed image sha where we know the timestamp details
-			Expect(tb.CreateBR(&v1beta1.BuildRun{
+			Expect(tb.CreateBR(&buildapi.BuildRun{
 
 				ObjectMeta: metav1.ObjectMeta{Name: buildRunName},
-				Spec: v1beta1.BuildRunSpec{
-					Build: v1beta1.ReferencedBuild{
-						Spec: &v1beta1.BuildSpec{
-							Strategy: v1beta1.Strategy{
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
+						Spec: &buildapi.BuildSpec{
+							Strategy: buildapi.Strategy{
 								Kind: &cbs,
 								Name: strategy.Name,
 							},
-							Source: &v1beta1.Source{
-								Type: v1beta1.OCIArtifactType,
-								OCIArtifact: &v1beta1.OCIArtifact{
+							Source: &buildapi.Source{
+								Type: buildapi.OCIArtifactType,
+								OCIArtifact: &buildapi.OCIArtifact{
 									Image: "ghcr.io/shipwright-io/sample-go/source-bundle@sha256:9a5e264c19980387b8416e0ffa7460488272fb8a6a56127c657edaa2682daab2",
 								},
 							},

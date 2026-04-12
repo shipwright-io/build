@@ -9,10 +9,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	. "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
@@ -23,20 +22,20 @@ var _ = Describe("ValidateSchedulerName", func() {
 		ctx = context.TODO()
 	})
 
-	var validate = func(build *Build) {
+	var validate = func(build *buildapi.Build) {
 		GinkgoHelper()
 
 		var validator = &validate.SchedulerNameRef{Build: build}
 		Expect(validator.ValidatePath(ctx)).To(Succeed())
 	}
 
-	var sampleBuild = func(schedulerName string) *Build {
-		return &Build{
+	var sampleBuild = func(schedulerName string) *buildapi.Build {
+		return &buildapi.Build{
 			ObjectMeta: corev1.ObjectMeta{
 				Namespace: "foo",
 				Name:      "bar",
 			},
-			Spec: BuildSpec{
+			Spec: buildapi.BuildSpec{
 				SchedulerName: &schedulerName,
 			},
 		}
@@ -46,14 +45,14 @@ var _ = Describe("ValidateSchedulerName", func() {
 		It("should fail an empty name", func() {
 			build := sampleBuild("")
 			validate(build)
-			Expect(*build.Status.Reason).To(Equal(SchedulerNameNotValid))
+			Expect(*build.Status.Reason).To(Equal(buildapi.SchedulerNameNotValid))
 			Expect(*build.Status.Message).To(ContainSubstring("Scheduler name not valid"))
 		})
 
 		It("should fail an invalid name", func() {
 			build := sampleBuild("invalidname!")
 			validate(build)
-			Expect(*build.Status.Reason).To(Equal(SchedulerNameNotValid))
+			Expect(*build.Status.Reason).To(Equal(buildapi.SchedulerNameNotValid))
 			Expect(*build.Status.Message).To(ContainSubstring("Scheduler name not valid"))
 		})
 

@@ -9,13 +9,12 @@ import (
 	"strings"
 	"time"
 
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources/sources"
-
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 const defaultSourceName = "default"
@@ -25,14 +24,14 @@ const sourceTimestampName = "source-timestamp"
 // isLocalCopyBuildSource appends all "Sources" in a single slice, and if any entry is typed
 // "LocalCopy" it returns first LocalCopy typed BuildSource found, or nil.
 func isLocalCopyBuildSource(
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
-) *buildv1beta1.Local {
-	if buildRun.Spec.Source != nil && buildRun.Spec.Source.Type == buildv1beta1.LocalType {
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
+) *buildapi.Local {
+	if buildRun.Spec.Source != nil && buildRun.Spec.Source.Type == buildapi.LocalType {
 		return buildRun.Spec.Source.Local
 	}
 
-	if build.Spec.Source != nil && build.Spec.Source.Type == buildv1beta1.LocalType {
+	if build.Spec.Source != nil && build.Spec.Source.Type == buildapi.LocalType {
 		return build.Spec.Source.Local
 	}
 
@@ -53,8 +52,8 @@ func appendSourceTimestampResult(taskSpec *pipelineapi.TaskSpec) {
 func AmendTaskSpecWithSources(
 	cfg *config.Config,
 	taskSpec *pipelineapi.TaskSpec,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
 ) {
 	if localCopy := isLocalCopyBuildSource(build, buildRun); localCopy != nil {
 		sources.AppendLocalCopyStep(cfg, taskSpec, localCopy.Timeout)
@@ -62,12 +61,12 @@ func AmendTaskSpecWithSources(
 
 		// create the step for spec.source, either Git or Bundle
 		switch build.Spec.Source.Type {
-		case buildv1beta1.OCIArtifactType:
+		case buildapi.OCIArtifactType:
 			if build.Spec.Source.OCIArtifact != nil {
 				appendSourceTimestampResult(taskSpec)
 				sources.AppendBundleStep(cfg, taskSpec, build.Spec.Source.OCIArtifact, defaultSourceName)
 			}
-		case buildv1beta1.GitType:
+		case buildapi.GitType:
 			if build.Spec.Source.Git != nil {
 				appendSourceTimestampResult(taskSpec)
 				sources.AppendGitStep(cfg, taskSpec, *build.Spec.Source.Git, defaultSourceName)
@@ -76,7 +75,7 @@ func AmendTaskSpecWithSources(
 	}
 }
 
-func updateBuildRunStatusWithSourceResult(buildrun *buildv1beta1.BuildRun, results []pipelineapi.TaskRunResult) {
+func updateBuildRunStatusWithSourceResult(buildrun *buildapi.BuildRun, results []pipelineapi.TaskRunResult) {
 	buildSpec := buildrun.Status.BuildSpec
 
 	if buildSpec.Source == nil {
@@ -84,10 +83,10 @@ func updateBuildRunStatusWithSourceResult(buildrun *buildv1beta1.BuildRun, resul
 	}
 
 	switch {
-	case buildSpec.Source.Type == buildv1beta1.OCIArtifactType && buildSpec.Source.OCIArtifact != nil:
+	case buildSpec.Source.Type == buildapi.OCIArtifactType && buildSpec.Source.OCIArtifact != nil:
 		sources.AppendBundleResult(buildrun, defaultSourceName, results)
 
-	case buildSpec.Source.Type == buildv1beta1.GitType && buildSpec.Source.Git != nil:
+	case buildSpec.Source.Type == buildapi.GitType && buildSpec.Source.Git != nil:
 		sources.AppendGitResult(buildrun, defaultSourceName, results)
 	}
 

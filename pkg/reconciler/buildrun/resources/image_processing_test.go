@@ -9,13 +9,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 	utils "github.com/shipwright-io/build/test/utils/v1beta1"
-
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 )
 
 var _ = Describe("Image Processing overrides", func() {
@@ -46,8 +45,8 @@ var _ = Describe("Image Processing overrides", func() {
 					processedTaskRun,
 					config,
 					refTimestamp,
-					buildv1beta1.Image{Image: "some-registry/some-namespace/some-image"},
-					buildv1beta1.Image{},
+					buildapi.Image{Image: "some-registry/some-namespace/some-image"},
+					buildapi.Image{},
 				)).To(Succeed())
 			})
 
@@ -64,13 +63,13 @@ var _ = Describe("Image Processing overrides", func() {
 					processedTaskRun,
 					config,
 					refTimestamp,
-					buildv1beta1.Image{
+					buildapi.Image{
 						Image: "some-registry/some-namespace/some-image",
 						Labels: map[string]string{
 							"aKey": "aLabel",
 						},
 					},
-					buildv1beta1.Image{},
+					buildapi.Image{},
 				)).To(Succeed())
 			})
 
@@ -99,12 +98,12 @@ var _ = Describe("Image Processing overrides", func() {
 		Context("for a build with a vulnerability scan options in the output", func() {
 			BeforeEach(func() {
 				processedTaskRun = taskRun.DeepCopy()
-				Expect(resources.SetupImageProcessing(processedTaskRun, config, refTimestamp, buildv1beta1.Image{
+				Expect(resources.SetupImageProcessing(processedTaskRun, config, refTimestamp, buildapi.Image{
 					Image: "some-registry/some-namespace/some-image",
-					VulnerabilityScan: &buildv1beta1.VulnerabilityScanOptions{
+					VulnerabilityScan: &buildapi.VulnerabilityScanOptions{
 						Enabled: true,
 					},
-				}, buildv1beta1.Image{})).To(Succeed())
+				}, buildapi.Image{})).To(Succeed())
 			})
 
 			It("adds the image-processing step", func() {
@@ -159,13 +158,13 @@ var _ = Describe("Image Processing overrides", func() {
 						processedTaskRun,
 						config,
 						refTimestamp,
-						buildv1beta1.Image{
+						buildapi.Image{
 							Image: "some-registry/some-namespace/some-image",
 							Labels: map[string]string{
 								"a-label": "a-value",
 							},
 						},
-						buildv1beta1.Image{
+						buildapi.Image{
 							Annotations: map[string]string{
 								"an-annotation": "some-value",
 							},
@@ -215,8 +214,8 @@ var _ = Describe("Image Processing overrides", func() {
 						processedTaskRun,
 						config,
 						refTimestamp,
-						buildv1beta1.Image{Image: "some-registry/some-namespace/some-image"},
-						buildv1beta1.Image{},
+						buildapi.Image{Image: "some-registry/some-namespace/some-image"},
+						buildapi.Image{},
 					)).To(Succeed())
 				})
 
@@ -260,11 +259,11 @@ var _ = Describe("Image Processing overrides", func() {
 					processedTaskRun,
 					config,
 					refTimestamp,
-					buildv1beta1.Image{
+					buildapi.Image{
 						Image:      "some-registry/some-namespace/some-image",
 						PushSecret: &someSecret,
 					},
-					buildv1beta1.Image{},
+					buildapi.Image{},
 				)).To(Succeed())
 			})
 

@@ -8,26 +8,26 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/env"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/env"
 )
 
 // executionContext holds shared state for build execution generation.
 type executionContext struct {
 	combinedEnvs       []corev1.EnvVar
 	volumeMounts       map[string]bool
-	strategyVolumes    []buildv1beta1.BuildStrategyVolume
-	buildVolumes       []buildv1beta1.BuildVolume
-	buildRunVolumes    []buildv1beta1.BuildVolume
+	strategyVolumes    []buildapi.BuildStrategyVolume
+	buildVolumes       []buildapi.BuildVolume
+	buildRunVolumes    []buildapi.BuildVolume
 	hasOutputDirectory bool
 }
 
 func prepareExecutionContext(
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
-	strategy buildv1beta1.BuilderStrategy,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
+	strategy buildapi.BuilderStrategy,
 ) (*executionContext, error) {
 	combinedEnvs, err := mergeEnvironmentVariables(build, buildRun)
 	if err != nil {
@@ -43,7 +43,7 @@ func prepareExecutionContext(
 	}, nil
 }
 
-func mergeEnvironmentVariables(build *buildv1beta1.Build, buildRun *buildv1beta1.BuildRun) ([]corev1.EnvVar, error) {
+func mergeEnvironmentVariables(build *buildapi.Build, buildRun *buildapi.BuildRun) ([]corev1.EnvVar, error) {
 	return env.MergeEnvVars(buildRun.Spec.Env, build.Spec.Env, true)
 }
 
@@ -67,9 +67,9 @@ type BuildRunExecutorGenerator interface {
 
 // GenerateBuildRunExecutor orchestrates build execution generation.
 func GenerateBuildRunExecutor(
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
-	strategy buildv1beta1.BuilderStrategy,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
+	strategy buildapi.BuilderStrategy,
 	generator BuildRunExecutorGenerator,
 ) (client.Object, error) {
 	execCtx, err := prepareExecutionContext(build, buildRun, strategy)

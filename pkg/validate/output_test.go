@@ -9,10 +9,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	. "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
@@ -23,7 +22,7 @@ var _ = Describe("BuildSpecOutputValidator", func() {
 		ctx = context.TODO()
 	})
 
-	var validate = func(build *Build) {
+	var validate = func(build *buildapi.Build) {
 		GinkgoHelper()
 
 		var validator = &validate.BuildSpecOutputValidator{Build: build}
@@ -31,23 +30,23 @@ var _ = Describe("BuildSpecOutputValidator", func() {
 	}
 
 	Context("output timestamp is specified", func() {
-		var sampleBuild = func(timestamp string) *Build {
-			return &Build{
+		var sampleBuild = func(timestamp string) *buildapi.Build {
+			return &buildapi.Build{
 				ObjectMeta: corev1.ObjectMeta{
 					Namespace: "foo",
 					Name:      "bar",
 				},
-				Spec: BuildSpec{
-					Source: &Source{
-						Type: GitType,
-						Git: &Git{
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type: buildapi.GitType,
+						Git: &buildapi.Git{
 							URL: "https://github.com/shipwright-io/sample-go",
 						},
 					},
-					Strategy: Strategy{
+					Strategy: buildapi.Strategy{
 						Name: "magic",
 					},
-					Output: Image{
+					Output: buildapi.Image{
 						Timestamp: &timestamp,
 					},
 				},
@@ -62,32 +61,32 @@ var _ = Describe("BuildSpecOutputValidator", func() {
 		})
 
 		It("should pass with string Zero", func() {
-			build := sampleBuild(OutputImageZeroTimestamp)
+			build := sampleBuild(buildapi.OutputImageZeroTimestamp)
 			validate(build)
 			Expect(build.Status.Reason).To(BeNil())
 			Expect(build.Status.Message).To(BeNil())
 		})
 
 		It("should pass with string SourceTimestamp", func() {
-			build := sampleBuild(OutputImageSourceTimestamp)
+			build := sampleBuild(buildapi.OutputImageSourceTimestamp)
 			validate(build)
 			Expect(build.Status.Reason).To(BeNil())
 			Expect(build.Status.Message).To(BeNil())
 		})
 
 		It("should pass with string BuildTimestamp", func() {
-			build := sampleBuild(OutputImageBuildTimestamp)
+			build := sampleBuild(buildapi.OutputImageBuildTimestamp)
 			validate(build)
 			Expect(build.Status.Reason).To(BeNil())
 			Expect(build.Status.Message).To(BeNil())
 		})
 
 		It("should fail with string SourceTimestamp in case there are no sources", func() {
-			build := sampleBuild(OutputImageSourceTimestamp)
+			build := sampleBuild(buildapi.OutputImageSourceTimestamp)
 			build.Spec.Source = nil
 
 			validate(build)
-			Expect(*build.Status.Reason).To(Equal(OutputTimestampNotSupported))
+			Expect(*build.Status.Reason).To(Equal(buildapi.OutputTimestampNotSupported))
 			Expect(*build.Status.Message).To(ContainSubstring("cannot use SourceTimestamp"))
 		})
 
@@ -95,7 +94,7 @@ var _ = Describe("BuildSpecOutputValidator", func() {
 			build := sampleBuild("WrongValue")
 
 			validate(build)
-			Expect(*build.Status.Reason).To(Equal(OutputTimestampNotValid))
+			Expect(*build.Status.Reason).To(Equal(buildapi.OutputTimestampNotValid))
 			Expect(*build.Status.Message).To(ContainSubstring("output timestamp value is invalid"))
 		})
 	})

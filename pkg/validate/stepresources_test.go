@@ -10,18 +10,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
 var _ = Describe("BuildRunStepResources", func() {
 	var (
-		strategySteps         []buildv1beta1.Step
-		buildRunStepResources []buildv1beta1.StepResourceOverride
+		strategySteps         []buildapi.Step
+		buildRunStepResources []buildapi.StepResourceOverride
 	)
 
 	BeforeEach(func() {
-		strategySteps = []buildv1beta1.Step{
+		strategySteps = []buildapi.Step{
 			{Name: "step-build"},
 			{Name: "step-push"},
 			{Name: "step-prepare"},
@@ -38,7 +38,7 @@ var _ = Describe("BuildRunStepResources", func() {
 			Expect(message).To(BeEmpty())
 
 			// Test empty slice (same code path as nil in Go)
-			valid, reason, message = validate.BuildRunStepResources(strategySteps, []buildv1beta1.StepResourceOverride{})
+			valid, reason, message = validate.BuildRunStepResources(strategySteps, []buildapi.StepResourceOverride{})
 			Expect(valid).To(BeTrue())
 			Expect(reason).To(BeEmpty())
 			Expect(message).To(BeEmpty())
@@ -47,7 +47,7 @@ var _ = Describe("BuildRunStepResources", func() {
 
 	Context("when buildRun stepResources references valid steps", func() {
 		It("should return valid for a single valid step", func() {
-			buildRunStepResources = []buildv1beta1.StepResourceOverride{
+			buildRunStepResources = []buildapi.StepResourceOverride{
 				{
 					Name: "step-build",
 					Resources: corev1.ResourceRequirements{
@@ -68,7 +68,7 @@ var _ = Describe("BuildRunStepResources", func() {
 
 	Context("when buildRun stepResources references invalid steps", func() {
 		It("should return invalid when one of multiple steps is invalid", func() {
-			buildRunStepResources = []buildv1beta1.StepResourceOverride{
+			buildRunStepResources = []buildapi.StepResourceOverride{
 				{
 					Name: "step-build",
 					Resources: corev1.ResourceRequirements{
@@ -88,15 +88,15 @@ var _ = Describe("BuildRunStepResources", func() {
 			}
 			valid, reason, message := validate.BuildRunStepResources(strategySteps, buildRunStepResources)
 			Expect(valid).To(BeFalse())
-			Expect(reason).To(Equal(string(buildv1beta1.UndefinedStepResource)))
+			Expect(reason).To(Equal(string(buildapi.UndefinedStepResource)))
 			Expect(message).To(ContainSubstring("non-existent-step"))
 		})
 	})
 
 	Context("when strategy has no steps", func() {
 		It("should return invalid for any stepResources", func() {
-			strategySteps = []buildv1beta1.Step{}
-			buildRunStepResources = []buildv1beta1.StepResourceOverride{
+			strategySteps = []buildapi.Step{}
+			buildRunStepResources = []buildapi.StepResourceOverride{
 				{
 					Name: "step-build",
 					Resources: corev1.ResourceRequirements{
@@ -108,7 +108,7 @@ var _ = Describe("BuildRunStepResources", func() {
 			}
 			valid, reason, _ := validate.BuildRunStepResources(strategySteps, buildRunStepResources)
 			Expect(valid).To(BeFalse())
-			Expect(reason).To(Equal(string(buildv1beta1.UndefinedStepResource)))
+			Expect(reason).To(Equal(string(buildapi.UndefinedStepResource)))
 		})
 	})
 })

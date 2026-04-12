@@ -8,9 +8,6 @@ import (
 	"context"
 	"time"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
-	"github.com/shipwright-io/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +15,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/ctxlog"
 )
 
 // ReconcileBuildRun reconciles a BuildRun object
@@ -44,7 +45,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 
 	ctxlog.Debug(ctx, "Start reconciling Buildrun-ttl", namespace, request.Namespace, name, request.Name)
 
-	br := &buildv1beta1.BuildRun{}
+	br := &buildapi.BuildRun{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, br)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -54,7 +55,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, err
 	}
 
-	condition := br.Status.GetCondition(buildv1beta1.Succeeded)
+	condition := br.Status.GetCondition(buildapi.Succeeded)
 	if condition == nil || condition.Status == corev1.ConditionUnknown {
 		return reconcile.Result{}, nil
 	}

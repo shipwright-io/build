@@ -5,10 +5,11 @@
 package resources
 
 import (
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
 )
 
 // TaskRunGenerator implements BuildRunExecutorGenerator for TaskRun execution.
@@ -21,20 +22,20 @@ import (
 // Steps share the same Pod filesystem for efficient data transfer.
 type TaskRunGenerator struct {
 	cfg                *config.Config
-	build              *buildv1beta1.Build
-	buildRun           *buildv1beta1.BuildRun
+	build              *buildapi.Build
+	buildRun           *buildapi.BuildRun
 	serviceAccountName string
-	strategy           buildv1beta1.BuilderStrategy
+	strategy           buildapi.BuilderStrategy
 
 	taskRun *pipelineapi.TaskRun
 }
 
 func NewTaskRunGenerator(
 	cfg *config.Config,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
 	serviceAccountName string,
-	strategy buildv1beta1.BuilderStrategy,
+	strategy buildapi.BuilderStrategy,
 ) *TaskRunGenerator {
 	return &TaskRunGenerator{
 		cfg:                cfg,
@@ -94,7 +95,7 @@ func (g *TaskRunGenerator) GenerateBuildStrategyPhase(execCtx *executionContext)
 func (g *TaskRunGenerator) GenerateOutputImagePhase(_ *executionContext) error {
 	buildRunOutput := g.buildRun.Spec.Output
 	if buildRunOutput == nil {
-		buildRunOutput = &buildv1beta1.Image{}
+		buildRunOutput = &buildapi.Image{}
 	}
 
 	return SetupImageProcessing(g.taskRun, g.cfg, g.buildRun.CreationTimestamp.Time, g.build.Spec.Output, *buildRunOutput)

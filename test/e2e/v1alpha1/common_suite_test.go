@@ -14,13 +14,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 const (
@@ -28,12 +27,12 @@ const (
 	pollCreateTimeout  = 10 * time.Second
 )
 
-type buildPrototype struct{ build buildv1alpha1.Build }
-type buildRunPrototype struct{ buildRun buildv1alpha1.BuildRun }
+type buildPrototype struct{ build buildapialpha.Build }
+type buildRunPrototype struct{ buildRun buildapialpha.BuildRun }
 
 func NewBuildPrototype() *buildPrototype {
 	return &buildPrototype{
-		build: buildv1alpha1.Build{},
+		build: buildapialpha.Build{},
 	}
 }
 
@@ -48,8 +47,8 @@ func (b *buildPrototype) Namespace(namespace string) *buildPrototype {
 }
 
 func (b *buildPrototype) BuildStrategy(name string) *buildPrototype {
-	var bs = buildv1alpha1.NamespacedBuildStrategyKind
-	b.build.Spec.Strategy = buildv1alpha1.Strategy{
+	var bs = buildapialpha.NamespacedBuildStrategyKind
+	b.build.Spec.Strategy = buildapialpha.Strategy{
 		Kind: &bs,
 		Name: name,
 	}
@@ -57,8 +56,8 @@ func (b *buildPrototype) BuildStrategy(name string) *buildPrototype {
 }
 
 func (b *buildPrototype) ClusterBuildStrategy(name string) *buildPrototype {
-	var cbs = buildv1alpha1.ClusterBuildStrategyKind
-	b.build.Spec.Strategy = buildv1alpha1.Strategy{
+	var cbs = buildapialpha.ClusterBuildStrategyKind
+	b.build.Spec.Strategy = buildapialpha.Strategy{
 		Kind: &cbs,
 		Name: name,
 	}
@@ -86,15 +85,15 @@ func (b *buildPrototype) SourceGitRevision(revision string) *buildPrototype {
 
 func (b *buildPrototype) SourceBundle(image string) *buildPrototype {
 	if b.build.Spec.Source.BundleContainer == nil {
-		b.build.Spec.Source.BundleContainer = &buildv1alpha1.BundleContainer{}
+		b.build.Spec.Source.BundleContainer = &buildapialpha.BundleContainer{}
 	}
 	b.build.Spec.Source.BundleContainer.Image = image
 	return b
 }
 
-func (b *buildPrototype) SourceBundlePrune(prune buildv1alpha1.PruneOption) *buildPrototype {
+func (b *buildPrototype) SourceBundlePrune(prune buildapialpha.PruneOption) *buildPrototype {
 	if b.build.Spec.Source.BundleContainer == nil {
-		b.build.Spec.Source.BundleContainer = &buildv1alpha1.BundleContainer{}
+		b.build.Spec.Source.BundleContainer = &buildapialpha.BundleContainer{}
 	}
 	b.build.Spec.Source.BundleContainer.Prune = &prune
 	return b
@@ -129,7 +128,7 @@ func (b *buildPrototype) determineParameterIndex(name string) int {
 
 	if index == -1 {
 		index = len(b.build.Spec.ParamValues)
-		b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+		b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildapialpha.ParamValue{
 			Name: name,
 		})
 	}
@@ -140,7 +139,7 @@ func (b *buildPrototype) determineParameterIndex(name string) int {
 // ArrayParamValue adds an item to an array parameter, if the parameter is not yet present, it is being added
 func (b *buildPrototype) ArrayParamValue(name string, value string) *buildPrototype {
 	index := b.determineParameterIndex(name)
-	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildapialpha.SingleValue{
 		Value: &value,
 	})
 
@@ -150,8 +149,8 @@ func (b *buildPrototype) ArrayParamValue(name string, value string) *buildProtot
 // ArrayParamValueFromConfigMap adds an item to an array parameter, if the parameter is not yet present, it is being added
 func (b *buildPrototype) ArrayParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildPrototype {
 	index := b.determineParameterIndex(name)
-	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
-		ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildapialpha.SingleValue{
+		ConfigMapValue: &buildapialpha.ObjectKeyRef{
 			Name:   configMapName,
 			Key:    configMapKey,
 			Format: format,
@@ -164,8 +163,8 @@ func (b *buildPrototype) ArrayParamValueFromConfigMap(name string, configMapName
 // ArrayParamValueFromSecret adds an item to an array parameter, if the parameter is not yet present, it is being added
 func (b *buildPrototype) ArrayParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildPrototype {
 	index := b.determineParameterIndex(name)
-	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
-		SecretValue: &buildv1alpha1.ObjectKeyRef{
+	b.build.Spec.ParamValues[index].Values = append(b.build.Spec.ParamValues[index].Values, buildapialpha.SingleValue{
+		SecretValue: &buildapialpha.ObjectKeyRef{
 			Name:   secretName,
 			Key:    secretKey,
 			Format: format,
@@ -176,9 +175,9 @@ func (b *buildPrototype) ArrayParamValueFromSecret(name string, secretName strin
 }
 
 func (b *buildPrototype) StringParamValue(name string, value string) *buildPrototype {
-	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildapialpha.ParamValue{
 		Name: name,
-		SingleValue: &buildv1alpha1.SingleValue{
+		SingleValue: &buildapialpha.SingleValue{
 			Value: &value,
 		},
 	})
@@ -187,10 +186,10 @@ func (b *buildPrototype) StringParamValue(name string, value string) *buildProto
 }
 
 func (b *buildPrototype) StringParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildPrototype {
-	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildapialpha.ParamValue{
 		Name: name,
-		SingleValue: &buildv1alpha1.SingleValue{
-			ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+		SingleValue: &buildapialpha.SingleValue{
+			ConfigMapValue: &buildapialpha.ObjectKeyRef{
 				Name:   configMapName,
 				Key:    configMapKey,
 				Format: format,
@@ -202,10 +201,10 @@ func (b *buildPrototype) StringParamValueFromConfigMap(name string, configMapNam
 }
 
 func (b *buildPrototype) StringParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildPrototype {
-	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildv1alpha1.ParamValue{
+	b.build.Spec.ParamValues = append(b.build.Spec.ParamValues, buildapialpha.ParamValue{
 		Name: name,
-		SingleValue: &buildv1alpha1.SingleValue{
-			SecretValue: &buildv1alpha1.ObjectKeyRef{
+		SingleValue: &buildapialpha.SingleValue{
+			SecretValue: &buildapialpha.ObjectKeyRef{
 				Name:   secretName,
 				Key:    secretKey,
 				Format: format,
@@ -240,7 +239,7 @@ func (b *buildPrototype) OutputTimestamp(timestampString string) *buildPrototype
 	return b
 }
 
-func (b buildPrototype) Create() (build *buildv1alpha1.Build, err error) {
+func (b buildPrototype) Create() (build *buildapialpha.Build, err error) {
 	ctx := context.Background()
 
 	_, err = testBuild.
@@ -266,12 +265,12 @@ func (b buildPrototype) Create() (build *buildv1alpha1.Build, err error) {
 }
 
 // BuildSpec returns the BuildSpec of this Build (no cluster resource is created)
-func (b buildPrototype) BuildSpec() (build *buildv1alpha1.BuildSpec) {
+func (b buildPrototype) BuildSpec() (build *buildapialpha.BuildSpec) {
 	return &b.build.Spec
 }
 
 func NewBuildRunPrototype() *buildRunPrototype {
-	return &buildRunPrototype{buildRun: buildv1alpha1.BuildRun{}}
+	return &buildRunPrototype{buildRun: buildapialpha.BuildRun{}}
 }
 
 func (b *buildRunPrototype) Name(name string) *buildRunPrototype {
@@ -284,20 +283,20 @@ func (b *buildRunPrototype) Namespace(namespace string) *buildRunPrototype {
 	return b
 }
 
-func (b *buildRunPrototype) ForBuild(build *buildv1alpha1.Build) *buildRunPrototype {
-	b.buildRun.Spec.BuildRef = &buildv1alpha1.BuildRef{Name: build.Name}
+func (b *buildRunPrototype) ForBuild(build *buildapialpha.Build) *buildRunPrototype {
+	b.buildRun.Spec.BuildRef = &buildapialpha.BuildRef{Name: build.Name}
 	b.buildRun.Namespace = build.Namespace
 	return b
 }
 
-func (b *buildRunPrototype) WithBuildSpec(buildSpec *buildv1alpha1.BuildSpec) *buildRunPrototype {
+func (b *buildRunPrototype) WithBuildSpec(buildSpec *buildapialpha.BuildSpec) *buildRunPrototype {
 	b.buildRun.Spec.BuildSpec = buildSpec
 	return b
 }
 
 func (b *buildRunPrototype) GenerateServiceAccount() *buildRunPrototype {
 	if b.buildRun.Spec.ServiceAccount == nil {
-		b.buildRun.Spec.ServiceAccount = &buildv1alpha1.ServiceAccount{}
+		b.buildRun.Spec.ServiceAccount = &buildapialpha.ServiceAccount{}
 	}
 	b.buildRun.Spec.ServiceAccount.Generate = ptr.To(true)
 	return b
@@ -314,7 +313,7 @@ func (b *buildRunPrototype) determineParameterIndex(name string) int {
 
 	if index == -1 {
 		index = len(b.buildRun.Spec.ParamValues)
-		b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+		b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildapialpha.ParamValue{
 			Name: name,
 		})
 	}
@@ -325,7 +324,7 @@ func (b *buildRunPrototype) determineParameterIndex(name string) int {
 // ArrayParamValue adds an item to an array parameter, if the parameter is not yet present, it is being added
 func (b *buildRunPrototype) ArrayParamValue(name string, value string) *buildRunPrototype {
 	index := b.determineParameterIndex(name)
-	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
+	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildapialpha.SingleValue{
 		Value: &value,
 	})
 
@@ -335,8 +334,8 @@ func (b *buildRunPrototype) ArrayParamValue(name string, value string) *buildRun
 // ArrayParamValueFromConfigMap adds an item to an array parameter, if the parameter is not yet present, it is being added
 func (b *buildRunPrototype) ArrayParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildRunPrototype {
 	index := b.determineParameterIndex(name)
-	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
-		ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildapialpha.SingleValue{
+		ConfigMapValue: &buildapialpha.ObjectKeyRef{
 			Name:   configMapName,
 			Key:    configMapKey,
 			Format: format,
@@ -349,8 +348,8 @@ func (b *buildRunPrototype) ArrayParamValueFromConfigMap(name string, configMapN
 // ArrayParamValueFromSecret adds an item to an array parameter, if the parameter is not yet present, it is being added
 func (b *buildRunPrototype) ArrayParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildRunPrototype {
 	index := b.determineParameterIndex(name)
-	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildv1alpha1.SingleValue{
-		SecretValue: &buildv1alpha1.ObjectKeyRef{
+	b.buildRun.Spec.ParamValues[index].Values = append(b.buildRun.Spec.ParamValues[index].Values, buildapialpha.SingleValue{
+		SecretValue: &buildapialpha.ObjectKeyRef{
 			Name:   secretName,
 			Key:    secretKey,
 			Format: format,
@@ -361,9 +360,9 @@ func (b *buildRunPrototype) ArrayParamValueFromSecret(name string, secretName st
 }
 
 func (b *buildRunPrototype) StringParamValue(name string, value string) *buildRunPrototype {
-	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildapialpha.ParamValue{
 		Name: name,
-		SingleValue: &buildv1alpha1.SingleValue{
+		SingleValue: &buildapialpha.SingleValue{
 			Value: &value,
 		},
 	})
@@ -372,10 +371,10 @@ func (b *buildRunPrototype) StringParamValue(name string, value string) *buildRu
 }
 
 func (b *buildRunPrototype) StringParamValueFromConfigMap(name string, configMapName string, configMapKey string, format *string) *buildRunPrototype {
-	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildapialpha.ParamValue{
 		Name: name,
-		SingleValue: &buildv1alpha1.SingleValue{
-			ConfigMapValue: &buildv1alpha1.ObjectKeyRef{
+		SingleValue: &buildapialpha.SingleValue{
+			ConfigMapValue: &buildapialpha.ObjectKeyRef{
 				Name:   configMapName,
 				Key:    configMapKey,
 				Format: format,
@@ -387,10 +386,10 @@ func (b *buildRunPrototype) StringParamValueFromConfigMap(name string, configMap
 }
 
 func (b *buildRunPrototype) StringParamValueFromSecret(name string, secretName string, secretKey string, format *string) *buildRunPrototype {
-	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildv1alpha1.ParamValue{
+	b.buildRun.Spec.ParamValues = append(b.buildRun.Spec.ParamValues, buildapialpha.ParamValue{
 		Name: name,
-		SingleValue: &buildv1alpha1.SingleValue{
-			SecretValue: &buildv1alpha1.ObjectKeyRef{
+		SingleValue: &buildapialpha.SingleValue{
+			SecretValue: &buildapialpha.ObjectKeyRef{
 				Name:   secretName,
 				Key:    secretKey,
 				Format: format,
@@ -401,7 +400,7 @@ func (b *buildRunPrototype) StringParamValueFromSecret(name string, secretName s
 	return b
 }
 
-func (b *buildRunPrototype) Create() (*buildv1alpha1.BuildRun, error) {
+func (b *buildRunPrototype) Create() (*buildapialpha.BuildRun, error) {
 	return testBuild.
 		BuildClientSet.
 		ShipwrightV1alpha1().
@@ -409,7 +408,7 @@ func (b *buildRunPrototype) Create() (*buildv1alpha1.BuildRun, error) {
 		Create(context.Background(), &b.buildRun, meta.CreateOptions{})
 }
 
-func (b *buildRunPrototype) MustCreate() *buildv1alpha1.BuildRun {
+func (b *buildRunPrototype) MustCreate() *buildapialpha.BuildRun {
 	GinkgoHelper()
 
 	buildrun, err := b.Create()

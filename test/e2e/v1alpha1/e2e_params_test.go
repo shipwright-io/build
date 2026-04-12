@@ -7,12 +7,12 @@ package e2e_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
-	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	test "github.com/shipwright-io/build/test/v1alpha1_samples"
 )
 
 var _ = Describe("For a Kubernetes cluster with Tekton and build installed", func() {
@@ -20,9 +20,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		testID string
 		err    error
 
-		build         *buildv1alpha1.Build
-		buildRun      *buildv1alpha1.BuildRun
-		buildStrategy *buildv1alpha1.BuildStrategy
+		build         *buildapialpha.Build
+		buildRun      *buildapialpha.BuildRun
+		buildStrategy *buildapialpha.BuildStrategy
 		configMap     *corev1.ConfigMap
 		secret        *corev1.Secret
 	)

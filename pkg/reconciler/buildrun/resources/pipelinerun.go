@@ -7,18 +7,19 @@ package resources
 import (
 	"fmt"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
-	"github.com/shipwright-io/build/pkg/config"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/config"
 )
 
 // GeneratePipelineRun creates a PipelineRun with separate tasks for each build phase.
 func GeneratePipelineRun(
 	cfg *config.Config,
-	build *buildv1beta1.Build,
-	buildRun *buildv1beta1.BuildRun,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
 	serviceAccountName string,
-	strategy buildv1beta1.BuilderStrategy,
+	strategy buildapi.BuilderStrategy,
 ) (*pipelineapi.PipelineRun, error) {
 	generator := NewPipelineRunGenerator(cfg, build, buildRun, serviceAccountName, strategy)
 

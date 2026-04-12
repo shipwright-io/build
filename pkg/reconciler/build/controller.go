@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	build "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
 )
@@ -58,8 +58,8 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		return err
 	}
 
-	pred := predicate.TypedFuncs[*build.Build]{
-		UpdateFunc: func(e event.TypedUpdateEvent[*build.Build]) bool {
+	pred := predicate.TypedFuncs[*buildapi.Build]{
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildapi.Build]) bool {
 			o := e.ObjectOld
 			n := e.ObjectNew
 
@@ -112,14 +112,14 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			// or BuildRunDeletion annotation does not change
 			return o.GetGeneration() != n.GetGeneration() || buildAtBuildDeletion
 		},
-		DeleteFunc: func(_ event.TypedDeleteEvent[*build.Build]) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildapi.Build]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
 	}
 
 	// Watch for changes to primary resource Build
-	if err = c.Watch(source.Kind(mgr.GetCache(), &build.Build{}, &handler.TypedEnqueueRequestForObject[*build.Build]{}, pred)); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &buildapi.Build{}, &handler.TypedEnqueueRequestForObject[*buildapi.Build]{}, pred)); err != nil {
 		return err
 	}
 
@@ -158,7 +158,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 	}
 
 	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}, handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, secret *corev1.Secret) []reconcile.Request {
-		buildList := &build.BuildList{}
+		buildList := &buildapi.BuildList{}
 
 		// List all builds in the namespace of the current secret
 		if err := mgr.GetClient().List(ctx, buildList, &client.ListOptions{Namespace: secret.Namespace}); err != nil {
@@ -203,7 +203,7 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 }
 
 func buildCredentialsAnnotationExist(annotation map[string]string) (string, bool) {
-	if val, ok := annotation[build.AnnotationBuildRefSecret]; ok {
+	if val, ok := annotation[buildapi.AnnotationBuildRefSecret]; ok {
 		return val, true
 	}
 	return "", false

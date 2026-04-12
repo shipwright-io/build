@@ -9,11 +9,11 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/go-containerregistry/pkg/name"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/google/go-containerregistry/pkg/name"
-	buildv1alpha1 "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
 )
 
 var _ = Describe("Using One-Off Builds", Label("OneOffBuild"), func() {
@@ -30,7 +30,7 @@ var _ = Describe("Using One-Off Builds", Label("OneOffBuild"), func() {
 		testID string
 		err    error
 
-		buildRun *buildv1alpha1.BuildRun
+		buildRun *buildapialpha.BuildRun
 	)
 
 	AfterEach(func() {

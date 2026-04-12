@@ -9,12 +9,11 @@ import (
 	"fmt"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-	"knative.dev/pkg/apis"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"knative.dev/pkg/apis"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -24,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	buildv1beta1 "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 )
 
@@ -52,13 +51,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		return err
 	}
 
-	predBuildRun := predicate.TypedFuncs[*buildv1beta1.BuildRun]{
-		CreateFunc: func(e event.TypedCreateEvent[*buildv1beta1.BuildRun]) bool {
+	predBuildRun := predicate.TypedFuncs[*buildapi.BuildRun]{
+		CreateFunc: func(e event.TypedCreateEvent[*buildapi.BuildRun]) bool {
 			// The CreateFunc is also called when the controller is started and iterates over all objects. For those BuildRuns that have an executor referenced already,
 			// we do not need to do a further reconciliation. BuildRun updates then only happen from the TaskRun/PipelineRun.
 			return e.Object.Status.Executor == nil && e.Object.Status.CompletionTime == nil
 		},
-		UpdateFunc: func(e event.TypedUpdateEvent[*buildv1beta1.BuildRun]) bool {
+		UpdateFunc: func(e event.TypedUpdateEvent[*buildapi.BuildRun]) bool {
 			// Only reconcile a BuildRun update when
 			// - it is set to canceled
 			switch {
@@ -68,7 +67,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 
 			return false
 		},
-		DeleteFunc: func(_ event.TypedDeleteEvent[*buildv1beta1.BuildRun]) bool {
+		DeleteFunc: func(_ event.TypedDeleteEvent[*buildapi.BuildRun]) bool {
 			// Never reconcile on deletion, there is nothing we have to do
 			return false
 		},
@@ -159,7 +158,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 	}
 
 	// Watch for changes to primary resource BuildRun
-	if err = c.Watch(source.Kind[*buildv1beta1.BuildRun](mgr.GetCache(), &buildv1beta1.BuildRun{}, &handler.TypedEnqueueRequestForObject[*buildv1beta1.BuildRun]{}, predBuildRun)); err != nil {
+	if err = c.Watch(source.Kind[*buildapi.BuildRun](mgr.GetCache(), &buildapi.BuildRun{}, &handler.TypedEnqueueRequestForObject[*buildapi.BuildRun]{}, predBuildRun)); err != nil {
 		return err
 	}
 
@@ -184,7 +183,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		// to a BuildRun
 		if err = c.Watch(source.Kind(mgr.GetCache(), &pipelineapi.TaskRun{}, handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, taskRun *pipelineapi.TaskRun) []reconcile.Request {
 			// check if TaskRun is related to BuildRun
-			if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildv1beta1.LabelBuildRun] == "" {
+			if taskRun.GetLabels() == nil || taskRun.GetLabels()[buildapi.LabelBuildRun] == "" {
 				return []reconcile.Request{}
 			}
 			return enqueueExecutorHandler(taskRun.Name, taskRun.Namespace)
@@ -197,7 +196,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, maxConcurrentReconciles in
 		// to a BuildRun
 		if err = c.Watch(source.Kind(mgr.GetCache(), &pipelineapi.PipelineRun{}, handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, pipelineRun *pipelineapi.PipelineRun) []reconcile.Request {
 			// check if PipelineRun is related to BuildRun
-			if pipelineRun.GetLabels() == nil || pipelineRun.GetLabels()[buildv1beta1.LabelBuildRun] == "" {
+			if pipelineRun.GetLabels() == nil || pipelineRun.GetLabels()[buildapi.LabelBuildRun] == "" {
 				return []reconcile.Request{}
 			}
 			return enqueueExecutorHandler(pipelineRun.Name, pipelineRun.Namespace)
