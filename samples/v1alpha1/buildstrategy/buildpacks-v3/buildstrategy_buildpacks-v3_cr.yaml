@@ -11,12 +11,17 @@ spec:
     - name: platform-api-version
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
       default: "0.12"
+    - name: insecure-registries
+      description: Registries to consider insecure (http or self-signed certificate).
+      default: ""
   buildSteps:
     - name: build-and-push
       image: docker.io/paketobuildpacks/builder-jammy-full:latest
       env: 
         - name: CNB_PLATFORM_API
           value: $(params.platform-api-version)
+        - name: CNB_INSECURE_REGISTRIES
+          value: $(params.insecure-registries)
         - name: PARAM_SOURCE_CONTEXT
           value: $(params.shp-source-context)
         - name: PARAM_OUTPUT_IMAGE
