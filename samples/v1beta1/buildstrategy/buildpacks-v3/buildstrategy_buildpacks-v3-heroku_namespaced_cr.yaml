@@ -18,7 +18,7 @@ spec:
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
       default: "0.12"
     - name: insecure-registries
-      description: Registries to consider insecure (http or self-signed certificate).
+      description: Comma separated list of registries to consider insecure (http or self-signed certificate).
       default: ""
   steps:
     - name: build-and-push
