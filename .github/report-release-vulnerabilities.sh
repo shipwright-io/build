@@ -23,7 +23,7 @@ for image in "${images[@]}"; do
   binaryName="$(basename "${entrypoint}")"
   echo "  [INFO] Rebuilding github.com/shipwright-io/build/cmd/${binaryName}"
   pushd "${REPOSITORY}" >/dev/null
-    KO_DOCKER_REPO=dummy/image ko build "github.com/shipwright-io/build/cmd/${binaryName}" --bare --platform linux/amd64 --push=false --sbom none --tarball /tmp/image.tar
+    KO_DOCKER_REPO=dummy/image ko build "github.com/shipwright-io/build/cmd/${binaryName}" --bare --platform linux/amd64 --push=false --sbom none --tarball /tmp/new-image.tar
   popd >/dev/null
 
   # OS vulnerabilities (Grype)
@@ -31,7 +31,7 @@ for image in "${images[@]}"; do
   echo "### OS vulnerabilities (Grype)" >>/tmp/report.md
   osVulnsGrype="$(grype --output json --only-fixed --quiet "${image}")"
   osVulnsGrypeFound=false
-  osVulnsGrypeLatest="$(grype --output json --only-fixed --quiet /tmp/image.tar)"
+  osVulnsGrypeLatest="$(grype --output json --only-fixed --quiet /tmp/new-image.tar)"
   while read -r id pkg severity vulnerableVersion fixedVersion; do
     if [ "${id}" == "" ]; then
       continue
@@ -70,7 +70,7 @@ for image in "${images[@]}"; do
   echo "### OS vulnerabilities (Trivy)" >>/tmp/report.md
   osVulnsTrivy="$(trivy image --disable-telemetry --skip-version-check --format json --ignore-unfixed --no-progress --pkg-types os --scanners vuln --skip-db-update --timeout 10m "${image}")"
   osVulnsTrivyFound=false
-  osVulnsTrivyLatest="$(trivy image --disable-telemetry --skip-version-check --format json --ignore-unfixed --input /tmp/image.tar --no-progress --pkg-types os --scanners vuln --skip-db-update --timeout 10m)"
+  osVulnsTrivyLatest="$(trivy image --disable-telemetry --skip-version-check --format json --ignore-unfixed --input /tmp/new-image.tar --no-progress --pkg-types os --scanners vuln --skip-db-update --timeout 10m)"
   while read -r id pkg severity vulnerableVersion fixedVersion; do
     if [ "${id}" == "" ]; then
       continue
@@ -107,12 +107,18 @@ for image in "${images[@]}"; do
   # Go vulnerabilities
   echo "  [INFO] Checking for Go vulnerabilities"
   echo "### Go vulnerabilities" >>/tmp/report.md
-  crane export "${image}" - | tar -xf - -C /tmp "${entrypoint:1}"
+  crane export "${image}" /tmp/old-image-export.tar
+  if ! tar -xf /tmp/old-image-export.tar -C /tmp "${entrypoint:1}"; then
+    tar -xf /tmp/old-image-export.tar -C /tmp "${entrypoint}"
+  fi
   goVulns="$(govulncheck -format json -mode binary "/tmp${entrypoint}")"
   goVulnsFound=false
-  cat /tmp/image.tar | crane export - - | tar -xf - -C /tmp "${entrypoint:1}"
+  crane export - /tmp/new-image-export.tar </tmp/new-image.tar
+  if ! tar -xf /tmp/new-image-export.tar -C /tmp "${entrypoint:1}"; then
+    tar -xf /tmp/new-image-export.tar -C /tmp "${entrypoint}"
+  fi
   goVulnsLatest="$(govulncheck -format json -mode binary "/tmp${entrypoint}")"
-  rm -f /tmp/image.tar "/tmp${entrypoint}"
+  rm -f /tmp/new-image.tar /tmp/new-image-export.tar /tmp/old-image-export.tar "/tmp${entrypoint}"
   while read -r id pkg vulnerableVersion fixedVersion; do
     if [ "${id}" == "" ]; then
       continue
