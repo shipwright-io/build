@@ -16,7 +16,10 @@ spec:
       default: "x86_64"
     - name: platform-api-version
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
-      default: "0.12"
+      default: "0.13"
+    - name: insecure-registries
+      description: Comma separated list of registries to consider insecure (http or self-signed certificate).
+      default: ""
   steps:
     - name: build-and-push
       image: heroku/builder:22
@@ -27,6 +30,8 @@ spec:
           value: $(params.system-architecture)
         - name: CNB_PLATFORM_API
           value: $(params.platform-api-version)
+        - name: CNB_INSECURE_REGISTRIES
+          value: $(params.insecure-registries)
         - name: PARAM_SOURCE_CONTEXT
           value: $(params.shp-source-context)
         - name: PARAM_OUTPUT_IMAGE
