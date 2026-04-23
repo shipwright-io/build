@@ -180,7 +180,7 @@ func (g *PipelineRunGenerator) GenerateOutputImagePhase(execCtx *executionContex
 }
 
 func (g *PipelineRunGenerator) ApplyInfrastructureConfiguration() error {
-	nodeSelector := mergeMaps(g.build.Spec.NodeSelector, g.buildRun.Spec.NodeSelector)
+	nodeSelector := MergeMaps(g.build.Spec.NodeSelector, g.buildRun.Spec.NodeSelector)
 
 	tolerations := mergeTolerations(g.build.Spec.Tolerations, g.buildRun.Spec.Tolerations)
 	for i := range tolerations {

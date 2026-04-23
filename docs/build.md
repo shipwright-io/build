@@ -104,6 +104,10 @@ To prevent users from triggering `BuildRun`s (_execution of a Build_) that will 
 | TolerationNotValid                              | The specified tolerations are not valid. |
 | SchedulerNameNotValid                           | The specified schedulerName is not valid. |
 | RuntimeClassNameNotValid                        | The specified runtimeClassName is not valid. |
+| InvalidPlatform                                 | `spec.output.platforms` is non-empty but an entry is invalid (missing `os`/`arch`, invalid label-style `os`/`arch`, or duplicate pair). |
+| NodeSelectorPlatformConflict                    | `spec.output.platforms` is set and `spec.nodeSelector` includes `kubernetes.io/os` or `kubernetes.io/arch`. |
+| ExecutorNotPipelineRun                          | *(BuildRun only)* Multi-arch output requires `PipelineRun` executor mode. |
+| NodePlatformNotFound                            | *(BuildRun only)* No schedulable node matches a requested platform (`kubernetes.io/os` / `kubernetes.io/arch`). |
 
 ## Configuring a Build
 

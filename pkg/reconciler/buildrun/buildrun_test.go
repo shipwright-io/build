@@ -1059,6 +1059,105 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
+			Context("when spec.output.platforms is set (multi-arch validation)", func() {
+				BeforeEach(func() {
+					buildSample = ctl.DefaultBuild(buildName, strategyName, buildapi.ClusterBuildStrategyKind)
+					buildSample.Spec.Output = buildapi.Image{
+						Image: "quay.io/example/app:latest",
+						Platforms: []buildapi.ImagePlatform{
+							{OS: "linux", Arch: "amd64"},
+							{OS: "linux", Arch: "arm64"},
+						},
+					}
+					client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+						buildSample,
+						buildRunSample,
+						ctl.DefaultServiceAccount(saName),
+						ctl.DefaultClusterBuildStrategy(),
+						ctl.DefaultNamespacedBuildStrategy(),
+					))
+				})
+
+				It("fails with ExecutorNotPipelineRun when executor is TaskRun", func() {
+					var sawExecutorNotPipeline bool
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
+						br, ok := o.(*buildapi.BuildRun)
+						if !ok {
+							return nil
+						}
+						if c := br.Status.GetCondition(buildapi.Succeeded); c != nil && c.Status == corev1.ConditionFalse &&
+							c.Reason == string(buildapi.ExecutorNotPipelineRun) {
+							sawExecutorNotPipeline = true
+							Expect(c.Message).To(ContainSubstring("PipelineRun executor mode"))
+						}
+						return nil
+					})
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(sawExecutorNotPipeline).To(BeTrue())
+					Expect(client.ListCallCount()).To(Equal(0))
+				})
+
+				It("returns error when listing Nodes fails (after preflight)", func() {
+					cfg := config.NewDefaultConfig()
+					cfg.BuildrunExecutor = "PipelineRun"
+					reconciler = buildrunctl.NewReconciler(cfg, manager, controllerutil.SetControllerReference)
+					listErr := fmt.Errorf("apiserver unavailable")
+					client.ListCalls(func(_ context.Context, list crc.ObjectList, _ ...crc.ListOption) error {
+						if _, ok := list.(*corev1.NodeList); ok {
+							return listErr
+						}
+						return nil
+					})
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).To(MatchError(listErr))
+				})
+
+				It("fails with NodePlatformNotFound when no schedulable node matches a platform", func() {
+					cfg := config.NewDefaultConfig()
+					cfg.BuildrunExecutor = "PipelineRun"
+					reconciler = buildrunctl.NewReconciler(cfg, manager, controllerutil.SetControllerReference)
+					client.ListCalls(func(_ context.Context, list crc.ObjectList, _ ...crc.ListOption) error {
+						nl, ok := list.(*corev1.NodeList)
+						if !ok {
+							return nil
+						}
+						nl.Items = []corev1.Node{{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node-amd64",
+								Labels: map[string]string{
+									corev1.LabelOSStable:   "linux",
+									corev1.LabelArchStable: "amd64",
+								},
+							},
+							Status: corev1.NodeStatus{
+								Conditions: []corev1.NodeCondition{
+									{Type: corev1.NodeReady, Status: corev1.ConditionTrue},
+								},
+							},
+						}}
+						return nil
+					})
+					var sawNodeNotFound bool
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
+						br, ok := o.(*buildapi.BuildRun)
+						if !ok {
+							return nil
+						}
+						if c := br.Status.GetCondition(buildapi.Succeeded); c != nil && c.Status == corev1.ConditionFalse &&
+							c.Reason == string(buildapi.NodePlatformNotFound) {
+							sawNodeNotFound = true
+							Expect(c.Message).To(ContainSubstring("linux/arm64"))
+						}
+						return nil
+					})
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(sawNodeNotFound).To(BeTrue())
+					Expect(client.ListCallCount()).To(Equal(1))
+				})
+			})
+
 			It("stops creation when a FALSE registered status of the build occurs", func() {
 				// Init the Build with registered status false
 				buildSample = ctl.DefaultBuildWithFalseRegistered(buildName, strategyName, buildapi.ClusterBuildStrategyKind)
