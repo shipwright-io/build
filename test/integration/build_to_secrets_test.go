@@ -103,7 +103,6 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 		})
 	})
 
-
 	Context("when a build reference a secret for the spec source", func() {
 		It("should validate the Build after secret deletion", func() {
 
