@@ -48,7 +48,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			)
 			Expect(err).To(BeNil())
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
 
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
@@ -90,7 +90,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Output.PushSecret)))
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
 
 			// generate resources
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
@@ -197,7 +197,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", "fake-secret")))
 
 			// we modify the annotation so automatic delete does not take place
-			data := []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"true"}}}`, buildapi.AnnotationBuildRefSecret))
+			data := []byte(`{"metadata":{"annotations":{"dummy-annotation":"true"}}}`)
 
 			_, err = tb.PatchSecret(*buildObject.Spec.Output.PushSecret, data)
 			Expect(err).To(BeNil())
@@ -223,7 +223,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			)
 			Expect(err).To(BeNil())
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
 
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
@@ -266,7 +266,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			// Status reason sometimes returns message "there are no secrets in namespace..."
 			// Expect(buildObject.Status.Reason).To(Equal(fmt.Sprintf("secret %s does not exist", buildObject.Spec.Source.Credentials.Name)))
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
 
 			// generate resources
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
@@ -300,7 +300,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			)
 			Expect(err).To(BeNil())
 
-			specSourceSecret := tb.Catalog.SecretWithAnnotation(*firstBuildObject.Spec.Source.Git.CloneSecret, firstBuildObject.Namespace)
+			specSourceSecret := tb.Catalog.SecretWithoutAnnotation(*firstBuildObject.Spec.Source.Git.CloneSecret, firstBuildObject.Namespace)
 
 			Expect(tb.CreateSecret(specSourceSecret)).To(BeNil())
 
@@ -366,7 +366,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 			Expect(err).To(BeNil())
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
 
-			specSourceSecret := tb.Catalog.SecretWithAnnotation(*firstBuildObject.Spec.Source.Git.CloneSecret, firstBuildObject.Namespace)
+			specSourceSecret := tb.Catalog.SecretWithoutAnnotation(*firstBuildObject.Spec.Source.Git.CloneSecret, firstBuildObject.Namespace)
 
 			// generate resources
 			Expect(tb.CreateSecret(specSourceSecret)).To(BeNil())

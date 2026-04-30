@@ -82,7 +82,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 				return false
 			}
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
 
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
@@ -130,7 +130,7 @@ var _ = Describe("Integration tests BuildRuns and Service-accounts", func() {
 				return false
 			}
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
 
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 

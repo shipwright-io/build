@@ -30,17 +30,6 @@ import (
 // Catalog allows you to access helper functions
 type Catalog struct{}
 
-// SecretWithAnnotation gives you a secret with build annotation
-func (c *Catalog) SecretWithAnnotation(name string, ns string) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   ns,
-			Annotations: map[string]string{buildapialpha.AnnotationBuildRefSecret: "true"},
-		},
-	}
-}
-
 // SecretWithoutAnnotation gives you a secret without build annotation
 func (c *Catalog) SecretWithoutAnnotation(name string, ns string) *corev1.Secret {
 	return &corev1.Secret{

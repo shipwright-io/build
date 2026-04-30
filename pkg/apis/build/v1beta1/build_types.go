@@ -126,6 +126,8 @@ const (
 
 	// AnnotationBuildRefSecret is an annotation that tells the Build Controller to reconcile on
 	// events of the secret only if is referenced by a Build in the same namespace
+	//
+	// Deprecated: this annotation is no longer required and has no effect.
 	AnnotationBuildRefSecret = BuildDomain + "/referenced.secret"
 
 	// AnnotationBuildVerifyRepository tells the Build Controller to check a remote repository. If the annotation is not set
