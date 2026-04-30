@@ -36,7 +36,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Context("when a build reference a secret with annotations for the spec output", func() {
+	Context("when a build reference a secret for the spec output", func() {
 		It("should validate the Build after secret deletion", func() {
 
 			// populate Build related vars
@@ -103,115 +103,8 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 		})
 	})
 
-	Context("when a build reference a secret without annotations for the spec output", func() {
-		It("should not validate the Build after a secret deletion", func() {
 
-			// populate Build related vars
-			buildName := BUILD + tb.Namespace
-			buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(
-				buildName,
-				STRATEGY+tb.Namespace,
-				[]byte(test.BuildWithOutputRefSecret),
-			)
-			Expect(err).To(BeNil())
-
-			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
-
-			// generate resources
-			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
-
-			// wait until the Build finish the validation
-			buildObject, err := tb.GetBuildTillValidation(buildName)
-			Expect(err).To(BeNil())
-			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
-
-			// delete a secret
-			Expect(tb.DeleteSecret(*buildObject.Spec.Output.PushSecret)).To(BeNil())
-
-			// assert that the validation happened one more time
-			buildObject, err = tb.GetBuild(buildName)
-			Expect(err).To(BeNil())
-			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-		})
-
-		It("should not validate when a missing secret is recreated without annotation", func() {
-			// populate Build related vars
-			buildName := BUILD + tb.Namespace
-			buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(
-				buildName,
-				STRATEGY+tb.Namespace,
-				[]byte(test.BuildCBSMinimalWithFakeSecret),
-			)
-			Expect(err).To(BeNil())
-
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
-
-			// wait until the Build finish the validation
-			buildObject, err := tb.GetBuildTillValidation(buildName)
-			Expect(err).To(BeNil())
-			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
-			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Output.PushSecret)))
-
-			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
-
-			// generate resources
-			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
-
-			// // assert that the validation happened one more time
-			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionFalse)
-			Expect(err).To(BeNil())
-			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
-			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", *buildObject.Spec.Output.PushSecret)))
-		})
-
-		It("should validate when a missing secret is recreated with annotation", func() {
-			// populate Build related vars
-			buildName := BUILD + tb.Namespace
-			buildObject, err = tb.Catalog.LoadBuildWithNameAndStrategy(
-				buildName,
-				STRATEGY+tb.Namespace,
-				[]byte(test.BuildCBSMinimalWithFakeSecret),
-			)
-			Expect(err).To(BeNil())
-
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
-
-			// wait until the Build finish the validation
-			buildObject, err := tb.GetBuildTillValidation(buildName)
-			Expect(err).To(BeNil())
-			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
-			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", "fake-secret")))
-
-			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Output.PushSecret, buildObject.Namespace)
-
-			// generate resources
-			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
-			// validate build status again
-			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
-			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SpecOutputSecretRefNotFound))
-			Expect(*buildObject.Status.Message).To(Equal(fmt.Sprintf("referenced secret %s not found", "fake-secret")))
-
-			// we modify the annotation so automatic delete does not take place
-			data := []byte(`{"metadata":{"annotations":{"dummy-annotation":"true"}}}`)
-
-			_, err = tb.PatchSecret(*buildObject.Spec.Output.PushSecret, data)
-			Expect(err).To(BeNil())
-
-			// // assert that the validation happened one more time
-			buildObject, err = tb.GetBuildTillRegistration(buildName, corev1.ConditionTrue)
-			Expect(err).To(BeNil())
-			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionTrue))
-			Expect(*buildObject.Status.Reason).To(Equal(buildapi.SucceedStatus))
-			Expect(*buildObject.Status.Message).To(Equal("all validations succeeded"))
-		})
-	})
-
-	Context("when a build reference a secret with annotations for the spec source", func() {
+	Context("when a build reference a secret for the spec source", func() {
 		It("should validate the Build after secret deletion", func() {
 
 			// populate Build related vars
@@ -279,7 +172,7 @@ var _ = Describe("Integration tests Build and referenced Secrets", func() {
 		})
 	})
 
-	Context("when multiple builds reference a secret with annotations for the spec.source", func() {
+	Context("when multiple builds reference a secret for the spec.source", func() {
 		It("should validate the Builds after secret deletion", func() {
 
 			// populate Build related vars
