@@ -12,16 +12,15 @@ spec:
       description: The referenced version is the minimum version that all relevant buildpack implementations support.
       default: "0.13"
     - name: insecure-registries
-      description: Comma separated list of registries to consider insecure (http or self-signed certificate).
-      default: ""
+      description: List of registries to consider insecure (http or self-signed certificate).
+      type: array
+      defaults: []
   buildSteps:
     - name: build-and-push
       image: docker.io/paketobuildpacks/builder-jammy-full:latest
       env: 
         - name: CNB_PLATFORM_API
           value: $(params.platform-api-version)
-        - name: CNB_INSECURE_REGISTRIES
-          value: $(params.insecure-registries)
         - name: PARAM_SOURCE_CONTEXT
           value: $(params.shp-source-context)
         - name: PARAM_OUTPUT_IMAGE
@@ -31,6 +30,29 @@ spec:
       args:
         - -c
         - |
+          insecureRegistries=""
+          inInsecureRegistries=false
+
+          while [[ $# -gt 0 ]]; do
+            arg="$1"
+            shift
+
+            if [ "${arg}" == "--insecure-registries" ]; then
+              inInsecureRegistries=true
+            elif [ "${inInsecureRegistries}" == "true" ]; then
+              insecureRegistries="${insecureRegistries}${arg},"
+            else
+              echo "Invalid usage"
+              exit 1
+            fi
+          done
+
+          if [[ ! -z "$insecureRegistries" ]]; then
+            echo "> Using insecure registries: $insecureRegistries"
+
+            export CNB_INSECURE_REGISTRIES=$insecureRegistries
+          fi
+
           set -euo pipefail
 
           echo "> Processing environment variables..."
@@ -90,6 +112,9 @@ spec:
 
           # Store the image digest
           grep digest /tmp/report.toml | tail -n 1 | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
+      - --
+      - --insecure-registries
+      - $(params.insecure-registries[*])
       volumeMounts:
         - mountPath: /platform/env
           name: platform-env
