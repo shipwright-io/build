@@ -136,6 +136,7 @@ func dockerHubLogin(username string, password string) (string, error) {
 		Password string `json:"password"`
 	}
 
+	// #nosec: G117 no hard-coded credentials
 	loginData, err := json.Marshal(LoginData{Username: username, Password: password})
 	if err != nil {
 		return "", err
