@@ -62,6 +62,9 @@ go mod vendor
 go get toolchain@none
 popd >/dev/null
 
+# As above changes may have changed the Kubernetes libraries, run code generation
+make -C "${BASEDIR}" generate
+
 # Update ci.yml
 sed -i "s/tekton: v.* # RETAIN-COMMENT: TEKTON_NEWEST_LTS/tekton: ${NEW_VERSION} # RETAIN-COMMENT: TEKTON_NEWEST_LTS/" "${BASEDIR}/.github/workflows/ci.yml"
 
