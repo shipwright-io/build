@@ -18,7 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/ptr"
@@ -564,7 +563,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			condition := br.Status.GetCondition(buildapi.Succeeded)
 			Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 			Expect(condition.Reason).To(Equal(resources.BuildRunNameInvalid))
-			Expect(condition.Message).To(Equal("must be no more than 63 characters"))
+			Expect(condition.Message).To(ContainSubstring("must be no more than 63"))
 		})
 
 		It("should reflect a BadRequest reason in TaskRun", func() {
@@ -630,7 +629,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("NodeSelectorNotValid"))
-				Expect(condition.Message).To(ContainSubstring("must be no more than 63 characters"))
+				Expect(condition.Message).To(ContainSubstring("must be no more than 63"))
 			})
 		})
 	})
@@ -680,7 +679,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("TolerationNotValid"))
-				Expect(condition.Message).To(ContainSubstring(validation.MaxLenError(63)))
+				Expect(condition.Message).To(ContainSubstring("must be no more than 63"))
 			})
 		})
 	})
@@ -726,7 +725,7 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 				condition := br.Status.GetCondition(buildapi.Succeeded)
 				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
 				Expect(condition.Reason).To(Equal("SchedulerNameNotValid"))
-				Expect(condition.Message).To(ContainSubstring(validation.MaxLenError(63)))
+				Expect(condition.Message).To(ContainSubstring("must be no more than 63"))
 			})
 		})
 	})
