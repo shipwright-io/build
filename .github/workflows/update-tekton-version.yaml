@@ -1,6 +1,6 @@
 ---
 # This workflow updates the Tekton version insight Shipwright Build to the latest LTS.
-# As part of that it uses a Personal Access Token that is stored as secret in shipwrigh-io/build
+# As part of that it uses a Personal Access Token that is stored as secret in shipwright-io/build
 # using the name SHIPWRIGHT_BUILD_WRITE_WORKFLOWS. The token expires every 90 days. Instructions
 # to renew it can be found in the "HOW TO update SHIPWRIGHT_BUILD_WRITE_WORKFLOWS" note in the
 # 1Password store that Shipwright Administrators have access to.
@@ -8,31 +8,44 @@ name: Update Tekton version
 on:
   schedule:
   - cron: '0 0 * * *'
+  workflow_dispatch: {}
   issue_comment:
     types: [created, edited]
 jobs:
   check-new-versions:
-    if: contains(github.event.comment.body, '/rebase') || github.event_name == 'schedule'
+    if: contains(github.event.comment.body, '/rebase') || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          path: go/src/github.com/shipwright-io/build
           token: ${{ secrets.SHIPWRIGHT_BUILD_WRITE_WORKFLOWS }}
       - name: Install Go
         uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
           cache: true
+          cache-dependency-path: ./go/src/github.com/shipwright-io/build
           check-latest: true
+      - name: Install Counterfeiter
+        working-directory: go/src/github.com/shipwright-io/build
+        run: make install-counterfeiter
+      - name: Install Spruce
+        working-directory: go/src/github.com/shipwright-io/build
+        run: make install-spruce
 
       - name: Update Tekton version
         id: update-tekton
+        working-directory: go/src/github.com/shipwright-io/build
+        env:
+          GOPATH: ${{ github.workspace }}/go
         run: ./.github/bump-tekton-lts.sh --output "${GITHUB_OUTPUT}"
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v8
         with:
+          path: go/src/github.com/shipwright-io/build
           token: ${{ secrets.SHIPWRIGHT_BUILD_WRITE_WORKFLOWS }}
 
           commit-message: Bump Tekton Pipeline from ${{ steps.update-tekton.outputs.OLD_VERSION }} to ${{ steps.update-tekton.outputs.NEW_VERSION }}
