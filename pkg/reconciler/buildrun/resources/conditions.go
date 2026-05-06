@@ -88,6 +88,19 @@ func UpdateBuildRunUsingTaskRunCondition(ctx context.Context, client client.Clie
 			message = "The TaskRun completed before the request to cancel the TaskRun could be processed."
 		}
 
+	// Tekton v1.12 introduced a more fine-grained set of reasons beside "Failed" that we previously already handled in our logic
+	// Mapping this all to reason Failed like before and fall through to our logic which will then for example map
+	// to our own OOM and PodEvicted reasons.
+	case pipelineapi.TaskRunReasonStepOOM:
+		fallthrough
+
+	case pipelineapi.TaskRunReasonPodEvicted:
+		fallthrough
+
+	case pipelineapi.TaskRunReasonStepFailed:
+		reason = string(pipelineapi.TaskRunReasonFailed)
+		fallthrough
+
 	case pipelineapi.TaskRunReasonFailed:
 		if taskRun.Status.CompletionTime != nil {
 			pod, failedContainer, failedContainerStatus, err := extractFailedPodAndContainer(ctx, client, taskRun)

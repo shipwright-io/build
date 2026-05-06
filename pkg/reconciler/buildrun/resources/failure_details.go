@@ -32,8 +32,11 @@ func UpdateBuildRunUsingTaskFailures(ctx context.Context, client client.Client, 
 	trCondition := taskRun.Status.GetCondition(apis.ConditionSucceeded)
 
 	// only extract failures when failing condition is present
-	if trCondition != nil && pipelineapi.TaskRunReason(trCondition.Reason) == pipelineapi.TaskRunReasonFailed {
-		buildRun.Status.FailureDetails = extractFailureDetails(ctx, client, taskRun)
+	if trCondition != nil {
+		trReason := pipelineapi.TaskRunReason(trCondition.Reason)
+		if trReason == pipelineapi.TaskRunReasonFailed || trReason == pipelineapi.TaskRunReasonStepFailed {
+			buildRun.Status.FailureDetails = extractFailureDetails(ctx, client, taskRun)
+		}
 	}
 }
 
