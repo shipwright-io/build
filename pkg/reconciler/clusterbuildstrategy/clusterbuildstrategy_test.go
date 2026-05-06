@@ -30,6 +30,8 @@ var _ = Describe("Reconcile ClusterBuildStrategy", func() {
 
 		// Fake the manager and get a reconcile Request
 		manager = &fakes.FakeManager{}
+		client := &fakes.FakeClient{}
+		manager.GetClientReturns(client)
 		request = reconcile.Request{NamespacedName: types.NamespacedName{Name: buildStrategyName}}
 	})
 
