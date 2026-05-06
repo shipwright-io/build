@@ -22,6 +22,20 @@ import (
 	"github.com/shipwright-io/build/pkg/validate"
 )
 
+func strategyKindFromBuild(b *buildapi.Build) string {
+	if b.Spec.Strategy.Kind == nil {
+		return string(buildapi.NamespacedBuildStrategyKind)
+	}
+	return string(*b.Spec.Strategy.Kind)
+}
+
+func sourceTypeFromBuild(b *buildapi.Build) string {
+	if b.Spec.Source == nil {
+		return ""
+	}
+	return string(b.Spec.Source.Type)
+}
+
 // build a list of current validation types
 var validationTypes = [...]string{
 	validate.OwnerReferences,
@@ -113,6 +127,13 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 				return reconcile.Result{}, err
 			}
 
+			buildmetrics.BuildCountInc(
+				b.Spec.Strategy.Name,
+				b.Namespace,
+				b.Name,
+				strategyKindFromBuild(b),
+				sourceTypeFromBuild(b),
+			)
 			return reconcile.Result{}, nil
 		}
 	}
@@ -124,7 +145,13 @@ func (r *ReconcileBuild) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	// Increase Build count in metrics
-	buildmetrics.BuildCountInc(b.Spec.Strategy.Name, b.Namespace, b.Name)
+	buildmetrics.BuildCountInc(
+		b.Spec.Strategy.Name,
+		b.Namespace,
+		b.Name,
+		strategyKindFromBuild(b),
+		sourceTypeFromBuild(b),
+	)
 
 	ctxlog.Debug(ctx, "finishing reconciling Build", namespace, request.Namespace, name, request.Name)
 	return reconcile.Result{}, nil
