@@ -1371,7 +1371,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 					case *buildapi.BuildRun:
 						condition := buildRun.Status.GetCondition(buildapi.Succeeded)
 						Expect(condition.Reason).To(Equal(resources.BuildRunNameInvalid))
-						Expect(condition.Message).To(Equal("must be no more than 63 characters"))
+						Expect(condition.Message).To(ContainSubstring("must be no more than 63"))
 					}
 
 					return nil

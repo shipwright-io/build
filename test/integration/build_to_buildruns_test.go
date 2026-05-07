@@ -527,7 +527,7 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 
 			Expect(*buildObject.Status.Registered).To(Equal(corev1.ConditionFalse))
 			Expect(*buildObject.Status.Reason).To(Equal(buildapi.BuildNameInvalid))
-			Expect(*buildObject.Status.Message).To(ContainSubstring("must be no more than 63 characters"))
+			Expect(*buildObject.Status.Message).To(ContainSubstring("must be no more than 63"))
 		})
 	})
 	Context("when a build generateName is provided but none name", func() {

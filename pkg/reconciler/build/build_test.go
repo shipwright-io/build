@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/ptr"
 	crc "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -621,7 +620,7 @@ var _ = Describe("Reconcile Build", func() {
 				buildSample.Spec.NodeSelector = map[string]string{strings.Repeat("s", 64): "amd64"}
 				buildSample.Spec.Output.PushSecret = nil
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, buildapi.NodeSelectorNotValid, "Node selector key not valid: name part "+validation.MaxLenError(63))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, buildapi.NodeSelectorNotValid, "Node selector key not valid: name part must be no more than 63 bytes")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(context.TODO(), request)
@@ -636,7 +635,7 @@ var _ = Describe("Reconcile Build", func() {
 				buildSample.Spec.Tolerations = []corev1.Toleration{{Key: strings.Repeat("s", 64), Operator: "Equal", Value: "test-value"}}
 				buildSample.Spec.Output.PushSecret = nil
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, buildapi.TolerationNotValid, "Toleration key not valid: name part "+validation.MaxLenError(63))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, buildapi.TolerationNotValid, "Toleration key not valid: name part must be no more than 63 bytes")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(context.TODO(), request)
@@ -651,7 +650,7 @@ var _ = Describe("Reconcile Build", func() {
 				buildSample.Spec.SchedulerName = ptr.To(strings.Repeat("s", 64))
 				buildSample.Spec.Output.PushSecret = nil
 
-				statusCall := ctl.StubFunc(corev1.ConditionFalse, buildapi.SchedulerNameNotValid, "Scheduler name not valid: name part "+validation.MaxLenError(63))
+				statusCall := ctl.StubFunc(corev1.ConditionFalse, buildapi.SchedulerNameNotValid, "Scheduler name not valid: name part must be no more than 63 bytes")
 				statusWriter.UpdateCalls(statusCall)
 
 				_, err := reconciler.Reconcile(context.TODO(), request)
