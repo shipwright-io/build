@@ -45,26 +45,33 @@ spec:
           insecureRegistries=""
           inInsecureRegistries=false
 
-          if [[ "${PARAM_OUTPUT_INSECURE}" == "true" ]]; then
-            while [[ $# -gt 0 ]]; do
-              arg="$1"
-              shift
+          while [[ $# -gt 0 ]]; do
+            arg="$1"
+            shift
 
-              if [ "${arg}" == "--insecure-registries" ]; then
-                inInsecureRegistries=true
-              elif [ "${inInsecureRegistries}" == "true" ]; then
-                insecureRegistries="${insecureRegistries}${arg},"
-              else
-                echo "Invalid usage"
-                exit 1
-              fi
-            done
+            if [ "${arg}" == "--insecure-registries" ]; then
+              inInsecureRegistries=true
+            elif [ "${inInsecureRegistries}" == "true" ]; then
+              insecureRegistries="${insecureRegistries}${arg},"
+            else
+              echo "Invalid usage"
+              exit 1
+            fi
+          done
+
+          if [[ "${PARAM_OUTPUT_INSECURE}" == "true" ]]; then
+            outputImageHost="${PARAM_OUTPUT_IMAGE%%/*}"
+            if [[ "${outputImageHost}" == "${PARAM_OUTPUT_IMAGE}" || ( "${outputImageHost}" != *.* && "${outputImageHost}" != *:* && "${outputImageHost}" != "localhost" ) ]]; then
+              echo "> Output image '${PARAM_OUTPUT_IMAGE}' has no explicit registry host; not adding to insecure registries."
+            else
+              insecureRegistries="${insecureRegistries}${outputImageHost},"
+            fi
           fi
 
           if [[ ! -z "$insecureRegistries" ]]; then
             echo "> Using insecure registries: $insecureRegistries"
 
-            export CNB_INSECURE_REGISTRIES=$insecureRegistries
+            export CNB_INSECURE_REGISTRIES="${insecureRegistries}"
           fi
 
           set -euo pipefail
@@ -119,16 +126,16 @@ spec:
           /cnb/lifecycle/builder -app="${PARAM_SOURCE_CONTEXT}" -layers="$LAYERS_DIR"
 
           exporter_args=( -layers="$LAYERS_DIR" -report=/tmp/report.toml -cache-dir="$CACHE_DIR" -app="${PARAM_SOURCE_CONTEXT}")
-          grep -q "buildpack-default-process-type" "$LAYERS_DIR/config/metadata.toml" || exporter_args+=( -process-type web ) 
+          grep -q "buildpack-default-process-type" "$LAYERS_DIR/config/metadata.toml" || exporter_args+=( -process-type web )
 
           announce_phase "EXPORTING"
           /cnb/lifecycle/exporter "${exporter_args[@]}" "${PARAM_OUTPUT_IMAGE}"
 
           # Store the image digest
           grep digest /tmp/report.toml | tail -n 1 | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
-      - --
-      - --insecure-registries
-      - $(params.insecure-registries[*])
+        - --
+        - --insecure-registries
+        - $(params.insecure-registries[*])
       volumeMounts:
         - mountPath: /platform/env
           name: platform-env
