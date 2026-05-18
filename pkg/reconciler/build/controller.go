@@ -123,40 +123,6 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		return err
 	}
 
-	preSecret := predicate.TypedFuncs[*corev1.Secret]{
-		// Only filter events where the secret have the Build specific annotation
-		CreateFunc: func(e event.TypedCreateEvent[*corev1.Secret]) bool {
-			objectAnnotations := e.Object.GetAnnotations()
-			if _, ok := buildCredentialsAnnotationExist(objectAnnotations); ok {
-				return true
-			}
-			return false
-		},
-
-		// Only filter events where the secret have the Build specific annotation,
-		// but only if the Build specific annotation changed
-		UpdateFunc: func(e event.TypedUpdateEvent[*corev1.Secret]) bool {
-			oldAnnotations := e.ObjectOld.GetAnnotations()
-			newAnnotations := e.ObjectNew.GetAnnotations()
-
-			if _, oldBuildKey := buildCredentialsAnnotationExist(oldAnnotations); !oldBuildKey {
-				if _, newBuildKey := buildCredentialsAnnotationExist(newAnnotations); newBuildKey {
-					return true
-				}
-			}
-			return false
-		},
-
-		// Only filter events where the secret have the Build specific annotation
-		DeleteFunc: func(e event.TypedDeleteEvent[*corev1.Secret]) bool {
-			objectAnnotations := e.Object.GetAnnotations()
-			if _, ok := buildCredentialsAnnotationExist(objectAnnotations); ok {
-				return true
-			}
-			return false
-		},
-	}
-
 	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}, handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, secret *corev1.Secret) []reconcile.Request {
 		buildList := &buildapi.BuildList{}
 
@@ -176,20 +142,12 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 		// any Build in the same namespaces
 
 		reconcileList := []reconcile.Request{}
-		flagReconcile := false
 
 		for _, build := range buildList.Items {
-			if build.GetSourceCredentials() != nil && *build.GetSourceCredentials() == secret.Name {
-				flagReconcile = true
-			}
+			// Check if this specific Build references the Secret in source or output
+			if (build.GetSourceCredentials() != nil && *build.GetSourceCredentials() == secret.Name) ||
+				(build.Spec.Output.PushSecret != nil && *build.Spec.Output.PushSecret == secret.Name) {
 
-			if build.Spec.Output.PushSecret != nil {
-				if *build.Spec.Output.PushSecret == secret.Name {
-					flagReconcile = true
-				}
-			}
-
-			if flagReconcile {
 				reconcileList = append(reconcileList, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Name:      build.Name,
@@ -199,12 +157,5 @@ func add(ctx context.Context, mgr manager.Manager, r reconcile.Reconciler, maxCo
 			}
 		}
 		return reconcileList
-	}), preSecret))
-}
-
-func buildCredentialsAnnotationExist(annotation map[string]string) (string, bool) {
-	if val, ok := annotation[buildapi.AnnotationBuildRefSecret]; ok {
-		return val, true
-	}
-	return "", false
+	})))
 }

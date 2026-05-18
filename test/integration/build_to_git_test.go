@@ -272,7 +272,7 @@ var _ = Describe("Integration tests Build and referenced Source url", func() {
 				},
 			}
 
-			sampleSecret := tb.Catalog.SecretWithAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
+			sampleSecret := tb.Catalog.SecretWithoutAnnotation(*buildObject.Spec.Source.Git.CloneSecret, buildObject.Namespace)
 			Expect(tb.CreateSecret(sampleSecret)).To(BeNil())
 
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())

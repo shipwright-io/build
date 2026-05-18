@@ -9,7 +9,7 @@ SPDX-License-Identifier: Apache-2.0
 The following document provides an introduction around the different authentication methods that can take place during an image build when using the Build controller.
 
 - [Overview](#overview)
-- [Build Secrets Annotation](#build-secrets-annotation)
+
 - [Authentication for Git](#authentication-for-git)
   - [SSH authentication](#ssh-authentication)
   - [Basic authentication](#basic-authentication)
@@ -23,30 +23,6 @@ The following document provides an introduction around the different authenticat
 
 There are two places where users might need to define authentication when building images. Authentication to a container registry is the most common one, but also users might have the need to define authentications for pulling source-code from Git. Overall, the authentication is done via the definition of [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in which the required sensitive data will be stored.
 
-## Build Secrets Annotation
-
-Users need to add an annotation `build.shipwright.io/referenced.secret: "true"` to a build secret so that build controller can decide to take a reconcile action when a secret event (`create`, `update` and `delete`) happens. Below is a secret example with build annotation:
-
-```yaml
-apiVersion: v1
-data:
-  .dockerconfigjson: xxxxx
-kind: Secret
-metadata:
-  annotations:
-    build.shipwright.io/referenced.secret: "true"
-  name: secret-docker
-type: kubernetes.io/dockerconfigjson
-```
-
-This annotation will help us filter secrets which are not referenced on a Build instance. That means if a secret doesn't have this annotation, then although event happens on this secret, Build controller will not reconcile. Being able to reconcile on secrets events allow the Build controller to re-trigger validations on the Build configuration, allowing users to understand if a dependency is missing.
-
-If you are using `kubectl` command create secrets, then you can first create build secret using `kubectl create secret` command and annotate this secret using `kubectl annotate secrets`. Below is an example:
-
-```sh
-kubectl -n ${namespace} create secret docker-registry example-secret --docker-server=${docker-server} --docker-username="${username}" --docker-password="${password}" --docker-email=me@here.com
-kubectl -n ${namespace} annotate secrets example-secret build.shipwright.io/referenced.secret='true'
-```
 
 ## Authentication for Git
 
@@ -66,8 +42,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: secret-git-ssh-auth
-  annotations:
-    build.shipwright.io/referenced.secret: "true"
 type: kubernetes.io/ssh-auth
 data:
   ssh-privatekey: <base64 <~/.ssh/id_rsa>
@@ -88,8 +62,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: secret-git-basic-auth
-  annotations:
-    build.shipwright.io/referenced.secret: "true"
 type: kubernetes.io/basic-auth
 stringData:
   username: <cleartext username>
@@ -144,7 +116,6 @@ kubectl --namespace <YOUR_NAMESPACE> create secret docker-registry <CONTAINER_RE
   --docker-username=<USERNAME> \
   --docker-password=<PASSWORD> \
   --docker-email=me@here.com
-kubectl --namespace <YOUR_NAMESPACE> annotate secrets <CONTAINER_REGISTRY_SECRET_NAME> build.shipwright.io/referenced.secret='true'
 ```
 
 _Notes:_ When generating a secret to access docker hub, the `REGISTRY_HOST` value should be `https://index.docker.io/v1/`, the username is the Docker ID.
