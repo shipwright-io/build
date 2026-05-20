@@ -100,6 +100,9 @@ const (
 	// TaskRunSpecStatusCancelled indicates that the user wants to cancel the task,
 	// if not already cancelled or terminated
 	TaskRunSpecStatusCancelled = "TaskRunCancelled"
+	// TaskRunSpecStatusPending indicates that the user wants to postpone starting the task.
+	// When pending, no Pod is created and StartTime is not set.
+	TaskRunSpecStatusPending = "TaskRunPending"
 )
 
 // TaskRunSpecStatusMessage defines human readable status messages for the TaskRun.
@@ -212,6 +215,10 @@ const (
 	TaskRunReasonResolvingStepActionRef = "ResolvingStepActionRef"
 	// TaskRunReasonImagePullFailed is the reason set when the step of a task fails due to image not being pulled
 	TaskRunReasonImagePullFailed TaskRunReason = "TaskRunImagePullFailed"
+	// TaskRunReasonCreateContainerConfigError is the reason set when the step of a task fails due to config error (e.g., missing ConfigMap or Secret)
+	TaskRunReasonCreateContainerConfigError TaskRunReason = "CreateContainerConfigError"
+	// TaskRunReasonPodCreationFailed is the reason set when the pod backing the TaskRun fails to be created (e.g., CreateContainerError)
+	TaskRunReasonPodCreationFailed TaskRunReason = "PodCreationFailed"
 	// TaskRunReasonResultLargerThanAllowedLimit is the reason set when one of the results exceeds its maximum allowed limit of 1 KB
 	TaskRunReasonResultLargerThanAllowedLimit TaskRunReason = "TaskRunResultLargerThanAllowedLimit"
 	// TaskRunReasonStopSidecarFailed indicates that the sidecar is not properly stopped.
@@ -233,6 +240,8 @@ const (
 	// TaskRunReasonFailureIgnored is the reason set when the Taskrun has failed due to pod execution error and the failure is ignored for the owning PipelineRun.
 	// TaskRuns failed due to reconciler/validation error should not use this reason.
 	TaskRunReasonFailureIgnored TaskRunReason = "FailureIgnored"
+	// TaskRunReasonPending is the reason set when the TaskRun is in the pending state
+	TaskRunReasonPending TaskRunReason = "TaskRunPending"
 )
 
 func (t TaskRunReason) String() string {
@@ -485,6 +494,11 @@ func (tr *TaskRun) IsFailure() bool {
 // IsCancelled returns true if the TaskRun's spec status is set to Cancelled state
 func (tr *TaskRun) IsCancelled() bool {
 	return tr.Spec.Status == TaskRunSpecStatusCancelled
+}
+
+// IsPending returns true if the TaskRun's spec status is set to Pending state.
+func (tr *TaskRun) IsPending() bool {
+	return tr.Spec.Status == TaskRunSpecStatusPending
 }
 
 // IsRetriable returns true if the TaskRun's Retries is not exhausted.

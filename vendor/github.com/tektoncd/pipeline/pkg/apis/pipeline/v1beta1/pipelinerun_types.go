@@ -83,6 +83,11 @@ func (pr *PipelineRun) HasStarted() bool {
 	return pr.Status.StartTime != nil && !pr.Status.StartTime.IsZero()
 }
 
+// IsSuccessful returns true if the PipelineRun's's status indicates that it has succeeded.
+func (pr *PipelineRun) IsSuccessful() bool {
+	return pr != nil && pr.Status.GetCondition(apis.ConditionSucceeded).IsTrue()
+}
+
 // IsCancelled returns true if the PipelineRun's spec status is set to Cancelled state
 func (pr *PipelineRun) IsCancelled() bool {
 	return pr.Spec.Status == PipelineRunSpecStatusCancelled
@@ -599,7 +604,7 @@ type PipelineRunList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []PipelineRun `json:"items,omitempty"`
+	Items           []PipelineRun `json:"items"`
 }
 
 // PipelineTaskRun reports the results of running a step in the Task. Each
