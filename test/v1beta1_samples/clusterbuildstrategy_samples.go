@@ -129,7 +129,7 @@ metadata:
 spec:
   steps:
   - name: crane-pull
-    image: gcr.io/go-containerregistry/crane:latest
+    image: gcr.io/go-containerregistry/crane:v0.21.5
     workingDir: $(params.shp-source-root)
     securityContext:
       runAsUser: 1000
