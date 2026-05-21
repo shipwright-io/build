@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -221,9 +222,12 @@ func icrLogin(registry, username, apikey string) (string, string, error) {
 		return "", "", fmt.Errorf("provided access credentials for %q do not contain an IBM API key", registry)
 	}
 
-	iamEndpoint := "https://iam.cloud.ibm.com/identity/token"
-	if isIcrStageEndpoint(registry) {
-		iamEndpoint = "https://iam.test.cloud.ibm.com/identity/token"
+	iamEndpoint, found := os.LookupEnv("IBM_CLOUD_IAM_ENDPOINT")
+	if !found {
+		iamEndpoint = "https://iam.cloud.ibm.com/identity/token"
+		if isIcrStageEndpoint(registry) {
+			iamEndpoint = "https://iam.test.cloud.ibm.com/identity/token"
+		}
 	}
 
 	data := fmt.Sprintf("grant_type=%s&apikey=%s",
