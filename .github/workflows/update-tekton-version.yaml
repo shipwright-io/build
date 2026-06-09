@@ -23,7 +23,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           cache: true
           cache-dependency-path: ./go/src/github.com/shipwright-io/build
           check-latest: true
