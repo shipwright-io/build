@@ -35,9 +35,9 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 
 ## Try It!
 
-- We assume you already have a Kubernetes cluster (v1.33+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
+- We assume you already have a Kubernetes cluster (v1.34+). If you don't, you can use [KinD](https://kind.sigs.k8s.io), which you can install by running [`./hack/install-kind.sh`](./hack/install-kind.sh).
 
-- We also require a Tekton installation (v0.59.+). To install the latest LTS release, run:
+- We also require a Tekton installation (v1.3+). To install the latest LTS release, run:
 
   ```bash
   kubectl apply --filename https://infra.tekton.dev/tekton-releases/pipeline/previous/v1.12.0/release.yaml
@@ -231,8 +231,8 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 
 | Dependency                           | Supported versions           |
 |--------------------------------------|------------------------------|
-| [Kubernetes](https://kubernetes.io/) | v1.33.\*, v1.33.\*, v1.35.\*|
-| [Tekton](https://tekton.dev)         | v1.0.\*, v1.3.\*, v1.6.\*, v1.9.\* |
+| [Kubernetes](https://kubernetes.io/) | v1.34.\*, v1.35.\*, v1.36.\*|
+| [Tekton](https://tekton.dev)         | v1.3.\*, v1.6.\*, v1.9.\*, v1.12.\* |
 
 ### Platform support
 
