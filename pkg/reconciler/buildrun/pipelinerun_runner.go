@@ -158,7 +158,7 @@ func (t *TektonPipelineRunWrapper) Cancel(ctx context.Context, c client.Client) 
 	return c.Patch(
 		ctx,
 		u,
-		client.Apply,
+		client.Apply, //nolint:staticcheck // deprecated in favor of client.Client.Apply(); requires refactoring
 		client.FieldOwner("shipwright-build-controller"),
 		client.ForceOwnership,
 	)

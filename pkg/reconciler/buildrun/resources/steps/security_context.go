@@ -6,11 +6,11 @@ package steps
 
 import (
 	"fmt"
+	"slices"
 
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
-	"k8s.io/utils/strings/slices"
 
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
