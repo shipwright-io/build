@@ -28,7 +28,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           cache: true
           check-latest: true
       - name: Install Trivy
@@ -78,10 +78,10 @@ jobs:
       matrix:
         compat:
           # oldest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
-          - kubernetes: v1.33.7
-            tekton: v1.0.0
+          - kubernetes: v1.34.8
+            tekton: v1.3.0
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
-          - kubernetes: v1.35.0
+          - kubernetes: v1.36.1
             tekton: v1.12.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: ubuntu-latest
@@ -91,7 +91,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           cache: true
           check-latest: true
       - name: Install Ko
@@ -160,10 +160,10 @@ jobs:
       matrix:
         compat:
           # oldest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
-          - kubernetes: v1.33.7
-            tekton: v1.0.0
+          - kubernetes: v1.34.8
+            tekton: v1.3.0
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
-          - kubernetes: v1.35.0
+          - kubernetes: v1.36.1
             tekton: v1.12.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
       max-parallel: 4
     runs-on: oracle-vm-16cpu-64gb-x86-64
@@ -173,7 +173,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           cache: true
           check-latest: true
       - name: Install kubectl
@@ -262,7 +262,7 @@ jobs:
           # Wait for the rollout to complete
           kubectl rollout restart deployment shipwright-build-controller -n shipwright-build
           kubectl rollout status deployment shipwright-build-controller -n shipwright-build
-          
+
           # Run PipelineRun tests
           TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
           TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \

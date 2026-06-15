@@ -16,7 +16,7 @@ var (
 	SchemeGroupVersion = schema.GroupVersion{Group: "shipwright.io", Version: "v1beta1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion} //nolint:staticcheck // deprecated in favor of apimachinery runtime.SchemeBuilder; requires refactoring
 
 	// AddToScheme is used in the generated kube code
 	AddToScheme = SchemeBuilder.AddToScheme
