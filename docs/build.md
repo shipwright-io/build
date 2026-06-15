@@ -133,6 +133,7 @@ The `Build` definition supports the following fields:
     - Use string `BuildTimestamp` to set the image timestamp to the timestamp of the build run.
     - Use any valid UNIX epoch seconds number as a string to set this as the image timestamp.
   - `spec.output.vulnerabilityScan` to enable a security vulnerability scan for your generated image. Further options in vulnerability scanning are defined [here](#defining-the-vulnerabilityscan)
+  - `spec.output.platforms` - Optional list of target OS/architecture combinations for the output image. When non-empty, the build controller orchestrates parallel builds per platform and assembles an OCI image index. See [Defining Multi-Architecture Builds](#defining-multi-architecture-builds) for details.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
   - `spec.retention.atBuildDeletion` - Defines if all related BuildRuns needs to be deleted when deleting the Build. The default is false.
   - `spec.retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
@@ -672,6 +673,74 @@ You can verify which labels were added to the output image that is available on 
 
 ```sh
 docker inspect us.icr.io/source-to-image-build/nodejs-ex | jq ".[].Config.Labels"
+```
+
+### Defining Multi-Architecture Builds
+
+The optional `platforms` field on `spec.output` configures building container images for one or more OS and CPU architecture combinations. When non-empty, the build controller orchestrates parallel builds for each platform and assembles the results into an [OCI image index](https://github.com/opencontainers/image-spec/blob/main/image-index.md) (manifest list). A single entry can be used to target one platform on clusters with heterogeneous nodes.
+
+Each platform entry requires:
+
+- `os` - The operating system (e.g. `linux`).
+- `arch` - The CPU architecture (e.g. `amd64`, `arm64`, `s390x`, `ppc64le`).
+
+**Note**: Multi-arch builds require the PipelineRun executor to be enabled (`BUILDRUN_EXECUTOR=PipelineRun`). Each platform build is scheduled on a node with the matching `kubernetes.io/os` and `kubernetes.io/arch` labels (via per-TaskRun `nodeSelector`).
+
+**Note**: When `spec.output.platforms` is non-empty, `spec.nodeSelector` must not contain `kubernetes.io/os` or `kubernetes.io/arch` keys, as the build controller manages architecture-specific scheduling.
+
+Example of a multi-arch build for x86 and ARM:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: multiarch-build
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  output:
+    image: quay.io/example/app:latest
+    pushSecret: registry-credentials
+    platforms:
+      - os: linux
+        arch: amd64
+      - os: linux
+        arch: arm64
+```
+
+Example of a multi-arch build for all supported Linux architectures:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: multiarch-all-linux
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  strategy:
+    name: buildah
+    kind: ClusterBuildStrategy
+  output:
+    image: quay.io/example/app:latest
+    platforms:
+      - os: linux
+        arch: amd64
+      - os: linux
+        arch: arm64
+      - os: linux
+        arch: s390x
+      - os: linux
+        arch: ppc64le
 ```
 
 ### Defining Retention Parameters

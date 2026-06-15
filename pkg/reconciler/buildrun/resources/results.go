@@ -10,7 +10,11 @@ import (
 	"strconv"
 	"strings"
 
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"knative.dev/pkg/apis"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
@@ -112,4 +116,126 @@ func getSeverity(sev string) buildapi.VulnerabilitySeverity {
 	default:
 		return buildapi.Unknown
 	}
+}
+
+// applyAssembleIndexOutputDigest sets status.output.digest to the OCI image index digest
+// produced by assemble-index (same convention as ko/buildkit multi-platform: output.digest
+// refers to the manifest list when applicable).
+func applyAssembleIndexOutputDigest(buildRun *buildapi.BuildRun, digest string) {
+	if buildRun.Status.Output == nil {
+		buildRun.Status.Output = &buildapi.Output{}
+	}
+	buildRun.Status.Output.Digest = digest
+}
+
+// UpdateBuildRunWithMultiArchResults extracts per-platform build results from a PipelineRun's
+// child TaskRuns and populates the BuildRun's platformResults status field; the assemble-index
+// task supplies the manifest-list digest via status.output.digest.
+// A non-nil error is returned for any TaskRun fetch failure that is not a NotFound
+func UpdateBuildRunWithMultiArchResults(
+	ctx context.Context,
+	buildRun *buildapi.BuildRun,
+	pipelineRun *pipelineapi.PipelineRun,
+	platforms []buildapi.ImagePlatform,
+	c client.Client,
+) error {
+	if pipelineRun == nil || len(platforms) == 0 {
+		return nil
+	}
+
+	// Fetch all child TaskRuns in a single List call
+	var taskRunList pipelineapi.TaskRunList
+	if err := c.List(ctx, &taskRunList, client.InNamespace(pipelineRun.Namespace), client.MatchingLabelsSelector{
+		Selector: labels.SelectorFromSet(labels.Set{
+			pipeline.PipelineRunLabelKey: pipelineRun.Name,
+		}),
+	}); err != nil {
+		return fmt.Errorf("listing TaskRuns for PipelineRun %s: %w", pipelineRun.Name, err)
+	}
+
+	taskRunsByPipelineTask := make(map[string]*pipelineapi.TaskRun, len(taskRunList.Items))
+	for i := range taskRunList.Items {
+		tr := &taskRunList.Items[i]
+		if ptName, ok := tr.Labels[pipeline.PipelineTaskLabelKey]; ok {
+			taskRunsByPipelineTask[ptName] = tr
+		}
+	}
+
+	digestResultName := generateOutputResultName(imageDigestResult)
+	sizeResultName := generateOutputResultName(imageSizeResult)
+	vulnResultName := generateOutputResultName(imageVulnerabilities)
+
+	buildRun.Status.PlatformResults = make([]buildapi.PlatformBuildResult, 0, len(platforms))
+
+	if buildRun.Status.Output != nil {
+		buildRun.Status.Output.Digest = ""
+		buildRun.Status.Output.Size = 0
+		buildRun.Status.Output.Vulnerabilities = nil
+	}
+
+	var allVulnerabilities []buildapi.Vulnerability
+	allPlatformsTerminal := true
+
+	for _, p := range platforms {
+		taskName := platformTaskName(p)
+		result := buildapi.PlatformBuildResult{
+			Platform: p,
+			Status:   buildapi.PlatformBuildStatusPending,
+		}
+
+		taskRun, exists := taskRunsByPipelineTask[taskName]
+		if !exists {
+			allPlatformsTerminal = false
+			buildRun.Status.PlatformResults = append(buildRun.Status.PlatformResults, result)
+			continue
+		}
+
+		condition := taskRun.Status.GetCondition(apis.ConditionSucceeded)
+		switch {
+		case condition == nil:
+			result.Status = buildapi.PlatformBuildStatusPending
+			allPlatformsTerminal = false
+		case condition.IsTrue():
+			result.Status = buildapi.PlatformBuildStatusSucceeded
+		case condition.IsFalse():
+			result.Status = buildapi.PlatformBuildStatusFailed
+			result.FailureMessage = condition.Message
+		default:
+			result.Status = buildapi.PlatformBuildStatusRunning
+			allPlatformsTerminal = false
+		}
+
+		for _, tr := range taskRun.Status.Results {
+			switch tr.Name {
+			case digestResultName:
+				result.Digest = tr.Value.StringVal
+			case sizeResultName:
+				if size, err := strconv.ParseInt(tr.Value.StringVal, 10, 64); err == nil {
+					result.Size = size
+				}
+			case vulnResultName:
+				result.Vulnerabilities = getImageVulnerabilitiesResult(tr)
+				allVulnerabilities = append(allVulnerabilities, result.Vulnerabilities...)
+			}
+		}
+
+		buildRun.Status.PlatformResults = append(buildRun.Status.PlatformResults, result)
+	}
+
+	if assembleTaskRun, ok := taskRunsByPipelineTask["assemble-index"]; ok {
+		if buildRun.Status.Output == nil {
+			buildRun.Status.Output = &buildapi.Output{}
+		}
+		for _, tr := range assembleTaskRun.Status.Results {
+			if tr.Name == digestResultName {
+				applyAssembleIndexOutputDigest(buildRun, tr.Value.StringVal)
+			}
+		}
+		buildRun.Status.Output.Size = 0
+		if allPlatformsTerminal {
+			buildRun.Status.Output.Vulnerabilities = allVulnerabilities
+		}
+	}
+
+	return nil
 }

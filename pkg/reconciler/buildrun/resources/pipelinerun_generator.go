@@ -18,13 +18,15 @@ import (
 
 // PipelineRunGenerator implements BuildRunExecutorGenerator for PipelineRun execution.
 //
-// Each build phase runs as a separate Task:
+// For single-arch builds, each build phase runs as a separate Task:
 //   - source-acquisition
 //   - build-strategy
 //   - output-image
 //
-// Tasks communicate via shared workspace (PVC). This enables future extensions like
-// parallel multi-arch builds.
+// For multi-arch builds (when spec.output.platforms is non-empty), the pipeline fans out:
+//   - source-acquisition (clone + push source as OCI artifact)
+//   - build-<os>-<arch> per platform (parallel, each with per-task nodeSelector)
+//   - assemble-index (creates OCI image index from per-platform results)
 type PipelineRunGenerator struct {
 	cfg                *config.Config
 	build              *buildapi.Build
@@ -53,15 +55,34 @@ func NewPipelineRunGenerator(
 	}
 }
 
+func (g *PipelineRunGenerator) isMultiArch() bool {
+	return len(g.effectiveOutputPlatforms()) > 0
+}
+
+func (g *PipelineRunGenerator) isSourceOCIArtifact() bool {
+	return g.build.Spec.Source != nil && g.build.Spec.Source.Type == buildapi.OCIArtifactType
+}
+
+func (g *PipelineRunGenerator) effectiveOutputPlatforms() []buildapi.ImagePlatform {
+	return EffectiveOutputPlatforms(g.buildRun, g.build.Spec.Output.Platforms)
+}
+
 func (g *PipelineRunGenerator) InitializeExecutor() error {
 	pipelineSpec := createBasePipelineSpec()
+
+	var workspaces []pipelineapi.WorkspaceBinding
+	if g.isMultiArch() {
+		workspaces = generateMultiArchWorkspaceBindings()
+	} else {
+		workspaces = generatePipelineWorkspaceBindings()
+	}
 
 	g.pipelineRun = &pipelineapi.PipelineRun{
 		ObjectMeta: generateTaskRunMetadata(g.build, g.buildRun),
 		Spec: pipelineapi.PipelineRunSpec{
 			PipelineSpec:    pipelineSpec,
 			TaskRunTemplate: generatePipelineTaskRunTemplate(g.serviceAccountName),
-			Workspaces:      generatePipelineWorkspaceBindings(),
+			Workspaces:      workspaces,
 		},
 	}
 
@@ -71,6 +92,12 @@ func (g *PipelineRunGenerator) InitializeExecutor() error {
 func (g *PipelineRunGenerator) GenerateSourceAcquisitionPhase(_ *executionContext) error {
 	taskSpec := createBaseTaskSpec()
 	applySourcesToTaskSpec(g.cfg, taskSpec, g.build, g.buildRun)
+
+	if g.isMultiArch() && !g.isSourceOCIArtifact() {
+		pushStep := generateSourceBundlePushStep(g.cfg, taskSpec, effectivePushSecret(g.build, g.buildRun))
+		taskSpec.Steps = append(taskSpec.Steps, pushStep)
+	}
+
 	g.applySecurityContextToTaskSpec(taskSpec)
 
 	pipelineTask := createSourceAcquisitionPipelineTask(taskSpec)
@@ -80,41 +107,22 @@ func (g *PipelineRunGenerator) GenerateSourceAcquisitionPhase(_ *executionContex
 }
 
 func (g *PipelineRunGenerator) GenerateBuildStrategyPhase(execCtx *executionContext) error {
-	taskSpec := createBaseTaskSpec()
-	addStrategyParametersToTaskSpec(taskSpec, g.strategy.GetParameters())
+	if g.isMultiArch() {
+		return g.generateMultiArchBuildPhase(execCtx)
+	}
+	return g.generateSingleArchBuildPhase(execCtx)
+}
 
-	volumeMounts, err := applyBuildStrategySteps(
-		taskSpec,
-		g.build,
-		g.buildRun,
-		g.strategy.GetBuildSteps(),
-		g.strategy.GetVolumes(),
-		execCtx.combinedEnvs,
-	)
+func (g *PipelineRunGenerator) generateSingleArchBuildPhase(execCtx *executionContext) error {
+	taskSpec := createBaseTaskSpec()
+
+	hasOutputDir, err := applyBuildStrategyToTaskSpec(taskSpec, g.build, g.buildRun, g.strategy, execCtx)
 	if err != nil {
 		return err
 	}
+	execCtx.hasOutputDirectory = hasOutputDir
 
-	execCtx.volumeMounts = volumeMounts
-
-	if err := generateTaskSpecVolumes(
-		taskSpec,
-		execCtx.volumeMounts,
-		execCtx.strategyVolumes,
-		execCtx.buildVolumes,
-		execCtx.buildRunVolumes,
-	); err != nil {
-		return err
-	}
-
-	execCtx.hasOutputDirectory = doesTaskSpecReferenceOutputDirectory(taskSpec)
-
-	if execCtx.hasOutputDirectory {
-		prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
-		taskSpec.Params = append(taskSpec.Params, pipelineapi.ParamSpec{
-			Name: prefixedOutputDirectory,
-			Type: pipelineapi.ParamTypeString,
-		})
+	if hasOutputDir {
 		addOutputDirectoryParamToPipelineSpec(g.pipelineRun.Spec.PipelineSpec)
 	}
 
@@ -127,7 +135,48 @@ func (g *PipelineRunGenerator) GenerateBuildStrategyPhase(execCtx *executionCont
 	return nil
 }
 
+func (g *PipelineRunGenerator) generateMultiArchBuildPhase(execCtx *executionContext) error {
+	platforms := g.effectiveOutputPlatforms()
+
+	if err := validateOutputImageForMultiArch(g.build, g.buildRun); err != nil {
+		return err
+	}
+
+	addStrategyParametersToPipelineSpec(g.pipelineRun.Spec.PipelineSpec, g.strategy.GetParameters())
+
+	hasOutputDirectory := false
+	for _, platform := range platforms {
+		pipelineTask, hasOutputDir, err := createPerPlatformBuildTask(
+			g.cfg,
+			g.build,
+			g.buildRun,
+			g.strategy,
+			platform,
+			execCtx,
+		)
+		if err != nil {
+			return fmt.Errorf("generating build task for %s/%s: %w", platform.OS, platform.Arch, err)
+		}
+		hasOutputDirectory = hasOutputDirectory || hasOutputDir
+		g.applySecurityContextToTaskSpec(&pipelineTask.TaskSpec.TaskSpec)
+		g.pipelineTasks = append(g.pipelineTasks, pipelineTask)
+	}
+
+	if hasOutputDirectory {
+		addOutputDirectoryParamToPipelineSpec(g.pipelineRun.Spec.PipelineSpec)
+	}
+
+	return nil
+}
+
 func (g *PipelineRunGenerator) GenerateOutputImagePhase(execCtx *executionContext) error {
+	if g.isMultiArch() {
+		return g.generateMultiArchOutputPhase()
+	}
+	return g.generateSingleArchOutputPhase(execCtx)
+}
+
+func (g *PipelineRunGenerator) generateSingleArchOutputPhase(execCtx *executionContext) error {
 	buildRunOutput := g.buildRun.Spec.Output
 	if buildRunOutput == nil {
 		buildRunOutput = &buildapi.Image{}
@@ -179,6 +228,14 @@ func (g *PipelineRunGenerator) GenerateOutputImagePhase(execCtx *executionContex
 	return nil
 }
 
+func (g *PipelineRunGenerator) generateMultiArchOutputPhase() error {
+	platforms := g.effectiveOutputPlatforms()
+	assemblyTask := createIndexAssemblyTask(g.cfg, platforms, g.build, g.buildRun)
+	g.applySecurityContextToTaskSpec(&assemblyTask.TaskSpec.TaskSpec)
+	g.pipelineTasks = append(g.pipelineTasks, assemblyTask)
+	return nil
+}
+
 func (g *PipelineRunGenerator) ApplyInfrastructureConfiguration() error {
 	nodeSelector := MergeMaps(g.build.Spec.NodeSelector, g.buildRun.Spec.NodeSelector)
 
@@ -220,6 +277,14 @@ func (g *PipelineRunGenerator) ApplyInfrastructureConfiguration() error {
 		if runtimeClassName != nil {
 			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.RuntimeClassName = runtimeClassName
 		}
+	}
+
+	if g.isMultiArch() {
+		g.pipelineRun.Spec.TaskRunSpecs = generateMultiArchTaskRunSpecs(
+			g.effectiveOutputPlatforms(),
+			nodeSelector,
+			tolerations,
+		)
 	}
 
 	return nil
