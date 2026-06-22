@@ -66,12 +66,12 @@ spec:
             else
               insecureRegistries="${insecureRegistries}${outputImageHost},"
             fi
-          fi
 
-          if [[ ! -z "$insecureRegistries" ]]; then
-            echo "> Using insecure registries: $insecureRegistries"
+            if [[ ! -z "$insecureRegistries" ]]; then
+              echo "> Using insecure registries: $insecureRegistries"
 
-            export CNB_INSECURE_REGISTRIES="${insecureRegistries}"
+              export CNB_INSECURE_REGISTRIES="${insecureRegistries}"
+            fi
           fi
 
           set -euo pipefail
