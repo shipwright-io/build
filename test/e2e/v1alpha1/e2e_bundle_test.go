@@ -65,10 +65,9 @@ var _ = Describe("Test local source code (bundle) functionality", Label("LocalSo
 			testID = generateTestID("bundle")
 
 			inputImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
-			outputImage = fmt.Sprintf("%s/%s:%s",
+			outputImage = fmt.Sprintf("%s:%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
-				"latest",
 			)
 		})
 
