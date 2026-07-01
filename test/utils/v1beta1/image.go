@@ -110,6 +110,12 @@ func (t *TestBuild) ValidateImageDigest(buildRun *buildapi.BuildRun) {
 	gomega.Expect(buildRun.Status.Output).NotTo(gomega.BeNil(), ".status.output is nil")
 	gomega.Expect(buildRun.Status.Output.Digest).NotTo(gomega.Equal(""), ".status.output.digest is empty")
 
-	// Verify that the digest is valid by retrieving the image manifest
-	t.GetImage(buildRun)
+	// Verify that the digest resolves in the registry. Use remote.Get instead of
+	// remote.Image: multi-platform outputs report an image index digest, and
+	// remote.Image defaults to linux/amd64 when resolving an index, which fails
+	// for clusters that only built arm64 (or other single-platform indexes).
+	ref, err := name.ParseReference(getImageURL(buildRun))
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+	_, err = remote.Get(ref, remote.WithAuth(t.getRegistryAuthentication(buildRun, ref)))
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 }

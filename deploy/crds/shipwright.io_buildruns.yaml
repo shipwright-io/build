@@ -15417,7 +15417,11 @@ spec:
                   of an output
                 properties:
                   digest:
-                    description: Digest holds the digest of output image
+                    description: |-
+                      Digest holds the digest of the built output image.
+
+                      For multi-arch builds that publish a manifest list (OCI image index), this is the
+                      digest of that index; per-platform digests are in status.platformResults.
                     type: string
                   size:
                     description: Size holds the compressed size of output image
@@ -15439,6 +15443,65 @@ spec:
                       type: object
                     type: array
                 type: object
+              platformResults:
+                description: PlatformResults holds per-platform build results when
+                  a multi-arch build is used.
+                items:
+                  description: PlatformBuildResult holds observed results for one
+                    OS/architecture in a multi-arch build.
+                  properties:
+                    digest:
+                      description: Digest is the pushed image digest for this platform
+                        variant.
+                      type: string
+                    failureMessage:
+                      description: FailureMessage is set when Status is Failed.
+                      type: string
+                    platform:
+                      description: Platform is the OS and CPU architecture this result
+                        applies to.
+                      properties:
+                        arch:
+                          description: Arch is the CPU architecture of the image platform
+                            (e.g. "amd64", "arm64", "s390x", "ppc64le").
+                          type: string
+                        os:
+                          description: OS is the operating system of the image platform
+                            (e.g. "linux").
+                          type: string
+                      required:
+                      - arch
+                      - os
+                      type: object
+                    size:
+                      description: Size is the compressed image size for this platform
+                        variant.
+                      format: int64
+                      type: integer
+                    status:
+                      description: Status is the lifecycle state of this platform's
+                        build.
+                      type: string
+                    vulnerabilities:
+                      description: Vulnerabilities lists vulnerabilities reported
+                        for this platform's image.
+                      items:
+                        description: Vulnerability defines a vulnerability by its
+                          ID and severity
+                        properties:
+                          id:
+                            type: string
+                          severity:
+                            description: VulnerabilitySeverity is an enum for the
+                              possible values for severity of a vulnerability
+                            type: string
+                        type: object
+                      type: array
+                  required:
+                  - platform
+                  - status
+                  type: object
+                type: array
               source:
                 description: Source holds the results emitted from the source step
                 properties:
