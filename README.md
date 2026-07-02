@@ -40,7 +40,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - We also require a Tekton installation (v1.3+). To install the latest LTS release, run:
 
   ```bash
-  kubectl apply --filename https://infra.tekton.dev/tekton-releases/pipeline/previous/v1.12.0/release.yaml
+  kubectl apply --filename https://infra.tekton.dev/tekton-releases/pipeline/previous/v1.12.2/release.yaml
   ```
 
   If you are using OpenShift cluster refer [Running on OpenShift](#running-on-openshift) for some more configurations.
