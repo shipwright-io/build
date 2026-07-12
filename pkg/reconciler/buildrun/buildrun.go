@@ -218,11 +218,11 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			if build.Spec.Retention != nil && build.Spec.Retention.AtBuildDeletion != nil {
 				if *build.Spec.Retention.AtBuildDeletion && !resources.IsOwnedByBuild(build, buildRun.OwnerReferences) {
 					if err := r.setOwnerReferenceFunc(build, buildRun, r.scheme); err != nil {
-						build.Status.Reason = ptr.To(buildapi.SetOwnerReferenceFailed)
-						build.Status.Message = ptr.To(fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err))
-						if err := r.client.Status().Update(ctx, build); err != nil {
-							return reconcile.Result{}, err
+						message := fmt.Sprintf("unexpected error when trying to set the ownerreference: %v", err)
+						if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, resources.ConditionSetOwnerReferenceFailed); updateErr != nil {
+							return reconcile.Result{}, updateErr
 						}
+						return reconcile.Result{}, nil
 					}
 					ctxlog.Info(ctx, fmt.Sprintf("updating BuildRun %s OwnerReferences, owner is Build %s", buildRun.Name, build.Name), namespace, request.Namespace, name, request.Name)
 					updateBuildRunRequired = true
