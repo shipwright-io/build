@@ -77,10 +77,9 @@ var _ = Describe("PipelineRun E2E Tests", Label("PipelineRun", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("pipelinerun-onoff")
-			outputImage, err = name.ParseReference(fmt.Sprintf("%s/%s:%s",
+			outputImage, err = name.ParseReference(fmt.Sprintf("%s:%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
-				"latest",
 			))
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -191,10 +190,9 @@ var _ = Describe("PipelineRun E2E Tests", Label("PipelineRun", "CORE"), func() {
 
 		BeforeEach(func() {
 			testID = generateTestID("pipelinerun-multi-task")
-			outputImage, err = name.ParseReference(fmt.Sprintf("%s/%s:%s",
+			outputImage, err = name.ParseReference(fmt.Sprintf("%s:%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
-				"latest",
 			))
 			Expect(err).ToNot(HaveOccurred())
 		})
