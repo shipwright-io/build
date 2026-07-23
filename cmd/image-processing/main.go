@@ -58,6 +58,8 @@ type settings struct {
 
 var flagValues settings
 
+var runVulnerabilityScan = image.RunVulnerabilityScan
+
 func initializeFlag() {
 	// Explicitly define the help flag so that --help can be invoked and returns status code 0
 	pflag.BoolVar(&flagValues.help, "help", false, "Print the help")
@@ -213,7 +215,7 @@ func runImageProcessing(ctx context.Context) error {
 			imageString = imageName.String()
 			imageInDir = false
 		}
-		vulns, err = image.RunVulnerabilityScan(ctx, imageString, flagValues.vulnerabilitySettings.VulnerabilityScanOptions, auth, flagValues.insecure, imageInDir, flagValues.vulnerabilityCountLimit)
+		vulns, err = runVulnerabilityScan(ctx, imageString, flagValues.vulnerabilitySettings.VulnerabilityScanOptions, auth, flagValues.insecure, imageInDir, flagValues.vulnerabilityCountLimit)
 		if err != nil {
 			return err
 		}
