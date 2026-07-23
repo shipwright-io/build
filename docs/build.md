@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
     - [Defining the vulnerabilityScan](#defining-the-vulnerabilityscan)
     - [Defining Retention Parameters](#defining-retention-parameters)
     - [Defining Volumes](#defining-volumes)
+    - [Defining CA Bundle](#defining-ca-bundle)
     - [Defining Step Resources](#defining-step-resources)
     - [Defining Triggers](#defining-triggers)
       - [GitHub](#github)
@@ -45,6 +46,7 @@ A `Build` resource allows the user to define:
 - tolerations
 - schedulerName
 - runtimeClassName
+- caBundle
 
 A `Build` is available within a namespace.
 
@@ -60,6 +62,7 @@ When the controller reconciles it:
 - Validates if the specified `paramValues` exist on the referenced strategy parameters. It also validates if the `paramValues` names collide with the Shipwright reserved names.
 - Validates if the container `registry` output secret exists.
 - Validates if the referenced `spec.source.git.url` endpoint exists.
+- Validates the Secret/ConfigMap referenced in the CA Bundle exists or not and also validates if the data in the referenced Secret/ConfigMap is a valid certificate authority.
 
 ## Build Validations
 
@@ -108,6 +111,12 @@ To prevent users from triggering `BuildRun`s (_execution of a Build_) that will 
 | NodeSelectorPlatformConflict                    | `spec.output.platforms` is set and `spec.nodeSelector` includes `kubernetes.io/os` or `kubernetes.io/arch`. |
 | ExecutorNotPipelineRun                          | *(BuildRun only)* Multi-arch output requires `PipelineRun` executor mode. |
 | NodePlatformNotFound                            | *(BuildRun only)* No schedulable node matches a requested platform (`kubernetes.io/os` / `kubernetes.io/arch`). |
+| NodeSelectorNotValid                            | The specified nodeSelector is not valid.                                                                                                                                                                     |
+| TolerationNotValid                              | The specified tolerations are not valid.                                                                                                                                                                     |
+| SchedulerNameNotValid                           | The specified schedulerName is not valid.                                                                                                                                                                    |
+| RuntimeClassNameNotValid                        | The specified runtimeClassName is not valid.                                                                                                                                                                 |
+| CABundleNotFound                                | Referenced ConfigMap/Secret does not exists.                                                                                                                                                                 |
+| CABundleNotValid                                | The data in the referenced ConfigMap/Secret is not a valid certificate authority.                                                                                                                            |
 
 ## Configuring a Build
 
@@ -144,6 +153,7 @@ The `Build` definition supports the following fields:
   - `spec.schedulerName` - Specifies the scheduler name for the build pod. If schedulerName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.strategy.stepResources` - Allows overriding resource requirements (CPU, memory) for individual steps defined in the `BuildStrategy` or `ClusterBuildStrategy`. Each entry specifies a step name and the resources to use instead of those defined in the strategy. You can overwrite values in the `BuildRun`. See [Defining Step Resources](#defining-step-resources) for more information.
   - `spec.runtimeClassName` - Specifies the [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) to be used for the build pod. If runtimeClassName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
+  - `spec.caBundle` - Specifies a CA Bundle that is mounted in all the workloads. Either `ConfigMap` or `Secret` can be referenced. The `Key` inside the referenced object also needs to be specified.
 
 ### Defining the Source
 
@@ -787,6 +797,47 @@ spec:
 ```
 
 See the related [BuildRun documentation](buildrun.md#defining-step-resources) for how to override step resources at the BuildRun level.
+
+### Defining CA Bundle
+
+Using the CA Bundle API, you can mount your own certificate authority, so that any program running in the build workload can use defined CA to establish mutual trust.
+
+CA Bundle can be referenced from a `ConfigMap` or `Secret` in the build namespace.
+The `Key` to be used from referenced `ConfigMap` or `Secret` also needs to be defined.
+
+The CA will be mounted in all the containers at the following locations
+- /etc/ssl/certs/ca-certificates.crt
+- /etc/pki/tls/certs/ca-bundle.crt
+
+The following environment variables will be added in all the containers, with value `/etc/ssl/certs/ca-certificates.crt`
+- SSL_CERT_FILE - OS trust store
+- NODE_EXTRA_CA_CERTS - Node.js uses this to append additional certificates
+- REQUESTS_CA_BUNDLE - Python requests library
+- CURL_CA_BUNDLE - curl CA bundle
+
+**Note**: If an environment is already defined, it will not be overwritten.
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildah-build-with-ca
+spec:
+  output:
+    image: registry/namespace/image:latest
+  source:
+    contextDir: buildah
+    git:
+      url: https://gitea.com/admin/samples.git
+    type: Git
+  strategy:
+    kind: ClusterBuildStrategy
+    name: buildah
+  caBundle:
+    secret:
+      name: ca-bundle
+      key: ca.crt
+```
 
 ### Defining Triggers
 
