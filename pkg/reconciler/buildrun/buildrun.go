@@ -474,6 +474,20 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 			resources.UpdateBuildRunUsingTaskResults(ctx, buildRun, executorResults, request)
 		}
 
+		// For multi-arch builds, extract per-platform results from PipelineRun child TaskRuns
+		if pipelineWrapper, ok := buildRunner.(*TektonPipelineRunWrapper); ok && pipelineWrapper.PipelineRun != nil {
+			var buildOutputPlatforms []buildapi.ImagePlatform
+			if buildRun.Status.BuildSpec != nil {
+				buildOutputPlatforms = buildRun.Status.BuildSpec.Output.Platforms
+			}
+			platforms := resources.EffectiveOutputPlatforms(buildRun, buildOutputPlatforms)
+			if len(platforms) > 0 {
+				if err := resources.UpdateBuildRunWithMultiArchResults(ctx, buildRun, pipelineWrapper.PipelineRun, platforms, r.client); err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+		}
+
 		executorCondition := buildRunner.GetCondition(apis.ConditionSucceeded)
 		if executorCondition != nil {
 			// Update BuildRun status based on the condition using the unified function
