@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"net/http"
@@ -20,11 +19,14 @@ import (
 
 	"github.com/shipwright-io/build/pkg/ctxlog"
 	"github.com/shipwright-io/build/pkg/webhook/conversion"
+	"github.com/shipwright-io/build/pkg/webhook/tlsconfig"
 	"github.com/shipwright-io/build/version"
 )
 
 var (
-	versionGiven = flag.String("version", "devel", "Version of Shipwright webhook running")
+	versionGiven    = flag.String("version", "devel", "Version of Shipwright webhook running")
+	tlsMinVersion   = pflag.String("tls-min-version", "", "Minimum TLS version for the webhook HTTPS server (VersionTLS10, VersionTLS11, VersionTLS12, VersionTLS13). Defaults to VersionTLS12.")
+	tlsCipherSuites = pflag.String("tls-cipher-suites", "", "Comma-separated list of TLS 1.2 cipher suites (Go cipher suite names). Only applies when the minimum TLS version is below TLS 1.3. Defaults to Go runtime selection.")
 )
 
 func printVersion(ctx context.Context) {
@@ -66,22 +68,29 @@ func Execute() error {
 	mux.HandleFunc("/convert", conversion.CRDConvertHandler(ctx))
 	ctxlog.Info(ctx, "adding handlefunc() /convert")
 
+	serverTLSConfig, warning, err := tlsconfig.BuildServerTLSConfig(*tlsMinVersion, *tlsCipherSuites)
+	if err != nil {
+		ctxlog.Error(ctx, err, "invalid TLS configuration")
+		return err
+	}
+	if warning != "" {
+		ctxlog.Info(ctx, warning)
+	}
+	ctxlog.Info(
+		ctx,
+		fmt.Sprintf(
+			"effective TLS configuration: minVersion=%d cipherSuitesConfigured=%t cipherSuitesCount=%d",
+			serverTLSConfig.MinVersion,
+			serverTLSConfig.CipherSuites != nil,
+			len(serverTLSConfig.CipherSuites),
+		),
+	)
+
 	server := &http.Server{
 		Addr:              ":8443",
 		Handler:           mux,
 		ReadHeaderTimeout: 32 * time.Second,
-		TLSConfig: &tls.Config{
-			MinVersion:       tls.VersionTLS12,
-			CurvePreferences: []tls.CurveID{tls.CurveP256, tls.CurveP384, tls.X25519},
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-			},
-		},
+		TLSConfig:         serverTLSConfig,
 	}
 
 	go func() {
