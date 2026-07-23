@@ -32,8 +32,22 @@ spec:
       args:
         - -c
         - |
+          set -euo pipefail
+
           insecureRegistries=""
           inInsecureRegistries=false
+          shouldExport=true
+
+          function validate_insecure_output() {
+            if [[ ${PARAM_OUTPUT_IMAGE} =~ $1 ]]; then
+              if [[ "${PARAM_OUTPUT_INSECURE}" != "true" ]]; then
+                echo "> WARNING: insecure output registry $1 listed while insecure output is disabled, disabling export"
+                shouldExport=false
+              else
+                echo "> WARNING: insecure output registry $1 doubly listed"
+              fi
+            fi
+          }
 
           while [[ $# -gt 0 ]]; do
             arg="$1"
@@ -42,7 +56,10 @@ spec:
             if [ "${arg}" == "--insecure-registries" ]; then
               inInsecureRegistries=true
             elif [ "${inInsecureRegistries}" == "true" ]; then
-              insecureRegistries="${insecureRegistries}${arg},"
+              if [[ ! -z "${arg}" ]]; then
+                validate_insecure_output ${arg}
+                insecureRegistries="${insecureRegistries}${arg},"
+              fi
             else
               echo "Invalid usage"
               exit 1
@@ -63,8 +80,6 @@ spec:
 
             export CNB_INSECURE_REGISTRIES="${insecureRegistries}"
           fi
-
-          set -euo pipefail
 
           echo "> Processing environment variables..."
           ENV_DIR="/platform/env"
@@ -118,11 +133,15 @@ spec:
           exporter_args=( -layers="$LAYERS_DIR" -report=/tmp/report.toml -cache-dir="$CACHE_DIR" -app="${PARAM_SOURCE_CONTEXT}")
           grep -q "buildpack-default-process-type" "$LAYERS_DIR/config/metadata.toml" || exporter_args+=( -process-type web )
 
-          announce_phase "EXPORTING"
-          /cnb/lifecycle/exporter "${exporter_args[@]}" "${PARAM_OUTPUT_IMAGE}"
+          if [[ "$shouldExport" == true ]]; then
+            announce_phase "EXPORTING"
+            /cnb/lifecycle/exporter "${exporter_args[@]}" "${PARAM_OUTPUT_IMAGE}"
 
-          # Store the image digest
-          grep digest /tmp/report.toml | tail -n 1 | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
+            # Store the image digest
+            grep digest /tmp/report.toml | tail -n 1 | tr -d ' \"\n' | sed s/digest=// > "$(results.shp-image-digest.path)"
+          else
+            exit 1
+          fi
         - --
         - --insecure-registries
         - $(params.insecure-registries[*])
