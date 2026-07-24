@@ -6,7 +6,7 @@ on:
     types: [created, edited]
 jobs:
   check-new-versions:
-    if: contains(github.event.comment.body, '/rebase') || github.event_name == 'schedule'
+    if: ${{ contains(github.event.comment.body, '/rebase') || (github.event_name == 'schedule' && github.repository == 'shipwright-io/build') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:

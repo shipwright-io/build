@@ -12,6 +12,7 @@ on:
   workflow_dispatch: {}
 jobs:
   report-vulnerabilities:
+    if: ${{ github.repository == 'shipwright-io/build' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
