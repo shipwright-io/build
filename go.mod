@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/docker/cli v29.6.2+incompatible
-	github.com/go-git/go-git/v5 v5.19.1
+	github.com/go-git/go-git/v5 v5.19.2
 	github.com/go-logr/logr v1.4.4
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/go-containerregistry v0.21.5
