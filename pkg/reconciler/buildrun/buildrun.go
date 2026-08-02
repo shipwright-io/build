@@ -7,6 +7,7 @@ package buildrun
 import (
 	"context"
 	"fmt"
+	"maps"
 	"regexp"
 	"strconv"
 	"strings"
@@ -361,6 +362,31 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					}
 					return reconcile.Result{}, nil
 				}
+			}
+
+			// Validate spec.output.annotations/labels on the merged output (BuildRun output
+			// entries are merged into Build output entries, see resources.MergeMaps usage in
+			// BuildImageProcessingArgs), so an invalid key introduced only by the BuildRun is
+			// also caught before it reaches the image-processing step.
+			buildRunOutput := buildapi.Image{}
+			if buildRun.Spec.Output != nil {
+				buildRunOutput = *buildRun.Spec.Output
+			}
+			// MergeMaps writes into its first argument, so pass clones to avoid mutating
+			// build.Spec.Output before it is used again later in the reconcile.
+			mergedAnnotations := resources.MergeMaps(maps.Clone(build.Spec.Output.Annotations), buildRunOutput.Annotations)
+			if valid, reason, message = validate.ValidateOutputMetadata("annotations", mergedAnnotations); !valid {
+				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, nil
+			}
+			mergedLabels := resources.MergeMaps(maps.Clone(build.Spec.Output.Labels), buildRunOutput.Labels)
+			if valid, reason, message = validate.ValidateOutputMetadata("labels", mergedLabels); !valid {
+				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, nil
 			}
 
 			// Create the ImageBuildRunner (TaskRun or PipelineRun)
