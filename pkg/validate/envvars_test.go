@@ -84,7 +84,76 @@ var _ = Describe("Env", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should pass in case of compliant env var using valueFrom", func() {
+		It("should fail for forbidden env var LD_PRELOAD", func() {
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "LD_PRELOAD",
+							Value: "/tmp/malicious.so",
+						},
+					},
+				},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(HaveOccurred())
+			Expect(b.Status.Reason).To(Equal(ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameForbidden)))
+			Expect(err.Error()).To(ContainSubstring("LD_PRELOAD"))
+		})
+
+		It("should fail for forbidden env var with LD_ prefix", func() {
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "LD_CUSTOM_VAR",
+							Value: "some-value",
+						},
+					},
+				},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(HaveOccurred())
+			Expect(b.Status.Reason).To(Equal(ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameForbidden)))
+		})
+
+		It("should fail for forbidden env var BASH_FUNC_ prefix", func() {
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "BASH_FUNC_exploit%%",
+							Value: "() { malicious; }",
+						},
+					},
+				},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(HaveOccurred())
+			Expect(b.Status.Reason).To(Equal(ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameForbidden)))
+		})
+
+		It("should fail for forbidden env var BASH_ENV", func() {
+			b := &buildapi.Build{
+				Spec: buildapi.BuildSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "BASH_ENV",
+							Value: "/tmp/evil.sh",
+						},
+					},
+				},
+			}
+
+			err := validate.NewEnv(b).ValidatePath(context.TODO())
+			Expect(err).To(HaveOccurred())
+			Expect(b.Status.Reason).To(Equal(ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameForbidden)))
+		})
+
+		It("should pass for allowed env var using valueFrom", func() {
 			b := &buildapi.Build{
 				Spec: buildapi.BuildSpec{
 					Env: []corev1.EnvVar{

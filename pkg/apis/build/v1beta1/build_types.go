@@ -37,6 +37,8 @@ const (
 	SpecEnvNameCanNotBeBlank BuildReason = "SpecEnvNameCanNotBeBlank"
 	// SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified indicates that both value and valueFrom were specified
 	SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified BuildReason = "SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified"
+	// SpecEnvNameForbidden indicates that an environment variable name is on the security blocklist
+	SpecEnvNameForbidden BuildReason = "SpecEnvNameForbidden"
 	// RuntimePathsCanNotBeEmpty indicates that the spec.runtime feature is used but the paths were not specified
 	RuntimePathsCanNotBeEmpty BuildReason = "RuntimePathsCanNotBeEmpty"
 	// RestrictedParametersInUse indicates the definition of reserved shipwright parameters

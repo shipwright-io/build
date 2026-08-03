@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/env"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
@@ -169,6 +170,13 @@ func BuildRunFields(buildRun *buildapi.BuildRun) (string, string) {
 		if len(buildRun.Spec.StepResources) > 0 {
 			return resources.BuildRunBuildFieldOverrideForbidden,
 				"cannot use 'stepResources' override and 'buildSpec' simultaneously"
+		}
+	}
+
+	for _, envVar := range buildRun.Spec.Env {
+		if env.IsForbiddenEnvVar(envVar.Name) {
+			return string(buildapi.SpecEnvNameForbidden),
+				fmt.Sprintf("environment variable %q is forbidden for security reasons", envVar.Name)
 		}
 	}
 
