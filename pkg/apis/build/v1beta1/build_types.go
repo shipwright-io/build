@@ -92,6 +92,8 @@ const (
 	NodeSelectorPlatformConflict BuildReason = "NodeSelectorPlatformConflict"
 	// InvalidPlatform indicates a platform entry has invalid or empty fields, or a duplicate entry
 	InvalidPlatform BuildReason = "InvalidPlatform"
+	// InvalidOutputMetadata indicates that an output annotation or label key is invalid
+	InvalidOutputMetadata BuildReason = "InvalidOutputMetadata"
 	// ExecutorNotPipelineRun indicates multi-arch builds require PipelineRun executor mode
 	ExecutorNotPipelineRun BuildReason = "ExecutorNotPipelineRun"
 	// NodePlatformNotFound indicates no schedulable node was found for a requested platform

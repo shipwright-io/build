@@ -1158,6 +1158,99 @@ var _ = Describe("Reconcile BuildRun", func() {
 				})
 			})
 
+			Context("when spec.output annotations/labels are merged from the BuildRun", func() {
+				BeforeEach(func() {
+					buildSample = ctl.DefaultBuild(buildName, strategyName, buildapi.ClusterBuildStrategyKind)
+					buildSample.Spec.Output = buildapi.Image{
+						Image: "quay.io/example/app:latest",
+					}
+				})
+
+				It("fails with InvalidOutputMetadata when the BuildRun output annotation key contains '='", func() {
+					buildRunSample.Spec.Output = &buildapi.Image{
+						Annotations: map[string]string{"a=b": "c"},
+					}
+					client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+						buildSample,
+						buildRunSample,
+						ctl.DefaultServiceAccount(saName),
+						ctl.DefaultClusterBuildStrategy(),
+						ctl.DefaultNamespacedBuildStrategy(),
+					))
+					var sawInvalidOutputMetadata bool
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
+						br, ok := o.(*buildapi.BuildRun)
+						if !ok {
+							return nil
+						}
+						if c := br.Status.GetCondition(buildapi.Succeeded); c != nil && c.Status == corev1.ConditionFalse &&
+							c.Reason == string(buildapi.InvalidOutputMetadata) {
+							sawInvalidOutputMetadata = true
+							Expect(c.Message).To(ContainSubstring(`"a=b"`))
+						}
+						return nil
+					})
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(sawInvalidOutputMetadata).To(BeTrue())
+					Expect(client.CreateCallCount()).To(Equal(0))
+				})
+
+				It("fails with InvalidOutputMetadata when the BuildRun output label key is empty", func() {
+					buildRunSample.Spec.Output = &buildapi.Image{
+						Labels: map[string]string{"": "c"},
+					}
+					client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+						buildSample,
+						buildRunSample,
+						ctl.DefaultServiceAccount(saName),
+						ctl.DefaultClusterBuildStrategy(),
+						ctl.DefaultNamespacedBuildStrategy(),
+					))
+					var sawInvalidOutputMetadata bool
+					statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
+						br, ok := o.(*buildapi.BuildRun)
+						if !ok {
+							return nil
+						}
+						if c := br.Status.GetCondition(buildapi.Succeeded); c != nil && c.Status == corev1.ConditionFalse &&
+							c.Reason == string(buildapi.InvalidOutputMetadata) {
+							sawInvalidOutputMetadata = true
+							Expect(c.Message).To(ContainSubstring("spec.output.labels"))
+						}
+						return nil
+					})
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(sawInvalidOutputMetadata).To(BeTrue())
+					Expect(client.CreateCallCount()).To(Equal(0))
+				})
+
+				It("succeeds when BuildRun output annotations/labels are valid", func() {
+					buildRunSample.Spec.Output = &buildapi.Image{
+						Annotations: map[string]string{"team": "shipwright"},
+						Labels:      map[string]string{"env": "prod"},
+					}
+					client.GetCalls(ctl.StubBuildRunGetWithSAandStrategies(
+						buildSample,
+						buildRunSample,
+						ctl.DefaultServiceAccount(saName),
+						ctl.DefaultClusterBuildStrategy(),
+						ctl.DefaultNamespacedBuildStrategy(),
+					))
+					client.CreateCalls(func(_ context.Context, object crc.Object, _ ...crc.CreateOption) error {
+						switch object := object.(type) {
+						case *pipelineapi.TaskRun:
+							ctl.DefaultTaskRunWithStatus(taskRunName, buildRunName, ns, corev1.ConditionTrue, "Succeeded").DeepCopyInto(object)
+						}
+						return nil
+					})
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(client.CreateCallCount()).To(Equal(1))
+				})
+			})
+
 			It("stops creation when a FALSE registered status of the build occurs", func() {
 				// Init the Build with registered status false
 				buildSample = ctl.DefaultBuildWithFalseRegistered(buildName, strategyName, buildapi.ClusterBuildStrategyKind)
