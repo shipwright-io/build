@@ -9,6 +9,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	_ "github.com/shipwright-io/build/pkg/config"
 )
 
 func TestValidate(t *testing.T) {

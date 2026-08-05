@@ -82,6 +82,7 @@ To prevent users from triggering `BuildRun`s (_execution of a Build_) that will 
 | BuildNameInvalid                                | The defined `Build` name (`metadata.name`) is invalid. The `Build` name should be a [valid label value](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set). |
 | SpecEnvNameCanNotBeBlank                        | The name for a user-provided environment variable is blank.                                                                                                                                                  |
 | SpecEnvValueCanNotBeBlank                       | The value for a user-provided environment variable is blank.                                                                                                                                                 |
+| SpecEnvNameForbidden                            | The environment variable name is on the security blocklist. Variables such as `LD_PRELOAD`, `BASH_ENV`, `NODE_OPTIONS`, and others that can be used for code injection are not allowed.                       |
 | SpecEnvOnlyOneOfValueOrValueFromMustBeSpecified | Both value and valueFrom were specified, which are mutually exclusive.                                                                                                                                       |
 | RuntimePathsCanNotBeEmpty                       | The `spec.runtime` feature is used but the paths were not specified.                                                                                                                                         |
 | WrongParameterValueType                         | A single value was provided for an array parameter, or vice-versa.                                                                                                                                           |
@@ -133,7 +134,7 @@ The `Build` definition supports the following fields:
     - Use string `BuildTimestamp` to set the image timestamp to the timestamp of the build run.
     - Use any valid UNIX epoch seconds number as a string to set this as the image timestamp.
   - `spec.output.vulnerabilityScan` to enable a security vulnerability scan for your generated image. Further options in vulnerability scanning are defined [here](#defining-the-vulnerabilityscan)
-  - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy.
+  - `spec.env` - Specifies additional environment variables that should be passed to the build container. The available variables depend on the tool that is being used by the chosen build strategy. For security reasons, certain environment variable names that can be used for code injection (such as `LD_PRELOAD`, `BASH_ENV`, `NODE_OPTIONS`, and any name starting with `LD_` or `BASH_FUNC_`) are forbidden and will cause the Build to fail validation.
   - `spec.retention.atBuildDeletion` - Defines if all related BuildRuns needs to be deleted when deleting the Build. The default is false.
   - `spec.retention.ttlAfterFailed` - Specifies the duration for which a failed buildrun can exist.
   - `spec.retention.ttlAfterSucceeded` - Specifies the duration for which a successful buildrun can exist.

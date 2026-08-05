@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/shipwright-io/build/pkg/env"
 )
 
 const (
@@ -80,7 +82,36 @@ const (
 
 	// environment variable to hold vulnerability count limit
 	VulnerabilityCountLimitEnvVar = "VULNERABILITY_COUNT_LIMIT"
+
+	// environment variable to override the forbidden env var blocklist
+	forbiddenEnvVarNamesEnvVar = "FORBIDDEN_ENV_VAR_NAMES"
 )
+
+// defaultForbiddenEnvVarNames is the default blocklist of environment variable
+// names that are rejected for security reasons. Entries ending with "*" are
+// treated as prefix matches (e.g. "LD_*" blocks any variable starting with "LD_").
+var defaultForbiddenEnvVarNames = []string{
+	"LD_*",
+	"BASH_FUNC_*",
+	"LD_PRELOAD",
+	"LD_LIBRARY_PATH",
+	"LD_AUDIT",
+	"LD_DEBUG",
+	"LD_PROFILE",
+	"BASH_ENV",
+	"ENV",
+	"CDPATH",
+	"PYTHONSTARTUP",
+	"PERL5OPT",
+	"PERLLIB",
+	"PERL5LIB",
+	"RUBYOPT",
+	"NODE_OPTIONS",
+}
+
+func init() {
+	env.SetForbiddenEnvVars(defaultForbiddenEnvVarNames)
+}
 
 var (
 	// arrays are not possible as constants
@@ -109,6 +140,7 @@ type Config struct {
 	GitRewriteRule                   bool
 	VulnerabilityCountLimit          int
 	BuildrunExecutor                 string
+	ForbiddenEnvVarNames             []string
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -166,6 +198,7 @@ func NewDefaultConfig() *Config {
 		GitRewriteRule:                false,
 		VulnerabilityCountLimit:       50,
 		BuildrunExecutor:              "TaskRun",
+		ForbiddenEnvVarNames:          defaultForbiddenEnvVarNames,
 
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
@@ -467,6 +500,15 @@ func (c *Config) SetConfigFromEnv() error {
 	if terminationLogPath := os.Getenv(terminationLogPathEnvVar); terminationLogPath != "" {
 		c.TerminationLogPath = terminationLogPath
 	}
+
+	if forbiddenNames := os.Getenv(forbiddenEnvVarNamesEnvVar); forbiddenNames != "" {
+		entries := strings.Split(forbiddenNames, ",")
+		for i, entry := range entries {
+			entries[i] = strings.TrimSpace(entry)
+		}
+		c.ForbiddenEnvVarNames = entries
+	}
+	env.SetForbiddenEnvVars(c.ForbiddenEnvVarNames)
 
 	return nil
 }

@@ -15,6 +15,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	. "github.com/shipwright-io/build/pkg/config"
+	"github.com/shipwright-io/build/pkg/env"
 )
 
 var _ = Describe("Config", func() {
@@ -268,6 +269,31 @@ var _ = Describe("Config", func() {
 						},
 					},
 				}))
+			})
+		})
+		It("should use default forbidden env var names when no override is set", func() {
+			config := NewDefaultConfig()
+			Expect(config.ForbiddenEnvVarNames).ToNot(BeEmpty())
+			Expect(config.ForbiddenEnvVarNames).To(ContainElement("LD_PRELOAD"))
+			Expect(config.ForbiddenEnvVarNames).To(ContainElement("LD_*"))
+		})
+
+		It("should allow for an override of the forbidden env var names using an environment variable", func() {
+			var overrides = map[string]string{"FORBIDDEN_ENV_VAR_NAMES": "CUSTOM_VAR,MALICIOUS_*"}
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.ForbiddenEnvVarNames).To(Equal([]string{"CUSTOM_VAR", "MALICIOUS_*"}))
+				Expect(env.IsForbiddenEnvVar("CUSTOM_VAR")).To(BeTrue())
+				Expect(env.IsForbiddenEnvVar("MALICIOUS_INJECT")).To(BeTrue())
+				Expect(env.IsForbiddenEnvVar("LD_PRELOAD")).To(BeFalse())
+			})
+		})
+
+		It("should trim whitespace from entries in the forbidden env var names override", func() {
+			var overrides = map[string]string{"FORBIDDEN_ENV_VAR_NAMES": " CUSTOM_VAR , MALICIOUS_* "}
+			configWithEnvVariableOverrides(overrides, func(config *Config) {
+				Expect(config.ForbiddenEnvVarNames).To(Equal([]string{"CUSTOM_VAR", "MALICIOUS_*"}))
+				Expect(env.IsForbiddenEnvVar("CUSTOM_VAR")).To(BeTrue())
+				Expect(env.IsForbiddenEnvVar("MALICIOUS_INJECT")).To(BeTrue())
 			})
 		})
 	})

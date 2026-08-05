@@ -13,6 +13,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
+	"github.com/shipwright-io/build/pkg/env"
 )
 
 // Env implements the Env interface to add validations for the `buildapi.spec.env` slice.
@@ -48,6 +49,12 @@ func (e *Env) validate(envVar corev1.EnvVar) []error {
 	if envVar.Name == "" {
 		e.Build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameCanNotBeBlank)
 		e.Build.Status.Message = ptr.To("name for environment variable must not be blank")
+		allErrs = append(allErrs, fmt.Errorf("%s", *e.Build.Status.Message))
+	}
+
+	if env.IsForbiddenEnvVar(envVar.Name) {
+		e.Build.Status.Reason = ptr.To[buildapi.BuildReason](buildapi.SpecEnvNameForbidden)
+		e.Build.Status.Message = ptr.To(fmt.Sprintf("environment variable %q is forbidden for security reasons", envVar.Name))
 		allErrs = append(allErrs, fmt.Errorf("%s", *e.Build.Status.Message))
 	}
 
