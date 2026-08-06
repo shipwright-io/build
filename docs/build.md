@@ -154,7 +154,10 @@ A `Build` resource can specify a source type, such as a Git repository or an OCI
 - `source.git.cloneSecret` - For private repositories or registries, the name references a secret in the namespace that contains the SSH private key or Docker access credentials, respectively.
 - `source.git.revision` - A specific revision to select from the source repository, this can be a commit, tag or branch name. If not defined, it will fall back to the Git repository default branch.
 - `source.git.depth` - The depth of the git clone. If not specified the default value is 1 which means that no history is cloned at all. This is the fastest way to clone a Git repository and in most cases enough as long as you don't have anything in your build logic relying on it. Any value greater than 1 will create a clone with the specified depth. For a full git history clone, depth must be set to 0. **Note**: If you specify a commit sha as revision, then the full history is always cloned before this commit is checked out.
-- `source.contextDir` - For repositories where the source code is not located at the root folder, you can specify this path here.
+- `source.ociArtifact.image` - Specify the source location using an OCI artifact image. Use this field together with `source.type: OCI`.
+- `source.ociArtifact.pullSecret` - Optional. For private OCI artifact images, the name references a secret in the namespace that contains registry credentials.
+- `source.ociArtifact.prune` - Optional. Specify whether Shipwright deletes the pulled OCI artifact image. The supported values are `Never`, which is the default, and `AfterPull`.
+- `source.contextDir` - For sources where the source code is not located at the root folder, you can specify this path here. For OCI artifact sources, the path is resolved inside the pulled artifact contents.
 
 By default, the Build controller does not validate that the Git repository exists. If the validation is desired, users can explicitly define the `build.shipwright.io/verify.repository` annotation with `true`. For example:
 
@@ -205,6 +208,29 @@ spec:
     git:
       url: https://github.com/SaschaSchwarze0/npm-simple
     contextDir: renamed
+```
+
+Example of a `Build` that uses an OCI artifact image as the source:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildpacks-ociartifact-build
+spec:
+  source:
+    type: OCI
+    ociArtifact:
+      image: registry.example.com/team/sample-go-source:latest
+      pullSecret: source-registry-credentials
+      prune: AfterPull
+    contextDir: source-build
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  output:
+    image: registry.example.com/team/sample-go:latest
+    pushSecret: output-registry-credentials
 ```
 
 Example of a `Build` that specifies the tag `v0.1.0` for the git repository:
