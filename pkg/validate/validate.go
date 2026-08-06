@@ -43,6 +43,8 @@ const (
 	SchedulerName = "schedulername"
 	// RuntimeClassName for validating `spec.runtimeClassName` entry
 	RuntimeClassName = "runtimeclassname"
+	// CABundles for validating `spec.caBundle` entry
+	CABundles = "cabundles"
 )
 
 const (
@@ -65,6 +67,8 @@ func NewValidation(
 	scheme *runtime.Scheme,
 ) (BuildPath, error) {
 	switch validationType {
+	case CABundles:
+		return &CABundle{Build: build, Client: client}, nil
 	case Secrets:
 		return &Credentials{Build: build, Client: client}, nil
 	case Strategies:
