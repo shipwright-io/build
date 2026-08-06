@@ -20,11 +20,22 @@ const (
 	NamespaceLabel     string = "namespace"
 	BuildLabel         string = "build"
 	BuildRunLabel      string = "buildrun"
+	StrategyKindLabel  string = "strategy_kind"
+	ExecutorLabel      string = "executor"
+	ResultLabel        string = "result"
+	SourceTypeLabel    string = "source_type"
+)
+
+// Result label values for build_buildrun_result_total
+const (
+	ResultSucceeded = "succeeded"
+	ResultFailed    = "failed"
+	ResultCancelled = "cancelled"
+	ResultTimeout   = "timeout"
 )
 
 var (
-	buildCount    *prometheus.CounterVec
-	buildRunCount *prometheus.CounterVec
+	buildCount *prometheus.CounterVec
 
 	buildRunEstablishDuration  *prometheus.HistogramVec
 	buildRunCompletionDuration *prometheus.HistogramVec
@@ -33,10 +44,19 @@ var (
 	taskRunRampUpDuration    *prometheus.HistogramVec
 	taskRunPodRampUpDuration *prometheus.HistogramVec
 
+	buildRunResultCount        *prometheus.CounterVec
+	buildRunFailureReasonCount *prometheus.CounterVec
+	buildRunsActive            *prometheus.GaugeVec
+	buildStrategyCount         *prometheus.GaugeVec
+
 	buildStrategyLabelEnabled = false
 	namespaceLabelEnabled     = false
 	buildLabelEnabled         = false
 	buildRunLabelEnabled      = false
+	strategyKindLabelEnabled  = false
+	executorLabelEnabled      = false
+	resultLabelEnabled        = false
+	sourceTypeLabelEnabled    = false
 
 	initialized = false
 )
@@ -73,6 +93,33 @@ func InitPrometheus(config *config.Config) {
 		buildRunLabels = append(buildRunLabels, BuildRunLabel)
 		buildRunLabelEnabled = true
 	}
+	if contains(config.Prometheus.EnabledLabels, StrategyKindLabel) {
+		buildLabels = append(buildLabels, StrategyKindLabel)
+		buildRunLabels = append(buildRunLabels, StrategyKindLabel)
+		strategyKindLabelEnabled = true
+	}
+	if contains(config.Prometheus.EnabledLabels, ExecutorLabel) {
+		buildRunLabels = append(buildRunLabels, ExecutorLabel)
+		executorLabelEnabled = true
+	}
+	if contains(config.Prometheus.EnabledLabels, SourceTypeLabel) {
+		buildLabels = append(buildLabels, SourceTypeLabel)
+		buildRunLabels = append(buildRunLabels, SourceTypeLabel)
+		sourceTypeLabelEnabled = true
+	}
+
+	// buildRunResultLabels includes the result label for build_buildrun_result_total
+	buildRunResultLabels := make([]string, len(buildRunLabels))
+	copy(buildRunResultLabels, buildRunLabels)
+	if contains(config.Prometheus.EnabledLabels, ResultLabel) {
+		buildRunResultLabels = append(buildRunResultLabels, ResultLabel)
+		resultLabelEnabled = true
+	}
+
+	// buildRunFailureReasonLabels always includes the reason label
+	buildRunFailureReasonLabels := make([]string, len(buildRunLabels))
+	copy(buildRunFailureReasonLabels, buildRunLabels)
+	buildRunFailureReasonLabels = append(buildRunFailureReasonLabels, "reason")
 
 	buildCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -80,13 +127,6 @@ func InitPrometheus(config *config.Config) {
 			Help: "Number of total registered Builds.",
 		},
 		buildLabels)
-
-	buildRunCount = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "build_buildruns_completed_total",
-			Help: "Number of total completed BuildRuns.",
-		},
-		buildRunLabels)
 
 	buildRunEstablishDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -128,15 +168,46 @@ func InitPrometheus(config *config.Config) {
 		},
 		buildRunLabels)
 
+	buildRunResultCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "build_buildrun_result_total",
+			Help: "Number of total completed BuildRuns by result.",
+		},
+		buildRunResultLabels)
+
+	buildRunFailureReasonCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "build_buildrun_failure_reason_total",
+			Help: "Number of total failed BuildRuns by failure reason.",
+		},
+		buildRunFailureReasonLabels)
+
+	buildRunsActive = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "build_buildruns_active",
+			Help: "Number of currently running BuildRuns.",
+		},
+		buildRunLabels)
+
+	buildStrategyCount = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "build_buildstrategy_count",
+			Help: "Number of BuildStrategy and ClusterBuildStrategy objects.",
+		},
+		[]string{StrategyKindLabel})
+
 	// Register custom metrics with the global prometheus registry
 	metrics.Registry.MustRegister(
 		buildCount,
-		buildRunCount,
 		buildRunEstablishDuration,
 		buildRunCompletionDuration,
 		buildRunRampUpDuration,
 		taskRunRampUpDuration,
 		taskRunPodRampUpDuration,
+		buildRunResultCount,
+		buildRunFailureReasonCount,
+		buildRunsActive,
+		buildStrategyCount,
 	)
 }
 
@@ -155,7 +226,7 @@ func contains(slice []string, element string) bool {
 	return false
 }
 
-func createBuildLabels(buildStrategy string, namespace string, build string) prometheus.Labels {
+func createBuildLabels(buildStrategy, namespace, build, strategyKind, sourceType string) prometheus.Labels {
 	labels := prometheus.Labels{}
 
 	if buildStrategyLabelEnabled {
@@ -167,11 +238,17 @@ func createBuildLabels(buildStrategy string, namespace string, build string) pro
 	if buildLabelEnabled {
 		labels[BuildLabel] = build
 	}
+	if strategyKindLabelEnabled {
+		labels[StrategyKindLabel] = strategyKind
+	}
+	if sourceTypeLabelEnabled {
+		labels[SourceTypeLabel] = sourceType
+	}
 
 	return labels
 }
 
-func createBuildRunLabels(buildStrategy string, namespace string, build string, buildRun string) prometheus.Labels {
+func createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string) prometheus.Labels {
 	labels := prometheus.Labels{}
 
 	if buildStrategyLabelEnabled {
@@ -186,55 +263,106 @@ func createBuildRunLabels(buildStrategy string, namespace string, build string, 
 	if buildRunLabelEnabled {
 		labels[BuildRunLabel] = buildRun
 	}
+	if strategyKindLabelEnabled {
+		labels[StrategyKindLabel] = strategyKind
+	}
+	if executorLabelEnabled {
+		labels[ExecutorLabel] = executor
+	}
+	if sourceTypeLabelEnabled {
+		labels[SourceTypeLabel] = sourceType
+	}
 
 	return labels
 }
 
-// BuildCountInc increases a number of the existing build total count
-func BuildCountInc(buildStrategy string, namespace string, build string) {
-	if buildCount != nil {
-		buildCount.With(createBuildLabels(buildStrategy, namespace, build)).Inc()
+func createBuildRunResultLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, result, sourceType string) prometheus.Labels {
+	labels := createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)
+	if resultLabelEnabled {
+		labels[ResultLabel] = result
 	}
+	return labels
 }
 
-// BuildRunCountInc increases a number of the existing build run total count
-func BuildRunCountInc(buildStrategy string, namespace string, build string, buildRun string) {
-	if buildRunCount != nil {
-		buildRunCount.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun)).Inc()
+func createBuildRunFailureReasonLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType, reason string) prometheus.Labels {
+	labels := createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)
+	labels["reason"] = reason
+	return labels
+}
+
+// BuildCountInc increases the total count of registered Builds
+func BuildCountInc(buildStrategy, namespace, build, strategyKind, sourceType string) {
+	if buildCount != nil {
+		buildCount.With(createBuildLabels(buildStrategy, namespace, build, strategyKind, sourceType)).Inc()
 	}
 }
 
 // BuildRunEstablishObserve sets the build run establish time
-func BuildRunEstablishObserve(buildStrategy string, namespace string, build string, buildRun string, duration time.Duration) {
+func BuildRunEstablishObserve(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string, duration time.Duration) {
 	if buildRunEstablishDuration != nil {
-		buildRunEstablishDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun)).Observe(duration.Seconds())
+		buildRunEstablishDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)).Observe(duration.Seconds())
 	}
 }
 
 // BuildRunCompletionObserve sets the build run completion time
-func BuildRunCompletionObserve(buildStrategy string, namespace string, build string, buildRun string, duration time.Duration) {
+func BuildRunCompletionObserve(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string, duration time.Duration) {
 	if buildRunCompletionDuration != nil {
-		buildRunCompletionDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun)).Observe(duration.Seconds())
+		buildRunCompletionDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)).Observe(duration.Seconds())
 	}
 }
 
 // BuildRunRampUpDurationObserve processes the observation of a new buildrun ramp-up duration
-func BuildRunRampUpDurationObserve(buildStrategy string, namespace string, build string, buildRun string, duration time.Duration) {
+func BuildRunRampUpDurationObserve(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string, duration time.Duration) {
 	if buildRunRampUpDuration != nil {
-		buildRunRampUpDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun)).Observe(duration.Seconds())
+		buildRunRampUpDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)).Observe(duration.Seconds())
 	}
 }
 
 // TaskRunRampUpDurationObserve processes the observation of a new taskrun ramp-up duration
-func TaskRunRampUpDurationObserve(buildStrategy string, namespace string, build string, buildRun string, duration time.Duration) {
+func TaskRunRampUpDurationObserve(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string, duration time.Duration) {
 	if taskRunRampUpDuration != nil {
-		taskRunRampUpDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun)).Observe(duration.Seconds())
+		taskRunRampUpDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)).Observe(duration.Seconds())
 	}
 }
 
 // TaskRunPodRampUpDurationObserve processes the observation of a new taskrun pod ramp-up duration
-func TaskRunPodRampUpDurationObserve(buildStrategy string, namespace string, build string, buildRun string, duration time.Duration) {
+func TaskRunPodRampUpDurationObserve(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string, duration time.Duration) {
 	if taskRunPodRampUpDuration != nil {
-		taskRunPodRampUpDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun)).Observe(duration.Seconds())
+		taskRunPodRampUpDuration.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)).Observe(duration.Seconds())
+	}
+}
+
+// BuildRunResultCountInc increments the build_buildrun_result_total counter
+func BuildRunResultCountInc(buildStrategy, namespace, build, buildRun, strategyKind, executor, result, sourceType string) {
+	if buildRunResultCount != nil {
+		buildRunResultCount.With(createBuildRunResultLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, result, sourceType)).Inc()
+	}
+}
+
+// BuildRunFailureReasonCountInc increments the build_buildrun_failure_reason_total counter
+func BuildRunFailureReasonCountInc(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType, reason string) {
+	if buildRunFailureReasonCount != nil {
+		buildRunFailureReasonCount.With(createBuildRunFailureReasonLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType, reason)).Inc()
+	}
+}
+
+// BuildRunsActiveInc increments the build_buildruns_active gauge
+func BuildRunsActiveInc(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string) {
+	if buildRunsActive != nil {
+		buildRunsActive.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)).Inc()
+	}
+}
+
+// BuildRunsActiveDec decrements the build_buildruns_active gauge
+func BuildRunsActiveDec(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType string) {
+	if buildRunsActive != nil {
+		buildRunsActive.With(createBuildRunLabels(buildStrategy, namespace, build, buildRun, strategyKind, executor, sourceType)).Dec()
+	}
+}
+
+// BuildStrategyCountSet sets the build_buildstrategy_count gauge
+func BuildStrategyCountSet(strategyKind string, count float64) {
+	if buildStrategyCount != nil {
+		buildStrategyCount.With(prometheus.Labels{StrategyKindLabel: strategyKind}).Set(count)
 	}
 }
