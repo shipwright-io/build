@@ -53,10 +53,9 @@ var _ = Describe("Using One-Off Builds", Label("OneOffBuild"), func() {
 		BeforeEach(func() {
 			testID = generateTestID("onoff")
 
-			outputImage, err = name.ParseReference(fmt.Sprintf("%s/%s:%s",
+			outputImage, err = name.ParseReference(fmt.Sprintf("%s:%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
-				"latest",
 			))
 			Expect(err).ToNot(HaveOccurred())
 		})

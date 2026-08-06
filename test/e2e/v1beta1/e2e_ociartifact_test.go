@@ -65,10 +65,9 @@ var _ = Describe("Test local source code (bundle) functionality", Label("OCIArti
 			testID = generateTestID("bundle")
 
 			inputImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
-			outputImage = fmt.Sprintf("%s/%s:%s",
+			outputImage = fmt.Sprintf("%s:%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
-				"latest",
 			)
 		})
 
@@ -160,10 +159,9 @@ var _ = Describe("Test local source code (bundle) functionality", Label("OCIArti
 			var secretName = os.Getenv(EnvVarImageRepoSecret)
 			var registryName string
 			var auth authn.Authenticator
-			var tmpImage = fmt.Sprintf("%s/source-%s:%s",
+			var tmpImage = fmt.Sprintf("%s:source-%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
-				"latest",
 			)
 
 			By("looking up the registry name", func() {
