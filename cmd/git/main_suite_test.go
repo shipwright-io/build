@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main_test
+package main
 
 import (
 	"fmt"
@@ -12,7 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 
-	. "github.com/shipwright-io/build/cmd/git"
 	shpgit "github.com/shipwright-io/build/pkg/git"
 )
 
