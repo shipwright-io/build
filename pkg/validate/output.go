@@ -76,15 +76,25 @@ func (b *BuildSpecOutputValidator) ValidatePath(_ context.Context) error {
 // that itself contains "=" is silently split apart, so the image ends up tagged with a
 // different key/value pair than the one requested instead of failing loudly.
 func ValidateOutputMetadata(field string, entries map[string]string) (bool, string, string) {
+	keys := make([]string, 0, len(entries))
 	for key := range entries {
-		if key == "" {
-			return false, string(buildapi.InvalidOutputMetadata), fmt.Sprintf("spec.output.%s key must not be empty", field)
-		}
-		if strings.Contains(key, "=") {
-			return false, string(buildapi.InvalidOutputMetadata), fmt.Sprintf("spec.output.%s key %q must not contain '='", field, key)
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+
+	var problems []string
+	for _, key := range keys {
+		switch {
+		case key == "":
+			problems = append(problems, fmt.Sprintf("spec.output.%s key must not be empty", field))
+		case strings.Contains(key, "="):
+			problems = append(problems, fmt.Sprintf("spec.output.%s key %q must not contain '='", field, key))
 		}
 	}
-	return true, "", ""
+	if len(problems) == 0 {
+		return true, "", ""
+	}
+	return false, string(buildapi.InvalidOutputMetadata), strings.Join(problems, "; ")
 }
 
 func (b *BuildSpecOutputValidator) checkOutputPlatformsFields() {

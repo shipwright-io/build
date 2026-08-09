@@ -291,6 +291,14 @@ var _ = Describe("BuildSpecOutputValidator", func() {
 			Expect(*build.Status.Reason).To(Equal(buildapi.InvalidOutputMetadata))
 			Expect(*build.Status.Message).To(ContainSubstring("must not be empty"))
 		})
+
+		It("should report all invalid annotation keys, not just the first found", func() {
+			build := buildWithOutputMetadata(map[string]string{"a=b": "1", "c=d": "2", "valid": "3"}, nil)
+			validate(build)
+			Expect(*build.Status.Reason).To(Equal(buildapi.InvalidOutputMetadata))
+			Expect(*build.Status.Message).To(ContainSubstring(`"a=b"`))
+			Expect(*build.Status.Message).To(ContainSubstring(`"c=d"`))
+		})
 	})
 })
 
