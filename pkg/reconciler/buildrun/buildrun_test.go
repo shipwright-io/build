@@ -1285,6 +1285,14 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(sawOwnerReferenceFailure).To(BeTrue())
 
 				Expect(client.CreateCallCount()).To(Equal(0)) // proving the TaskRun is no longer created
+
+				// walk every Status().Update call recorded by the fake
+				// to prove the Build was never one of the updated objects
+				for i := 0; i < statusWriter.UpdateCallCount(); i++ {
+					_, obj, _ := statusWriter.UpdateArgsForCall(i)
+					_, isBuild := obj.(*buildapi.Build)
+					Expect(isBuild).To(BeFalse(), "Build status should not be updated on ownerreference failure")
+				}
 			})
 
 			It("fails the BuildRun when BuildRun and Build are not in the same ns when setting ownerreferences", func() {
@@ -1326,6 +1334,14 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(sawOwnerReferenceFailure).To(BeTrue())
 
 				Expect(client.CreateCallCount()).To(Equal(0))
+
+				// walk every Status().Update call recorded by the fake
+				// to prove the Build was never one of the updated objects
+				for i := 0; i < statusWriter.UpdateCallCount(); i++ {
+					_, obj, _ := statusWriter.UpdateArgsForCall(i)
+					_, isBuild := obj.(*buildapi.Build)
+					Expect(isBuild).To(BeFalse(), "Build status should not be updated on ownerreference failure")
+				}
 			})
 
 			It("ensure the Build can own a BuildRun when using the proper annotation", func() {
