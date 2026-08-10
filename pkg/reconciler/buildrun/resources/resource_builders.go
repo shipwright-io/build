@@ -67,13 +67,30 @@ func generateBaseTaskParamReferences() []pipelineapi.Param {
 	}
 }
 
+// normalizeImageTag ensures the image reference includes an explicit tag. Without an
+// explicit tag, per-platform suffix appending (e.g. "-linux-amd64") produces an
+// image-name mutation like "myimage-linux-amd64" instead of the intended
+// "myimage:latest-linux-amd64".
+func normalizeImageTag(image string) string {
+	lastSlash := strings.LastIndex(image, "/")
+	nameAndTag := image
+	if lastSlash >= 0 {
+		nameAndTag = image[lastSlash+1:]
+	}
+	if !strings.Contains(nameAndTag, ":") && !strings.Contains(nameAndTag, "@") {
+		return image + ":latest"
+	}
+	return image
+}
+
 func generateBaseParamValues(build *buildapi.Build, buildRun *buildapi.BuildRun) []pipelineapi.Param {
 	var image string
-	if buildRun.Spec.Output != nil {
+	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Image != "" {
 		image = buildRun.Spec.Output.Image
 	} else {
 		image = build.Spec.Output.Image
 	}
+	image = normalizeImageTag(image)
 
 	insecure := false
 	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Insecure != nil {
@@ -434,11 +451,12 @@ func applyAnnotationsAndLabels(taskRun *pipelineapi.TaskRun, strategy buildapi.B
 
 func applyParameters(taskRun *pipelineapi.TaskRun, build *buildapi.Build, buildRun *buildapi.BuildRun, strategy buildapi.BuilderStrategy) error {
 	var image string
-	if buildRun.Spec.Output != nil {
+	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Image != "" {
 		image = buildRun.Spec.Output.Image
 	} else {
 		image = build.Spec.Output.Image
 	}
+	image = normalizeImageTag(image)
 
 	insecure := false
 	if buildRun.Spec.Output != nil && buildRun.Spec.Output.Insecure != nil {
@@ -556,7 +574,7 @@ func generateBasePipelineWorkspaceDeclarations() []pipelineapi.PipelineWorkspace
 			Description: "Workspace for source code and build artifacts",
 		},
 		{
-			Name:        "cache",
+			Name:        workspaceCache,
 			Description: "Cache workspace for build artifacts",
 			Optional:    true,
 		},
@@ -585,7 +603,23 @@ func generatePipelineWorkspaceBindings() []pipelineapi.WorkspaceBinding {
 			},
 		},
 		{
-			Name:     "cache",
+			Name:     workspaceCache,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
+// generateMultiArchWorkspaceBindings creates EmptyDir workspace bindings for multi-arch
+// PipelineRuns. Each TaskRun in the PipelineRun gets its own independent EmptyDir volume,
+// which is essential because per-platform tasks run on different nodes.
+func generateMultiArchWorkspaceBindings() []pipelineapi.WorkspaceBinding {
+	return []pipelineapi.WorkspaceBinding{
+		{
+			Name:     workspaceSource,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+		{
+			Name:     workspaceCache,
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
@@ -667,17 +701,15 @@ func createBuildStrategyPipelineTask(taskSpec *pipelineapi.TaskSpec, strategy bu
 	return pipelineTask
 }
 
-func generateBuildStrategyTaskParams(strategy buildapi.BuilderStrategy) []pipelineapi.Param {
-	params := generateBaseTaskParamReferences()
-
-	for _, strategyParam := range strategy.GetParameters() {
+func strategyParamReferences(parameters []buildapi.Parameter) []pipelineapi.Param {
+	var params []pipelineapi.Param
+	for _, strategyParam := range parameters {
 		var paramRef string
 		if strategyParam.Type == buildapi.ParameterTypeArray {
 			paramRef = fmt.Sprintf("$(params.%s[*])", strategyParam.Name)
 		} else {
 			paramRef = fmt.Sprintf("$(params.%s)", strategyParam.Name)
 		}
-
 		params = append(params, pipelineapi.Param{
 			Name: strategyParam.Name,
 			Value: pipelineapi.ParamValue{
@@ -686,8 +718,50 @@ func generateBuildStrategyTaskParams(strategy buildapi.BuilderStrategy) []pipeli
 			},
 		})
 	}
-
 	return params
+}
+
+func generateBuildStrategyTaskParams(strategy buildapi.BuilderStrategy) []pipelineapi.Param {
+	params := generateBaseTaskParamReferences()
+	params = append(params, strategyParamReferences(strategy.GetParameters())...)
+	return params
+}
+
+func applyBuildStrategyToTaskSpec(
+	taskSpec *pipelineapi.TaskSpec,
+	build *buildapi.Build,
+	buildRun *buildapi.BuildRun,
+	strategy buildapi.BuilderStrategy,
+	execCtx *executionContext,
+) (bool, error) {
+	addStrategyParametersToTaskSpec(taskSpec, strategy.GetParameters())
+
+	volumeMounts, err := applyBuildStrategySteps(
+		taskSpec, build, buildRun,
+		strategy.GetBuildSteps(), strategy.GetVolumes(),
+		execCtx.combinedEnvs,
+	)
+	if err != nil {
+		return false, err
+	}
+
+	if err := generateTaskSpecVolumes(
+		taskSpec, volumeMounts,
+		execCtx.strategyVolumes, execCtx.buildVolumes, execCtx.buildRunVolumes,
+	); err != nil {
+		return false, err
+	}
+
+	hasOutputDir := doesTaskSpecReferenceOutputDirectory(taskSpec)
+	if hasOutputDir {
+		prefixedOutputDirectory := fmt.Sprintf("%s-%s", prefixParamsResultsVolumes, paramOutputDirectory)
+		taskSpec.Params = append(taskSpec.Params, pipelineapi.ParamSpec{
+			Name: prefixedOutputDirectory,
+			Type: pipelineapi.ParamTypeString,
+		})
+	}
+
+	return hasOutputDir, nil
 }
 
 func generateBuildStrategyWorkspaceBindings() []pipelineapi.WorkspacePipelineTaskBinding {
@@ -697,8 +771,8 @@ func generateBuildStrategyWorkspaceBindings() []pipelineapi.WorkspacePipelineTas
 			Workspace: workspaceSource,
 		},
 		{
-			Name:      "cache",
-			Workspace: "cache",
+			Name:      workspaceCache,
+			Workspace: workspaceCache,
 		},
 	}
 }

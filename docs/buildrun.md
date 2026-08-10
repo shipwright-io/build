@@ -75,6 +75,7 @@ The `BuildRun` definition supports the following fields:
   - `spec.output.pushSecret` - Reference an existing secret to get access to the container registry. This secret will be added to the service account along with the ones requested by the `Build`.
   - `spec.output.timestamp` - Overrides the output timestamp configuration of the referenced build to instruct the build to change the output image creation timestamp to the specified value. When omitted, the respective build strategy tool defines the output image timestamp.
   - `spec.output.vulnerabilityScan` - Overrides the output vulnerabilityScan configuration of the referenced build to run the vulnerability scan for the generated image.
+  - `spec.output.platforms` - Overrides the target OS/architecture list from the Build. When non-empty, triggers a multi-arch build. See [Defining Multi-Architecture Builds](build.md#defining-multi-architecture-builds) for details.
   - `spec.env` - Specifies additional environment variables that should be passed to the build container. Overrides any environment variables that are specified in the `Build` resource. The available variables depend on the tool used by the chosen build strategy.
   - `spec.stepResources` - Allows overriding resource requirements (CPU, memory) for individual steps defined in the `BuildStrategy` or `ClusterBuildStrategy`. If the referenced `Build` also specifies `spec.strategy.stepResources`, the `BuildRun` values take precedence for the same step. See [Defining Step Resources](#defining-step-resources) for more information.
   - `spec.nodeSelector` - Specifies a selector which must match a node's labels for the build pod to be scheduled on that node. If nodeSelectors are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
@@ -562,6 +563,41 @@ status:
 ```
 
 **Note**: The vulnerability scan will only run if it is specified in the build or buildrun spec. See [Defining the `vulnerabilityScan`](build.md#defining-the-vulnerabilityscan).
+
+#### Multi-Architecture Build Results
+
+When a multi-arch build completes, the `BuildRun` status includes per-platform results under `.status.platformResults`. The manifest-list (OCI image index) digest is recorded in **`.status.output.digest`**, consistent with other multi-platform flows (for example BuildKit or `ko`); per-platform digests remain under `platformResults`.
+
+```yaml
+# [...]
+status:
+  output:
+    digest: sha256:ab12cd34...  # OCI image index digest
+  platformResults:
+    - platform:
+        os: linux
+        arch: amd64
+      status: Succeeded
+      digest: sha256:amd64digest...
+      size: 52428800
+    - platform:
+        os: linux
+        arch: arm64
+      status: Succeeded
+      digest: sha256:arm64digest...
+      size: 48234567
+```
+
+Each `platformResults` entry reports:
+
+- `platform` - The OS and architecture this result applies to.
+- `status` - One of `Pending`, `Running`, `Succeeded`, or `Failed`.
+- `digest` - The pushed image digest for this platform variant.
+- `size` - The compressed image size for this platform variant.
+- `failureMessage` - Set when `status` is `Failed`.
+- `vulnerabilities` - Per-platform vulnerability scan results (when enabled).
+
+If any platform fails, the overall `BuildRun` is marked as failed. Per-platform details are still available in `platformResults` for debugging.
 
 ### Build Snapshot
 
