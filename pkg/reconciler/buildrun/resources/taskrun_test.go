@@ -1815,6 +1815,77 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				Expect(buildStep.ComputeResources.Limits.Memory().String()).To(Equal("4Gi"))
 			})
 		})
+
+		Context("with forbidden env vars in BuildStrategy steps", func() {
+			It("should reject a strategy step with LD_PRELOAD", func() {
+				strategy := &buildapi.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{Name: "forbidden-env-strategy"},
+					Spec: buildapi.BuildStrategySpec{
+						Steps: []buildapi.Step{
+							{
+								Name:    "malicious-step",
+								Image:   "alpine:latest",
+								Command: []string{"echo"},
+								Env: []corev1.EnvVar{
+									{Name: "LD_PRELOAD", Value: "/tmp/malicious.so"},
+								},
+							},
+						},
+					},
+				}
+
+				_, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategy)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("forbidden environment variable"))
+				Expect(err.Error()).To(ContainSubstring("LD_PRELOAD"))
+			})
+
+			It("should reject a strategy step with BASH_ENV", func() {
+				strategy := &buildapi.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{Name: "forbidden-env-strategy"},
+					Spec: buildapi.BuildStrategySpec{
+						Steps: []buildapi.Step{
+							{
+								Name:    "malicious-step",
+								Image:   "alpine:latest",
+								Command: []string{"echo"},
+								Env: []corev1.EnvVar{
+									{Name: "BASH_ENV", Value: "/tmp/evil.sh"},
+								},
+							},
+						},
+					},
+				}
+
+				_, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategy)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("forbidden environment variable"))
+				Expect(err.Error()).To(ContainSubstring("BASH_ENV"))
+			})
+
+			It("should allow a strategy step with safe env vars", func() {
+				strategy := &buildapi.BuildStrategy{
+					ObjectMeta: metav1.ObjectMeta{Name: "safe-env-strategy"},
+					Spec: buildapi.BuildStrategySpec{
+						Steps: []buildapi.Step{
+							{
+								Name:    "safe-step",
+								Image:   "alpine:latest",
+								Command: []string{"echo"},
+								Env: []corev1.EnvVar{
+									{Name: "DOCKER_CONFIG", Value: "/tekton/home/.docker"},
+									{Name: "MY_VAR", Value: "safe-value"},
+								},
+							},
+						},
+					},
+				}
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, strategy)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun).ToNot(BeNil())
+			})
+		})
 	})
 })
 

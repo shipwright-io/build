@@ -191,6 +191,12 @@ func applyBuildStrategySteps(
 	stepResourceOverrides := buildStepResourceOverridesMap(build, buildRun)
 
 	for _, containerValue := range buildSteps {
+		for _, e := range containerValue.Env {
+			if env.IsForbiddenEnvVar(e.Name) {
+				return nil, fmt.Errorf("BuildStrategy step %q defines forbidden environment variable %q", containerValue.Name, e.Name)
+			}
+		}
+
 		stepEnv, err := env.MergeEnvVars(combinedEnvs, containerValue.Env, false)
 		if err != nil {
 			return nil, fmt.Errorf("error(s) occurred merging environment variables into BuildStrategy %q steps: %s", build.Spec.StrategyName(), err.Error())
