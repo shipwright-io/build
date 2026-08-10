@@ -5,6 +5,7 @@ approvers:
 - SaschaSchwarze0
 - HeavyWombat
 - apoorvajagtap
+- IrvingMg
 
 reviewers:
 - apoorvajagtap
@@ -14,8 +15,8 @@ reviewers:
 - HeavyWombat
 - karanibm6
 - rxinui
-- ayushsatyam146
-- hasanawad94
+- IrvingMg
+- kaizakin
 
 emeritus_approvers:
 - adambkaplan # 2026-06-17
@@ -23,3 +24,7 @@ emeritus_approvers:
 - sbose78 # 2022-08-15
 - gabemontero # 2022-08-15
 - ImJasonH # 2023-01-07
+
+emeritus_reviewers:
+- ayushsatyam146 # 2026-08-09
+- hasanawad94 # 2026-08-09
