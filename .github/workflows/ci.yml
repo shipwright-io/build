@@ -6,6 +6,10 @@
 name: Unit, Integration, and E2E Tests
 on:
   pull_request:
+    paths-ignore:
+    - OWNERS
+    - 'README.md'
+    - 'docs/**'
     branches:
     - main
     - "release-v*" # release branches
@@ -13,6 +17,7 @@ on:
     paths-ignore:
     - 'README.md'
     - 'docs/**'
+    - OWNERS
     branches:
     - main
     - "release-v*" # release branches
