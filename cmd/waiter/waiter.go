@@ -44,8 +44,8 @@ func (w *Waiter) retry() error {
 	timer := time.NewTimer(w.flagValues.timeout)
 	defer timer.Stop()
 
-	// Verify on file existence every 100ms. Prefer NewTicker over time.Tick so
-	// the underlying goroutine can be stopped when retry returns.
+	// Verify file existence every 100ms. Use NewTicker so the ticker can be
+	// stopped immediately when retry returns.
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
