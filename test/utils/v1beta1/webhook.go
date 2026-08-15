@@ -6,7 +6,6 @@ package utils
 
 import (
 	"context"
-	"crypto/tls"
 	"net/http"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/onsi/gomega"
 
 	"github.com/shipwright-io/build/pkg/webhook/conversion"
+	"github.com/shipwright-io/build/pkg/webhook/tlsconfig"
 	"github.com/shipwright-io/build/test/utils"
 )
 
@@ -22,23 +22,15 @@ func StartBuildWebhook() *http.Server {
 	mux.HandleFunc("/convert", conversion.CRDConvertHandler(context.Background()))
 	mux.HandleFunc("/health", health)
 
+	serverTLSConfig, _, err := tlsconfig.BuildServerTLSConfig("", "")
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
 	webhookServer := &http.Server{
 		Addr:              ":30443",
 		Handler:           mux,
 		ReadHeaderTimeout: 32 * time.Second,
 		IdleTimeout:       time.Second,
-		TLSConfig: &tls.Config{
-			MinVersion:       tls.VersionTLS12,
-			CurvePreferences: []tls.CurveID{tls.CurveP256, tls.CurveP384, tls.X25519},
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-			},
-		},
+		TLSConfig:         serverTLSConfig,
 	}
 
 	// start server
