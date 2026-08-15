@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-containerregistry/pkg/name"
 	containerreg "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/spf13/pflag"
 
@@ -136,7 +135,7 @@ func runImageProcessing(ctx context.Context) error {
 	if flagValues.image == "" {
 		return &ExitError{Code: 100, Message: "the 'image' argument must not be empty"}
 	}
-	imageName, err := name.ParseReference(flagValues.image)
+	imageName, err := image.ParseReference(flagValues.image, flagValues.insecure)
 	if err != nil {
 		return fmt.Errorf("failed to parse image name: %w", err)
 	}

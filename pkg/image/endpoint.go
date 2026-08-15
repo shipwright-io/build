@@ -14,7 +14,7 @@ import (
 
 // ExtractHostnamePort tries to extract the hostname and port of the provided image URL
 func ExtractHostnamePort(url string) (string, int, error) {
-	ref, err := name.ParseReference(url)
+	ref, err := ParseReference(url, false)
 	if err != nil {
 		return "", 0, err
 	}
@@ -45,4 +45,14 @@ func ExtractHostnamePort(url string) (string, int, error) {
 	}
 
 	return hostname, port, nil
+}
+
+// ParseReference parses an image name into a reference. If insecure is set, the reference is
+// flagged as insecure so that go-containerregistry falls back to HTTP when HTTPS is not served.
+func ParseReference(image string, insecure bool) (name.Reference, error) {
+	if insecure {
+		return name.ParseReference(image, name.Insecure)
+	}
+
+	return name.ParseReference(image)
 }
