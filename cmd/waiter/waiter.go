@@ -44,14 +44,16 @@ func (w *Waiter) retry() error {
 	timer := time.NewTimer(w.flagValues.timeout)
 	defer timer.Stop()
 
-	// Verify on file existence every 100ms
-	ticker := time.Tick(100 * time.Millisecond)
+	// Verify file existence every 100ms. Use NewTicker so the ticker can be
+	// stopped immediately when retry returns.
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
 
 	for {
 		select {
 		case <-timer.C:
 			return fmt.Errorf("%w: elapsed %v seconds", ErrTimeout, w.flagValues.timeout.Seconds())
-		case <-ticker:
+		case <-ticker.C:
 			if _, err := os.Stat(w.flagValues.lockFile); err != nil && os.IsNotExist(err) {
 				log.Printf("Done! Condition has been reached\n")
 				return nil
