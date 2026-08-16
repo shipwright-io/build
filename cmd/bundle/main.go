@@ -80,7 +80,7 @@ func Do(ctx context.Context) error {
 		}
 	}
 
-	ref, err := name.ParseReference(flagValues.image)
+	ref, err := image.ParseReference(flagValues.image, true)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func Do(ctx context.Context) error {
 		// Some container registry implementations, i.e. library/registry:2 will fail to
 		// delete the image when there is no image digest given. Use image digest from the
 		// image pulling to construct an image name including tag and digest.
-		ref, err = name.NewDigest(fmt.Sprintf("%s@%s", ref.Name(), digest.String()))
+		ref, err = name.NewDigest(fmt.Sprintf("%s@%s", ref.Name(), digest.String()), name.Insecure)
 		if err != nil {
 			return err
 		}
