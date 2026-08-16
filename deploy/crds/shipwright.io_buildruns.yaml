@@ -97,6 +97,10 @@ spec:
                         description: Annotations references the additional annotations
                           to be applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: annotation keys must not be empty and must not
+                            contain '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       credentials:
                         description: |-
                           Credentials references a Secret that contains credentials to access
@@ -126,6 +130,10 @@ spec:
                         description: Labels references the additional labels to be
                           applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: label keys must not be empty and must not contain
+                            '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       timestamp:
                         description: |-
                           Timestamp references the optional image timestamp to be set, valid values are:
@@ -316,6 +324,10 @@ spec:
                         description: Annotations references the additional annotations
                           to be applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: annotation keys must not be empty and must not
+                            contain '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       credentials:
                         description: |-
                           Credentials references a Secret that contains credentials to access
@@ -345,6 +357,10 @@ spec:
                         description: Labels references the additional labels to be
                           applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: label keys must not be empty and must not contain
+                            '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       timestamp:
                         description: |-
                           Timestamp references the optional image timestamp to be set, valid values are:
@@ -2765,6 +2781,10 @@ spec:
                     description: Annotations references the additional annotations
                       to be applied on the image
                     type: object
+                    x-kubernetes-validations:
+                    - message: annotation keys must not be empty and must not contain
+                        '='
+                      rule: self.all(k, k != '' && !k.contains('='))
                   credentials:
                     description: |-
                       Credentials references a Secret that contains credentials to access
@@ -2793,6 +2813,9 @@ spec:
                     description: Labels references the additional labels to be applied
                       on the image
                     type: object
+                    x-kubernetes-validations:
+                    - message: label keys must not be empty and must not contain '='
+                      rule: self.all(k, k != '' && !k.contains('='))
                   timestamp:
                     description: |-
                       Timestamp references the optional image timestamp to be set, valid values are:
@@ -4900,6 +4923,10 @@ spec:
                         description: Annotations references the additional annotations
                           to be applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: annotation keys must not be empty and must not
+                            contain '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       credentials:
                         description: |-
                           Credentials references a Secret that contains credentials to access
@@ -4929,6 +4956,10 @@ spec:
                         description: Labels references the additional labels to be
                           applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: label keys must not be empty and must not contain
+                            '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       timestamp:
                         description: |-
                           Timestamp references the optional image timestamp to be set, valid values are:
@@ -5119,6 +5150,10 @@ spec:
                         description: Annotations references the additional annotations
                           to be applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: annotation keys must not be empty and must not
+                            contain '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       credentials:
                         description: |-
                           Credentials references a Secret that contains credentials to access
@@ -5148,6 +5183,10 @@ spec:
                         description: Labels references the additional labels to be
                           applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: label keys must not be empty and must not contain
+                            '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       timestamp:
                         description: |-
                           Timestamp references the optional image timestamp to be set, valid values are:
@@ -7772,6 +7811,10 @@ spec:
                             description: Annotations references the additional annotations
                               to be applied on the image
                             type: object
+                            x-kubernetes-validations:
+                            - message: annotation keys must not be empty and must
+                                not contain '='
+                              rule: self.all(k, k != '' && !k.contains('='))
                           image:
                             description: Image is the reference of the image.
                             type: string
@@ -7785,6 +7828,10 @@ spec:
                             description: Labels references the additional labels to
                               be applied on the image
                             type: object
+                            x-kubernetes-validations:
+                            - message: label keys must not be empty and must not contain
+                                '='
+                              rule: self.all(k, k != '' && !k.contains('='))
                           platforms:
                             description: |-
                               Platforms is the list of OS and CPU architecture combinations to build for.
@@ -10417,6 +10464,10 @@ spec:
                     description: Annotations references the additional annotations
                       to be applied on the image
                     type: object
+                    x-kubernetes-validations:
+                    - message: annotation keys must not be empty and must not contain
+                        '='
+                      rule: self.all(k, k != '' && !k.contains('='))
                   image:
                     description: Image is the reference of the image.
                     type: string
@@ -10429,6 +10480,9 @@ spec:
                     description: Labels references the additional labels to be applied
                       on the image
                     type: object
+                    x-kubernetes-validations:
+                    - message: label keys must not be empty and must not contain '='
+                      rule: self.all(k, k != '' && !k.contains('='))
                   platforms:
                     description: |-
                       Platforms is the list of OS and CPU architecture combinations to build for.
@@ -12885,6 +12939,10 @@ spec:
                         description: Annotations references the additional annotations
                           to be applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: annotation keys must not be empty and must not
+                            contain '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       image:
                         description: Image is the reference of the image.
                         type: string
@@ -12898,6 +12956,10 @@ spec:
                         description: Labels references the additional labels to be
                           applied on the image
                         type: object
+                        x-kubernetes-validations:
+                        - message: label keys must not be empty and must not contain
+                            '='
+                          rule: self.all(k, k != '' && !k.contains('='))
                       platforms:
                         description: |-
                           Platforms is the list of OS and CPU architecture combinations to build for.
