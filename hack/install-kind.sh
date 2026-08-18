@@ -13,7 +13,7 @@ set -eu
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # kind version
-KIND_VERSION="${KIND_VERSION:-v0.31.0}"
+KIND_VERSION="${KIND_VERSION:-v0.32.0}"
 
 if ! hash kind > /dev/null 2>&1 ; then
     echo "# Installing KinD..."

@@ -84,7 +84,7 @@ jobs:
         compat:
           # oldest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.34.8
-            tekton: v1.3.0
+            tekton: v1.6.6
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.36.1
             tekton: v1.15.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
@@ -102,7 +102,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.10
         with:
-          version: v0.18.1
+          version: v0.19.1
       - name: Install kubectl
         uses: azure/setup-kubectl@v5
         with:
@@ -110,7 +110,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.31.0
+          version: v0.32.0
           node_image: kindest/node:${{ matrix.compat.kubernetes }}
           cluster_name: kind
           wait: 120s
@@ -166,7 +166,7 @@ jobs:
         compat:
           # oldest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.34.8
-            tekton: v1.3.0
+            tekton: v1.6.6
           # newest supported Kubernetes and Tekton LTS that exists at the time of our planned next release
           - kubernetes: v1.36.1
             tekton: v1.15.0 # RETAIN-COMMENT: TEKTON_NEWEST_LTS
@@ -188,7 +188,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1
         with:
-          version: v0.31.0
+          version: v0.32.0
           node_image: kindest/node:${{ matrix.compat.kubernetes }}
           cluster_name: kind
           config: test/kind/config_three_node.yaml
@@ -233,7 +233,7 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.10
         with:
-          version: v0.18.1
+          version: v0.19.1
       - name: Install Shipwright Build
         run: |
           make install-controller-kind
