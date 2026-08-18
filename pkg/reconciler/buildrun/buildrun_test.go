@@ -1243,7 +1243,7 @@ var _ = Describe("Reconcile BuildRun", func() {
 				Expect(client.CreateCallCount()).To(Equal(1))
 			})
 
-			It("updates Build with error when BuildRun is already owned", func() {
+			It("fails the BuildRun when it is already owned by another controller", func() {
 				fakeOwnerName := "fakeOwner"
 
 				// Set the build spec
@@ -1263,18 +1263,39 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
-				statusCall := ctl.StubBuildStatusReason(buildapi.SetOwnerReferenceFailed,
-					fmt.Sprintf("unexpected error when trying to set the ownerreference: Object /%s is already owned by another %s controller ", buildRunName, fakeOwnerName),
-				)
-				statusWriter.UpdateCalls(statusCall)
+				var sawOwnerReferenceFailure bool
+				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
+					br, ok := o.(*buildapi.BuildRun)
+					if !ok {
+						return nil
+					}
+					if c := br.Status.GetCondition(buildapi.Succeeded); c != nil && c.Status == corev1.ConditionFalse &&
+						c.Reason == resources.ConditionSetOwnerReferenceFailed {
+						sawOwnerReferenceFailure = true
+						Expect(c.Message).To(ContainSubstring("unexpected error when trying to set the ownerreference"))
+						Expect(c.Message).To(ContainSubstring(fmt.Sprintf("already owned by another %s controller", fakeOwnerName)))
+					}
+					return nil
+				})
 
+				// the BuildRun is marked Failed and we stop reconciling: the parent
+				// Build's status is left untouched and no TaskRun is created
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(sawOwnerReferenceFailure).To(BeTrue())
 
-				Expect(client.CreateCallCount()).To(Equal(1))
+				Expect(client.CreateCallCount()).To(Equal(0)) // proving the TaskRun is no longer created
+
+				// walk every Status().Update call recorded by the fake
+				// to prove the Build was never one of the updated objects
+				for i := 0; i < statusWriter.UpdateCallCount(); i++ {
+					_, obj, _ := statusWriter.UpdateArgsForCall(i)
+					_, isBuild := obj.(*buildapi.Build)
+					Expect(isBuild).To(BeFalse(), "Build status should not be updated on ownerreference failure")
+				}
 			})
 
-			It("updates Build with error when BuildRun and Build are not in the same ns when setting ownerreferences", func() {
+			It("fails the BuildRun when BuildRun and Build are not in the same ns when setting ownerreferences", func() {
 				// Set the build spec
 				buildRunSample = ctl.BuildRunWithFakeNamespace(buildRunName, buildName)
 				buildRunSample.Status.BuildSpec = &buildSample.Spec
@@ -1292,15 +1313,35 @@ var _ = Describe("Reconcile BuildRun", func() {
 					ctl.DefaultNamespacedBuildStrategy()),
 				)
 
-				statusCall := ctl.StubBuildStatusReason(buildapi.SetOwnerReferenceFailed,
-					fmt.Sprintf("unexpected error when trying to set the ownerreference: cross-namespace owner references are disallowed, owner's namespace %s, obj's namespace %s", buildSample.Namespace, buildRunSample.Namespace),
-				)
-				statusWriter.UpdateCalls(statusCall)
+				var sawOwnerReferenceFailure bool
+				statusWriter.UpdateCalls(func(_ context.Context, o crc.Object, _ ...crc.SubResourceUpdateOption) error {
+					br, ok := o.(*buildapi.BuildRun)
+					if !ok {
+						return nil
+					}
+					if c := br.Status.GetCondition(buildapi.Succeeded); c != nil && c.Status == corev1.ConditionFalse &&
+						c.Reason == resources.ConditionSetOwnerReferenceFailed {
+						sawOwnerReferenceFailure = true
+						Expect(c.Message).To(ContainSubstring(fmt.Sprintf("cross-namespace owner references are disallowed, owner's namespace %s, obj's namespace %s", buildSample.Namespace, buildRunSample.Namespace)))
+					}
+					return nil
+				})
 
+				// the BuildRun is marked Failed and we stop reconciling: the parent
+				// Build's status is left untouched and no TaskRun is created
 				_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(sawOwnerReferenceFailure).To(BeTrue())
 
-				Expect(client.CreateCallCount()).To(Equal(1))
+				Expect(client.CreateCallCount()).To(Equal(0))
+
+				// walk every Status().Update call recorded by the fake
+				// to prove the Build was never one of the updated objects
+				for i := 0; i < statusWriter.UpdateCallCount(); i++ {
+					_, obj, _ := statusWriter.UpdateArgsForCall(i)
+					_, isBuild := obj.(*buildapi.Build)
+					Expect(isBuild).To(BeFalse(), "Build status should not be updated on ownerreference failure")
+				}
 			})
 
 			It("ensure the Build can own a BuildRun when using the proper annotation", func() {
