@@ -44,7 +44,7 @@ jobs:
     # Install tools
     - uses: ko-build/setup-ko@v0.10
       with:
-        version: v0.18.1
+        version: v0.19.1
     - uses: sigstore/cosign-installer@v3
 
     - name: Build Release Changelog
