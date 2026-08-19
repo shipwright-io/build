@@ -110,10 +110,9 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		BeforeEach(func() {
 			testID = generateTestID("timestamp")
 
-			outputImage, err = name.ParseReference(fmt.Sprintf("%s/%s:%s",
+			outputImage, err = name.ParseReference(fmt.Sprintf("%s:%s",
 				os.Getenv(EnvVarImageRepo),
 				testID,
-				"latest",
 			))
 			Expect(err).ToNot(HaveOccurred())
 		})
