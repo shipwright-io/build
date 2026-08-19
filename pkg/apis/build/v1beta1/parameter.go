@@ -25,15 +25,15 @@ type SingleValue struct {
 
 	// The value of the parameter
 	// +optional
-	Value *string `json:"value"`
+	Value *string `json:"value,omitempty"`
 
 	// The ConfigMap value of the parameter
 	// +optional
-	ConfigMapValue *ObjectKeyRef `json:"configMapValue"`
+	ConfigMapValue *ObjectKeyRef `json:"configMapValue,omitempty"`
 
 	// The secret value of the parameter
 	// +optional
-	SecretValue *ObjectKeyRef `json:"secretValue"`
+	SecretValue *ObjectKeyRef `json:"secretValue,omitempty"`
 }
 
 // ParamValue is a key/value that populates a strategy parameter
