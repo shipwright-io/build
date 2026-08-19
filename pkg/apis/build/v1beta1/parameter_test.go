@@ -2,63 +2,50 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta1_test
 
 import (
 	"encoding/json"
-	"strings"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
-// TestSingleValueOmitsNilFields verifies that the mutually-exclusive optional
-// fields of SingleValue are omitted from the serialized output when unset,
-// instead of being rendered as explicit nulls (e.g. "configMapValue": null).
-func TestSingleValueOmitsNilFields(t *testing.T) {
+var _ = Describe("SingleValue", func() {
+
 	value := "BUILD_VERSION=1.0.0"
 
-	tests := []struct {
-		name        string
-		param       ParamValue
-		wantPresent []string
-		wantAbsent  []string
-	}{
-		{
-			name:        "literal value set",
-			param:       ParamValue{Name: "build-args", SingleValue: &SingleValue{Value: &value}},
-			wantPresent: []string{`"value":"BUILD_VERSION=1.0.0"`},
-			wantAbsent:  []string{`"configMapValue"`, `"secretValue"`},
-		},
-		{
-			name:        "configMap value set",
-			param:       ParamValue{Name: "p", SingleValue: &SingleValue{ConfigMapValue: &ObjectKeyRef{Name: "cm", Key: "k"}}},
-			wantPresent: []string{`"configMapValue"`},
-			wantAbsent:  []string{`"value"`, `"secretValue"`},
-		},
-		{
-			name:        "secret value set",
-			param:       ParamValue{Name: "p", SingleValue: &SingleValue{SecretValue: &ObjectKeyRef{Name: "s", Key: "k"}}},
-			wantPresent: []string{`"secretValue"`},
-			wantAbsent:  []string{`"value"`, `"configMapValue"`},
-		},
-	}
+	// verifies that the mutually-exclusive optional fields of SingleValue are
+	// omitted from the serialized output when unset, instead of being rendered
+	// as explicit nulls (e.g. "configMapValue": null)
+	DescribeTable("the serialization of a ParamValue",
+		func(param buildapi.ParamValue, wantPresent []string, wantAbsent []string) {
+			out, err := json.Marshal(param)
+			Expect(err).ToNot(HaveOccurred())
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			out, err := json.Marshal(tt.param)
-			if err != nil {
-				t.Fatalf("failed to marshal ParamValue: %v", err)
+			for _, want := range wantPresent {
+				Expect(string(out)).To(ContainSubstring(want))
 			}
-			got := string(out)
-			for _, want := range tt.wantPresent {
-				if !strings.Contains(got, want) {
-					t.Errorf("expected %q in output, got: %s", want, got)
-				}
+			for _, absent := range wantAbsent {
+				Expect(string(out)).ToNot(ContainSubstring(absent))
 			}
-			for _, absent := range tt.wantAbsent {
-				if strings.Contains(got, absent) {
-					t.Errorf("expected %q to be omitted, got: %s", absent, got)
-				}
-			}
-		})
-	}
-}
+		},
+		Entry("literal value set",
+			buildapi.ParamValue{Name: "build-args", SingleValue: &buildapi.SingleValue{Value: &value}},
+			[]string{`"value":"BUILD_VERSION=1.0.0"`},
+			[]string{`"configMapValue"`, `"secretValue"`},
+		),
+		Entry("configMap value set",
+			buildapi.ParamValue{Name: "p", SingleValue: &buildapi.SingleValue{ConfigMapValue: &buildapi.ObjectKeyRef{Name: "cm", Key: "k"}}},
+			[]string{`"configMapValue"`},
+			[]string{`"value"`, `"secretValue"`},
+		),
+		Entry("secret value set",
+			buildapi.ParamValue{Name: "p", SingleValue: &buildapi.SingleValue{SecretValue: &buildapi.ObjectKeyRef{Name: "s", Key: "k"}}},
+			[]string{`"secretValue"`},
+			[]string{`"value"`, `"configMapValue"`},
+		),
+	)
+})
