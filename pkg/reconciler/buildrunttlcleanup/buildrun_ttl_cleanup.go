@@ -92,7 +92,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 		}
 	} else {
 		timeLeft := time.Until(br.Status.CompletionTime.Add(ttl.Duration))
-		return reconcile.Result{Requeue: true, RequeueAfter: timeLeft}, nil
+		return reconcile.Result{RequeueAfter: timeLeft}, nil
 	}
 
 	ctxlog.Debug(ctx, "Finishing reconciling request from a BuildRun event", namespace, request.Namespace, name, request.Name)
