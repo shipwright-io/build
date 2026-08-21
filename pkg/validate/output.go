@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -56,7 +57,44 @@ func (b *BuildSpecOutputValidator) ValidatePath(_ context.Context) error {
 		b.checkOutputPlatformsFields()
 	}
 
+	if valid, reason, msg := ValidateOutputMetadata("annotations", b.Build.Spec.Output.Annotations); !valid {
+		b.Build.Status.Reason = ptr.To(buildapi.BuildReason(reason))
+		b.Build.Status.Message = ptr.To(msg)
+	}
+
+	if valid, reason, msg := ValidateOutputMetadata("labels", b.Build.Spec.Output.Labels); !valid {
+		b.Build.Status.Reason = ptr.To(buildapi.BuildReason(reason))
+		b.Build.Status.Message = ptr.To(msg)
+	}
+
 	return nil
+}
+
+// ValidateOutputMetadata checks that output annotation/label keys do not contain "=".
+// The image-processing step encodes each entry as a single "key=value" CLI argument and
+// splits it back on the first "=" (see cmd/image-processing/main.go splitKeyVals). A key
+// that itself contains "=" is silently split apart, so the image ends up tagged with a
+// different key/value pair than the one requested instead of failing loudly.
+func ValidateOutputMetadata(field string, entries map[string]string) (bool, string, string) {
+	keys := make([]string, 0, len(entries))
+	for key := range entries {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+
+	var problems []string
+	for _, key := range keys {
+		switch {
+		case key == "":
+			problems = append(problems, fmt.Sprintf("spec.output.%s key must not be empty", field))
+		case strings.Contains(key, "="):
+			problems = append(problems, fmt.Sprintf("spec.output.%s key %q must not contain '='", field, key))
+		}
+	}
+	if len(problems) == 0 {
+		return true, "", ""
+	}
+	return false, string(buildapi.InvalidOutputMetadata), strings.Join(problems, "; ")
 }
 
 func (b *BuildSpecOutputValidator) checkOutputPlatformsFields() {

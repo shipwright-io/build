@@ -225,6 +225,81 @@ var _ = Describe("BuildSpecOutputValidator", func() {
 			Expect(build.Status.Message).To(BeNil())
 		})
 	})
+
+	Context("output annotations and labels are specified", func() {
+		var buildWithOutputMetadata = func(annotations, labels map[string]string) *buildapi.Build {
+			return &buildapi.Build{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "foo",
+					Name:      "bar",
+				},
+				Spec: buildapi.BuildSpec{
+					Source: &buildapi.Source{
+						Type: buildapi.GitType,
+						Git: &buildapi.Git{
+							URL: "https://github.com/shipwright-io/sample-go",
+						},
+					},
+					Strategy: buildapi.Strategy{
+						Name: "buildah",
+					},
+					Output: buildapi.Image{
+						Image:       "quay.io/example/app:latest",
+						Annotations: annotations,
+						Labels:      labels,
+					},
+				},
+			}
+		}
+
+		It("should pass with valid annotations and labels", func() {
+			build := buildWithOutputMetadata(
+				map[string]string{"org.opencontainers.image.url": "https://example.com"},
+				map[string]string{"maintainer": "team@example.com"},
+			)
+			validate(build)
+			Expect(build.Status.Reason).To(BeNil())
+			Expect(build.Status.Message).To(BeNil())
+		})
+
+		It("should fail when an annotation key contains '='", func() {
+			build := buildWithOutputMetadata(map[string]string{"a=b": "c"}, nil)
+			validate(build)
+			Expect(*build.Status.Reason).To(Equal(buildapi.InvalidOutputMetadata))
+			Expect(*build.Status.Message).To(ContainSubstring("spec.output.annotations"))
+			Expect(*build.Status.Message).To(ContainSubstring(`must not contain '='`))
+		})
+
+		It("should fail when a label key contains '='", func() {
+			build := buildWithOutputMetadata(nil, map[string]string{"a=b": "c"})
+			validate(build)
+			Expect(*build.Status.Reason).To(Equal(buildapi.InvalidOutputMetadata))
+			Expect(*build.Status.Message).To(ContainSubstring("spec.output.labels"))
+			Expect(*build.Status.Message).To(ContainSubstring(`must not contain '='`))
+		})
+
+		It("should fail when an annotation key is empty", func() {
+			build := buildWithOutputMetadata(map[string]string{"": "c"}, nil)
+			validate(build)
+			Expect(*build.Status.Reason).To(Equal(buildapi.InvalidOutputMetadata))
+			Expect(*build.Status.Message).To(ContainSubstring("must not be empty"))
+		})
+
+		It("should fail when a label key is empty", func() {
+			build := buildWithOutputMetadata(nil, map[string]string{"": "c"})
+			validate(build)
+			Expect(*build.Status.Reason).To(Equal(buildapi.InvalidOutputMetadata))
+			Expect(*build.Status.Message).To(ContainSubstring("must not be empty"))
+		})
+
+		It("should report all invalid annotation keys, not just the first found", func() {
+			build := buildWithOutputMetadata(map[string]string{"a=b": "1", "c=d": "2", "valid": "3"}, nil)
+			validate(build)
+			Expect(*build.Status.Reason).To(Equal(buildapi.InvalidOutputMetadata))
+			Expect(*build.Status.Message).To(ContainSubstring(`"a=b"`))
+			Expect(*build.Status.Message).To(ContainSubstring(`"c=d"`))
+		})
+	})
 })
 
 var _ = Describe("ValidateNodeAvailability", func() {

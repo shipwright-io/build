@@ -109,6 +109,7 @@ To prevent users from triggering `BuildRun`s (_execution of a Build_) that will 
 | NodeSelectorPlatformConflict                    | `spec.output.platforms` is set and `spec.nodeSelector` includes `kubernetes.io/os` or `kubernetes.io/arch`. |
 | ExecutorNotPipelineRun                          | *(BuildRun only)* Multi-arch output requires `PipelineRun` executor mode. |
 | NodePlatformNotFound                            | *(BuildRun only)* No schedulable node matches a requested platform (`kubernetes.io/os` / `kubernetes.io/arch`). |
+| InvalidOutputMetadata                           | `spec.output.annotations` or `spec.output.labels` (including the merged Build+BuildRun values) contains an empty key or a key that contains `=`. |
 
 ## Configuring a Build
 
