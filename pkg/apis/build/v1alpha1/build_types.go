@@ -241,11 +241,13 @@ type Image struct {
 	// Annotations references the additional annotations to be applied on the image
 	//
 	// +optional
+	// +kubebuilder:validation:XValidation:rule="self.all(k, k != '' && !k.contains('='))",message="annotation keys must not be empty and must not contain '='"
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// Labels references the additional labels to be applied on the image
 	//
 	// +optional
+	// +kubebuilder:validation:XValidation:rule="self.all(k, k != '' && !k.contains('='))",message="label keys must not be empty and must not contain '='"
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Timestamp references the optional image timestamp to be set, valid values are:
