@@ -28,7 +28,7 @@ import (
 )
 
 var _ = Describe("Bundle Loader", func() {
-	const exampleImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
+	const publicExampleImage = "ghcr.io/shipwright-io/sample-go/source-bundle:latest"
 
 	run := func(args ...string) error {
 		log.SetOutput(GinkgoWriter)
@@ -74,6 +74,18 @@ var _ = Describe("Bundle Loader", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		f(u.Host)
+	}
+
+	withTestBundleImage := func(f func(tag name.Tag)) {
+		withTempRegistry(func(endpoint string) {
+			tag, err := name.NewTag(fmt.Sprintf("%s/namespace/unit-test-cmd-bundle-%s:latest", endpoint, rand.String(5)))
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = bundle.PackAndPush(tag, filepath.Join("..", "..", "test", "bundle"))
+			Expect(err).ToNot(HaveOccurred())
+
+			f(tag)
+		})
 	}
 
 	filecontent := func(path string) string {
@@ -135,29 +147,30 @@ var _ = Describe("Bundle Loader", func() {
 
 	Context("Pulling image anonymously", func() {
 		It("should pull and unbundle an image from a public registry", func() {
-			withTempDir(func(target string) {
-				Expect(run(
-					"--image", exampleImage,
-					"--target", target,
-				)).To(Succeed())
+			withTestBundleImage(func(tag name.Tag) {
+				withTempDir(func(target string) {
+					Expect(run(
+						"--image", tag.String(),
+						"--target", target,
+					)).To(Succeed())
 
-				Expect(filepath.Join(target, "LICENSE")).To(BeAnExistingFile())
+					Expect(filepath.Join(target, "README.md")).To(BeAnExistingFile())
+				})
 			})
 		})
 
 		It("should store image digest into file specified in --result-file-image-digest flags", func() {
-			withTempDir(func(target string) {
-				withTempFile("image-digest", func(filename string) {
-					Expect(run(
-						"--image", exampleImage,
-						"--target", target,
-						"--result-file-image-digest", filename,
-					)).To(Succeed())
+			withTestBundleImage(func(tag name.Tag) {
+				withTempDir(func(target string) {
+					withTempFile("image-digest", func(filename string) {
+						Expect(run(
+							"--image", tag.String(),
+							"--target", target,
+							"--result-file-image-digest", filename,
+						)).To(Succeed())
 
-					tag, err := name.NewTag(exampleImage)
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(filecontent(filename)).To(Equal(getImageDigest(tag).String()))
+						Expect(filecontent(filename)).To(Equal(getImageDigest(tag).String()))
+					})
 				})
 			})
 		})
@@ -201,7 +214,7 @@ var _ = Describe("Bundle Loader", func() {
 				"source",
 			)
 
-			src, err := name.ParseReference(exampleImage)
+			src, err := name.ParseReference(publicExampleImage)
 			Expect(err).ToNot(HaveOccurred())
 
 			dst, err := name.ParseReference(testImage)
@@ -318,12 +331,14 @@ var _ = Describe("Bundle Loader", func() {
 
 	Context("Using show listing flag", func() {
 		It("should run without issues", func() {
-			withTempDir(func(target string) {
-				Expect(run(
-					"--image", exampleImage,
-					"--target", target,
-					"--show-listing",
-				)).To(Succeed())
+			withTestBundleImage(func(tag name.Tag) {
+				withTempDir(func(target string) {
+					Expect(run(
+						"--image", tag.String(),
+						"--target", target,
+						"--show-listing",
+					)).To(Succeed())
+				})
 			})
 		})
 	})
