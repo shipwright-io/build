@@ -34,7 +34,71 @@ const (
 	namespace          string = "namespace"
 	name               string = "name"
 	generatedNameRegex        = "-[a-z0-9]{5,5}$"
+
+	buildRunTimeoutReason = "BuildRunTimeout"
 )
+
+func classifyBuildRunResult(condition *buildapi.Condition) string {
+	if condition == nil {
+		return buildmetrics.ResultFailed
+	}
+	if condition.Status == corev1.ConditionTrue {
+		return buildmetrics.ResultSucceeded
+	}
+	switch condition.Reason {
+	case buildapi.BuildRunStateCancel:
+		return buildmetrics.ResultCancelled
+	case buildRunTimeoutReason:
+		return buildmetrics.ResultTimeout
+	default:
+		return buildmetrics.ResultFailed
+	}
+}
+
+func sourceTypeFromBuildSpec(spec *buildapi.BuildSpec) string {
+	if spec == nil || spec.Source == nil {
+		return ""
+	}
+	return string(spec.Source.Type)
+}
+
+func strategyKindFromBuildSpec(spec *buildapi.BuildSpec) string {
+	if spec == nil || spec.Strategy.Kind == nil {
+		return string(buildapi.NamespacedBuildStrategyKind)
+	}
+	return string(*spec.Strategy.Kind)
+}
+
+func (r *ReconcileBuildRun) recordPreExecutorFailure(buildRun *buildapi.BuildRun, reason, result string) {
+	var strategyName, buildName, strategyKind, sourceType string
+	if buildRun.Status.BuildSpec != nil {
+		strategyName = buildRun.Status.BuildSpec.StrategyName()
+		strategyKind = strategyKindFromBuildSpec(buildRun.Status.BuildSpec)
+		sourceType = sourceTypeFromBuildSpec(buildRun.Status.BuildSpec)
+	}
+	buildName = buildRun.Spec.BuildName()
+
+	buildmetrics.BuildRunResultCountInc(
+		strategyName,
+		buildRun.Namespace,
+		buildName,
+		buildRun.Name,
+		strategyKind,
+		"",
+		result,
+		sourceType,
+	)
+	buildmetrics.BuildRunFailureReasonCountInc(
+		strategyName,
+		buildRun.Namespace,
+		buildName,
+		buildRun.Name,
+		strategyKind,
+		"",
+		sourceType,
+		reason,
+	)
+}
 
 // blank assignment to verify that ReconcileBuildRun implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileBuildRun{}
@@ -99,24 +163,32 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 		// Validating buildrun name is a valid label value
 		if errs := validation.IsValidLabelValue(buildRun.Name); len(errs) > 0 {
 			// stop reconciling and mark the BuildRun as Failed
-			return reconcile.Result{}, resources.UpdateConditionWithFalseStatus(
+			if err := resources.UpdateConditionWithFalseStatus(
 				ctx,
 				r.client,
 				buildRun,
 				strings.Join(errs, ", "),
 				resources.BuildRunNameInvalid,
-			)
+			); err != nil {
+				return reconcile.Result{}, err
+			}
+			r.recordPreExecutorFailure(buildRun, resources.BuildRunNameInvalid, buildmetrics.ResultFailed)
+			return reconcile.Result{}, nil
 		}
 
 		// Validate BuildRun for disallowed field combinations (could technically be also done in a validating webhook)
 		if reason, message := validate.BuildRunFields(buildRun); reason != "" {
-			return reconcile.Result{}, resources.UpdateConditionWithFalseStatus(
+			if err := resources.UpdateConditionWithFalseStatus(
 				ctx,
 				r.client,
 				buildRun,
 				message,
 				reason,
-			)
+			); err != nil {
+				return reconcile.Result{}, err
+			}
+			r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
+			return reconcile.Result{}, nil
 		}
 	}
 	// if this is a build run event after we've set the task run ref, get the task run using the task run name stored in the build run
@@ -211,6 +283,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, "the BuildRun is marked canceled.", buildapi.BuildRunStateCancel); updateErr != nil {
 					return reconcile.Result{}, updateErr
 				}
+				r.recordPreExecutorFailure(buildRun, buildapi.BuildRunStateCancel, buildmetrics.ResultCancelled)
 				return reconcile.Result{}, nil
 			}
 
@@ -277,6 +350,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
 				}
+				r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 				return reconcile.Result{}, nil
 			}
 
@@ -286,6 +360,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
 				}
+				r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 				return reconcile.Result{}, nil
 			}
 
@@ -295,6 +370,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
 				}
+				r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 				return reconcile.Result{}, nil
 			}
 
@@ -304,6 +380,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
 				}
+				r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 				return reconcile.Result{}, nil
 			}
 
@@ -313,6 +390,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
 				}
+				r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 				return reconcile.Result{}, nil
 			}
 
@@ -322,6 +400,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
 				}
+				r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 				return reconcile.Result{}, nil
 			}
 
@@ -331,6 +410,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				if err := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, message, reason); err != nil {
 					return reconcile.Result{}, err
 				}
+				r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 				return reconcile.Result{}, nil
 			}
 
@@ -347,6 +427,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						ctxlog.Error(ctx, err, "failed to update BuildRun status for multi-arch validation failure", namespace, request.Namespace, name, request.Name)
 						return reconcile.Result{}, err
 					}
+					r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 					return reconcile.Result{}, nil
 				}
 				nodeList := &corev1.NodeList{}
@@ -359,6 +440,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						ctxlog.Error(ctx, err, "failed to update BuildRun status for multi-arch validation failure", namespace, request.Namespace, name, request.Name)
 						return reconcile.Result{}, err
 					}
+					r.recordPreExecutorFailure(buildRun, reason, buildmetrics.ResultFailed)
 					return reconcile.Result{}, nil
 				}
 			}
@@ -382,6 +464,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					if updateErr := resources.UpdateConditionWithFalseStatus(ctx, r.client, buildRun, err.Error(), string(buildapi.VolumeDoesNotExist)); updateErr != nil {
 						return reconcile.Result{}, updateErr
 					}
+					r.recordPreExecutorFailure(buildRun, string(buildapi.VolumeDoesNotExist), buildmetrics.ResultFailed)
 					return reconcile.Result{}, nil // Stop reconciling
 				}
 				// Some other error occurred, return it for reconciliation retry
@@ -413,12 +496,18 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				ctxlog.Error(ctx, err, "Failed to update BuildRun status is ignored", namespace, request.Namespace, name, request.Name)
 			}
 
-			// Increase BuildRun count in metrics
-			buildmetrics.BuildRunCountInc(
+			executorKind := imageBuildRunner.GetExecutorKind()
+			strategyKind := strategyKindFromBuildSpec(buildRun.Status.BuildSpec)
+			sourceType := sourceTypeFromBuildSpec(buildRun.Status.BuildSpec)
+
+			buildmetrics.BuildRunsActiveInc(
 				buildRun.Status.BuildSpec.StrategyName(),
 				buildRun.Namespace,
 				buildRun.Spec.BuildName(),
 				buildRun.Name,
+				strategyKind,
+				executorKind,
+				sourceType,
 			)
 
 			// Report buildrun ramp-up duration (time between buildrun creation and taskrun creation)
@@ -427,6 +516,9 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				buildRun.Namespace,
 				buildRun.Spec.BuildName(),
 				buildRun.Name,
+				strategyKind,
+				executorKind,
+				sourceType,
 				imageBuildRunner.GetCreationTimestamp().Sub(buildRun.CreationTimestamp.Time),
 			)
 		} else {
@@ -504,6 +596,10 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 				}
 			}
 
+			brStrategyKind := strategyKindFromBuildSpec(buildRun.Status.BuildSpec)
+			brExecutorKind := buildRunner.GetExecutorKind()
+			brSourceType := sourceTypeFromBuildSpec(buildRun.Status.BuildSpec)
+
 			executorStartTime := buildRunner.GetStartTime()
 			if buildRun.Status.StartTime == nil && executorStartTime != nil {
 				buildRun.Status.StartTime = executorStartTime
@@ -514,6 +610,9 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					buildRun.Namespace,
 					buildRun.Spec.BuildName(),
 					buildRun.Name,
+					brStrategyKind,
+					brExecutorKind,
+					brSourceType,
 					buildRun.Status.StartTime.Sub(buildRun.CreationTimestamp.Time),
 				)
 			}
@@ -527,7 +626,50 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 					buildRun.Namespace,
 					buildRun.Spec.BuildName(),
 					buildRun.Name,
+					brStrategyKind,
+					brExecutorKind,
+					brSourceType,
 					buildRun.Status.CompletionTime.Sub(buildRun.CreationTimestamp.Time),
+				)
+
+				// Record result and failure metrics
+				condition := buildRun.Status.GetCondition(buildapi.Succeeded)
+				result := classifyBuildRunResult(condition)
+				buildmetrics.BuildRunResultCountInc(
+					buildRun.Status.BuildSpec.StrategyName(),
+					buildRun.Namespace,
+					buildRun.Spec.BuildName(),
+					buildRun.Name,
+					brStrategyKind,
+					brExecutorKind,
+					result,
+					brSourceType,
+				)
+				if result != buildmetrics.ResultSucceeded {
+					failureReason := ""
+					if condition != nil {
+						failureReason = condition.Reason
+					}
+					buildmetrics.BuildRunFailureReasonCountInc(
+						buildRun.Status.BuildSpec.StrategyName(),
+						buildRun.Namespace,
+						buildRun.Spec.BuildName(),
+						buildRun.Name,
+						brStrategyKind,
+						brExecutorKind,
+						brSourceType,
+						failureReason,
+					)
+				}
+
+				buildmetrics.BuildRunsActiveDec(
+					buildRun.Status.BuildSpec.StrategyName(),
+					buildRun.Namespace,
+					buildRun.Spec.BuildName(),
+					buildRun.Name,
+					brStrategyKind,
+					brExecutorKind,
+					brSourceType,
 				)
 
 				// Look for the pod created by the executor
@@ -556,6 +698,9 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 									buildRun.Namespace,
 									buildRun.Spec.BuildName(),
 									buildRun.Name,
+									brStrategyKind,
+									brExecutorKind,
+									brSourceType,
 									lastInitPod.State.Terminated.FinishedAt.Sub(pod.CreationTimestamp.Time),
 								)
 							}
@@ -567,6 +712,9 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 							buildRun.Namespace,
 							buildRun.Spec.BuildName(),
 							buildRun.Name,
+							brStrategyKind,
+							brExecutorKind,
+							brSourceType,
 							pod.CreationTimestamp.Sub(buildRunner.GetCreationTimestamp().Time),
 						)
 					}

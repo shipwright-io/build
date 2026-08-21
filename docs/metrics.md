@@ -10,17 +10,24 @@ The Build component exposes several metrics to help you monitor the health and b
 
 Following build metrics are exposed on port `8383`.
 
-| Name                                                 | Type      | Description                                       | Labels                                                                                                                                                                           | Status       |
-|:-----------------------------------------------------|:----------|:--------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------|
-| `build_builds_registered_total`                      | Counter   | Number of total registered Builds.                | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>build=<build_name> <sup>1</sup>                                          | experimental |
-| `build_buildruns_completed_total`                    | Counter   | Number of total completed BuildRuns.              | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>build=<build_name> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_establish_duration_seconds`          | Histogram | BuildRun establish duration in seconds.           | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>build=<build_name> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_completion_duration_seconds`         | Histogram | BuildRun completion duration in seconds.          | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>build=<build_name> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_rampup_duration_seconds`             | Histogram | BuildRun ramp-up duration in seconds              | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>build=<build_name> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_taskrun_rampup_duration_seconds`     | Histogram | BuildRun taskrun ramp-up duration in seconds.     | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>build=<build_name> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
-| `build_buildrun_taskrun_pod_rampup_duration_seconds` | Histogram | BuildRun taskrun pod ramp-up duration in seconds. | buildstrategy=<build_buildstrategy_name> <sup>1</sup><br>namespace=<buildrun_namespace> <sup>1</sup><br>build=<build_name> <sup>1</sup><br>buildrun=<buildrun_name> <sup>1</sup> | experimental |
+| Name                                                 | Type      | Description                                                          | Labels                          | Status       |
+|:-----------------------------------------------------|:----------|:---------------------------------------------------------------------|:--------------------------------|:-------------|
+| `build_builds_registered_total`                      | Counter   | Number of total registered Builds (both successful and failed).      | `buildstrategy` `namespace` `build` `strategy_kind` `source_type` <sup>1</sup> | experimental |
+| `build_buildrun_result_total`                        | Counter   | Number of total completed BuildRuns by result.                       | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` `result` <sup>1</sup> | experimental |
+| `build_buildrun_failure_reason_total`                | Counter   | Number of total failed BuildRuns by failure reason.                  | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` <sup>1</sup> `reason` <sup>2</sup> | experimental |
+| `build_buildruns_active`                             | Gauge     | Number of currently running BuildRuns.                               | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` <sup>1</sup> | experimental |
+| `build_buildstrategy_count`                          | Gauge     | Number of BuildStrategy and ClusterBuildStrategy objects.            | `strategy_kind` <sup>3</sup>    | experimental |
+| `build_buildrun_establish_duration_seconds`          | Histogram | BuildRun establish duration in seconds.                              | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` <sup>1</sup> | experimental |
+| `build_buildrun_completion_duration_seconds`         | Histogram | BuildRun completion duration in seconds.                             | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` <sup>1</sup> | experimental |
+| `build_buildrun_rampup_duration_seconds`             | Histogram | BuildRun ramp-up duration in seconds                                 | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` <sup>1</sup> | experimental |
+| `build_buildrun_taskrun_rampup_duration_seconds`     | Histogram | BuildRun taskrun ramp-up duration in seconds.                        | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` <sup>1</sup> | experimental |
+| `build_buildrun_taskrun_pod_rampup_duration_seconds` | Histogram | BuildRun taskrun pod ramp-up duration in seconds.                    | `buildstrategy` `namespace` `build` `buildrun` `strategy_kind` `executor` `source_type` <sup>1</sup> | experimental |
 
 <sup>1</sup> Labels for metric are disabled by default. See [Configuration of metric labels](#configuration-of-metric-labels) to enable them.
+
+<sup>2</sup> The `reason` label on `build_buildrun_failure_reason_total` is always present (not opt-in) because it is the defining dimension of this metric. Values are a bounded set of failure reasons such as `StepOutOfMemory`, `PodEvicted`, `BuildRunTimeout`, `BuildRunCanceled`, etc.
+
+<sup>3</sup> The `strategy_kind` label on `build_buildstrategy_count` is always present (not opt-in). Values are `BuildStrategy` or `ClusterBuildStrategy`.
 
 ## Configuration of histogram buckets
 
@@ -55,10 +62,14 @@ When you deploy the build controller in a Kubernetes cluster, you need to extend
 
 As the amount of buckets and labels has a direct impact on the number of Prometheus time series, you can selectively enable labels that you are interested in using the `PROMETHEUS_ENABLED_LABELS` environment variable. The supported labels are:
 
-* buildstrategy
-* namespace
-* build
-* buildrun
+* `buildstrategy` - The build strategy name
+* `namespace` - The Kubernetes namespace
+* `build` - The Build resource name
+* `buildrun` - The BuildRun resource name
+* `strategy_kind` - The strategy kind (`BuildStrategy` or `ClusterBuildStrategy`)
+* `executor` - The executor type (`TaskRun` or `PipelineRun`)
+* `result` - The build result (`succeeded`, `failed`, `cancelled`, `timeout`) - only on `build_buildrun_result_total`
+* `source_type` - The source code delivery method (`Git`, `OCI`, `Local`)
 
 Use a comma-separated value to enable multiple labels. For example:
 
@@ -70,7 +81,7 @@ make local
 or
 
 ```bash
-export PROMETHEUS_ENABLED_LABELS=buildstrategy,namespace,build
+export PROMETHEUS_ENABLED_LABELS=buildstrategy,namespace,build,strategy_kind,result
 make local
 ```
 
@@ -80,6 +91,6 @@ When you deploy the build controller in a Kubernetes cluster, you need to extend
 [...]
   env:
   - name: PROMETHEUS_ENABLED_LABELS
-    value: namespace
+    value: namespace,strategy_kind,result
 [...]
 ```
