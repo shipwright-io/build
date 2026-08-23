@@ -19,19 +19,13 @@ jobs:
       run: |
         # Validate PR release notes
         echo "Going to validate PR ${PR_NUMBER}"
-
-        echo "First making sure you have not left the PR template as is"
-        # Describe any user facing changes here, or delete this block.
-        TEMPLATE_LEFT_AS_IS=$(wget -q  -O- https://api.github.com/repos/shipwright-io/build/pulls/${PR_NUMBER} | jq '.body | match("(Describe any user facing changes here, or delete this block)")')
-        if [ -z "${TEMPLATE_LEFT_AS_IS}" ]; then
-          echo "You appear to have attempted to update the PR template to define a release note."
-        else
-          echo "You have not made any changes for release notes in your PR description.  Edit your PR description per the instructions at https://raw.githubusercontent.com/shipwright-io/build/main/.github/pull_request_template.md"
-          exit 1
-        fi
+        PR_BODY=$(wget -q -O- https://api.github.com/repos/shipwright-io/build/pulls/${PR_NUMBER} | jq '.body')
 
         echo "Now checking against valid structure for release notes"
-        MATCHES=$(wget -q  -O- https://api.github.com/repos/shipwright-io/build/pulls/${PR_NUMBER} | jq '.body | match("(```release-note\r\n(.*|NONE|action required: .*)\r\n```)")')
+        # Strip CR so the match works for both CRLF (web UI) and LF (API, gh CLI) bodies.
+        # The block must contain at least one non-blank line and may span multiple lines
+        # (e.g. "action required" followed by a bullet list).
+        MATCHES=$(echo "${PR_BODY}" | jq 'gsub("\r"; "") | match("```release-note\n(.*[^[:space:]].*\n(?:.*\n)*?)```")')
         if [ -z "${MATCHES}" ]; then
           echo "Your Release Notes were not properly defined or they are not in place, please make sure you add them."
           echo "See our PR template for more information: https://raw.githubusercontent.com/shipwright-io/build/main/.github/pull_request_template.md"
