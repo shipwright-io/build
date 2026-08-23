@@ -17,6 +17,8 @@ jobs:
             latest-release-url: https://api.github.com/repos/moby/buildkit/releases/latest
           - image: quay.io/containers/buildah
             latest-release-url: https://quay.io/api/v1/repository/containers/buildah/tag/
+          - image: docker.io/paketobuildpacks/builder-jammy-full
+            latest-release-url: https://hub.docker.com/v2/repositories/paketobuildpacks/builder-jammy-full/tags
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
