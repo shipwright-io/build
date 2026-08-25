@@ -28,6 +28,12 @@ See the following docs referencing each of the Kubernetes resources currently su
 - [`BuildStrategy`](buildstrategies.md)
 - [`ClusterBuildStrategy`](buildstrategies.md)
 
+## Migrating to the beta API
+
+The `shipwright.io/v1beta1` API is the current storage version. If you still have Custom Resources
+using `shipwright.io/v1alpha1`, see [Migrating from v1alpha1 to v1beta1](migrating-v1alpha1-to-v1beta1.md)
+for the complete field mapping.
+
 ## Controllers Flow
 
 The following image illustrate the interactions between the `Build`, `BuildRun` controller and the Tekton `Pipeline` controller.
