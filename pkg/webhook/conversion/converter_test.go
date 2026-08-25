@@ -1187,6 +1187,81 @@ request:
 			// Use ComparableTo and assert the whole object
 			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
 		})
+
+		It("converts for spec output", func() {
+			// Create the yaml in v1beta1
+			buildTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1beta1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        build:
+          name: a_build
+        output:
+          image: %s
+          insecure: true
+          pushSecret: %s
+          timestamp: Zero
+          annotations:
+            org.opencontainers.image.url: https://my-company.com/images
+          labels:
+            maintainer: team@my-company.com
+`
+			o := fmt.Sprintf(buildTemplate, apiVersion,
+				desiredAPIVersion, image,
+				secretName)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Alpha1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1alpha1 BuildRun
+			desiredBuildRun := buildapialpha.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1alpha1",
+					Kind:       "BuildRun",
+				},
+				Spec: buildapialpha.BuildRunSpec{
+					BuildRef: &buildapialpha.BuildRef{
+						Name: "a_build",
+					},
+					ServiceAccount: &buildapialpha.ServiceAccount{},
+					Output: &buildapialpha.Image{
+						Image:     image,
+						Insecure:  ptr.To(true),
+						Timestamp: ptr.To("Zero"),
+						Credentials: &corev1.LocalObjectReference{
+							Name: secretName,
+						},
+						Annotations: map[string]string{
+							"org.opencontainers.image.url": "https://my-company.com/images",
+						},
+						Labels: map[string]string{
+							"maintainer": "team@my-company.com",
+						},
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
 	})
 	Context("for a BuildRun CR from v1alpha1 to v1beta1", func() {
 		var desiredAPIVersion = "shipwright.io/v1beta1"
@@ -1421,6 +1496,79 @@ request:
 									},
 								},
 							},
+						},
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
+
+		It("converts for spec output", func() {
+			// Create the yaml in v1alpha1
+			buildTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1alpha1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        buildRef:
+          name: a_build
+        output:
+          image: %s
+          insecure: true
+          credentials:
+            name: %s
+          timestamp: Zero
+          annotations:
+            org.opencontainers.image.url: https://my-company.com/images
+          labels:
+            maintainer: team@my-company.com
+`
+			o := fmt.Sprintf(buildTemplate, apiVersion,
+				desiredAPIVersion, image,
+				secretName)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Beta1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1beta1 BuildRun
+			desiredBuildRun := buildapi.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1beta1",
+					Kind:       "BuildRun",
+				},
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
+						Name: ptr.To("a_build"),
+					},
+					Output: &buildapi.Image{
+						Image:      image,
+						Insecure:   ptr.To(true),
+						Timestamp:  ptr.To("Zero"),
+						PushSecret: ptr.To(secretName),
+						Annotations: map[string]string{
+							"org.opencontainers.image.url": "https://my-company.com/images",
+						},
+						Labels: map[string]string{
+							"maintainer": "team@my-company.com",
 						},
 					},
 				},
