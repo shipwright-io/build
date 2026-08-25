@@ -81,8 +81,10 @@ func (src *BuildRun) ConvertTo(ctx context.Context, obj *unstructured.Unstructur
 	if src.Spec.Output != nil {
 		alphaBuildRun.Spec.Output = &buildapialpha.Image{
 			Image:       src.Spec.Output.Image,
+			Insecure:    src.Spec.Output.Insecure,
 			Annotations: src.Spec.Output.Annotations,
 			Labels:      src.Spec.Output.Labels,
+			Timestamp:   src.Spec.Output.Timestamp,
 		}
 		if src.Spec.Output.PushSecret != nil {
 			alphaBuildRun.Spec.Output.Credentials = &corev1.LocalObjectReference{
@@ -348,8 +350,10 @@ func (dest *BuildRunSpec) ConvertFrom(ctx context.Context, orig *buildapialpha.B
 	if orig.Output != nil {
 		dest.Output = &Image{
 			Image:       orig.Output.Image,
+			Insecure:    orig.Output.Insecure,
 			Annotations: orig.Output.Annotations,
 			Labels:      orig.Output.Labels,
+			Timestamp:   orig.Output.Timestamp,
 		}
 
 		if orig.Output.Credentials != nil {
