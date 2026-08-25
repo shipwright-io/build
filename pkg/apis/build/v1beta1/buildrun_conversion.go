@@ -265,6 +265,13 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 	// clients written before failureDetails existed report the failure location.
 	// failureDetails stays authoritative, failedAt is only consulted for the
 	// location it does not provide itself.
+	//
+	// Only the location is recovered here. reason and message are deliberately
+	// left unset, because a v1alpha1 object that reports failedAt alone carries
+	// no such data, and inventing values would be worse than leaving them empty.
+	// Whether FailureDetails.Reason and FailureDetails.Message should be
+	// required rather than optional is a separate schema question, tracked in
+	// https://github.com/shipwright-io/build/issues/2308.
 	//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
 	failedAt := alphaBuildRun.Status.FailedAt
 	if failedAt != nil {
