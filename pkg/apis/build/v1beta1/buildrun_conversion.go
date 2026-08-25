@@ -261,6 +261,21 @@ func (src *BuildRun) ConvertFrom(ctx context.Context, obj *unstructured.Unstruct
 		}
 	}
 
+	// Fall back to the deprecated failedAt field, which is the only place where
+	// clients written before failureDetails existed report the failure location.
+	// failureDetails stays authoritative, failedAt is only consulted for the
+	// location it does not provide itself.
+	//nolint:staticcheck // SA1019 we want to give users some time to adopt to failureDetails
+	failedAt := alphaBuildRun.Status.FailedAt
+	if failedAt != nil {
+		if src.Status.FailureDetails == nil {
+			src.Status.FailureDetails = &FailureDetails{}
+		}
+		if src.Status.FailureDetails.Location == nil {
+			src.Status.FailureDetails.Location = (*Location)(failedAt)
+		}
+	}
+
 	var output *Output
 	if alphaBuildRun.Status.Output != nil {
 		output = &Output{
