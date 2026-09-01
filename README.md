@@ -48,9 +48,9 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.18.4/release.yaml --server-side
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.18.4/hack/setup-webhook-cert.sh | bash
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.18.4/hack/storage-version-migration.sh | bash
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/latest/release.yaml --server-side
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.20.14/hack/setup-webhook-cert.sh | bash
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.20.14/hack/storage-version-migration.sh | bash
   ```
 
   To install the latest nightly release, run:
@@ -64,7 +64,7 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/v0.18.4/sample-strategies.yaml --server-side
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/latest/sample-strategies.yaml --server-side
   ```
 
   To install the latest nightly release, run:
@@ -172,6 +172,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version | Docs | Examples |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | HEAD | [Docs @ HEAD](docs/README.md) | [Examples @ HEAD](samples) |
+| [v0.20.14](https://github.com/shipwright-io/build/releases/tag/v0.20.14) | [Docs @ v0.20.14](https://github.com/shipwright-io/build/tree/v0.20.14/docs) | [Examples @ v0.20.14](https://github.com/shipwright-io/build/tree/v0.20.14/samples) |
 | [v0.20.13](https://github.com/shipwright-io/build/releases/tag/v0.20.13) | [Docs @ v0.20.13](https://github.com/shipwright-io/build/tree/v0.20.13/docs) | [Examples @ v0.20.13](https://github.com/shipwright-io/build/tree/v0.20.13/samples) |
 | [v0.20.12](https://github.com/shipwright-io/build/releases/tag/v0.20.12) | [Docs @ v0.20.12](https://github.com/shipwright-io/build/tree/v0.20.12/docs) | [Examples @ v0.20.12](https://github.com/shipwright-io/build/tree/v0.20.12/samples) |
 | [v0.20.11](https://github.com/shipwright-io/build/releases/tag/v0.20.11) | [Docs @ v0.20.11](https://github.com/shipwright-io/build/tree/v0.20.11/docs) | [Examples @ v0.20.11](https://github.com/shipwright-io/build/tree/v0.20.11/samples) |
@@ -254,7 +255,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 
 | Dependency                           | Supported versions           |
 |--------------------------------------|------------------------------|
-| [Kubernetes](https://kubernetes.io/) | v1.34.\*, v1.35.\*, v1.36.\* |
+| [Kubernetes](https://kubernetes.io/) | v1.34.\*, v1.35.\*, v1.36.\*, v1.37.\* |
 | [Tekton](https://tekton.dev)         | v1.6.\*, v1.9.\*, v1.12.\*, v1.15.\* |
 
 ### Platform support
