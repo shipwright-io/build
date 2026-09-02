@@ -12,8 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
 	"github.com/shipwright-io/build/pkg/ctxlog"
+	buildmetrics "github.com/shipwright-io/build/pkg/metrics"
 )
 
 // blank assignment to verify that ReconcileClusterBuildStrategy implements reconcile.Reconciler
@@ -46,5 +48,12 @@ func (r *ReconcileClusterBuildStrategy) Reconcile(ctx context.Context, request r
 	defer cancel()
 
 	ctxlog.Info(ctx, "reconciling ClusterBuildStrategy", "name", request.Name)
+
+	list := &buildapi.ClusterBuildStrategyList{}
+	if err := r.client.List(ctx, list); err != nil {
+		return reconcile.Result{}, err
+	}
+	buildmetrics.BuildStrategyCountSet(string(buildapi.ClusterBuildStrategyKind), float64(len(list.Items)))
+
 	return reconcile.Result{}, nil
 }
