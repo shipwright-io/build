@@ -17,7 +17,7 @@ spec:
       defaults: []
   steps:
     - name: build-and-push
-      image: docker.io/paketobuildpacks/builder-jammy-full:latest
+      image: docker.io/paketobuildpacks/builder-jammy-full:0.3.650
       env: 
         - name: CNB_PLATFORM_API
           value: $(params.platform-api-version)

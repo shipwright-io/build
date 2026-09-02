@@ -47,6 +47,9 @@ function update() {
         QUERY=".tag_name"
         if [[ ${IMAGE} == *buildah* ]]; then
                 QUERY='[.tags[] | select(.name | endswith("immutable") | not) ] | sort_by(.name) | reverse | .[0].name'
+        elif [[ ${IMAGE} == *paketobuildpacks* ]]; then
+                # Docker Hub tags API: pick the highest x.y.z tag, ignoring "latest"
+                QUERY='[.results[] | select(.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name] | sort_by(split(".") | map(tonumber)) | last'
         fi
 
         CURL_FLAGS=(
