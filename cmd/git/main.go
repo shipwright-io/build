@@ -38,6 +38,18 @@ var (
 	displayURL string
 )
 
+var (
+	runGitCommand = func(ctx context.Context, args ...string) ([]byte, error) {
+		// #nosec G204 arguments are well-defined by the code
+		// #nosec G702 arguments are well-defined by the code
+		cmd := exec.CommandContext(ctx, "git", args...)
+		cmd.Stdin = nil
+
+		return cmd.CombinedOutput()
+	}
+	testConnection = util.TestConnection
+)
+
 // ExitError is an error which has an exit code to be used in os.Exit() to
 // return both an exit code and an error message
 type ExitError struct {
@@ -172,7 +184,7 @@ func runGitClone(ctx context.Context) error {
 
 	// check the endpoint, if hostname extraction fails, ignore that failure
 	if hostname, port, err := shpgit.ExtractHostnamePort(flagValues.url); err == nil {
-		if !util.TestConnection(hostname, port, 9) {
+		if !testConnection(hostname, port, 9) {
 			log.Printf("Warning: a connection test to %s:%d failed. The operation will likely fail.\n", hostname, port)
 		}
 	}
@@ -494,9 +506,8 @@ func git(ctx context.Context, args ...string) (string, error) {
 	if err := os.Setenv("GIT_TERMINAL_PROMPT", "0"); err != nil {
 		return "", err
 	}
-	cmd.Stdin = nil
 
-	out, err := cmd.CombinedOutput()
+	out, err := runGitCommand(ctx, fullArgs...)
 
 	var output string
 	if out != nil {

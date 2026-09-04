@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main_test
+package main
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
@@ -27,12 +28,36 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/rand"
 
-	. "github.com/shipwright-io/build/cmd/image-processing"
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
 var _ = Describe("Image Processing Resource", Ordered, func() {
+	originalRunVulnerabilityScan := runVulnerabilityScan
+
+	fakeVulnerabilities := func(limit int) []buildapi.Vulnerability {
+		vulnerabilities := []buildapi.Vulnerability{
+			{ID: "CVE-2019-8457", Severity: buildapi.High},
+			{ID: "CVE-2019-12900", Severity: buildapi.Medium},
+			{ID: "CVE-2020-0001", Severity: buildapi.High},
+			{ID: "CVE-2020-0002", Severity: buildapi.Medium},
+			{ID: "CVE-2020-0003", Severity: buildapi.Low},
+			{ID: "CVE-2020-0004", Severity: buildapi.High},
+			{ID: "CVE-2020-0005", Severity: buildapi.Medium},
+			{ID: "CVE-2020-0006", Severity: buildapi.Low},
+			{ID: "CVE-2020-0007", Severity: buildapi.High},
+			{ID: "CVE-2020-0008", Severity: buildapi.Medium},
+			{ID: "CVE-2020-0009", Severity: buildapi.Low},
+			{ID: "CVE-2020-0010", Severity: buildapi.High},
+		}
+
+		if limit > 0 && limit < len(vulnerabilities) {
+			return vulnerabilities[:limit]
+		}
+
+		return vulnerabilities
+	}
+
 	run := func(args ...string) error {
 		log.SetOutput(GinkgoWriter)
 
@@ -50,7 +75,15 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 		return Execute(context.Background())
 	}
 
+	BeforeEach(func() {
+		runVulnerabilityScan = func(_ context.Context, _ string, _ buildapi.VulnerabilityScanOptions, _ *authn.AuthConfig, _ bool, _ bool, vulnCountLimit int) ([]buildapi.Vulnerability, error) {
+			return fakeVulnerabilities(vulnCountLimit), nil
+		}
+	})
+
 	AfterEach(func() {
+		runVulnerabilityScan = originalRunVulnerabilityScan
+
 		// Reset flag variables
 		pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 	})
@@ -501,20 +534,11 @@ var _ = Describe("Image Processing Resource", Ordered, func() {
 			}
 
 			withTempRegistry(func(endpoint string) {
-				originalImageRef := "ghcr.io/shipwright-io/shipwright-samples/node:12"
-				srcRef, err := name.ParseReference(originalImageRef)
-				Expect(err).ToNot(HaveOccurred())
-
-				// Pull the original image
-				originalImage, err := remote.Image(srcRef)
-				Expect(err).ToNot(HaveOccurred())
-
 				// Tag the image with a new name
 				tag, err := name.NewTag(fmt.Sprintf("%s/%s:%s", endpoint, "temp-image", rand.String(5)))
 				Expect(err).ToNot(HaveOccurred())
 
-				err = remote.Write(tag, originalImage)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(remote.Write(tag, empty.Image)).To(Succeed())
 
 				vulnSettings := &resources.VulnerablilityScanParams{VulnerabilityScanOptions: *vulnOptions}
 				withTempFile("vuln-scan-result", func(filename string) {
