@@ -48,9 +48,10 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright deployment. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/latest/release.yaml --server-side
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.20.14/hack/setup-webhook-cert.sh | bash
-  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/v0.20.14/hack/storage-version-migration.sh | bash
+  VERSION=$(curl -s https://api.github.com/repos/shipwright-io/build/releases/latest | jq -r .tag_name)
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/${VERSION}/release.yaml --server-side
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/${VERSION}/hack/setup-webhook-cert.sh | bash
+  curl --silent --location https://raw.githubusercontent.com/shipwright-io/build/${VERSION}/hack/storage-version-migration.sh | bash
   ```
 
   To install the latest nightly release, run:
@@ -64,7 +65,8 @@ Shipwright supports any tool that can build container images in Kubernetes clust
 - Install the Shipwright strategies. To install the latest version, run:
 
   ```bash
-  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/latest/sample-strategies.yaml --server-side
+  VERSION=$(curl -s https://api.github.com/repos/shipwright-io/build/releases/latest | jq -r .tag_name)
+  kubectl apply --filename https://github.com/shipwright-io/build/releases/download/${VERSION}/sample-strategies.yaml --server-side
   ```
 
   To install the latest nightly release, run:
