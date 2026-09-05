@@ -231,6 +231,7 @@ func (r *ReconcileBuildRun) Reconcile(ctx context.Context, request reconcile.Req
 						validate.NewNodeSelector(build),
 						validate.NewTolerations(build),
 						validate.NewSchedulerName(build),
+						validate.NewCABundle(r.client, build),
 					)
 
 					// an internal/technical error during validation happened
