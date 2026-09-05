@@ -172,6 +172,7 @@ To find out more on what's the best strategy or what else can Shipwright do for 
 | Version | Docs | Examples |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | HEAD | [Docs @ HEAD](docs/README.md) | [Examples @ HEAD](samples) |
+| [v0.21.0](https://github.com/shipwright-io/build/releases/tag/v0.21.0)    | [Docs @ v0.21.0](https://github.com/shipwright-io/build/tree/v0.21.0/docs) | [Examples @ v0.21.0](https://github.com/shipwright-io/build/tree/v0.21.0/samples) |
 | [v0.20.14](https://github.com/shipwright-io/build/releases/tag/v0.20.14) | [Docs @ v0.20.14](https://github.com/shipwright-io/build/tree/v0.20.14/docs) | [Examples @ v0.20.14](https://github.com/shipwright-io/build/tree/v0.20.14/samples) |
 | [v0.20.13](https://github.com/shipwright-io/build/releases/tag/v0.20.13) | [Docs @ v0.20.13](https://github.com/shipwright-io/build/tree/v0.20.13/docs) | [Examples @ v0.20.13](https://github.com/shipwright-io/build/tree/v0.20.13/samples) |
 | [v0.20.12](https://github.com/shipwright-io/build/releases/tag/v0.20.12) | [Docs @ v0.20.12](https://github.com/shipwright-io/build/tree/v0.20.12/docs) | [Examples @ v0.20.12](https://github.com/shipwright-io/build/tree/v0.20.12/samples) |
