@@ -5,6 +5,8 @@
 package bundle_test
 
 import (
+	"archive/tar"
+	"bytes"
 	"fmt"
 	"log"
 	"net/http/httptest"
@@ -85,6 +87,38 @@ var _ = Describe("Bundle", func() {
 				})
 			})
 		})
+
+		DescribeTable("should reject a tar entry that attempts to escape the target directory",
+			func(entryName string) {
+				withTempDir(func(outerDir string) {
+					targetDir := filepath.Join(outerDir, "target")
+					Expect(os.Mkdir(targetDir, os.FileMode(0755))).To(Succeed())
+
+					// where the malicious entry would land if it were not rejected
+					escapedPath := filepath.Join(targetDir, entryName)
+
+					var buf bytes.Buffer
+					tw := tar.NewWriter(&buf)
+					Expect(tw.WriteHeader(&tar.Header{
+						Name:     entryName,
+						Typeflag: tar.TypeReg,
+						Mode:     0644,
+						Size:     int64(len("owned")),
+					})).To(Succeed())
+					_, err := tw.Write([]byte("owned"))
+					Expect(err).ToNot(HaveOccurred())
+					Expect(tw.Close()).To(Succeed())
+
+					_, err = Unpack(&buf, targetDir)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("escapes the target directory"))
+
+					Expect(escapedPath).ToNot(BeAnExistingFile())
+				})
+			},
+			Entry("single level traversal", "../canary"),
+			Entry("deep traversal matching the reported issue", "../../../../etc/canary"),
+		)
 	})
 
 	Context("packing/pushing and pulling/unpacking", func() {

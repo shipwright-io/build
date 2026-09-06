@@ -270,10 +270,10 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 			continue
 		}
 
-		// #nosec G305 path traversal is checked by validating that the resulting path does not contain unexpected special elements
+		// #nosec G305 path traversal is checked by validating that the resulting path does not escape targetPath
 		var target = filepath.Join(targetPath, header.Name)
-		if strings.Contains(target, "/../") {
-			return nil, fmt.Errorf("targetPath validation failed, path contains unexpected special elements")
+		if rel, err := filepath.Rel(targetPath, target); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return nil, fmt.Errorf("targetPath validation failed, %q escapes the target directory", header.Name)
 		}
 
 		switch header.Typeflag {
