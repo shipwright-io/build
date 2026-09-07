@@ -2282,6 +2282,61 @@ var _ = Describe("Reconcile BuildRun", func() {
 					Expect(client.GetCallCount()).To(Equal(4))
 					Expect(client.StatusCallCount()).To(Equal(2))
 				})
+
+				It("fails on PipelineRun creation when a referenced volume does not exist", func() {
+					buildStrategy := ctl.DefaultClusterBuildStrategy()
+					buildStrategy.Spec.Volumes = []buildapi.BuildStrategyVolume{
+						{
+							Name:        "secret-volume",
+							Overridable: ptr.To(true),
+						},
+					}
+
+					buildRunSample = ctl.BuildRunWithSA(buildRunName, buildName, saName)
+					buildRunSample.Spec.Volumes = []buildapi.BuildVolume{
+						{
+							Name: "secret-volume",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: "non-existent-secret",
+								},
+							},
+						},
+					}
+
+					client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
+						switch object := object.(type) {
+						case *buildapi.Build:
+							buildSample.DeepCopyInto(object)
+							return nil
+						case *buildapi.BuildRun:
+							buildRunSample.DeepCopyInto(object)
+							return nil
+						case *corev1.ServiceAccount:
+							ctl.DefaultServiceAccount(saName).DeepCopyInto(object)
+							return nil
+						case *buildapi.ClusterBuildStrategy:
+							buildStrategy.DeepCopyInto(object)
+							return nil
+						}
+						return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
+					})
+
+					volumeErrorConditionFound := false
+					statusWriter.UpdateCalls(func(_ context.Context, object crc.Object, _ ...crc.SubResourceUpdateOption) error {
+						if br, ok := object.(*buildapi.BuildRun); ok {
+							c := br.Status.GetCondition(buildapi.Succeeded)
+							if c != nil && c.Reason == string(buildapi.VolumeDoesNotExist) && c.Status == corev1.ConditionFalse {
+								volumeErrorConditionFound = true
+							}
+						}
+						return nil
+					})
+
+					_, err := reconciler.Reconcile(context.TODO(), buildRunRequest)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(volumeErrorConditionFound).To(BeTrue())
+				})
 			})
 		})
 	})
