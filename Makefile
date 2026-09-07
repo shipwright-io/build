@@ -157,6 +157,13 @@ install-counterfeiter:
 install-spruce:
 	hack/install-spruce.sh
 
+.PHONY: test-install-spruce
+test-install-spruce:
+	bash hack/install-spruce_test.sh valid
+	bash hack/install-spruce_test.sh mismatch
+	bash hack/install-spruce_test.sh darwin
+	bash hack/install-spruce_test.sh missing-checksum
+
 .PHONY: install-trivy
 install-trivy:
 	hack/install-trivy.sh
