@@ -53,22 +53,32 @@ func IsForbiddenEnvVar(name string) bool {
 // if overwriteValues is false, this function will return an error if a duplicate EnvVar name is encountered
 // if overwriteValues is true, this function will overwrite the existing value with the new value if a duplicate is encountered
 func MergeEnvVars(from []corev1.EnvVar, into []corev1.EnvVar, overwriteValues bool) ([]corev1.EnvVar, error) {
-	// If no variables are incoming, there is nothing to merge.
 	if len(from) == 0 && len(into) == 0 {
 		return []corev1.EnvVar{}, nil
-	} else if len(from) == 0 {
-		return into, nil
 	}
 
-	// Track names and indices in the merged slice for duplicate detection and replacement.
+	// create a map of the original (into) env vars with the name as the key and
+	// their index as the value so we can do value replacements later if overwriteValues is true
 	envIndices := make(map[string]int)
-
-	for i, o := range into {
-		envIndices[o.Name] = i
-	}
 
 	// errs holds a slice of error objects from the merge process
 	var errs []error
+
+	merged := make([]corev1.EnvVar, 0, len(into)+len(from))
+
+	for _, o := range into {
+		index, exists := envIndices[o.Name]
+
+		switch {
+		case exists && overwriteValues:
+			merged[index] = o
+		case exists && !overwriteValues:
+			errs = append(errs, fmt.Errorf("environment variable %q already exists", o.Name))
+		default:
+			envIndices[o.Name] = len(merged)
+			merged = append(merged, o)
+		}
+	}
 
 	// merge the new env vars into the original env vars list following a few simple rules
 	// based on if the name already exists and whether overwriteValues is true or false
@@ -82,16 +92,16 @@ func MergeEnvVars(from []corev1.EnvVar, into []corev1.EnvVar, overwriteValues bo
 
 		switch {
 		case exists && overwriteValues:
-			into[index] = n
+			merged[index] = n
 		case exists && !overwriteValues:
 			errs = append(errs, fmt.Errorf("environment variable %q already exists", n.Name))
 		default:
-			envIndices[n.Name] = len(into)
-			into = append(into, n)
+			envIndices[n.Name] = len(merged)
+			merged = append(merged, n)
 		}
 	}
 
 	// kerrors.NewAggregate will return nil if the slice is empty
 	// or an aggregated error otherwise
-	return into, kerrors.NewAggregate(errs)
+	return merged, kerrors.NewAggregate(errs)
 }

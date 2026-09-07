@@ -186,6 +186,71 @@ func TestMergeEnvVars(t *testing.T) {
 			},
 		},
 		{
+			name: "duplicate destination names should fail with overwriteValues false and empty from",
+			args: args{
+				new: []corev1.EnvVar{},
+				into: []corev1.EnvVar{
+					{Name: "ONE", Value: "first"},
+					{Name: "ONE", Value: "second"},
+				},
+				overwriteValues: false,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "first"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "duplicate destination names should overwrite with empty from",
+			args: args{
+				new: []corev1.EnvVar{},
+				into: []corev1.EnvVar{
+					{Name: "ONE", Value: "first"},
+					{Name: "TWO", Value: "twoValue"},
+					{Name: "ONE", Value: "second"},
+				},
+				overwriteValues: true,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "second"},
+				{Name: "TWO", Value: "twoValue"},
+			},
+		},
+		{
+			name: "duplicate destination names should fail with overwriteValues false",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "THREE", Value: "threeValue"},
+				},
+				into: []corev1.EnvVar{
+					{Name: "ONE", Value: "first"},
+					{Name: "ONE", Value: "second"},
+				},
+				overwriteValues: false,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "first"},
+				{Name: "THREE", Value: "threeValue"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "duplicate destination names should be overwritten by incoming values",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "ONE", Value: "third"},
+				},
+				into: []corev1.EnvVar{
+					{Name: "ONE", Value: "first"},
+					{Name: "ONE", Value: "second"},
+				},
+				overwriteValues: true,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "third"},
+			},
+		},
+		{
 			name: "duplicate incoming valueFrom should replace value",
 			args: args{
 				new: []corev1.EnvVar{
