@@ -118,6 +118,130 @@ func TestMergeEnvVars(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "duplicate incoming names should fail with overwriteValues false",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "TWO", Value: "first"},
+					{Name: "THREE", Value: "threeValue"},
+					{Name: "TWO", Value: "second"},
+				},
+				into: []corev1.EnvVar{
+					{Name: "ONE", Value: "oneValue"},
+				},
+				overwriteValues: false,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "oneValue"},
+				{Name: "TWO", Value: "first"},
+				{Name: "THREE", Value: "threeValue"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "duplicate incoming names should overwrite without changing order",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "TWO", Value: "first"},
+					{Name: "THREE", Value: "threeValue"},
+					{Name: "TWO", Value: "second"},
+				},
+				into: []corev1.EnvVar{
+					{Name: "ONE", Value: "oneValue"},
+				},
+				overwriteValues: true,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "oneValue"},
+				{Name: "TWO", Value: "second"},
+				{Name: "THREE", Value: "threeValue"},
+			},
+		},
+		{
+			name: "duplicate incoming names should fail with nil into",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "ONE", Value: "first"},
+					{Name: "ONE", Value: "second"},
+				},
+				into:            nil,
+				overwriteValues: false,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "first"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "duplicate incoming names should overwrite with empty into",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "ONE", Value: "first"},
+					{Name: "ONE", Value: "second"},
+				},
+				into:            []corev1.EnvVar{},
+				overwriteValues: true,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "second"},
+			},
+		},
+		{
+			name: "duplicate incoming valueFrom should replace value",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "ONE", Value: "first"},
+					{
+						Name: "ONE",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"},
+						},
+					},
+				},
+				overwriteValues: true,
+			},
+			want: []corev1.EnvVar{
+				{
+					Name: "ONE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"},
+					},
+				},
+			},
+		},
+		{
+			name: "duplicate incoming value should replace valueFrom",
+			args: args{
+				new: []corev1.EnvVar{
+					{
+						Name: "ONE",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"},
+						},
+					},
+					{Name: "ONE", Value: "second"},
+				},
+				overwriteValues: true,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "second"},
+			},
+		},
+		{
+			name: "forbidden incoming env var should fail with empty into",
+			args: args{
+				new: []corev1.EnvVar{
+					{Name: "ONE", Value: "oneValue"},
+					{Name: "LD_PRELOAD", Value: "/tmp/malicious.so"},
+				},
+				into:            []corev1.EnvVar{},
+				overwriteValues: true,
+			},
+			want: []corev1.EnvVar{
+				{Name: "ONE", Value: "oneValue"},
+			},
+			wantErr: true,
+		},
+		{
 			name: "duplicate names should fail with overwriteValues false",
 			args: args{
 				new: []corev1.EnvVar{
