@@ -5,6 +5,8 @@
 package util_test
 
 import (
+	"net"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -26,20 +28,14 @@ var _ = Describe("TCP", func() {
 		Context("For a broken endpoint", func() {
 
 			BeforeEach(func() {
-				hostname = "shipwright.io"
-				port = 33333
-			})
+				listener, err := net.Listen("tcp", "127.0.0.1:0")
+				Expect(err).ToNot(HaveOccurred())
 
-			It("returns false", func() {
-				Expect(result).To(BeFalse())
-			})
-		})
+				tcpAddress := listener.Addr().(*net.TCPAddr)
+				hostname = tcpAddress.IP.String()
+				port = tcpAddress.Port
 
-		Context("For an unknown host", func() {
-
-			BeforeEach(func() {
-				hostname = "shipwright-dhasldglidgewidgwd.io"
-				port = 33333
+				Expect(listener.Close()).To(Succeed())
 			})
 
 			It("returns false", func() {
@@ -50,8 +46,13 @@ var _ = Describe("TCP", func() {
 		Context("For a functional endpoint", func() {
 
 			BeforeEach(func() {
-				hostname = "github.com"
-				port = 443
+				listener, err := net.Listen("tcp", "127.0.0.1:0")
+				Expect(err).ToNot(HaveOccurred())
+				DeferCleanup(listener.Close)
+
+				tcpAddress := listener.Addr().(*net.TCPAddr)
+				hostname = tcpAddress.IP.String()
+				port = tcpAddress.Port
 			})
 
 			It("returns true", func() {

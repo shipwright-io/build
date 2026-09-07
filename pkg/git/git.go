@@ -23,6 +23,16 @@ const (
 	gitProtocol   = "ssh"
 )
 
+var listRemoteRefs = func(ctx context.Context, urlPath string) error {
+	repo := gogitv5.NewRemote(memory.NewStorage(), &config.RemoteConfig{
+		Name: defaultRemote,
+		URLs: []string{urlPath},
+	})
+
+	_, err := repo.ListContext(ctx, &gogitv5.ListOptions{})
+	return err
+}
+
 // ExtractHostnamePort extracts the hostname and port of the provided Git URL
 func ExtractHostnamePort(url string) (string, int, error) {
 	endpoint, err := transport.NewEndpoint(url)
@@ -61,12 +71,7 @@ func ValidateGitURLExists(ctx context.Context, urlPath string) error {
 
 	switch endpoint.Protocol {
 	case httpsProtocol, httpProtocol:
-		repo := gogitv5.NewRemote(memory.NewStorage(), &config.RemoteConfig{
-			Name: defaultRemote,
-			URLs: []string{urlPath},
-		})
-
-		if _, err := repo.ListContext(ctx, &gogitv5.ListOptions{}); err != nil {
+		if err := listRemoteRefs(ctx, urlPath); err != nil {
 			// Note: When the urlPath is an valid public path, however, this
 			// path doesn't exist, func will return `authentication required`,
 			// this is maybe misleading. So convert this error message to:
