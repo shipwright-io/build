@@ -31,12 +31,15 @@ fi
 
 echo "[INFO] Retrieving spruce binary release location"
 DOWNLOAD_URI="$(curl --silent --location "https://api.github.com/repos/${ORG}/${REPO}/releases/tags/${VERSION}" | jq --raw-output ".assets[] | select( (.name | contains(\"${SYSTEM_UNAME}\")) and (.name | contains(\"${SYSTEM_ARCH}\")) and (.name | contains(\"sha1\") | not) ) | .browser_download_url")"
-if [[ -z ${DOWNLOAD_URI} ]]; then
+CHECKSUM_URI="$(curl --silent --location "https://api.github.com/repos/${ORG}/${REPO}/releases/tags/${VERSION}" | jq --raw-output ".assets[] | select( (.name | contains(\"${SYSTEM_UNAME}\")) and (.name | contains(\"${SYSTEM_ARCH}\")) and (.name | contains(\"sha1\")) ) | .browser_download_url")"
+if [[ -z ${DOWNLOAD_URI} ]] || [[ -z ${CHECKSUM_URI} ]]; then
   echo -e "Unsupported operating system or machine type"
   exit 1
 fi
 
 echo "[INFO] Downloading spruce binary with version ${VERSION}"
 if curl --progress-bar --location "${DOWNLOAD_URI}" --output "${TARGET_DIR}/spruce"; then
+  echo "[INFO] Validating spruce binary..."
+  sha1sum --check <<<"$(curl --fail --silent --location "${CHECKSUM_URI}" | awk '{print $1}')  ${TARGET_DIR}/spruce"
   chmod a+rx "${TARGET_DIR}/spruce"
 fi
