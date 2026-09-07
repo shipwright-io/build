@@ -43,6 +43,14 @@ jobs:
       - name: Test
         run: make test-unit-coverage
 
+  test-install-spruce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+      - name: Test Spruce installer
+        run: make test-install-spruce
+
   test-docker-build:
     runs-on: ubuntu-latest
     strategy:
