@@ -42,6 +42,9 @@ jobs:
     - name: Install Spruce
       run: |
         make -C go/src/github.com/shipwright-io/build install-spruce
+    - name: Test Spruce installer
+      run: |
+        make -C go/src/github.com/shipwright-io/build test-install-spruce
     - name: Run verify-generate
       run: |
         export GOPATH="${GITHUB_WORKSPACE}"/go
