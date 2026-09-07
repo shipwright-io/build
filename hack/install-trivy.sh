@@ -25,7 +25,10 @@ if [[ -z ${TARGET_DIR:-} ]]; then
 fi
 
 echo "# Install Trivy"
-curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b "$TARGET_DIR"
+curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/v0.50.1/contrib/install.sh -o install.sh
+sha256sum --check <<<"2304dcc0c1883e802d376eae1b514c923b7427a7d88091dfcaf83967e6f55a7c  install.sh"
+sh install.sh -b "$TARGET_DIR" v0.50.1
+rm install.sh
 
 echo "# Trivy version"
 trivy --version
