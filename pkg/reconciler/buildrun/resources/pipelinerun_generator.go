@@ -222,6 +222,12 @@ func (g *PipelineRunGenerator) ApplyInfrastructureConfiguration() error {
 		}
 	}
 
+	for n := range g.pipelineTasks {
+		if err := applyCABundle(&g.pipelineTasks[n].TaskSpec.TaskSpec, g.build, g.buildRun); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

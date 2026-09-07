@@ -21,6 +21,7 @@ const (
 	paramSourceRoot      = "source-root"
 	paramSourceContext   = "source-context"
 	paramOutputDirectory = "output-directory"
+	paramCABundle        = "ca-bundle"
 
 	workspaceSource = "source"
 )
