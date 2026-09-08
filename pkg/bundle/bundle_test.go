@@ -91,8 +91,11 @@ var _ = Describe("Bundle", func() {
 		DescribeTable("should reject a tar entry that attempts to escape the target directory",
 			func(entryName string) {
 				withTempDir(func(outerDir string) {
-					targetDir := filepath.Join(outerDir, "target")
-					Expect(os.Mkdir(targetDir, os.FileMode(0755))).To(Succeed())
+					// nested four levels deep so that the "../../../../etc/canary"
+					// payload still escapes targetDir while resolving to a path
+					// inside outerDir, not the host's real /etc
+					targetDir := filepath.Join(outerDir, "a", "b", "c", "target")
+					Expect(os.MkdirAll(targetDir, os.FileMode(0755))).To(Succeed())
 
 					// where the malicious entry would land if it were not rejected
 					escapedPath := filepath.Join(targetDir, entryName)
