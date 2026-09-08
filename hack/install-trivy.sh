@@ -1,11 +1,4 @@
 #!/bin/bash
-
-# Copyright The Shipwright Contributors
-#
-# SPDX-License-Identifier: Apache-2.0
-
-#
-#!/bin/bash
 # Copyright The Shipwright Contributors
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -32,11 +25,20 @@ if [[ -z ${TARGET_DIR:-} ]]; then
   exit 1
 fi
 
-# Determine the architecture
+# Determine the operating system and architecture
+case "$(uname -s)" in
+  Linux)  OS_NAME="Linux"  ;;
+  Darwin) OS_NAME="macOS"  ;;
+  *)
+    echo "Unsupported operating system: $(uname -s)"
+    exit 1
+    ;;
+esac
+
 ARCH=$(uname -m | sed -e 's/x86_64/64bit/' -e 's/aarch64/ARM64/' -e 's/arm64/ARM64/')
 
 BASE_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
-TARBALL="trivy_${TRIVY_VERSION}_Linux-${ARCH}.tar.gz"
+TARBALL="trivy_${TRIVY_VERSION}_${OS_NAME}-${ARCH}.tar.gz"
 
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TEMP_DIR}"' EXIT
