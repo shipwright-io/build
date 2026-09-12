@@ -232,8 +232,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/tektoncd/pipeline v1.15.1 h1:eCGlMonJr7OhiLaaykO/+qXZv15eijswriT7JrLW9aQ=
-github.com/tektoncd/pipeline v1.15.1/go.mod h1:t2/vjjHPODK3hvx1OFgWVyo9Va/gGE1gR3o/beAsXKg=
+github.com/tektoncd/pipeline v1.15.2 h1:lhh8VU056jh0FnwHnf/uX/Qgc5Ul4aLgwkvhlV+ThsQ=
+github.com/tektoncd/pipeline v1.15.2/go.mod h1:WQoCY3StpfR+3bCrAg1gF/IRGVHa5kvMddqi52SoDy8=
 github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
 github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
