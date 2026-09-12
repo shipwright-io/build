@@ -72,16 +72,21 @@ type FakeStatusWriter struct {
 }
 
 func (fake *FakeStatusWriter) Apply(arg1 context.Context, arg2 runtime.ApplyConfiguration, arg3 ...client.SubResourceApplyOption) error {
+	var arg3Copy []client.SubResourceApplyOption
+	if arg3 != nil {
+		arg3Copy = make([]client.SubResourceApplyOption, len(arg3))
+		copy(arg3Copy, arg3)
+	}
 	fake.applyMutex.Lock()
 	ret, specificReturn := fake.applyReturnsOnCall[len(fake.applyArgsForCall)]
 	fake.applyArgsForCall = append(fake.applyArgsForCall, struct {
 		arg1 context.Context
 		arg2 runtime.ApplyConfiguration
 		arg3 []client.SubResourceApplyOption
-	}{arg1, arg2, arg3})
+	}{arg1, arg2, arg3Copy})
 	stub := fake.ApplyStub
 	fakeReturns := fake.applyReturns
-	fake.recordInvocation("Apply", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Apply", []interface{}{arg1, arg2, arg3Copy})
 	fake.applyMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3...)
@@ -135,6 +140,11 @@ func (fake *FakeStatusWriter) ApplyReturnsOnCall(i int, result1 error) {
 }
 
 func (fake *FakeStatusWriter) Create(arg1 context.Context, arg2 client.Object, arg3 client.Object, arg4 ...client.SubResourceCreateOption) error {
+	var arg4Copy []client.SubResourceCreateOption
+	if arg4 != nil {
+		arg4Copy = make([]client.SubResourceCreateOption, len(arg4))
+		copy(arg4Copy, arg4)
+	}
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
 	fake.createArgsForCall = append(fake.createArgsForCall, struct {
@@ -142,10 +152,10 @@ func (fake *FakeStatusWriter) Create(arg1 context.Context, arg2 client.Object, a
 		arg2 client.Object
 		arg3 client.Object
 		arg4 []client.SubResourceCreateOption
-	}{arg1, arg2, arg3, arg4})
+	}{arg1, arg2, arg3, arg4Copy})
 	stub := fake.CreateStub
 	fakeReturns := fake.createReturns
-	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3, arg4Copy})
 	fake.createMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3, arg4...)
@@ -199,6 +209,11 @@ func (fake *FakeStatusWriter) CreateReturnsOnCall(i int, result1 error) {
 }
 
 func (fake *FakeStatusWriter) Patch(arg1 context.Context, arg2 client.Object, arg3 client.Patch, arg4 ...client.SubResourcePatchOption) error {
+	var arg4Copy []client.SubResourcePatchOption
+	if arg4 != nil {
+		arg4Copy = make([]client.SubResourcePatchOption, len(arg4))
+		copy(arg4Copy, arg4)
+	}
 	fake.patchMutex.Lock()
 	ret, specificReturn := fake.patchReturnsOnCall[len(fake.patchArgsForCall)]
 	fake.patchArgsForCall = append(fake.patchArgsForCall, struct {
@@ -206,10 +221,10 @@ func (fake *FakeStatusWriter) Patch(arg1 context.Context, arg2 client.Object, ar
 		arg2 client.Object
 		arg3 client.Patch
 		arg4 []client.SubResourcePatchOption
-	}{arg1, arg2, arg3, arg4})
+	}{arg1, arg2, arg3, arg4Copy})
 	stub := fake.PatchStub
 	fakeReturns := fake.patchReturns
-	fake.recordInvocation("Patch", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("Patch", []interface{}{arg1, arg2, arg3, arg4Copy})
 	fake.patchMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3, arg4...)
@@ -263,16 +278,21 @@ func (fake *FakeStatusWriter) PatchReturnsOnCall(i int, result1 error) {
 }
 
 func (fake *FakeStatusWriter) Update(arg1 context.Context, arg2 client.Object, arg3 ...client.SubResourceUpdateOption) error {
+	var arg3Copy []client.SubResourceUpdateOption
+	if arg3 != nil {
+		arg3Copy = make([]client.SubResourceUpdateOption, len(arg3))
+		copy(arg3Copy, arg3)
+	}
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, struct {
 		arg1 context.Context
 		arg2 client.Object
 		arg3 []client.SubResourceUpdateOption
-	}{arg1, arg2, arg3})
+	}{arg1, arg2, arg3Copy})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
-	fake.recordInvocation("Update", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Update", []interface{}{arg1, arg2, arg3Copy})
 	fake.updateMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3...)
