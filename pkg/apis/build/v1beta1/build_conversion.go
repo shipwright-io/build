@@ -436,14 +436,16 @@ func getAlphaBuildSource(src BuildSpec) buildapialpha.Source {
 
 	switch src.Source.Type {
 	case OCIArtifactType:
-		if src.Source.OCIArtifact != nil && src.Source.OCIArtifact.PullSecret != nil {
-			credentials = corev1.LocalObjectReference{
-				Name: *src.Source.OCIArtifact.PullSecret,
+		if src.Source.OCIArtifact != nil {
+			if src.Source.OCIArtifact.PullSecret != nil {
+				credentials = corev1.LocalObjectReference{
+					Name: *src.Source.OCIArtifact.PullSecret,
+				}
 			}
-		}
-		source.BundleContainer = &buildapialpha.BundleContainer{
-			Image: src.Source.OCIArtifact.Image,
-			Prune: (*buildapialpha.PruneOption)(src.Source.OCIArtifact.Prune),
+			source.BundleContainer = &buildapialpha.BundleContainer{
+				Image: src.Source.OCIArtifact.Image,
+				Prune: (*buildapialpha.PruneOption)(src.Source.OCIArtifact.Prune),
+			}
 		}
 	default:
 		if src.Source.Git != nil && src.Source.Git.CloneSecret != nil {
