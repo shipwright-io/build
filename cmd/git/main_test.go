@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main_test
+package main
 
 import (
 	"bytes"
@@ -12,14 +12,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/shipwright-io/build/cmd/git"
 	shpgit "github.com/shipwright-io/build/pkg/git"
 )
 
@@ -62,6 +60,19 @@ func run(o ...runOpts) error {
 }
 
 var _ = Describe("Git Resource", func() {
+	type cloneDetails struct {
+		branch string
+		commit string
+		url    string
+	}
+
+	var (
+		gitCommands            [][]string
+		clonedTargets          map[string]cloneDetails
+		originalRunGitCommand  = runGitCommand
+		originalTestConnection = testConnection
+	)
+
 	var withTempDir = func(f func(target string)) {
 		path, err := os.MkdirTemp(os.TempDir(), "git")
 		Expect(err).ToNot(HaveOccurred())
@@ -88,6 +99,185 @@ var _ = Describe("Git Resource", func() {
 	var file = func(path string, mode os.FileMode, data []byte) {
 		Expect(os.WriteFile(path, data, mode)).ToNot(HaveOccurred())
 	}
+
+	var stripGitConfig = func(args []string) []string {
+		if len(args) >= 2 && args[0] == "-c" && strings.HasPrefix(args[1], "safe.directory=") {
+			return args[2:]
+		}
+
+		return args
+	}
+
+	var argumentValue = func(args []string, name string) string {
+		for i := 0; i < len(args)-1; i++ {
+			if args[i] == name {
+				return args[i+1]
+			}
+		}
+
+		return ""
+	}
+
+	var containsArgument = func(args []string, value string) bool {
+		for _, arg := range args {
+			if strings.Contains(arg, value) {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	var privateKeyFile = func(args []string) string {
+		for _, arg := range args {
+			if !strings.Contains(arg, "core.sshCommand=") {
+				continue
+			}
+
+			fields := strings.Fields(arg)
+			for i := 0; i < len(fields)-1; i++ {
+				if fields[i] == "-i" {
+					return fields[i+1]
+				}
+			}
+		}
+
+		return ""
+	}
+
+	var hasInvalidPrivateKey = func(args []string) bool {
+		filename := privateKeyFile(args)
+		if filename == "" {
+			return false
+		}
+
+		data, err := os.ReadFile(filename)
+		return err == nil && string(data) == "invalid"
+	}
+
+	var normalizeCommit = func(revision string) string {
+		switch revision {
+		case "v0.1.0":
+			return "8016b0437a7a09079f961e5003e81e5ad54e6c26"
+		case "0e05834", "0e0583421a5e4bf562ffe33f3651e16ba0c78591":
+			return "0e0583421a5e4bf562ffe33f3651e16ba0c78591"
+		default:
+			return "1b4f0c379bf8d0a87c2a9fc82fa82c7316b1d6a6"
+		}
+	}
+
+	var writeClonedContent = func(target string, sourceURL string) {
+		Expect(os.MkdirAll(target, 0755)).To(Succeed())
+		file(filepath.Join(target, "README.md"), 0644, []byte("sample repository\n"))
+
+		if strings.Contains(sourceURL, "sample-lfs") {
+			Expect(os.MkdirAll(filepath.Join(target, "assets"), 0755)).To(Succeed())
+			file(filepath.Join(target, "assets", "shipwright-logo-lightbg-512.png"), 0644, []byte{
+				0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n',
+				0x00, 0x00, 0x00, 0x0d, 'I', 'H', 'D', 'R',
+			})
+		}
+	}
+
+	var writeSubmoduleContent = func(target string, sourceURL string) {
+		if strings.Contains(sourceURL, "sample-submodule-private") {
+			Expect(os.MkdirAll(filepath.Join(target, "src", "sample-nodejs-private"), 0755)).To(Succeed())
+			file(filepath.Join(target, "src", "sample-nodejs-private", "README.md"), 0644, []byte("private submodule\n"))
+			return
+		}
+
+		if strings.Contains(sourceURL, "sample-submodule") {
+			Expect(os.MkdirAll(filepath.Join(target, "src", "sample-go"), 0755)).To(Succeed())
+			file(filepath.Join(target, "src", "sample-go", "README.md"), 0644, []byte("sample submodule\n"))
+		}
+	}
+
+	var fakeGitError = func(message string) ([]byte, error) {
+		return []byte(message), &ExitError{Code: 128, Message: message}
+	}
+
+	BeforeEach(func() {
+		gitCommands = nil
+		clonedTargets = map[string]cloneDetails{}
+		testConnection = func(_ string, _ int, _ int) bool {
+			return true
+		}
+		runGitCommand = func(_ context.Context, args ...string) ([]byte, error) {
+			args = stripGitConfig(args)
+			gitCommands = append(gitCommands, append([]string{}, args...))
+
+			switch {
+			case len(args) >= 2 && args[0] == "clone" && args[1] == "-h":
+				return []byte("--no-tags\n--revision\n"), nil
+
+			case len(args) >= 2 && args[0] == "submodule" && args[1] == "-h":
+				return []byte("--single-branch\n"), nil
+
+			case len(args) > 0 && args[0] == "clone":
+				sourceURL := args[len(args)-2]
+				target := args[len(args)-1]
+
+				switch {
+				case strings.Contains(sourceURL, "feqlQoDIHc") || strings.Contains(sourceURL, "bcfHFHHXYF"):
+					return fakeGitError("fatal: repository not found")
+				case containsArgument(args, "core.sshCommand") && hasInvalidPrivateKey(args):
+					return fakeGitError("fatal: Could not read from remote repository.")
+				case strings.Contains(sourceURL, "nonexistent") && containsArgument(args, "credential.helper"):
+					return fakeGitError("remote: Invalid username or password.")
+				case strings.Contains(sourceURL, "nonexistent") && containsArgument(args, "core.sshCommand"):
+					return fakeGitError("ERROR: Repository not found.")
+				case strings.Contains(sourceURL, "nonexistent"):
+					return fakeGitError("fatal: could not read Username for 'https://github.com': terminal prompts disabled.")
+				case argumentValue(args, "--branch") == "non-existent":
+					return fakeGitError("fatal: Remote branch non-existent not found in upstream origin")
+				}
+
+				revision := argumentValue(args, "--revision")
+				if revision == "" {
+					revision = argumentValue(args, "--branch")
+				}
+
+				clonedTargets[target] = cloneDetails{
+					branch: "main",
+					commit: normalizeCommit(revision),
+					url:    sourceURL,
+				}
+				writeClonedContent(target, sourceURL)
+				return []byte{}, nil
+
+			case len(args) >= 4 && args[0] == "-C" && args[2] == "checkout":
+				target := args[1]
+				details := clonedTargets[target]
+				details.commit = normalizeCommit(args[3])
+				clonedTargets[target] = details
+				return []byte{}, nil
+
+			case len(args) >= 4 && args[0] == "-C" && args[2] == "submodule":
+				target := args[1]
+				writeSubmoduleContent(target, clonedTargets[target].url)
+				return []byte{}, nil
+
+			case len(args) >= 5 && args[0] == "-C" && args[2] == "rev-parse" && args[3] == "--verify":
+				return []byte(clonedTargets[args[1]].commit), nil
+
+			case len(args) >= 5 && args[0] == "-C" && args[2] == "rev-parse" && args[3] == "--abbrev-ref":
+				return []byte(clonedTargets[args[1]].branch), nil
+
+			case len(args) >= 5 && args[0] == "-C" && args[2] == "log":
+				return []byte("Enrique Encalada"), nil
+
+			case len(args) >= 5 && args[0] == "-C" && args[2] == "show":
+				return []byte("1619426578"), nil
+			}
+
+			return []byte{}, nil
+		}
+	})
+
+	AfterEach(func() {
+		runGitCommand = originalRunGitCommand
+		testConnection = originalTestConnection
+	})
 
 	Context("validations and error cases", func() {
 		It("should succeed in case the help is requested", func() {
@@ -493,12 +683,6 @@ var _ = Describe("Git Resource", func() {
 		Context("Test that require git configurations", func() {
 			Context("cloning repositories with Git Large File Storage", func() {
 				const exampleRepo = "https://github.com/shipwright-io/sample-lfs"
-
-				BeforeEach(func() {
-					if _, err := exec.LookPath("git-lfs"); err != nil {
-						Skip("Skipping Git Large File Storage test as `git-lfs` binary is not in the PATH")
-					}
-				})
 
 				It("should Git clone a repository to the specified target directory", func() {
 					withTempDir(func(target string) {
