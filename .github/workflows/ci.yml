@@ -248,6 +248,12 @@ jobs:
           export TEST_E2E_TIMEOUT_MULTIPLIER=2
           make test-e2e
       - name: Test-PipelineRun
+        env:
+          TEST_NAMESPACE: shp-e2e
+          TEST_IMAGE_REPO: registry.registry.svc.cluster.local:32222/shipwright-io/build-e2e
+          TEST_IMAGE_REPO_INSECURE: true
+          TEST_E2E_SERVICEACCOUNT_NAME: pipeline
+          TEST_E2E_TIMEOUT_MULTIPLIER: 1
         run: make test-e2e-pipelinerun
       - name: Build controller logs
         if: ${{ failure() }}

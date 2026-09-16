@@ -230,23 +230,13 @@ test-e2e-plain: ginkgo
 	$(GINKGO) --label-filter="!PipelineRun" ${TEST_E2E_FLAGS} test/e2e/
 
 .PHONY: test-integration-pipelinerun
-test-integration-pipelinerun: install-apis ginkgo
-	./hack/setup-webhook-cert-integration-test.sh
+test-integration-pipelinerun: ginkgo
 	BUILDRUN_EXECUTOR=PipelineRun \
 	$(GINKGO) --label-filter="PipelineRun" -v test/integration/...
 
 .PHONY: test-e2e-pipelinerun
 test-e2e-pipelinerun: ginkgo
-	kubectl patch deployment shipwright-build-controller -n shipwright-build --type='json' -p='[\
-	  {\
-	    "op": "add",\
-	    "path": "/spec/template/spec/containers/0/env/-",\
-	    "value": {\
-	      "name": "BUILDRUN_EXECUTOR",\
-	      "value": "PipelineRun"\
-	    }\
-	  }\
-	]'
+	kubectl patch deployment shipwright-build-controller -n shipwright-build --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/env/-","value":{"name":"BUILDRUN_EXECUTOR","value":"PipelineRun"}}]'
 	kubectl rollout restart deployment shipwright-build-controller -n shipwright-build
 	kubectl rollout status deployment shipwright-build-controller -n shipwright-build
 	TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
