@@ -28,6 +28,12 @@ See the following docs referencing each of the Kubernetes resources currently su
 - [`BuildStrategy`](buildstrategies.md)
 - [`ClusterBuildStrategy`](buildstrategies.md)
 
+## For contributors
+
+- [Repository architecture](development/architecture.md) describes the important source, deployment, test, and documentation directories.
+- [Major dependencies](development/dependencies.md) explains the direct libraries used by the controller and helper tools.
+- [Samples](../samples/README.md) catalogs the available `Build`, `BuildRun`, and strategy manifests by API version and build technology.
+
 ## Controllers Flow
 
 The following image illustrate the interactions between the `Build`, `BuildRun` controller and the Tekton `Pipeline` controller.
