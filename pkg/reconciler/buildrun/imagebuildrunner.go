@@ -52,6 +52,9 @@ type ImageBuildRunner interface {
 
 	// GetUnderlyingTaskRun returns the generated TaskRun from using either TaskRun or PipelineRun.
 	GetUnderlyingTaskRuns(client client.Client) ([]*pipelineapi.TaskRun, error)
+
+	// GetVolumes returns all volumes defined in the build runner.
+	GetVolumes() []corev1.Volume
 }
 
 // ImageBuildRunnerFactory defines methods for creating and manipulating ImageBuildRunners.
@@ -194,6 +197,14 @@ func (t *TektonTaskRunWrapper) GetUnderlyingTaskRuns(_ client.Client) ([]*pipeli
 		return nil, fmt.Errorf("underlying TaskRun does not exist")
 	}
 	return []*pipelineapi.TaskRun{t.TaskRun}, nil
+}
+
+// GetVolumes returns all volumes defined in the TaskRun.
+func (t *TektonTaskRunWrapper) GetVolumes() []corev1.Volume {
+	if t.TaskRun == nil || t.TaskRun.Spec.TaskSpec == nil {
+		return nil
+	}
+	return t.TaskRun.Spec.TaskSpec.Volumes
 }
 
 // TektonTaskRunImageBuildRunnerFactory implements ImageBuildRunnerFactory for Tekton TaskRuns
