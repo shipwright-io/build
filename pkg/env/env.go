@@ -49,52 +49,59 @@ func IsForbiddenEnvVar(name string) bool {
 	return false
 }
 
-// MergeEnvVars merges one slice of corev1.EnvVar into another slice of corev1.EnvVar
+// MergeEnvVars merges two slices of corev1.EnvVar into a new slice of corev1.EnvVar that is then returned
 // if overwriteValues is false, this function will return an error if a duplicate EnvVar name is encountered
 // if overwriteValues is true, this function will overwrite the existing value with the new value if a duplicate is encountered
-func MergeEnvVars(from []corev1.EnvVar, into []corev1.EnvVar, overwriteValues bool) ([]corev1.EnvVar, error) {
-	// if from, into, or both are empty, there is no need to run through the processing logic
-	// just quickly return the appropriate value
-	if len(from) == 0 && len(into) == 0 {
+func MergeEnvVars(env1 []corev1.EnvVar, env2 []corev1.EnvVar, overwriteValues bool) ([]corev1.EnvVar, error) {
+	if len(env1) == 0 && len(env2) == 0 {
 		return []corev1.EnvVar{}, nil
-	} else if len(from) == 0 {
-		return into, nil
-	} else if len(into) == 0 {
-		return from, nil
 	}
 
-	// create a map of the original (into) env vars with the name as the key and
+	// create a map of the env2 variables with the name as the key and
 	// their index as the value so we can do value replacements later if overwriteValues is true
-	originalEnvs := make(map[string]int)
-
-	for i, o := range into {
-		originalEnvs[o.Name] = i
-	}
+	envIndices := make(map[string]int)
 
 	// errs holds a slice of error objects from the merge process
 	var errs []error
 
-	// merge the new env vars into the original env vars list following a few simple rules
-	// based on if the name already exists and whether overwriteValues is true or false
-	for _, n := range from {
-		if IsForbiddenEnvVar(n.Name) {
-			errs = append(errs, fmt.Errorf("environment variable %q is forbidden for security reasons", n.Name))
-			continue
-		}
+	merged := make([]corev1.EnvVar, 0, len(env2)+len(env1))
 
-		_, exists := originalEnvs[n.Name]
+	for _, envVar := range env2 {
+		index, exists := envIndices[envVar.Name]
 
 		switch {
 		case exists && overwriteValues:
-			into[originalEnvs[n.Name]] = n
+			merged[index] = envVar
 		case exists && !overwriteValues:
-			errs = append(errs, fmt.Errorf("environment variable %q already exists", n.Name))
+			errs = append(errs, fmt.Errorf("environment variable %q already exists", envVar.Name))
 		default:
-			into = append(into, n)
+			envIndices[envVar.Name] = len(merged)
+			merged = append(merged, envVar)
+		}
+	}
+
+	// merge the env1 variables into the result following a few simple rules
+	// based on if the name already exists and whether overwriteValues is true or false
+	for _, envVar := range env1 {
+		if IsForbiddenEnvVar(envVar.Name) {
+			errs = append(errs, fmt.Errorf("environment variable %q is forbidden for security reasons", envVar.Name))
+			continue
+		}
+
+		index, exists := envIndices[envVar.Name]
+
+		switch {
+		case exists && overwriteValues:
+			merged[index] = envVar
+		case exists && !overwriteValues:
+			errs = append(errs, fmt.Errorf("environment variable %q already exists", envVar.Name))
+		default:
+			envIndices[envVar.Name] = len(merged)
+			merged = append(merged, envVar)
 		}
 	}
 
 	// kerrors.NewAggregate will return nil if the slice is empty
 	// or an aggregated error otherwise
-	return into, kerrors.NewAggregate(errs)
+	return merged, kerrors.NewAggregate(errs)
 }
