@@ -807,30 +807,8 @@ func (r *ReconcileBuildRun) getReferencedStrategy(ctx context.Context, build *bu
 
 // validateExecutorVolumes checks that all volumes referenced in the executor (TaskRun or PipelineRun) exist.
 func (r *ReconcileBuildRun) validateExecutorVolumes(ctx context.Context, imageBuildRunner ImageBuildRunner) error {
-	switch runner := imageBuildRunner.(type) {
-	case *TektonTaskRunWrapper:
-		if runner.TaskRun != nil {
-			return resources.CheckTaskRunVolumesExist(ctx, r.client, runner.TaskRun)
-		}
-	case *TektonPipelineRunWrapper:
-		if runner.PipelineRun != nil {
-			return resources.CheckPipelineRunVolumesExist(ctx, r.client, runner.PipelineRun)
-		}
-	default:
-		generatedTaskRuns, err := imageBuildRunner.GetUnderlyingTaskRuns(r.client)
-		if err != nil {
-			return fmt.Errorf("failed to get underlying TaskRuns: %w", err)
-		}
-
-		for _, taskRun := range generatedTaskRuns {
-			if taskRun == nil {
-				continue
-			}
-			if err := resources.CheckTaskRunVolumesExist(ctx, r.client, taskRun); err != nil {
-				return err
-			}
-		}
+	if imageBuildRunner == nil || imageBuildRunner.GetObject() == nil {
+		return nil
 	}
-
-	return nil
+	return resources.CheckVolumesExist(ctx, r.client, imageBuildRunner.GetObject().GetNamespace(), imageBuildRunner.GetVolumes())
 }
