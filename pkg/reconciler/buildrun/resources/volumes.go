@@ -7,7 +7,6 @@ package resources
 import (
 	"context"
 
-	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,41 +56,6 @@ func CheckVolumesExist(ctx context.Context, client client.Client, namespace stri
 
 		if err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-// CheckTaskRunVolumesExist tries to find some of the volumes referenced by the BuildRun with all the
-// overrides. If some secret or configmap does not exist in the namespace, function returns error
-// describing the missing resource
-func CheckTaskRunVolumesExist(ctx context.Context, client client.Client, taskRun *pipelineapi.TaskRun) error {
-	if taskRun == nil || taskRun.Spec.TaskSpec == nil {
-		return nil
-	}
-	return CheckVolumesExist(ctx, client, taskRun.Namespace, taskRun.Spec.TaskSpec.Volumes)
-}
-
-// CheckPipelineRunVolumesExist checks that all volumes referenced in the PipelineRun tasks exist.
-func CheckPipelineRunVolumesExist(ctx context.Context, client client.Client, pipelineRun *pipelineapi.PipelineRun) error {
-	if pipelineRun == nil {
-		return nil
-	}
-
-	for _, task := range pipelineRun.Spec.PipelineSpec.Tasks {
-		if task.TaskSpec != nil {
-			if err := CheckVolumesExist(ctx, client, pipelineRun.Namespace, task.TaskSpec.TaskSpec.Volumes); err != nil {
-				return err
-			}
-		}
-	}
-
-	for _, task := range pipelineRun.Spec.PipelineSpec.Finally {
-		if task.TaskSpec != nil {
-			if err := CheckVolumesExist(ctx, client, pipelineRun.Namespace, task.TaskSpec.TaskSpec.Volumes); err != nil {
-				return err
-			}
 		}
 	}
 
