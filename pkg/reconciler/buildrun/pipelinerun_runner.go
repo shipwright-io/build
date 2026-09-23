@@ -217,12 +217,12 @@ func (t *TektonPipelineRunWrapper) GetVolumes() []corev1.Volume {
 	var vols []corev1.Volume
 	for _, task := range t.PipelineRun.Spec.PipelineSpec.Tasks {
 		if task.TaskSpec != nil {
-			vols = append(vols, task.TaskSpec.TaskSpec.Volumes...)
+			vols = append(vols, task.TaskSpec.Volumes...)
 		}
 	}
 	for _, task := range t.PipelineRun.Spec.PipelineSpec.Finally {
 		if task.TaskSpec != nil {
-			vols = append(vols, task.TaskSpec.TaskSpec.Volumes...)
+			vols = append(vols, task.TaskSpec.Volumes...)
 		}
 	}
 	return vols
