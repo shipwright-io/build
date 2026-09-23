@@ -19,68 +19,160 @@ import (
 	"github.com/shipwright-io/build/pkg/reconciler/buildrun/resources"
 )
 
-var _ = Describe("Volumes", func() {
+var _ = Describe("CheckVolumesExist", func() {
+
 	var (
-		ctx       context.Context
 		client    *fakes.FakeClient
 		namespace string
 	)
 
 	BeforeEach(func() {
-		ctx = context.TODO()
 		namespace = "test-ns"
 		client = &fakes.FakeClient{}
 	})
 
-	Context("when checking volumes exist", func() {
-		It("succeeds when referenced Secret and ConfigMap exist", func() {
+	Context("for a namepace where my-configmap and my-secret exist", func() {
+
+		BeforeEach(func() {
 			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
 				if nn.Name == "my-secret" || nn.Name == "my-configmap" {
 					return nil
 				}
 				return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
 			})
+		})
 
-			vols := []corev1.Volume{
-				{
-					Name: "sec-vol",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: "my-secret",
+		It("succeeds for volumes that only reference those objects", func(ctx SpecContext) {
+			vols := []corev1.Volume{{
+				Name: "sec-vol",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "my-secret",
+					},
+				},
+			}, {
+				Name: "cm-vol",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "my-configmap",
 						},
 					},
 				},
-				{
-					Name: "cm-vol",
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "my-configmap",
+			}}
+
+			Expect(resources.CheckVolumesExist(ctx, client, namespace, vols)).To(Succeed())
+		})
+
+		It("fails for volumes that reference something else", func(ctx SpecContext) {
+			vols := []corev1.Volume{{
+				Name: "sec-vol",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "missing-secret",
+					},
+				},
+			}}
+
+			err := resources.CheckVolumesExist(ctx, client, namespace, vols)
+			Expect(err).To(HaveOccurred())
+			Expect(k8serrors.IsNotFound(err)).To(BeTrue())
+		})
+
+		It("succeeds for projected volumes that only reference those objects", func(ctx SpecContext) {
+			vols := []corev1.Volume{{
+				Name: "proj-vol",
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "my-secret",
+									},
+								},
+							},
+							{
+								ConfigMap: &corev1.ConfigMapProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "my-configmap",
+									},
+								},
 							},
 						},
 					},
 				},
-			}
+			}}
 
-			err := resources.CheckVolumesExist(ctx, client, namespace, vols)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(resources.CheckVolumesExist(ctx, client, namespace, vols)).To(Succeed())
 		})
 
-		It("fails when referenced Secret is missing", func() {
-			client.GetCalls(func(_ context.Context, nn types.NamespacedName, object crc.Object, _ ...crc.GetOption) error {
-				return k8serrors.NewNotFound(schema.GroupResource{}, nn.Name)
-			})
-
-			vols := []corev1.Volume{
-				{
-					Name: "sec-vol",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: "missing-secret",
+		It("succeeds for projected volumes with sources that are neither secret nor config map", func(ctx SpecContext) {
+			vols := []corev1.Volume{{
+				Name: "proj-vol",
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+									Path: "token",
+								},
+							},
 						},
 					},
 				},
-			}
+			}}
+
+			Expect(resources.CheckVolumesExist(ctx, client, namespace, vols)).To(Succeed())
+		})
+
+		It("fails for projected volumes referencing a missing secret", func(ctx SpecContext) {
+			vols := []corev1.Volume{{
+				Name: "proj-vol",
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								ConfigMap: &corev1.ConfigMapProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "my-configmap",
+									},
+								},
+							},
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "missing-secret",
+									},
+								},
+							},
+						},
+					},
+				},
+			}}
+
+			err := resources.CheckVolumesExist(ctx, client, namespace, vols)
+			Expect(err).To(HaveOccurred())
+			Expect(k8serrors.IsNotFound(err)).To(BeTrue())
+		})
+
+		It("fails for projected volumes referencing a missing config map", func(ctx SpecContext) {
+			vols := []corev1.Volume{{
+				Name: "proj-vol",
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								ConfigMap: &corev1.ConfigMapProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "missing-configmap",
+									},
+								},
+							},
+						},
+					},
+				},
+			}}
 
 			err := resources.CheckVolumesExist(ctx, client, namespace, vols)
 			Expect(err).To(HaveOccurred())
