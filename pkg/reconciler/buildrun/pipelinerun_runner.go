@@ -208,6 +208,26 @@ func (t *TektonPipelineRunWrapper) GetUnderlyingTaskRuns(client client.Client) (
 	return taskRuns, nil
 }
 
+// GetVolumes returns all volumes defined across tasks in the PipelineRun.
+func (t *TektonPipelineRunWrapper) GetVolumes() []corev1.Volume {
+	if t.PipelineRun == nil {
+		return nil
+	}
+
+	var vols []corev1.Volume
+	for _, task := range t.PipelineRun.Spec.PipelineSpec.Tasks {
+		if task.TaskSpec != nil {
+			vols = append(vols, task.TaskSpec.Volumes...)
+		}
+	}
+	for _, task := range t.PipelineRun.Spec.PipelineSpec.Finally {
+		if task.TaskSpec != nil {
+			vols = append(vols, task.TaskSpec.Volumes...)
+		}
+	}
+	return vols
+}
+
 // TektonPipelineRunImageBuildRunnerFactory implements ImageBuildRunnerFactory for Tekton PipelineRuns.
 type TektonPipelineRunImageBuildRunnerFactory struct{}
 
