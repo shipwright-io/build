@@ -27,7 +27,7 @@ func TestBuildServerTLSConfig_MinVersionDefaultsToTLS12(t *testing.T) {
 		t.Fatalf("expected no warning, got %q", warning)
 	}
 	if cfg.MinVersion != tls.VersionTLS12 {
-		t.Fatalf("expected MinVersion TLS1.2, got %d", cfg.MinVersion)
+		t.Fatalf("expected MinVersion TLS 1.2, got %d", cfg.MinVersion)
 	}
 	if cfg.CipherSuites != nil {
 		t.Fatalf("expected CipherSuites to be unset by default")
@@ -44,9 +44,8 @@ func TestBuildServerTLSConfig_MinVersionParsing(t *testing.T) {
 	}{
 		{"VersionTLS10", tls.VersionTLS10},
 		{"VersionTLS11", tls.VersionTLS11},
-		{"VersionTLS12", tls.VersionTLS12},
-		{"VersionTLS13", tls.VersionTLS13},
-		{"  VersionTLS12  ", tls.VersionTLS12},
+		{"1.2", tls.VersionTLS12},
+		{"1.3", tls.VersionTLS13},
 	}
 
 	for _, tc := range cases {
@@ -62,7 +61,7 @@ func TestBuildServerTLSConfig_MinVersionParsing(t *testing.T) {
 		}
 	}
 
-	if _, _, err := BuildServerTLSConfig("VersionTLS14", ""); err == nil {
+	if _, _, err := BuildServerTLSConfig("1.4", ""); err == nil {
 		t.Fatalf("expected error for invalid min version")
 	}
 }
@@ -71,7 +70,7 @@ func TestBuildServerTLSConfig_CipherSuiteParsingAndOrderPreserved(t *testing.T) 
 	a := "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
 	b := "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
 
-	cfg, warning, err := BuildServerTLSConfig("VersionTLS12", a+","+b)
+	cfg, warning, err := BuildServerTLSConfig("1.2", a+","+b)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -89,12 +88,12 @@ func TestBuildServerTLSConfig_CipherSuiteParsingAndOrderPreserved(t *testing.T) 
 }
 
 func TestBuildServerTLSConfig_TLS13IgnoresCipherSuitesWithWarning(t *testing.T) {
-	cfg, warning, err := BuildServerTLSConfig("VersionTLS13", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+	cfg, warning, err := BuildServerTLSConfig("1.3", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	if cfg.MinVersion != tls.VersionTLS13 {
-		t.Fatalf("expected MinVersion TLS1.3, got %d", cfg.MinVersion)
+		t.Fatalf("expected MinVersion TLS 1.3, got %d", cfg.MinVersion)
 	}
 	if warning == "" || !strings.Contains(warning, "ignoring --tls-cipher-suites") {
 		t.Fatalf("expected ignore warning, got %q", warning)
@@ -105,15 +104,15 @@ func TestBuildServerTLSConfig_TLS13IgnoresCipherSuitesWithWarning(t *testing.T) 
 }
 
 func TestBuildServerTLSConfig_InvalidCipherSuitesFailFast(t *testing.T) {
-	if _, _, err := BuildServerTLSConfig("VersionTLS12", ""); err != nil {
+	if _, _, err := BuildServerTLSConfig("1.2", ""); err != nil {
 		t.Fatalf("empty flag should be treated as unset, got %v", err)
 	}
 
-	if _, _, err := BuildServerTLSConfig("VersionTLS12", " , , "); err == nil {
+	if _, _, err := BuildServerTLSConfig("1.2", " , , "); err == nil {
 		t.Fatalf("expected error for empty cipher suite list")
 	}
 
-	if _, _, err := BuildServerTLSConfig("VersionTLS12", "TLS_NOT_A_REAL_CIPHER"); err == nil {
+	if _, _, err := BuildServerTLSConfig("1.2", "TLS_NOT_A_REAL_CIPHER"); err == nil {
 		t.Fatalf("expected error for invalid cipher suite name")
 	}
 }
@@ -150,7 +149,7 @@ func TestHandshake_DefaultConfigAcceptsTLS12Client(t *testing.T) {
 }
 
 func TestHandshake_TLS13MinimumRejectsTLS12Client(t *testing.T) {
-	serverCfg, _, err := BuildServerTLSConfig("VersionTLS13", "")
+	serverCfg, _, err := BuildServerTLSConfig("1.3", "")
 	if err != nil {
 		t.Fatalf("expected no error building server config, got %v", err)
 	}
@@ -166,7 +165,7 @@ func TestHandshake_TLS13MinimumRejectsTLS12Client(t *testing.T) {
 }
 
 func TestHandshake_TLS13MinimumAcceptsTLS13Client(t *testing.T) {
-	serverCfg, _, err := BuildServerTLSConfig("VersionTLS13", "")
+	serverCfg, _, err := BuildServerTLSConfig("1.3", "")
 	if err != nil {
 		t.Fatalf("expected no error building server config, got %v", err)
 	}
@@ -185,7 +184,7 @@ func TestHandshake_CipherAllowlistRestrictsTLS12Negotiation(t *testing.T) {
 	const allowedCipher = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
 	const disallowedCipher = "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
 
-	serverCfg, _, err := BuildServerTLSConfig("VersionTLS12", allowedCipher)
+	serverCfg, _, err := BuildServerTLSConfig("1.2", allowedCipher)
 	if err != nil {
 		t.Fatalf("expected no error building server config, got %v", err)
 	}

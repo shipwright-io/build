@@ -25,7 +25,7 @@ import (
 
 var (
 	versionGiven    = flag.String("version", "devel", "Version of Shipwright webhook running")
-	tlsMinVersion   = pflag.String("tls-min-version", "", "Minimum TLS version for the webhook HTTPS server (VersionTLS10, VersionTLS11, VersionTLS12, VersionTLS13). Defaults to VersionTLS12.")
+	tlsMinVersion   = pflag.String("tls-min-version", "", "Minimum TLS version for the webhook HTTPS server (1.0, 1.1, 1.2, 1.3). Defaults to version 1.2.")
 	tlsCipherSuites = pflag.String("tls-cipher-suites", "", "Comma-separated list of TLS 1.2 cipher suites (Go cipher suite names). Only applies when the minimum TLS version is below TLS 1.3. Defaults to Go runtime selection.")
 )
 

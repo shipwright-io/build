@@ -18,7 +18,7 @@ import (
 //     (including TLS 1.3 cipher negotiation and updated curve defaults).
 //
 // Flags:
-// - minVersionFlag accepts: VersionTLS10|VersionTLS11|VersionTLS12|VersionTLS13
+// - minVersionFlag accepts: 1.0|1.1|1.2|1.3
 // - cipherSuitesFlag is a comma-separated list of Go cipher suite names (TLS 1.2 only).
 //
 // Returns (cfg, warning, err). A warning is returned when cipher suites are provided
@@ -58,16 +58,16 @@ func parseMinVersionFlag(v string) (uint16, error) {
 	}
 
 	switch v {
-	case "VersionTLS10":
+	case "1.0", "VersionTLS10":
 		return tls.VersionTLS10, nil
-	case "VersionTLS11":
+	case "1.1", "VersionTLS11":
 		return tls.VersionTLS11, nil
-	case "VersionTLS12":
+	case "1.2", "VersionTLS12":
 		return tls.VersionTLS12, nil
-	case "VersionTLS13":
+	case "1.3", "VersionTLS13":
 		return tls.VersionTLS13, nil
 	default:
-		return 0, fmt.Errorf("invalid --tls-min-version %q (allowed: VersionTLS10, VersionTLS11, VersionTLS12, VersionTLS13)", v)
+		return 0, fmt.Errorf("invalid --tls-min-version %q (allowed: 1.0, 1.1, 1.2, 1.3)", v)
 	}
 }
 
