@@ -161,15 +161,19 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 
 		Context("when condition status is false", func() {
 			It("reflects a timeout", func() {
-				_, build, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSWithShortTimeOut), []byte(test.MinimalBuildRun))
+				// use a custom strategy here that just sleeps 30 seconds, the default strategy fails on its own about
+				// as fast as the 5s timeout, and whichever comes first decides the BuildRun reason
+				WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategySleep30s), func() {
+					_, build, buildRun := setupBuildAndBuildRun([]byte(test.BuildCBSWithShortTimeOut), []byte(test.MinimalBuildRun), STRATEGY+tb.Namespace+"custom")
 
-				buildRun, err := tb.GetBRTillCompletion(buildRun.Name)
-				Expect(err).ToNot(HaveOccurred())
+					buildRun, err := tb.GetBRTillCompletion(buildRun.Name)
+					Expect(err).ToNot(HaveOccurred())
 
-				condition := buildRun.Status.GetCondition(buildapi.Succeeded)
-				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
-				Expect(condition.Reason).To(Equal("BuildRunTimeout"))
-				Expect(condition.Message).To(Equal(fmt.Sprintf("BuildRun %s failed to finish within %v", buildRun.Name, build.Spec.Timeout.Duration)))
+					condition := buildRun.Status.GetCondition(buildapi.Succeeded)
+					Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+					Expect(condition.Reason).To(Equal("BuildRunTimeout"))
+					Expect(condition.Message).To(Equal(fmt.Sprintf("BuildRun %s failed to finish within %v", buildRun.Name, build.Spec.Timeout.Duration)))
+				})
 			})
 
 			It("reflects a failed reason", func() {
@@ -301,31 +305,35 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 		})
 
 		It("should reflect a TaskRunTimeout reason and Completion time on timeout", func() {
+			// use a custom strategy here that just sleeps 30 seconds, the default strategy fails on its own about
+			// as fast as the 5s timeout, and whichever comes first decides the BuildRun reason
+			WithCustomClusterBuildStrategy([]byte(test.ClusterBuildStrategySleep30s), func() {
+				buildObject.Spec.Strategy.Name = STRATEGY + tb.Namespace + "custom"
+				Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
-			Expect(tb.CreateBuild(buildObject)).To(BeNil())
+				buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
+				Expect(err).To(BeNil())
 
-			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
-			Expect(err).To(BeNil())
+				Expect(tb.CreateBR(buildRunObject)).To(BeNil())
 
-			Expect(tb.CreateBR(buildRunObject)).To(BeNil())
+				_, err = tb.GetBRTillCompletion(buildRunObject.Name)
+				Expect(err).To(BeNil())
 
-			_, err = tb.GetBRTillCompletion(buildRunObject.Name)
-			Expect(err).To(BeNil())
+				expectedReason := "TaskRunTimeout"
+				actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
+				Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			expectedReason := "TaskRunTimeout"
-			actualReason, err := tb.GetTRTillDesiredReason(buildRunObject.Name, expectedReason)
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
+				_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
 
-			_, err = tb.GetTaskRunFromBuildRun(buildRunObject.Name)
-			Expect(err).To(BeNil())
+				expectedReason = "BuildRunTimeout"
+				actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
+				Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
 
-			expectedReason = "BuildRunTimeout"
-			actualReason, err = tb.GetBRTillDesiredReason(buildRunObject.Name, expectedReason)
-			Expect(err).To(BeNil(), fmt.Sprintf("failed to get desired reason; expected %s, got %s", expectedReason, actualReason))
-
-			tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
-			Expect(err).To(BeNil())
-			Expect(tr.Status.CompletionTime).ToNot(BeNil())
+				tr, err := tb.GetTaskRunFromBuildRun(buildRunObject.Name)
+				Expect(err).To(BeNil())
+				Expect(tr.Status.CompletionTime).ToNot(BeNil())
+			})
 		})
 	})
 
