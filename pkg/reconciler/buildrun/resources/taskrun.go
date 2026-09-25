@@ -23,6 +23,7 @@ const (
 	paramOutputDirectory = "output-directory"
 
 	workspaceSource = "source"
+	workspaceCache  = "cache"
 )
 
 // GenerateTaskRun creates a TaskRun with all build phases as sequential steps.
