@@ -92,12 +92,15 @@ func validateWaiterBuildRun(testBuild *utils.TestBuild, testBuildRun *buildapi.B
 		Should(BeTrue(), "BuildRun should start running")
 
 	// asserting the waiter step will end up in timeout, in other words, the build is terminated with
-	// the reason "failed"
+	// the reason "failed". On a busy cluster the waiter's timeout can start more than a minute
+	// after the BuildRun reports Running, since the step waits for the kubelet to deliver Tekton's
+	// ready annotation, and the TaskRun and BuildRun status updates can lag further. So this uses
+	// the same limit as the other BuildRun waits instead of a fixed window.
 	Eventually(func() string {
 		condition := getBuildRunStatusCondition(buildRunName)
 		Expect(condition).ToNot(BeNil())
 		Logf("BuildRun %q condition %v...", buildRunName, condition)
 		return condition.Reason
-	}, time.Duration(90*time.Second), 10*time.Second).
+	}, time.Duration(1100*getTimeoutMultiplier())*time.Second, 10*time.Second).
 		Should(Equal("Failed"), "BuildRun should end up in timeout")
 }

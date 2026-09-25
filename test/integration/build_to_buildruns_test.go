@@ -72,7 +72,16 @@ var _ = Describe("Integration tests Build and BuildRuns", func() {
 		})
 
 		It("should fail the builRun with a Reason", func() {
+			// use a custom strategy here that just sleeps 30 seconds, the default strategy fails on its own about
+			// as fast as the 5s timeout, and whichever comes first decides the BuildRun reason
+			sleepStrategy, err := tb.Catalog.LoadCBSWithName(STRATEGY+tb.Namespace+"custom", []byte(test.ClusterBuildStrategySleep30s))
+			Expect(err).To(BeNil())
+			Expect(tb.CreateClusterBuildStrategy(sleepStrategy)).To(BeNil())
+			DeferCleanup(func() {
+				Expect(tb.DeleteClusterBuildStrategy(sleepStrategy.Name)).To(BeNil())
+			})
 
+			buildObject.Spec.Strategy.Name = sleepStrategy.Name
 			Expect(tb.CreateBuild(buildObject)).To(BeNil())
 
 			buildObject, err = tb.GetBuildTillValidation(buildObject.Name)
