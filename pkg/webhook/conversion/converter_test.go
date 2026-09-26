@@ -1329,6 +1329,274 @@ request:
 			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
 		})
 
+		It("converts the deprecated status failedAt into the failureDetails location", func() {
+			// Create the yaml in v1alpha1
+			buildTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1alpha1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        buildRef:
+          name: a_build
+      status:
+        failedAt:
+          pod: buildkit-run-pod
+          container: step-build-and-push
+`
+			o := fmt.Sprintf(buildTemplate, apiVersion,
+				desiredAPIVersion)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Beta1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1beta1 BuildRun
+			desiredBuildRun := buildapi.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1beta1",
+					Kind:       "BuildRun",
+				},
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
+						Name: ptr.To("a_build"),
+					},
+				},
+				Status: buildapi.BuildRunStatus{
+					FailureDetails: &buildapi.FailureDetails{
+						Location: &buildapi.Location{
+							Pod:       "buildkit-run-pod",
+							Container: "step-build-and-push",
+						},
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
+
+		It("converts for status failureDetails", func() {
+			// Create the yaml in v1alpha1
+			buildTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1alpha1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        buildRef:
+          name: a_build
+      status:
+        failureDetails:
+          reason: ImagePullFailed
+          message: the image could not be pulled
+          location:
+            pod: buildkit-run-pod
+            container: step-build-and-push
+`
+			o := fmt.Sprintf(buildTemplate, apiVersion,
+				desiredAPIVersion)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Beta1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1beta1 BuildRun
+			desiredBuildRun := buildapi.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1beta1",
+					Kind:       "BuildRun",
+				},
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
+						Name: ptr.To("a_build"),
+					},
+				},
+				Status: buildapi.BuildRunStatus{
+					FailureDetails: &buildapi.FailureDetails{
+						Reason:  "ImagePullFailed",
+						Message: "the image could not be pulled",
+						Location: &buildapi.Location{
+							Pod:       "buildkit-run-pod",
+							Container: "step-build-and-push",
+						},
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
+
+		It("keeps the failureDetails location when the deprecated failedAt disagrees", func() {
+			// Create the yaml in v1alpha1
+			buildTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1alpha1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        buildRef:
+          name: a_build
+      status:
+        failedAt:
+          pod: stale-pod
+          container: stale-container
+        failureDetails:
+          reason: ImagePullFailed
+          message: the image could not be pulled
+          location:
+            pod: buildkit-run-pod
+            container: step-build-and-push
+`
+			o := fmt.Sprintf(buildTemplate, apiVersion,
+				desiredAPIVersion)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Beta1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1beta1 BuildRun, the deprecated failedAt is
+			// ignored because failureDetails already carries a location
+			desiredBuildRun := buildapi.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1beta1",
+					Kind:       "BuildRun",
+				},
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
+						Name: ptr.To("a_build"),
+					},
+				},
+				Status: buildapi.BuildRunStatus{
+					FailureDetails: &buildapi.FailureDetails{
+						Reason:  "ImagePullFailed",
+						Message: "the image could not be pulled",
+						Location: &buildapi.Location{
+							Pod:       "buildkit-run-pod",
+							Container: "step-build-and-push",
+						},
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
+
+		It("completes the failureDetails location from the deprecated failedAt", func() {
+			// Create the yaml in v1alpha1
+			buildTemplate := `kind: ConversionReview
+apiVersion: %s
+request:
+  uid: 0000-0000-0000-0000
+  desiredAPIVersion: %s
+  objects:
+    - apiVersion: shipwright.io/v1alpha1
+      kind: BuildRun
+      metadata:
+        name: buildkit-run
+      spec:
+        buildRef:
+          name: a_build
+      status:
+        failedAt:
+          pod: buildkit-run-pod
+          container: step-build-and-push
+        failureDetails:
+          reason: ImagePullFailed
+          message: the image could not be pulled
+`
+			o := fmt.Sprintf(buildTemplate, apiVersion,
+				desiredAPIVersion)
+
+			// Invoke the /convert webhook endpoint
+			conversionReview, err := getConversionReview(o)
+			Expect(err).To(BeNil())
+			Expect(conversionReview.Response.Result.Status).To(Equal(v1.StatusSuccess))
+
+			convertedObj, err := ToUnstructured(conversionReview)
+			Expect(err).To(BeNil())
+
+			buildRun, err := toV1Beta1BuildRunObject(convertedObj)
+			Expect(err).To(BeNil())
+
+			// Prepare our desired v1beta1 BuildRun, the location is taken from
+			// the deprecated failedAt because failureDetails has none
+			desiredBuildRun := buildapi.BuildRun{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "buildkit-run",
+				},
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "shipwright.io/v1beta1",
+					Kind:       "BuildRun",
+				},
+				Spec: buildapi.BuildRunSpec{
+					Build: buildapi.ReferencedBuild{
+						Name: ptr.To("a_build"),
+					},
+				},
+				Status: buildapi.BuildRunStatus{
+					FailureDetails: &buildapi.FailureDetails{
+						Reason:  "ImagePullFailed",
+						Message: "the image could not be pulled",
+						Location: &buildapi.Location{
+							Pod:       "buildkit-run-pod",
+							Container: "step-build-and-push",
+						},
+					},
+				},
+			}
+
+			// Use ComparableTo and assert the whole object
+			Expect(buildRun).To(BeComparableTo(desiredBuildRun))
+		})
+
 		It("converts for spec a generated serviceAccount", func() {
 			// Create the yaml in v1alpha1
 			buildRunTemplate := `kind: ConversionReview
