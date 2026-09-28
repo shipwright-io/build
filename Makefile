@@ -230,7 +230,7 @@ test-e2e-plain: ginkgo
 	$(GINKGO) --label-filter="!PipelineRun" ${TEST_E2E_FLAGS} test/e2e/
 
 .PHONY: test-integration-pipelinerun
-test-integration-pipelinerun: ginkgo
+test-integration-pipelinerun: install-apis ginkgo
 	BUILDRUN_EXECUTOR=PipelineRun \
 	$(GINKGO) --label-filter="PipelineRun" -v test/integration/...
 
