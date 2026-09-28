@@ -230,7 +230,8 @@ test-e2e-plain: ginkgo
 	$(GINKGO) --label-filter="!PipelineRun" ${TEST_E2E_FLAGS} test/e2e/
 
 .PHONY: test-integration-pipelinerun
-test-integration-pipelinerun: ginkgo
+test-integration-pipelinerun: install-apis ginkgo
+	./hack/setup-webhook-cert-integration-test.sh
 	BUILDRUN_EXECUTOR=PipelineRun \
 	$(GINKGO) --label-filter="PipelineRun" -v test/integration/...
 
@@ -264,6 +265,7 @@ install-apis:
 			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
 				kubectl replace -f "deploy/crds/shipwright.io_$${resource}.yaml" ; \
 			else \
+				kubectl patch crd "$${resource}.shipwright.io" --type=json -p='[{"op": "remove", "path": "/spec/conversion/webhook/clientConfig/url"}]' 2>/dev/null || true ; \
 				kubectl apply -f "deploy/crds/shipwright.io_$${resource}.yaml" --server-side ; \
 			fi ; \
 		else \
