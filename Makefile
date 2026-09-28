@@ -230,15 +230,13 @@ test-e2e-plain: ginkgo
 	$(GINKGO) --label-filter="!PipelineRun" ${TEST_E2E_FLAGS} test/e2e/
 
 .PHONY: test-integration-pipelinerun
-test-integration-pipelinerun: install-apis ginkgo
-	./hack/setup-webhook-cert-integration-test.sh
+test-integration-pipelinerun: ginkgo
 	BUILDRUN_EXECUTOR=PipelineRun \
 	$(GINKGO) --label-filter="PipelineRun" -v test/integration/...
 
 .PHONY: test-e2e-pipelinerun
-test-e2e-pipelinerun: ginkgo
+test-e2e-pipelinerun: install-strategies ginkgo
 	kubectl patch deployment shipwright-build-controller -n shipwright-build --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/env/-","value":{"name":"BUILDRUN_EXECUTOR","value":"PipelineRun"}}]'
-	kubectl rollout restart deployment shipwright-build-controller -n shipwright-build
 	kubectl rollout status deployment shipwright-build-controller -n shipwright-build
 	TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
@@ -262,10 +260,9 @@ install-with-pprof:
 install-apis:
 	for resource in buildruns builds buildstrategies clusterbuildstrategies ; do \
 		if kubectl get crd "$${resource}.shipwright.io" >/dev/null 2>&1 ; then \
-			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
+			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.url}}')" != "<no value>" ] || [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
 				kubectl replace -f "deploy/crds/shipwright.io_$${resource}.yaml" ; \
 			else \
-				kubectl patch crd "$${resource}.shipwright.io" --type=json -p='[{"op": "remove", "path": "/spec/conversion/webhook/clientConfig/url"}]' 2>/dev/null || true ; \
 				kubectl apply -f "deploy/crds/shipwright.io_$${resource}.yaml" --server-side ; \
 			fi ; \
 		else \
