@@ -262,10 +262,9 @@ install-with-pprof:
 install-apis:
 	for resource in buildruns builds buildstrategies clusterbuildstrategies ; do \
 		if kubectl get crd "$${resource}.shipwright.io" >/dev/null 2>&1 ; then \
-			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
+			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.url}}')" != "<no value>" ] || [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
 				kubectl replace -f "deploy/crds/shipwright.io_$${resource}.yaml" ; \
 			else \
-				kubectl patch crd "$${resource}.shipwright.io" --type=json -p='[{"op": "remove", "path": "/spec/conversion/webhook/clientConfig/url"}]' 2>/dev/null || true ; \
 				kubectl apply -f "deploy/crds/shipwright.io_$${resource}.yaml" --server-side ; \
 			fi ; \
 		else \
