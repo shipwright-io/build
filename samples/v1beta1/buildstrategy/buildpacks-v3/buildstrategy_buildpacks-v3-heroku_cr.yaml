@@ -54,7 +54,7 @@ spec:
                 echo "> WARNING: insecure output registry $1 listed while insecure output is disabled, disabling export"
                 shouldExport=false
               else
-                echo "> WARNING: insecure output registry $1 doubly listed"
+                echo "> WARNING: registry '$1' is listed in parameter 'insecure-registries' and is also declared insecure as the output of the BuildRun. The duplicate insecure declaration is unnecessary."
               fi
             fi
           }
