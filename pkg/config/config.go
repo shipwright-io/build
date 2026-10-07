@@ -85,6 +85,9 @@ const (
 
 	// environment variable to override the forbidden env var blocklist
 	forbiddenEnvVarNamesEnvVar = "FORBIDDEN_ENV_VAR_NAMES"
+
+	// environment variable to hold whether to enable service links on the pod
+	EnableServiceLinks = "ENABLE_SERVICE_LINKS"
 )
 
 // defaultForbiddenEnvVarNames is the default blocklist of environment variable
@@ -141,6 +144,7 @@ type Config struct {
 	VulnerabilityCountLimit          int
 	BuildrunExecutor                 string
 	ForbiddenEnvVarNames             []string
+	EnableServiceLinks               bool
 }
 
 // PrometheusConfig contains the specific configuration for the
@@ -199,6 +203,7 @@ func NewDefaultConfig() *Config {
 		VulnerabilityCountLimit:       50,
 		BuildrunExecutor:              "TaskRun",
 		ForbiddenEnvVarNames:          defaultForbiddenEnvVarNames,
+		EnableServiceLinks:            false,
 
 		GitContainerTemplate: Step{
 			Image: gitDefaultImage,
@@ -443,6 +448,10 @@ func (c *Config) SetConfigFromEnv() error {
 
 	if remoteArtifactsImage := os.Getenv(remoteArtifactsEnvVar); remoteArtifactsImage != "" {
 		c.RemoteArtifactsContainerImage = remoteArtifactsImage
+	}
+
+	if enableServiceLinks := os.Getenv(EnableServiceLinks); enableServiceLinks != "" {
+		c.EnableServiceLinks = strings.ToLower(enableServiceLinks) == "true"
 	}
 
 	if err := updateBucketsConfig(&c.Prometheus.BuildRunCompletionDurationBuckets, metricBuildRunCompletionDurationBucketsEnvVar); err != nil {
