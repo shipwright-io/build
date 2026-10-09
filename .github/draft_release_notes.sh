@@ -78,59 +78,56 @@ while IFS= read -r pr; do
    AUTHOR=$(echo $pr | cut -d';' -f2)
    PR_NUM=$(echo $pr | cut -d';' -f3)
    echo "Examining from @${AUTHOR} PR ${PR_NUM}"
-   PR_BODY=$(wget -q -O- https://api.github.com/repos/shipwright-io/build/issues/${PR_NUM:1})
-   echo $PR_BODY | grep -oPz '(?s)(?<=```release-note..)(.+?)(?=```)' > /dev/null 2>&1
-   rc=$?
-   if [ ${rc} -eq 1 ]; then
+   # decode the JSON body and strip CR so that both CRLF (web UI) and LF (API, gh CLI) bodies are handled
+   PR_BODY=$(wget -q -O- https://api.github.com/repos/shipwright-io/build/issues/${PR_NUM:1} | jq -r '.body // ""' | tr -d '\r')
+   # extract the release-note block line by line, preserving line breaks and indentation (e.g. bullet lists),
+   # and dropping leading blank lines; trailing blank lines are dropped by the command substitution
+   PR_RELEASE_NOTE=$(echo "${PR_BODY}" | awk '/^```release-note[[:space:]]*$/ {f=1; next} f && /^```/ {exit} f && (seen || NF) {seen=1; print}')
+   if [ -z "${PR_RELEASE_NOTE}" ]; then
       echo "First validation:  the release-note field for PR ${PR_NUM} was not properly formatted.  Until it is fixed, it will be skipped for release note inclusion."
       echo "See the PR template at https://raw.githubusercontent.com/shipwright-io/build/master/.github/pull_request_template.md for verification steps"
       continue
    fi
-   PR_BODY_FILTER_ONE=$(echo $PR_BODY | grep -oPz '(?s)(?<=```release-note..)(.+?)(?=```)')
-   echo $PR_BODY_FILTER_ONE | grep -avP '\W*(Your release note here|NONE)\W*' > /dev/null 2>&1
-   rc=$?
-   if [ ${rc} -eq 1 ]; then
+   if echo "${PR_RELEASE_NOTE}" | tr -d '\n' | grep -qP '^\W*(Your release note here|NONE)\W*$'; then
       echo "Second validation:  the release-note field for PR ${PR_NUM} was not properly formatted.  Until it is fixed, it will be skipped for release note inclusion."
       echo "See the PR template at https://raw.githubusercontent.com/shipwright-io/build/master/.github/pull_request_template.md for verification steps"
       continue
    fi
-   PR_RELEASE_NOTE=$(echo $PR_BODY_FILTER_ONE | grep -avP '\W*(Your release note here|NONE)\W*')
-   PR_RELEASE_NOTE_NO_NEWLINES=$(echo $PR_RELEASE_NOTE | sed 's/\\n//g' | sed 's/\\r//g')
+   # the first line of the note follows the PR reference, any further lines are kept as-is
+   ENTRY="$PR_NUM by @$AUTHOR: $PR_RELEASE_NOTE"
    MISC=yes
    echo $pr | grep 'kind/bug'
    rc=$?
    if [ ${rc} -eq 0 ]; then
       echo >> Fixes.md
-      echo "$PR_NUM by @$AUTHOR: $PR_RELEASE_NOTE_NO_NEWLINES" >> Fixes.md
+      echo "$ENTRY" >> Fixes.md
       MISC=no
    fi
    echo $pr | grep 'kind/api-change'
    rc=$?
    if [ ${rc} -eq 0 ]; then
       echo >> API.md
-      echo "$PR_NUM by @$AUTHOR: $PR_RELEASE_NOTE_NO_NEWLINES" >> API.md
+      echo "$ENTRY" >> API.md
       MISC=no
    fi
    echo $pr | grep 'kind/feature'
    rc=$?
    if [ ${rc} -eq 0 ]; then
       echo >> Features.md
-      echo "$PR_NUM by @$AUTHOR: $PR_RELEASE_NOTE_NO_NEWLINES" >> Features.md
+      echo "$ENTRY" >> Features.md
       MISC=no
    fi
    echo $pr | grep 'kind/documentation'
    rc=$?
    if [ ${rc} -eq 0 ]; then
       echo >> Docs.md
-      echo "$PR_NUM by @$AUTHOR: $PR_RELEASE_NOTE_NO_NEWLINES" >> Docs.md
+      echo "$ENTRY" >> Docs.md
       MISC=no
    fi
    if [ "$MISC" == "yes" ]; then
       echo >> Misc.md
-      echo "$PR_NUM by @$AUTHOR: $PR_RELEASE_NOTE_NO_NEWLINES" >> Misc.md
+      echo "$ENTRY" >> Misc.md
    fi
-   # update the PR template if our greps etc. for pulling the release note changes
-   #PR_RELEASE_NOTE=$(wget -q -O- https://api.github.com/repos/shipwright-io/build/issues/${PR_NUM:1} | grep -oPz '(?s)(?<=```release-note..)(.+?)(?=```)' | grep -avP '\W*(Your release note here|action required: your release note here|NONE)\W*')
    echo "Added from @${AUTHOR} PR ${PR_NUM:1} to the release note draft"
 done < last-300-prs-with-release-note.txt
 
