@@ -601,6 +601,19 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(taskRun).ToNot(BeNil())
 			})
+
+			It("should handle environment for enabling service links", func() {
+				orig := cfg.EnableServiceLinks
+				for _, expected := range []bool{true, false} {
+					cfg.EnableServiceLinks = expected
+					taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(taskRun).ToNot(BeNil())
+					Expect(*taskRun.Spec.PodTemplate.EnableServiceLinks).To(Equal(expected))
+				}
+				cfg.EnableServiceLinks = orig
+			})
 		})
 
 		Context("with embedded Build (empty build name)", func() {
