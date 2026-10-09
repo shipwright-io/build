@@ -236,6 +236,23 @@ test-e2e-plain: ginkgo
 	TEST_E2E_VERIFY_TEKTONOBJECTS=${TEST_E2E_VERIFY_TEKTONOBJECTS} \
 	$(GINKGO) --label-filter="!PipelineRun" ${TEST_E2E_FLAGS} test/e2e/
 
+.PHONY: test-integration-pipelinerun
+test-integration-pipelinerun: install-apis ginkgo
+	./hack/setup-webhook-cert-integration-test.sh
+	BUILDRUN_EXECUTOR=PipelineRun \
+	$(GINKGO) --label-filter="PipelineRun" -v test/integration/...
+
+.PHONY: test-e2e-pipelinerun
+test-e2e-pipelinerun: install-strategies ginkgo
+	kubectl patch deployment shipwright-build-controller -n shipwright-build --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/env/-","value":{"name":"BUILDRUN_EXECUTOR","value":"PipelineRun"}}]'
+	kubectl rollout status deployment shipwright-build-controller -n shipwright-build
+	TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
+	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
+	TEST_E2E_TIMEOUT_MULTIPLIER=${TEST_E2E_TIMEOUT_MULTIPLIER} \
+	TEST_E2E_VERIFY_TEKTONOBJECTS=true \
+	$(GINKGO) --label-filter="PipelineRun" --procs 8 --timeout=1h --vv test/e2e/v1beta1/
+
 .PHONY: test-e2e-kind-with-prereq-install
 test-e2e-kind-with-prereq-install: ginkgo install-controller-kind install-strategies test-e2e-plain
 
@@ -251,7 +268,7 @@ install-with-pprof:
 install-apis:
 	for resource in buildruns builds buildstrategies clusterbuildstrategies ; do \
 		if kubectl get crd "$${resource}.shipwright.io" >/dev/null 2>&1 ; then \
-			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
+			if [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.url}}')" != "<no value>" ] || [ "$$(kubectl get crd "$${resource}.shipwright.io" -o go-template='{{.spec.conversion.webhook.clientConfig.caBundle}}')" == "<no value>" ] ; then \
 				kubectl replace -f "deploy/crds/shipwright.io_$${resource}.yaml" ; \
 			else \
 				kubectl apply -f "deploy/crds/shipwright.io_$${resource}.yaml" --server-side ; \
