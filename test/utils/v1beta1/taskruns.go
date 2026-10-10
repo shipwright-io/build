@@ -8,7 +8,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
+	tektonpipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +39,23 @@ func (t *TestBuild) GetTaskRunFromBuildRun(buildRunName string) (*pipelineapi.Ta
 	}
 
 	return &trList.Items[0], nil
+}
+
+// ListTaskRunsForPipelineRun returns TaskRuns created for a PipelineRun (Tekton label tekton.dev/pipelineRun).
+func (t *TestBuild) ListTaskRunsForPipelineRun(pipelineRunName string) ([]pipelineapi.TaskRun, error) {
+	sel := fmt.Sprintf("%s=%s", tektonpipeline.PipelineRunLabelKey, pipelineRunName)
+
+	trList, err := t.PipelineClientSet.TektonV1().TaskRuns(t.Namespace).List(t.Context, metav1.ListOptions{
+		LabelSelector: sel,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]pipelineapi.TaskRun, len(trList.Items))
+	copy(out, trList.Items)
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out, nil
 }
 
 // UpdateTaskRun applies changes to a TaskRun object
