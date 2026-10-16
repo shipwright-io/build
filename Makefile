@@ -244,8 +244,10 @@ test-integration-pipelinerun: install-apis ginkgo
 
 .PHONY: test-e2e-pipelinerun
 test-e2e-pipelinerun: install-strategies ginkgo
-	kubectl patch deployment shipwright-build-controller -n shipwright-build --type='json' -p='[{"op":"add","path":"/spec/template/spec/containers/0/env/-","value":{"name":"BUILDRUN_EXECUTOR","value":"PipelineRun"}}]'
-	kubectl rollout status deployment shipwright-build-controller -n shipwright-build
+	trap 'kubectl set env deployment/shipwright-build-controller -n shipwright-build -c shipwright-build BUILDRUN_EXECUTOR- && \
+		kubectl rollout status deployment/shipwright-build-controller -n shipwright-build --timeout=5m' EXIT; \
+	kubectl set env deployment/shipwright-build-controller -n shipwright-build -c shipwright-build BUILDRUN_EXECUTOR=PipelineRun && \
+	kubectl rollout status deployment/shipwright-build-controller -n shipwright-build --timeout=5m && \
 	TEST_CONTROLLER_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_WATCH_NAMESPACE=${TEST_NAMESPACE} \
 	TEST_E2E_SERVICEACCOUNT_NAME=${TEST_E2E_SERVICEACCOUNT_NAME} \
