@@ -217,7 +217,10 @@ type Vulnerability struct {
 
 // Output holds the information about the container image that the BuildRun built
 type Output struct {
-	// Digest holds the digest of output image
+	// Digest holds the digest of the built output image.
+	//
+	// For multi-arch builds that publish a manifest list (OCI image index), this is the
+	// digest of that index; per-platform digests are in status.platformResults.
 	//
 	// +optional
 	Digest string `json:"digest,omitempty"`
@@ -228,6 +231,53 @@ type Output struct {
 	Size int64 `json:"size,omitempty"`
 
 	// Vulnerabilities holds the list of vulnerabilities detected in the image
+	//
+	// +optional
+	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
+}
+
+// PlatformBuildStatus describes the lifecycle state of a single platform build within a multi-arch BuildRun.
+type PlatformBuildStatus string
+
+const (
+	// PlatformBuildStatusPending indicates the platform build has not finished yet.
+	PlatformBuildStatusPending PlatformBuildStatus = "Pending"
+	// PlatformBuildStatusRunning indicates the platform build is in progress.
+	PlatformBuildStatusRunning PlatformBuildStatus = "Running"
+	// PlatformBuildStatusSucceeded indicates the platform build completed successfully.
+	PlatformBuildStatusSucceeded PlatformBuildStatus = "Succeeded"
+	// PlatformBuildStatusFailed indicates the platform build failed.
+	PlatformBuildStatusFailed PlatformBuildStatus = "Failed"
+)
+
+// PlatformBuildResult holds observed results for one OS/architecture in a multi-arch build.
+type PlatformBuildResult struct {
+	// Platform is the OS and CPU architecture this result applies to.
+	//
+	// +required
+	Platform ImagePlatform `json:"platform"`
+
+	// Status is the lifecycle state of this platform's build.
+	//
+	// +required
+	Status PlatformBuildStatus `json:"status"`
+
+	// FailureMessage is set when Status is Failed.
+	//
+	// +optional
+	FailureMessage string `json:"failureMessage,omitempty"`
+
+	// Digest is the pushed image digest for this platform variant.
+	//
+	// +optional
+	Digest string `json:"digest,omitempty"`
+
+	// Size is the compressed image size for this platform variant.
+	//
+	// +optional
+	Size int64 `json:"size,omitempty"`
+
+	// Vulnerabilities lists vulnerabilities reported for this platform's image.
 	//
 	// +optional
 	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
@@ -270,6 +320,11 @@ type BuildRunStatus struct {
 	// BuildSpec is the Build Spec of this BuildRun.
 	// +optional
 	BuildSpec *BuildSpec `json:"buildSpec,omitempty"`
+
+	// PlatformResults holds per-platform build results when a multi-arch build is used.
+	//
+	// +optional
+	PlatformResults []PlatformBuildResult `json:"platformResults,omitempty"`
 
 	// FailureDetails contains error details that are collected and surfaced from TaskRun
 	// +optional
