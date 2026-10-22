@@ -51,6 +51,7 @@ var validationTypes = [...]string{
 	validate.Tolerations,
 	validate.SchedulerName,
 	validate.RuntimeClassName,
+	validate.CABundles,
 }
 
 // ReconcileBuild reconciles a Build object

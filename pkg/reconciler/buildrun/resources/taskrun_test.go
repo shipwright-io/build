@@ -109,6 +109,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				Expect(paramNames).To(HaveKey("shp-output-insecure"))
 				Expect(paramNames).To(HaveKey("shp-source-root"))
 				Expect(paramNames).To(HaveKey("shp-source-context"))
+				Expect(paramNames).To(HaveKey("shp-ca-bundle"))
 			})
 
 			It("should include TaskSpec parameters", func() {
@@ -125,6 +126,7 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				Expect(taskSpecParamNames).To(HaveKey("shp-output-insecure"))
 				Expect(taskSpecParamNames).To(HaveKey("shp-source-root"))
 				Expect(taskSpecParamNames).To(HaveKey("shp-source-context"))
+				Expect(taskSpecParamNames).To(HaveKey("shp-ca-bundle"))
 			})
 
 			It("should include workspaces", func() {
