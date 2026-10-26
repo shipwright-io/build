@@ -24,9 +24,10 @@ import (
 )
 
 var (
-	versionGiven    = flag.String("version", "devel", "Version of Shipwright webhook running")
-	tlsMinVersion   = pflag.String("tls-min-version", "", "Minimum TLS version for the webhook HTTPS server (1.0, 1.1, 1.2, 1.3). Defaults to version 1.2.")
-	tlsCipherSuites = pflag.String("tls-cipher-suites", "", "Comma-separated list of TLS 1.2 cipher suites (Go cipher suite names). Only applies when the minimum TLS version is below TLS 1.3. Defaults to Go runtime selection.")
+	versionGiven        = flag.String("version", "devel", "Version of Shipwright webhook running")
+	tlsMinVersion       = pflag.String("tls-min-version", "", "Minimum TLS version for the webhook HTTPS server (1.0, 1.1, 1.2, 1.3). Defaults to version 1.2.")
+	tlsCipherSuites     = pflag.String("tls-cipher-suites", "", "Comma-separated list of TLS 1.2 cipher suites (Go cipher suite names). Only applies when the minimum TLS version is below TLS 1.3. Defaults to Go runtime selection.")
+	tlsCurvePreferences = pflag.String("tls-curve-preferences", "", "Comma-separated list of supported groups for TLS handshake (X25519, secp256r1, secp384r1, secp521r1, X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024).")
 )
 
 func printVersion(ctx context.Context) {
@@ -68,7 +69,7 @@ func Execute() error {
 	mux.HandleFunc("/convert", conversion.CRDConvertHandler(ctx))
 	ctxlog.Info(ctx, "adding handlefunc() /convert")
 
-	serverTLSConfig, warning, err := tlsconfig.BuildServerTLSConfig(*tlsMinVersion, *tlsCipherSuites)
+	serverTLSConfig, warning, err := tlsconfig.BuildServerTLSConfig(*tlsMinVersion, *tlsCipherSuites, *tlsCurvePreferences)
 	if err != nil {
 		ctxlog.Error(ctx, err, "invalid TLS configuration")
 		return err
@@ -79,10 +80,12 @@ func Execute() error {
 	ctxlog.Info(
 		ctx,
 		fmt.Sprintf(
-			"effective TLS configuration: minVersion=%d cipherSuitesConfigured=%t cipherSuitesCount=%d",
+			"effective TLS configuration: minVersion=%d cipherSuitesConfigured=%t cipherSuitesCount=%d curvePreferencesConfigured=%t curvePreferencesCount=%d",
 			serverTLSConfig.MinVersion,
 			serverTLSConfig.CipherSuites != nil,
 			len(serverTLSConfig.CipherSuites),
+			serverTLSConfig.CurvePreferences != nil,
+			len(serverTLSConfig.CurvePreferences),
 		),
 	)
 

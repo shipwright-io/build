@@ -19,7 +19,7 @@ import (
 )
 
 func TestBuildServerTLSConfig_MinVersionDefaultsToTLS12(t *testing.T) {
-	cfg, warning, err := BuildServerTLSConfig("", "")
+	cfg, warning, err := BuildServerTLSConfig("", "", "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -49,7 +49,7 @@ func TestBuildServerTLSConfig_MinVersionParsing(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		cfg, warning, err := BuildServerTLSConfig(tc.in, "")
+		cfg, warning, err := BuildServerTLSConfig(tc.in, "", "")
 		if err != nil {
 			t.Fatalf("minVersion %q: expected no error, got %v", tc.in, err)
 		}
@@ -61,7 +61,7 @@ func TestBuildServerTLSConfig_MinVersionParsing(t *testing.T) {
 		}
 	}
 
-	if _, _, err := BuildServerTLSConfig("1.4", ""); err == nil {
+	if _, _, err := BuildServerTLSConfig("1.4", "", ""); err == nil {
 		t.Fatalf("expected error for invalid min version")
 	}
 }
@@ -70,7 +70,7 @@ func TestBuildServerTLSConfig_CipherSuiteParsingAndOrderPreserved(t *testing.T) 
 	a := "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
 	b := "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
 
-	cfg, warning, err := BuildServerTLSConfig("1.2", a+","+b)
+	cfg, warning, err := BuildServerTLSConfig("1.2", a+","+b, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -88,7 +88,7 @@ func TestBuildServerTLSConfig_CipherSuiteParsingAndOrderPreserved(t *testing.T) 
 }
 
 func TestBuildServerTLSConfig_TLS13IgnoresCipherSuitesWithWarning(t *testing.T) {
-	cfg, warning, err := BuildServerTLSConfig("1.3", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+	cfg, warning, err := BuildServerTLSConfig("1.3", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -104,15 +104,15 @@ func TestBuildServerTLSConfig_TLS13IgnoresCipherSuitesWithWarning(t *testing.T) 
 }
 
 func TestBuildServerTLSConfig_InvalidCipherSuitesFailFast(t *testing.T) {
-	if _, _, err := BuildServerTLSConfig("1.2", ""); err != nil {
+	if _, _, err := BuildServerTLSConfig("1.2", "", ""); err != nil {
 		t.Fatalf("empty flag should be treated as unset, got %v", err)
 	}
 
-	if _, _, err := BuildServerTLSConfig("1.2", " , , "); err == nil {
+	if _, _, err := BuildServerTLSConfig("1.2", " , , ", ""); err == nil {
 		t.Fatalf("expected error for empty cipher suite list")
 	}
 
-	if _, _, err := BuildServerTLSConfig("1.2", "TLS_NOT_A_REAL_CIPHER"); err == nil {
+	if _, _, err := BuildServerTLSConfig("1.2", "TLS_NOT_A_REAL_CIPHER", ""); err == nil {
 		t.Fatalf("expected error for invalid cipher suite name")
 	}
 }
@@ -133,7 +133,7 @@ func testTLSClientConfig(t *testing.T, minVersion, maxVersion uint16, cipherSuit
 }
 
 func TestHandshake_DefaultConfigAcceptsTLS12Client(t *testing.T) {
-	serverCfg, _, err := BuildServerTLSConfig("", "")
+	serverCfg, _, err := BuildServerTLSConfig("", "", "")
 	if err != nil {
 		t.Fatalf("expected no error building server config, got %v", err)
 	}
@@ -149,7 +149,7 @@ func TestHandshake_DefaultConfigAcceptsTLS12Client(t *testing.T) {
 }
 
 func TestHandshake_TLS13MinimumRejectsTLS12Client(t *testing.T) {
-	serverCfg, _, err := BuildServerTLSConfig("1.3", "")
+	serverCfg, _, err := BuildServerTLSConfig("1.3", "", "")
 	if err != nil {
 		t.Fatalf("expected no error building server config, got %v", err)
 	}
@@ -165,7 +165,7 @@ func TestHandshake_TLS13MinimumRejectsTLS12Client(t *testing.T) {
 }
 
 func TestHandshake_TLS13MinimumAcceptsTLS13Client(t *testing.T) {
-	serverCfg, _, err := BuildServerTLSConfig("1.3", "")
+	serverCfg, _, err := BuildServerTLSConfig("1.3", "", "")
 	if err != nil {
 		t.Fatalf("expected no error building server config, got %v", err)
 	}
@@ -184,7 +184,7 @@ func TestHandshake_CipherAllowlistRestrictsTLS12Negotiation(t *testing.T) {
 	const allowedCipher = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
 	const disallowedCipher = "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
 
-	serverCfg, _, err := BuildServerTLSConfig("1.2", allowedCipher)
+	serverCfg, _, err := BuildServerTLSConfig("1.2", allowedCipher, "")
 	if err != nil {
 		t.Fatalf("expected no error building server config, got %v", err)
 	}
@@ -287,4 +287,75 @@ func dialTLS(addr string, cfg *tls.Config) error {
 		return err
 	}
 	return conn.Close()
+}
+
+func TestBuildServerTLSConfig_GroupsParsingAndOrderPreserved(t *testing.T) {
+	a := "X25519"
+	b := "secp256r1"
+	c := "X25519MLKEM768"
+
+	cfg, warning, err := BuildServerTLSConfig("1.2", "", a+","+b+","+c)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if warning != "" {
+		t.Fatalf("expected no warning, got %q", warning)
+	}
+	if cfg.CurvePreferences == nil || len(cfg.CurvePreferences) != 3 {
+		t.Fatalf("expected 3 groups, got %#v", cfg.CurvePreferences)
+	}
+
+	m := groupNameMap()
+	if cfg.CurvePreferences[0] != m[a] || cfg.CurvePreferences[1] != m[b] || cfg.CurvePreferences[2] != m[c] {
+		t.Fatalf("expected order [%d,%d,%d], got [%d,%d,%d]",
+			m[a], m[b], m[c],
+			cfg.CurvePreferences[0], cfg.CurvePreferences[1], cfg.CurvePreferences[2])
+	}
+}
+
+func TestBuildServerTLSConfig_GroupsNotSetWhenEmpty(t *testing.T) {
+	cfg, warning, err := BuildServerTLSConfig("1.2", "", "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if warning != "" {
+		t.Fatalf("expected no warning, got %q", warning)
+	}
+	if cfg.CurvePreferences != nil {
+		t.Fatalf("expected CurvePreferences to be unset when groups flag is empty")
+	}
+}
+
+func TestBuildServerTLSConfig_InvalidGroupsFailFast(t *testing.T) {
+	// Whitespace-only is treated as unset (same as cipher suites behavior)
+	if _, _, err := BuildServerTLSConfig("1.2", "", "   "); err != nil {
+		t.Fatalf("whitespace-only flag should be treated as unset, got %v", err)
+	}
+
+	// Commas without valid names should error
+	if _, _, err := BuildServerTLSConfig("1.2", "", " , , "); err == nil {
+		t.Fatalf("expected error for empty group list")
+	}
+
+	if _, _, err := BuildServerTLSConfig("1.2", "", "X25519,INVALID_GROUP"); err == nil {
+		t.Fatalf("expected error for invalid group name")
+	}
+
+	if _, _, err := BuildServerTLSConfig("1.2", "", "P256"); err == nil {
+		t.Fatalf("expected error for incorrect group name (should be secp256r1, not P256)")
+	}
+}
+
+func TestBuildServerTLSConfig_AllValidGroups(t *testing.T) {
+	allGroups := "X25519,secp256r1,secp384r1,secp521r1,X25519MLKEM768,SecP256r1MLKEM768,SecP384r1MLKEM1024"
+	cfg, warning, err := BuildServerTLSConfig("1.2", "", allGroups)
+	if err != nil {
+		t.Fatalf("expected no error for all valid groups, got %v", err)
+	}
+	if warning != "" {
+		t.Fatalf("expected no warning, got %q", warning)
+	}
+	if len(cfg.CurvePreferences) != 7 {
+		t.Fatalf("expected 7 groups, got %d", len(cfg.CurvePreferences))
+	}
 }
