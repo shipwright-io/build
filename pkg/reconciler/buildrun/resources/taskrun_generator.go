@@ -5,6 +5,7 @@
 package resources
 
 import (
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -113,6 +114,12 @@ func (g *TaskRunGenerator) ApplyInfrastructureConfiguration() error {
 	if err := applyRuntimeClassName(g.taskRun, g.build, g.buildRun); err != nil {
 		return err
 	}
+
+	if g.taskRun.Spec.PodTemplate == nil {
+		g.taskRun.Spec.PodTemplate = &pod.PodTemplate{}
+	}
+
+	g.taskRun.Spec.PodTemplate.EnableServiceLinks = &g.cfg.EnableServiceLinks
 
 	return applyScheduler(g.taskRun, g.build, g.buildRun)
 }
