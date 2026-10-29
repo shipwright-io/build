@@ -20,10 +20,11 @@ import (
 // Flags:
 // - minVersionFlag accepts: 1.0|1.1|1.2|1.3
 // - cipherSuitesFlag is a comma-separated list of Go cipher suite names (TLS 1.2 only).
+// - curvePreferencesFlag is a comma-separated list of supported group names.
 //
 // Returns (cfg, warning, err). A warning is returned when cipher suites are provided
 // but ignored due to TLS 1.3 minimum.
-func BuildServerTLSConfig(minVersionFlag, cipherSuitesFlag string) (*tls.Config, string, error) {
+func BuildServerTLSConfig(minVersionFlag, cipherSuitesFlag, curvePreferencesFlag string) (*tls.Config, string, error) {
 	minVersion, err := parseMinVersionFlag(minVersionFlag)
 	if err != nil {
 		return nil, "", err
@@ -34,21 +35,33 @@ func BuildServerTLSConfig(minVersionFlag, cipherSuitesFlag string) (*tls.Config,
 	}
 
 	cipherSuitesFlag = strings.TrimSpace(cipherSuitesFlag)
-	if cipherSuitesFlag == "" {
-		return cfg, "", nil
+	curvePreferencesFlag = strings.TrimSpace(curvePreferencesFlag)
+
+	var warning string
+
+	// Parse cipher suites
+	if cipherSuitesFlag != "" {
+		if minVersion >= tls.VersionTLS13 {
+			warning = "ignoring --tls-cipher-suites because --tls-min-version is TLS 1.3 or higher"
+		} else {
+			ciphers, err := parseCipherSuitesFlag(cipherSuitesFlag)
+			if err != nil {
+				return nil, "", err
+			}
+			cfg.CipherSuites = ciphers
+		}
 	}
 
-	if minVersion >= tls.VersionTLS13 {
-		return cfg, "ignoring --tls-cipher-suites because --tls-min-version is TLS 1.3 or higher", nil
+	// Parse curve preferences
+	if curvePreferencesFlag != "" {
+		curves, err := parseCurvePreferencesFlag(curvePreferencesFlag)
+		if err != nil {
+			return nil, "", err
+		}
+		cfg.CurvePreferences = curves
 	}
 
-	ciphers, err := parseCipherSuitesFlag(cipherSuitesFlag)
-	if err != nil {
-		return nil, "", err
-	}
-	cfg.CipherSuites = ciphers
-
-	return cfg, "", nil
+	return cfg, warning, nil
 }
 
 func parseMinVersionFlag(v string) (uint16, error) {
@@ -105,4 +118,41 @@ func cipherSuiteNameMap() map[string]uint16 {
 		m[cs.Name] = cs.ID
 	}
 	return m
+}
+
+func parseCurvePreferencesFlag(csv string) ([]tls.CurveID, error) {
+	parts := strings.Split(csv, ",")
+	var names []string
+	for _, p := range parts {
+		n := strings.TrimSpace(p)
+		if n != "" {
+			names = append(names, n)
+		}
+	}
+	if len(names) == 0 {
+		return nil, fmt.Errorf("invalid --tls-curve-preferences: no curve preferences provided")
+	}
+
+	byName := groupNameMap()
+	out := make([]tls.CurveID, 0, len(names))
+	for _, name := range names {
+		id, ok := byName[name]
+		if !ok {
+			return nil, fmt.Errorf("invalid --tls-curve-preferences entry %q (must be one of: X25519, secp256r1, secp384r1, secp521r1, X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024)", name)
+		}
+		out = append(out, id)
+	}
+	return out, nil
+}
+
+func groupNameMap() map[string]tls.CurveID {
+	return map[string]tls.CurveID{
+		"X25519":             tls.X25519,
+		"secp256r1":          tls.CurveP256,
+		"secp384r1":          tls.CurveP384,
+		"secp521r1":          tls.CurveP521,
+		"X25519MLKEM768":     tls.X25519MLKEM768,
+		"SecP256r1MLKEM768":  tls.SecP256r1MLKEM768,
+		"SecP384r1MLKEM1024": tls.SecP384r1MLKEM1024,
+	}
 }

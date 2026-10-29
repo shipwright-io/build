@@ -22,7 +22,7 @@ func StartBuildWebhook() *http.Server {
 	mux.HandleFunc("/convert", conversion.CRDConvertHandler(context.Background()))
 	mux.HandleFunc("/health", health)
 
-	serverTLSConfig, _, err := tlsconfig.BuildServerTLSConfig("", "")
+	serverTLSConfig, _, err := tlsconfig.BuildServerTLSConfig("", "", "")
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	webhookServer := &http.Server{
