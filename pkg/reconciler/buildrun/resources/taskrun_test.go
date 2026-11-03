@@ -602,17 +602,25 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				Expect(taskRun).ToNot(BeNil())
 			})
 
-			It("should handle environment for enabling service links", func() {
-				orig := cfg.EnableServiceLinks
-				for _, expected := range []bool{true, false} {
-					cfg.EnableServiceLinks = expected
-					taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+			Describe("should handle environment for enabling service links", func() {
+				DescribeTable("Service links toggle",
+					func(expected bool) {
+						orig := cfg.EnableServiceLinks
+						DeferCleanup(func() {
+							cfg.EnableServiceLinks = orig
+						})
 
-					Expect(err).ToNot(HaveOccurred())
-					Expect(taskRun).ToNot(BeNil())
-					Expect(*taskRun.Spec.PodTemplate.EnableServiceLinks).To(Equal(expected))
-				}
-				cfg.EnableServiceLinks = orig
+						cfg.EnableServiceLinks = expected
+						taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+						Expect(err).ToNot(HaveOccurred())
+						Expect(taskRun).ToNot(BeNil())
+						Expect(*taskRun.Spec.PodTemplate).ToNot(BeNil())
+						Expect(*taskRun.Spec.PodTemplate.EnableServiceLinks).To(Equal(expected))
+					},
+					Entry("Enable", true),
+					Entry("Disable", false),
+				)
 			})
 		})
 
