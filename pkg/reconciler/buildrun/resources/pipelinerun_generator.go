@@ -203,23 +203,23 @@ func (g *PipelineRunGenerator) ApplyInfrastructureConfiguration() error {
 		runtimeClassName = g.build.Spec.RuntimeClassName
 	}
 
-	if len(nodeSelector) > 0 || len(tolerations) > 0 || schedulerName != "" || runtimeClassName != nil {
-		if g.pipelineRun.Spec.TaskRunTemplate.PodTemplate == nil {
-			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate = &pod.PodTemplate{}
-		}
+	if g.pipelineRun.Spec.TaskRunTemplate.PodTemplate == nil {
+		g.pipelineRun.Spec.TaskRunTemplate.PodTemplate = &pod.PodTemplate{}
+	}
 
-		if len(nodeSelector) > 0 {
-			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.NodeSelector = nodeSelector
-		}
-		if len(tolerations) > 0 {
-			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.Tolerations = tolerations
-		}
-		if schedulerName != "" {
-			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.SchedulerName = schedulerName
-		}
-		if runtimeClassName != nil {
-			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.RuntimeClassName = runtimeClassName
-		}
+	g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.EnableServiceLinks = &g.cfg.EnableServiceLinks
+
+	if len(nodeSelector) > 0 {
+		g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.NodeSelector = nodeSelector
+	}
+	if len(tolerations) > 0 {
+		g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.Tolerations = tolerations
+	}
+	if schedulerName != "" {
+		g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.SchedulerName = schedulerName
+	}
+	if runtimeClassName != nil {
+		g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.RuntimeClassName = runtimeClassName
 	}
 
 	return nil

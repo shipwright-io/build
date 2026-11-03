@@ -271,6 +271,7 @@ var _ = Describe("Config", func() {
 				}))
 			})
 		})
+
 		It("should use default forbidden env var names when no override is set", func() {
 			config := NewDefaultConfig()
 			Expect(config.ForbiddenEnvVarNames).ToNot(BeEmpty())
@@ -295,6 +296,15 @@ var _ = Describe("Config", func() {
 				Expect(env.IsForbiddenEnvVar("CUSTOM_VAR")).To(BeTrue())
 				Expect(env.IsForbiddenEnvVar("MALICIOUS_INJECT")).To(BeTrue())
 			})
+		})
+
+		It("should allow for an override of the EnableServiceLinks settings", func() {
+			for varValue, expected := range map[string]bool{"true": true, "false": false} {
+				var overrides = map[string]string{"ENABLE_SERVICE_LINKS": varValue}
+				configWithEnvVariableOverrides(overrides, func(config *Config) {
+					Expect(config.EnableServiceLinks).To(Equal(expected))
+				})
+			}
 		})
 	})
 })
