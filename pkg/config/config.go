@@ -87,7 +87,7 @@ const (
 	forbiddenEnvVarNamesEnvVar = "FORBIDDEN_ENV_VAR_NAMES"
 
 	// environment variable to hold whether to enable service links on the pod
-	EnableServiceLinks = "ENABLE_SERVICE_LINKS"
+	enableServiceLinksEnvVar = "ENABLE_SERVICE_LINKS"
 )
 
 // defaultForbiddenEnvVarNames is the default blocklist of environment variable
@@ -450,7 +450,7 @@ func (c *Config) SetConfigFromEnv() error {
 		c.RemoteArtifactsContainerImage = remoteArtifactsImage
 	}
 
-	if enableServiceLinks := os.Getenv(EnableServiceLinks); enableServiceLinks != "" {
+	if enableServiceLinks := os.Getenv(enableServiceLinksEnvVar); enableServiceLinks != "" {
 		c.EnableServiceLinks = strings.ToLower(enableServiceLinks) == "true"
 	}
 
