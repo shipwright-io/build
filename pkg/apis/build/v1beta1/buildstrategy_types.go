@@ -92,6 +92,11 @@ func (s BuildStrategy) GetVolumes() []BuildStrategyVolume {
 	return s.Spec.Volumes
 }
 
+// GetHostUsers returns the hostUsers setting defined by the build strategy
+func (s BuildStrategy) GetHostUsers() *bool {
+	return s.Spec.HostUsers
+}
+
 func init() {
 	SchemeBuilder.Register(&BuildStrategy{}, &BuildStrategyList{})
 }

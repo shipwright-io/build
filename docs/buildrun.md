@@ -81,8 +81,9 @@ The `BuildRun` definition supports the following fields:
   - `spec.tolerations` - Specifies the tolerations for the build pod. Only `key`, `value`, and `operator` are supported. Only `NoSchedule` taint `effect` is supported. If tolerations are specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.schedulerName` - Specifies the scheduler name for the build pod. If schedulerName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.runtimeClassName` - Specifies the [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) to be used for the build pod. If runtimeClassName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
+  - `spec.hostUsers` - Controls whether the build pod uses the host's user namespace. Set it to `false` to run the build pod in its own [user namespace](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/). The cluster nodes must support user namespaces, and Tekton Pipelines must support the field (v1.6.1 or later v1.6 releases, or v1.9.0 or later). The precedence order is `BuildRun`, then `Build`, then the `BuildStrategy` or `ClusterBuildStrategy`, except that a strategy that sets `false` cannot be overridden. See [User Namespaces](buildstrategies.md#user-namespaces).
 
-**Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, `env`, `stepResources`, `nodeSelector`, `tolerations`, `schedulerName`, and `runtimeClassName` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
+**Note**: The `spec.build.name` and `spec.build.spec` are mutually exclusive. Furthermore, the overrides for `timeout`, `paramValues`, `output`, `env`, `stepResources`, `nodeSelector`, `tolerations`, `schedulerName`, `runtimeClassName`, and `hostUsers` can only be combined with `spec.build.name`, but **not** with `spec.build.spec`.
 
 ### Defining the Build Reference
 

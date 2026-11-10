@@ -38,6 +38,7 @@ SPDX-License-Identifier: Apache-2.0
 - [Securely referencing string parameters](#securely-referencing-string-parameters)
 - [System results](#system-results)
 - [Security Contexts](#security-contexts)
+  - [User Namespaces](#user-namespaces)
 - [Steps Resource Definition](#steps-resource-definition)
   - [Overriding Step Resources via Build and BuildRun](#overriding-step-resources-via-build-and-buildrun)
   - [Strategies with different resources](#strategies-with-different-resources)
@@ -88,6 +89,8 @@ The strategy is available in two formats:
 - [`buildah-strategy-managed-push`](../samples/v1beta1/buildstrategy/buildah/buildstrategy_buildah_strategy_managed_push_cr.yaml)
 
 Learn more about the differences of [shipwright-, or strategy-managed push](#output-directory-vs-output-image)
+
+Only `buildah-strategy-managed-push` can run in a Kubernetes user namespace, because `buildah-shipwright-managed-push` uses a privileged container. See [User Namespaces](#user-namespaces).
 
 ### Installing Buildah Strategy
 
@@ -713,6 +716,39 @@ This runAs configuration will be used for all shipwright-managed steps such as t
 Without a `securityContext` for the build strategy, shipwright-managed steps will run with the `runAsUser` and `runAsGroup` that is defined in the [configuration's container templates](configuration.md) that is potentially a different user than you use in your build strategy. This can result in issues when for example source code is downloaded as user A as defined by the Git container template, but your strategy accesses it as user B.
 
 In build strategy steps you can define a step-specific `securityContext` that matches [Kubernetes' security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) where you can configure other security aspects such as capabilities or privileged containers.
+
+### User Namespaces
+
+Build pods can run in a Kubernetes [user namespace](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/) by setting `spec.hostUsers` to `false`. Inside a user namespace, a process running as root in the container is mapped to an unprivileged user on the node, and the capabilities it holds only apply inside the pod. When `hostUsers` is not set anywhere, Shipwright leaves the field unset and build pods use the host's user namespace, which is the Kubernetes default.
+
+A `Build` or `BuildRun` opts in with `spec.hostUsers: false`. For example, with the `buildah-strategy-managed-push` sample strategy:
+
+```yaml
+apiVersion: shipwright.io/v1beta1
+kind: Build
+metadata:
+  name: buildah-userns
+spec:
+  source:
+    type: Git
+    git:
+      url: https://github.com/shipwright-io/sample-go
+    contextDir: docker-build
+  strategy:
+    name: buildah-strategy-managed-push
+    kind: ClusterBuildStrategy
+  hostUsers: false
+  output:
+    image: registry.example.com/sample-go
+```
+
+Privileged containers cannot run in a user namespace: the build pod fails to start. Only use `hostUsers: false` with strategies whose steps do not set `privileged: true`. Among the sample strategies, `buildah-shipwright-managed-push` and `multiarch-native-buildah` are privileged and cannot be used this way.
+
+A strategy author can also set `spec.hostUsers: false` on the `BuildStrategy` or `ClusterBuildStrategy` so that all its build pods run in a user namespace. A strategy that does this may rely on the user namespace for isolation, for example by adding capabilities to its steps, so a `Build` or `BuildRun` cannot override it. For a strategy that sets `hostUsers: true` or leaves it unset, the `BuildRun` value takes precedence over the `Build` value.
+
+User namespaces require Kubernetes support on the cluster: they are enabled by default from Kubernetes v1.33. The nodes also need a container runtime and filesystem that support them, for example containerd 2.0 or later and a Linux kernel of 6.3 or later. On clusters without this support, build pods with `hostUsers: false` fail to start.
+
+Shipwright passes `hostUsers` to Tekton through the TaskRun or PipelineRun pod template. Tekton Pipelines supports this field in v1.6.1 or later v1.6 releases, and in v1.9.0 or later. It is not supported in v1.6.0, v1.7, or v1.8, where build pods do not get a user namespace.
 
 ## Steps Resource Definition
 
