@@ -203,7 +203,9 @@ func (g *PipelineRunGenerator) ApplyInfrastructureConfiguration() error {
 		runtimeClassName = g.build.Spec.RuntimeClassName
 	}
 
-	if len(nodeSelector) > 0 || len(tolerations) > 0 || schedulerName != "" || runtimeClassName != nil {
+	hostUsers := resolveHostUsers(g.strategy, g.build, g.buildRun)
+
+	if len(nodeSelector) > 0 || len(tolerations) > 0 || schedulerName != "" || runtimeClassName != nil || hostUsers != nil {
 		if g.pipelineRun.Spec.TaskRunTemplate.PodTemplate == nil {
 			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate = &pod.PodTemplate{}
 		}
@@ -219,6 +221,9 @@ func (g *PipelineRunGenerator) ApplyInfrastructureConfiguration() error {
 		}
 		if runtimeClassName != nil {
 			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.RuntimeClassName = runtimeClassName
+		}
+		if hostUsers != nil {
+			g.pipelineRun.Spec.TaskRunTemplate.PodTemplate.HostUsers = hostUsers
 		}
 	}
 

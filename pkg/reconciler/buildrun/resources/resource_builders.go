@@ -396,6 +396,49 @@ func applyRuntimeClassName(taskRun *pipelineapi.TaskRun, build *buildapi.Build, 
 	return nil
 }
 
+// resolveHostUsers returns the hostUsers value for the build pod.
+//
+// A BuildStrategy that sets hostUsers to false requires a user namespace: its
+// steps may rely on it for isolation, for example by adding capabilities instead
+// of running privileged. That value can therefore not be overridden, so a Build
+// or BuildRun can opt into a user namespace but never opt out of one that the
+// strategy requires.
+//
+// Otherwise the BuildRun value wins over the Build value, which wins over the
+// BuildStrategy value. It returns nil when none of them set it, leaving the
+// Kubernetes default.
+func resolveHostUsers(strategy buildapi.BuilderStrategy, build *buildapi.Build, buildRun *buildapi.BuildRun) *bool {
+	var strategyHostUsers *bool
+	if strategy != nil {
+		strategyHostUsers = strategy.GetHostUsers()
+	}
+
+	switch {
+	case strategyHostUsers != nil && !*strategyHostUsers:
+		return strategyHostUsers
+	case buildRun != nil && buildRun.Spec.HostUsers != nil:
+		return buildRun.Spec.HostUsers
+	case build != nil && build.Spec.HostUsers != nil:
+		return build.Spec.HostUsers
+	default:
+		return strategyHostUsers
+	}
+}
+
+func applyHostUsers(taskRun *pipelineapi.TaskRun, strategy buildapi.BuilderStrategy, build *buildapi.Build, buildRun *buildapi.BuildRun) error {
+	hostUsers := resolveHostUsers(strategy, build, buildRun)
+	if hostUsers == nil {
+		return nil
+	}
+
+	if taskRun.Spec.PodTemplate == nil {
+		taskRun.Spec.PodTemplate = &pod.PodTemplate{}
+	}
+	taskRun.Spec.PodTemplate.HostUsers = hostUsers
+
+	return nil
+}
+
 func mergeTolerations(buildTolerations []corev1.Toleration, buildRunTolerations []corev1.Toleration) []corev1.Toleration {
 	mergedTolerations := []corev1.Toleration{}
 	mergedTolerations = append(mergedTolerations, buildRunTolerations...)

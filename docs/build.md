@@ -45,6 +45,7 @@ A `Build` resource allows the user to define:
 - tolerations
 - schedulerName
 - runtimeClassName
+- hostUsers
 
 A `Build` is available within a namespace.
 
@@ -145,6 +146,7 @@ The `Build` definition supports the following fields:
   - `spec.schedulerName` - Specifies the scheduler name for the build pod. If schedulerName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
   - `spec.strategy.stepResources` - Allows overriding resource requirements (CPU, memory) for individual steps defined in the `BuildStrategy` or `ClusterBuildStrategy`. Each entry specifies a step name and the resources to use instead of those defined in the strategy. You can overwrite values in the `BuildRun`. See [Defining Step Resources](#defining-step-resources) for more information.
   - `spec.runtimeClassName` - Specifies the [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) to be used for the build pod. If runtimeClassName is specified in both a `Build` and `BuildRun`, `BuildRun` values take precedence.
+  - `spec.hostUsers` - Controls whether the build pod uses the host's user namespace. Set it to `false` to run the build pod in its own [user namespace](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/). The cluster nodes must support user namespaces, and Tekton Pipelines must support the field (v1.6.1 or later v1.6 releases, or v1.9.0 or later). The precedence order is `BuildRun`, then `Build`, then the `BuildStrategy` or `ClusterBuildStrategy`, except that a strategy that sets `false` cannot be overridden. See [User Namespaces](buildstrategies.md#user-namespaces).
 
 ### Defining the Source
 
