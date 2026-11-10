@@ -277,6 +277,13 @@ func (b *buildPrototype) OutputImageInsecure(insecure bool) *buildPrototype {
 	return b
 }
 
+// OutputImagePlatforms sets spec.output.platforms for multi-arch PipelineRun orchestration
+// (per-platform PipelineTasks and assemble-index). Requires BUILDRUN_EXECUTOR=PipelineRun.
+func (b *buildPrototype) OutputImagePlatforms(platforms []buildapi.ImagePlatform) *buildPrototype {
+	b.build.Spec.Output.Platforms = append([]buildapi.ImagePlatform(nil), platforms...)
+	return b
+}
+
 func (b *buildPrototype) OutputTimestamp(timestampString string) *buildPrototype {
 	b.build.Spec.Output.Timestamp = &timestampString
 	return b
