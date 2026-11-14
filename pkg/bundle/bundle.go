@@ -23,9 +23,14 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const shpIgnoreFilename = ".shpignore"
+
+// orasUnpackAnnotation is set by ORAS on layers that hold a directory packed as
+// a gzipped tarball, as opposed to a single file stored as is.
+const orasUnpackAnnotation = "io.deis.oras.content.unpack"
 
 // UnpackDetails contains details about the files that were unpacked
 type UnpackDetails struct {
@@ -80,14 +85,124 @@ func PullAndUnpack(ref name.Reference, targetPath string, options ...remote.Opti
 		return nil, err
 	}
 
-	rc := mutate.Extract(image)
-	defer rc.Close()
-
-	if _, err = Unpack(rc, targetPath); err != nil {
+	if _, err = UnpackImage(image, targetPath); err != nil {
 		return nil, err
 	}
 
 	return image, nil
+}
+
+// UnpackImage writes the content of an image into the local file system. A
+// regular container image is flattened and its file system is unpacked. An
+// artifact pushed by ORAS, where layers carry an org.opencontainers.image.title
+// annotation, is unpacked layer by layer instead: a directory layer is unpacked
+// as a tarball, and a file layer is written as is under its title.
+func UnpackImage(image containerreg.Image, targetPath string) (*UnpackDetails, error) {
+	manifest, err := image.Manifest()
+	if err != nil {
+		return nil, err
+	}
+
+	if !isORASArtifact(manifest) {
+		rc := mutate.Extract(image)
+		defer rc.Close()
+
+		return Unpack(rc, targetPath)
+	}
+
+	layers, err := image.Layers()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(layers) != len(manifest.Layers) {
+		return nil, fmt.Errorf("image has %d layers, but its manifest lists %d", len(layers), len(manifest.Layers))
+	}
+
+	var details = UnpackDetails{}
+	for i, layer := range layers {
+		annotations := manifest.Layers[i].Annotations
+
+		var layerDetails *UnpackDetails
+		if annotations[orasUnpackAnnotation] == "true" {
+			layerDetails, err = unpackLayer(layer, targetPath)
+		} else {
+			err = writeLayerFile(layer, targetPath, annotations[ocispec.AnnotationTitle])
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		if layerDetails != nil && layerDetails.MostRecentFileTimestamp != nil &&
+			(details.MostRecentFileTimestamp == nil || details.MostRecentFileTimestamp.Before(*layerDetails.MostRecentFileTimestamp)) {
+			details.MostRecentFileTimestamp = layerDetails.MostRecentFileTimestamp
+		}
+	}
+
+	// Files stored as is carry no timestamp, so fall back to the creation time of the artifact
+	if details.MostRecentFileTimestamp == nil {
+		if created, err := time.Parse(time.RFC3339, manifest.Annotations[ocispec.AnnotationCreated]); err == nil {
+			details.MostRecentFileTimestamp = &created
+		}
+	}
+
+	return &details, nil
+}
+
+func isORASArtifact(manifest *containerreg.Manifest) bool {
+	for _, layer := range manifest.Layers {
+		if layer.Annotations[ocispec.AnnotationTitle] != "" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func unpackLayer(layer containerreg.Layer, targetPath string) (*UnpackDetails, error) {
+	rc, err := layer.Uncompressed()
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	return Unpack(rc, targetPath)
+}
+
+func writeLayerFile(layer containerreg.Layer, targetPath string, title string) error {
+	if title == "" {
+		return fmt.Errorf("layer has no %s annotation, unable to determine its file name", ocispec.AnnotationTitle)
+	}
+
+	// #nosec G305 path traversal is checked by validating that the resulting path does not escape targetPath
+	var target = filepath.Join(targetPath, title)
+	if rel, err := filepath.Rel(targetPath, target); err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("targetPath validation failed, %q escapes the target directory", title)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(target), os.FileMode(0755)); err != nil {
+		return err
+	}
+
+	// The blob of a file layer is the file content itself, ORAS does not compress it
+	rc, err := layer.Compressed()
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+
+	// #nosec G304 the target path was validated above
+	file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0644))
+	if err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(file, rc); err != nil {
+		_ = file.Close()
+		return err
+	}
+
+	return file.Close()
 }
 
 // Pack reads a directory and creates a tar stream with its content by:
