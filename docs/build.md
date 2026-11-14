@@ -211,6 +211,8 @@ spec:
     contextDir: renamed
 ```
 
+The OCI artifact can be an image built from a `scratch` Containerfile, like the one `shp build upload` pushes, or an artifact pushed with [ORAS](https://oras.land/). For an ORAS artifact, every file is written under its name in the artifact and every directory is unpacked as it was pushed.
+
 Example of a `Build` that uses an OCI artifact image as the source:
 
 ```yaml

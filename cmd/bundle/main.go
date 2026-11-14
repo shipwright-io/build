@@ -12,7 +12,6 @@ import (
 	"strconv"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/spf13/pflag"
 
@@ -101,10 +100,7 @@ func Do(ctx context.Context) error {
 		return err
 	}
 
-	rc := mutate.Extract(img)
-	defer rc.Close()
-
-	unpackDetails, err := bundle.Unpack(rc, flagValues.target)
+	unpackDetails, err := bundle.UnpackImage(img, flagValues.target)
 	if err != nil {
 		return err
 	}
