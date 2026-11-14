@@ -98,21 +98,39 @@ EOF
 
 JOB_NAME=$(kubectl -n shipwright-build get job --selector app=storage-version-migration-shipwright -o jsonpath='{.items[0].metadata.name}')
 
-while [ "$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '.status.completionTime // ""')" == "" ]; do
-    echo "[INFO] Storage version migraton job is still running"
-    sleep 10
-done
+# How long to wait for the job, in seconds. The job retries failed pods up to its backoffLimit,
+# which can take a while, so the default is generous.
+TIMEOUT="${STORAGE_VERSION_MIGRATION_TIMEOUT:-1800}"
 
-isFailed="$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '.status.conditions[] | select(.type == "Failed") | .status')"
+# A failed job never gets a completionTime, so wait for either the Complete or the Failed condition.
+jobState=""
+waited=0
+while true; do
+    jobState="$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '[.status.conditions[]? | select(.status == "True") | .type] | map(select(. == "Complete" or . == "Failed")) | first // ""')"
+    if [ -n "${jobState}" ]; then
+        break
+    fi
+    if [ "${waited}" -ge "${TIMEOUT}" ]; then
+        jobState="Timeout"
+        break
+    fi
+    echo "[INFO] Storage version migration job is still running"
+    sleep 10
+    waited=$((waited + 10))
+done
 
 # Delete the ClusterRole, ServiceAccount, and ClusterRoleBinding after the job finishes
 kubectl delete clusterrole storage-version-migration-role || true
 kubectl delete serviceaccount storage-version-migration -n shipwright-build || true
 kubectl delete clusterrolebinding storage-version-migration-rolebinding || true
 
-if [ "${isFailed}" == "True" ]; then
-    echo "[ERROR] Storage version migration failed"
-    kubectl -n shipwright-build logs "job/${JOB_NAME}"
+if [ "${jobState}" != "Complete" ]; then
+    if [ "${jobState}" == "Timeout" ]; then
+        echo "[ERROR] Storage version migration did not finish within ${TIMEOUT} seconds"
+    else
+        echo "[ERROR] Storage version migration failed"
+    fi
+    kubectl -n shipwright-build logs "job/${JOB_NAME}" || true
     exit 1
 fi
 
