@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -184,6 +185,62 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 		Entry("parent directory", "../canary"),
 		Entry("target directory itself", "."),
 	)
+
+	DescribeTable("should not follow a symlink in the target directory that points outside of it",
+		func(title string) {
+			if runtime.GOOS == "windows" {
+				Skip("creating symlinks needs extra privileges on Windows")
+			}
+
+			image := orasArtifact("", mutate.Addendum{
+				Layer:       fileLayer("owned"),
+				Annotations: map[string]string{ocispec.AnnotationTitle: title},
+			})
+
+			withTempDir(func(tempDir string) {
+				outside := filepath.Join(tempDir, "outside")
+				Expect(os.Mkdir(outside, 0755)).To(Succeed())
+				canary := filepath.Join(outside, "canary")
+				Expect(os.WriteFile(canary, []byte("untouched"), 0644)).To(Succeed())
+
+				target := filepath.Join(tempDir, "target")
+				Expect(os.Mkdir(target, 0755)).To(Succeed())
+				Expect(os.Symlink(outside, filepath.Join(target, "link"))).To(Succeed())
+				Expect(os.Symlink(canary, filepath.Join(target, "file"))).To(Succeed())
+
+				_, err := UnpackImage(image, target)
+				Expect(err).To(HaveOccurred())
+				Expect(os.ReadFile(canary)).To(Equal([]byte("untouched")))
+			})
+		},
+		Entry("parent directory symlink", "link/canary"),
+		Entry("final file name symlink", "file"),
+	)
+
+	It("should replace files of earlier layers that overlap with later ones", func() {
+		image := orasArtifact("",
+			mutate.Addendum{
+				Layer: directoryLayer("src", dirModTime, map[string]string{"main.go": "old-content"}),
+				Annotations: map[string]string{
+					ocispec.AnnotationTitle:       "src",
+					"io.deis.oras.content.unpack": "true",
+				},
+			},
+			mutate.Addendum{
+				Layer: directoryLayer("src", dirModTime, map[string]string{"main.go": "new"}),
+				Annotations: map[string]string{
+					ocispec.AnnotationTitle:       "src",
+					"io.deis.oras.content.unpack": "true",
+				},
+			},
+		)
+
+		withTempDir(func(target string) {
+			_, err := UnpackImage(image, target)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("new")))
+		})
+	})
 
 	It("should pull and unpack an ORAS artifact from a registry", func() {
 		withTempRegistry(func(endpoint string) {

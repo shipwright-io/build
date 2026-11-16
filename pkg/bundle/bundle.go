@@ -176,12 +176,27 @@ func writeLayerFile(layer containerreg.Layer, targetPath string, title string) e
 
 	// #nosec G305 path traversal is checked by validating that the resulting path does not escape targetPath
 	var target = filepath.Join(targetPath, title)
-	if rel, err := filepath.Rel(targetPath, target); err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+	name, err := filepath.Rel(targetPath, target)
+	if err != nil || name == "." || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
 		return fmt.Errorf("targetPath validation failed, %q escapes the target directory", title)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(target), os.FileMode(0755)); err != nil {
+	if err := os.MkdirAll(targetPath, os.FileMode(0755)); err != nil {
 		return err
+	}
+
+	// Create and open the file through an os.Root, so that symlinks already
+	// present in the target directory cannot redirect the write outside of it
+	root, err := os.OpenRoot(targetPath)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+
+	if dir := filepath.Dir(name); dir != "." {
+		if err := root.MkdirAll(dir, os.FileMode(0755)); err != nil {
+			return err
+		}
 	}
 
 	// The blob of a file layer is the file content itself, ORAS does not compress it
@@ -191,8 +206,7 @@ func writeLayerFile(layer containerreg.Layer, targetPath string, title string) e
 	}
 	defer rc.Close()
 
-	// #nosec G304 the target path was validated above
-	file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0644))
+	file, err := root.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0644))
 	if err != nil {
 		return err
 	}
@@ -412,7 +426,7 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 			}
 
 			// #nosec G304 names are safe, they come from the listing
-			file, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, fileMode(header))
+			file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_RDWR, fileMode(header))
 			if err != nil {
 				return nil, err
 			}
