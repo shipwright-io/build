@@ -103,20 +103,24 @@ JOB_NAME=$(kubectl -n shipwright-build get job --selector app=storage-version-mi
 TIMEOUT="${STORAGE_VERSION_MIGRATION_TIMEOUT:-1800}"
 
 # A failed job never gets a completionTime, so wait for either the Complete or the Failed condition.
+# A failed or stalled status read must not exit the script, so that the RBAC cleanup below still runs.
 jobState=""
-waited=0
+deadline=$((SECONDS + TIMEOUT))
 while true; do
-    jobState="$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '[.status.conditions[]? | select(.status == "True") | .type] | map(select(. == "Complete" or . == "Failed")) | first // ""')"
-    if [ -n "${jobState}" ]; then
-        break
+    if jobJSON="$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json --request-timeout=30s)"; then
+        jobState="$(jq -r '[.status.conditions[]? | select(.status == "True") | .type] | map(select(. == "Complete" or . == "Failed")) | first // ""' <<<"${jobJSON}")"
+        if [ -n "${jobState}" ]; then
+            break
+        fi
+        echo "[INFO] Storage version migration job is still running"
+    else
+        echo "[WARN] Could not read the storage version migration job status, retrying"
     fi
-    if [ "${waited}" -ge "${TIMEOUT}" ]; then
+    if [ "${SECONDS}" -ge "${deadline}" ]; then
         jobState="Timeout"
         break
     fi
-    echo "[INFO] Storage version migration job is still running"
     sleep 10
-    waited=$((waited + 10))
 done
 
 # Delete the ClusterRole, ServiceAccount, and ClusterRoleBinding after the job finishes
