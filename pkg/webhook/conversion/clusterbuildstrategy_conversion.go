@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package conversion
 
 import (
 	"context"
@@ -11,15 +11,12 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
 	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/shipwright-io/build/pkg/webhook"
 )
 
-// ensure v1beta1 implements the Conversion interface
-var _ webhook.Conversion = (*ClusterBuildStrategy)(nil)
-
-// ConvertTo converts this object to its v1alpha1 equivalent
-func (src *ClusterBuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
+// convertClusterBuildStrategyBetaToAlpha converts this object to its v1alpha1 equivalent
+func convertClusterBuildStrategyBetaToAlpha(ctx context.Context, src *buildapi.ClusterBuildStrategy, obj *unstructured.Unstructured) error {
 	ctxlog.Info(ctx, "converting ClusterBuildStrategy from beta to alpha", "namespace", src.Namespace, "name", src.Name)
 
 	var bs buildapialpha.ClusterBuildStrategy
@@ -27,25 +24,27 @@ func (src *ClusterBuildStrategy) ConvertTo(ctx context.Context, obj *unstructure
 	bs.APIVersion = alphaGroupVersion
 	bs.ObjectMeta = src.ObjectMeta
 
-	src.Spec.ConvertTo(&bs.Spec)
+	convertBuildStrategySpecBetaToAlpha((*buildapi.BuildStrategySpec)(&src.Spec), (*buildapialpha.BuildStrategySpec)(&bs.Spec))
 
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&bs)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed structuring the newObject")
+		return err
 	}
 	obj.Object = mapito
 
 	return nil
 }
 
-// ConvertFrom converts buildapialpha.ClusterBuildStrategy into this object
-func (src *ClusterBuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Unstructured) error {
+// convertClusterBuildStrategyAlphaToBeta converts buildapialpha.ClusterBuildStrategy into this object
+func convertClusterBuildStrategyAlphaToBeta(ctx context.Context, src *buildapi.ClusterBuildStrategy, obj *unstructured.Unstructured) error {
 	var cbs buildapialpha.ClusterBuildStrategy
 
 	unstructured := obj.UnstructuredContent()
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &cbs)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed unstructuring the buildrun convertedObject")
+		return err
 	}
 
 	ctxlog.Info(ctx, "converting ClusterBuildStrategy from alpha to beta", "namespace", cbs.Namespace, "name", cbs.Name)
@@ -54,7 +53,7 @@ func (src *ClusterBuildStrategy) ConvertFrom(ctx context.Context, obj *unstructu
 	src.TypeMeta = cbs.TypeMeta
 	src.APIVersion = betaGroupVersion
 
-	src.Spec.ConvertFrom(cbs.Spec)
+	convertBuildStrategySpecAlphaToBeta((*buildapi.BuildStrategySpec)(&src.Spec), (buildapialpha.BuildStrategySpec)(cbs.Spec))
 
 	return nil
 }
