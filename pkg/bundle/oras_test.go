@@ -151,7 +151,7 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 			details, err := UnpackImage(image, target)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(os.ReadFile(filepath.Join(target, "hello.txt"))).To(Equal([]byte("hello world"))) // #nosec G304 test paths
+			Expect(os.ReadFile(filepath.Join(target, "hello.txt"))).To(Equal([]byte("hello world")))       // #nosec G304 test paths
 			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("package main"))) // #nosec G304 test paths
 			Expect(details.MostRecentFileTimestamp).ToNot(BeNil())
 			Expect(details.MostRecentFileTimestamp.Equal(dirModTime)).To(BeTrue())
