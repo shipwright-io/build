@@ -191,7 +191,7 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 	)
 
 	DescribeTable("should not follow a symlink in the target directory that points outside of it",
-		func(title string) {
+		func(title string, wantErr bool) {
 			if runtime.GOOS == "windows" {
 				Skip("creating symlinks needs extra privileges on Windows")
 			}
@@ -213,12 +213,23 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 				Expect(os.Symlink(canary, filepath.Join(target, "file"))).To(Succeed())
 
 				_, err := UnpackImage(image, target)
-				Expect(err).To(HaveOccurred())
 				Expect(os.ReadFile(canary)).To(Equal([]byte("untouched")))
+
+				if wantErr {
+					Expect(err).To(HaveOccurred())
+					return
+				}
+
+				// A symlink at the file name is replaced, it is not written through
+				Expect(err).ToNot(HaveOccurred())
+				info, err := os.Lstat(filepath.Join(target, title))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(info.Mode().IsRegular()).To(BeTrue())
+				Expect(os.ReadFile(filepath.Join(target, title))).To(Equal([]byte("owned")))
 			})
 		},
-		Entry("parent directory symlink", "link/canary"),
-		Entry("final file name symlink", "file"),
+		Entry("parent directory symlink", "link/canary", true),
+		Entry("final file name symlink", "file", false),
 	)
 
 	It("should replace files of earlier layers that overlap with later ones", func() {
