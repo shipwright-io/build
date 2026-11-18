@@ -7,6 +7,7 @@ package bundle
 import (
 	"archive/tar"
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -205,6 +206,11 @@ func writeLayerFile(layer containerreg.Layer, targetPath string, title string) e
 		return err
 	}
 	defer rc.Close()
+
+	// Replace a file of an earlier layer instead of truncating it, which fails for read-only files
+	if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
 
 	file, err := root.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0644))
 	if err != nil {
@@ -422,6 +428,11 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 			// Edge case in which that tarball did not have a directory entry
 			dir, _ := filepath.Split(target)
 			if err := os.MkdirAll(dir, os.FileMode(0755)); err != nil {
+				return nil, err
+			}
+
+			// Replace a file of an earlier layer instead of truncating it, which fails for read-only files
+			if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return nil, err
 			}
 

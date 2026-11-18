@@ -252,6 +252,33 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 		})
 	})
 
+	It("should replace read-only files of earlier layers", func() {
+		layerAnnotations := map[string]string{
+			ocispec.AnnotationTitle:       "src",
+			"io.deis.oras.content.unpack": "true",
+		}
+		image := orasArtifact("",
+			mutate.Addendum{
+				Layer:       directoryLayerWithMode("src", dirModTime, 0444, map[string]string{"main.go": "old-content"}),
+				Annotations: layerAnnotations,
+			},
+			mutate.Addendum{
+				Layer:       directoryLayerWithMode("src", dirModTime, 0444, map[string]string{"main.go": "new"}),
+				Annotations: layerAnnotations,
+			},
+			mutate.Addendum{
+				Layer:       fileLayer("file-content"),
+				Annotations: map[string]string{ocispec.AnnotationTitle: "src/main.go"},
+			},
+		)
+
+		withTempDir(func(target string) {
+			_, err := UnpackImage(image, target)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("file-content")))
+		})
+	})
+
 	It("should pull and unpack an ORAS artifact from a registry", func() {
 		withTempRegistry(func(endpoint string) {
 			ref, err := name.ParseReference(fmt.Sprintf("%s/namespace/unit-test-pkg-bundle-oras-%s:latest", endpoint, rand.String(5)))
