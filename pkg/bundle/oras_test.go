@@ -151,8 +151,8 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 			details, err := UnpackImage(image, target)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(os.ReadFile(filepath.Join(target, "hello.txt"))).To(Equal([]byte("hello world")))
-			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("package main")))
+			Expect(os.ReadFile(filepath.Join(target, "hello.txt"))).To(Equal([]byte("hello world"))) // #nosec G304 test paths
+			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("package main"))) // #nosec G304 test paths
 			Expect(details.MostRecentFileTimestamp).ToNot(BeNil())
 			Expect(details.MostRecentFileTimestamp.Equal(dirModTime)).To(BeTrue())
 		})
@@ -203,17 +203,17 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 
 			withTempDir(func(tempDir string) {
 				outside := filepath.Join(tempDir, "outside")
-				Expect(os.Mkdir(outside, 0755)).To(Succeed())
+				Expect(os.Mkdir(outside, 0o750)).To(Succeed())
 				canary := filepath.Join(outside, "canary")
-				Expect(os.WriteFile(canary, []byte("untouched"), 0644)).To(Succeed())
+				Expect(os.WriteFile(canary, []byte("untouched"), 0o600)).To(Succeed())
 
 				target := filepath.Join(tempDir, "target")
-				Expect(os.Mkdir(target, 0755)).To(Succeed())
+				Expect(os.Mkdir(target, 0o750)).To(Succeed())
 				Expect(os.Symlink(outside, filepath.Join(target, "link"))).To(Succeed())
 				Expect(os.Symlink(canary, filepath.Join(target, "file"))).To(Succeed())
 
 				_, err := UnpackImage(image, target)
-				Expect(os.ReadFile(canary)).To(Equal([]byte("untouched")))
+				Expect(os.ReadFile(canary)).To(Equal([]byte("untouched"))) // #nosec G304 test paths
 
 				if wantErr {
 					Expect(err).To(HaveOccurred())
