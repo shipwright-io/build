@@ -440,6 +440,12 @@ func Unpack(in io.Reader, targetPath string) (*UnpackDetails, error) {
 				return nil, err
 			}
 
+			// OpenFile only applies the mode when it creates the file, so a file that an
+			// earlier layer already wrote would keep that layer's permissions
+			if err := os.Chmod(target, fileMode(header)); err != nil {
+				return nil, err
+			}
+
 			if err := os.Chtimes(target, header.AccessTime, header.ModTime); err != nil {
 				return nil, err
 			}

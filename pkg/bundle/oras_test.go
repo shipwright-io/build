@@ -68,6 +68,10 @@ func fileLayer(content string) *blobLayer {
 
 // directoryLayer packs the files into a gzipped tarball below dir, like oras push does for a directory.
 func directoryLayer(dir string, modTime time.Time, files map[string]string) *blobLayer {
+	return directoryLayerWithMode(dir, modTime, 0644, files)
+}
+
+func directoryLayerWithMode(dir string, modTime time.Time, mode int64, files map[string]string) *blobLayer {
 	var tarBuf bytes.Buffer
 	tw := tar.NewWriter(&tarBuf)
 	Expect(tw.WriteHeader(&tar.Header{Typeflag: tar.TypeDir, Name: dir + "/", Mode: 0755, ModTime: modTime})).To(Succeed())
@@ -75,7 +79,7 @@ func directoryLayer(dir string, modTime time.Time, files map[string]string) *blo
 		Expect(tw.WriteHeader(&tar.Header{
 			Typeflag: tar.TypeReg,
 			Name:     dir + "/" + fileName,
-			Mode:     0644,
+			Mode:     mode,
 			Size:     int64(len(content)),
 			ModTime:  modTime,
 		})).To(Succeed())
@@ -227,7 +231,7 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 				},
 			},
 			mutate.Addendum{
-				Layer: directoryLayer("src", dirModTime, map[string]string{"main.go": "new"}),
+				Layer: directoryLayerWithMode("src", dirModTime, 0755, map[string]string{"main.go": "new"}),
 				Annotations: map[string]string{
 					ocispec.AnnotationTitle:       "src",
 					"io.deis.oras.content.unpack": "true",
@@ -239,6 +243,12 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 			_, err := UnpackImage(image, target)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("new")))
+
+			if runtime.GOOS != "windows" {
+				info, err := os.Stat(filepath.Join(target, "src", "main.go"))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(info.Mode().Perm()).To(Equal(os.FileMode(0755)))
+			}
 		})
 	})
 
