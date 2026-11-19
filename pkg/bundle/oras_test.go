@@ -225,7 +225,7 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 				info, err := os.Lstat(filepath.Join(target, title))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(info.Mode().IsRegular()).To(BeTrue())
-				Expect(os.ReadFile(filepath.Join(target, title))).To(Equal([]byte("owned")))
+				Expect(os.ReadFile(filepath.Join(target, title))).To(Equal([]byte("owned"))) // #nosec G304 test paths
 			})
 		},
 		Entry("parent directory symlink", "link/canary", true),
@@ -253,7 +253,7 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 		withTempDir(func(target string) {
 			_, err := UnpackImage(image, target)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("new")))
+			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("new"))) // #nosec G304 test paths
 
 			if runtime.GOOS != "windows" {
 				info, err := os.Stat(filepath.Join(target, "src", "main.go"))
@@ -286,7 +286,7 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 		withTempDir(func(target string) {
 			_, err := UnpackImage(image, target)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("file-content")))
+			Expect(os.ReadFile(filepath.Join(target, "src", "main.go"))).To(Equal([]byte("file-content"))) // #nosec G304 test paths
 		})
 	})
 
