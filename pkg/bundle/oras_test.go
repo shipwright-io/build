@@ -304,7 +304,7 @@ var _ = Describe("Unpacking ORAS artifacts", func() {
 			withTempDir(func(target string) {
 				_, err := PullAndUnpack(ref, target)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(os.ReadFile(filepath.Join(target, "hello.txt"))).To(Equal([]byte("hello world")))
+				Expect(os.ReadFile(filepath.Join(target, "hello.txt"))).To(Equal([]byte("hello world"))) // #nosec G304 test paths
 			})
 		})
 	})
