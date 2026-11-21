@@ -42,8 +42,24 @@ spec:
       args:
         - -c
         - |
+          set -euo pipefail
+
           insecureRegistries=""
           inInsecureRegistries=false
+
+          function validate_insecure_output() {
+            if [[ ${PARAM_OUTPUT_IMAGE} =~ $1 ]]; then
+              if [[ "${PARAM_OUTPUT_INSECURE}" != "true" ]]; then
+                msg="> ERROR: insecure output registry $1 listed while insecure output is disabled"
+                echo -e $msg
+                echo -n "InsecureConfigurationError" > '$(results.shp-error-reason.path)'
+                echo -n $msg > '$(results.shp-error-message.path)'
+                exit 1
+              else
+                echo "> WARNING: registry '$1' is listed in parameter 'insecure-registries' and is also declared insecure as the output of the BuildRun. The duplicate insecure declaration is unnecessary."
+              fi
+            fi
+          }
 
           while [[ $# -gt 0 ]]; do
             arg="$1"
@@ -52,7 +68,10 @@ spec:
             if [ "${arg}" == "--insecure-registries" ]; then
               inInsecureRegistries=true
             elif [ "${inInsecureRegistries}" == "true" ]; then
-              insecureRegistries="${insecureRegistries}${arg},"
+              if [[ ! -z "${arg}" ]]; then
+                validate_insecure_output ${arg}
+                insecureRegistries="${insecureRegistries}${arg},"
+              fi
             else
               echo "Invalid usage"
               exit 1
@@ -73,8 +92,6 @@ spec:
 
             export CNB_INSECURE_REGISTRIES="${insecureRegistries}"
           fi
-
-          set -euo pipefail
 
           echo "> Processing environment variables..."
           ENV_DIR="/platform/env"
