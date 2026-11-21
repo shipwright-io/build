@@ -23,7 +23,7 @@ spec:
         - name: s2i
           mountPath: /s2i
     - name: buildah
-      image: quay.io/containers/buildah:v1.43.5
+      image: quay.io/containers/buildah:v1.46.1
       imagePullPolicy: Always
       workingDir: /s2i
       securityContext:
@@ -40,9 +40,9 @@ spec:
           # Parse parameters
           image=
           target=
-          registriesBlock=""
+          declare -A registriesBlock=()
           inRegistriesBlock=false
-          registriesInsecure=""
+          declare -A registriesInsecure=()
           inRegistriesInsecure=false
           registriesSearch=""
           inRegistriesSearch=false
@@ -76,9 +76,9 @@ spec:
               inRegistriesBlock=false
               inRegistriesInsecure=false
             elif [ "${inRegistriesBlock}" == "true" ]; then
-              registriesBlock="${registriesBlock}'${arg}', "
+              registriesBlock["${arg}"]=true
             elif [ "${inRegistriesInsecure}" == "true" ]; then
-              registriesInsecure="${registriesInsecure}'${arg}', "
+              registriesInsecure["${arg}"]=true
             elif [ "${inRegistriesSearch}" == "true" ]; then
               registriesSearch="${registriesSearch}'${arg}', "
             else
@@ -88,27 +88,22 @@ spec:
           done
 
           echo "[INFO] Creating registries config file..."
+          touch /tmp/registries.conf
           if [ "${registriesSearch}" != "" ]; then
             cat <<EOF >>/tmp/registries.conf
-          [registries.search]
-          registries = [${registriesSearch::-2}]
+          unqualified-search-registries = [${registriesSearch::-2}]
 
           EOF
           fi
-          if [ "${registriesInsecure}" != "" ]; then
+          for registry in $(printf '%s\n' "${!registriesInsecure[@]}" "${!registriesBlock[@]}" | sort -u); do
             cat <<EOF >>/tmp/registries.conf
-          [registries.insecure]
-          registries = [${registriesInsecure::-2}]
+          [[registry]]
+          location = '${registry}'
+          insecure = ${registriesInsecure[${registry}]:-false}
+          blocked = ${registriesBlock[${registry}]:-false}
 
           EOF
-          fi
-          if [ "${registriesBlock}" != "" ]; then
-            cat <<EOF >>/tmp/registries.conf
-          [registries.block]
-          registries = [${registriesBlock::-2}]
-
-          EOF
-          fi
+          done
 
           # Building the image
           echo "[INFO] Building image ${image}"

@@ -34,7 +34,8 @@ spec:
 
           # Parse parameters
           context="" dockerfile="" runtime_stage_from_image="" image="" status=""
-          registriesBlock="" registriesInsecure="" registriesSearch=""
+          registriesSearch=""
+          declare -A registriesBlock=() registriesInsecure=()
           request_cpu="" request_memory="" limit_cpu="" limit_memory=""
           declare -a architectures buildArgs
 
@@ -99,9 +100,9 @@ spec:
             elif [ "${status}" == "parse_build_contexts" ]; then
               buildArgs+=("--build-context" "${arg}")
             elif [ "${status}" == "parse_registries_block" ]; then
-              registriesBlock="${registriesBlock}'${arg}', "
+              registriesBlock["${arg}"]=true
             elif [ "${status}" == "parse_registries_insecure" ]; then
-              registriesInsecure="${registriesInsecure}'${arg}', "
+              registriesInsecure["${arg}"]=true
             elif [ "${status}" == "parse_registries_search" ]; then
               registriesSearch="${registriesSearch}'${arg}', "
             else
@@ -130,22 +131,19 @@ spec:
           touch /tmp/registries.conf
           if [ "${registriesSearch}" != "" ]; then
             cat <<EOF >>/tmp/registries.conf
-          [registries.search]
-          registries = [${registriesSearch::-2}]
+          unqualified-search-registries = [${registriesSearch::-2}]
+
           EOF
           fi
-          if [ "${registriesInsecure}" != "" ]; then
+          for registry in $(printf '%s\n' "${!registriesInsecure[@]}" "${!registriesBlock[@]}" | sort -u); do
             cat <<EOF >>/tmp/registries.conf
-          [registries.insecure]
-          registries = [${registriesInsecure::-2}]
+          [[registry]]
+          location = '${registry}'
+          insecure = ${registriesInsecure[${registry}]:-false}
+          blocked = ${registriesBlock[${registry}]:-false}
+
           EOF
-          fi
-          if [ "${registriesBlock}" != "" ]; then
-            cat <<EOF >>/tmp/registries.conf
-          [registries.block]
-          registries = [${registriesBlock::-2}]
-          EOF
-          fi
+          done
 
           if [ "${#runtime_stage_from_image}" -gt 0 ]; then
             echo "[INFO] Replacing the runtime stage image to extend from"
@@ -194,7 +192,7 @@ spec:
                 restartPolicy: Never
                 containers:
                   - name: build
-                    image: quay.io/containers/buildah:v1.43.5
+                    image: quay.io/containers/buildah:v1.46.1
                     volumeMounts:
                       - mountPath: /var/workdir
                         name: workdir
@@ -412,7 +410,7 @@ spec:
         - --architectures
         - $(params.architectures[*])
     - name: package-manifest-list-and-push
-      image: quay.io/containers/buildah:v1.43.5
+      image: quay.io/containers/buildah:v1.46.1
       securityContext:
         privileged: true
       workingDir: /var/oci-archive-storage

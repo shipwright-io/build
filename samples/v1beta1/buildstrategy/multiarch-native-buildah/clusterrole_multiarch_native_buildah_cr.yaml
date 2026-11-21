@@ -12,6 +12,12 @@ rules:
     apiGroups:
       - ""
   - verbs:
+      - get
+    resources:
+      - pods/log
+    apiGroups:
+      - ""
+  - verbs:
       - create
     resources:
       - pods/exec

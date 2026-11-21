@@ -547,6 +547,8 @@ var _ = Describe("For a Kubernetes cluster with Tekton and build installed", fun
 		It("successfully runs a build", func() {
 			buildRun, err = buildRunTestData(testBuild.Namespace, testID, "test/data/v1beta1/buildrun_multiarch_native_buildah_cr.yaml")
 			Expect(err).ToNot(HaveOccurred())
+			appendRegistryInsecureParamValue(build, buildRun)
+
 			buildRun = validateBuildRunToSucceed(testBuild, buildRun)
 		})
 	})
