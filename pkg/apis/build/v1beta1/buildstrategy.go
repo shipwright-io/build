@@ -37,6 +37,16 @@ type BuildStrategySpec struct {
 	// Volumes defines the volumes of the strategy
 	// +optional
 	Volumes []BuildStrategyVolume `json:"volumes,omitempty"`
+
+	// HostUsers controls whether build pods created from this strategy use the
+	// host's user namespace. Set it to false to run build pods in their own user
+	// namespace, which requires Kubernetes user namespace support on the cluster
+	// nodes. When set to false, Build and BuildRun cannot override it, so build
+	// pods from this strategy always run in a user namespace. When set to true or
+	// unset, Build and BuildRun can set false to opt into a user namespace.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+	// +optional
+	HostUsers *bool `json:"hostUsers,omitempty"`
 }
 
 // ParameterType indicates the type of a parameter
@@ -235,4 +245,5 @@ type BuilderStrategy interface {
 	GetParameters() []Parameter
 	GetSecurityContext() *BuildStrategySecurityContext
 	GetVolumes() []BuildStrategyVolume
+	GetHostUsers() *bool
 }

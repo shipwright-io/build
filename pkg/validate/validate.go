@@ -167,6 +167,11 @@ func BuildRunFields(buildRun *buildapi.BuildRun) (string, string) {
 				"cannot use 'runtimeClassName' override and 'buildSpec' simultaneously"
 		}
 
+		if buildRun.Spec.HostUsers != nil {
+			return resources.BuildRunBuildFieldOverrideForbidden,
+				"cannot use 'hostUsers' override and 'buildSpec' simultaneously"
+		}
+
 		if len(buildRun.Spec.StepResources) > 0 {
 			return resources.BuildRunBuildFieldOverrideForbidden,
 				"cannot use 'stepResources' override and 'buildSpec' simultaneously"

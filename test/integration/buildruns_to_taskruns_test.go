@@ -880,4 +880,28 @@ var _ = Describe("Integration tests BuildRuns and TaskRuns", func() {
 			})
 		})
 	})
+
+	Context("when a buildrun has a buildSpec defined and overrides hostUsers", func() {
+		var standaloneBuildRunObject *buildapi.BuildRun
+
+		BeforeEach(func() {
+			buildRunSample = []byte(test.MinimalBuildRunWithHostUsersOverride)
+			standaloneBuildRunObject, err = tb.Catalog.LoadStandAloneBuildRunWithNameAndStrategy(BUILDRUN+tb.Namespace+"-standalone", cbsObject, buildRunSample)
+			Expect(err).To(BeNil())
+		})
+
+		Context("when the buildRun is created", func() {
+			It("should fail to register", func() {
+				Expect(tb.CreateBR(standaloneBuildRunObject)).To(BeNil())
+
+				br, err := tb.GetBRTillCompletion(standaloneBuildRunObject.Name)
+				Expect(err).To(BeNil())
+
+				condition := br.Status.GetCondition(buildapi.Succeeded)
+				Expect(condition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(condition.Reason).To(Equal(resources.BuildRunBuildFieldOverrideForbidden))
+				Expect(condition.Message).To(ContainSubstring("cannot use 'hostUsers' override and 'buildSpec' simultaneously"))
+			})
+		})
+	})
 })

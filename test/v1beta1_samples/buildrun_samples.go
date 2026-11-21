@@ -339,6 +339,20 @@ spec:
   runtimeClassName: "kata-containers"
 `
 
+// MinimalBuildRunWithHostUsersOverride defines a minimal BuildRun
+// with a build spec defined and a hostUsers overriding the build spec
+const MinimalBuildRunWithHostUsersOverride = `
+apiVersion: shipwright.io/v1beta1
+kind: BuildRun
+spec:
+  build:
+    spec:
+      strategy:
+        kind: ClusterBuildStrategy
+        name: buildah
+  hostUsers: false
+`
+
 // MinimalBuildRunWithStepResourcesOverride defines a minimal BuildRun
 // with stepResources override (for name reference path)
 const MinimalBuildRunWithStepResourcesOverride = `

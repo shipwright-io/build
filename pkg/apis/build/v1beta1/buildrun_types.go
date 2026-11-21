@@ -138,6 +138,15 @@ type BuildRunSpec struct {
 	// RuntimeClassName specifies the RuntimeClass to be used to run the Pod
 	// +optional
 	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
+
+	// HostUsers controls whether the build pod uses the host's user namespace.
+	// Set it to false to run the build pod in its own user namespace, which
+	// requires Kubernetes user namespace support on the cluster nodes.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+	// The BuildRun value takes precedence over the Build and BuildStrategy values,
+	// except that it cannot set true when the BuildStrategy sets false.
+	// +optional
+	HostUsers *bool `json:"hostUsers,omitempty"`
 }
 
 // BuildRunRequestedState defines the buildrun state the user can provide to override whatever is the current state.
