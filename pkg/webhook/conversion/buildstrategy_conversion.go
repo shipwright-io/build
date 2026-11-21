@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package conversion
 
 import (
 	"context"
@@ -14,15 +14,12 @@ import (
 	"k8s.io/utils/ptr"
 
 	buildapialpha "github.com/shipwright-io/build/pkg/apis/build/v1alpha1"
+	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/ctxlog"
-	"github.com/shipwright-io/build/pkg/webhook"
 )
 
-// ensure v1beta1 implements the Conversion interface
-var _ webhook.Conversion = (*BuildStrategy)(nil)
-
-// ConvertTo converts this object to its v1alpha1 equivalent
-func (src *BuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstructured) error {
+// convertBuildStrategyBetaToAlpha converts this object to its v1alpha1 equivalent
+func convertBuildStrategyBetaToAlpha(ctx context.Context, src *buildapi.BuildStrategy, obj *unstructured.Unstructured) error {
 	ctxlog.Info(ctx, "converting BuildStrategy from beta to alpha", "namespace", src.Namespace, "name", src.Name)
 
 	var bs buildapialpha.BuildStrategy
@@ -30,28 +27,29 @@ func (src *BuildStrategy) ConvertTo(ctx context.Context, obj *unstructured.Unstr
 	bs.APIVersion = alphaGroupVersion
 	bs.ObjectMeta = src.ObjectMeta
 
-	src.Spec.ConvertTo(&bs.Spec)
+	convertBuildStrategySpecBetaToAlpha(&src.Spec, &bs.Spec)
 
 	mapito, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&bs)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed structuring the newObject")
+		return err
 	}
 	obj.Object = mapito
 
 	return nil
 }
 
-func (src *BuildStrategySpec) ConvertTo(bs *buildapialpha.BuildStrategySpec) {
+func convertBuildStrategySpecBetaToAlpha(src *buildapi.BuildStrategySpec, bs *buildapialpha.BuildStrategySpec) {
 	usesMigratedDockerfileArg, usesMigratedBuilderArg := false, false
 
 	bs.Parameters = []buildapialpha.Parameter{}
 	for _, param := range src.Parameters {
-		if param.Name == "dockerfile" && param.Type == ParameterTypeString && param.Default != nil && *param.Default == "Dockerfile" {
+		if param.Name == "dockerfile" && param.Type == buildapi.ParameterTypeString && param.Default != nil && *param.Default == "Dockerfile" {
 			usesMigratedDockerfileArg = true
 			continue
 		}
 
-		if param.Name == "builder-image" && param.Type == ParameterTypeString && param.Default == nil {
+		if param.Name == "builder-image" && param.Type == buildapi.ParameterTypeString && param.Default == nil {
 			usesMigratedBuilderArg = true
 			continue
 		}
@@ -67,7 +65,6 @@ func (src *BuildStrategySpec) ConvertTo(bs *buildapialpha.BuildStrategySpec) {
 
 	bs.BuildSteps = []buildapialpha.BuildStep{}
 	for _, step := range src.Steps {
-
 		buildStep := buildapialpha.BuildStep{
 			Container: corev1.Container{
 				Name:            step.Name,
@@ -85,7 +82,6 @@ func (src *BuildStrategySpec) ConvertTo(bs *buildapialpha.BuildStrategySpec) {
 
 		if usesMigratedDockerfileArg {
 			// Migrate to legacy argument
-
 			for commandIndex, command := range buildStep.Command {
 				if strings.Contains(command, "$(params.dockerfile)") {
 					buildStep.Command[commandIndex] = strings.ReplaceAll(command, "$(params.dockerfile)", "$(params.DOCKERFILE)")
@@ -107,7 +103,6 @@ func (src *BuildStrategySpec) ConvertTo(bs *buildapialpha.BuildStrategySpec) {
 
 		if usesMigratedBuilderArg {
 			// Migrate to legacy argument
-
 			for commandIndex, command := range buildStep.Command {
 				if strings.Contains(command, "$(params.builder-image)") {
 					buildStep.Command[commandIndex] = strings.ReplaceAll(command, "$(params.builder-image)", "$(build.builder.image)")
@@ -145,14 +140,15 @@ func (src *BuildStrategySpec) ConvertTo(bs *buildapialpha.BuildStrategySpec) {
 	}
 }
 
-// ConvertFrom converts from buildapialpha.BuildStrategy into this object.
-func (src *BuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Unstructured) error {
+// convertBuildStrategyAlphaToBeta converts from buildapialpha.BuildStrategy into buildapi.BuildStrategy.
+func convertBuildStrategyAlphaToBeta(ctx context.Context, src *buildapi.BuildStrategy, obj *unstructured.Unstructured) error {
 	var bs buildapialpha.BuildStrategy
 
 	unstructured := obj.UnstructuredContent()
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &bs)
 	if err != nil {
 		ctxlog.Error(ctx, err, "failed unstructuring the buildrun convertedObject")
+		return err
 	}
 
 	ctxlog.Info(ctx, "converting BuildStrategy from alpha to beta", "namespace", bs.Namespace, "name", bs.Name)
@@ -161,18 +157,18 @@ func (src *BuildStrategy) ConvertFrom(ctx context.Context, obj *unstructured.Uns
 	src.TypeMeta = bs.TypeMeta
 	src.APIVersion = betaGroupVersion
 
-	src.Spec.ConvertFrom(bs.Spec)
+	convertBuildStrategySpecAlphaToBeta(&src.Spec, bs.Spec)
 
 	return nil
 }
 
-func (src *BuildStrategySpec) ConvertFrom(bs buildapialpha.BuildStrategySpec) {
-	src.Steps = []Step{}
+func convertBuildStrategySpecAlphaToBeta(src *buildapi.BuildStrategySpec, bs buildapialpha.BuildStrategySpec) {
+	src.Steps = []buildapi.Step{}
 
 	usesDockerfile, usesBuilderImage := false, false
 
 	for _, brStep := range bs.BuildSteps {
-		step := Step{
+		step := buildapi.Step{
 			Name:            brStep.Name,
 			Image:           brStep.Image,
 			Command:         brStep.Command,
@@ -186,7 +182,6 @@ func (src *BuildStrategySpec) ConvertFrom(bs buildapialpha.BuildStrategySpec) {
 		}
 
 		// Migrate legacy argument usage
-
 		for commandIndex, command := range step.Command {
 			if strings.Contains(command, "$(params.DOCKERFILE)") {
 				usesDockerfile = true
@@ -235,41 +230,40 @@ func (src *BuildStrategySpec) ConvertFrom(bs buildapialpha.BuildStrategySpec) {
 		src.Steps = append(src.Steps, step)
 	}
 
-	src.Parameters = []Parameter{}
+	src.Parameters = []buildapi.Parameter{}
 	for _, param := range bs.Parameters {
-		src.Parameters = append(src.Parameters, Parameter{
+		src.Parameters = append(src.Parameters, buildapi.Parameter{
 			Name:        param.Name,
 			Description: param.Description,
-			Type:        ParameterType(param.Type),
+			Type:        buildapi.ParameterType(param.Type),
 			Default:     param.Default,
 			Defaults:    param.Defaults,
 		})
 	}
 
 	// Add replacement for legacy arguments
-
 	if usesDockerfile {
-		src.Parameters = append(src.Parameters, Parameter{
+		src.Parameters = append(src.Parameters, buildapi.Parameter{
 			Name:        "dockerfile",
 			Description: "The Dockerfile to be built.",
-			Type:        ParameterTypeString,
+			Type:        buildapi.ParameterTypeString,
 			Default:     ptr.To("Dockerfile"),
 		})
 	}
 
 	if usesBuilderImage {
-		src.Parameters = append(src.Parameters, Parameter{
+		src.Parameters = append(src.Parameters, buildapi.Parameter{
 			Name:        "builder-image",
 			Description: "The builder image.",
-			Type:        ParameterTypeString,
+			Type:        buildapi.ParameterTypeString,
 		})
 	}
 
-	src.SecurityContext = (*BuildStrategySecurityContext)(bs.SecurityContext)
+	src.SecurityContext = (*buildapi.BuildStrategySecurityContext)(bs.SecurityContext)
 
-	src.Volumes = []BuildStrategyVolume{}
+	src.Volumes = []buildapi.BuildStrategyVolume{}
 	for _, vol := range bs.Volumes {
-		src.Volumes = append(src.Volumes, BuildStrategyVolume{
+		src.Volumes = append(src.Volumes, buildapi.BuildStrategyVolume{
 			Overridable:  vol.Overridable,
 			Name:         vol.Name,
 			Description:  vol.Description,

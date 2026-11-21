@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1_test
+package conversion
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -12,7 +12,7 @@ import (
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 )
 
-var _ = Describe("BuildSpec ConvertTo", func() {
+var _ = Describe("BuildSpec convertBuildSpecBetaToAlpha", func() {
 
 	// verifies that converting a BuildSpec whose source type is OCIArtifact but
 	// whose OCIArtifact field is unset does not panic, and instead produces an
@@ -27,7 +27,7 @@ var _ = Describe("BuildSpec ConvertTo", func() {
 		dest := &buildapialpha.BuildSpec{}
 
 		Expect(func() {
-			Expect(src.ConvertTo(dest)).To(Succeed())
+			Expect(convertBuildSpecBetaToAlpha(&src, dest)).To(Succeed())
 		}).ToNot(Panic())
 
 		Expect(dest.Source.BundleContainer).To(BeNil())

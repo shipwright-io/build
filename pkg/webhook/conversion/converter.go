@@ -52,7 +52,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 					ctxlog.Error(ctx, err, "failed unstructuring the build convertedObject")
 					return nil, statusErrorFromError(err)
 				}
-				if err = build.ConvertTo(ctx, convertedObject); err != nil {
+				if err = convertBuildBetaToAlpha(ctx, &build, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
@@ -65,7 +65,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 					ctxlog.Error(ctx, err, "failed unstructuring the buildRun convertedObject")
 					return nil, statusErrorFromError(err)
 				}
-				if err = buildRun.ConvertTo(ctx, convertedObject); err != nil {
+				if err = convertBuildRunBetaToAlpha(ctx, &buildRun, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
@@ -78,7 +78,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 					ctxlog.Error(ctx, err, "failed unstructuring the buildStrategy convertedObject")
 					return nil, statusErrorFromError(err)
 				}
-				if err = buildStrategy.ConvertTo(ctx, convertedObject); err != nil {
+				if err = convertBuildStrategyBetaToAlpha(ctx, &buildStrategy, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
@@ -91,7 +91,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 					ctxlog.Error(ctx, err, "failed unstructuring the clusterBuildStrategy convertedObject")
 					return nil, statusErrorFromError(err)
 				}
-				if err = clusterBuildStrategy.ConvertTo(ctx, convertedObject); err != nil {
+				if err = convertClusterBuildStrategyBetaToAlpha(ctx, &clusterBuildStrategy, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
@@ -109,7 +109,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 			case buildKind:
 				var buildBeta buildapi.Build
 
-				if err := buildBeta.ConvertFrom(ctx, convertedObject); err != nil {
+				if err := convertBuildAlphaToBeta(ctx, &buildBeta, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
@@ -124,7 +124,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 			case buildRunKind:
 				var buildRunBeta buildapi.BuildRun
 
-				if err := buildRunBeta.ConvertFrom(ctx, convertedObject); err != nil {
+				if err := convertBuildRunAlphaToBeta(ctx, &buildRunBeta, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
@@ -139,7 +139,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 			case buildStrategyKind:
 				var buildStrategyBeta buildapi.BuildStrategy
 
-				if err := buildStrategyBeta.ConvertFrom(ctx, convertedObject); err != nil {
+				if err := convertBuildStrategyAlphaToBeta(ctx, &buildStrategyBeta, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
@@ -154,7 +154,7 @@ func convertSHPCR(ctx context.Context, Object *unstructured.Unstructured, toVers
 			case clusterBuildStrategyKind:
 				var clusterBuildStrategyBeta buildapi.ClusterBuildStrategy
 
-				if err := clusterBuildStrategyBeta.ConvertFrom(ctx, convertedObject); err != nil {
+				if err := convertClusterBuildStrategyAlphaToBeta(ctx, &clusterBuildStrategyBeta, convertedObject); err != nil {
 					ctxlog.Error(ctx, err, "failed to convert object")
 					return nil, statusErrorFromError(err)
 				}
