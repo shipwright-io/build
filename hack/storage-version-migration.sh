@@ -98,21 +98,43 @@ EOF
 
 JOB_NAME=$(kubectl -n shipwright-build get job --selector app=storage-version-migration-shipwright -o jsonpath='{.items[0].metadata.name}')
 
-while [ "$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '.status.completionTime // ""')" == "" ]; do
-    echo "[INFO] Storage version migraton job is still running"
+# How long to wait for the job, in seconds. The job retries failed pods up to its backoffLimit,
+# which can take a while, so the default is generous.
+TIMEOUT="${STORAGE_VERSION_MIGRATION_TIMEOUT:-1800}"
+
+# A failed job never gets a completionTime, so wait for either the Complete or the Failed condition.
+# A failed or stalled status read must not exit the script, so that the RBAC cleanup below still runs.
+jobState=""
+deadline=$((SECONDS + TIMEOUT))
+while true; do
+    if jobJSON="$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json --request-timeout=30s)"; then
+        jobState="$(jq -r '[.status.conditions[]? | select(.status == "True") | .type] | map(select(. == "Complete" or . == "Failed")) | first // ""' <<<"${jobJSON}")"
+        if [ -n "${jobState}" ]; then
+            break
+        fi
+        echo "[INFO] Storage version migration job is still running"
+    else
+        echo "[WARN] Could not read the storage version migration job status, retrying"
+    fi
+    if [ "${SECONDS}" -ge "${deadline}" ]; then
+        jobState="Timeout"
+        break
+    fi
     sleep 10
 done
-
-isFailed="$(kubectl -n shipwright-build get job "${JOB_NAME}" -o json | jq -r '.status.conditions[] | select(.type == "Failed") | .status')"
 
 # Delete the ClusterRole, ServiceAccount, and ClusterRoleBinding after the job finishes
 kubectl delete clusterrole storage-version-migration-role || true
 kubectl delete serviceaccount storage-version-migration -n shipwright-build || true
 kubectl delete clusterrolebinding storage-version-migration-rolebinding || true
 
-if [ "${isFailed}" == "True" ]; then
-    echo "[ERROR] Storage version migration failed"
-    kubectl -n shipwright-build logs "job/${JOB_NAME}"
+if [ "${jobState}" != "Complete" ]; then
+    if [ "${jobState}" == "Timeout" ]; then
+        echo "[ERROR] Storage version migration did not finish within ${TIMEOUT} seconds"
+    else
+        echo "[ERROR] Storage version migration failed"
+    fi
+    kubectl -n shipwright-build logs "job/${JOB_NAME}" || true
     exit 1
 fi
 
