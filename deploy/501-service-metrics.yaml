@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipwright-build-metrics
+  namespace: shipwright-build
+spec:
+  ports:
+  - name: metrics-port
+    port: 8383
+    targetPort: metrics-port
+  selector:
+    name: shipwright-build
