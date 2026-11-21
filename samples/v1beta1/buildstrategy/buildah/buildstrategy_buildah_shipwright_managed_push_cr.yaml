@@ -36,9 +36,9 @@ spec:
           outputDirectory=
           budArgs=()
           inBuildArgs=false
-          registriesBlock=""
+          declare -A registriesBlock=()
           inRegistriesBlock=false
-          registriesInsecure=""
+          declare -A registriesInsecure=()
           inRegistriesInsecure=false
           registriesSearch=""
           inRegistriesSearch=false
@@ -106,9 +106,9 @@ spec:
             elif [ "${inBuildArgs}" == "true" ]; then
               budArgs+=(--build-arg "${arg}")
             elif [ "${inRegistriesBlock}" == "true" ]; then
-              registriesBlock="${registriesBlock}'${arg}', "
+              registriesBlock["${arg}"]=true
             elif [ "${inRegistriesInsecure}" == "true" ]; then
-              registriesInsecure="${registriesInsecure}'${arg}', "
+              registriesInsecure["${arg}"]=true
             elif [ "${inRegistriesSearch}" == "true" ]; then
               registriesSearch="${registriesSearch}'${arg}', "
             else
@@ -135,27 +135,22 @@ spec:
           fi
 
           echo "[INFO] Creating registries config file..."
+          touch /shp-tmp/registries.conf
           if [ "${registriesSearch}" != "" ]; then
             cat <<EOF >>/shp-tmp/registries.conf
-          [registries.search]
-          registries = [${registriesSearch::-2}]
+          unqualified-search-registries = [${registriesSearch::-2}]
 
           EOF
           fi
-          if [ "${registriesInsecure}" != "" ]; then
+          for registry in $(printf '%s\n' "${!registriesInsecure[@]}" "${!registriesBlock[@]}" | sort -u); do
             cat <<EOF >>/shp-tmp/registries.conf
-          [registries.insecure]
-          registries = [${registriesInsecure::-2}]
+          [[registry]]
+          location = '${registry}'
+          insecure = ${registriesInsecure[${registry}]:-false}
+          blocked = ${registriesBlock[${registry}]:-false}
 
           EOF
-          fi
-          if [ "${registriesBlock}" != "" ]; then
-            cat <<EOF >>/shp-tmp/registries.conf
-          [registries.block]
-          registries = [${registriesBlock::-2}]
-
-          EOF
-          fi
+          done
 
           # Building the image
           echo "[INFO] Building image ${image}"
