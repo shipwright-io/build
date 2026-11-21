@@ -154,9 +154,13 @@ jobs:
           kubectl -n tekton-pipelines rollout status deployment tekton-pipelines-webhook --timeout=3m
       - name: Build helper images
         run: |
-          echo "GIT_CONTAINER_IMAGE=$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)" >> "$GITHUB_ENV"
-          echo "BUNDLE_CONTAINER_IMAGE=$(KO_DOCKER_REPO=kind.local ko publish ./cmd/bundle)" >> "$GITHUB_ENV"
-          echo "IMAGE_PROCESSING_CONTAINER_IMAGE=$(KO_DOCKER_REPO=kind.local ko publish ./cmd/image-processing)" >> "$GITHUB_ENV"
+          GIT_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/git)"
+          BUNDLE_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/bundle)"
+          IMAGE_PROCESSING_CONTAINER_IMAGE="$(KO_DOCKER_REPO=kind.local ko publish ./cmd/image-processing)"
+
+          echo "GIT_CONTAINER_IMAGE=$GIT_CONTAINER_IMAGE" >> "$GITHUB_ENV"
+          echo "BUNDLE_CONTAINER_IMAGE=$BUNDLE_CONTAINER_IMAGE" >> "$GITHUB_ENV"
+          echo "IMAGE_PROCESSING_CONTAINER_IMAGE=$IMAGE_PROCESSING_CONTAINER_IMAGE" >> "$GITHUB_ENV"
       - name: Test
         run: |
           # host.docker.internal does not work in a GitHub action
