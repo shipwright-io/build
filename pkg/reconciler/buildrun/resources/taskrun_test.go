@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	buildapi "github.com/shipwright-io/build/pkg/apis/build/v1beta1"
 	"github.com/shipwright-io/build/pkg/config"
@@ -412,6 +413,74 @@ var _ = Describe("TaskRun Unit Tests", func() {
 				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
 				Expect(taskRun.Spec.PodTemplate.RuntimeClassName).ToNot(BeNil())
 				Expect(*taskRun.Spec.PodTemplate.RuntimeClassName).To(Equal(buildRunRuntimeClassName))
+			})
+		})
+
+		Context("with hostUsers", func() {
+			It("should not set hostUsers when none of BuildStrategy, Build or BuildRun specify it", func() {
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				if taskRun.Spec.PodTemplate != nil {
+					Expect(taskRun.Spec.PodTemplate.HostUsers).To(BeNil())
+				}
+			})
+
+			It("should use BuildStrategy hostUsers when Build and BuildRun do not specify it", func() {
+				buildStrategy.Spec.HostUsers = ptr.To(false)
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.HostUsers).To(Equal(ptr.To(false)))
+			})
+
+			It("should prefer Build hostUsers over BuildStrategy hostUsers true", func() {
+				buildStrategy.Spec.HostUsers = ptr.To(true)
+				build.Spec.HostUsers = ptr.To(false)
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.HostUsers).To(Equal(ptr.To(false)))
+			})
+
+			It("should not let Build or BuildRun opt out of a user namespace that the BuildStrategy requires", func() {
+				buildStrategy.Spec.HostUsers = ptr.To(false)
+				build.Spec.HostUsers = ptr.To(true)
+				buildRun.Spec.HostUsers = ptr.To(true)
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.HostUsers).To(Equal(ptr.To(false)))
+			})
+
+			It("should prefer BuildRun hostUsers over Build and BuildStrategy hostUsers", func() {
+				buildStrategy.Spec.HostUsers = ptr.To(true)
+				build.Spec.HostUsers = ptr.To(true)
+				buildRun.Spec.HostUsers = ptr.To(false)
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.HostUsers).To(Equal(ptr.To(false)))
+			})
+
+			It("should keep other pod template settings when hostUsers is set", func() {
+				build.Spec.NodeSelector = map[string]string{"kubernetes.io/hostname": "node-1"}
+				buildRun.Spec.HostUsers = ptr.To(false)
+
+				taskRun, err := resources.GenerateTaskRun(cfg, build, buildRun, serviceAccountName, buildStrategy)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(taskRun.Spec.PodTemplate).ToNot(BeNil())
+				Expect(taskRun.Spec.PodTemplate.NodeSelector).To(HaveKeyWithValue("kubernetes.io/hostname", "node-1"))
+				Expect(taskRun.Spec.PodTemplate.HostUsers).To(Equal(ptr.To(false)))
 			})
 		})
 

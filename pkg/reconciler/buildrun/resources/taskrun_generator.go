@@ -115,6 +115,10 @@ func (g *TaskRunGenerator) ApplyInfrastructureConfiguration() error {
 		return err
 	}
 
+	if err := applyHostUsers(g.taskRun, g.strategy, g.build, g.buildRun); err != nil {
+		return err
+	}
+
 	if g.taskRun.Spec.PodTemplate == nil {
 		g.taskRun.Spec.PodTemplate = &pod.PodTemplate{}
 	}

@@ -7793,6 +7793,15 @@ spec:
                           - name
                           type: object
                         type: array
+                      hostUsers:
+                        description: |-
+                          HostUsers controls whether the build pod uses the host's user namespace.
+                          Set it to false to run the build pod in its own user namespace, which
+                          requires Kubernetes user namespace support on the cluster nodes.
+                          More info: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+                          The Build value takes precedence over the BuildStrategy value, except that
+                          it cannot set true when the BuildStrategy sets false.
+                        type: boolean
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -10445,6 +10454,15 @@ spec:
                   - name
                   type: object
                 type: array
+              hostUsers:
+                description: |-
+                  HostUsers controls whether the build pod uses the host's user namespace.
+                  Set it to false to run the build pod in its own user namespace, which
+                  requires Kubernetes user namespace support on the cluster nodes.
+                  More info: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+                  The BuildRun value takes precedence over the Build and BuildStrategy values,
+                  except that it cannot set true when the BuildStrategy sets false.
+                type: boolean
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -12921,6 +12939,15 @@ spec:
                       - name
                       type: object
                     type: array
+                  hostUsers:
+                    description: |-
+                      HostUsers controls whether the build pod uses the host's user namespace.
+                      Set it to false to run the build pod in its own user namespace, which
+                      requires Kubernetes user namespace support on the cluster nodes.
+                      More info: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+                      The Build value takes precedence over the BuildStrategy value, except that
+                      it cannot set true when the BuildStrategy sets false.
+                    type: boolean
                   nodeSelector:
                     additionalProperties:
                       type: string
