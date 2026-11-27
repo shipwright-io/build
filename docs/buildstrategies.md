@@ -748,7 +748,7 @@ A strategy author can also set `spec.hostUsers: false` on the `BuildStrategy` or
 
 User namespaces require Kubernetes support on the cluster: they are enabled by default from Kubernetes v1.33. The nodes also need a container runtime and filesystem that support them, for example containerd 2.0 or later and a Linux kernel of 6.3 or later. On clusters without this support, build pods with `hostUsers: false` fail to start.
 
-Shipwright passes `hostUsers` to Tekton through the TaskRun or PipelineRun pod template. Tekton Pipelines supports this field in v1.6.1 or later v1.6 releases, and in v1.9.0 or later. It is not supported in v1.6.0, v1.7, or v1.8, where build pods do not get a user namespace.
+Shipwright passes `hostUsers` to Tekton through the TaskRun or PipelineRun pod template. Tekton Pipelines supports this field in v1.9.0 or later. It is not supported in v1.7, or v1.8, where build pods do not get a user namespace.
 
 ## Steps Resource Definition
 
